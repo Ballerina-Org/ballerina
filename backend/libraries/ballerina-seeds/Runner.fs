@@ -17,7 +17,9 @@ open Ballerina.DSL.Next.StdLib.Extensions
 module Runner =
   let _extensions, languageContext = stdExtensions
 
-  let seed (schema: Schema<TypeValue>) : Reader<SpecData<TypeValue, ValueExt>, SeedingContext, Errors> =
+  let seed
+    (schema: Schema<TypeValue, ResolvedIdentifier>)
+    : Reader<SpecData<TypeValue, ValueExt>, SeedingContext, Errors> =
     reader {
       let! ctx = reader.GetContext()
 

@@ -23,9 +23,10 @@ module Extension =
     (operationLens: PartialLens<'ext, DecimalOperations<'ext>>)
     : OperationsExtension<'ext, DecimalOperations<'ext>> =
 
-    let decimalPlusId = Identifier.FullyQualified([ "decimal" ], "+")
+    let decimalPlusId =
+      Identifier.FullyQualified([ "decimal" ], "+") |> TypeCheckScope.Empty.Resolve
 
-    let plusOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let plusOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalPlusId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue))
         Kind = Kind.Star
@@ -62,9 +63,10 @@ module Extension =
             } }
 
 
-    let decimalMinusId = Identifier.FullyQualified([ "decimal" ], "-")
+    let decimalMinusId =
+      Identifier.FullyQualified([ "decimal" ], "-") |> TypeCheckScope.Empty.Resolve
 
-    let minusOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let minusOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalMinusId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue))
         Kind = Kind.Star
@@ -99,9 +101,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Decimal(vClosure - v))
             } }
 
-    let decimalDivideId = Identifier.FullyQualified([ "decimal" ], "/")
+    let decimalDivideId =
+      Identifier.FullyQualified([ "decimal" ], "/") |> TypeCheckScope.Empty.Resolve
 
-    let divideOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let divideOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalDivideId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue))
         Kind = Kind.Star
@@ -136,9 +139,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Decimal(vClosure / v))
             } }
 
-    let decimalPowerId = Identifier.FullyQualified([ "decimal" ], "**")
+    let decimalPowerId =
+      Identifier.FullyQualified([ "decimal" ], "**") |> TypeCheckScope.Empty.Resolve
 
-    let powerOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let powerOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalPowerId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(int32TypeValue, decimalTypeValue))
         Kind = Kind.Star
@@ -179,9 +183,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Decimal(pown vClosure v))
             } }
 
-    let decimalModId = Identifier.FullyQualified([ "decimal" ], "%")
+    let decimalModId =
+      Identifier.FullyQualified([ "decimal" ], "%") |> TypeCheckScope.Empty.Resolve
 
-    let modOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let modOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalModId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue))
         Kind = Kind.Star
@@ -216,9 +221,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Decimal(vClosure % v))
             } }
 
-    let decimalEqualId = Identifier.FullyQualified([ "decimal" ], "==")
+    let decimalEqualId =
+      Identifier.FullyQualified([ "decimal" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalEqualId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -253,9 +259,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let decimalNotEqualId = Identifier.FullyQualified([ "decimal" ], "!=")
+    let decimalNotEqualId =
+      Identifier.FullyQualified([ "decimal" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalNotEqualId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -290,9 +297,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
-    let decimalGreaterThanId = Identifier.FullyQualified([ "decimal" ], ">")
+    let decimalGreaterThanId =
+      Identifier.FullyQualified([ "decimal" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalGreaterThanId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -327,9 +335,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
-    let decimalGreaterThanOrEqualId = Identifier.FullyQualified([ "decimal" ], ">=")
+    let decimalGreaterThanOrEqualId =
+      Identifier.FullyQualified([ "decimal" ], ">=") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalGreaterThanOrEqualId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -367,9 +376,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
-    let decimalLessThanId = Identifier.FullyQualified([ "decimal" ], "<")
+    let decimalLessThanId =
+      Identifier.FullyQualified([ "decimal" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalLessThanId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -404,9 +414,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
-    let decimalLessThanOrEqualId = Identifier.FullyQualified([ "decimal" ], "<=")
+    let decimalLessThanOrEqualId =
+      Identifier.FullyQualified([ "decimal" ], "<=") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalLessThanOrEqualId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
         Kind = Kind.Star

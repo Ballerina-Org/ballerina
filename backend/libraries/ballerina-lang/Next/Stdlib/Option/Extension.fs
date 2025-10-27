@@ -27,7 +27,12 @@ module Extension =
     let optionSomeSymbol = optionSomeId |> TypeSymbol.Create
     let optionNoneSymbol = optionNoneId |> TypeSymbol.Create
     let aVar, aKind = TypeVar.Create("a"), Kind.Star
-    let optionMapId = Identifier.FullyQualified([ "Option" ], "map")
+    let optionId = optionId |> TypeCheckScope.Empty.Resolve
+    let optionSomeId = optionSomeId |> TypeCheckScope.Empty.Resolve
+    let optionNoneId = optionNoneId |> TypeCheckScope.Empty.Resolve
+
+    let optionMapId =
+      Identifier.FullyQualified([ "Option" ], "map") |> TypeCheckScope.Empty.Resolve
 
     let someCase =
       (optionSomeId, optionSomeSymbol),
@@ -72,7 +77,8 @@ module Extension =
             | _ -> None) }
 
     let mapOperation
-      : Identifier * TypeOperationExtension<'ext, OptionConstructors, OptionValues<'ext>, OptionOperations<'ext>> =
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, OptionConstructors, OptionValues<'ext>, OptionOperations<'ext>> =
       optionMapId,
       { Type =
           TypeValue.CreateLambda(
@@ -136,9 +142,9 @@ module Extension =
       }
 
     let valueParser
-      (_rootValueParser: ValueParser<TypeValue, 'ext>)
+      (_rootValueParser: ValueParser<TypeValue, ResolvedIdentifier, 'ext>)
       (_v: JsonValue)
-      : ValueParserReader<TypeValue, 'ext> =
+      : ValueParserReader<TypeValue, ResolvedIdentifier, 'ext> =
       reader.Throw(Ballerina.Errors.Errors.Singleton("Option value parser not implemented"))
 
     let valueEncoder

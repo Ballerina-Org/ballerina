@@ -8,9 +8,10 @@ module PrimitiveValue =
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Json.Primitive
+  open Ballerina.DSL.Next.Types
 
   type Value<'T, 'valueExtension> with
-    static member FromJsonPrimitive(json: JsonValue) : ValueParserReader<'T, 'valueExtension> =
+    static member FromJsonPrimitive(json: JsonValue) : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
       reader {
         let! primitive = PrimitiveValue.FromJson json |> reader.OfSum
         return Value.Primitive primitive
