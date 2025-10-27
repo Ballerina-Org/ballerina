@@ -215,7 +215,8 @@ export const TableAbstractRenderer = <
               _.typeAncestors,
             ),
             domNodeAncestorPath:
-              _.domNodeAncestorPath + `[table][cell][${rowId}][${column}]`,
+              _.domNodeAncestorPath +
+              `[table][cell][${rowId}][record][${column}]`,
             lookupTypeAncestorNames: _.lookupTypeAncestorNames,
             labelContext,
           };
@@ -388,7 +389,8 @@ export const TableAbstractRenderer = <
               typeAncestors: [_.type as DispatchParsedType<any>].concat(
                 _.typeAncestors,
               ),
-              domNodeAncestorPath: _.domNodeAncestorPath + "[table][details]",
+              domNodeAncestorPath:
+                _.domNodeAncestorPath + `[table][cell][${selectedDetailRow}]`,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               labelContext,
             };
