@@ -27,13 +27,28 @@ module Extension =
     let listId = Identifier.LocalScope "List"
     let listSymbolId = listId |> TypeSymbol.Create
     let aVar, aKind = TypeVar.Create("a"), Kind.Star
-    let listFoldId = Identifier.FullyQualified([ "List" ], "fold")
-    let listLengthId = Identifier.FullyQualified([ "List" ], "length")
-    let listFilterId = Identifier.FullyQualified([ "List" ], "filter")
-    let listMapId = Identifier.FullyQualified([ "List" ], "map")
-    let listAppendId = Identifier.FullyQualified([ "List" ], "append")
-    let listConsId = Identifier.FullyQualified([ "List" ], "Cons")
-    let listNilId = Identifier.FullyQualified([ "List" ], "Nil")
+    let listId = listId |> TypeCheckScope.Empty.Resolve
+
+    let listFoldId =
+      Identifier.FullyQualified([ "List" ], "fold") |> TypeCheckScope.Empty.Resolve
+
+    let listLengthId =
+      Identifier.FullyQualified([ "List" ], "length") |> TypeCheckScope.Empty.Resolve
+
+    let listFilterId =
+      Identifier.FullyQualified([ "List" ], "filter") |> TypeCheckScope.Empty.Resolve
+
+    let listMapId =
+      Identifier.FullyQualified([ "List" ], "map") |> TypeCheckScope.Empty.Resolve
+
+    let listAppendId =
+      Identifier.FullyQualified([ "List" ], "append") |> TypeCheckScope.Empty.Resolve
+
+    let listConsId =
+      Identifier.FullyQualified([ "List" ], "Cons") |> TypeCheckScope.Empty.Resolve
+
+    let listNilId =
+      Identifier.FullyQualified([ "List" ], "Nil") |> TypeCheckScope.Empty.Resolve
 
     let getValueAsList (v: Value<TypeValue, 'ext>) : Sum<List<Value<TypeValue, 'ext>>, Ballerina.Errors.Errors> =
       sum {
@@ -50,7 +65,7 @@ module Extension =
     let toValueFromList (v: List<Value<TypeValue, 'ext>>) : Value<TypeValue, 'ext> =
       ListValues.List v |> valueLens.Set |> Ext
 
-    let lengthOperation: Identifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+    let lengthOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listLengthId,
       { Type =
           TypeValue.CreateLambda(
@@ -89,7 +104,7 @@ module Extension =
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
-    let foldOperation: Identifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+    let foldOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listFoldId,
       { Type =
           TypeValue.CreateLambda(
@@ -171,7 +186,7 @@ module Extension =
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
-    let filterOperation: Identifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+    let filterOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listFilterId,
       { Type =
           TypeValue.CreateLambda(
@@ -240,7 +255,7 @@ module Extension =
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
-    let mapOperation: Identifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+    let mapOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listMapId,
       { Type =
           TypeValue.CreateLambda(
@@ -290,7 +305,7 @@ module Extension =
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
-    let appendOperation: Identifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+    let appendOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listAppendId,
       { Type =
           TypeValue.CreateLambda(
@@ -338,7 +353,7 @@ module Extension =
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
-    let consOperation: Identifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+    let consOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listConsId,
       { Type =
           TypeValue.CreateLambda(
@@ -393,7 +408,7 @@ module Extension =
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
-    let nilOperation: Identifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+    let nilOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listNilId,
       { Type =
           TypeValue.CreateLambda(
@@ -424,9 +439,9 @@ module Extension =
       }
 
     let valueParser
-      (rootValueParser: ValueParser<TypeValue, 'ext>)
+      (rootValueParser: ValueParser<TypeValue, ResolvedIdentifier, 'ext>)
       (v: JsonValue)
-      : ValueParserReader<TypeValue, 'ext> =
+      : ValueParserReader<TypeValue, ResolvedIdentifier, 'ext> =
       Reader.assertDiscriminatorAndContinueWithValue "list" v (fun elementsJson ->
         reader {
           let! elements = elementsJson |> JsonValue.AsArray |> reader.OfSum
