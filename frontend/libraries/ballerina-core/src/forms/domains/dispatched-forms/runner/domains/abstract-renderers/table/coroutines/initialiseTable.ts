@@ -26,6 +26,11 @@ export const InitialiseTable = <
     Co<CustomPresentationContext, ExtraContext>()
       .GetState()
       .then((current) => {
+        // extracting the ID from the local bindings to use it in the getMany api call
+        // this used when the table is contained in another table and we want to
+        // get the some data based on the parent ID
+        // this is not needed in the initialise filters and sorting coroutine because
+        // in theory, the same kind of table will always be initialised with the same filters and sorting
         const co = Co<CustomPresentationContext, ExtraContext>();
         type StateWithParentId = { current: typeof current; parentId?: string };
 
