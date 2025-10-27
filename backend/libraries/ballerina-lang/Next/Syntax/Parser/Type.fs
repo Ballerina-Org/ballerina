@@ -93,6 +93,17 @@ module Type =
           return! (loc, $"Error: expected float64, got {id}") |> Errors.Singleton |> parser.Throw
       }
 
+    let decimalTypeDecl () =
+      parser {
+        let! id = identifierMatch
+
+        match id with
+        | "decimal" -> return TypeExpr.Primitive PrimitiveType.Decimal
+        | _ ->
+          let! loc = parser.Location
+          return! (loc, $"Error: expected decimal, got {id}") |> Errors.Singleton |> parser.Throw
+      }
+
     let stringTypeDecl () =
       parser {
         let! id = identifierMatch
@@ -244,6 +255,7 @@ module Type =
         int64TypeDecl ()
         float32TypeDecl ()
         float64TypeDecl ()
+        decimalTypeDecl ()
         stringTypeDecl ()
         guidTypeDecl ()
         lookupTypeDecl () ]

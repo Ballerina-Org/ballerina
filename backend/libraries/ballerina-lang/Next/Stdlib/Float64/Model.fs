@@ -4,7 +4,7 @@ namespace Ballerina.DSL.Next.StdLib.Float64
 module Model =
   type Float64Operations<'ext> =
     | Plus of {| v1: Option<float> |}
-    | Minus of {| v1: unit |}
+    | Minus of {| v1: Option<float> |}
     | Divide of {| v1: Option<float> |}
     | Power of {| v1: Option<float> |}
     | Mod of {| v1: Option<float> |}

@@ -13,12 +13,14 @@ open Ballerina.DSL.Next.Types.Json.TypeValue
 open Ballerina.DSL.Next.Json
 open Ballerina.Collections.NonEmptyList
 open Ballerina.DSL.Next.Terms.Json
+open Ballerina.DSL.Next.Types.Json.ResolvedTypeIdentifier
 
 let ``Assert Delta -> ToJson -> FromJson -> Delta`` (expression: Delta<Unit>) (expectedJson: JsonValue) =
   let normalize (json: JsonValue) =
     json.ToString JsonSaveOptions.DisableFormatting
 
-  let rootExprToJson = Expr.ToJson >> Reader.Run TypeValue.ToJson
+  let rootExprToJson =
+    Expr.ToJson >> Reader.Run(TypeValue.ToJson, ResolvedIdentifier.ToJson)
 
   let rootValueToJson =
     Json.buildRootEncoder<TypeValue, Unit> (NonEmptyList.OfList(Value.ToJson, []))
@@ -32,13 +34,15 @@ let ``Assert Delta -> ToJson -> FromJson -> Delta`` (expression: Delta<Unit>) (e
   | Left json ->
     Assert.That(normalize json, Is.EqualTo(normalize expectedJson))
 
-    let rootExprFromJson = Expr.FromJson >> Reader.Run TypeValue.FromJson
+    let rootExprFromJson =
+      Expr.FromJson >> Reader.Run(TypeValue.FromJson, ResolvedIdentifier.FromJson)
 
     let rootValueFromJson =
-      Json.buildRootParser<TypeValue, Unit> (NonEmptyList.OfList(Value.FromJson, []))
+      Json.buildRootParser<TypeValue, ResolvedIdentifier, Unit> (NonEmptyList.OfList(Value.FromJson, []))
 
     let valueParser =
-      rootValueFromJson >> Reader.Run(rootExprFromJson, TypeValue.FromJson)
+      rootValueFromJson
+      >> Reader.Run(rootExprFromJson, TypeValue.FromJson, ResolvedIdentifier.FromJson)
 
     let parsed = Delta.FromJson expectedJson |> Reader.Run valueParser
 

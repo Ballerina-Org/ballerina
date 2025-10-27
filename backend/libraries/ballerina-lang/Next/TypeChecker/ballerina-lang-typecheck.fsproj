@@ -5,11 +5,31 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="TypeEval.fs" />
         <Compile Include="Unification/EquivalenceClass.fs" />
+        <Compile Include="Model.fs" />
+        <Compile Include="Patterns.fs" />
+        <Compile Include="TypeEval.fs" />
         <Compile Include="Unification/Unification.fs" />
-        <Compile Include="AdHocPolymorphicOperators.fs" />
-        <Compile Include="TypeCheck.fs" />
+        <Compile Include="TypeCheck/LiftOtherSteps.fs" />
+        <Compile Include="TypeCheck/AdHocPolymorphicOperators.fs" />
+        <Compile Include="TypeCheck/Primitive.fs" />
+        <Compile Include="TypeCheck/Lookup.fs" />
+        <Compile Include="TypeCheck/Lambda.fs" />
+        <Compile Include="TypeCheck/Apply.fs" />
+        <Compile Include="TypeCheck/If.fs" />
+        <Compile Include="TypeCheck/TypeLambda.fs" />
+        <Compile Include="TypeCheck/Let.fs" />
+        <Compile Include="TypeCheck/RecordCons.fs" />
+        <Compile Include="TypeCheck/RecordWith.fs" />
+        <Compile Include="TypeCheck/RecordDes.fs" />
+        <Compile Include="TypeCheck/UnionDes.fs" />
+        <Compile Include="TypeCheck/SumDes.fs" />
+        <Compile Include="TypeCheck/SumCons.fs" />
+        <Compile Include="TypeCheck/TupleDes.fs" />
+        <Compile Include="TypeCheck/TupleCons.fs" />
+        <Compile Include="TypeCheck/TypeLet.fs" />
+        <Compile Include="TypeCheck/TypeApply.fs" />
+        <Compile Include="TypeCheck/Expr.fs" />
     </ItemGroup>
     <ItemGroup>
         <!--
