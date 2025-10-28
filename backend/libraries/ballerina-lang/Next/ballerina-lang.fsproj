@@ -10,4 +10,9 @@
         <ProjectReference Include=".\Stdlib\ballerina-lang-stdlib.fsproj" />
         <ProjectReference Include=".\Syntax\ballerina-lang-parser.fsproj" />
     </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="Runners/TypeCheck.fs" />
+    </ItemGroup>
+
 </Project>
