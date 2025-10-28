@@ -20,6 +20,7 @@ export const TableLoadWithRetries =
     fromTableApiParser: (
       value: unknown,
     ) => ValueOrErrors<PredicateValue, string>,
+    parentId?: string,
   ) =>
   (maxRetries = 3) =>
   (
@@ -52,6 +53,7 @@ export const TableLoadWithRetries =
                           : current.value.to,
                       filtersAndSorting:
                         current.customFormState.filterAndSortParam,
+                      parentId,
                     }),
                   () => "error" as const,
                 ),
@@ -65,6 +67,7 @@ export const TableLoadWithRetries =
               : TableLoadWithRetries<CustomPresentationContext, ExtraContext>(
                   tableApiSource,
                   fromTableApiParser,
+                  parentId,
                 )(maxRetries)(attempt + 1),
           )
       : Co<CustomPresentationContext, ExtraContext>().Return(
