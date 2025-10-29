@@ -2409,7 +2409,8 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       );
     },
     daisyEnum: () => (props) => {
-
+        const [selected, setSelected] = useState(!PredicateValue.Operations.IsUnit(props.context.value)
+        && props.context.value.isSome )
           if (PredicateValue.Operations.IsUnit(props.context.value)) {
               return <></>;
           }
@@ -2420,7 +2421,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
             isSome && PredicateValue.Operations.IsRecord(props.context.value.value)
                 ? props.context.value.value.fields.get("Value")!
                 : undefined;
- 
+
           return (
        
                 <fieldset className="fieldset bg-base-100 border-base-300 rounded-box border p-4">
@@ -2428,8 +2429,9 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
 
                     <label className="label">
                         {(props.context.activeOptions == "unloaded" ||
-                  
-                        props.context.activeOptions == "loading") && <input type="checkbox" className="toggle"
+                        
+                        props.context.activeOptions == "loading") && 
+                            <input type="checkbox" className="toggle"
                                checked={
                                    (props.context.activeOptions != "unloaded" &&
                                        props.context.activeOptions != "loading")
@@ -2439,25 +2441,31 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                         {props.context.details}
                         {(props.context.activeOptions != "unloaded" &&
                             props.context.activeOptions != "loading") && <form className="filter">
-                            <input className="btn btn-square" type="reset" value="×"/>
+                            <input className="btn btn-square" type="reset" value="×" onClick={() => setSelected(false) }
+                                  />
                             {
 
                                 props.context.activeOptions.map((o) =>
                                     (<input
                                         className="btn"
                                         type="radio"
-                                        name="frameworks"
-                                        onChange={(e) =>
+                                        name="alloptions"
+                                        checked={selected && (value as string | undefined === (o.fields.get("Value")! as string))}
+                                        onChange={(e) => {
+                                            setSelected(true)
                                             props.foreignMutations.setNewValue(
-                                                e.currentTarget.value,
+                                                (o.fields.get("Value")! as string),
                                                 undefined,
                                             )
+                                            
+                                        }
                                         }
                                         aria-label={o.fields.get("Value")! as string}
                                     />)
                                 )}
 
                         </form>}
+       
                     </label>
                 </fieldset>
 
@@ -2741,27 +2749,30 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                             "DisplayValue",
                         ) as string)}{" "}</label>
                     <div className="join">
-                        <div>
+                     
                             <input type="text"
                                    className="input w-64"
                                    disabled={props.context.disabled}
                                    placeholder="Select value"
-                                   onChange={(e) =>
+                                   onChange={(e) => {
                                        props.foreignMutations.setSearchText(e.currentTarget.value)
+                                   }
                                    }
                                    value={props.context.customFormState.searchText.value}
                                    list={listId}/>
+           
                             {props.context.customFormState.status == "closed" ? (
                                     <></>
                                 ) :
-
-                                <datalist id={listId}>
+                                <select defaultValue="Pick sth" className="select w-64 select-neutral">
+                                    <option disabled={true}>Pick a language</option>
                                     {props.context.customFormState.stream.loadedElements
                                         .valueSeq()
                                         .map((chunk) =>
                                             chunk.data.valueSeq().map((element) => (
-                                                <option
-                                                    onClick={() =>
+                                                <option className=""
+                                                    onClick={() => {
+                                          
                                                         props.foreignMutations.select(
                                                             PredicateValue.Default.option(
                                                                 true,
@@ -2770,19 +2781,15 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                                                             undefined,
                                                         )
                                                     }
-                                                    value={
-                                                        `${element.DisplayValue}${
-                                                            props.context.value.isSome &&
-                                                            (props.context.value.value as ValueRecord).fields.get("Id") === element.Id
-                                                                ? " ✅"
-                                                                : ""
-                                                        }`
-                                                    }></option>
+                                                    
+                                                 
+                                                    }>
+                                                    {element.DisplayValue}</option>
 
                                             )),
                                         )}
-                                </datalist>}
-                        </div>
+                                </select>}
+                 
 
                         {props.context.customFormState.status == "open" &&
                             <div className="tooltip tooltip-top indicator" data-tip="clear selection">
@@ -3070,7 +3077,8 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
           )}
         </div>
       );
-    },
+    }, 
+      list: () => DispatchPassthroughFormConcreteRenderers.list.defaultList(),
       timeline: () => (props) => {
           const value = props.context.value;
           if (PredicateValue.Operations.IsUnit(value)) {

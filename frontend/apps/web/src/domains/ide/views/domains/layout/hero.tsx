@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import styled from '@emotion/styled';
 import {Ide, postCodegen, postVfs} from "playground-core";
-import {BasicFun, Updater} from "ballerina-core";
+import {BasicFun, SimpleCallback, Unit, Updater} from "ballerina-core";
 
-type Props = Ide & { setState: BasicFun<Updater<Ide>, void> };
+type Props = { heroVisible: boolean, onSelection1: SimpleCallback<void>, onSelection2: BasicFun<Unit,void>};
 
 export const Hero: React.FC<Props> = (props: Props) => {
 
@@ -28,7 +28,6 @@ export const Hero: React.FC<Props> = (props: Props) => {
                     <p className="py-6">
                         Experiment with the spec to explore how it shapes your forms — all within a playground environment that validates your spec and provides a real-time, interactive preview.
                     </p>
-                    
                 </div>
                 <div className="w-full flex flex-col gap-4">
                     {/* top two cards side by side on lg, stacked on sm */}
@@ -40,9 +39,7 @@ export const Hero: React.FC<Props> = (props: Props) => {
                                 <div className="card-actions justify-end">
                                     <button 
                                         className="btn bg-green-950 text-white hover:bg-green-600"
-                                        onClick={() => props.setState(
-                                            Ide.Updaters.Phases.hero.toBootstrap()
-                                                .then(Ide.Updaters.CommonUI.toggleHero()))}>select</button>
+                                        onClick={() => props.onSelection1() }>select</button>
                                 </div>
                             </div>
                         </div>
@@ -69,10 +66,6 @@ export const Hero: React.FC<Props> = (props: Props) => {
                     {/*    </button>*/}
                     {/*</div>*/}
                 </div>
-
-
-
-
             </div>
         </div>
     </div>)

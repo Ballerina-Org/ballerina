@@ -1,37 +1,32 @@
 ﻿import React, {Dispatch, SetStateAction, useState} from "react";
-import {Node, getOrInitSpec, Ide, initSpec, postVfs, VirtualFolders} from "playground-core";
+import {Node, getOrInitSpec, Ide, initSpec, postVfs, VirtualFolders, CommonUI} from "playground-core";
 import {BasicFun, BasicUpdater, Option, Updater, Value, ValueOrErrors} from "ballerina-core";
 
 import {LocalStorage_SpecName} from "playground-core/ide/domains/storage/local.ts";
-import {ChooseState} from "playground-core/ide/domains/choose/state.ts";
-import {SpecMode} from "playground-core/ide/domains/spec/state.ts";
+import {SelectionOrCreationPhase} from "playground-core/ide/domains/choose/state.ts";
+import {List} from "immutable";
 
 type AddSpecProps = Ide & { setState: BasicFun<Updater<Ide>, void> };
 
 export const AddSpecUploadZipped = (props: AddSpecProps): React.ReactElement => {
-    const [result, setResult] = useState<ValueOrErrors<Array<{ path: string[]; content: Record<string, unknown> }>, string>>(ValueOrErrors.Default.return([]));
+    if(props.variant.kind != 'explore') return <></>
+    const [result, setResult] = 
+        useState<ValueOrErrors<Array<{ path: string[]; content: Record<string, unknown> }>, string>>(ValueOrErrors.Default.throw(List(["No file selected"])));
 
     const handlePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const f = e.target.files?.[0] || null;
-        const content = await ChooseState.Operations.handleZip(f);
+        const content = await SelectionOrCreationPhase.Operations.handleZip(f);
         setResult(content);
     };
-    const formsMode: SpecMode = { mode: 'explore', entry: 'upload-zip'};
 
-    return (props.phase == 'choose' && props.choose.entry == 'upload-zip' && props.choose.progressIndicator == 'upload-started')
-        ? <div className="card bg-gray-200 text-black m-5 ">
+    return (props.phase == 'selectionOrCreation' && props.variant.upload == 'upload-started')
+        ? <div className="card bg-gray-200 text-black m-5">
                 <div className="card-body items-start gap-3">
 
                     <div className="card-body items-start gap-3">
                         <h2 className="card-title">Select zip file</h2>
                         <div className="flex flex-wrap gap-3">
-                            <input
-                                type="file"
-                                multiple
-                                onChange={handlePick}
-                                className="file-input file-input-ghost"
-                            />
-                            <input type="file" accept=".zip" onChange={handlePick} />
+                            <input type="file" accept=".zip" className="file-input file-input-ghost" onChange={handlePick} />
                         </div>
                     </div>
                     {result.kind == "errors" && <div role="alert" className="alert alert-error">
@@ -40,36 +35,32 @@ export const AddSpecUploadZipped = (props: AddSpecProps): React.ReactElement => 
                         </svg>
                         <span>{result.errors}</span>
                     </div>}
-                    {result.kind == "value" && <div className="card-actions justify-end">
+                    <div className="card-actions justify-end">
                         <button
                             onClick={async ()=> {
                                
-                                const vfs = await initSpec(props.name.value, formsMode);
+                                const vfs = await initSpec(props.name.value, props.variant);
                                 if(vfs.kind == "errors") {
-                                    props.setState(Ide.Updaters.CommonUI.chooseErrors(vfs.errors))
+                                    props.setState(CommonUI.Updater.Core.chooseErrors(vfs.errors))
                                     return;
                                 }
                                 if(result.kind == "value") {
                                     const vfs = await VirtualFolders.Operations.fileArrayToTree(result.value);
                                     if(vfs.kind == "value") {
-                                        const u = Ide.Updaters.Phases.choosing.progressUpload()
-                                        props.setState(u)
+                                        // const u = Ide.Updaters.Phases.choosing.progressUpload()
+                                        // props.setState(u)
 
                                         const d = await postVfs(props.name.value, vfs.value);
 
                                         if (d.kind == "errors") {
-                                            props.setState(Ide.Updaters.CommonUI.chooseErrors(d.errors).then(Ide.Updaters.Phases.choosing.finishUpload()))
+                                            props.setState(CommonUI.Updater.Core.chooseErrors(d.errors).then(Ide.Updaters.Phases.choosing.finishUpload()))
                                             return;
                                         }
 
                                         const u2 =
                                             Ide.Updaters.Phases.choosing.finishUpload()
                                                 .then(
-                                                    Ide.Updaters.Phases.choosing.toLocked(props.name.value,
-                                                       vfs.value,
-                                                        {origin: 'creating'},
-                                                        formsMode
-                                                    ))
+                                                    Ide.Updaters.Phases.choosing.toLocked(vfs.value))
                                         props.setState(u2)
                                         LocalStorage_SpecName.set(props.name.value);
 
@@ -77,12 +68,11 @@ export const AddSpecUploadZipped = (props: AddSpecProps): React.ReactElement => 
                                 }
         
                             }}
-                            //disabled={node.kind == "l"}
+                            disabled={result.kind == "errors"}
                             className="btn btn-primary">Upload</button>
-                    </div>}
+                    </div>
 
                 </div>
             </div>
-        : <></>   
-
+        : <></>
 }

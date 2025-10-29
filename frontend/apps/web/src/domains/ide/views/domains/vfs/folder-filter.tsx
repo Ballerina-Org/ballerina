@@ -1,14 +1,15 @@
 ﻿import {addMissingVfsFiles, getSpec, Ide, INode, Meta, moveIntoOwnFolder, WorkspaceState} from "playground-core";
 import React from "react";
-import {LockedSpec} from "playground-core/ide/domains/locked/state.ts";
+import {LockedPhase} from "playground-core/ide/domains/locked/state.ts";
 import {VscAdd, VscCopilot, VscMove} from "react-icons/vsc";
 import {BasicFun, Unit} from "ballerina-core";
-import {CommonUI} from "playground-core/ide/domains/ui/state.ts";
+import {CommonUI, Variant} from "playground-core/ide/domains/common-ui/state.ts";
 
 type FolderFilterProps = {
     workspace: WorkspaceState
     update?: any,
     name: string,
+    variant: Variant,
     moveIntoOwnFolder: BasicFun<void, Promise<void>> }
 
 function extractKindFromFileName(fileName: string): string {
@@ -27,6 +28,7 @@ export const FolderFilter = ({
      name,
      workspace,
      update,
+     variant,
      moveIntoOwnFolder,
  }: FolderFilterProps) => {
     
@@ -34,14 +36,14 @@ export const FolderFilter = ({
     
     const files = (workspace.current.folder.children || [])?.filter(x => x.metadata.kind === "file");
     const specialFilesMissing = 
-        workspace.mode == 'explore'
+        variant.kind == 'explore'
         && workspace.current.kind == 'file'
         && !workspace.current.file.name.endsWith("_schema.json")
         && !workspace.current.file.name.endsWith("_typesV2.json")
         && files && !files.map(f => f.name).includes(`${workspace.current.file.name}_schema.json`)
     
     const parentFileNotYetExtracted =
-        workspace.mode == 'explore'
+        variant.kind == 'explore'
         && workspace.current.kind == 'file'
         && workspace.current.folder.name != removeExtension(workspace.current.file.name)
     return (
@@ -91,7 +93,7 @@ export const FolderFilter = ({
                                     aria-label={extractKindFromFileName(f.name)}
                                     onChange={async () => {
                                         const s_u = 
-                                            LockedSpec.Updaters.Core.workspace(WorkspaceState.Updater.selectFile(f))
+                                            LockedPhase.Updaters.Core.workspace(WorkspaceState.Updater.selectFile(f))
                                         update(s_u);
                                     }}
                                 />

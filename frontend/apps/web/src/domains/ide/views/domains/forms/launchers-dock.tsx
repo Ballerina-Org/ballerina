@@ -1,9 +1,8 @@
-﻿import {getSpec, Ide, LockedSpec, WorkspaceState} from "playground-core";
+﻿import {getSpec, Ide, LockedPhase, WorkspaceState} from "playground-core";
 import {BasicFun, Option, Updater} from "ballerina-core";
 import React from "react";
-import {IdeEntity, IdeLauncher} from "playground-core/ide/domains/spec/state.ts";
-import LauncherSelector from "./launcher-selector.tsx";
-import {EntitiesSelector} from "./entities-selector.tsx";
+
+
 import {ProgressiveAB} from "playground-core/ide/domains/types/Progresssive.ts";
 import {VscAdd, VscCodeReview, VscEdit} from "react-icons/vsc";
 

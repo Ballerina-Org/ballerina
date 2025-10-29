@@ -11,5 +11,4 @@ export const JsonEditorTemplate = Template.Default<
     JsonEditorWritableState,
     JsonEditorForeignMutationsExpected,
     JsonEditorView
->((props) => <props.view {...props} />).any([
-]);
+>((props) => <props.view {...props} />).any([]);

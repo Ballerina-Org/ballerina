@@ -108,24 +108,6 @@ export const FlatNode = {
 
             return recurse(root);
         },
-        // findFolderByPath: (root: FlatNode, path: string): FlatNode | null => {
-        //     const parts = path.split("/").filter(Boolean);
-        //
-        //     const recurse = (node: FlatNode, pathParts: string[]): FlatNode | null => {
-        //         if (pathParts.length === 0) return node.metadata.kind === "dir" ? node : null;
-        //
-        //         if (node.metadata.kind !== "dir" || !node.children) return null;
-        //
-        //         const [current, ...rest] = pathParts;
-        //
-        //         const child = node.children.find(c => c.name === current);
-        //         if (!child) return null;
-        //
-        //         return recurse(child, rest);
-        //     };
-        //
-        //     return recurse(root, parts);
-        // },
         
         findFolderByPath: (root: Node, path: string): Option<Node> => {
             const some = Option.Default.some<Node>;
@@ -154,16 +136,3 @@ export const FlatNode = {
         }
     }
 }
-// export const takeRoot = (nodes: FlatNode[]): FlatNode => {
-//     let root: FlatNode | undefined;
-//
-//     for (const n of nodes) {
-//         if (n.parent === null) {
-//             if (root) throw new Error("Multiple roots found");
-//             root = n;
-//         }
-//     }
-//
-//     if (!root) throw new Error("Root not found");
-//     return root;
-// }

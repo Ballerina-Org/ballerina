@@ -1,9 +1,9 @@
 ﻿import React from "react";
 import {Ide} from "playground-core";
 
-type NoSpecInfoProps = Ide;
+type NoSpecInfoProps = { specs: number }
 
-export const NoSpescInfo = (props: NoSpecInfoProps): React.ReactElement => {
+export const MissingSpecsInfoAlert = (props: NoSpecInfoProps): React.ReactElement => {
     const div =
         <div role="alert" className="alert alert-warning">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -13,5 +13,5 @@ export const NoSpescInfo = (props: NoSpecInfoProps): React.ReactElement => {
             </svg>
             <span>You have no current specifications. Start with a name for the new spec and then upload files.</span>
         </div>
-    return props.phase == "choose" && props.specSelection.specs.length == 0 ? div : <></>
+    return props.specs == 0 ? div : <></>
 }

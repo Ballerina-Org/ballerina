@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import styled from '@emotion/styled';
 import {getSpec, Ide, postCodegen, postVfs} from "playground-core";
 import {BasicFun, Updater} from "ballerina-core";
+import {CommonUI} from "playground-core/ide/domains/common-ui/state.ts";
 
 type Props = Ide & { setState: BasicFun<Updater<Ide>, void> };
 
@@ -43,8 +44,8 @@ export const SettingsPanel: React.FC<Props> = (props: Props) => {
         
         if(refreshed.kind == "value" && result.kind == "value")
         props.setState(
-            Ide.Updaters.Phases.locking.refreshVfs(refreshed.value.folders)
-                .then(Ide.Updaters.CommonUI.toggleSettings()))
+            Ide.Updaters.Phases.locking.refreshVfs(refreshed.value)
+                .then(CommonUI.Updater.Core.toggleSettings()))
     };
     if(!props.settingsVisible) return <></>;
     return (
@@ -88,7 +89,7 @@ export const SettingsPanel: React.FC<Props> = (props: Props) => {
                             className="btn"
                             type="button"
                             onClick={() => {
-                                props.setState(Ide.Updaters.CommonUI.toggleSettings());
+                                props.setState(CommonUI.Updater.Core.toggleSettings());
                             }}
                         >
                             Cancel

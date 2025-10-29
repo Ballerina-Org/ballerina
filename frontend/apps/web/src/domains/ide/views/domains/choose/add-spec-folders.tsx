@@ -1,13 +1,25 @@
 ﻿import React from "react";
-import {Node, getOrInitSpec, Ide, initSpec, postVfs, VirtualFolders, FlatNode, WorkspaceState} from "playground-core";
+import {
+    Node,
+    getOrInitSpec,
+    Ide,
+    initSpec,
+    postVfs,
+    VirtualFolders,
+    FlatNode,
+    WorkspaceState,
+    CommonUI
+} from "playground-core";
 import {BasicFun, BasicUpdater, Option, Updater, Value} from "ballerina-core";
 import {MultiSelectCheckboxControlled} from "../vfs/workspace-picker.tsx"
 import {LocalStorage_SpecName} from "playground-core/ide/domains/storage/local.ts";
-import {SpecMode, SpecOrigin} from "playground-core/ide/domains/spec/state.ts";
+import {Origin} from "playground-core/ide/domains/choose/state.ts";
 
 type AddSpecProps = Ide & { setState: BasicFun<Updater<Ide>, void> };
 
 export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => {
+    if(props.variant.kind != "compose") return <></>
+    
     const [node, setNode] = React.useState<Option<Node>>(Option.Default.none());
     const handlePick = React.useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
         const list = e.currentTarget.files;
@@ -15,12 +27,12 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
 
         const node = await VirtualFolders.Operations.fileListToTree(list);
 
-        if(node.kind == "errors") props.setState(Ide.Updaters.CommonUI.chooseErrors(node.errors))
+        if(node.kind == "errors") props.setState(CommonUI.Updater.Core.chooseErrors(node.errors))
         else setNode(Option.Default.some(node.value));
     }, []);
-    const formsMode: SpecMode = { mode: 'scratch', entry: 'upload-manual' };
-    const specOrigin: SpecOrigin = { origin: 'creating'}
-    return  (props.phase == 'choose' && props.choose.entry == 'upload-folder' && props.choose.progressIndicator == 'upload-started')
+
+    const specOrigin: Origin = 'creating'
+    return  (props.phase == 'selectionOrCreation' && props.variant.upload == 'upload-started')
         ?
             <div className="card bg-gray-200 text-black w-full m-5">
                 <div className="card-body items-start gap-3">
@@ -42,8 +54,6 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
                                     workspace={{
                                         kind: "view",
                                         nodes: node.value,
-                                        ...formsMode,
-                                        ...specOrigin,
                                     }}
                                     mode={'uploader'}
                                     onAcceptedNodes={(node: Node)=> {
@@ -55,22 +65,22 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
                         <button
                             onClick={async ()=>{
                                 //TODO: unify this in updaters/operations
-                                const vfs = await initSpec(props.name.value, formsMode);
+                                const vfs = await initSpec(props.name.value, props.variant);
                                 if(vfs.kind == "errors") {
-                                    props.setState(Ide.Updaters.CommonUI.chooseErrors(vfs.errors))
+                                    props.setState(CommonUI.Updater.Core.chooseErrors(vfs.errors))
                                     return;
                                 }
                                 
                                 if(node.kind == "r") {
                                     
-                                    const u = Ide.Updaters.Phases.choosing.progressUpload()
-                                    props.setState(u)
+                                    // const u = Ide.Updaters.Phases.choosing.progressUpload()
+                                    // props.setState(u)
                                     
                                     const d = await postVfs(props.name.value, node.value);
                               
                                     if(d.kind == "errors") {
                                         props.setState(
-                                            Ide.Updaters.CommonUI.chooseErrors(d.errors)
+                                            CommonUI.Updater.Core.chooseErrors(d.errors)
                                                 .then(Ide.Updaters.Phases.choosing.finishUpload()))
                                         return;
                                     }
@@ -79,10 +89,7 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
                                         Ide.Updaters.Phases.choosing.finishUpload()
                                             .then(
                                                 Ide.Updaters.Phases.choosing.toLocked(
-                                                    props.name.value,
-                                                    node.value,
-                                                    {origin: 'creating'},
-                                                    formsMode
+                                                    node.value
                                                 ))
                                             .then((ide: Ide) => {
                                                 if(ide.phase != 'locked') return ide;

@@ -1,20 +1,19 @@
-﻿import {simpleUpdater, ValueOrErrors} from "ballerina-core";
+﻿import {ValueOrErrors} from "ballerina-core";
 import {List} from "immutable";
 import JSZip, { JSZipObject } from "jszip";
-import {getSpec} from "../../api/specs";
-import {VirtualFolders} from "../locked/vfs/state";
-import {Ide} from "../../state";
-import {DataEntry, SpecOrigin} from "../spec/state";
 
-export type ChooseStep = 'default' | 'upload-started' | 'upload-in-progress' | 'upload-finished';
+export type UploadStep = 'upload-not-started' | 'upload-started' | 'upload-finished' | 'upload-validation' | 'upload_failed';
 
-export type ChoosePhase = {
-    specOrigin: SpecOrigin, 
-    entry: DataEntry, 
-    progressIndicator: ChooseStep
-}
 
-export const ChooseState = {
+
+export type Origin = 'selected' | 'creating'
+
+// export type SelectionOrCreationPhase = {
+//     origin: Origin, 
+//     step: UploadStep
+// }
+
+export const SelectionOrCreationPhase = {
     Operations: {
         tryParseJsonObject: (str: string): Record<string, unknown> | null => {
             try {
@@ -26,7 +25,6 @@ export const ChooseState = {
                     return parsed as Record<string, unknown>;
                 }
             } catch(e: any) {
-                debugger
                 return null;
             }
             return null;
@@ -53,7 +51,7 @@ export const ChooseState = {
                 const all = await Promise.all(tasks);
                 const parsed =
                     all.map(file =>
-                        ({...file, content: ChooseState.Operations.tryParseJsonObject(file.content)})
+                        ({...file, content: SelectionOrCreationPhase.Operations.tryParseJsonObject(file.content)})
                     );
                 debugger
                 const valid = true //parsed.every(file => file.content != null)

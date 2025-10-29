@@ -1,8 +1,8 @@
 ﻿/* Experimental phase updater */
 
 import {Ide} from "../../state";
-import {LockedSpec} from "../locked/state";
-import {Bootstrap} from "../bootstrap/state";
+import {LockedPhase} from "../locked/state";
+import {BootstrapPhase} from "../bootstrap/state";
 
 type ExtractPhase<TUnion, TPhase extends string> =
     Extract<TUnion, { phase: TPhase }>;
@@ -32,11 +32,11 @@ export function PhaseUpdater<
 /* example for Locked */
 
 export const LockedUpdater = (
-    updater: (locked: LockedSpec) => LockedSpec
+    updater: (locked: LockedPhase) => LockedPhase
 ) => PhaseUpdater<Ide, "locked", "locked">("locked", "locked", updater);
 
 export const LockedUpdaterFull = (
-    updater: (locked: LockedSpec, ide: Ide) => LockedSpec | Ide
+    updater: (locked: LockedPhase, ide: Ide) => LockedPhase | Ide
 ): ((ide: Ide) => Ide) => {
     return (ide: Ide): Ide => {
         if (ide.phase === "locked") {
@@ -44,7 +44,7 @@ export const LockedUpdaterFull = (
             if ("phase" in result) {
                 return result as Ide;
             } else {
-                return { ...ide, locked: result as LockedSpec };
+                return { ...ide, locked: result as LockedPhase };
             }
         }
         return ide;
@@ -52,5 +52,5 @@ export const LockedUpdaterFull = (
 };
 
 export const BootstrapUpdater = (
-    updater: (bootstrap: Bootstrap) => Bootstrap
+    updater: (bootstrap: BootstrapPhase) => BootstrapPhase
 ) => PhaseUpdater<Ide, "bootstrap", "bootstrap">("bootstrap", "bootstrap", updater);

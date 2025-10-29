@@ -1,8 +1,8 @@
 ﻿
 import {axiosVOE} from "./api";
 import {Node} from "../domains/locked/vfs/upload/model";
-import {SpecMode} from "../domains/spec/state";
 import {KnownSections} from "../domains/types/Json";
+import {Variant} from "../domains/common-ui/state";
 
 
 export const listSpecs = async () =>
@@ -33,13 +33,12 @@ export const getZippedWorkspace = async (name: string) =>
         responseType: "blob"
     });
 
-export const initSpec = async (name: string, formsMode: SpecMode) =>
+export const initSpec = async (name: string, variant: Variant) =>
     await axiosVOE<{ folders: Node, settings: {workspaceMode: string}}, any>({
         method: "Post",
         url: `/specs/${name}`,
         data: {
-            workspaceMode: formsMode.mode,
-            dataEntry: formsMode.entry,
+            workspaceMode: variant.kind
         }
     });
 
@@ -57,8 +56,8 @@ export const postCodegen = async (name: string, node: Node) =>
         data: node
     });
 
-export const getOrInitSpec = async (origin: 'create' | 'existing', formsMode: SpecMode, name: string) =>
-    origin == 'existing' ? await getSpec(name) : await initSpec(name, formsMode).then(() => getSpec(name));
+export const getOrInitSpec = async (origin: 'create' | 'existing', variant: Variant, name: string) =>
+    origin == 'existing' ? await getSpec(name) : await initSpec(name, variant).then(() => getSpec(name));
 
 export const validateCompose = async (name: string) =>
     await axiosVOE<KnownSections>({

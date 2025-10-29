@@ -1,79 +1,90 @@
 ﻿import {DispatchDelta, Option, Product, replaceWith, Updater} from "ballerina-core";
 import {Ide} from "../../state";
 import {WorkspaceState} from "./vfs/state";
-import {FlatNode, Node} from "./vfs/upload/model";
-import {IdeEntity, IdeLauncher} from "../spec/state";
+import {IdeLauncher} from "../spec/state";
 import {ProgressiveAB} from "../types/Progresssive";
 import {LockedUpdater, LockedUpdaterFull} from "../types/PhaseUpdater";
 import {KnownSections} from "../types/Json";
-import {Dispatch} from "react";
-import { List, Map} from "immutable";
+import { List} from "immutable";
 import {DeltaDrain, Deltas} from "../forms/deltas/state";
+import {Origin} from "../choose/state";
 
-export const ProgressiveLauncherAndEntities ={
-    fromLaunchers: 
-        (launchers: IdeLauncher[])
-            : ProgressiveAB<IdeLauncher, IdeEntity> => 
-            ({ kind: "selectA", options: launchers }),
-    fromLauncherAndEntities: 
-        (launcher: IdeLauncher, entities: IdeEntity[])
-            : ProgressiveAB<IdeLauncher, IdeEntity> => 
-            ({ kind: "selectB", a: launcher, options: entities}),
-    selectEntity:
-        (launcher: IdeLauncher, entity: IdeEntity)
-            : ProgressiveAB<IdeLauncher, IdeEntity> => 
-            ({ kind: "done", a: launcher, b: entity}),
-}
+// export const ProgressiveLauncherAndEntities ={
+//     fromLaunchers: 
+//         (launchers: IdeLauncher[])
+//             : ProgressiveAB<IdeLauncher, IdeEntity> => 
+//             ({ kind: "selectA", options: launchers }),
+//     fromLauncherAndEntities: 
+//         (launcher: IdeLauncher, entities: IdeEntity[])
+//             : ProgressiveAB<IdeLauncher, IdeEntity> => 
+//             ({ kind: "selectB", a: launcher, options: entities}),
+//     selectEntity:
+//         (launcher: IdeLauncher, entity: IdeEntity)
+//             : ProgressiveAB<IdeLauncher, IdeEntity> => 
+//             ({ kind: "done", a: launcher, b: entity}),
+// }
 
 export type FormsDataEntry =
-    | { kind: 'launcher', selectEntityFromLauncher: ProgressiveAB<IdeLauncher, IdeEntity> }
+   // | { kind: 'launcher', selectEntityFromLauncher: ProgressiveAB<IdeLauncher, IdeEntity> }
     | { kind: 'launchers', launchers: string [], selected: Option<string> }
-    | { kind: 'schema-selector', selectEntityAndLookups: ProgressiveAB<string, { name: string, fromEntity: string, toEntity: string }> }
+   // | { kind: 'schema-selector', selectEntityAndLookups: ProgressiveAB<string, { name: string, fromEntity: string, toEntity: string }> }
 
 export type LockedStep =
     | { kind: 'design' }
-    | { kind: 'preDisplay', dataEntry: FormsDataEntry, deltas: Option<DeltaDrain> };
+    | { kind: 'preDisplay', dataEntry: FormsDataEntry, deltas: Option<DeltaDrain>, showDeltas: boolean };
 
 export const LockedStep = {
     Updaters: {
         Core: {
-            fromLaunchers: (launchers: IdeLauncher []) : LockedStep => 
-                ({ kind: 'preDisplay',
-                        deltas: Option.Default.none(),
-                        dataEntry: { kind: 'launcher', selectEntityFromLauncher: ProgressiveLauncherAndEntities.fromLaunchers(launchers) }}),
-            fromLauncherAndEntities: (launcher: IdeLauncher, entities: IdeEntity[]) : LockedStep  => 
-                ({ kind: 'preDisplay',
-                    deltas: Option.Default.none(),
-                    dataEntry: { kind: 'launcher', selectEntityFromLauncher: ProgressiveLauncherAndEntities.fromLauncherAndEntities(launcher, entities) }}),
-            selectEntity: (launcher: IdeLauncher, entity: IdeEntity) : LockedStep =>
-                ({ kind: 'preDisplay',
-                    deltas: Option.Default.none(),
-                    dataEntry: { kind: 'launcher', selectEntityFromLauncher: ProgressiveLauncherAndEntities.selectEntity(launcher, entity)}}),
+            // fromLaunchers: (launchers: IdeLauncher []) : LockedStep => 
+            //     ({ kind: 'preDisplay',
+            //             deltas: Option.Default.none(),
+            //             showDeltas: false,
+            //             dataEntry: { kind: 'launcher', selectEntityFromLauncher: ProgressiveLauncherAndEntities.fromLaunchers(launchers) }}),
+            // fromLauncherAndEntities: (launcher: IdeLauncher, entities: IdeEntity[]) : LockedStep  => 
+            //     ({ kind: 'preDisplay',
+            //         deltas: Option.Default.none(),
+            //         showDeltas: false,
+            //         dataEntry: { kind: 'launcher', selectEntityFromLauncher: ProgressiveLauncherAndEntities.fromLauncherAndEntities(launcher, entities) }}),
+            // selectEntity: (launcher: IdeLauncher, entity: IdeEntity) : LockedStep =>
+            //     ({ kind: 'preDisplay',
+            //         deltas: Option.Default.none(),
+            //         showDeltas: false,
+            //         dataEntry: { kind: 'launcher', selectEntityFromLauncher: ProgressiveLauncherAndEntities.selectEntity(launcher, entity)}}),
             launchers: (launchers: string[]): LockedStep => 
                 ({ kind: 'preDisplay',
+                    showDeltas: false,
                     deltas: Option.Default.none(),
                     dataEntry: { kind: 'launchers', launchers: launchers, selected: Option.Default.none()}})
                     ,
             selectLauncher: (launcher: string,launchers: IdeLauncher []): LockedStep =>
                 ({ kind: 'preDisplay', deltas: Option.Default.none(),
+                        showDeltas: false,
                     dataEntry: { 
                         kind: 'launchers', 
                         launchers: launchers, 
                         selected: Option.Default.some(launcher)
                     }
                 }
-                )
+                ),
+            toggleDeltas: (): Updater<LockedStep> => 
+                Updater(locked => {
+                    if(locked.kind != "preDisplay") return locked;
+                    return ({...locked, showDeltas: !locked.showDeltas});
+                })
         }
     }
 }
 
-export type LockedSpec = {
+export type LockedPhase = {
     workspace: WorkspaceState,
     progress: LockedStep,
-    validatedSpec: Option<KnownSections> // merged or full single
+    validatedSpec: Option<KnownSections>,
+    origin: Readonly<Origin>,
+    
 };
 
-export const LockedSpec = {
+export const LockedPhase = {
     Updaters: {
         Step :{
             addDelta: (delta:DispatchDelta<any>): Updater<Ide> =>
@@ -87,7 +98,7 @@ export const LockedSpec = {
                                 ...locked.progress, 
                                 deltas: Option.Default.some(Product.Updaters.left<Deltas, Deltas>(current => current.push(delta))(locked.progress.deltas.value))
                             },
-                        } satisfies LockedSpec;
+                        } satisfies LockedPhase;
                     })
                 ),
             drainDeltas :() : Updater<Ide> =>
@@ -114,7 +125,7 @@ export const LockedSpec = {
                         return {
                             ...locked,
                             progress: LockedStep.Updaters.Core.selectLauncher(launcher, locked.progress.dataEntry.launchers),
-                        } satisfies LockedSpec;
+                        } satisfies LockedPhase;
                     })
                 ),
             selectLauncherByNr: (nr: number): Updater<Ide> =>
@@ -125,15 +136,15 @@ export const LockedSpec = {
                         return {
                             ...locked,
                             progress: LockedStep.Updaters.Core.selectLauncher(name, locked.progress.dataEntry.launchers),
-                        } satisfies LockedSpec;
+                        } satisfies LockedPhase;
                     })
                 ),
-            selectEntity: (launcher: IdeLauncher, entity: IdeEntity): Updater<Ide> =>
-                Updater(ide => {
-                    if(ide.phase != 'locked') return ide;
-                    const step = LockedStep.Updaters.Core.selectEntity(launcher, entity)
-                    return ({...ide, locked: {...ide.locked, progress: step}});
-                }),
+            // selectEntity: (launcher: IdeLauncher, entity: IdeEntity): Updater<Ide> =>
+            //     Updater(ide => {
+            //         if(ide.phase != 'locked') return ide;
+            //         const step = LockedStep.Updaters.Core.selectEntity(launcher, entity)
+            //         return ({...ide, locked: {...ide.locked, progress: step}});
+            //     }),
   
         },
         Core: {

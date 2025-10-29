@@ -1,31 +1,24 @@
-﻿import {Updater, Option} from "ballerina-core";
+﻿import {Updater, Option, replaceWith} from "ballerina-core";
 import {Ide} from "../../state";
 import {BootstrapUpdater} from "../types/PhaseUpdater";
+import {LockedPhase} from "../locked/state";
 
-export type Bootstrap =
+export type BootstrapPhase =
     | { kind: "kickedOff" }
     | { kind: "initializing", message: string }
     | { kind: "ready"}
 
-export const Bootstrap = {
+export const BootstrapPhase = {
     Updaters: {
         Core: {
-            init: (msg: string): Updater<Ide> =>
-                Updater(
-                    BootstrapUpdater(bootstrap => ({
-                        kind: 'initializing', 
-                        message: msg
-                    }))),
-            ready: (specNames: string []): Updater<Ide> =>
-                Updater(ide =>
-                    ide.phase === 'bootstrap'
-                        ? { ...ide, 
-                            specOrigin: specNames.length > 0 
-                                ? 'existing' 
-                                : 'create', 
-                            bootstrap: { kind: 'ready' }, 
-                            specSelection: { specs: specNames, selected: Option.Default.none() } }
-                        : ide),
+            ready: (): Updater<BootstrapPhase> =>
+                Updater((_: BootstrapPhase) => {
+                    return { kind : 'ready' } as BootstrapPhase;
+                })
         },
+        Coroutine: {
+            init: (msg: string): Updater<BootstrapPhase> => 
+              replaceWith<BootstrapPhase>({ kind: 'initializing', message: msg})
+        }
     }
 }

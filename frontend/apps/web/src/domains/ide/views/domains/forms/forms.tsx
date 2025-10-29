@@ -45,10 +45,11 @@ import {
 import { DispatchFieldTypeConverters } from "../../../../dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
 import {
+    CommonUI,
     DispatchFromConfigApis, expand,
     Ide,
     IdeEntityApis,
-    IdeFormProps, LockedSpec, sendDelta,
+    IdeFormProps, LockedPhase, sendDelta,
     UnmockingApisEnums,
     UnmockingApisLookups
 } from "playground-core";
@@ -251,10 +252,10 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
         console.log("patching entity", newEntity);
         console.log("delta", JSON.stringify(delta, null, 2));
         if(props.deltas.kind == "l") {
-            props.setState( LockedSpec.Operations.startDeltas().then(LockedSpec.Updaters.Step.addDelta(delta)));
+            props.setState( LockedPhase.Operations.startDeltas().then(LockedPhase.Updaters.Step.addDelta(delta)));
         }
         else {
-            props.setState( LockedSpec.Updaters.Step.addDelta(delta));
+            props.setState( LockedPhase.Updaters.Step.addDelta(delta));
         }
         
         setEntity(
@@ -278,7 +279,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                 parseCustomDelta,
             )(delta);
         
-    
+            debugger
             setEntityPath(path);
             setRemoteEntityVersionIdentifier(v4());
         }
@@ -320,7 +321,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                         }
                     }
                     else {
-                        props.setState(Ide.Updaters.CommonUI.formsError(raw.errors));
+                        props.setState(CommonUI.Updater.Core.formsError(raw.errors));
                     }
                 });
         }
@@ -371,7 +372,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                 <table>
                     <tbody>
                     <tr><td>
-                        {props.deltas.kind == 'r' &&
+                        {props.deltas.kind == 'r' && props.showDeltas &&
 
                             <div className="stats bg-base-100 border-base-300 border w-full">
                                 <div className="stat">
@@ -382,8 +383,8 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                         <button className="btn btn-xs btn-success"
                                                 onClick={async() =>{
                                                     if(props.deltas.kind == "r") {
-                                                        const t = await sendDelta(props.specName, entityName.value, entityId.value, props.deltas.value, props.path);
-                                                        props.setState(LockedSpec.Updaters.Step.drainDeltas());
+                                                        const t = await sendDelta(props.specName, entityName.value, entityId.value, props.deltas.value, props.path, props.launcher);
+                                                        props.setState(LockedPhase.Updaters.Step.drainDeltas());
                                                     }
                                                 }}
                                         >Drain</button>

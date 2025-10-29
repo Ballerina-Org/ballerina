@@ -3,7 +3,7 @@ import Editor, { OnMount } from "@monaco-editor/react";
 import type * as monaco from "monaco-editor";
 import type * as monacoT from "monaco-editor";
 import {BasicUpdater} from "ballerina-core";
-import {Ide, LockedSpec, WorkspaceState, VirtualFolders} from "playground-core";
+import {Ide, LockedPhase, WorkspaceState, VirtualFolders} from "playground-core";
 
 type VocabJsonEditorProps = {
     value?: string;
@@ -30,7 +30,7 @@ export default function MonacoEditor( props: {content: string, onChange: BasicUp
 
         try {
             const parsed = JSON.parse(value);
-            props.onChange(LockedSpec.Updaters.Core.workspace(WorkspaceState.Updater.changeFileContent(parsed)));
+            props.onChange(LockedPhase.Updaters.Core.workspace(WorkspaceState.Updater.changeFileContent(parsed)));
         } catch {
         }
     }, [props.onChange]);
@@ -79,7 +79,7 @@ export default function MonacoEditor( props: {content: string, onChange: BasicUp
     };
 
     return (
-        <div className="h-[90vh] flex flex-col gap-2 ">
+        <div className="h-screen flex flex-col gap-2 ">
             <div className="flex gap-2 ml-5">
                 <button className="btn btn-sm btn-info" onClick={format}>Format JSON</button>
             </div>
@@ -88,9 +88,7 @@ export default function MonacoEditor( props: {content: string, onChange: BasicUp
                 height="100%"
                 defaultLanguage="json"
                 theme="vs-light"
-
-                onChange={handleEditorChange
-                }
+                onChange={handleEditorChange}
                 defaultValue={initialFormatted}
                 onMount={handleMount}
             />

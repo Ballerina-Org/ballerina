@@ -3,7 +3,6 @@ import React from "react";
 import {VscFile, VscFolder} from "react-icons/vsc";
 import {Option} from "ballerina-core";
 
-
 type BreadcrumbsProps = { workspace: WorkspaceState };
 
 export function Breadcrumbs({ workspace }: BreadcrumbsProps) {

@@ -63,21 +63,6 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
     const folders = data.filter(x => chosenIds.has(x.id)).filter(x => x.metadata?.kind == "dir")?.length - 1 || 0;
     return (
         <div>
-            {/*<div className="stats stats-vertical sm:stats-horizontal shadow p-3">*/}
-            {/*    <div className="stat text-center">*/}
-            {/*        <div className="stat-title text-sm">Folders</div>*/}
-            {/*        <div className="stat-value text-xl">{folders}*/}
-            {/*            */}
-            {/*        </div>*/}
-            {/*        <div className="stat-desc text-xs"></div>*/}
-            {/*    </div>*/}
-            
-            {/*    <div className="stat text-center">*/}
-            {/*        <div className="stat-title text-sm">Files</div>*/}
-            {/*        <div className="stat-value text-xl">{chosenIds.size - 1 - folders}</div>*/}
-            {/*        <div className="stat-desc text-xs"></div>*/}
-            {/*    </div>*/}
-            {/*</div>*/}
             <div className="">
                 <TreeView
                     data={data}
@@ -118,7 +103,6 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
       
                                 <div className="w-full group inline-flex items-center h-6">
                                     <div className={element.metadata?.kind == "dir" ? "w-full flex mt-3" :"contents mt-3"}>
-                                {/*{i sBranch && <ArrowIcon isOpen={isExpanded} />}*/}
                                     {isBranch && <div className="flex items-center gap-2 text-base-content font-medium">
                                         <span><VscFolder size={20} /> </span>
                                         <span>{element.name}</span>
@@ -128,7 +112,6 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
                                         onClick={() => {
                                             const selected = element as unknown as Node
                                             if (props.onSelectedFile) {
-
                                                 props.onSelectedFile(selected);
                                             }
                                         }}
@@ -140,50 +123,6 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
                                         {element.metadata?.kind == "file" && <div className="ml-2 hidden group-hover:inline text-sm text-base-content/80">
                                             <SizeBadge bytes={(element.metadata as Meta)?.size} /></div>}
                                     </div>
-                                {/*<CheckBoxIcon*/}
-                                {/*    mode={props.mode}*/}
-                                {/*    className="checkbox-icon mr-3"*/}
-                                {/*    onClick={(e:any) => {*/}
-                                {/*        handleSelect(e);*/}
-                                {/*        e.stopPropagation();*/}
-                                {/*    }}*/}
-                                {/*    variant={*/}
-                                {/*        isHalfSelected ? "some" : isSelected ? "all" : "none"*/}
-                                {/*    }*/}
-                                {/*/>*/}
-                                {/*<label className="label">*/}
-                                {/*  {element.name}*/}
-                                {/*</label>*/}
-                                {/*{props.mode == 'reader' &&  element.metadata?.kind == "dir" && props.workspace.mode == 'compose'*/}
-                                {/*    &&  <button */}
-                                {/*        className="ml-auto btn btn-neutral btn-xs"*/}
-                                {/*        onClick={() => { */}
-                                {/*            */}
-                                {/*            const selected = element as unknown as Node*/}
-                                {/*            debugger*/}
-                                {/*            if (props.onSelectedFolder) {*/}
-                                {/*                let item =*/}
-                                {/*                    ({ ...selected, children: selected.children?.map((child: any) => */}
-                                {/*                        data.find(x => x.id === child)*/}
-                                {/*                    )})*/}
-                                {/*       */}
-                                {/*                props.onSelectedFolder(item as Node);*/}
-                                {/*            }*/}
-                                {/*        }}*/}
-                                {/*    >select folder</button>}*/}
-                                {/*    */}
-                                
-                                {/*    {props.mode == 'reader' && props.workspace.mode != 'compose' && element.metadata?.kind == "file"*/}
-                                {/*        &&  <div className={""}><SizeBadge bytes={(element.metadata as Meta)?.size} /><button*/}
-                                {/*            className="ml-auto btn btn-neutral btn-dash btn-xs"*/}
-                                {/*            onClick={() => {*/}
-                                {/*                const selected = element as unknown as Node*/}
-                                {/*                if (props.onSelectedFile) {*/}
-                                
-                                {/*                    props.onSelectedFile(selected);*/}
-                                {/*                }*/}
-                                {/*            }}*/}
-                                {/*        >select file</button></div>}*/}
                             </div>
                             </div>
                         );

@@ -1,7 +1,7 @@
 ﻿
 import {axiosVOE} from "./api";
 import {Node} from "../domains/locked/vfs/upload/model";
-import {SpecMode} from "../domains/spec/state";
+import {Mode} from "../domains/spec/state";
 import {KnownSections} from "../domains/types/Json";
 import {FormsSeedEntity} from "../domains/seeds/state";
 

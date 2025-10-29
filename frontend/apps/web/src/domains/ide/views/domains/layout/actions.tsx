@@ -12,16 +12,11 @@ import {
     VscChecklist,
     VscMerge,
     VscTriangleLeft, VscTriangleRight, VscFolderLibrary, VscSettings, VscTriangleUp, VscBracketError,
-    VscCommentUnresolved, VscCircle
+    VscCommentUnresolved, VscCircle, VscHistory
 } from "react-icons/vsc";
 
 
-import {Ide, LockedSpec} from "playground-core";
-
-type ActionKey =
-    | "new" | "folders" | "save" | "seed" | "reseed"
-    | "run" | "merge" 
-    | "left" | "right" | "lock" 
+import {Ide, LockedPhase} from "playground-core";
 
 const size = 22;
 
@@ -30,7 +25,6 @@ type ActionsProps = {
     setState: any;
     hideRight?: boolean;
     errorCount: number;
-    onAction?: (action: ActionKey) => void;
     canRun?: boolean;
     canValidate: boolean;
     onNew?: () => void;
@@ -45,22 +39,22 @@ type ActionsProps = {
     onHideUp: () => void;
     onSettings?: () => void;
     onErrorPanel?: () => void;
+    onDeltaShow?: () => void;
     
 };
 
 export const Actions: React.FC<ActionsProps> = ({
-            context,
+    context,
     setState,
     errorCount = 0,
-            hideRight = false,
-            onHideUp,
-            onAction,
-            onSettings,
-            canValidate = false,
-            canRun = true,
+    hideRight = false,
+    onHideUp,
+    onSettings,
+    canValidate = false,
+    canRun = true,
+    onDeltaShow,
     onErrorPanel,
-    
-            onSeed, onNew, onLock, onReSeed, onRun, onMerge, onSave, onHide
+    onSeed, onNew, onLock, onReSeed, onRun, onMerge, onSave, onHide
 
         }) => {
     useEffect(() => {
@@ -81,7 +75,7 @@ export const Actions: React.FC<ActionsProps> = ({
                 await onRun();
 
                 setState(
-                    LockedSpec.Updaters.Step.selectLauncherByNr(numberPressed)
+                    LockedPhase.Updaters.Step.selectLauncherByNr(numberPressed)
                 );
             }
         };
@@ -98,16 +92,14 @@ export const Actions: React.FC<ActionsProps> = ({
             || context.locked.workspace.current.file.name.replace(".json","") == "merged" ))
     return (
     <div className={"p-5 mt-10.5 flex space-x-1 w-full"}>
-        {/*{context.phase === "choose" && context.specOrigin === "existing" && (*/}
-        {/*    <button*/}
-        {/*        className="btn tooltip tooltip-bottom"*/}
-        {/*        data-tip="New spec"*/}
-        {/*        onClick={onNew}*/}
-        {/*    >*/}
-        {/*        <VscNewFile size={size} />*/}
-        {/*    </button>*/}
-        {/*)}*/}
-
+        { context.phase == "locked" &&
+            <button
+                className="btn tooltip tooltip-bottom"
+                data-tip="Create new"
+                onClick={onNew}
+            >
+                <VscNewFile size={size} />
+            </button>}
         { context.phase == "locked" &&
             <label
                 htmlFor="my-drawer" className="btn tooltip tooltip-bottom" data-tip="Workspace">
@@ -177,6 +169,17 @@ export const Actions: React.FC<ActionsProps> = ({
                     <VscSettings size={size} />
                 </button>
             )}
+            {context.phase === "locked"
+                && context.locked.progress.kind === "preDisplay"
+                && (
+                    <button
+                        className="btn tooltip tooltip-bottom"
+                        data-tip="Show deltas"
+                        onClick={onDeltaShow}
+                    >
+                        <VscHistory size={size} />
+                    </button>
+                )}
         {context.phase === "locked" && hideRight && 
             <button
                 className="btn tooltip tooltip-bottom"

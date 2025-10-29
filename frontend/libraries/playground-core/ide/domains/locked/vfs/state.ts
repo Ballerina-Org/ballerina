@@ -1,6 +1,5 @@
 ﻿import {Updater,ValueOrErrors} from "ballerina-core";
 import {FlatNode, Node} from "./upload/model";
-import {SpecOrigin, SpecMode} from "../../spec/state";
 
 
 export type SelectedWorkspace =
@@ -11,16 +10,12 @@ export type WorkspaceState =
     (
     | { kind: 'view', nodes: Node }
     | { kind: 'selected', nodes: Node, current: SelectedWorkspace }
-    ) 
-    & Readonly<SpecMode>
-    & Readonly<SpecOrigin>
+    )
 
 export const WorkspaceState = {
-    Default: (nodes: Node, mode: SpecMode, origin: SpecOrigin): WorkspaceState => ({
+    Default: (nodes: Node): WorkspaceState => ({
         kind: 'view',
-        nodes: nodes,
-        ...mode,
-        ...origin
+        nodes: nodes
     }),
     Updater: {
         reloadContent: (next: Node): Updater<WorkspaceState> =>
@@ -211,59 +206,6 @@ export const VirtualFolders = {
                 return node;
             }
         },
-        // insert: async (node: FlatNode, pathParts: string[], file: File): Promise<FlatNode> => {
-        //     if (pathParts.length === 0) return node;
-        //
-        //     const [head, ...rest] = pathParts;
-        //     const existing = node.children?.find(c => c.name === head);
-        //
-        //     if (rest.length === 0) {
-        //         //TODO: make it a properly validated in the state
-        //         const content = await (async () => {
-        //             try {
-        //                 return JSON.parse(await file.text());
-        //             } catch {
-        //                 return {};
-        //             }
-        //         })();
-        //         const fileNode: FlatNode = {
-        //             id: [...(node.metadata.path === "root" ? [] : [node.metadata.path]), head].join("/"),
-        //             name: head,
-        //             parent: node.id ?? null,
-        //             isBranch: false,
-        //             metadata: {
-        //                 kind: "file",
-        //                 path: [...(node.metadata.path === "root" ? [] : [node.metadata.path]), head].join("/"),
-        //                 size: file.size,
-        //                 checked: true,
-        //                 content: content
-        //             }
-        //         };
-        //         node.children = [...(node.children ?? []), fileNode];
-        //         return node;
-        //     } else {
-        //         let dirNode = existing && existing.metadata.kind === "dir" ? existing : undefined;
-        //
-        //         if (!dirNode) {
-        //             dirNode = {
-        //                 id: [...(node.metadata.path === "root" ? [] : [node.metadata.path]), head].join("/"),
-        //                 name: head,
-        //                 parent: node.id ?? null,
-        //                 isBranch: true,
-        //                 metadata: {
-        //                     kind: "dir",
-        //                     path: [...(node.metadata.path === "root" ? [] : [node.metadata.path]), head].join("/"),
-        //                     checked: true
-        //                 },
-        //                 children: [],
-        //             };
-        //             node.children = [...(node.children ?? []), dirNode];
-        //         }
-        //
-        //         await VirtualFolders.Operations.insert(dirNode, rest, file); 
-        //         return node;
-        //     }
-        // },
         buildTreeFromFolder(
             files: FileList,
             root: Node
@@ -333,16 +275,5 @@ export const VirtualFolders = {
 
     }
 }
-
-// export const VfsWorkspace = {
-//     Updaters: {
-//         Core: {
-//             ...simpleUpdater<VfsWorkspace>()("selectedFile"),
-//             ...simpleUpdater<VfsWorkspace>()("merged"),
-//             ...simpleUpdater<VfsWorkspace>()("selectedFolder"),
-//             ...simpleUpdater<VfsWorkspace>()("schema"),
-//         }
-//     }
-// }
 
 
