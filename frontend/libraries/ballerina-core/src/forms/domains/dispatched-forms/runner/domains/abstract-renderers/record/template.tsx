@@ -32,6 +32,7 @@ import {
   RecordAbstractRendererState,
   RecordAbstractRendererView,
 } from "./state";
+import { RecordFieldRenderer } from "../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/record/domains/recordFieldRenderer/state";
 
 export const RecordAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -57,6 +58,7 @@ export const RecordAbstractRenderer = <
       GetDefaultState: () => CommonAbstractRendererState;
     }
   >,
+  FieldRenderers: Map<string, RecordFieldRenderer<any>>,
   Layout: PredicateFormLayout,
   DisabledFieldsPredicate: PredicateComputedOrInlined,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
@@ -96,33 +98,39 @@ export const RecordAbstractRenderer = <
             > &
               RecordAbstractRendererState,
           ) => {
-              if(!PredicateValue.Operations.IsUnit(_.value) && typeof _.value.fields.get !== "function"){
-         
-                  const test = "breakpoint"
-              }
-              return ({
-            value: PredicateValue.Operations.IsUnit(_.value)
-              ? _.value
-              : _.value.fields.get(fieldName)!,
-            type: _.type.fields.get(fieldName)!,
-            ...(_.fieldStates?.get(fieldName) ||
-              FieldTemplates.get(fieldName)!.GetDefaultState()),
-            disabled: _.disabled || _.globallyDisabled,
-            globallyDisabled: _.globallyDisabled,
-            readOnly: _.readOnly || _.globallyReadOnly,
-            globallyReadOnly: _.globallyReadOnly,
-            locked: _.locked,
-            bindings: isInlined ? _.bindings : _.bindings.set("local", _.value),
-            extraContext: _.extraContext,
-            customPresentationContext: _.customPresentationContext,
-            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            domNodeAncestorPath:
-              _.domNodeAncestorPath + `[record][${fieldName}]`,
-            typeAncestors: [_.type as DispatchParsedType<any>].concat(
-              _.typeAncestors,
-            ),
-            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
-          })},
+            const fieldRenderer = FieldRenderers.get(fieldName)!;
+            const labelContext =
+              CommonAbstractRendererState.Operations.GetLabelContext(
+                _.labelContext,
+                fieldRenderer,
+              );
+            return {
+              value: PredicateValue.Operations.IsUnit(_.value)
+                ? _.value
+                : _.value.fields.get(fieldName)!,
+              type: fieldRenderer.renderer.type,
+              ...(_.fieldStates?.get(fieldName) ||
+                FieldTemplates.get(fieldName)!.GetDefaultState()),
+              disabled: _.disabled || _.globallyDisabled,
+              globallyDisabled: _.globallyDisabled,
+              readOnly: _.readOnly || _.globallyReadOnly,
+              globallyReadOnly: _.globallyReadOnly,
+              locked: _.locked,
+              bindings: isInlined
+                ? _.bindings
+                : _.bindings.set("local", _.value),
+              extraContext: _.extraContext,
+              customPresentationContext: _.customPresentationContext,
+              remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+              domNodeAncestorPath:
+                _.domNodeAncestorPath + `[record][${fieldName}]`,
+              labelContext,
+              typeAncestors: [_.type as DispatchParsedType<any>].concat(
+                _.typeAncestors,
+              ),
+              lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+            };
+          },
         )
         .mapState(
           (
@@ -270,15 +278,16 @@ export const RecordAbstractRenderer = <
       return <></>;
     }
 
-    visibleFieldKeys.value.map((field) => {
-      if (field != null && !FieldTemplates.has(field)) {
-        console.warn(
-          `Field ${field} is defined in the visible fields, but not in the FieldTemplates. A renderer in the record fields is missing for this field.
-          \n...When rendering \n...${domNodeId}
-          `,
-        );
-      }
-    });
+    // TODO: find a better way to warn about missing fields without cluttering the console
+    // visibleFieldKeys.value.forEach((field) => {
+    //   if (field != null && !FieldTemplates.has(field)) {
+    //     console.warn(
+    //       `Field ${field} is defined in the visible fields, but not in the FieldTemplates. A renderer in the record fields is missing for this field.
+    //       \n...When rendering \n...${domNodeId}
+    //       `,
+    //     );
+    //   }
+    // });
 
     const visibleFieldKeysSet = Set(
       visibleFieldKeys.value.filter((fieldName) => fieldName != null),

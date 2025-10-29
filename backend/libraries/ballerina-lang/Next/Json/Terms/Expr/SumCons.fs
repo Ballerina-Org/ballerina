@@ -11,28 +11,26 @@ module SumCons =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.Errors
   open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.DSL.Next.Terms.Patterns
 
   let private discriminator = "sum"
 
-  type Expr<'T> with
-    static member FromJsonSumCons (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+  type Expr<'T, 'Id when 'Id: comparison> with
+    static member FromJsonSumCons (_fromRootJson: ExprParser<'T, 'Id>) (value: JsonValue) : ExprParserReader<'T, 'Id> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun elementsJson ->
         reader {
-          let! (case, count, v) = elementsJson |> JsonValue.AsTriple |> reader.OfSum
+          let! (case, count) = elementsJson |> JsonValue.AsPair |> reader.OfSum
           let! case = case |> JsonValue.AsInt |> reader.OfSum
           let! count = count |> JsonValue.AsInt |> reader.OfSum
-          let! v = v |> fromRootJson
-          return Expr.SumCons({ Case = case; Count = count }, v)
+          return Expr.SumCons({ Case = case; Count = count })
         })
 
     static member ToJsonSumCons
-      (rootToJson: ExprEncoder<'T>)
+      (_rootToJson: ExprEncoder<'T, 'Id>)
       (sel: SumConsSelector)
-      (e: Expr<'T>)
-      : ExprEncoderReader<'T> =
+      : ExprEncoderReader<'T, 'Id> =
       reader {
         let case = sel.Case |> decimal |> JsonValue.Number
         let count = sel.Count |> decimal |> JsonValue.Number
-        let! e = e |> rootToJson
-        return [| case; count; e |] |> JsonValue.Array |> Json.discriminator discriminator
+        return [| case; count |] |> JsonValue.Array |> Json.discriminator discriminator
       }

@@ -155,3 +155,11 @@ module Records =
   }
 }
 """
+
+module Specs =
+  open System.IO
+
+  let private jsonPath = Path.Combine(__SOURCE_DIRECTORY__, "PersonGenders.json")
+
+  let private jsonText = File.ReadAllText(jsonPath)
+  let PersonGenders = jsonText

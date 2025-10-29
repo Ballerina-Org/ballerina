@@ -25,12 +25,43 @@ export const InitialiseTable = <
   return Co<CustomPresentationContext, ExtraContext>().Seq([
     Co<CustomPresentationContext, ExtraContext>()
       .GetState()
-      .then((current) =>
+      .then((current) => {
+        // extracting the ID from the local bindings to use it in the getMany api call
+        // this used when the table is contained in another table and we want to
+        // get the some data based on the parent ID
+        // this is not needed in the initialise filters and sorting coroutine because
+        // in theory, the same kind of table will always be initialised with the same filters and sorting
+        const co = Co<CustomPresentationContext, ExtraContext>();
+        type StateWithParentId = { current: typeof current; parentId?: string };
+
+        const local = current.bindings.get("local");
+        if (!local || !PredicateValue.Operations.IsRecord(local)) {
+          return co.Return<StateWithParentId>({
+            current,
+            parentId: undefined,
+          });
+        }
+
+        const parentId = local.fields.get("Id");
+        if (!parentId || !PredicateValue.Operations.IsString(parentId)) {
+          return co.Return<StateWithParentId>({
+            current,
+            parentId: undefined,
+          });
+        }
+
+        return co.Return<StateWithParentId>({
+          current,
+          parentId,
+        });
+      })
+      .then(({ current, parentId }) =>
         (current.value.data.size == 0 && current.value.hasMoreValues) ||
         current.customFormState.loadingState == "reload from 0"
           ? TableLoadWithRetries<CustomPresentationContext, ExtraContext>(
               tableApiSource,
               fromTableApiParser,
+              parentId,
             )(3)().then((res) =>
               res.kind == "r"
                 ? Co<CustomPresentationContext, ExtraContext>().Seq([

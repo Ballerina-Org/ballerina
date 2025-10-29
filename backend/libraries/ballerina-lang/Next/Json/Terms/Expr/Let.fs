@@ -12,11 +12,12 @@ module Let =
   open Ballerina.Reader.WithError
   open Ballerina.Errors
   open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.DSL.Next.Terms.Patterns
 
   let private discriminator = "let"
 
-  type Expr<'T> with
-    static member FromJsonLet (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+  type Expr<'T, 'Id when 'Id: comparison> with
+    static member FromJsonLet (fromRootJson: ExprParser<'T, 'Id>) (value: JsonValue) : ExprParserReader<'T, 'Id> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun letJson ->
         reader {
           let! (var, value, body) = letJson |> JsonValue.AsTriple |> reader.OfSum
@@ -28,11 +29,11 @@ module Let =
         })
 
     static member ToJsonLet
-      (rootToJson: ExprEncoder<'T>)
+      (rootToJson: ExprEncoder<'T, 'Id>)
       (var: Var)
-      (value: Expr<'T>)
-      (body: Expr<'T>)
-      : ExprEncoderReader<'T> =
+      (value: Expr<'T, 'Id>)
+      (body: Expr<'T, 'Id>)
+      : ExprEncoderReader<'T, 'Id> =
       reader {
         let var = var.Name |> JsonValue.String
         let! value = value |> rootToJson

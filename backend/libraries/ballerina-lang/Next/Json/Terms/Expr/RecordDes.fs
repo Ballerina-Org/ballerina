@@ -13,27 +13,30 @@ module RecordDes =
   open Ballerina.Errors
   open Ballerina.DSL.Next.Types.Json
   open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.DSL.Next.Terms.Patterns
 
   let private discriminator = "record-field-lookup"
 
-  type Expr<'T> with
-    static member FromJsonRecordDes (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+  type Expr<'T, 'Id when 'Id: comparison> with
+    static member FromJsonRecordDes (fromRootJson: ExprParser<'T, 'Id>) (value: JsonValue) : ExprParserReader<'T, 'Id> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun recordDesJson ->
         reader {
           let! expr, field = recordDesJson |> JsonValue.AsPair |> reader.OfSum
           let! expr = expr |> fromRootJson
-          let! field = field |> Identifier.FromJson |> reader.OfSum
+          let! _, ctx = reader.GetContext()
+          let! field = field |> ctx |> reader.OfSum
           return Expr.RecordDes(expr, field)
         })
 
     static member ToJsonRecordDes
-      (rootToJson: ExprEncoder<'T>)
-      (expr: Expr<'T>)
-      (field: Identifier)
-      : ExprEncoderReader<'T> =
+      (rootToJson: ExprEncoder<'T, 'Id>)
+      (expr: Expr<'T, 'Id>)
+      (field: 'Id)
+      : ExprEncoderReader<'T, 'Id> =
       reader {
+        let! _, ctx = reader.GetContext()
         let! expr = rootToJson expr
-        let field = field |> Identifier.ToJson
+        let field = field |> ctx
 
         return [| expr; field |] |> JsonValue.Array |> Json.discriminator discriminator
       }

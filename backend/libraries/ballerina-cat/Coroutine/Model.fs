@@ -5,13 +5,14 @@ module Model =
   open Ballerina.Collections.Sum
   open System
   open System.Threading.Tasks
+  open Ballerina.Cat.Collections.OrderedMap
 
   type DeltaT = TimeSpan
 
   type Coroutine<'a, 's, 'c, 'event, 'err> =
     | Co of
-      ('s * 'c * Map<Guid, 'event> * DeltaT
-        -> Sum<CoroutineResult<'a, 's, 'c, 'event, 'err> * Option<U<'s>> * Option<U<Map<Guid, 'event>>>, 'err>)
+      ('s * 'c * OrderedMap<Guid, 'event> * DeltaT
+        -> Sum<CoroutineResult<'a, 's, 'c, 'event, 'err> * Option<U<'s>> * Option<U<OrderedMap<Guid, 'event>>>, 'err>)
 
     static member map<'a, 'b, 's, 'c, 'event, 'err>
       (f: ('a -> 'b))
@@ -75,6 +76,8 @@ module Model =
       Co(fun _ -> Left(Then(p |> Coroutine.map k), None, None))
 
   type CoroutineBuilder() =
+    member co.Delay(f: unit -> Coroutine<'a, 's, 'c, 'event, 'err>) = f ()
+
     member _.Zero() =
       Co(fun _ -> Left(CoroutineResult.Return(()), None, None))
 
@@ -154,7 +157,8 @@ module Model =
 
     member co.Produce(new_event) =
       co.YieldAfter(
-        Co(fun _ -> Left(CoroutineResult.Return(), None, Some(fun es -> let (id, e) = new_event in es |> Map.add id e)))
+        Co(fun _ ->
+          Left(CoroutineResult.Return(), None, Some(fun es -> let (id, e) = new_event in es |> OrderedMap.add id e)))
       )
 
     member co.ofSum(p: Sum<'a, 'err>) =
@@ -170,6 +174,7 @@ module Model =
         return res
       }
 
+
   let co = CoroutineBuilder()
 
   type WaitingCoroutine<'a, 's, 'c, 'event, 'err> =
@@ -177,16 +182,19 @@ module Model =
       Until: DateTime }
 
   type EvaluatedCoroutine<'a, 's, 'c, 'event, 'err> =
-    | Done of 'a * Option<U<'s>> * Option<U<Map<Guid, 'event>>>
+    | Done of 'a * Option<U<'s>> * Option<U<OrderedMap<Guid, 'event>>>
     | Spawned of
       List<Coroutine<Unit, 's, 'c, 'event, 'err>> *
       Option<U<'s>> *
-      Option<U<Map<Guid, 'event>>> *
+      Option<U<OrderedMap<Guid, 'event>>> *
       Option<Coroutine<'a, 's, 'c, 'event, 'err>>
-    | Active of Coroutine<'a, 's, 'c, 'event, 'err> * Option<U<'s>> * Option<U<Map<Guid, 'event>>>
-    | Listening of Coroutine<'a, 's, 'c, 'event, 'err> * Option<U<'s>> * Option<U<Map<Guid, 'event>>>
-    | Waiting of WaitingCoroutine<'a, 's, 'c, 'event, 'err> * Option<U<'s>> * Option<U<Map<Guid, 'event>>>
-    | WaitingOrListening of WaitingCoroutine<'a, 's, 'c, 'event, 'err> * Option<U<'s>> * Option<U<Map<Guid, 'event>>>
+    | Active of Coroutine<'a, 's, 'c, 'event, 'err> * Option<U<'s>> * Option<U<OrderedMap<Guid, 'event>>>
+    | Listening of Coroutine<'a, 's, 'c, 'event, 'err> * Option<U<'s>> * Option<U<OrderedMap<Guid, 'event>>>
+    | Waiting of WaitingCoroutine<'a, 's, 'c, 'event, 'err> * Option<U<'s>> * Option<U<OrderedMap<Guid, 'event>>>
+    | WaitingOrListening of
+      WaitingCoroutine<'a, 's, 'c, 'event, 'err> *
+      Option<U<'s>> *
+      Option<U<OrderedMap<Guid, 'event>>>
     | Error of 'err
 
     member this.After(u_s, u_e) =
@@ -210,7 +218,7 @@ module Model =
   type Coroutine<'a, 's, 'c, 'event, 'err> with
     static member eval<'a>
       ((Co p): Coroutine<'a, 's, 'c, 'event, 'err>)
-      (ctx: 's * 'c * Map<Guid, 'event> * DeltaT)
+      (ctx: 's * 'c * OrderedMap<Guid, 'event> * DeltaT)
       : EvaluatedCoroutine<'a, 's, 'c, 'event, 'err> =
       let (s, c, es, dt) = ctx
 
@@ -335,12 +343,13 @@ module Model =
         | On(p_e) ->
           match
             es
-            |> Seq.map (fun e -> p_e e.Value, e)
+            |> OrderedMap.toSeq
+            |> Seq.map (fun e -> p_e (e |> snd), e)
             |> Seq.tryFind (function
               | Some _, _ -> true
               | _ -> false)
           with
-          | Some(Some res, e) -> Done(res, None, Some(Map.remove e.Key))
+          | Some(Some res, e) -> Done(res, None, Some(OrderedMap.remove (e |> fst)))
           | _ -> Active(co.On p_e, None, None)
         | Spawn(p) -> Spawned([ p ], None, None, None)
         | Do(f) -> Done(f c, None, None)
@@ -360,11 +369,11 @@ module Model =
 
     static member evalMany<'s, 'c, 'event, 'err>
       (ps: Map<Guid, Coroutine<Unit, 's, 'c, 'event, 'err>>)
-      ((s, c, es, dt): 's * 'c * Map<Guid, 'event> * DeltaT)
-      : EvaluatedCoroutines<'s, 'c, 'event, 'err> * Option<U<'s>> * Option<U<Map<Guid, 'event>>> =
+      ((s, c, es, dt): 's * 'c * OrderedMap<Guid, 'event> * DeltaT)
+      : EvaluatedCoroutines<'s, 'c, 'event, 'err> * Option<U<'s>> * Option<U<OrderedMap<Guid, 'event>>> =
       let ctx = (s, c, es, dt)
       let mutable u_s: Option<U<'s>> = None
-      let mutable u_e: Option<U<Map<Guid, 'event>>> = None
+      let mutable u_e: Option<U<OrderedMap<Guid, 'event>>> = None
 
       let mutable evaluated: EvaluatedCoroutines<'s, 'c, 'event, 'err> =
         { active = Map.empty
@@ -438,9 +447,9 @@ module Model =
 
     static member evalSynchronously<'a>
       (onSpawnedError: unit -> 'err)
-      ((s, c, events, dt): 's * 'c * Map<Guid, 'event> * DeltaT)
+      ((s, c, events, dt): 's * 'c * OrderedMap<Guid, 'event> * DeltaT)
       ((Co p): Coroutine<'a, 's, 'c, 'event, 'err>)
-      : Sum<'a * 's * Map<Guid, 'event>, 'err> =
+      : Sum<'a * 's * OrderedMap<Guid, 'event>, 'err> =
       let step = Coroutine.eval (Co p) (s, c, events, dt)
 
       match step with

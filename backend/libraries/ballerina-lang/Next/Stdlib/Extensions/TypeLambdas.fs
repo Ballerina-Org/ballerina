@@ -5,7 +5,8 @@ module TypeLambdas =
   open Ballerina
   open Ballerina.Reader.WithError
   open Ballerina.DSL.Next.Terms.Model
-  open Ballerina.DSL.Next.Types.TypeCheck
+  open Ballerina.DSL.Next.Types.TypeChecker.Expr
+  open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.Terms
   open Ballerina.Collections.NonEmptyList
@@ -45,7 +46,8 @@ module TypeLambdas =
 
         let newOps = [ ext.EvalToTypeApplicable; ext.EvalToApplicable ]
 
-        let ops = fun v -> reader.Any(ops v, newOps |> List.map (fun newOp -> newOp v))
+        let ops =
+          fun loc0 v -> reader.Any(ops loc0 v, newOps |> List.map (fun newOp -> newOp loc0 v))
 
         let id, _, _ = ext.ExtensionType
 

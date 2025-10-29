@@ -127,6 +127,12 @@ export type DispatchDeltaList<T = Unit> =
       sourceAncestorLookupTypeNames: string[];
     }
   | {
+      kind: "ArrayValueAll";
+      nestedDelta: DispatchDelta<T>;
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    }
+  | {
       kind: "ArrayAdd";
       value: PredicateValue;
       state: any;
@@ -145,6 +151,11 @@ export type DispatchDeltaList<T = Unit> =
   | {
       kind: "ArrayRemoveAt";
       index: number;
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    }
+  | {
+      kind: "ArrayRemoveAll";
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
     }
@@ -312,6 +323,11 @@ export type DispatchDeltaTable<T = Unit> =
       sourceAncestorLookupTypeNames: string[];
     }
   | {
+      kind: "TableRemoveAll";
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    }
+  | {
       kind: "TableMoveTo";
       id: string;
       to: string;
@@ -397,8 +413,13 @@ export type DispatchDeltaTransferList<DispatchDeltaTransferCustom> =
         DispatchDeltaTransfer<DispatchDeltaTransferCustom>
       >;
     }
+  | {
+      Discriminator: "ArrayValueAll";
+      ValueAll: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
+    }
   | { Discriminator: "ArrayAddAt"; AddAt: DispatchTransferTuple2<number, any> }
   | { Discriminator: "ArrayRemoveAt"; RemoveAt: number }
+  | { Discriminator: "ArrayRemoveAll"; RemoveAll: Unit }
   | {
       Discriminator: "ArrayMoveFromTo";
       MoveFromTo: DispatchTransferTuple2<number, number>;
@@ -462,6 +483,7 @@ export type DispatchDeltaTransferTable<DispatchDeltaTransferCustom> =
     }
   | { Discriminator: "TableAddEmpty" }
   | { Discriminator: "TableRemoveAt"; RemoveAt: string }
+  | { Discriminator: "TableRemoveAll"; RemoveAll: Unit }
   | { Discriminator: "TableDuplicateAt"; DuplicateAt: string }
   | {
       Discriminator: "TableMoveFromTo";
@@ -833,6 +855,30 @@ export const DispatchDeltaTransfer = {
               ]),
             );
           }
+          if (delta.kind == "ArrayValueAll") {
+            return DispatchDeltaTransfer.Default.FromDelta(
+              toRawObject,
+              parseCustomDelta,
+            )(delta.nestedDelta).Then((value) =>
+              ValueOrErrors.Default.return<
+                [
+                  DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                  DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>,
+                ],
+                string
+              >([
+                {
+                  Discriminator: "ArrayValueAll",
+                  ValueAll: value[0],
+                },
+                `[ArrayValueAll]${value[1]}`,
+                delta.flags
+                  ? [[delta.flags, `[ArrayValueAll]${value[1]}`], ...value[2]]
+                  : value[2],
+              ]),
+            );
+          }
           if (delta.kind == "ArrayAdd") {
             return toRawObject(delta.value, delta.type, delta.state).Then(
               (value) =>
@@ -893,6 +939,23 @@ export const DispatchDeltaTransfer = {
               },
               `[ArrayRemoveAt]`,
               delta.flags ? [[delta.flags, "[ArrayRemoveAt]"]] : [],
+            ]);
+          }
+          if (delta.kind == "ArrayRemoveAll") {
+            return ValueOrErrors.Default.return<
+              [
+                DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>,
+              ],
+              string
+            >([
+              {
+                Discriminator: "ArrayRemoveAll",
+                RemoveAll: unit,
+              },
+              `[ArrayRemoveAll]`,
+              delta.flags ? [[delta.flags, "[ArrayRemoveAll]"]] : [],
             ]);
           }
           if (delta.kind == "ArrayMoveFromTo") {
@@ -1239,8 +1302,8 @@ export const DispatchDeltaTransfer = {
                 string
               >([
                 {
-                  Discriminator: delta.caseName[0],
-                  [delta.caseName[0]]: value[0],
+                  Discriminator: `Case${delta.caseName[0]}`,
+                  [`Case${delta.caseName[0]}`]: value[0],
                 } as {
                   Discriminator: string;
                 } & {
@@ -1402,6 +1465,23 @@ export const DispatchDeltaTransfer = {
                 : [],
             ]);
           }
+          if (delta.kind == "TableRemoveAll") {
+            return ValueOrErrors.Default.return<
+              [
+                DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>,
+              ],
+              string
+            >([
+              {
+                Discriminator: "TableRemoveAll",
+                RemoveAll: unit,
+              },
+              `[TableRemoveAll]`,
+              delta.flags ? [[delta.flags, "[TableRemoveAll]"]] : [],
+            ]);
+          }
           if (delta.kind == "TableDuplicate") {
             return ValueOrErrors.Default.return<
               [
@@ -1432,7 +1512,10 @@ export const DispatchDeltaTransfer = {
             >([
               {
                 Discriminator: "TableMoveFromTo",
-                MoveFromTo: [delta.id, delta.to],
+                MoveFromTo: {
+                  Item1: delta.id,
+                  Item2: delta.to,
+                },
               },
               `[TableMoveFromTo][${delta.id}][${delta.to}]`,
               delta.flags

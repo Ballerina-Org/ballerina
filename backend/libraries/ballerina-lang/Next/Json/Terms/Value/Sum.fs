@@ -6,6 +6,7 @@ module Sum =
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.DSL.Next.Terms.Model
+  open Ballerina.DSL.Next.Types.Model
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Json.Keys
@@ -14,24 +15,26 @@ module Sum =
 
   type Value<'T, 'valueExtension> with
     static member FromJsonSum
-      (fromJsonRoot: ValueParser<'T, 'valueExtension>)
+      (fromJsonRoot: ValueParser<'T, ResolvedIdentifier, 'valueExtension>)
       (json: JsonValue)
-      : ValueParserReader<'T, 'valueExtension> =
+      : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator json (fun elementsJson ->
         reader {
-          let! k, v = elementsJson |> JsonValue.AsPair |> reader.OfSum
+          let! k, n, v = elementsJson |> JsonValue.AsTriple |> reader.OfSum
           let! k = k |> JsonValue.AsInt |> reader.OfSum
+          let! n = n |> JsonValue.AsInt |> reader.OfSum
           let! v = fromJsonRoot v
-          return Value.Sum(k, v)
+          return Value.Sum({ Case = k; Count = n }, v)
         })
 
     static member ToJsonSum
       (rootToJson: ValueEncoder<'T, 'valueExtension>)
-      (i: int)
+      (selector: SumConsSelector)
       (v: Value<'T, 'valueExtension>)
       : ValueEncoderReader<'T> =
       reader {
-        let i = i |> decimal |> JsonValue.Number
+        let i = selector.Case |> decimal |> JsonValue.Number
+        let n = selector.Count |> decimal |> JsonValue.Number
         let! v = rootToJson v
-        return [| i; v |] |> JsonValue.Array |> Json.discriminator discriminator
+        return [| i; n; v |] |> JsonValue.Array |> Json.discriminator discriminator
       }

@@ -13,21 +13,26 @@ module RecordCons =
   open Ballerina.DSL.Next.Types.Json
   open Ballerina.Errors
   open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.DSL.Next.Terms.Patterns
 
   let private discriminator = "record-cons"
 
-  type Expr<'T> with
-    static member FromJsonRecordCons (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+  type Expr<'T, 'Id when 'Id: comparison> with
+    static member FromJsonRecordCons
+      (fromRootJson: ExprParser<'T, 'Id>)
+      (value: JsonValue)
+      : ExprParserReader<'T, 'Id> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun fieldsJson ->
         reader {
           let! fields = fieldsJson |> JsonValue.AsArray |> reader.OfSum
+          let! _, ctx = reader.GetContext()
 
           let! fields =
             fields
             |> Seq.map (fun field ->
               reader {
                 let! (k, v) = field |> JsonValue.AsPair |> reader.OfSum
-                let! k = k |> Identifier.FromJson |> reader.OfSum
+                let! k = k |> ctx |> reader.OfSum
                 let! v = v |> fromRootJson
                 return (k, v)
               })
@@ -37,16 +42,18 @@ module RecordCons =
         })
 
     static member ToJsonRecordCons
-      (rootToJson: ExprEncoder<'T>)
-      (record: List<Identifier * Expr<'T>>)
-      : ExprEncoderReader<'T> =
+      (rootToJson: ExprEncoder<'T, 'Id>)
+      (record: List<'Id * Expr<'T, 'Id>>)
+      : ExprEncoderReader<'T, 'Id> =
       reader {
+        let! _, ctx = reader.GetContext()
+
         let! all =
           record
           |> List.map (fun (field, expr) ->
             reader {
               let! expr = rootToJson expr
-              let field = Identifier.ToJson field
+              let field = field |> ctx
               return [| field; expr |] |> JsonValue.Array
             })
           |> reader.All

@@ -7,7 +7,7 @@ open Ballerina.Data.Schema.Model
 open Ballerina.Data.Seeds
 
 open Ballerina.Data.Spec.Model
-open Ballerina.Errors
+open Ballerina.LocalizedErrors
 open Ballerina.Reader.WithError
 open Ballerina.Seeds
 
@@ -17,7 +17,9 @@ open Ballerina.DSL.Next.StdLib.Extensions
 module Runner =
   let _extensions, languageContext = stdExtensions
 
-  let seed (schema: Schema<TypeValue>) : Reader<SpecData<TypeValue, ValueExt>, SeedingContext, Errors> =
+  let seed
+    (schema: Schema<TypeValue, ResolvedIdentifier>)
+    : Reader<SpecData<TypeValue, ValueExt>, SeedingContext, Errors> =
     reader {
       let! ctx = reader.GetContext()
 

@@ -10,12 +10,13 @@ module PrimitiveExpr =
   open Ballerina.Reader.WithError
   open Ballerina.Reader.WithError.Operators
   open Ballerina.DSL.Next.Terms.Json.Primitive
+  open Ballerina.DSL.Next.Terms.Patterns
 
-  type Expr<'T> with
-    static member FromJsonPrimitive: ExprParser<'T> =
+  type Expr<'T, 'Id when 'Id: comparison> with
+    static member FromJsonPrimitive: ExprParser<'T, 'Id> =
       PrimitiveValue.FromJson
       >> reader.OfSum
       >>= fun primitive -> reader.Return(Expr.Primitive primitive)
 
-    static member ToJsonPrimitive: PrimitiveValue -> ExprEncoderReader<'T> =
+    static member ToJsonPrimitive: PrimitiveValue -> ExprEncoderReader<'T, 'Id> =
       PrimitiveValue.ToJson >> reader.Return

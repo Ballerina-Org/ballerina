@@ -30,7 +30,10 @@ module UnionTypeExpr =
             |> sum.All
 
           let union = TypeExpr.Union(caseTypes)
-          let! wrappedUnion = AutomaticSymbolCreation.wrapWithLet (union, caseTypes |> List.map fst)
+
+          let! wrappedUnion =
+            AutomaticSymbolCreation.wrapWithLet (union, caseTypes |> List.map fst, SymbolsKind.UnionConstructors)
+
           return wrappedUnion
         })
 

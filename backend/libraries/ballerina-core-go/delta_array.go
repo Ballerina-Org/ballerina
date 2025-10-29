@@ -9,8 +9,10 @@ type deltaArrayEffectsEnum string
 
 const (
 	arrayValue       deltaArrayEffectsEnum = "ArrayValue"
+	arrayValueAll    deltaArrayEffectsEnum = "ArrayValueAll"
 	arrayAddAt       deltaArrayEffectsEnum = "ArrayAddAt"
 	arrayRemoveAt    deltaArrayEffectsEnum = "ArrayRemoveAt"
+	arrayRemoveAll   deltaArrayEffectsEnum = "ArrayRemoveAll"
 	arrayMoveFromTo  deltaArrayEffectsEnum = "ArrayMoveFromTo"
 	arrayDuplicateAt deltaArrayEffectsEnum = "ArrayDuplicateAt"
 	arrayAdd         deltaArrayEffectsEnum = "ArrayAdd"
@@ -21,8 +23,10 @@ type DeltaArray[a any, deltaA any] struct {
 	DeltaBase
 	discriminator deltaArrayEffectsEnum
 	value         *Tuple2[int, deltaA]
+	valueAll      *deltaA
 	addAt         *Tuple2[int, a]
 	removeAt      *int
+	removeAll     Unit
 	moveFromTo    *Tuple2[int, int]
 	duplicateAt   *int
 	add           *a
@@ -37,8 +41,10 @@ func (d DeltaArray[a, deltaA]) MarshalJSON() ([]byte, error) {
 		DeltaBase
 		Discriminator deltaArrayEffectsEnum
 		Value         *Tuple2[int, deltaA]
+		ValueAll      *deltaA
 		AddAt         *Tuple2[int, a]
 		RemoveAt      *int
+		RemoveAll     Unit
 		MoveFromTo    *Tuple2[int, int]
 		DuplicateAt   *int
 		Add           *a
@@ -47,8 +53,10 @@ func (d DeltaArray[a, deltaA]) MarshalJSON() ([]byte, error) {
 		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
 		Value:         d.value,
+		ValueAll:      d.valueAll,
 		AddAt:         d.addAt,
 		RemoveAt:      d.removeAt,
+		RemoveAll:     d.removeAll,
 		MoveFromTo:    d.moveFromTo,
 		DuplicateAt:   d.duplicateAt,
 		Add:           d.add,
@@ -61,8 +69,10 @@ func (d *DeltaArray[a, deltaA]) UnmarshalJSON(data []byte) error {
 		DeltaBase
 		Discriminator deltaArrayEffectsEnum
 		Value         *Tuple2[int, deltaA]
+		ValueAll      *deltaA
 		AddAt         *Tuple2[int, a]
 		RemoveAt      *int
+		RemoveAll     Unit
 		MoveFromTo    *Tuple2[int, int]
 		DuplicateAt   *int
 		Add           *a
@@ -76,8 +86,10 @@ func (d *DeltaArray[a, deltaA]) UnmarshalJSON(data []byte) error {
 	d.DeltaBase = aux.DeltaBase
 	d.discriminator = aux.Discriminator
 	d.value = aux.Value
+	d.valueAll = aux.ValueAll
 	d.addAt = aux.AddAt
 	d.removeAt = aux.RemoveAt
+	d.removeAll = aux.RemoveAll
 	d.moveFromTo = aux.MoveFromTo
 	d.duplicateAt = aux.DuplicateAt
 	d.add = aux.Add
@@ -98,6 +110,12 @@ func NewDeltaArrayValue[a any, deltaA any](index int, delta deltaA) DeltaArray[a
 		value:         &tmp,
 	}
 }
+func NewDeltaArrayValueAll[a any, deltaA any](delta deltaA) DeltaArray[a, deltaA] {
+	return DeltaArray[a, deltaA]{
+		discriminator: arrayValueAll,
+		valueAll:      &delta,
+	}
+}
 func NewDeltaArrayAddAt[a any, deltaA any](index int, newElement a) DeltaArray[a, deltaA] {
 	tmp := NewTuple2(index, newElement)
 	return DeltaArray[a, deltaA]{
@@ -109,6 +127,12 @@ func NewDeltaArrayRemoveAt[a any, deltaA any](index int) DeltaArray[a, deltaA] {
 	return DeltaArray[a, deltaA]{
 		discriminator: arrayRemoveAt,
 		removeAt:      &index,
+	}
+}
+func NewDeltaArrayRemoveAll[a any, deltaA any]() DeltaArray[a, deltaA] {
+	return DeltaArray[a, deltaA]{
+		discriminator: arrayRemoveAll,
+		removeAll:     NewUnit(),
 	}
 }
 func NewDeltaArrayMoveFromTo[a any, deltaA any](from int, to int) DeltaArray[a, deltaA] {
@@ -133,8 +157,10 @@ func NewDeltaArrayAdd[a any, deltaA any](newElement a) DeltaArray[a, deltaA] {
 
 func MatchDeltaArray[a any, deltaA any, Result any](
 	onValue func(Tuple2[int, deltaA]) func(ReaderWithError[Unit, a]) (Result, error),
+	onValueAll func(deltaA) (Result, error),
 	onAddAt func(Tuple2[int, a]) (Result, error),
 	onRemoveAt func(int) (Result, error),
+	onRemoveAll func() (Result, error),
 	onMoveFromTo func(Tuple2[int, int]) (Result, error),
 	onDuplicateAt func(int) (Result, error),
 	onAdd func(a) (Result, error),
@@ -151,10 +177,14 @@ func MatchDeltaArray[a any, deltaA any, Result any](
 					},
 				)(value)
 				return onValue(*delta.value)(arrayElement)
+			case arrayValueAll:
+				return onValueAll(*delta.valueAll)
 			case arrayAddAt:
 				return onAddAt(*delta.addAt)
 			case arrayRemoveAt:
 				return onRemoveAt(*delta.removeAt)
+			case arrayRemoveAll:
+				return onRemoveAll()
 			case arrayMoveFromTo:
 				return onMoveFromTo(*delta.moveFromTo)
 			case arrayDuplicateAt:

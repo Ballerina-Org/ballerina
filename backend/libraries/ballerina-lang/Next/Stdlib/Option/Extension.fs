@@ -4,7 +4,7 @@ namespace Ballerina.DSL.Next.StdLib.Option
 module Extension =
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
-  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types
@@ -27,7 +27,12 @@ module Extension =
     let optionSomeSymbol = optionSomeId |> TypeSymbol.Create
     let optionNoneSymbol = optionNoneId |> TypeSymbol.Create
     let aVar, aKind = TypeVar.Create("a"), Kind.Star
-    let optionMapId = Identifier.FullyQualified([ "Option" ], "map")
+    let optionId = optionId |> TypeCheckScope.Empty.Resolve
+    let optionSomeId = optionSomeId |> TypeCheckScope.Empty.Resolve
+    let optionNoneId = optionNoneId |> TypeCheckScope.Empty.Resolve
+
+    let optionMapId =
+      Identifier.FullyQualified([ "Option" ], "map") |> TypeCheckScope.Empty.Resolve
 
     let someCase =
       (optionSomeId, optionSomeSymbol),
@@ -38,7 +43,7 @@ module Extension =
             TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope "Option"), TypeExpr.Lookup(Identifier.LocalScope "a"))
           )
         Constructor = Option_Some
-        Apply = fun (_, v) -> reader { return OptionValues.Option(Some v) |> valueLens.Set |> Ext }
+        Apply = fun _loc0 (_, v) -> reader { return OptionValues.Option(Some v) |> valueLens.Set |> Ext }
         ValueLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -59,7 +64,7 @@ module Extension =
             TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope "Option"), TypeExpr.Lookup(Identifier.LocalScope "a"))
           )
         Constructor = Option_None
-        Apply = fun (_, _) -> reader { return OptionValues.Option None |> valueLens.Set |> Ext }
+        Apply = fun _loc0 (_, _) -> reader { return OptionValues.Option None |> valueLens.Set |> Ext }
         ValueLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -72,7 +77,8 @@ module Extension =
             | _ -> None) }
 
     let mapOperation
-      : Identifier * TypeOperationExtension<'ext, OptionConstructors, OptionValues<'ext>, OptionOperations<'ext>> =
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, OptionConstructors, OptionValues<'ext>, OptionOperations<'ext>> =
       optionMapId,
       { Type =
           TypeValue.CreateLambda(
@@ -101,40 +107,51 @@ module Extension =
           |> PartialLens.BindGet (function
             | Option_Map v -> Some(Option_Map v))
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> OptionOperations.AsMap |> reader.OfSum
+              let! op =
+                op
+                |> OptionOperations.AsMap
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return OptionOperations.Option_Map({| f = Some v |}) |> operationLens.Set
+                return OptionOperations.Option_Map({| f = Some v |}) |> operationLens.Set |> Ext
               | Some f -> // the closure has the function - second step in the application
-                let! v = v |> Value.AsExt |> reader.OfSum
+                let! v = v |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
                 let! v =
                   valueLens.Get v
-                  |> sum.OfOption("cannot get option value" |> Errors.Singleton)
+                  |> sum.OfOption((loc0, "cannot get option value") |> Errors.Singleton)
                   |> reader.OfSum
 
-                let! v = v |> OptionValues.AsOption |> reader.OfSum
+                let! v =
+                  v
+                  |> OptionValues.AsOption
+                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> reader.OfSum
 
-                let! v' = v |> FSharp.Core.Option.map (fun v -> Expr.EvalApply(f, v)) |> reader.RunOption
+                let! v' =
+                  v
+                  |> FSharp.Core.Option.map (fun v -> Expr.EvalApply loc0 (f, v))
+                  |> reader.RunOption
 
-                return OptionValues.Option v' |> valueLens.Set
+                return OptionValues.Option v' |> valueLens.Set |> Ext
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
     let valueParser
-      (_rootValueParser: ValueParser<TypeValue, 'ext>)
+      (_rootValueParser: ValueParser<TypeValue, ResolvedIdentifier, 'ext>)
       (_v: JsonValue)
-      : ValueParserReader<TypeValue, 'ext> =
-      reader.Throw(Errors.Singleton("Option value parser not implemented"))
+      : ValueParserReader<TypeValue, ResolvedIdentifier, 'ext> =
+      reader.Throw(Ballerina.Errors.Errors.Singleton("Option value parser not implemented"))
 
     let valueEncoder
       (_rootValueEncoder: ValueEncoder<TypeValue, 'ext>)
       (_v: Value<TypeValue, 'ext>)
       : ValueEncoderReader<TypeValue> =
-      reader.Throw(Errors.Singleton("Option value encoder not implemented"))
+      reader.Throw(Ballerina.Errors.Errors.Singleton("Option value encoder not implemented"))
 
     { TypeName = optionId, optionSymbolId
       TypeVars = [ (aVar, aKind) ]

@@ -1,17 +1,21 @@
 ﻿module Ballerina.Data.Tests.Seeds.EndToEnd
 
+open System
 open System.Text.RegularExpressions
 open Ballerina.Collections.NonEmptyList
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.Extensions
 open Ballerina.DSL.Next.Json
-open Ballerina.DSL.Next.Types.Eval
+open Ballerina.DSL.Next.Types.TypeChecker.Eval
+open Ballerina.DSL.Next.Types.TypeChecker.Model
+open Ballerina.DSL.Next.Types.TypeChecker.Patterns
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Json
 open Ballerina.DSL.Next.Terms.Model
 open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Terms.Json
-open Ballerina.Errors
+open Ballerina.LocalizedErrors
+open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.Reader.WithError
 open Ballerina.Seeds
 open Ballerina.State.WithError
@@ -20,14 +24,21 @@ open Ballerina.Seeds.Test
 open NUnit.Framework
 open FSharp.Data
 open Ballerina.DSL.Next.StdLib.Extensions
-open Ballerina.DSL.Next.StdLib.List
+open Ballerina.DSL.Next.StdLib
+open Ballerina.Data.Schema.Json
+open Ballerina.Data.Spec.Model
+open Ballerina.Data.Schema.Model
+open Ballerina.Data.TypeEval
+open Ballerina.Data.Schema
 
 let extensions, languageContext = stdExtensions
+
+let private rootExprEncoder =
+  Expr.ToJson >> Reader.Run(TypeValue.ToJson, ResolvedIdentifier.ToJson)
 
 let valueEncoderRoot =
   Json.buildRootEncoder<TypeValue, ValueExt> (NonEmptyList.OfList(Value.ToJson, [ extensions.List.Encoder ]))
 
-let rootExprEncoder = Expr.ToJson >> Reader.Run TypeValue.ToJson
 let encoder = valueEncoderRoot >> Reader.Run(rootExprEncoder, TypeValue.ToJson)
 
 let emailRgx = Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled)
@@ -42,21 +53,26 @@ let private evalJsonAndSeed (str: string) =
     let! bindings, _evalStateOpt =
       state {
         let json = str |> JsonValue.Parse
-        let! typesJson = JsonValue.AsRecord json |> state.OfSum
+
+        let! typesJson =
+          JsonValue.AsRecord json
+          |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+          |> state.OfSum
 
         let! types =
           typesJson
           |> List.ofArray
           |> List.map (fun (name, value) -> TypeExpr.FromJson value |> sum.Map(fun typeExpr -> name, typeExpr))
           |> sum.All
+          |> Sum.mapRight (Errors.FromErrors Location.Unknown)
           |> state.OfSum
 
         do!
           types
           |> List.map (fun (name, expr) ->
             state {
-              let! tv = TypeExpr.Eval None expr
-              do! TypeExprEvalState.bindType name tv
+              let! tv = TypeExpr.Eval None Location.Unknown expr
+              do! TypeExprEvalState.bindType (name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) tv
               return ()
             })
           |> state.All
@@ -89,7 +105,9 @@ let ``Seeds: Json with nested records (Spec fragment) -> Parse TypeExpr -> Eval 
     | Right e -> Assert.Fail(e.Errors.Head.Message)
     | Left seeds ->
 
-      let _, _, person = seeds |> Map.find (Identifier.LocalScope "Person")
+      let _, _, person =
+        seeds
+        |> Map.find ("Person" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
 
       sum {
         let! _json =
@@ -98,14 +116,12 @@ let ``Seeds: Json with nested records (Spec fragment) -> Parse TypeExpr -> Eval 
 
         let! personRec = Value.AsRecord person
 
-        let fieldKey =
-          personRec |> Map.findKey (fun key _ -> key.Name = LocalScope "Private")
+        let fieldKey = personRec |> Map.findKey (fun key _ -> key.Name = "Private")
 
         let field = personRec |> Map.find fieldKey
         let! nestedRec = Value.AsRecord field
 
-        let nestedKey =
-          nestedRec |> Map.findKey (fun key _ -> key.Name = LocalScope "Email")
+        let nestedKey = nestedRec |> Map.findKey (fun key _ -> key.Name = "Email")
 
         let nested = nestedRec |> Map.find nestedKey
         let! nestedValue = Value.AsPrimitive nested
@@ -139,7 +155,9 @@ let ``Seeds: Json with Flatten expression (Spec fragment) -> Parse TypeExpr -> E
     | Right e -> Assert.Fail(e.Errors.Head.Message)
     | Left seeds ->
 
-      let _, _, person = seeds |> Map.find (Identifier.LocalScope "Person")
+      let _, _, person =
+        seeds
+        |> Map.find ("Person" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
 
       sum {
         let! _json =
@@ -147,7 +165,7 @@ let ``Seeds: Json with Flatten expression (Spec fragment) -> Parse TypeExpr -> E
           |> sum.Map(fun json -> json.ToString JsonSaveOptions.DisableFormatting)
 
         let! personRec = Value.AsRecord person
-        let fieldKey = personRec |> Map.findKey (fun key _ -> key.Name = LocalScope "Email")
+        let fieldKey = personRec |> Map.findKey (fun key _ -> key.Name = "Email")
         let field = personRec |> Map.find fieldKey
         let! emailStr = Value.AsPrimitive field
         let! email = PrimitiveValue.AsString emailStr
@@ -157,7 +175,7 @@ let ``Seeds: Json with Flatten expression (Spec fragment) -> Parse TypeExpr -> E
         | Right _ -> Assert.Fail("Verification of the email in the types failed")
         | Left(email, personRec) ->
           let actualFields =
-            personRec |> Map.keys |> Seq.map _.Name.ToString() |> Seq.toList |> List.sort
+            personRec |> Map.keys |> Seq.map _.ToString() |> Seq.toList |> List.sort
 
           Assert.That(actualFields, Is.EquivalentTo [ "Age"; "Email"; "Name" ])
           Assert.That(isEmail email, Is.True)
@@ -176,7 +194,9 @@ let ``Seeds: List extension`` () =
     | Right e -> Assert.Fail(e.Errors.Head.Message)
     | Left seeds ->
 
-      let _, _, company = seeds |> Map.find (Identifier.LocalScope "Company")
+      let _, _, company =
+        seeds
+        |> Map.find ("Company" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
 
       sum {
         let! _json =
@@ -185,8 +205,7 @@ let ``Seeds: List extension`` () =
 
         let! companyRec = Value.AsRecord company
 
-        let fieldKey =
-          companyRec |> Map.findKey (fun key _ -> key.Name = LocalScope "Emails")
+        let fieldKey = companyRec |> Map.findKey (fun key _ -> key.Name = "Emails")
 
         let field = companyRec |> Map.find fieldKey
 
@@ -196,9 +215,9 @@ let ``Seeds: List extension`` () =
         let! listValues =
           match choice with
           | Choice1Of3(ListExt.ListValues v) -> sum.Return v
-          | _ -> sum.Throw(Errors.Singleton "Expected List, got other ext")
+          | _ -> sum.Throw(Ballerina.Errors.Errors.Singleton "Expected List, got other ext")
 
-        let (List values) = listValues
+        let (List.Model.ListValues.List values) = listValues
 
         let! values = values |> Seq.map Value.AsPrimitive |> sum.All
         let! strings = values |> Seq.map PrimitiveValue.AsString |> sum.All
@@ -207,3 +226,140 @@ let ``Seeds: List extension`` () =
       |> function
         | Right er -> Assert.Fail($"Verification of the email in the types failed :{er}")
         | Left values -> Assert.That(List.forall isEmail values, Is.True)
+
+let analyze (data: Map<Guid, Set<Guid>>) =
+  let counts = data |> Map.map (fun _ -> Set.count)
+
+  let reverse =
+    data
+    |> Seq.collect (fun (KeyValue(k, set)) -> set |> Seq.map (fun v -> v, k))
+    |> Seq.groupBy fst
+    |> Seq.map (fun (v, pairs) -> v, pairs |> Seq.map snd |> Set.ofSeq |> Set.count)
+    |> Map.ofSeq
+
+  counts, reverse
+
+let insert
+  (ctx: SeedingContext)
+  : Sum<Value<TypeValue, ValueExt> * Option<TypeExprEvalState>, Errors * Option<TypeExprEvalState>> =
+  let json = SampleData.Specs.PersonGenders |> JsonValue.Parse
+
+  state {
+    let! spec =
+      Schema.FromJson json
+      |> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
+      |> state.OfSum
+      |> state.MapError(Errors.FromErrors Location.Unknown)
+
+    let! types = Ballerina.Data.Spec.Builder.typeContextFromSpecBody spec
+
+    let lookupPath =
+      spec.Lookups
+      |> Map.toSeq
+      |> Seq.head
+      |> (fun (_name, data) -> data.Forward.Path)
+
+    let! schema = (spec, types) ||> Schema.SchemaEval
+
+    let! seeds = Runner.seed schema |> Reader.Run ctx |> state.OfSum
+    let lookups = seeds.Lookups |> Map.find { LookupName = "PeopleGenders" }
+    let sampleOneToMany = lookups |> Map.toSeq |> Seq.head
+    let counts, reverse = analyze lookups
+
+    Assert.That(Map.forall (fun _ v -> v = 1) counts, Is.True, "Arity is preserved after seeding")
+    Assert.That(Map.forall (fun _ v -> v = 1) reverse, Is.True, "Arity is preserved after seeding")
+
+    let people =
+      seeds.Entities
+      |> Map.find { EntityName = "People" }
+      |> Map.find (fst sampleOneToMany)
+
+    let genders =
+      seeds.Entities
+      |> Map.find { EntityName = "Genders" }
+      |> Map.find (snd sampleOneToMany |> Set.minElement)
+
+    return!
+      Value.insert genders people lookupPath
+      |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+      |> state.OfSum
+  }
+  |> State.Run(languageContext.TypeCheckContext.Types, languageContext.TypeCheckState.Types)
+
+let private tryExtractGender
+  (value: Value<TypeValue, ValueExt>)
+  : Sum<option<ResolvedIdentifier> * Map<ResolvedIdentifier, Value<TypeValue, ValueExt>>, Errors> =
+  sum {
+    let! record = Value.AsRecord value |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+
+    let! _, biology =
+      record
+      |> Map.tryFindByWithError
+        (fun (k, _v) -> k.Name = "Biology")
+        "record field"
+        "biology field not found"
+        Location.Unknown
+
+    let! biology = biology |> Value.AsTuple |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+    let! _, biology = Value.AsUnion biology.Head |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+    let! fields = Value.AsRecord biology |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+    let genderKey = fields |> Map.tryFindKey (fun ts _ -> ts.Name = "Gender")
+    return genderKey, fields
+  }
+
+[<Test>]
+let ``Seed lookups, insert item via path, path satisfied results in item being inserted`` () =
+  sum {
+    let! result, _ =
+      insert
+        { SeedingContext.Default() with
+            WantedCount = Some 10
+            PickItemStrategy = First } // ensures Public union case (satisfies path) is seeded
+      |> sum.MapError fst
+
+
+    let! genderKey, fields = tryExtractGender result
+
+    let! genderKey =
+      genderKey
+      |> sum.OfOption(Errors.Singleton(Location.Unknown, "Gender not found"))
+
+    let gender = fields |> Map.find genderKey
+    let! gender = Value.AsTuple gender |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+    let gender = gender |> List.head
+    let! ts, _ = Value.AsUnion gender |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+    return ts.Name
+  }
+  |> function
+    | Right error -> Assert.Fail error.Errors.Head.Message
+    | Left gender -> Assert.That([ "F"; "M"; "X" ] |> List.contains gender, Is.True)
+
+[<Test>]
+let ``Seed lookups, insert item via path, path not satisfied results with no insert`` () =
+  sum {
+    let! result, _ =
+      insert
+        { SeedingContext.Default() with
+            WantedCount = Some 10
+            PickItemStrategy = Last } // ensures Secret union case (does not satisfy path) is seeded
+      |> sum.MapError fst
+
+    let! record = Value.AsRecord result |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+
+    let! _, biology =
+      record
+      |> Map.tryFindByWithError
+        (fun (k, _v) -> k.Name = "Biology")
+        "record field"
+        "biology field not found"
+        Location.Unknown
+
+    let! biology = biology |> Value.AsTuple |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+    let head = biology |> List.exactlyOne
+    let! unionCase = Value.AsUnion head |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+    return unionCase
+  }
+  |> function
+    | Right error -> Assert.Fail $"Test assumes no errors but got {error.Errors.Head.Message}"
+    | Left(_, unionCase) ->
+      Assert.That(unionCase.IsPrimitive, Is.True, "biology remains a union case that has unit, not an inserted field")

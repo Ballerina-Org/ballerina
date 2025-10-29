@@ -4,7 +4,7 @@ namespace Ballerina.DSL.Next.StdLib.String
 module Extension =
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
-  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.Model
@@ -13,6 +13,7 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.Option
 
+  let private int32TypeValue = TypeValue.CreateInt32()
   let private boolTypeValue = TypeValue.CreateBool()
   let private stringTypeValue = TypeValue.CreateString()
 
@@ -20,9 +21,46 @@ module Extension =
     (operationLens: PartialLens<'ext, StringOperations<'ext>>)
     : OperationsExtension<'ext, StringOperations<'ext>> =
 
-    let stringPlusId = Identifier.FullyQualified([ "String" ], "+")
+    let stringLengthId =
+      Identifier.FullyQualified([ "string" ], "length")
+      |> TypeCheckScope.Empty.Resolve
 
-    let plusOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let lengthOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
+      stringLengthId,
+      { Type = TypeValue.CreateArrow(stringTypeValue, int32TypeValue)
+        Kind = Kind.Star
+        Operation = StringOperations.Length
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | StringOperations.Length -> Some(StringOperations.Length)
+            | _ -> None)
+
+        Apply =
+          fun loc0 (op, v) ->
+            reader {
+              do!
+                op
+                |> StringOperations.AsLength
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+
+              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Length))
+            } }
+
+    let stringPlusId =
+      Identifier.FullyQualified([ "string" ], "+") |> TypeCheckScope.Empty.Resolve
+
+    let plusOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringPlusId,
       { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, stringTypeValue))
         Kind = Kind.Star
@@ -34,11 +72,21 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> StringOperations.AsConcat |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsString |> reader.OfSum
+              let! op =
+                op
+                |> StringOperations.AsConcat
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -49,9 +97,10 @@ module Extension =
             } }
 
 
-    let stringEqualId = Identifier.FullyQualified([ "String" ], "==")
+    let stringEqualId =
+      Identifier.FullyQualified([ "string" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringEqualId,
       { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -62,11 +111,21 @@ module Extension =
             | StringOperations.Equal v -> Some(StringOperations.Equal v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> StringOperations.AsEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsString |> reader.OfSum
+              let! op =
+                op
+                |> StringOperations.AsEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -76,9 +135,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let stringNotEqualId = Identifier.FullyQualified([ "String" ], "!=")
+    let stringNotEqualId =
+      Identifier.FullyQualified([ "string" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringNotEqualId,
       { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -89,11 +149,21 @@ module Extension =
             | StringOperations.NotEqual v -> Some(StringOperations.NotEqual v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> StringOperations.AsNotEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsString |> reader.OfSum
+              let! op =
+                op
+                |> StringOperations.AsNotEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -103,9 +173,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
-    let stringGreaterThanId = Identifier.FullyQualified([ "String" ], ">")
+    let stringGreaterThanId =
+      Identifier.FullyQualified([ "string" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringGreaterThanId,
       { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -116,11 +187,21 @@ module Extension =
             | StringOperations.GreaterThan v -> Some(StringOperations.GreaterThan v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> StringOperations.AsGreaterThan |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsString |> reader.OfSum
+              let! op =
+                op
+                |> StringOperations.AsGreaterThan
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -130,9 +211,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
-    let stringGreaterThanOrEqualId = Identifier.FullyQualified([ "String" ], ">=")
+    let stringGreaterThanOrEqualId =
+      Identifier.FullyQualified([ "string" ], ">=") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringGreaterThanOrEqualId,
       { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -143,11 +225,21 @@ module Extension =
             | StringOperations.GreaterThanOrEqual v -> Some(StringOperations.GreaterThanOrEqual v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> StringOperations.AsGreaterThanOrEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsString |> reader.OfSum
+              let! op =
+                op
+                |> StringOperations.AsGreaterThanOrEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -160,9 +252,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
-    let stringLessThanId = Identifier.FullyQualified([ "String" ], "<")
+    let stringLessThanId =
+      Identifier.FullyQualified([ "string" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringLessThanId,
       { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -173,11 +266,21 @@ module Extension =
             | StringOperations.LessThan v -> Some(StringOperations.LessThan v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> StringOperations.AsLessThan |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsString |> reader.OfSum
+              let! op =
+                op
+                |> StringOperations.AsLessThan
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -187,9 +290,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
-    let stringLessThanOrEqualId = Identifier.FullyQualified([ "String" ], "<=")
+    let stringLessThanOrEqualId =
+      Identifier.FullyQualified([ "string" ], "<=") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringLessThanOrEqualId,
       { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -200,11 +304,21 @@ module Extension =
             | StringOperations.LessThanOrEqual v -> Some(StringOperations.LessThanOrEqual v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> StringOperations.AsLessThanOrEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsString |> reader.OfSum
+              let! op =
+                op
+                |> StringOperations.AsLessThanOrEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -216,7 +330,8 @@ module Extension =
 
     { TypeVars = []
       Operations =
-        [ plusOperation
+        [ lengthOperation
+          plusOperation
           equalOperation
           notEqualOperation
           greaterThanOperation

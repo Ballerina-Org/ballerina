@@ -5,9 +5,10 @@ module Operations =
   open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
-  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Terms.Model
-  open Ballerina.DSL.Next.Types.TypeCheck
+  open Ballerina.DSL.Next.Types.TypeChecker.Expr
+  open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.Terms
 
@@ -39,18 +40,18 @@ module Operations =
           opsExt.Operations
           |> Map.values
           |> Seq.fold
-            (fun (acc: 'ext -> ExprEvaluator<'ext, ExtEvalResult<'ext>>) caseExt ->
-              fun v ->
+            (fun (acc: Location -> 'ext -> ExprEvaluator<'ext, ExtEvalResult<'ext>>) caseExt ->
+              fun loc0 v ->
                 reader.Any(
                   reader {
                     let! v =
                       caseExt.OperationsLens.Get v
-                      |> sum.OfOption($"Error: cannot extra constructor from extension" |> Errors.Singleton)
+                      |> sum.OfOption((loc0, $"Error: cannot extra constructor from extension") |> Errors.Singleton)
                       |> reader.OfSum
 
-                    return Applicable(fun arg -> caseExt.Apply(v, arg))
+                    return Applicable(fun arg -> caseExt.Apply loc0 (v, arg))
                   },
-                  [ acc v ]
+                  [ acc loc0 v ]
                 ))
             ops
 

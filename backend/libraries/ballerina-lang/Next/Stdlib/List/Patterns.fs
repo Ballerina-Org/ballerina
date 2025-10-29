@@ -6,7 +6,7 @@ module Patterns =
   open Ballerina.Errors
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Types
-
+  open Model
   // type ListConstructors<'ext> with
 
   type ListOperations<'ext> with
@@ -15,10 +15,27 @@ module Patterns =
       | List_Map v -> v.f |> sum.Return
       | _ -> $"Error: Expected List_Map, found {op}" |> Errors.Singleton |> sum.Throw
 
+    static member AsAppend(op: ListOperations<'ext>) : Sum<Option<Value<TypeValue, 'ext>>, Errors> =
+      match op with
+      | List_Append v -> v.l |> sum.Return
+      | _ -> $"Error: Expected List_Append, found {op}" |> Errors.Singleton |> sum.Throw
+
     static member AsFilter(op: ListOperations<'ext>) : Sum<Option<Value<TypeValue, 'ext>>, Errors> =
       match op with
       | List_Filter v -> v.f |> sum.Return
       | _ -> $"Error: Expected List_Filter, found {op}" |> Errors.Singleton |> sum.Throw
+
+    static member AsFold
+      (op: ListOperations<'ext>)
+      : Sum<Option<Value<TypeValue, 'ext>> * Option<Value<TypeValue, 'ext>>, Errors> =
+      match op with
+      | List_Fold v -> (v.f, v.acc) |> sum.Return
+      | _ -> $"Error: Expected List_Fold, found {op}" |> Errors.Singleton |> sum.Throw
+
+    static member AsLength(op: ListOperations<'ext>) : Sum<Unit, Errors> =
+      match op with
+      | List_Length -> () |> sum.Return
+      | _ -> $"Error: Expected List_Length, found {op}" |> Errors.Singleton |> sum.Throw
 
     static member AsCons(op: ListOperations<'ext>) : Sum<Unit, Errors> =
       match op with

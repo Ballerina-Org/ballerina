@@ -4,7 +4,7 @@ namespace Ballerina.DSL.Next.StdLib.Decimal
 module Model =
   type DecimalOperations<'ext> =
     | Plus of {| v1: Option<decimal> |}
-    | Minus of {| v1: unit |}
+    | Minus of {| v1: Option<decimal> |}
     | Divide of {| v1: Option<decimal> |}
     | Power of {| v1: Option<decimal> |}
     | Mod of {| v1: Option<decimal> |}

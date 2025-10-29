@@ -21,6 +21,11 @@ module LocalizedErrors =
   type Location with
     static member Initial(file: string) = { File = file; Line = 1; Column = 1 }
 
+    static member Unknown: Location =
+      { Location.File = "unknown"
+        Line = 1
+        Column = 1 }
+
     static member Step (c: Char) (loc: Location) : Location =
       match c with
       | '\n' ->
@@ -29,15 +34,17 @@ module LocalizedErrors =
             Column = 1 }
       | _ -> { loc with Column = loc.Column + 1 }
 
-  type ErrorPriority =
-    | High
-    | Medium
-    | Low
+  type ErrorPriority = Errors.ErrorPriority
 
   type LocalizedError =
     { Message: string
       Priority: ErrorPriority
       Location: Location }
+
+    static member FromError (loc: Location) (e: Errors.Error) : LocalizedError =
+      { Message = e.Message
+        Priority = e.Priority
+        Location = loc }
 
     static member Updaters =
       {| Message = fun u err -> { err with Message = u (err.Message) }
@@ -55,6 +62,9 @@ module LocalizedErrors =
               Location = loc }
           ) }
 
+    static member FromErrors (loc: Location) (e: Errors.Errors) : Errors =
+      { Errors = e.Errors |> NonEmptyList.map (LocalizedError.FromError loc) }
+
     static member Concat(e1, e2) =
       { Errors = NonEmptyList.OfList(e1.Errors.Head, e1.Errors.Tail @ (e2.Errors |> NonEmptyList.ToList)) }
 
@@ -66,7 +76,7 @@ module LocalizedErrors =
       { e with
           Errors = e.Errors |> NonEmptyList.map (LocalizedError.Updaters.Priority(replaceWith p)) }
 
-    static member HighestPriority e =
+    static member FilterHighestPriorityOnly e =
       let errors = e.Errors |> NonEmptyList.ToList
 
       match errors |> List.filter (fun e -> e.Priority.IsHigh) with
@@ -84,7 +94,7 @@ module LocalizedErrors =
       do Console.WriteLine $"Errors when processing {inputFile}"
       do Console.ForegroundColor <- ConsoleColor.Red
 
-      for error in (e |> Errors.HighestPriority).Errors do
+      for error in (e |> Errors.FilterHighestPriorityOnly).Errors do
         // do Console.Write error.Priority
         // do Console.Write ": "
         do Console.WriteLine $"{error.Message}@{error.Location}"

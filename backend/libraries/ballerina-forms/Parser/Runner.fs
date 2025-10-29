@@ -232,6 +232,7 @@ module Runner =
         NonEmptyList.OfList(
           tableCase "add" TableMethod.Add,
           [ tableCase "remove" TableMethod.Remove
+            tableCase "removeAll" TableMethod.RemoveAll
             tableCase "duplicate" TableMethod.Duplicate
             tableCase "move" TableMethod.Move ]
         )
@@ -639,8 +640,8 @@ module Runner =
                         {| TypeId = formType.TypeId
                            Renderer =
                             Renderer.UnionRenderer
-                              {| Cases = Map.empty
-                                 Renderer = RendererName "" |} |}
+                              { Cases = Map.empty
+                                Renderer = RendererName "" } |}
 
                     FormId = Guid.CreateVersion7()
                     FormName = formName }
@@ -738,8 +739,8 @@ module Runner =
 
         do!
           State.mapState
-            (fun outerState -> outerState.Types)
-            (fun innerState -> ParsedFormsContext.Updaters.Types(fun _ -> innerState))
+            (fst >> fun outerState -> outerState.Types)
+            (fun (innerState, _) -> ParsedFormsContext.Updaters.Types(fun _ -> innerState))
             (ParsedFormsContext.ParseTypes topLevel.Types)
 
         let! c = state.GetContext()

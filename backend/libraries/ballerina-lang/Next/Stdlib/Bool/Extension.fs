@@ -4,7 +4,7 @@ namespace Ballerina.DSL.Next.StdLib.Bool
 module Extension =
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
-  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.Model
@@ -18,9 +18,10 @@ module Extension =
     (operationLens: PartialLens<'ext, BoolOperations<'ext>>)
     : OperationsExtension<'ext, BoolOperations<'ext>> =
 
-    let boolAndId = Identifier.FullyQualified([ "Bool" ], "&&")
+    let boolAndId =
+      Identifier.FullyQualified([ "bool" ], "&&") |> TypeCheckScope.Empty.Resolve
 
-    let andOperation: Identifier * OperationExtension<'ext, BoolOperations<'ext>> =
+    let andOperation: ResolvedIdentifier * OperationExtension<'ext, BoolOperations<'ext>> =
       boolAndId,
       { Type = TypeValue.CreateArrow(boolTypeValue, TypeValue.CreateArrow(boolTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -32,11 +33,21 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun (op, v) ->
+          fun loc (op, v) ->
             reader {
-              let! op = op |> BoolOperations.AsAnd |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsBool |> reader.OfSum
+              let! op =
+                op
+                |> BoolOperations.AsAnd
+                |> sum.MapError(Errors.FromErrors loc)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsBool
+                |> sum.MapError(Errors.FromErrors loc)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -46,9 +57,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure && v))
             } }
 
-    let boolOrId = Identifier.FullyQualified([ "Bool" ], "||")
+    let boolOrId =
+      Identifier.FullyQualified([ "bool" ], "||") |> TypeCheckScope.Empty.Resolve
 
-    let orOperation: Identifier * OperationExtension<'ext, BoolOperations<'ext>> =
+    let orOperation: ResolvedIdentifier * OperationExtension<'ext, BoolOperations<'ext>> =
       boolOrId,
       { Type = TypeValue.CreateArrow(boolTypeValue, TypeValue.CreateArrow(boolTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -60,11 +72,21 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> BoolOperations.AsOr |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsBool |> reader.OfSum
+              let! op =
+                op
+                |> BoolOperations.AsOr
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsBool
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -74,9 +96,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure || v))
             } }
 
-    let boolNotId = Identifier.FullyQualified([ "Bool" ], "!")
+    let boolNotId =
+      Identifier.FullyQualified([ "bool" ], "!") |> TypeCheckScope.Empty.Resolve
 
-    let notOperation: Identifier * OperationExtension<'ext, BoolOperations<'ext>> =
+    let notOperation: ResolvedIdentifier * OperationExtension<'ext, BoolOperations<'ext>> =
       boolNotId,
       { Type = TypeValue.CreateArrow(boolTypeValue, boolTypeValue)
         Kind = Kind.Star
@@ -88,10 +111,15 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun (_, v) ->
+          fun loc0 (_, v) ->
             reader {
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsBool |> reader.OfSum
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsBool
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(not v))
             } }

@@ -9,6 +9,7 @@ open Ballerina.Data.Delta.ToUpdater
 open Ballerina.Data.Delta.Model
 open Ballerina.Collections.Sum
 open Ballerina.StdLib.OrderPreservingMap
+open Ballerina.Cat.Collections.OrderedMap
 
 let symbol name : TypeSymbol =
   { Name = name |> Identifier.LocalScope
@@ -23,7 +24,14 @@ let ``Delta.Record: Updates field in a record correctly`` () =
   let recordType = TypeValue.CreateRecord(OrderedMap.ofList [ typeSymbol, typeValue ])
 
   let recordValue =
-    Value<Unit>.Record(Map.ofList [ typeSymbol, Value<Unit>.Primitive(PrimitiveValue.Int32 99) ])
+    Value<Unit>
+      .Record(
+        Map.ofList
+          [ typeSymbol.Name.LocalName
+            |> Identifier.LocalScope
+            |> TypeCheckScope.Empty.Resolve,
+            Value<Unit>.Primitive(PrimitiveValue.Int32 99) ]
+      )
 
   let delta =
     Delta.Record(fieldName, Delta.Replace(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive))
@@ -32,7 +40,11 @@ let ``Delta.Record: Updates field in a record correctly`` () =
   | Sum.Left updater ->
     match updater recordValue with
     | Sum.Left(Value.Record updated) ->
-      let updatedValue = updated.[typeSymbol]
+      let updatedValue =
+        updated.[typeSymbol.Name.LocalName
+                 |> Identifier.LocalScope
+                 |> TypeCheckScope.Empty.Resolve]
+
       Assert.That(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive, Is.EqualTo updatedValue)
     | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"
     | _ -> Assert.Fail "Unexpected value shape"

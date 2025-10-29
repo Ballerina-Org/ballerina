@@ -14,74 +14,56 @@ open Ballerina.DSL.Next.Terms.Model
 open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Patterns
-open Ballerina.DSL.Next.Types.TypeCheck
-open Ballerina.DSL.Next.Types.Eval
+open Ballerina.DSL.Next.Types.TypeChecker.Expr
+open Ballerina.DSL.Next.Types.TypeChecker.Model
+open Ballerina.DSL.Next.Types.TypeChecker.Eval
+open Ballerina.DSL.Next.Types.TypeChecker.Model
+open Ballerina.DSL.Next.Types.TypeChecker
 open Ballerina.DSL.Next.Terms
 open Ballerina.State.WithError
 open Ballerina.DSL.Next.StdLib.Option
 open Ballerina.DSL.Next.Extensions
 open Ballerina.LocalizedErrors
 open Ballerina.Parser
-open Ballerina.Parser
 open Ballerina.StdLib.Object
 open Ballerina.DSL.Next.Syntax
 open Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval
+open Ballerina.DSL.Next
+open Ballerina.DSL.Next.StdLib
+open Ballerina.DSL.Next.Types.TypeChecker.Patterns
+open Ballerina.DSL.Next.Runners
 
 let context = Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval.context
 
-let private run program =
-  let initialLocation = Location.Initial "input"
+let private run (program: string) =
 
-  let actual =
-    Ballerina.DSL.Next.Syntax.Lexer.tokens
-    |> Parser.Run(program |> Seq.toList, initialLocation)
+  let typeCheckResult = Expr.TypeCheckString context program
 
-  match actual with
-  | Right e -> Right $"Failed to tokenize program: {e.ToFSharpString}"
-  | Left(ParserResult(actual, _)) ->
+  match typeCheckResult with
+  | Left(program, typeValue, typeCheckFinalState) ->
 
-    let parsed = Parser.Expr.program |> Parser.Run(actual, initialLocation)
+    let evalContext = context.ExprEvalContext
 
-    match parsed with
-    | Right e -> Right $"Failed to parse program: {e.ToFSharpString}"
-    | Left(ParserResult(program, _)) ->
+    let typeCheckedSymbols: ExprEvalContextSymbols =
+      (typeCheckFinalState.Types.Symbols) |> ExprEvalContextSymbols.FromTypeChecker
 
-      let typeCheckResult =
-        Expr.TypeCheck program
-        |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+    let evalContext =
+      { evalContext with
+          Symbols = ExprEvalContextSymbols.Append evalContext.Symbols typeCheckedSymbols
+      // Values: Map<Identifier, Value<TypeValue, 'valueExtension>>
+      // Values =
+      //   ((evalContext.Values |> Map.toList)
+      //    @ unionCaseConstructors
+      //    @ recordFieldDestructors)
+      //   |> Map.ofList
+      }
 
-      match typeCheckResult with
-      | Left((program, typeValue, _), typeCheckFinalState) ->
+    let evalResult = Expr.Eval program |> Reader.Run evalContext
 
-        let evalContext = context.ExprEvalContext
-
-        let typeCheckedSymbols =
-          match typeCheckFinalState with
-          | None -> []
-          | Some s -> s.Types.Symbols |> Map.toList
-
-        let unionCaseConstructors =
-          match typeCheckFinalState with
-          | None -> []
-          | Some s ->
-            s.Types.UnionCases
-            |> Map.map (fun k _ ->
-              Value<TypeValue, ValueExt>
-                .Lambda("_" |> Var.Create, Expr.UnionCons(k, "_" |> Identifier.LocalScope |> Expr.Lookup)))
-            |> Map.toList
-
-        let evalContext =
-          { evalContext with
-              Symbols = (evalContext.Symbols |> Map.toList) @ typeCheckedSymbols |> Map.ofList
-              // Values: Map<Identifier, Value<TypeValue, 'valueExtension>>
-              Values = (evalContext.Values |> Map.toList) @ unionCaseConstructors |> Map.ofList }
-
-        let evalResult = Expr.Eval program |> Reader.Run evalContext
-
-        match evalResult with
-        | Left value -> Sum.Left(value, typeValue)
-        | Right e -> Sum.Right $"Evaluation failed: {e.ToFSharpString}"
-      | Right(e, _) -> Sum.Right $"Type checking failed: {e.ToFSharpString}"
+    match evalResult with
+    | Left value -> Sum.Left(value, typeValue)
+    | Right e -> Sum.Right $"Evaluation failed: {e.ToFSharpString}"
+  | Right e -> Sum.Right $"Type checking failed: {e.ToFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration let over int succeeds`` () =
@@ -251,20 +233,118 @@ in x"""
 
 
 [<Test>]
-let ``LangNext-Integration let with annotation fails`` () =
-  let program = """let x:int = false in x"""
+let ``LangNext-Integration programs that should not typecheck fail`` () =
+  let programs =
+    [ """
+let a = 1Of3 10
+in match a with | 1Of3 (v -> v + 1) | 2Of3 (v -> 0)
+            """
+
+      """
+let a = 1Of3 10
+in match a with | 1Of3 (v -> v + 1) | 2Of3 (v -> "") | 3Of3 (v -> false)
+            """
+
+      """
+let a = 1Of3 10
+in match a with | 1Of3 (v -> v + 1) | 2Of3 (v -> "") | 3Of3 (v -> false)
+            """
+
+      """
+type T = { A:int32; B:bool; }
+in let t:T = { A=10; C=true; }
+in t.A > 10 || t.B
+    """
+
+      """
+type T = { A:int32; B:bool; }
+in let t:T = { A=10; B=true; }
+in t.C
+    """
+
+      """
+type T = | A of int32 | B of string
+in (fun (t:T) -> 
+match t with
+| B (_ -> 0)
+)
+      """
+
+      """
+type T = | A of int32 | B of string
+in (fun (t:T) -> 
+match t with
+| A (i -> i |> string::length)
+| B (_ -> 0)
+)
+      """
+
+      """10 && false"""
+
+      """if 10 then "hello" else "world" """
+
+      """fun (y:int32) -> x + y"""
+
+      """let x:int = false in x"""
+
+      """
+(1,2,3).0
+      """
+
+      """
+(1,2,3).4
+      """
+
+      """
+let f = (fun (x:string) -> x |> string::length)
+in f 10
+            """
+
+      """
+let f = (fun (x:string) -> x && true)
+in f false
+      """ ]
+
+  for program in programs do
+    let actual = program |> run
+
+    match actual with
+    | Left(value, typeValue) ->
+
+      Assert.Fail(
+        $"Type checking and evaluation succeeded with {(value, typeValue).ToFSharpString}, even though failure was expected"
+      )
+
+    | Right _e -> ()
+
+  Assert.Pass()
+
+
+[<Test>]
+let ``LangNext-Integration tuple construction and destruction succeeds`` () =
+  let program =
+    """
+let v = (1, "hello", true)
+in v.1, v.2, v.3
+  """
 
   let actual = program |> run
 
   match actual with
   | Left(value, typeValue) ->
 
-    Assert.Fail(
-      $"Type checking and evaluation succeeded with {(value, typeValue).ToFSharpString}, even though failure was expected"
-    )
+    let expectedValue: Value<TypeValue, ValueExt> =
+      Tuple [ Primitive(Int32 1); Primitive(String "hello"); Primitive(Bool true) ]
 
-  | Right _e -> Assert.Pass()
+    Assert.That(value, Is.EqualTo(expectedValue))
 
+    match typeValue with
+    | TypeValue.Tuple({ value = [ TypeValue.Primitive({ value = PrimitiveType.Int32 })
+                                  TypeValue.Primitive({ value = PrimitiveType.String })
+                                  TypeValue.Primitive({ value = PrimitiveType.Bool }) ] }) -> ()
+    | _ -> Assert.Fail($"Expected Tuple type, got {typeValue.ToFSharpString}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
 
 [<Test>]
 let ``LangNext-Integration tuple construction and destruction fails`` () =
@@ -272,7 +352,7 @@ let ``LangNext-Integration tuple construction and destruction fails`` () =
     """
 type T = int32 * List [int32] * bool
 in let t: T = 123, List::Cons [int32] (1, List::Nil [int32] ()), false
-in t.Item1
+in t.1
   """
 
   let actual = program |> run
@@ -296,11 +376,11 @@ let ``LangNext-Integration sum construction and destruction succeeds`` () =
   let program =
     """
 type T = int32 + List [int32] + bool
-in let t: T = Sum::Choice2Of3(List::Nil [int32] ())
+in let t: T = 2Of3(List::Nil [int32] ())
 in match t with
-| Sum::Choice1Of3 (x -> x)
-| Sum::Choice2Of3 (x -> -1)
-| Sum::Choice3Of3 (x -> 0)
+| 1Of3 (x -> x)
+| 2Of3 (x -> -1)
+| 3Of3 (x -> 0)
   """
 
   let actual = program |> run
@@ -325,12 +405,12 @@ let ``LangNext-Integration sum and tuple construction and destruction succeeds``
   let program =
     """
 type T = int32 + List [int32] * int32 + bool
-in let t: T = Sum::Choice2Of3(List::Nil [int32] (), 42)
-in let item2 = fun (x:List [int32] * int32) -> x.Item2
+in let t: T = 2Of3(List::Nil [int32] (), 42)
+in let item2 = fun (x:List [int32] * int32) -> x.2
 in match t with
-| Sum::Choice1Of3 (x -> x)
-| Sum::Choice2Of3 (x -> item2 x)
-| Sum::Choice3Of3 (x -> 0)
+| 1Of3 (x -> x)
+| 2Of3 (x -> item2 x)
+| 3Of3 (x -> 0)
   """
 
   let actual = program |> run
@@ -349,58 +429,17 @@ in match t with
   | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
 
 
-
-[<Test>]
-let ``LangNext-Integration ambiguous sum and union construction and destruction succeeds`` () =
-  let program =
-    """
-type MyUnion =
-  | Choice1Of3 of int32
-  | Choice2Of3 of string
-  | Choice3Of3 of bool
-
-in type T = int32 + List [int32] + bool
-
-in let t1: T = Sum::Choice2Of3(List::Nil [int32] ())
-in let res1 = match t1 with
-| Sum::Choice1Of3 (x -> x)
-| Sum::Choice2Of3 (x -> -1)
-| Sum::Choice3Of3 (x -> 0)
-
-in let t2: MyUnion = MyUnion::Choice1Of3(900)
-in let res2 = match t2 with
-| MyUnion::Choice1Of3 (x -> x)
-| MyUnion::Choice2Of3 (x -> -1)
-| MyUnion::Choice3Of3 (x -> 0)
-
-in res1, res2
-  """
-
-  let actual = program |> run
-
-  match actual with
-  | Left(value, _typeValue) ->
-
-    let expectedValue: Value<TypeValue, ValueExt> =
-      Tuple [ Primitive(Int32 -1); Primitive(Int32 900) ]
-
-    Assert.That(value, Is.EqualTo(expectedValue))
-
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
-
-
-
 [<Test>]
 let ``LangNext-Integration sum and arrow composition succeeds`` () =
   let program =
     """
 type T = int32 + bool -> List [int32] + string
 
-in let t1: T = Sum::Choice2Of3(fun flag -> if flag then List::Cons [int32] (1, List::Nil [int32] ()) else List::Nil [int32] ())
+in let t1: T = 2Of3(fun flag -> if flag then List::Cons [int32] (1, List::Nil [int32] ()) else List::Nil [int32] ())
 in let res1 = match t1 with
-| Sum::Choice1Of3 (x -> x)
-| Sum::Choice2Of3 (x -> -1)
-| Sum::Choice3Of3 (x -> 0)
+| 1Of3 (x -> x)
+| 2Of3 (x -> -1)
+| 3Of3 (x -> 0)
 
 in res1
   """
@@ -436,3 +475,310 @@ in f true, f false
     | _ -> Assert.Fail($"Expected a tuple of two list values, got {value.ToFSharpString}")
 
   | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+
+[<Test>]
+let ``LangNext-Integration list cons, nil, map, filter, length, fold succeeds`` () =
+  let program =
+    """
+let l = List::Cons [int32] (1, List::Cons [int32] (-2, List::Cons [int32] (3, List::Nil [int32] ())))
+in let l1 = List::map [int32][bool] (fun (v:int32) -> v > 0) l
+in let l2 = List::filter [int32] (fun (v:int32) -> v > 0) l
+in let l3 = List::length [int32] l2
+in let l4 = List::fold [int32] [bool] (fun (acc:bool) -> fun (v:int32) -> acc && v > 0) true l
+in l,l1,l2,l3,l4
+  """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Tuple [ Ext(ValueExt(Choice1Of3(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
+                                                                                             Value.Primitive(Int32 -2)
+                                                                                             Value.Primitive(Int32 3) ]))))
+              Ext(ValueExt(Choice1Of3(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Bool true)
+                                                                                             Value.Primitive(Bool false)
+                                                                                             Value.Primitive(Bool true) ]))))
+              Ext(ValueExt(Choice1Of3(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
+                                                                                             Value.Primitive(Int32 3) ]))))
+              Value.Primitive(Int32 2)
+              Value.Primitive(Bool false) ] -> Assert.Pass()
+    | _ -> Assert.Fail($"Expected a tuple of two list values, got {value}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+
+
+
+[<Test>]
+let ``LangNext-Integration scoped function with closures succeeds`` () =
+  let program =
+    """
+  let x = 7
+  in let f = fun (a:int32) -> fun (b:int32) -> a + b + x
+  in f 5 6
+  """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive(Int32 18) -> Assert.Pass()
+    | _ -> Assert.Fail($"Expected a tuple of two list values, got {value}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+
+
+[<Test>]
+let ``LangNext-Integration union des with wildcard and ambiguous name succeeds`` () =
+  let program =
+    """
+type T = 
+| T of int32
+| CaseA of int32
+| CaseB of string
+| CaseC of bool
+
+in let t:T = CaseC false
+in match t with
+  | T (x -> x + 100)
+  | CaseC (b -> if b then 1 else 0)
+  | (* -> -1000)
+  """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive(Int32 0) -> Assert.Pass()
+    | _ -> Assert.Fail($"Expected 18, got {value}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+
+
+
+
+[<Test>]
+let ``LangNext-Integration list append succeeds`` () =
+  let program =
+    """
+let cons = List::Cons [string]
+in let nil = List::Nil [string] ()
+in let l1 = cons("hello", cons(" ", cons("world", nil)))
+in let l2 = cons("bonjour", cons(" ", cons("monde", nil)))
+in List::append [string] l1 l2
+  """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Ext(ValueExt(Choice1Of3(ListExt.ListValues(List.Model.ListValues.List [ Value.Primitive(String "hello")
+                                                                              Value.Primitive(String " ")
+                                                                              Value.Primitive(String "world")
+                                                                              Value.Primitive(String "bonjour")
+                                                                              Value.Primitive(String " ")
+                                                                              Value.Primitive(String "monde") ])))) ->
+      Assert.Pass()
+    | _ -> Assert.Fail($"Expected a list with the appended values, got {value}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+
+
+
+
+[<Test>]
+let ``LangNext-Integration same record field names disambiguate succesfully thanks to type annotations`` () =
+  let program =
+    """
+type T1 = {
+  A: int32;
+  B: string;
+  C: bool;
+}    
+
+in type T2 = {    
+  A: string;
+  B: int32;
+  C: bool;
+}
+
+in let a1:T1 = { A=10; B="hello"; C=true; }
+in let a2:T2 = { A="world"; B=20; C=false; }
+
+in let f = fun (x:T1) -> x.A
+in let x = f a1 + string::length (a1.B + "???")
+
+in x
+  """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive(Int32 18) -> Assert.Pass()
+    | _ -> Assert.Fail($"Expected 18, got {value}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+
+
+[<Test>]
+let ``LangNext-Integration sum and lambda cons and des with annotations`` () =
+  let program =
+    """
+let f = (fun (x:string + int32) -> match x with | 1Of2 (v -> string::length ("!!!" + v)) | 2Of2 (v -> v))
+in f (1Of2 "hello"), f (2Of2 10)
+  """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Tuple [ Value.Primitive(Int32 8); Value.Primitive(Int32 10) ] -> Assert.Pass()
+    | _ -> Assert.Fail($"Expected (8, 10), got {value}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+
+[<Test>]
+let ``LangNext-Integration tuple and lambda cons and des with annotations`` () =
+  let program =
+    """
+let f = (fun (x:int32 * string) -> x.1)
+in f (1, "hello")
+  """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive(Int32 1) -> Assert.Pass()
+    | _ -> Assert.Fail($"Expected 1, got {value}")
+
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+let PrimitiveOpTest (program: string, expectedValue: PrimitiveValue, errMsg: Value<TypeValue, ValueExt> -> string) =
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive res when res = expectedValue -> Assert.Pass()
+    | _ -> Assert.Fail(errMsg value)
+  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+
+[<Test>]
+let ``LangNext-Integration int32 literals work`` () =
+  let programs =
+    [ "let x = 42 in x", Int32 42, fun v -> $"Expected 42, got {v}"
+      "let x = -42 in x", Int32 -42, fun v -> $"Expected -42, got {v}" ]
+
+  programs
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration Int64 literals work`` () =
+  let programs =
+    [ "let x = 42l in x", Int64 42L, fun v -> $"Expected 42 (Int64), got {v}"
+      "let x = -42l in x", Int64 -42L, fun v -> $"Expected -42 (Int64), got {v}" ]
+
+  programs
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration Float32 literals work`` () =
+  let programs =
+    [ "let x = 94.53f in x", Float32 94.53f, fun v -> $"Expected 94.53f, got {v}"
+      "let x = -94.53f in x", Float32 -94.53f, fun v -> $"Expected -94.53f, got {v}" ]
+
+  programs
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration Float64 literals work`` () =
+  let programs =
+    [ "let x = 123456789.123d in x", Float64 123456789.123, fun v -> $"Expected 123456789.123, got {v}"
+      "let x = -123456789.123d in x", Float64 -123456789.123, fun v -> $"Expected -123456789.123, got {v}" ]
+
+  programs
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration Decimal literals work`` () =
+  let programs =
+    [ "let x = 12.123 in x", Decimal 12.123M, fun v -> $"Expected 12.123, got {v}"
+      "let x = -12.123 in x", Decimal -12.123M, fun v -> $"Expected -12.123, got {v}" ]
+
+  programs
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration Int32 operations work`` () =
+  let int32Ops =
+    [ "let x = 100 - 50 in x", Int32 50, fun v -> $"Expected 50, got {v}"
+      "let x = 100 * 2 in x", Int32 200, fun v -> $"Expected 200, got {v}"
+      "let x = 100 / 2 in x", Int32 50, fun v -> $"Expected 50, got {v}"
+      "let x = 100 % 3 in x", Int32 1, fun v -> $"Expected 1, got {v}"
+      "let x = 100 ^ 2 in x", Int32 10000, fun v -> $"Expected 10000, got {v}" ]
+
+  int32Ops
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration Int64 operations work`` () =
+  let int64Ops =
+    [ "let x = 100l - 50l in x", Int64 50L, fun v -> $"Expected 50, got {v}"
+      "let x = 100l * 2l in x", Int64 200L, fun v -> $"Expected 200, got {v}"
+      "let x = 100l / 2l in x", Int64 50L, fun v -> $"Expected 50, got {v}"
+      "let x = 100l % 3l in x", Int64 1L, fun v -> $"Expected 1, got {v}"
+      "let x = 100l ^ 2l in x", Int64 10000L, fun v -> $"Expected 10000, got {v}" ]
+
+  int64Ops
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration Float32 operations work`` () =
+  let float32Ops =
+    [ "let x = 10.0f - 5.0f in x", Float32 5.0f, fun v -> $"Expected 5.0f, got {v}"
+      "let x = 10.0f * 2.0f in x", Float32 20.0f, fun v -> $"Expected 20.0f, got {v}"
+      "let x = 10.0f / 2.0f in x", Float32 5.0f, fun v -> $"Expected 5.0f, got {v}"
+      "let x = 10.0f % 3.0f in x", Float32 1.0f, fun v -> $"Expected 1.0f, got {v}"
+      "let x = 10.0f ^ 2.0f in x", Float32 100.0f, fun v -> $"Expected 100.0f, got {v}" ]
+
+  float32Ops
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration Float64 operations work`` () =
+  let float64Ops =
+    [ "let x = 10.0d - 5.0d in x", Float64 5.0, fun v -> $"Expected 5.0, got {v}"
+      "let x = 10.0d * 2.0d in x", Float64 20.0, fun v -> $"Expected 20.0, got {v}"
+      "let x = 10.0d / 2.0d in x", Float64 5.0, fun v -> $"Expected 5.0, got {v}"
+      "let x = 10.0d % 3.0d in x", Float64 1.0, fun v -> $"Expected 1.0, got {v}"
+      "let x = 10.0d ^ 2.0d in x", Float64 100.0, fun v -> $"Expected 100.0, got {v}" ]
+
+  float64Ops
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration Decimal operations work`` () =
+  let decimalOps =
+    [ "let x = 10.0 - 5.0 in x", Decimal 5.0M, fun v -> $"Expected 5.0, got {v}"
+      "let x = 10.0 * 2.0 in x", Decimal 20.0M, fun v -> $"Expected 20.0, got {v}"
+      "let x = 10.0 / 2.0 in x", Decimal 5.0M, fun v -> $"Expected 5.0, got {v}"
+      "let x = 10.0 % 3.0 in x", Decimal 1.0M, fun v -> $"Expected 1.0, got {v}"
+      "let x = 10.0 ^ 2.0 in x", Decimal 100.0M, fun v -> $"Expected 100.0, got {v}" ]
+
+  decimalOps
+  |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))

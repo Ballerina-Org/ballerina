@@ -14,6 +14,7 @@
         <Compile Include="Type\Kind.fs" />
         <Compile Include="Type\Parameter.fs" />
         <Compile Include="Type\Identifier.fs" />
+        <Compile Include="Type\ResolvedIdentifier.fs" />
 
         <Compile Include="Types\TypeExpr\AutomaticSymbolCreation.fs" />
         <Compile Include="Types\TypeExpr\Union.fs" />
@@ -49,7 +50,6 @@
 
         <Compile Include="Terms\Primitive.fs" />
         <Compile Include="Terms\Expr\UnionDes.fs" />
-        <Compile Include="Terms\Expr\UnionCons.fs" />
         <Compile Include="Terms\Expr\TypeLet.fs" />
         <Compile Include="Terms\Expr\TypeLambda.fs" />
         <Compile Include="Terms\Expr\TypeApply.fs" />

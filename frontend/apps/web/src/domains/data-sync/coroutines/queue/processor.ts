@@ -27,9 +27,9 @@ export const QueueProcessor = (): Coroutine<
         });
       return workersToUpdateNow.map((k) => ({
         preprocess: k.dirtySetter("dirty but being processed"),
-        operation: k.operation.then(() => Co.Return("completed" as const)),
+        operation: k.operation.then(() => Co.Return({ kind: "completed" })),
         postprocess: (_) =>
-          _ == "completed"
+          _.kind == "completed"
             ? Co.GetState().then((current) =>
                 current.queue.count(
                   (mutation) => mutation.entityId == k.entityId,
@@ -38,7 +38,8 @@ export const QueueProcessor = (): Coroutine<
                   : Co.Return({}),
               )
             : Co.Return({}), // BasicFun<SynchronizationResult, Coroutine<Context & State, State, Unit>>
-        reenqueue: Co.SetState(DataSync().Updaters.Core.queue.add([v4(), k])),
+        reenqueue: (_) =>
+          Co.SetState(DataSync().Updaters.Core.queue.add([v4(), k])),
       }));
     },
   );

@@ -1,11 +1,12 @@
 ﻿module Ballerina.Data.Tests.VirtualFolders.Init
 
 open System.Linq
-open Ballerina.Data.VirtualFolders
+open Ballerina.VirtualFolders
+open Ballerina.VirtualFolders.Model
 open NUnit.Framework
 open FSharp.Data
 
-let json = JsonValue.Record [| "someKey", JsonValue.String "someValue" |]
+let json = JsonValue.Record [| "someKey", JsonValue.String "someValue" |] |> Json
 
 
 
@@ -14,65 +15,73 @@ let ``Init structure works`` () =
   let root =
     { Name = "Root"
       Path = []
+      Metadata = None
       Children =
         [ File
             { Name = "alone"
-              Size = 1
               Path = [ "alone" ]
-              Content = json }
+              Content = json
+              Metadata = None }
 
           Folder
             { Name = "A"
               Path = [ "A" ]
+              Metadata = None
               Children =
                 [ Folder
                     { Name = "A.1"
                       Path = [ "A"; "A.1" ]
+                      Metadata = None
                       Children =
                         [ Folder
                             { Name = "A.1.1"
                               Path = [ "A"; "A.1"; "A.1.1" ]
+                              Metadata = None
                               Children =
                                 [ Folder
                                     { Name = "A.1.2"
                                       Path = [ "A"; "A.1"; "A.1.2" ]
+                                      Metadata = None
                                       Children =
                                         [ Folder
                                             { Name = "A.1.2.3"
                                               Path = [ "A"; "A.1"; "A.1.2"; "A.1.2.3" ]
+                                              Metadata = None
                                               Children = [] }
                                           File
                                             { Name = "file_x"
-                                              Size = 1
                                               Path = [ "A"; "A.1"; "A.1.2"; "A.1.2.3"; "file_x" ]
+                                              Metadata = None
                                               Content = json } ] } ] } ] }
                   File
                     { Name = "file1-in-a"
-                      Size = 1
+                      Metadata = None
                       Path = [ "A"; "file1-in-a" ]
                       Content = json }
                   File
                     { Name = "file2-in-a"
-                      Size = 1
+                      Metadata = None
                       Path = [ "A"; "file2-in-a" ]
                       Content = json } ] }
 
           Folder
             { Name = "B"
               Path = [ "B" ]
+              Metadata = None
               Children =
                 [ Folder
                     { Name = "B.1"
                       Path = [ "B"; "B.1" ]
+                      Metadata = None
                       Children = [] }
                   File
                     { Name = "file1-in-b"
-                      Size = 1
+                      Metadata = None
                       Path = [ "B"; "file1-in-b" ]
                       Content = json } ] }
           File
             { Name = "alone2"
-              Size = 1
+              Metadata = None
               Path = [ "alone2" ]
               Content = json } ] }
 

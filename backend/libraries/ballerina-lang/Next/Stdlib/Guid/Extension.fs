@@ -4,7 +4,7 @@ namespace Ballerina.DSL.Next.StdLib.Guid
 module Extension =
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
-  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.Model
@@ -20,9 +20,10 @@ module Extension =
     (operationLens: PartialLens<'ext, GuidOperations<'ext>>)
     : OperationsExtension<'ext, GuidOperations<'ext>> =
 
-    let guidEqualId = Identifier.FullyQualified([ "Guid" ], "==")
+    let guidEqualId =
+      Identifier.FullyQualified([ "guid" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: Identifier * OperationExtension<'ext, GuidOperations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, GuidOperations<'ext>> =
       guidEqualId,
       { Type = TypeValue.CreateArrow(guidTypeValue, TypeValue.CreateArrow(guidTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -34,11 +35,21 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> GuidOperations.AsEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsGuid |> reader.OfSum
+              let! op =
+                op
+                |> GuidOperations.AsEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsGuid
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -48,9 +59,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let guidNotEqualId = Identifier.FullyQualified([ "Guid" ], "!=")
+    let guidNotEqualId =
+      Identifier.FullyQualified([ "guid" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: Identifier * OperationExtension<'ext, GuidOperations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, GuidOperations<'ext>> =
       guidNotEqualId,
       { Type = TypeValue.CreateArrow(guidTypeValue, TypeValue.CreateArrow(guidTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -62,11 +74,21 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> GuidOperations.AsNotEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsGuid |> reader.OfSum
+              let! op =
+                op
+                |> GuidOperations.AsNotEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsGuid
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application

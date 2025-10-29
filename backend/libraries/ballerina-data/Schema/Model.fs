@@ -3,6 +3,9 @@ namespace Ballerina.Data.Schema
 module Model =
   open Ballerina.Data.Arity.Model
   open Ballerina.DSL.Next.Terms.Model
+  open Ballerina.StdLib.OrderPreservingMap
+  open Ballerina.Cat.Collections.OrderedMap
+  open Ballerina.DSL.Next.Types
 
   type EntityName = { EntityName: string }
   type LookupName = { LookupName: string }
@@ -33,16 +36,16 @@ module Model =
     | UnionCase of string * Var
     | SumCase of int * Var
 
-  and Updater<'Type> =
+  and Updater<'Type, 'Id when 'Id: comparison> =
     { Path: List<UpdaterPathStep>
-      Condition: Expr<'Type>
-      Expr: Expr<'Type> }
+      Condition: Expr<'Type, 'Id>
+      Expr: Expr<'Type, 'Id> }
 
-  and EntityDescriptor<'Type> =
+  and EntityDescriptor<'Type, 'Id when 'Id: comparison> =
     { Type: 'Type
       Methods: Set<EntityMethod>
-      Updaters: List<Updater<'Type>>
-      Predicates: Map<string, Expr<'Type>> }
+      Updaters: List<Updater<'Type, 'Id>>
+      Predicates: Map<string, Expr<'Type, 'Id>> }
 
   and LookupDescriptor =
     { Source: EntityName
@@ -50,6 +53,7 @@ module Model =
       Forward: DirectedLookupDescriptor
       Backward: Option<LookupName * DirectedLookupDescriptor> }
 
-  type Schema<'Type> =
-    { Entities: Map<EntityName, EntityDescriptor<'Type>>
+  type Schema<'Type, 'Id when 'Id: comparison> =
+    { Types: OrderedMap<Identifier, 'Type>
+      Entities: Map<EntityName, EntityDescriptor<'Type, 'Id>>
       Lookups: Map<LookupName, LookupDescriptor> }

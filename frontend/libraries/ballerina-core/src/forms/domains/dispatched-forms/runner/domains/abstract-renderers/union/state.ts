@@ -12,6 +12,7 @@ import {
   Unit,
   CommonAbstractRendererState,
   CommonAbstractRendererViewOnlyReadonlyContext,
+  PredicateValue,
 } from "../../../../../../../../main";
 import { Map } from "immutable";
 
@@ -72,7 +73,9 @@ export type UnionAbstractRendererView<
     ExtraContext
   > &
     UnionAbstractRendererState &
-    CommonAbstractRendererViewOnlyReadonlyContext,
+    CommonAbstractRendererViewOnlyReadonlyContext & {
+      defaultCaseValues: Map<string, () => PredicateValue>;
+    },
   UnionAbstractRendererState,
   UnionAbstractRendererForeignMutationsExpected<Flags>,
   {

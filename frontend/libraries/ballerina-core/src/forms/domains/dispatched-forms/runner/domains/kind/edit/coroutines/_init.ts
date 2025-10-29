@@ -323,6 +323,14 @@ export const initCo = <
                   Flags,
                   CustomPresentationContext,
                   ExtraContext
+                >().Updaters.Core.formName(
+                  replaceWith(editFormLauncher.formName),
+                ),
+                DispatchEditFormLauncherState<
+                  T,
+                  Flags,
+                  CustomPresentationContext,
+                  ExtraContext
                 >().Updaters.Core.config(replaceWith(_.config)),
               ]);
           }),

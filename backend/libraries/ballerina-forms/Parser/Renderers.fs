@@ -319,10 +319,10 @@ module Renderers =
 
               return
                 MapRenderer
-                  {| Label = label
-                     Map = name
-                     Key = keyRenderer
-                     Value = valueRenderer |}
+                  { Label = label
+                    Map = name
+                    Key = keyRenderer
+                    Value = valueRenderer }
             }
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
         else
@@ -358,10 +358,10 @@ module Renderers =
 
               return
                 SumRenderer
-                  {| Sum = name
-                     Label = label
-                     Left = leftRenderer
-                     Right = rightRenderer |}
+                  { Sum = name
+                    Label = label
+                    Left = leftRenderer
+                    Right = rightRenderer }
             }
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
         else
@@ -395,10 +395,10 @@ module Renderers =
 
               let res =
                 OptionRenderer
-                  {| Label = label
-                     Option = name
-                     Some = someRenderer
-                     None = noneRenderer |}
+                  { Label = label
+                    Option = name
+                    Some = someRenderer
+                    None = noneRenderer }
 
               return res
             }
@@ -461,11 +461,11 @@ module Renderers =
 
               return
                 OneRenderer
-                  {| Label = label
-                     One = name
-                     OneApiId = oneApiId
-                     Details = details
-                     Preview = preview |}
+                  { Label = label
+                    One = name
+                    OneApiId = oneApiId
+                    Details = details
+                    Preview = preview }
             }
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
         else
@@ -496,9 +496,9 @@ module Renderers =
 
               return
                 ReadOnlyRenderer
-                  {| ReadOnly = name
-                     Label = label
-                     Value = valueRenderer |}
+                  { ReadOnly = name
+                    Label = label
+                    Value = valueRenderer }
             }
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
         else
@@ -540,10 +540,10 @@ module Renderers =
 
               return
                 ListRenderer
-                  {| Label = label
-                     List = name
-                     Element = elementRenderer
-                     MethodLabels = actionLabels |}
+                  { Label = label
+                    List = name
+                    Element = elementRenderer
+                    MethodLabels = actionLabels }
             }
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
         else
@@ -664,9 +664,9 @@ module Renderers =
             else
               return
                 TupleRenderer
-                  {| Label = label
-                     Tuple = name
-                     Elements = itemRenderers |}
+                  { Label = label
+                    Tuple = name
+                    Elements = itemRenderers }
           }
           |> state.MapError(Errors.WithPriority ErrorPriority.High)
       }
@@ -697,8 +697,8 @@ module Renderers =
           |> state.RunOption
 
         Renderer.RecordRenderer
-          {| Renderer = renderer
-             Fields = formFields |}
+          { Renderer = renderer
+            Fields = formFields }
       }
 
     static member ParseUnionRenderer
@@ -755,7 +755,7 @@ module Renderers =
                 |> state.Map(Map.ofSeq)
 
 
-              Renderer.UnionRenderer {| Renderer = renderer; Cases = cases |}
+              Renderer.UnionRenderer { Renderer = renderer; Cases = cases }
           }
           |> state.MapError(Errors.WithPriority ErrorPriority.High)
       }
@@ -861,6 +861,21 @@ module Renderers =
 
               let highlightedFilters = highlightedFilters |> Option.defaultWith (fun () -> [])
 
+              let! disabledColumnsJson =
+                fields
+                |> state.TryFindField "disabledColumns"
+                |> state.Catch
+                |> state.Map Sum.toOption
+                |> state.Map(Option.defaultWith (fun () -> JsonValue.Array [||]))
+
+              let! disabledColumns =
+                FormBody.ParseGroup
+                  primitivesExt
+                  exprParser
+                  "disabledColumns"
+                  (columns |> Map.map (fun _ c -> c.FieldConfig))
+                  disabledColumnsJson
+
               return
                 {| Columns = columns
                    RowTypeId = t.TypeId
@@ -869,7 +884,8 @@ module Renderers =
                    HighlightedFilters = highlightedFilters
                    Renderer = renderer
                    MethodLabels = actionLabels
-                   VisibleColumns = visibleColumns |}
+                   VisibleColumns = visibleColumns
+                   DisabledColumns = disabledColumns |}
                 |> FormBody.Table
           }
           |> state.MapError(Errors.WithPriority ErrorPriority.High)
@@ -925,6 +941,7 @@ module Renderers =
                           Map.ofSeq
                             [ "add", TableMethod.Add
                               "remove", TableMethod.Remove
+                              "removeAll", TableMethod.RemoveAll
                               "duplicate", TableMethod.Duplicate
                               "move", TableMethod.Move ]
                           |> Map.tryFindWithError k "TableMethod" k
@@ -1174,27 +1191,33 @@ module Renderers =
         let disabledJson = disabledJson |> Sum.toOption
         let! renderer = Renderer.Parse primitivesExt exprParser fields
 
-        let! visible =
-          visibleJson
-          |> Sum.toOption
-          |> Option.map (exprParser >> state.OfSum)
-          |> state.RunOption
+        match renderer with
+        // FIXME: This replicas a shortcoming of the frontend parser, can be removed once fixed
+        | Renderer.RecordRenderer _ ->
+          return!
+            state.Throw(Errors.Singleton """For record fields, record renderers must be wrapped in {"renderer": ...}""")
+        | _ ->
+          let! visible =
+            visibleJson
+            |> Sum.toOption
+            |> Option.map (exprParser >> state.OfSum)
+            |> state.RunOption
 
-        let visible = visible |> Option.defaultWith (fun () -> primitivesExt.ConstBool true)
+          let visible = visible |> Option.defaultWith (fun () -> primitivesExt.ConstBool true)
 
-        let! disabled = disabledJson |> Option.map (exprParser >> state.OfSum) |> state.RunOption
+          let! disabled = disabledJson |> Option.map (exprParser >> state.OfSum) |> state.RunOption
 
-        let fc =
-          { FieldName = fieldName
-            FieldId = Guid.CreateVersion7()
-            Label = label
-            Tooltip = tooltip
-            Details = details
-            Renderer = renderer
-            Visible = visible
-            Disabled = disabled }
+          let fc =
+            { FieldName = fieldName
+              FieldId = Guid.CreateVersion7()
+              Label = label
+              Tooltip = tooltip
+              Details = details
+              Renderer = renderer
+              Visible = visible
+              Disabled = disabled }
 
-        return fc
+          fc
       }
       |> state.WithErrorContext $"...when parsing field {fieldName}"
 

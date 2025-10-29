@@ -1,12 +1,16 @@
 ﻿namespace Ballerina.Data.Store
 
+open Ballerina.VirtualFolders.Model
+
 module Model =
 
   open System
   open Ballerina.Collections.Sum
-  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
   open Ballerina.State.WithError
-  open Ballerina.DSL.Next.Types.Eval
+  open Ballerina.DSL.Next.Types.TypeChecker.Eval
+  open Ballerina.DSL.Next.Types.TypeChecker.Model
+  open Ballerina.DSL.Next.Types.TypeChecker
   open Ballerina.Data.Spec.Model
   open Ballerina.Data.Store.Api.Model
   open Ballerina.Data.Schema.Model
@@ -15,9 +19,7 @@ module Model =
 
   type TenantId = TenantId of Guid
 
-  type Seeds = SpecData<TypeValue, ValueExt>
-
-  type Seeder = Schema<TypeValue> -> Sum<Seeds, Errors>
+  type Seeder = Schema<TypeValue, ResolvedIdentifier> -> Sum<SpecData<TypeValue, ValueExt>, Errors>
 
   type TenantStore = { ListTenants: unit -> TenantId list }
 
@@ -30,10 +32,10 @@ module Model =
         TenantId
           -> SpecName
           -> Seeder
-          -> TypeExprEvalState
-          -> State<Seeds, TypeExprEvalContext, TypeExprEvalState, Errors>
+          -> VirtualPath option
+          -> State<SpecData<TypeValue, ValueExt>, TypeExprEvalContext, TypeExprEvalState, Errors>
       SeedSpec: TenantId * SpecName * SpecData<TypeValue, ValueExt> -> Sum<unit, Errors>
-      GetSeeds: TenantId -> SpecName -> Sum<Seeds, Errors> }
+      GetSeeds: TenantId -> SpecName -> Sum<SpecData<TypeValue, ValueExt>, Errors> }
 
   and Store =
     { Specs: SpecsStore

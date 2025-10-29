@@ -8,6 +8,11 @@ open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.DSL.Next.EquivalenceClasses
 open Ballerina.DSL.Next.Unification
 open Ballerina.State.WithError
+open Ballerina.LocalizedErrors
+open Ballerina.DSL.Next.Types.TypeChecker.Eval
+open Ballerina.DSL.Next.Types.TypeChecker.Model
+open Ballerina.DSL.Next.Types.TypeChecker.Patterns
+open Ballerina.DSL.Next.Types.TypeChecker
 
 [<Test>]
 let ``LangNext-Instantiate straightforward var to primitive`` () =
@@ -21,7 +26,7 @@ let ``LangNext-Instantiate straightforward var to primitive`` () =
   let program = TypeValue.Var a
 
   let actual =
-    (TypeValue.Instantiate(program).run (TypeInstantiateContext.Empty, classes))
+    ((TypeValue.Instantiate Location.Unknown program).run (TypeInstantiateContext.Empty, classes))
 
   let expected = TypeValue.CreateInt32()
 
@@ -41,7 +46,7 @@ let ``LangNext-Instantiate var nested inside generics to primitive`` () =
   let program = TypeValue.Var a |> TypeValue.CreateSet
 
   let actual =
-    (TypeValue.Instantiate(program).run (TypeInstantiateContext.Empty, classes))
+    ((TypeValue.Instantiate Location.Unknown program).run (TypeInstantiateContext.Empty, classes))
 
   let expected = TypeValue.CreateInt32() |> TypeValue.CreateSet
 
@@ -64,7 +69,7 @@ let ``LangNext-Instantiate var nested inside generics via other bound var to pri
   let program = TypeValue.Var a |> TypeValue.CreateSet
 
   let actual =
-    (TypeValue.Instantiate(program).run (TypeInstantiateContext.Empty, classes))
+    ((TypeValue.Instantiate Location.Unknown program).run (TypeInstantiateContext.Empty, classes))
 
   let expected =
     TypeValue.CreateString() |> TypeValue.CreateSet |> TypeValue.CreateSet
@@ -89,7 +94,7 @@ let ``LangNext-Instantiate var nested inside generics via other bound and aliase
   let program = TypeValue.Var a |> TypeValue.CreateSet |> TypeValue.CreateSet
 
   let actual =
-    (TypeValue.Instantiate(program).run (TypeInstantiateContext.Empty, classes))
+    ((TypeValue.Instantiate Location.Unknown program).run (TypeInstantiateContext.Empty, classes))
 
   let expected =
     TypeValue.CreateString()

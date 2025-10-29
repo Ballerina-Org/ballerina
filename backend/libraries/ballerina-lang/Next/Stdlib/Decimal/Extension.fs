@@ -4,7 +4,7 @@ namespace Ballerina.DSL.Next.StdLib.Decimal
 module Extension =
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
-  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.Model
@@ -23,9 +23,10 @@ module Extension =
     (operationLens: PartialLens<'ext, DecimalOperations<'ext>>)
     : OperationsExtension<'ext, DecimalOperations<'ext>> =
 
-    let decimalPlusId = Identifier.FullyQualified([ "Decimal" ], "+")
+    let decimalPlusId =
+      Identifier.FullyQualified([ "decimal" ], "+") |> TypeCheckScope.Empty.Resolve
 
-    let plusOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let plusOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalPlusId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue))
         Kind = Kind.Star
@@ -37,11 +38,21 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsPlus |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsPlus
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -52,30 +63,48 @@ module Extension =
             } }
 
 
-    let decimalMinusId = Identifier.FullyQualified([ "Decimal" ], "-")
+    let decimalMinusId =
+      Identifier.FullyQualified([ "decimal" ], "-") |> TypeCheckScope.Empty.Resolve
 
-    let minusOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let minusOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalMinusId,
-      { Type = TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue)
+      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue))
         Kind = Kind.Star
-        Operation = DecimalOperations.Minus {| v1 = () |}
+        Operation = DecimalOperations.Minus {| v1 = None |}
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
             | DecimalOperations.Minus v -> Some(DecimalOperations.Minus v)
             | _ -> None)
         Apply =
-          fun (_, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsMinus
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Decimal(-v))
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              match op with
+              | None -> // the closure is empty - first step in the application
+                return DecimalOperations.Minus({| v1 = Some v |}) |> operationLens.Set |> Ext
+              | Some vClosure -> // the closure has the first operand - second step in the application
+
+                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Decimal(vClosure - v))
             } }
 
-    let decimalDivideId = Identifier.FullyQualified([ "Decimal" ], "/")
+    let decimalDivideId =
+      Identifier.FullyQualified([ "decimal" ], "/") |> TypeCheckScope.Empty.Resolve
 
-    let divideOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let divideOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalDivideId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue))
         Kind = Kind.Star
@@ -86,11 +115,21 @@ module Extension =
             | DecimalOperations.Divide v -> Some(DecimalOperations.Divide v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsDivide |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsDivide
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -100,9 +139,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Decimal(vClosure / v))
             } }
 
-    let decimalPowerId = Identifier.FullyQualified([ "Decimal" ], "**")
+    let decimalPowerId =
+      Identifier.FullyQualified([ "decimal" ], "**") |> TypeCheckScope.Empty.Resolve
 
-    let powerOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let powerOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalPowerId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(int32TypeValue, decimalTypeValue))
         Kind = Kind.Star
@@ -114,23 +154,39 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsPower |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsPower
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+                let! v =
+                  v
+                  |> PrimitiveValue.AsDecimal
+                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> reader.OfSum
+
                 return DecimalOperations.Power({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
-                let! v = v |> PrimitiveValue.AsInt32 |> reader.OfSum
+                let! v =
+                  v
+                  |> PrimitiveValue.AsInt32
+                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> reader.OfSum
+
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Decimal(pown vClosure v))
             } }
 
-    let decimalModId = Identifier.FullyQualified([ "Decimal" ], "%")
+    let decimalModId =
+      Identifier.FullyQualified([ "decimal" ], "%") |> TypeCheckScope.Empty.Resolve
 
-    let modOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let modOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalModId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue))
         Kind = Kind.Star
@@ -141,11 +197,21 @@ module Extension =
             | DecimalOperations.Mod v -> Some(DecimalOperations.Mod v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsMod |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsMod
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -155,9 +221,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Decimal(vClosure % v))
             } }
 
-    let decimalEqualId = Identifier.FullyQualified([ "Decimal" ], "==")
+    let decimalEqualId =
+      Identifier.FullyQualified([ "decimal" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalEqualId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -168,11 +235,21 @@ module Extension =
             | DecimalOperations.Equal v -> Some(DecimalOperations.Equal v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -182,9 +259,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let decimalNotEqualId = Identifier.FullyQualified([ "Decimal" ], "!=")
+    let decimalNotEqualId =
+      Identifier.FullyQualified([ "decimal" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalNotEqualId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -195,11 +273,21 @@ module Extension =
             | DecimalOperations.NotEqual v -> Some(DecimalOperations.NotEqual v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsNotEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsNotEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -209,9 +297,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
-    let decimalGreaterThanId = Identifier.FullyQualified([ "Decimal" ], ">")
+    let decimalGreaterThanId =
+      Identifier.FullyQualified([ "decimal" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalGreaterThanId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -222,11 +311,21 @@ module Extension =
             | DecimalOperations.GreaterThan v -> Some(DecimalOperations.GreaterThan v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsGreaterThan |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsGreaterThan
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -236,9 +335,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
-    let decimalGreaterThanOrEqualId = Identifier.FullyQualified([ "Decimal" ], ">=")
+    let decimalGreaterThanOrEqualId =
+      Identifier.FullyQualified([ "decimal" ], ">=") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalGreaterThanOrEqualId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -249,11 +349,21 @@ module Extension =
             | DecimalOperations.GreaterThanOrEqual v -> Some(DecimalOperations.GreaterThanOrEqual v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsGreaterThanOrEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsGreaterThanOrEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -266,9 +376,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
-    let decimalLessThanId = Identifier.FullyQualified([ "Decimal" ], "<")
+    let decimalLessThanId =
+      Identifier.FullyQualified([ "decimal" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalLessThanId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -279,11 +390,21 @@ module Extension =
             | DecimalOperations.LessThan v -> Some(DecimalOperations.LessThan v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsLessThan |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsLessThan
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -293,9 +414,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
-    let decimalLessThanOrEqualId = Identifier.FullyQualified([ "Decimal" ], "<=")
+    let decimalLessThanOrEqualId =
+      Identifier.FullyQualified([ "decimal" ], "<=") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalLessThanOrEqualId,
       { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -306,11 +428,21 @@ module Extension =
             | DecimalOperations.LessThanOrEqual v -> Some(DecimalOperations.LessThanOrEqual v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> DecimalOperations.AsLessThanOrEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsDecimal |> reader.OfSum
+              let! op =
+                op
+                |> DecimalOperations.AsLessThanOrEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application

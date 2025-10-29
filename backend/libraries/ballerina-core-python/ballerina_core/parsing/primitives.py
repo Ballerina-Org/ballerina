@@ -69,13 +69,13 @@ def bool_from_json(value: Json) -> Sum[ParsingError, bool]:
             return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
 
 
-def float32_to_json(value: Decimal) -> Json:
-    return {DISCRIMINATOR_KEY: "float32", VALUE_KEY: str(value)}
+def decimal_to_json(value: Decimal) -> Json:
+    return {DISCRIMINATOR_KEY: "decimal", VALUE_KEY: str(value)}
 
 
-def float32_from_json(value: Json) -> Sum[ParsingError, Decimal]:
+def decimal_from_json(value: Json) -> Sum[ParsingError, Decimal]:
     match value:
-        case {"discriminator": "float32", "value": float_value}:
+        case {"discriminator": "decimal", "value": float_value}:
             match float_value:
                 case str():
                     try:

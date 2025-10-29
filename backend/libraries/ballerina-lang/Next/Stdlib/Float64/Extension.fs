@@ -4,7 +4,7 @@ namespace Ballerina.DSL.Next.StdLib.Float64
 module Extension =
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
-  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.Model
@@ -21,9 +21,10 @@ module Extension =
   let Float64Extension<'ext>
     (operationLens: PartialLens<'ext, Float64Operations<'ext>>)
     : OperationsExtension<'ext, Float64Operations<'ext>> =
-    let float64PlusId = Identifier.FullyQualified([ "Float64" ], "+")
+    let float64PlusId =
+      Identifier.FullyQualified([ "float64" ], "+") |> TypeCheckScope.Empty.Resolve
 
-    let plusOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let plusOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64PlusId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, float64TypeValue))
         Kind = Kind.Star
@@ -34,11 +35,21 @@ module Extension =
             | Float64Operations.Plus v -> Some(Float64Operations.Plus v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsPlus |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsPlus
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -48,30 +59,47 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(vClosure + v))
             } }
 
-    let float64MinusId = Identifier.FullyQualified([ "Float64" ], "-")
+    let float64MinusId =
+      Identifier.FullyQualified([ "float64" ], "-") |> TypeCheckScope.Empty.Resolve
 
-    let minusOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let minusOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64MinusId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, float64TypeValue))
         Kind = Kind.Star
-        Operation = Float64Operations.Minus {| v1 = () |}
+        Operation = Float64Operations.Minus {| v1 = None |}
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
             | Float64Operations.Minus v -> Some(Float64Operations.Minus v)
             | _ -> None)
         Apply =
-          fun (_, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsMinus
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(-v))
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              match op with
+              | None -> // the closure is empty - first step in the application
+                return Float64Operations.Minus({| v1 = Some v |}) |> operationLens.Set |> Ext
+              | Some vClosure -> // the closure has the first operand - second step in the application
+                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(vClosure - v))
             } }
 
-    let float64DivideId = Identifier.FullyQualified([ "Float64" ], "/")
+    let float64DivideId =
+      Identifier.FullyQualified([ "float64" ], "/") |> TypeCheckScope.Empty.Resolve
 
-    let divideOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let divideOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64DivideId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, float64TypeValue))
         Kind = Kind.Star
@@ -82,11 +110,21 @@ module Extension =
             | Float64Operations.Divide v -> Some(Float64Operations.Divide v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsDivide |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsDivide
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -96,9 +134,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(vClosure / v))
             } }
 
-    let float64PowerId = Identifier.FullyQualified([ "Float64" ], "**")
+    let float64PowerId =
+      Identifier.FullyQualified([ "float64" ], "**") |> TypeCheckScope.Empty.Resolve
 
-    let powerOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let powerOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64PowerId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, int32TypeValue))
         Kind = Kind.Star
@@ -110,23 +149,39 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsPower |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsPower
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+                let! v =
+                  v
+                  |> PrimitiveValue.AsFloat64
+                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> reader.OfSum
+
                 return Float64Operations.Power({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
-                let! v = v |> PrimitiveValue.AsInt32 |> reader.OfSum
+                let! v =
+                  v
+                  |> PrimitiveValue.AsInt32
+                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> reader.OfSum
+
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(pown vClosure v))
             } }
 
-    let float64ModId = Identifier.FullyQualified([ "Float64" ], "%")
+    let float64ModId =
+      Identifier.FullyQualified([ "float64" ], "%") |> TypeCheckScope.Empty.Resolve
 
-    let modOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let modOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64ModId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, float64TypeValue))
         Kind = Kind.Star
@@ -137,11 +192,21 @@ module Extension =
             | Float64Operations.Mod v -> Some(Float64Operations.Mod v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsMod |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsMod
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -151,9 +216,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(vClosure % v))
             } }
 
-    let float64EqualId = Identifier.FullyQualified([ "Float64" ], "==")
+    let float64EqualId =
+      Identifier.FullyQualified([ "float64" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64EqualId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -164,11 +230,21 @@ module Extension =
             | Float64Operations.Equal v -> Some(Float64Operations.Equal v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -178,9 +254,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
-    let float64NotEqualId = Identifier.FullyQualified([ "Float64" ], "!=")
+    let float64NotEqualId =
+      Identifier.FullyQualified([ "float64" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64NotEqualId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -191,11 +268,21 @@ module Extension =
             | Float64Operations.NotEqual v -> Some(Float64Operations.NotEqual v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsNotEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsNotEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -205,9 +292,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
-    let float64GreaterThanId = Identifier.FullyQualified([ "Float64" ], ">")
+    let float64GreaterThanId =
+      Identifier.FullyQualified([ "float64" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64GreaterThanId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -218,11 +306,21 @@ module Extension =
             | Float64Operations.GreaterThan v -> Some(Float64Operations.GreaterThan v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsGreaterThan |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsGreaterThan
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -232,9 +330,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
-    let float64GreaterThanOrEqualId = Identifier.FullyQualified([ "Float64" ], ">=")
+    let float64GreaterThanOrEqualId =
+      Identifier.FullyQualified([ "float64" ], ">=") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOrEqualOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64GreaterThanOrEqualId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -245,11 +344,21 @@ module Extension =
             | Float64Operations.GreaterThanOrEqual v -> Some(Float64Operations.GreaterThanOrEqual v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsGreaterThanOrEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsGreaterThanOrEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -262,9 +371,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
-    let float64LessThanId = Identifier.FullyQualified([ "Float64" ], "<")
+    let float64LessThanId =
+      Identifier.FullyQualified([ "float64" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64LessThanId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -275,11 +385,21 @@ module Extension =
             | Float64Operations.LessThan v -> Some(Float64Operations.LessThan v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsLessThan |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsLessThan
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
@@ -289,9 +409,10 @@ module Extension =
                 return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
-    let float64LessThanOrEqualId = Identifier.FullyQualified([ "Float64" ], "<=")
+    let float64LessThanOrEqualId =
+      Identifier.FullyQualified([ "float64" ], "<=") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOrEqualOperation: Identifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
       float64LessThanOrEqualId,
       { Type = TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -302,11 +423,21 @@ module Extension =
             | Float64Operations.LessThanOrEqual v -> Some(Float64Operations.LessThanOrEqual v)
             | _ -> None)
         Apply =
-          fun (op, v) ->
+          fun loc0 (op, v) ->
             reader {
-              let! op = op |> Float64Operations.AsLessThanOrEqual |> reader.OfSum
-              let! v = v |> Value.AsPrimitive |> reader.OfSum
-              let! v = v |> PrimitiveValue.AsFloat64 |> reader.OfSum
+              let! op =
+                op
+                |> Float64Operations.AsLessThanOrEqual
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application

@@ -11,11 +11,12 @@ module TupleCons =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.DSL.Next.Terms.Patterns
 
   let private discriminator = "tuple-cons"
 
-  type Expr<'T> with
-    static member FromJsonTupleCons (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+  type Expr<'T, 'Id when 'Id: comparison> with
+    static member FromJsonTupleCons (fromRootJson: ExprParser<'T, 'Id>) (value: JsonValue) : ExprParserReader<'T, 'Id> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun elementsJson ->
         reader {
           let! elements = elementsJson |> JsonValue.AsArray |> reader.OfSum
@@ -23,7 +24,10 @@ module TupleCons =
           return Expr.TupleCons(elements)
         })
 
-    static member ToJsonTupleCons (rootToJson: ExprEncoder<'T>) (tuple: List<Expr<'T>>) : ExprEncoderReader<'T> =
+    static member ToJsonTupleCons
+      (rootToJson: ExprEncoder<'T, 'Id>)
+      (tuple: List<Expr<'T, 'Id>>)
+      : ExprEncoderReader<'T, 'Id> =
       tuple
       |> List.map rootToJson
       |> reader.All

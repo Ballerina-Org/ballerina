@@ -1,8 +1,10 @@
-namespace Ballerina.Data.Json
+namespace Ballerina.Data.Schema
 
-open Ballerina.Data.Schema.Model
+open Ballerina.VirtualFolders
+open Ballerina.VirtualFolders.Interactions
+open Ballerina.VirtualFolders.Operations
 
-module Schema =
+module Json =
 
   open Ballerina.Reader.WithError
   open Ballerina.Collections.Sum
@@ -13,6 +15,15 @@ module Schema =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Json
   open Ballerina.DSL.Next.Json
+  open Ballerina.StdLib.OrderPreservingMap
+  open Ballerina.Cat.Collections.OrderedMap
+  open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.DSL.Next.Types.Json
+  open Ballerina.Data.Schema.Model
+  open Ballerina.VirtualFolders.Model
+  open Ballerina.VirtualFolders.Patterns
+  open Ballerina.DSL.Next.Types
 
   type EntityMethod with
     static member FromJson(jsonValue: JsonValue) : Sum<EntityMethod, Errors> =
@@ -76,8 +87,10 @@ module Schema =
           [| JsonValue.String "sumCase"
              JsonValue.Array [| JsonValue.Number(decimal index); JsonValue.String var.Name |] |]
 
-  type Updater<'Type> with
-    static member FromJson(jsonValue: JsonValue) : Reader<Updater<'Type>, JsonParser<'Type>, Errors> =
+  type Updater<'Type, 'Id when 'Id: comparison> with
+    static member FromJson
+      (jsonValue: JsonValue)
+      : Reader<Updater<'Type, 'Id>, JsonParser<'Type> * JsonParser<'Id>, Errors> =
       reader {
         let! path, condition, expr = jsonValue |> JsonValue.AsTriple |> reader.OfSum
         let! path = path |> JsonValue.AsArray |> reader.OfSum
@@ -91,7 +104,9 @@ module Schema =
             Updater.Expr = expr }
       }
 
-    static member ToJson(updater: Updater<'Type>) : Reader<JsonValue, JsonEncoder<'Type>, Errors> =
+    static member ToJson
+      (updater: Updater<'Type, 'Id>)
+      : Reader<JsonValue, JsonEncoder<'Type> * JsonEncoder<'Id>, Errors> =
       let pathJson =
         updater.Path
         |> Seq.toArray
@@ -128,12 +143,14 @@ module Schema =
 
   type JsonParser<'T> = JsonValue -> Sum<'T, Errors>
 
-  type EntityDescriptor<'T> with
-    static member FromJson(jsonValue: JsonValue) : Reader<EntityDescriptor<'T>, JsonParser<'T>, Errors> =
+  type EntityDescriptor<'T, 'Id when 'Id: comparison> with
+    static member FromJson
+      (jsonValue: JsonValue)
+      : Reader<EntityDescriptor<'T, 'Id>, JsonParser<'T> * JsonParser<'Id>, Errors> =
       reader {
         let! jsonValue = jsonValue |> JsonValue.AsRecordMap |> reader.OfSum
         let! typeValue = jsonValue |> Map.tryFindWithError "type" "entity" "type" |> reader.OfSum
-        let! ctx = reader.GetContext()
+        let! ctx, _ = reader.GetContext()
         let! typeValue = typeValue |> ctx |> reader.OfSum
 
         let! methods = jsonValue |> Map.tryFindWithError "methods" "entity" "methods" |> reader.OfSum
@@ -148,7 +165,7 @@ module Schema =
 
         let! updaters = jsonValue |> Map.tryFindWithError "updaters" "entity" "updaters" |> reader.OfSum
         let! updaters = updaters |> JsonValue.AsArray |> reader.OfSum
-        let! updaters = updaters |> Seq.map Updater<'T>.FromJson |> reader.All
+        let! updaters = updaters |> Seq.map Updater<'T, 'Id>.FromJson |> reader.All
 
         let! predicates =
           jsonValue
@@ -165,15 +182,17 @@ module Schema =
             Predicates = predicates }
       }
 
-    static member ToJson(entity: EntityDescriptor<'T>) : Reader<JsonValue, JsonEncoder<'T>, Errors> =
+    static member ToJson
+      (entity: EntityDescriptor<'T, 'Id>)
+      : Reader<JsonValue, JsonEncoder<'T> * JsonEncoder<'Id>, Errors> =
       reader {
-        let! ctx = reader.GetContext()
+        let! ctx, _ = reader.GetContext()
         let typeJson = entity.Type |> ctx
 
         let methodsJson =
           entity.Methods |> Seq.map EntityMethod.ToJson |> Seq.toArray |> JsonValue.Array
 
-        let! updatersJson = entity.Updaters |> Seq.map Updater<'T>.ToJson |> reader.All
+        let! updatersJson = entity.Updaters |> Seq.map Updater<'T, 'Id>.ToJson |> reader.All
 
         let! predicatesJson = entity.Predicates |> Map.map (fun _ -> Expr.ToJson) |> reader.AllMap
 
@@ -285,8 +304,8 @@ module Schema =
            "forward", forwardJson
            "backward", backwardJson |]
 
-  type Schema<'T> with
-    static member FromJson(jsonValue: JsonValue) : Reader<Schema<'T>, JsonParser<'T>, Errors> =
+  type Schema<'T, 'Id when 'Id: comparison> with
+    static member FromJson(jsonValue: JsonValue) : Reader<Schema<'T, 'Id>, JsonParser<'T> * JsonParser<'Id>, Errors> =
       reader {
         let! jsonValue = jsonValue |> JsonValue.AsRecordMap |> reader.OfSum
 
@@ -312,7 +331,7 @@ module Schema =
           entities
           |> Map.map (fun _ entityJson ->
             reader {
-              let! entityDescriptor = EntityDescriptor<'T>.FromJson entityJson
+              let! entityDescriptor = EntityDescriptor<'T, 'Id>.FromJson entityJson
               return entityDescriptor
             })
           |> reader.AllMap
@@ -327,17 +346,31 @@ module Schema =
           |> sum.AllMap
           |> reader.OfSum
 
+
+        let! types = jsonValue |> Map.tryFindWithError "types" "root" "types" |> reader.OfSum
+        let! types = JsonValue.AsRecord types |> reader.OfSum
+
+        let! ctx, _ = reader.GetContext()
+
+        let! types =
+          types
+          |> Array.toList
+          |> List.map (fun (k, v) -> ctx v |> sum.Map(fun t -> Identifier.LocalScope k, t))
+          |> sum.All
+          |> reader.OfSum
+
         return
-          { Entities = entitiesMap
+          { Types = OrderedMap.ofList types
+            Entities = entitiesMap
             Lookups = lookupsMap }
       }
 
-    static member ToJson(schema: Schema<'T>) : Reader<JsonValue, JsonEncoder<'T>, Errors> =
+    static member ToJson(schema: Schema<'T, 'Id>) : Reader<JsonValue, JsonEncoder<'T> * JsonEncoder<'Id>, Errors> =
 
       reader {
         let! entitiesJson =
           schema.Entities
-          |> Map.map (fun _ -> EntityDescriptor<'T>.ToJson)
+          |> Map.map (fun _ -> EntityDescriptor<'T, 'Id>.ToJson)
           |> reader.AllMap
 
         let lookupsJson =
@@ -347,12 +380,68 @@ module Schema =
           |> Array.map (fun (k, v) -> k.LookupName, v)
           |> JsonValue.Record
 
+        let! ctx, _ = reader.GetContext()
+
+        let typesJon =
+          schema.Types
+          |> OrderedMap.map (fun _k -> ctx)
+          |> OrderedMap.toArray
+          |> Array.map (fun (idf, v) -> idf.LocalName, v)
+
         return
           JsonValue.Record
-            [| "entities",
+            [| "types", JsonValue.Record typesJon
+               "entities",
                entitiesJson
                |> Map.toArray
                |> Array.map (fun (k, v) -> k.EntityName, v)
                |> JsonValue.Record
                "lookups", lookupsJson |]
+      }
+
+    static member FromJsonVirtualFolder
+      (variant: WorkspaceVariant)
+      (root: FolderNode)
+      : Sum<Schema<TypeExpr, Identifier>, Errors> =
+      sum {
+        let! merged =
+          getWellKnownFile (Folder root) Merged
+          |> sum.OfOption(Errors.Singleton "Attempt to get merged spec failed")
+
+        let! schemaJson =
+          match variant with
+          | Compose ->
+            sum {
+              let! content = FileContent.AsJson merged.Content
+              let! r = JsonValue.AsRecord content
+              return! r |> Map.ofArray |> Map.tryFindWithError "schema" "api spec" "schema"
+            }
+          | Explore(_split, path) when Transient.has path ->
+            sum {
+              let path = Transient.value path
+              let schemaPath = withFileSuffix "_schema" path.Value
+              let typesPath = withFileSuffix "_typesV2" path.Value
+
+              let! schemaContent =
+                tryFind schemaPath (Folder root)
+                |> sum.OfOption(Errors.Singleton $"Can't evaluate path {path} in vfs")
+
+              let! schemaFile = VfsNode.AsFile schemaContent
+              let! schemaJson = FileContent.AsJson schemaFile.Content
+
+              let! typesContent =
+                tryFind typesPath (Folder root)
+                |> sum.OfOption(Errors.Singleton $"Can't evaluate path {path} in vfs")
+
+              let! typesFile = VfsNode.AsFile typesContent
+              let! typesJson = FileContent.AsJson typesFile.Content
+
+              let! schema = JsonValue.AsRecordMap schemaJson
+              let schema = Map.add "types" typesJson schema
+              return JsonValue.Record(schema |> Map.toArray)
+            }
+          | Explore(_, _path) -> sum.Throw(Errors.Singleton $"Missing path in exploring vfs")
+
+        let! schema = Schema.FromJson schemaJson |> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
+        return schema
       }

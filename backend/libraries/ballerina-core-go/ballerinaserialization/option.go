@@ -7,14 +7,14 @@ import (
 )
 
 func OptionSerializer[T any](serializer Serializer[T]) Serializer[ballerina.Option[T]] {
-	return withContext("on option", func(value ballerina.Option[T]) ballerina.Sum[error, json.RawMessage] {
+	return WithContext("on option", func(value ballerina.Option[T]) ballerina.Sum[error, json.RawMessage] {
 		return SumSerializer(UnitSerializer, serializer)(value.Sum)
 	})
 }
 
 func OptionDeserializer[T any](deserializer Deserializer[T]) Deserializer[ballerina.Option[T]] {
 	sumDeserializer := SumDeserializer(UnitDeserializer, deserializer)
-	return withContext(
+	return WithContext(
 		"on option",
 		func(data json.RawMessage) ballerina.Sum[error, ballerina.Option[T]] {
 			return ballerina.MapRight(

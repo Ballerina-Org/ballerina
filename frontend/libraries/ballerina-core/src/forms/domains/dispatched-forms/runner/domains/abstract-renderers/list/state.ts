@@ -7,9 +7,11 @@ import {
   CommonAbstractRendererState,
   CommonAbstractRendererViewOnlyReadonlyContext,
   DispatchCommonFormState,
+  DispatchDelta,
   DispatchOnChange,
   ListType,
   PredicateValue,
+  SimpleCallback,
   ValueCallbackWithOptionalFlags,
   ValueUnit,
   VoidCallbackWithOptionalFlags,
@@ -17,7 +19,10 @@ import {
 import { Unit } from "../../../../../../../fun/domains/unit/state";
 import { Template } from "../../../../../../../template/state";
 import { View } from "../../../../../../../template/state";
-import { simpleUpdater } from "../../../../../../../fun/domains/updater/domains/simpleUpdater/state";
+import {
+  simpleUpdater,
+  simpleUpdaterWithChildren,
+} from "../../../../../../../fun/domains/updater/domains/simpleUpdater/state";
 import { ValueTuple } from "../../../../../../../../main";
 
 export type ListAbstractRendererReadonlyContext<
@@ -32,6 +37,9 @@ export type ListAbstractRendererReadonlyContext<
 
 export type ListAbstractRendererState = CommonAbstractRendererState & {
   elementFormStates: Map<number, CommonAbstractRendererState>;
+  customFormState: {
+    applyToAll: boolean;
+  };
 };
 
 export const ListAbstractRendererState = {
@@ -45,12 +53,20 @@ export const ListAbstractRendererState = {
     ): ListAbstractRendererState => ({
       ...CommonAbstractRendererState.Default(),
       elementFormStates,
+      customFormState: {
+        applyToAll: false,
+      },
     }),
   },
   Updaters: {
     Core: {
       ...simpleUpdater<ListAbstractRendererState>()("commonFormState"),
       ...simpleUpdater<ListAbstractRendererState>()("elementFormStates"),
+      ...simpleUpdaterWithChildren<ListAbstractRendererState>()({
+        ...simpleUpdater<ListAbstractRendererState["customFormState"]>()(
+          "applyToAll",
+        ),
+      })("customFormState"),
     },
     Template: {},
   },
@@ -69,6 +85,9 @@ export type ListAbstractRendererViewForeignMutationsExpected<Flags> = {
   move?: (elementIndex: number, to: number, flags: Flags | undefined) => void;
   duplicate?: ValueCallbackWithOptionalFlags<number, Flags>;
   insert?: ValueCallbackWithOptionalFlags<number, Flags>;
+  setApplyToAll: SimpleCallback<boolean>;
+  applyToAll: ValueCallbackWithOptionalFlags<DispatchDelta<Flags>, Flags>;
+  removeAll?: VoidCallbackWithOptionalFlags<Flags>;
 };
 
 export type ListAbstractRendererView<

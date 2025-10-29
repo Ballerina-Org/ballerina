@@ -10,11 +10,12 @@ module If =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.DSL.Next.Terms.Patterns
 
   let private discriminator = "if"
 
-  type Expr<'T> with
-    static member FromJsonIf (fromRootJson: ExprParser<'T>) (value: JsonValue) : ExprParserReader<'T> =
+  type Expr<'T, 'Id when 'Id: comparison> with
+    static member FromJsonIf (fromRootJson: ExprParser<'T, 'Id>) (value: JsonValue) : ExprParserReader<'T, 'Id> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun ifJson ->
         reader {
           let! cond, thenBranch, elseBranch = ifJson |> JsonValue.AsTriple |> reader.OfSum
@@ -25,11 +26,11 @@ module If =
         })
 
     static member ToJsonIf
-      (rootToJson: ExprEncoder<'T>)
-      (cond: Expr<'T>)
-      (thenBranch: Expr<'T>)
-      (elseBranch: Expr<'T>)
-      : ExprEncoderReader<'T> =
+      (rootToJson: ExprEncoder<'T, 'Id>)
+      (cond: Expr<'T, 'Id>)
+      (thenBranch: Expr<'T, 'Id>)
+      (elseBranch: Expr<'T, 'Id>)
+      : ExprEncoderReader<'T, 'Id> =
       reader {
         let! condJson = cond |> rootToJson
         let! thenJson = thenBranch |> rootToJson

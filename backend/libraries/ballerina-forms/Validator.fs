@@ -82,21 +82,19 @@ module Validator =
 
   type NestedRenderer<'ExprExtension, 'ValueExtension> with
     static member Validate
-      (codegen: CodeGenConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (expectedType: ExprType)
       (fr: NestedRenderer<'ExprExtension, 'ValueExtension>)
       : Sum<ExprType, Errors> =
-      Renderer.Validate codegen ctx expectedType fr.Renderer
+      Renderer.Validate ctx expectedType fr.Renderer
 
   and Renderer<'ExprExtension, 'ValueExtension> with
     static member Validate
-      (codegen: CodeGenConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (expectedType: ExprType)
       (fr: Renderer<'ExprExtension, 'ValueExtension>)
       : Sum<ExprType, Errors> =
-      let (!) = Renderer.Validate codegen ctx
+      let (!) = Renderer.Validate ctx
 
       let unify (expected: ExprType) (formType: ExprType) : Sum<Unit, Errors> =
         ExprType.Unify
@@ -110,13 +108,8 @@ module Validator =
         sum {
           let! formType = FormBody.Type ctx.Types i
 
-          let formType =
-            match formType with
-            | ExprType.TableType row -> row
-            | _ -> formType
-
           do! unify expectedType formType
-          do! FormBody.Validate codegen ctx i |> Sum.map ignore
+          do! FormBody.Validate ctx i |> Sum.map ignore
           // NOTE: no need to recurse in the form body because the top-level-forms have already been validated
           formType
         }
@@ -130,7 +123,7 @@ module Validator =
 
           do! unify expectedType formType
 
-          return! FormBody.Validate codegen ctx form.Body
+          return! FormBody.Validate ctx form.Body
         }
 
 
@@ -145,6 +138,39 @@ module Validator =
           expectedType
         }
         |> sum.WithErrorContext(sprintf "...when validating primitive renderer %s" rendererName)
+
+      let recordRendererMatchesSupportedRenderersFields
+        ({ Renderer = rendererName
+           Fields = fields }: RecordRenderer<'ExprExtension, 'ValueExtension>)
+        : Sum<Unit, Errors> =
+        sum {
+          match rendererName with
+          | Some renderer ->
+            let! rendererFields =
+              ctx.SupportedRecordRenderers
+              |> Map.tryFindWithError
+                renderer
+                "record renderer"
+                (renderer
+                 |> (function
+                 | RendererName r -> r))
+
+            if rendererFields |> Set.isEmpty |> not then
+              let renderedFields = fields.Fields |> Map.keys |> Set.ofSeq
+
+              if renderedFields <> rendererFields then
+                return!
+                  sum.Throw(
+                    Errors.Singleton
+                      $"Error: form renderer expects exactly fields {rendererFields |> List.ofSeq}, instead found {renderedFields |> List.ofSeq}"
+                  )
+              else
+                return ()
+            else
+              return ()
+          | None -> return ()
+        }
+
 
       sum {
         let error (expectedType: ExprType) (renderer: Renderer<'ExprExtension, 'ValueExtension>) =
@@ -217,37 +243,13 @@ module Validator =
         | ExprType.RecordType _ ->
           match fr with
           | Renderer.RecordRenderer fields ->
-            match fields.Renderer with
-            | Some renderer ->
-              let! rendererFields =
-                codegen.Record.SupportedRenderers
-                |> Map.tryFindWithError
-                  renderer
-                  "record renderer"
-                  (renderer
-                   |> (function
-                   | RendererName r -> r))
-
-              if rendererFields |> Set.isEmpty |> not then
-                let renderedFields = fields.Fields.Fields |> Map.keys |> Set.ofSeq
-
-                if renderedFields <> rendererFields then
-                  return!
-                    sum.Throw(
-                      Errors.Singleton
-                        $"Error: form renderer expects exactly fields {rendererFields |> List.ofSeq}, instead found {renderedFields |> List.ofSeq}"
-                    )
-                else
-                  return ()
-              else
-                return ()
-            | _ -> return ()
+            do! recordRendererMatchesSupportedRenderersFields fields
 
             do!
               sum.All(
                 fields.Fields.Fields
                 |> Map.values
-                |> Seq.map (FieldConfig.Validate codegen ctx expectedType)
+                |> Seq.map (FieldConfig.Validate ctx expectedType)
                 |> Seq.toList
               )
               |> Sum.map ignore
@@ -274,7 +276,7 @@ module Validator =
           | Renderer.UnionRenderer formCases ->
             let unallowedCases =
               typeCases
-              |> Map.filter (fun _ typeCase -> typeCase.Fields.IsUnitType || typeCase.Fields.IsLookupType |> not)
+              |> Map.filter (fun _ typeCase -> (typeCase.Fields.IsUnitType || typeCase.Fields.IsLookupType) |> not)
 
             let typeCaseNames =
               typeCases |> Map.values |> Seq.map (fun c -> c.CaseName) |> Set.ofSeq
@@ -302,7 +304,7 @@ module Validator =
                   | None ->
                     sum.Throw(Errors.Singleton $"Error: cannot find form case for type case {typeCase.Key.CaseName}")
                   | Some formCase ->
-                    NestedRenderer.Validate codegen ctx typeCase.Value.Fields formCase
+                    NestedRenderer.Validate ctx typeCase.Value.Fields formCase
                     |> sum.WithErrorContext $"...when validating case {typeCase.Key.CaseName}")
                 |> sum.All
                 |> Sum.map ignore
@@ -593,30 +595,31 @@ module Validator =
         | ExprType.GenericApplicationType _ ->
           return! sum.Throw(Errors.Singleton "Error: unexpected renderer for generic application")
         | ExprType.TranslationOverride { Label = label; KeyType = keyType } ->
-          match fr with
-          | Renderer.RecordRenderer _ -> return! error expectedType fr
-          | Renderer.UnionRenderer _ -> return! error expectedType fr
-          | Renderer.InlineFormRenderer i -> return! handleInlineFormRenderer i
-          | Renderer.PrimitiveRenderer _ -> return! error expectedType fr
-          | Renderer.MapRenderer renderer ->
-            do!
-              !
-                ExprType.MapType(ExprType.OptionType keyType, ExprType.PrimitiveType PrimitiveType.StringType)
-                (renderer |> Renderer.MapRenderer)
-              |> Sum.map ignore
+          match keyType with
+          | ExprType.LookupType { VarName = varName } ->
+            let (LanguageStreamType languageStreamType) = ctx.LanguageStreamType
 
-            ExprType.TranslationOverride { Label = label; KeyType = keyType }
-          | Renderer.SumRenderer _ -> return! error expectedType fr
-          | Renderer.ListRenderer _ -> return! error expectedType fr
-          | Renderer.OptionRenderer _ -> return! error expectedType fr
-          | Renderer.OneRenderer _ -> return! error expectedType fr
-          | Renderer.ManyRenderer _ -> return! error expectedType fr
-          | Renderer.ReadOnlyRenderer _ -> return! error expectedType fr
-          | Renderer.EnumRenderer _ -> return! error expectedType fr
-          | Renderer.StreamRenderer _ -> return! error expectedType fr
-          | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
-          | Renderer.TableFormRenderer _ -> return! error expectedType fr
-          | Renderer.TupleRenderer _ -> return! error expectedType fr
+            if languageStreamType = varName then
+              let expectedType = TranslationOverride.Type { Label = label; KeyType = keyType }
+              do! ! expectedType fr |> Sum.map ignore
+              ExprType.TranslationOverride { Label = label; KeyType = keyType }
+            else
+              return!
+                sum.Throw(
+                  Errors.Singleton(
+                    sprintf
+                      "Error: translation override key type %s is not the configured language stream type %s"
+                      varName
+                      languageStreamType
+                  )
+                )
+          | _ ->
+            return!
+              sum.Throw(
+                Errors.Singleton(
+                  sprintf "Error: translation override key type %s is not a lookup type" (keyType.ToString())
+                )
+              )
       }
 
   and NestedRenderer<'ExprExtension, 'ValueExtension> with
@@ -628,7 +631,7 @@ module Validator =
       (rootType: ExprType)
       (localType: ExprType)
       (r: NestedRenderer<'ExprExtension, 'ValueExtension>)
-      : State<Unit, CodeGenConfig, ValidationState, Errors> =
+      : State<Unit, _, ValidationState, Errors> =
       state {
         do!
           Renderer.ValidatePredicates
@@ -650,7 +653,7 @@ module Validator =
       (rootType: ExprType)
       (localType: ExprType)
       (r: Renderer<'ExprExtension, 'ValueExtension>)
-      : State<Unit, CodeGenConfig, ValidationState, Errors> =
+      : State<Unit, _, ValidationState, Errors> =
       let (!!) =
         NestedRenderer.ValidatePredicates validateFormConfigPredicates ctx typeCheck globalType rootType localType
 
@@ -763,7 +766,6 @@ module Validator =
 
   and FieldConfig<'ExprExtension, 'ValueExtension> with
     static member Validate
-      (codegen: CodeGenConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (recordType: ExprType)
       (fc: FieldConfig<'ExprExtension, 'ValueExtension>)
@@ -777,7 +779,7 @@ module Validator =
             let! expectedFieldType = ExprType.ResolveLookup ctx.Types expectedFieldType
 
             do!
-              Renderer.Validate codegen ctx expectedFieldType fc.Renderer
+              Renderer.Validate ctx expectedFieldType fc.Renderer
               |> sum.WithErrorContext $"...when validating field config renderer for {fc.FieldName}"
               |> Sum.map ignore
 
@@ -799,7 +801,7 @@ module Validator =
       (localType: ExprType)
       (includeLocalTypeInScope: bool)
       (fc: FieldConfig<'ExprExtension, 'ValueExtension>)
-      : State<Unit, CodeGenConfig, ValidationState, Errors> =
+      : State<Unit, _, ValidationState, Errors> =
       state {
         let vars =
           [ ("global", globalType); ("root", rootType) ]
@@ -908,19 +910,18 @@ module Validator =
 
   and FormBody<'ExprExtension, 'ValueExtension> with
     static member Validate
-      (codegen: CodeGenConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (body: FormBody<'ExprExtension, 'ValueExtension>)
       : Sum<ExprType, Errors> =
       sum {
         match body with
         | FormBody.Annotated renderer ->
-          return! Renderer.Validate codegen ctx (ExprType.LookupType renderer.TypeId) renderer.Renderer
+          return! Renderer.Validate ctx (ExprType.LookupType renderer.TypeId) renderer.Renderer
         | FormBody.Table table ->
           let! rowType = ctx.TryFindType table.RowTypeId.VarName
 
           match table.Details with
-          | Some details -> do! NestedRenderer.Validate codegen ctx rowType.Type details |> Sum.map ignore
+          | Some details -> do! NestedRenderer.Validate ctx rowType.Type details |> Sum.map ignore
           | None -> return ()
 
           // match table.Preview with
@@ -939,7 +940,7 @@ module Validator =
               table.Columns
               |> Map.values
               |> Seq.map (fun c ->
-                FieldConfig.Validate codegen ctx rowType.Type c.FieldConfig
+                FieldConfig.Validate ctx rowType.Type c.FieldConfig
                 |> sum.WithErrorContext $"...when validating table column {c.FieldConfig.FieldName}")
               |> Seq.toList
             )
@@ -998,6 +999,14 @@ module Validator =
           // | Some preview -> do! FormBody.ValidatePredicates ctx globalType rootType localType preview
           // | None -> return ()
 
+          match table.DisabledColumns with
+          | Inlined _ -> return ()
+          | Computed disabledExpr ->
+            let vars =
+              [ ("global", globalType) ] |> Seq.map (VarName.Create <*> id) |> Map.ofSeq
+
+            do! validateGroupPredicates ctx typeCheck vars localType disabledExpr
+
           match table.VisibleColumns with
           | Inlined _ -> return ()
           | Computed visibleExpr ->
@@ -1009,11 +1018,10 @@ module Validator =
 
   and FormConfig<'ExprExtension, 'ValueExtension> with
     static member Validate
-      (config: CodeGenConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (formConfig: FormConfig<'ExprExtension, 'ValueExtension>)
       : Sum<Unit, Errors> =
-      sum { do! FormBody.Validate config ctx formConfig.Body |> Sum.map ignore }
+      sum { do! FormBody.Validate ctx formConfig.Body |> Sum.map ignore }
       |> sum.WithErrorContext $"...when validating form config {formConfig.FormName}"
 
     static member ValidatePredicates
@@ -1228,7 +1236,6 @@ module Validator =
   type TableApi<'ExprExtension, 'ValueExtension> with
     static member Validate<'ExprExtension, 'ValueExtension>
       (_: GeneratedLanguageSpecificConfig)
-      (codegen: CodeGenConfig)
       (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>)
       (tableApi: TableApi<'ExprExtension, 'ValueExtension> * Set<TableMethod>)
       : Sum<Unit, Errors> =
@@ -1251,9 +1258,7 @@ module Validator =
             sum {
               do! fields |> sum.TryFindField filterableField |> sum.Map ignore
 
-              do!
-                NestedRenderer.Validate codegen ctx filtering.Type filtering.Display
-                |> Sum.map ignore
+              do! NestedRenderer.Validate ctx filtering.Type filtering.Display |> Sum.map ignore
 
               return ()
             }
@@ -1282,31 +1287,15 @@ module Validator =
     static member GetIdType(lookupType: TypeBinding) : Sum<ExprType, Errors> =
       sum {
         let! (idType: ExprType) =
-          sum.Any2
-            (sum {
-              let! fields =
-                lookupType.Type
-                |> ExprType.AsRecord
-                |> sum.MapError(Errors.WithPriority ErrorPriority.Medium)
+          sum {
+            let! fields = lookupType.Type |> ExprType.AsRecord
 
-              return!
-                (sum.Any2
-                  (fields |> Map.tryFindWithError "id" "key" "id")
-                  (fields |> Map.tryFindWithError "Id" "key" "Id"))
-                |> sum.MapError(Errors.WithPriority ErrorPriority.High)
-            })
-            (sum {
-              let! fields =
-                lookupType.Type
-                |> ExprType.AsTuple
-                |> sum.MapError(Errors.WithPriority ErrorPriority.Medium)
-
-              return!
-                fields
-                |> Seq.tryHead
-                |> Sum.fromOption (fun () -> Errors.Singleton "Error: cannot find first field in tuple")
-                |> sum.MapError(Errors.WithPriority ErrorPriority.High)
-            })
+            return!
+              (sum.Any2
+                (fields |> Map.tryFindWithError "id" "key" "id")
+                (fields |> Map.tryFindWithError "Id" "key" "Id"))
+              |> sum.MapError(Errors.WithPriority ErrorPriority.High)
+          }
           |> sum.MapError Errors.HighestPriority
 
         match idType with
@@ -1365,14 +1354,12 @@ module Validator =
           |> Sum.map ignore
           |> state.OfSum
 
-        let! codegenConfig = state.GetContext()
-
         do!
           sum.All(
             ctx.Apis.Tables
             |> Map.values
             |> Seq.map (fun tableApi ->
-              TableApi.Validate codegenTargetConfig codegenConfig ctx tableApi
+              TableApi.Validate codegenTargetConfig ctx tableApi
               |> sum.WithErrorContext(sprintf "...when validating table API for table %s" (tableApi |> fst).TableName))
             |> Seq.toList
           )
@@ -1399,7 +1386,7 @@ module Validator =
             ctx.Forms
             |> Map.values
             |> Seq.map (fun formConfig ->
-              FormConfig.Validate codegenConfig ctx formConfig
+              FormConfig.Validate ctx formConfig
               |> sum.WithErrorContext(
                 sprintf
                   "...when validating form config for form %s"

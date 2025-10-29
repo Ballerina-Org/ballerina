@@ -1,23 +1,29 @@
 ﻿namespace Ballerina.Data.Spec
 
+open Ballerina.DSL.Next.Types.Patterns
+open Ballerina.Data.Schema.Model
+open Ballerina.StdLib.OrderPreservingMap
+open Ballerina.Cat.Collections.OrderedMap
+
 module Builder =
 
-  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Types.Model
-  open Ballerina.DSL.Next.Types.Eval
-  open Ballerina.Data.Spec.Model
+  open Ballerina.DSL.Next.Types.TypeChecker.Eval
+  open Ballerina.DSL.Next.Types.TypeChecker.Model
+  open Ballerina.DSL.Next.Types.TypeChecker.Patterns
+  open Ballerina.DSL.Next.Types.TypeChecker
   open Ballerina.State.WithError
 
-  let typeContextFromSpecBody (spec: V2Format) : State<unit, TypeExprEvalContext, TypeExprEvalState, Errors> =
-    spec.TypesV2
-    |> List.map (fun (name, expr) ->
+  let typeContextFromSpecBody
+    (schema: Schema<TypeExpr, Identifier>)
+    : State<OrderedMap<Identifier, TypeValue>, TypeExprEvalContext, TypeExprEvalState, Errors> =
+    schema.Types
+    |> OrderedMap.map (fun identifier typeExpr ->
       state {
-
-        let! tv = TypeExpr.Eval None expr
-        let! sb = TypeExpr.EvalAsSymbol expr
-        do! TypeExprEvalState.bindType name tv
-        do! TypeExprEvalState.bindSymbol name sb
-        return ()
+        let! tv, kind = TypeExpr.Eval None Location.Unknown typeExpr
+        do! TypeExprEvalState.bindType (identifier |> TypeCheckScope.Empty.Resolve) (tv, kind)
+        return tv
       })
-    |> state.All
-    |> state.Map(fun _ -> ())
+    |> state.AllMapOrdered
+//|> state.Map ignore

@@ -75,8 +75,9 @@ module Model =
       | ExprType.CustomType _
       | ExprType.LookupType _
       | ExprType.PrimitiveType _
-      | ExprType.TranslationOverride _
       | ExprType.UnitType -> t
+      | ExprType.TranslationOverride { Label = label; KeyType = keyType } ->
+        ExprType.TranslationOverride { Label = label; KeyType = !keyType }
       | ExprType.VarType v ->
         match tvars |> Map.tryFind v with
         | None -> t

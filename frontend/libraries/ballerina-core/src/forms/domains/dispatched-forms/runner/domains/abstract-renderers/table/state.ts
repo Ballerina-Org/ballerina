@@ -453,6 +453,7 @@ export type TableAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
   onChange: DispatchOnChange<ValueTable, Flags>;
   setApplyToAll: SimpleCallback<boolean>;
   applyToAll: ValueCallbackWithOptionalFlags<DispatchDelta<Flags>, Flags>;
+  removeAll: VoidCallbackWithOptionalFlags<Flags> | undefined;
   add: VoidCallbackWithOptionalFlags<Flags> | undefined;
   remove: ValueCallbackWithOptionalFlags<string, Flags> | undefined;
   moveTo:
@@ -488,6 +489,23 @@ export type TableAbstractRendererView<
   TableAbstractRendererViewForeignMutationsExpected<Flags>,
   {
     TableData: OrderedMap<
+      string,
+      OrderedMap<
+        string,
+        (
+          flags: Flags | undefined,
+        ) => Template<
+          TableAbstractRendererReadonlyContext<
+            CustomPresentationContext,
+            ExtraContext
+          > &
+            TableAbstractRendererState,
+          TableAbstractRendererState,
+          TableAbstractRendererForeignMutationsExpected<Flags>
+        >
+      >
+    >;
+    UnfilteredTableData_Dangerous: OrderedMap<
       string,
       OrderedMap<
         string,
