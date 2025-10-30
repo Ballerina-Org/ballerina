@@ -531,6 +531,8 @@ export const TableAbstractRenderer = <
         ),
   }));
 
+  const validColumns = CellTemplates.keySeq().toArray();
+
   return Template.Default<
     TableAbstractRendererReadonlyContext<
       CustomPresentationContext,
@@ -638,37 +640,37 @@ export const TableAbstractRenderer = <
 
     const hasMoreValues = props.context.value.hasMoreValues;
 
-    const validColumns = CellTemplates.keySeq().toArray();
-
     const validVisibleColumns = visibleColumns.value.columns.filter((_) =>
       validColumns.includes(_),
     );
 
-    const embeddedTableData =
-      props.context.customFormState.loadingState != "loaded"
-        ? OrderedMap<string, OrderedMap<string, any>>()
-        : props.context.value.data.map((rowData, rowId) =>
-            rowData.fields
-              .filter((_, column) => validVisibleColumns.includes(column))
-              .map((_, column) =>
-                EmbeddedCellTemplates.get(column)!(rowId)(
-                  rowData.fields.get(column)!,
-                )(disabledColumnKeysSet.has(column)),
-              ),
-          );
+    // const embeddedTableData =
+    //   props.context.customFormState.loadingState != "loaded"
+    //     ? OrderedMap<string, OrderedMap<string, any>>()
+    //     : props.context.value.data.map((rowData, rowId) =>
+    //         rowData.fields
+    //           .filter((_, column) => validVisibleColumns.includes(column))
+    //           .map((_, column) =>
+    //             EmbeddedCellTemplates.get(column)!(rowId)(
+    //               rowData.fields.get(column)!,
+    //             )(disabledColumnKeysSet.has(column)),
+    //           ),
+    //       );
 
-    const embeddedUnfilteredTableData =
-      props.context.customFormState.loadingState != "loaded"
-        ? OrderedMap<string, OrderedMap<string, any>>()
-        : props.context.value.data.map((rowData, rowId) =>
-            rowData.fields
-              .filter((_, column) => validColumns.includes(column))
-              .map((_, column) =>
-                EmbeddedCellTemplates.get(column)!(rowId)(
-                  rowData.fields.get(column)!,
-                )(disabledColumnKeysSet.has(column)),
-              ),
-          );
+    // const embeddedUnfilteredTableData =
+    //   props.context.customFormState.loadingState != "loaded"
+    //     ? OrderedMap<string, OrderedMap<string, any>>()
+    //     : props.context.value.data.map((rowData, rowId) =>
+    //         rowData.fields
+    //           .filter((_, column) => validColumns.includes(column))
+    //           .map((_, column) =>
+    //             EmbeddedCellTemplates.get(column)!(rowId)(
+    //               rowData.fields.get(column)!,
+    //             )(disabledColumnKeysSet.has(column)),
+    //           ),
+    //       );
+
+    const embeddedUnfilteredTableData = OrderedMap<string, OrderedMap<string, any>>();
 
     if (props.context.customFormState.isFilteringInitialized == false) {
       return <></>;
@@ -737,7 +739,7 @@ export const TableAbstractRenderer = <
               selectAllRows: () =>
                 props.setState(
                   TableAbstractRendererState.Updaters.Core.customFormState.children.selectedRows(
-                    replaceWith(Set(embeddedTableData.keySeq())),
+                    replaceWith(Set(props.context.value.data.keySeq())),
                   ),
                 ),
               clearRows: () =>
@@ -919,7 +921,7 @@ export const TableAbstractRenderer = <
                 ),
             }}
             DetailsRenderer={embedDetailsRenderer}
-            TableData={embeddedTableData}
+            CellTemplates={EmbeddedCellTemplates}
             UnfilteredTableData_Dangerous={embeddedUnfilteredTableData}
             AllowedFilters={EmbeddedAllowedFilters}
             AllowedSorting={props.context.sorting}
@@ -927,6 +929,8 @@ export const TableAbstractRenderer = <
             isFilteringSortAndLoadingEnabled={
               props.context.customFormState.isFilteringInitialized
             }
+            tableData={props.context.customFormState.loadingState != "loaded" ? ValueTable.Default.empty() : props.context.value}
+            disabledColumnKeys={disabledColumnKeysSet}
           />
         </IdProvider>
       </>

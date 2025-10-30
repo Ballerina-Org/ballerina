@@ -488,23 +488,27 @@ export type TableAbstractRendererView<
   TableAbstractRendererState,
   TableAbstractRendererViewForeignMutationsExpected<Flags>,
   {
-    TableData: OrderedMap<
+    CellTemplates: Map<
       string,
-      OrderedMap<
-        string,
-        (
-          flags: Flags | undefined,
-        ) => Template<
-          TableAbstractRendererReadonlyContext<
-            CustomPresentationContext,
-            ExtraContext
-          > &
-            TableAbstractRendererState,
+      (
+        rowId: string,
+      ) => (
+        value: PredicateValue,
+      ) => (
+        disabled: boolean,
+      ) => (
+        flags: Flags | undefined,
+      ) => Template<
+        TableAbstractRendererReadonlyContext<
+          CustomPresentationContext,
+          ExtraContext
+        > &
           TableAbstractRendererState,
-          TableAbstractRendererForeignMutationsExpected<Flags>
-        >
+        TableAbstractRendererState,
+        TableAbstractRendererForeignMutationsExpected<Flags>
       >
     >;
+
     UnfilteredTableData_Dangerous: OrderedMap<
       string,
       OrderedMap<
@@ -561,5 +565,7 @@ export type TableAbstractRendererView<
     AllowedSorting: Array<string>;
     HighlightedFilters: Array<string>;
     isFilteringSortAndLoadingEnabled: boolean;
+    tableData: ValueTable;
+    disabledColumnKeys: Set<string>;
   }
 >;
