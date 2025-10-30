@@ -32,6 +32,7 @@ import {
   ValueUnit,
   id,
   DispatchDelta,
+  BaseFlags,
 } from "../../../../../../../../main";
 import { Template, View } from "../../../../../../../template/state";
 
@@ -472,6 +473,11 @@ export type TableAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
   reloadFrom0: () => void;
 };
 
+export type CellContext<Flags = Unit> = {
+  rowId: string;
+  flags: Flags | undefined;
+};
+
 export type TableAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = Unit,
@@ -490,20 +496,13 @@ export type TableAbstractRendererView<
   {
     CellTemplates: Map<
       string,
-      (
-        rowId: string,
-      ) => (
-        value: PredicateValue,
-      ) => (
-        disabled: boolean,
-      ) => (
-        flags: Flags | undefined,
-      ) => Template<
+      Template<
         TableAbstractRendererReadonlyContext<
           CustomPresentationContext,
           ExtraContext
         > &
-          TableAbstractRendererState,
+          TableAbstractRendererState &
+          CellContext<Flags>,
         TableAbstractRendererState,
         TableAbstractRendererForeignMutationsExpected<Flags>
       >

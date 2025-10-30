@@ -38,6 +38,7 @@ import {
   DispatchTableApiSource,
   ValueUnit,
   NestedRenderer,
+  CellContext,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import {
@@ -150,170 +151,170 @@ export const TableAbstractRenderer = <
     ExtraContext
   >(tableApiSource, fromTableApiParser);
 
-  const embedCellTemplate =
-    (
-      column: string,
-      cellTemplate: Template<
-        CommonAbstractRendererReadonlyContext<
-          DispatchParsedType<any>,
-          PredicateValue,
+  const embedCellTemplate = (
+    column: string,
+    cellTemplate: Template<
+      CommonAbstractRendererReadonlyContext<
+        DispatchParsedType<any>,
+        PredicateValue,
+        CustomPresentationContext,
+        ExtraContext
+      >,
+      CommonAbstractRendererState,
+      CommonAbstractRendererForeignMutationsExpected<Flags>
+    >,
+  ) =>
+    cellTemplate
+      .mapContext<
+        TableAbstractRendererReadonlyContext<
           CustomPresentationContext,
           ExtraContext
-        >,
-        CommonAbstractRendererState,
-        CommonAbstractRendererForeignMutationsExpected<Flags>
-      >,
-    ) =>
-    (rowId: string) =>
-    (value: PredicateValue) =>
-    (disabled: boolean) =>
-    (flags: Flags | undefined) =>
-      cellTemplate
-        .mapContext<
-          TableAbstractRendererReadonlyContext<
-            CustomPresentationContext,
-            ExtraContext
-          > &
-            TableAbstractRendererState
-        >((_) => {
-          const labelContext =
-            CommonAbstractRendererState.Operations.GetLabelContext(
-              _.labelContext,
-              CellRenderers.get(column)!,
-            );
-          const rowState = _.customFormState.rowStates.get(rowId);
+        > &
+          TableAbstractRendererState &
+          CellContext<Flags>
+      >((_) => {
+        const labelContext =
+          CommonAbstractRendererState.Operations.GetLabelContext(
+            _.labelContext,
+            CellRenderers.get(column)!,
+          );
+        const rowState = _.customFormState.rowStates.get(_.rowId);
 
-          const cellState =
-            rowState?.fieldStates.get(column) ??
-            CellTemplates.get(column)!.GetDefaultState();
+        const cellState =
+          rowState?.fieldStates.get(column) ??
+          CellTemplates.get(column)!.GetDefaultState();
 
-          const rowValue = _.value.data.get(rowId);
+        const rowValue = _.value.data.get(_.rowId);
 
-          if (rowValue == undefined) {
-            console.error(
-              `Row value is undefined for row ${rowId}\n
+        if (rowValue == undefined) {
+          console.error(
+            `Row value is undefined for row ${_.rowId}\n
               ...When rendering table field ${column}\n
               ...${_.domNodeAncestorPath}`,
-            );
-            return undefined;
-          }
+          );
+          return undefined;
+        }
 
-          return {
-            value,
-            ...cellState,
-            disabled: disabled || _.disabled || _.globallyDisabled,
-            globallyDisabled: _.globallyDisabled,
-            readOnly: _.readOnly || _.globallyReadOnly,
-            globallyReadOnly: _.globallyReadOnly,
-            locked: _.locked,
-            bindings: _.bindings.set("local", rowValue),
-            extraContext: _.extraContext,
-            type: TableEntityType.fields.get(column)!,
-            customPresentationContext: _.customPresentationContext,
-            remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-            typeAncestors: [_.type as DispatchParsedType<any>].concat(
-              _.typeAncestors,
-            ),
-            domNodeAncestorPath:
-              _.domNodeAncestorPath +
-              `[table][cell][${rowId}][record][${column}]`,
-            lookupTypeAncestorNames: _.lookupTypeAncestorNames,
-            labelContext,
-          };
-        })
+        const value = PredicateValue.Operations.IsUnit(rowValue)
+          ? rowValue
+          : rowValue.fields.get(column)!;
 
-        .mapState<TableAbstractRendererState>((updater) =>
-          TableAbstractRendererState.Updaters.Core.customFormState.children.rowStates(
-            MapRepo.Updaters.upsert(
-              rowId,
-              () => RecordAbstractRendererState.Default.fieldState(Map()),
-              RecordAbstractRendererState.Updaters.Core.fieldStates(
-                MapRepo.Updaters.upsert(
-                  column,
-                  () => CellTemplates.get(column)!.GetDefaultState(),
-                  updater,
-                ),
+        return {
+          value,
+          ...cellState,
+          disabled: _.disabled || _.globallyDisabled,
+          globallyDisabled: _.globallyDisabled,
+          readOnly: _.readOnly || _.globallyReadOnly,
+          globallyReadOnly: _.globallyReadOnly,
+          locked: _.locked,
+          bindings: _.bindings.set("local", rowValue),
+          extraContext: _.extraContext,
+          type: TableEntityType.fields.get(column)!,
+          customPresentationContext: _.customPresentationContext,
+          remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+          typeAncestors: [_.type as DispatchParsedType<any>].concat(
+            _.typeAncestors,
+          ),
+          domNodeAncestorPath:
+            _.domNodeAncestorPath +
+            `[table][cell][${_.rowId}][record][${column}]`,
+          lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+          labelContext,
+        };
+      })
+
+      .mapStateFromProps<TableAbstractRendererState>(([props, updater]) =>
+        TableAbstractRendererState.Updaters.Core.customFormState.children.rowStates(
+          MapRepo.Updaters.upsert(
+            props.context.rowId,
+            () => RecordAbstractRendererState.Default.fieldState(Map()),
+            RecordAbstractRendererState.Updaters.Core.fieldStates(
+              MapRepo.Updaters.upsert(
+                column,
+                () => CellTemplates.get(column)!.GetDefaultState(),
+                updater,
               ),
             ),
           ),
-        )
-        .mapForeignMutationsFromProps<
-          TableAbstractRendererForeignMutationsExpected<Flags>
-        >((props) => ({
-          onChange: (
-            nestedUpdater: Option<BasicUpdater<PredicateValue>>,
-            nestedDelta: DispatchDelta<Flags>,
-          ) => {
-            props.setState(
-              TableAbstractRendererState.Updaters.Core.customFormState.children
-                .rowStates(
-                  MapRepo.Updaters.upsert(
-                    rowId,
-                    () => RecordAbstractRendererState.Default.fieldState(Map()),
-                    RecordAbstractRendererState.Updaters.Core.fieldStates(
-                      MapRepo.Updaters.upsert(
-                        column,
-                        () => CellTemplates.get(column)!.GetDefaultState(),
-                        (__) => ({
-                          ...__,
-                          commonFormState:
-                            DispatchCommonFormState.Updaters.modifiedByUser(
-                              replaceWith(true),
-                            )(__.commonFormState),
-                        }),
-                      ),
+        ),
+      )
+      .mapForeignMutationsFromProps<
+        TableAbstractRendererForeignMutationsExpected<Flags>
+      >((props) => ({
+        onChange: (
+          nestedUpdater: Option<BasicUpdater<PredicateValue>>,
+          nestedDelta: DispatchDelta<Flags>,
+        ) => {
+          props.setState(
+            TableAbstractRendererState.Updaters.Core.customFormState.children
+              .rowStates(
+                MapRepo.Updaters.upsert(
+                  props.context.rowId,
+                  () => RecordAbstractRendererState.Default.fieldState(Map()),
+                  RecordAbstractRendererState.Updaters.Core.fieldStates(
+                    MapRepo.Updaters.upsert(
+                      column,
+                      () => CellTemplates.get(column)!.GetDefaultState(),
+                      (__) => ({
+                        ...__,
+                        commonFormState:
+                          DispatchCommonFormState.Updaters.modifiedByUser(
+                            replaceWith(true),
+                          )(__.commonFormState),
+                      }),
                     ),
-                  ),
-                )
-                .then(
-                  TableAbstractRendererState.Updaters.Core.commonFormState.children.modifiedByUser(
-                    replaceWith(true),
                   ),
                 ),
-            );
+              )
+              .then(
+                TableAbstractRendererState.Updaters.Core.commonFormState.children.modifiedByUser(
+                  replaceWith(true),
+                ),
+              ),
+          );
 
-            const nestedRecordDelta: DispatchDelta<Flags> = {
-              kind: "RecordField",
-              field: [column, nestedDelta],
-              recordType: TableEntityType,
-              flags: undefined,
-              sourceAncestorLookupTypeNames:
-                nestedDelta.sourceAncestorLookupTypeNames,
-            };
+          const nestedRecordDelta: DispatchDelta<Flags> = {
+            kind: "RecordField",
+            field: [column, nestedDelta],
+            recordType: TableEntityType,
+            flags: undefined,
+            sourceAncestorLookupTypeNames:
+              nestedDelta.sourceAncestorLookupTypeNames,
+          };
 
-            const delta: DispatchDelta<Flags> = {
-              ...(props.context.customFormState.applyToAll
-                ? {
-                    kind: "TableValueAll",
-                  }
-                : {
-                    kind: "TableValue",
-                    id: rowId,
-                  }),
-              nestedDelta: nestedRecordDelta,
-              flags,
-              sourceAncestorLookupTypeNames:
-                nestedDelta.sourceAncestorLookupTypeNames,
-            };
+          const delta: DispatchDelta<Flags> = {
+            ...(props.context.customFormState.applyToAll
+              ? {
+                  kind: "TableValueAll",
+                }
+              : {
+                  kind: "TableValue",
+                  id: props.context.rowId,
+                }),
+            nestedDelta: nestedRecordDelta,
+            flags: props.context.flags,
+            sourceAncestorLookupTypeNames:
+              nestedDelta.sourceAncestorLookupTypeNames,
+          };
 
-            const updater =
-              nestedUpdater.kind == "l"
-                ? nestedUpdater
-                : Option.Default.some(
-                    ValueTable.Updaters.data(
-                      MapRepo.Updaters.update(
-                        rowId,
-                        ValueRecord.Updaters.update(
-                          column,
-                          nestedUpdater.kind == "r" ? nestedUpdater.value : id,
-                        ),
+          const updater =
+            nestedUpdater.kind == "l"
+              ? nestedUpdater
+              : Option.Default.some(
+                  ValueTable.Updaters.data(
+                    MapRepo.Updaters.update(
+                      props.context.rowId,
+                      ValueRecord.Updaters.update(
+                        column,
+                        nestedUpdater.kind == "r" ? nestedUpdater.value : id,
                       ),
                     ),
-                  );
+                  ),
+                );
 
-            props.foreignMutations.onChange(updater, delta);
-          },
-        }));
+          props.foreignMutations.onChange(updater, delta);
+        },
+      }));
 
   const embedDetailsRenderer =
     DetailsRenderer && DetailsRendererRaw
@@ -670,7 +671,10 @@ export const TableAbstractRenderer = <
     //           ),
     //       );
 
-    const embeddedUnfilteredTableData = OrderedMap<string, OrderedMap<string, any>>();
+    const embeddedUnfilteredTableData = OrderedMap<
+      string,
+      OrderedMap<string, any>
+    >();
 
     if (props.context.customFormState.isFilteringInitialized == false) {
       return <></>;
@@ -929,7 +933,11 @@ export const TableAbstractRenderer = <
             isFilteringSortAndLoadingEnabled={
               props.context.customFormState.isFilteringInitialized
             }
-            tableData={props.context.customFormState.loadingState != "loaded" ? ValueTable.Default.empty() : props.context.value}
+            tableData={
+              props.context.customFormState.loadingState != "loaded"
+                ? ValueTable.Default.empty()
+                : props.context.value
+            }
             disabledColumnKeys={disabledColumnKeysSet}
           />
         </IdProvider>
