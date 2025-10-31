@@ -2777,6 +2777,31 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </>
       );
     },
+    tuple4: () => (props) => {
+      return (
+        <>
+          {props.context.label && <h3>{props.context.label}</h3>}
+          <div>
+            {props.embeddedItemTemplates(0)(undefined)({
+              ...props,
+              view: unit,
+            })}
+            {props.embeddedItemTemplates(1)(undefined)({
+              ...props,
+              view: unit,
+            })}
+            {props.embeddedItemTemplates(2)(undefined)({
+              ...props,
+              view: unit,
+            })}
+            {props.embeddedItemTemplates(3)(undefined)({
+              ...props,
+              view: unit,
+            })}
+          </div>
+        </>
+      );
+    },
   },
   sum: {
     defaultSum: () => (props) => {

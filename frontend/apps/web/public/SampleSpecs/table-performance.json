@@ -17,36 +17,56 @@
     },
     "User": {
       "fields": {
-        "1": "Tuple4Primitive",
-        "2": "Tuple4Primitive",
-        "3": "Tuple4Primitive",
-        "4": "Tuple4Primitive",
-        "5": "Tuple4Primitive",
-        "6": "Tuple4Primitive",
-        "7": "Tuple4Primitive",
-        "8": "Tuple4Primitive",
-        "9": "Tuple4Primitive",
-        "10": "Tuple4Primitive",
-        "11": "Tuple4Primitive",
-        "12": "Tuple4Primitive",
-        "13": "Tuple4Primitive",
-        "14": "Tuple4Primitive",
-        "15": "Tuple4Primitive",
-        "16": "Tuple4Primitive",
-        "17": "Tuple4Primitive",
-        "18": "Tuple4Primitive",
-        "19": "Tuple4Primitive",
-        "20": "Tuple4Primitive",
-        "21": "Tuple4Primitive",
-        "22": "Tuple4Primitive",
-        "23": "Tuple4Primitive",
-        "24": "Tuple4Primitive",
-        "25": "Tuple4Primitive",
-        "26": "Tuple4Primitive",
-        "27": "Tuple4Primitive",
-        "28": "Tuple4Primitive",
-        "29": "Tuple4Primitive",
-        "30": "Tuple4Primitive"
+        "a": "Tuple4Primitive",
+        "b": "Tuple4Primitive",
+        "e": "Tuple4Primitive",
+        "f": "Tuple4Primitive",
+        "g": "Tuple4Primitive",
+        "h": "Tuple4Primitive",
+        "i": "Tuple4Primitive",
+        "j": "Tuple4Primitive",
+        "k": "Tuple4Primitive",
+        "l": "Tuple4Primitive",
+        "m": "Tuple4Primitive",
+        "n": "Tuple4Primitive",
+        "o": "Tuple4Primitive",
+        "p": "Tuple4Primitive",
+        "q": "Tuple4Primitive",
+        "r": "Tuple4Primitive",
+        "s": "Tuple4Primitive",
+        "t": "Tuple4Primitive",
+        "u": "Tuple4Primitive",
+        "v": "Tuple4Primitive",
+        "w": "Tuple4Primitive",
+        "x": "Tuple4Primitive",
+        "y": "Tuple4Primitive",
+        "z": "Tuple4Primitive",
+        "aa": "Tuple4Primitive",
+        "ab": "Tuple4Primitive",
+        "ac": "Tuple4Primitive",
+        "ad": "Tuple4Primitive",
+        "ae": "Tuple4Primitive",
+        "af": "Tuple4Primitive",
+        "ag": "Tuple4Primitive",
+        "ah": "Tuple4Primitive",
+        "ai": "Tuple4Primitive",
+        "aj": "Tuple4Primitive",
+        "ak": "Tuple4Primitive",
+        "al": "Tuple4Primitive",
+        "am": "Tuple4Primitive",
+        "an": "Tuple4Primitive",
+        "ao": "Tuple4Primitive",
+        "ap": "Tuple4Primitive",
+        "aq": "Tuple4Primitive",
+        "ar": "Tuple4Primitive",
+        "as": "Tuple4Primitive",
+        "at": "Tuple4Primitive",
+        "au": "Tuple4Primitive",
+        "av": "Tuple4Primitive",
+        "aw": "Tuple4Primitive",
+        "ax": "Tuple4Primitive",
+        "ay": "Tuple4Primitive",
+        "az": "Tuple4Primitive"
       },
       "Users": {
         "fun": "Table",
@@ -111,52 +131,52 @@
       "type": "User",
       "renderer": "streamingTable",
       "columns": {
-        "1": {
-          "label": "1",
+        "a": {
+          "label": "a",
           "renderer": "tuple4"
         },
-        "2": {
-          "label": "2",
+        "b": {
+          "label": "b",
           "renderer": "tuple4"
         },
-        "3": {
-          "label": "3",
+        "c": {
+          "label": "c",
           "renderer": "tuple4"
         },
-        "4": {
-          "label": "4",
+        "d": {
+          "label": "d",
           "renderer": "tuple4"
         },
-        "5": {
-          "label": "5",
+        "e": {
+          "label": "e",
           "renderer": "tuple4"
         },
-        "6": {
-          "label": "6",
+        "f": {
+          "label": "f",
           "renderer": "tuple4"
         },
-        "7": {
-          "label": "7",
+        "g": {
+          "label": "g",
           "renderer": "tuple4"
         },
-        "8": {
-          "label": "8",
+        "h": {
+          "label": "h",
           "renderer": "tuple4"
         },
-        "9": {
-          "label": "9",
+        "i": {
+          "label": "i",
           "renderer": "tuple4"
         },
-        "10": {
-          "label": "10",
+        "j": {
+          "label": "j",
           "renderer": "tuple4"
         },
-        "11": {
-          "label": "11",
+        "k": {
+          "label": "k",
           "renderer": "tuple4"
         },
         "12": {
-          "label": "12",
+          "label": "l",
           "renderer": "tuple4"
         },
         "13": {
