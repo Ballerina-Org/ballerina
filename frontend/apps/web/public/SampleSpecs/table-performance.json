@@ -1,0 +1,304 @@
+{
+  "types": {
+    "Config": {},
+    "Address": {
+      "fields": {
+        "Street": "string",
+        "Number": "number",
+        "City": "string",
+        "State": "string",
+        "Zip": "string",
+        "Country": "string"
+      }
+    },
+    "Tuple4Primitive": {
+      "fun": "Tuple",
+      "args": ["string", "number", "bool", "Address"]
+    },
+    "User": {
+      "fields": {
+        "1": "Tuple4Primitive",
+        "2": "Tuple4Primitive",
+        "3": "Tuple4Primitive",
+        "4": "Tuple4Primitive",
+        "5": "Tuple4Primitive",
+        "6": "Tuple4Primitive",
+        "7": "Tuple4Primitive",
+        "8": "Tuple4Primitive",
+        "9": "Tuple4Primitive",
+        "10": "Tuple4Primitive",
+        "11": "Tuple4Primitive",
+        "12": "Tuple4Primitive",
+        "13": "Tuple4Primitive",
+        "14": "Tuple4Primitive",
+        "15": "Tuple4Primitive",
+        "16": "Tuple4Primitive",
+        "17": "Tuple4Primitive",
+        "18": "Tuple4Primitive",
+        "19": "Tuple4Primitive",
+        "20": "Tuple4Primitive",
+        "21": "Tuple4Primitive",
+        "22": "Tuple4Primitive",
+        "23": "Tuple4Primitive",
+        "24": "Tuple4Primitive",
+        "25": "Tuple4Primitive",
+        "26": "Tuple4Primitive",
+        "27": "Tuple4Primitive",
+        "28": "Tuple4Primitive",
+        "29": "Tuple4Primitive",
+        "30": "Tuple4Primitive"
+      },
+      "Users": {
+        "fun": "Table",
+        "args": ["User"]
+      },
+      "App": {
+        "fields": {
+          "Users": "Users"
+        }
+      }
+    }
+  },
+  "forms": {
+    "Address": {
+      "type": "Address",
+      "renderer": "address",
+      "fields": {
+        "Street": {
+          "renderer": "string"
+        },
+        "Number": {
+          "renderer": "number"
+        },
+        "City": {
+          "renderer": "string"
+        },
+        "State": {
+          "renderer": "string"
+        },
+        "Zip": {
+          "renderer": "string"
+        },
+        "Country": {
+          "renderer": "string"
+        }
+      }
+    },
+    "Tuple4": {
+      "type": "Tuple4Primitive",
+      "label": "Tuple4",
+      "renderer": "tuple4",
+      "itemRenderers": [
+        {
+          "label": "String",
+          "renderer": "string"
+        },
+        {
+          "label": "Number",
+          "renderer": "number"
+        },
+        {
+          "label": "Boolean",
+          "renderer": "boolean"
+        },
+        {
+          "label": "Address",
+          "renderer": "Address"
+        }
+      ]
+    },
+    "Users": {
+      "type": "User",
+      "renderer": "streamingTable",
+      "columns": {
+        "1": {
+          "label": "1",
+          "renderer": "tuple4"
+        },
+        "2": {
+          "label": "2",
+          "renderer": "tuple4"
+        },
+        "3": {
+          "label": "3",
+          "renderer": "tuple4"
+        },
+        "4": {
+          "label": "4",
+          "renderer": "tuple4"
+        },
+        "5": {
+          "label": "5",
+          "renderer": "tuple4"
+        },
+        "6": {
+          "label": "6",
+          "renderer": "tuple4"
+        },
+        "7": {
+          "label": "7",
+          "renderer": "tuple4"
+        },
+        "8": {
+          "label": "8",
+          "renderer": "tuple4"
+        },
+        "9": {
+          "label": "9",
+          "renderer": "tuple4"
+        },
+        "10": {
+          "label": "10",
+          "renderer": "tuple4"
+        },
+        "11": {
+          "label": "11",
+          "renderer": "tuple4"
+        },
+        "12": {
+          "label": "12",
+          "renderer": "tuple4"
+        },
+        "13": {
+          "label": "13",
+          "renderer": "tuple4"
+        },
+        "14": {
+          "label": "14",
+          "renderer": "tuple4"
+        },
+        "15": {
+          "label": "15",
+          "renderer": "tuple4"
+        },
+        "16": {
+          "label": "16",
+          "renderer": "tuple4"
+        },
+        "17": {
+          "label": "17",
+          "renderer": "tuple4"
+        },
+        "18": {
+          "label": "18",
+          "renderer": "tuple4"
+        },
+        "19": {
+          "label": "19",
+          "renderer": "tuple4"
+        },
+        "20": {
+          "label": "20",
+          "renderer": "tuple4"
+        },
+        "21": {
+          "label": "21",
+          "renderer": "tuple4"
+        },
+        "22": {
+          "label": "22",
+          "renderer": "tuple4"
+        },
+        "23": {
+          "label": "23",
+          "renderer": "tuple4"
+        },
+        "24": {
+          "label": "24",
+          "renderer": "tuple4"
+        },
+        "25": {
+          "label": "25",
+          "renderer": "tuple4"
+        },
+        "26": {
+          "label": "26",
+          "renderer": "tuple4"
+        },
+        "27": {
+          "label": "27",
+          "renderer": "tuple4"
+        },
+        "28": {
+          "label": "28",
+          "renderer": "tuple4"
+        },
+        "29": {
+          "label": "29",
+          "renderer": "tuple4"
+        },
+        "30": {
+          "label": "30",
+          "renderer": "tuple4"
+        }
+      },
+      "visibleColumns": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23",
+        "24",
+        "25",
+        "26",
+        "27",
+        "28",
+        "29",
+        "30"
+      ]
+    },
+    "App": {
+      "type": "App",
+      "renderer": "app",
+      "fields": {
+        "Users": {
+          "renderer": "Users",
+          "api": "TablePerformanceUsersApi"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": {
+              "groups": {
+                "main": ["Users"]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "apis": {
+    "tables": {
+      "TablePerformanceUsersApi": {
+        "type": "User"
+      }
+    }
+  },
+  "launchers": {
+    "AppLauncher": {
+      "kind": "passthrough",
+      "form": "App",
+      "configType": "Config"
+    }
+  }
+}
