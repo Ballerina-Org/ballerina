@@ -353,7 +353,7 @@ func TestListDeserialization(t *testing.T) {
   ]
 }`)
 	deserialized := deserializer(serialized)
-	require.Equal(t, ballerina.Right[error, []bool]([]bool{true, false, true}), deserialized)
+	require.Equal(t, ballerina.Right[error, ballerina.Array[bool]]([]bool{true, false, true}), deserialized)
 }
 
 func TestListDeserializationError(t *testing.T) {
