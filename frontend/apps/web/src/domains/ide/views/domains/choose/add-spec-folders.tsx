@@ -84,7 +84,7 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
                                                 .then(Ide.Updaters.Phases.choosing.finishUpload()))
                                         return;
                                     }
-                                    debugger
+                          
                                     const u2 = 
                                         Ide.Updaters.Phases.choosing.finishUpload()
                                             .then(

@@ -1327,7 +1327,6 @@ export const dispatchFromAPIRawValue =
   (raw: any): ValueOrErrors<PredicateValue, string> => {
 
     const result: ValueOrErrors<PredicateValue, string> = (() => {
-      debugger  
       if (t.kind == "primitive") {
         // unit is a special kind of primitive
         if (t.name == "unit") {
@@ -1405,7 +1404,6 @@ export const dispatchFromAPIRawValue =
       }
       
       if (t.kind == "map" && t.args.length == 2) {
-          debugger
         const result = converters["Map"].fromAPIRawValue(raw);
 
         return ValueOrErrors.Operations.All(
@@ -1459,7 +1457,7 @@ export const dispatchFromAPIRawValue =
 
       if (t.kind == "sum" && t.args.length === 2) {
         const result = converters["Sum"].fromAPIRawValue(raw);
-
+        debugger
         return dispatchFromAPIRawValue(
           result.kind == "l" ? t.args[0] : t.args[1],
           types,

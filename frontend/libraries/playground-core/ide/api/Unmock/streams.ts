@@ -26,7 +26,9 @@ const inventory = {
                                     ({
                                         data:
                                             OrderedMapRepo.Default.fromIdentifiables(
-                                                res.value.map(x => x.value)
+                                                res.value
+                                                    .map(x => ({ Id: x.id, DisplayValue: x.value.DisplayValue }))
+                                                    //.map(x => x.value)
 
                                                     .filter((x: CollectionReference) => {
                                                     

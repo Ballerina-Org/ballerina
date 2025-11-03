@@ -2740,14 +2740,15 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         ),
         daisyInfiniteStream: () => (props) => {
             const listId = useId()
+            const selected =  props.context.value.isSome &&
+                    ((props.context.value.value as ValueRecord).fields.get(
+                        "DisplayValue",
+                    ) as string) || ""
             return (<>
                 <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
                     {props.context.label && <legend className="fieldset-legend">{props.context.label}</legend>}
                     {props.context.details && <p className="label">{props.context.details}</p>}
-                    <label className="label">      {props.context.value.isSome &&
-                        ((props.context.value.value as ValueRecord).fields.get(
-                            "DisplayValue",
-                        ) as string)}{" "}</label>
+                    <label className="label">      {selected}{" "}</label>
                     <div className="join">
                      
                             <input type="text"
@@ -2764,13 +2765,15 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                             {props.context.customFormState.status == "closed" ? (
                                     <></>
                                 ) :
-                                <select defaultValue="Pick sth" className="select w-64 select-neutral">
+                                <select value={selected} defaultValue="Pick sth" className="select w-64 select-neutral">
                                     <option disabled={true}>Pick a language</option>
                                     {props.context.customFormState.stream.loadedElements
                                         .valueSeq()
                                         .map((chunk) =>
                                             chunk.data.valueSeq().map((element) => (
-                                                <option className=""
+                                                <option
+                                                    value={element.DisplayValue}
+                                                    className=""
                                                     onClick={() => {
                                           
                                                         props.foreignMutations.select(

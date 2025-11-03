@@ -22,6 +22,7 @@ export const SelectSpec = (props: SelectSpecProps): React.ReactElement => {
                 const u = 
                     Ide.Updaters.Phases.choosing.toLocked(spec.value)
                         .then(((ide: Ide) => {
+                            debugger
                             if(ide.phase != 'locked') return ide;
 
                             if(!FlatNode.Operations.hasSingleFolderBelowRoot(spec.value)) {

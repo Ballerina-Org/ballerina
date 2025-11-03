@@ -1,4 +1,13 @@
-﻿import {DispatchDelta, Option, Product, replaceWith, Updater} from "ballerina-core";
+﻿import {
+    AggregatedFlags,
+    DispatchDelta,
+    DispatchDeltaTransfer,
+    DispatchDeltaTransferComparand,
+    Option,
+    Product,
+    replaceWith,
+    Updater
+} from "ballerina-core";
 import {Ide} from "../../state";
 import {WorkspaceState} from "./vfs/state";
 import {IdeLauncher} from "../spec/state";
@@ -84,10 +93,16 @@ export type LockedPhase = {
     
 };
 
+type TD = [
+    DispatchDeltaTransfer<any>,
+    DispatchDeltaTransferComparand,
+    AggregatedFlags<any>,
+]
+
 export const LockedPhase = {
     Updaters: {
         Step :{
-            addDelta: (delta:DispatchDelta<any>): Updater<Ide> =>
+            addDelta: (delta:TD): Updater<Ide> =>
                 Updater(
                     LockedUpdaterFull((locked, ide) => {
                         if(locked.progress.kind != 'preDisplay' || locked.progress.deltas.kind == "l") return locked;

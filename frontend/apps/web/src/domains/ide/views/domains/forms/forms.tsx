@@ -20,7 +20,7 @@ import {
     ErrorRendererProps,
     DispatchInjectedPrimitive,
     DispatchOnChange,
-    AggregatedFlags, LookupApiOne,
+    AggregatedFlags, LookupApiOne, DispatchDeltaTransferComparand, DispatchDeltaTransferV2,
 } from "ballerina-core";
 import { Set, OrderedMap } from "immutable";
 import {FormsSeedEntity} from "playground-core/ide/domains/seeds/state.ts";
@@ -222,6 +222,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
             specificationDeserializer.deserializedSpecification.sync.value.kind ==
             "value"
         ) {
+            debugger
             const toApiRawParser =
                 specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
                     "person-config",
@@ -251,12 +252,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                 : entity.value.value;
         console.log("patching entity", newEntity);
         console.log("delta", JSON.stringify(delta, null, 2));
-        if(props.deltas.kind == "l") {
-            props.setState( LockedPhase.Operations.startDeltas().then(LockedPhase.Updaters.Step.addDelta(delta)));
-        }
-        else {
-            props.setState( LockedPhase.Updaters.Step.addDelta(delta));
-        }
+
         
         setEntity(
             replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newEntity))),
@@ -274,12 +270,26 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                 specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
                     props.launcher,
                 )!.parseValueToApi;
-            const path = DispatchDeltaTransfer.Default.FromDelta(
-                toApiRawParser as any, //TODO - fix type issue if worth it
+            const path: ValueOrErrors<
+                [
+                    DispatchDeltaTransferV2,
+                    DispatchDeltaTransferComparand,
+                    AggregatedFlags<any>,
+                ],
+                string
+            >  = DispatchDeltaTransferV2.Default.FromDelta(
+                toApiRawParser as any, 
                 parseCustomDelta,
             )(delta);
         
             debugger
+            if(path.kind == "value") {
+                if (props.deltas.kind == "l") {
+                    props.setState(LockedPhase.Operations.startDeltas().then(LockedPhase.Updaters.Step.addDelta(path.value)));
+                } else {
+                    props.setState(LockedPhase.Updaters.Step.addDelta(path.value));
+                }
+            }
             setEntityPath(path);
             setRemoteEntityVersionIdentifier(v4());
         }
@@ -298,12 +308,12 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                 .then(async (raw) => {
                     if (raw.kind == "value") {
                         const res: FormsSeedEntity = raw.value;
-                        
+                        debugger
                         const parsed =
                             spec.launchers.passthrough
                                 .get(props.launcher)!
                                 .parseEntityFromApi(raw.value.value);
-
+                        debugger
                         if (parsed.kind == "errors") {
                             console.error("parsed entity errors", parsed.errors);
                         } else {

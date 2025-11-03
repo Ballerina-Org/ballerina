@@ -80,7 +80,7 @@ export const WorkspaceState = {
         defaultForSingleFolder: (): Updater<WorkspaceState> =>
             Updater(workspace =>
                 {
-                    debugger
+        
                     if(!FlatNode.Operations.hasSingleFolderBelowRoot(workspace.nodes)) {
                         return workspace;
                     }

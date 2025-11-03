@@ -1,5 +1,15 @@
 ﻿import {List} from "immutable";
-import {DispatchDelta, Product} from "ballerina-core";
-
-export type Deltas = List<DispatchDelta<any>>
+import {
+    AggregatedFlags,
+    DispatchDelta,
+    DispatchDeltaTransfer,
+    DispatchDeltaTransferComparand,
+    Product
+} from "ballerina-core";
+type TD = [
+    DispatchDeltaTransfer<any>,
+    DispatchDeltaTransferComparand,
+    AggregatedFlags<any>,
+]
+export type Deltas = List<TD> // List<DispatchDelta<any>>
 export type DeltaDrain = Product<Deltas, Deltas>

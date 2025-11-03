@@ -41,7 +41,7 @@ export const LockedUpdaterFull = (
     return (ide: Ide): Ide => {
         if (ide.phase === "locked") {
             const result = updater(ide.locked, ide);
-            if ("phase" in result) {
+            if ("kind" in result) {
                 return result as Ide;
             } else {
                 return { ...ide, locked: result as LockedPhase };

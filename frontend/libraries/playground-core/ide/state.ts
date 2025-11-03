@@ -1,4 +1,4 @@
-﻿import {Option, Updater} from "ballerina-core";
+﻿import {Option, Updater, caseUpdater, CaseUpdater} from "ballerina-core";
 import { Template, View } from "ballerina-core";
 import { ForeignMutationsInput } from "ballerina-core";
 import { JsonEditorForeignMutationsExpected, JsonEditorView } from "./domains/editor/state";
@@ -9,6 +9,33 @@ import {CommonUI, Variant} from "./domains/common-ui/state";
 import {Origin} from "./domains/choose/state";
 import {Node} from "./domains/locked/vfs/upload/model";
 
+// export type Ide =
+//     CommonUI & (
+//     |  { readonly kind: 'hero' }
+//     |  ({ readonly kind: 'bootstrap'} & BootstrapPhase)
+//     |  ({ readonly kind: 'selectionOrCreation'} & Origin)
+//     |  ({ readonly kind: 'locked'} & LockedPhase)
+//     )
+//
+// type App = {
+//     ide: Ide;
+//     otherStuff?: any;
+// };
+//
+// export const App = {
+//     Default: (): App =>
+//         ({ ide : {...CommonUI.Default({ kind: 'scratch'} as Variant), kind: 'hero'}}),
+//     Updater: {
+//         ...caseUpdater<App>()("ide")("bootstrap"),
+//         ...caseUpdater<App>()("ide")("locked"),
+//         ...caseUpdater<App>()("ide")("hero"),
+//         ...caseUpdater<App>()("ide")("selectionOrCreation"),
+//     },
+//     Operations: {
+//         test: (app: App) => App.Updater.bootstrap( b => ({ ...b, kind2: 'initializing', message:''}))
+//     }
+// }
+
 export type Ide =
     CommonUI & (
     |  { readonly phase: 'hero' }
@@ -16,6 +43,7 @@ export type Ide =
     |  { readonly phase: 'selectionOrCreation', origin: Origin }
     |  { readonly phase: 'locked', locked: LockedPhase }
     )
+
 
 export const IsBootstrap = (
     ide: Ide
@@ -38,12 +66,13 @@ export const Ide = {
         ({ ...CommonUI.Default({ kind: 'scratch'} as Variant), phase: 'hero'}),
     
     Updaters: {
+
         Phases: {
             hero: {
                 toBootstrap: (variant: Variant): Updater<Ide> => 
                     Updater((ide: Ide): Ide => ({
                         ...ide,
-                        phase: 'bootstrap',
+                            phase: 'bootstrap',
                         bootstrap: {kind: 'kickedOff'}
                     })
                     ).then(Updater((ide: Ide) => Object.assign(ide, CommonUI.Default(variant))))
