@@ -54,3 +54,15 @@ func ApplyAll[Entity any](updaters []UpdaterWithError[Entity]) UpdaterWithError[
 		return entity, nil
 	})
 }
+
+func ReplaceWith[T any](value T) Updater[T] {
+	return NewUpdater(func(_ T) T {
+		return value
+	})
+}
+
+func ReplaceWithWithError[T any](value T) UpdaterWithError[T] {
+	return NewUpdaterWithError(func(_ T) (T, error) {
+		return value, nil
+	})
+}
