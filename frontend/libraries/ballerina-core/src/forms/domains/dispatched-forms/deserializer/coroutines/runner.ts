@@ -14,6 +14,7 @@ import {
   DispatchFormsParserContext,
   DispatchFormsParserState,
   parseDispatchFormsToLaunchers,
+  parseDispatchFormsToLaunchersSerializable,
 } from "../state";
 
 export const LoadAndDeserializeSpecification = <
@@ -89,6 +90,21 @@ export const LoadAndDeserializeSpecification = <
             return deserializationResult;
           }
 
+          const deserializationStartTime = performance.now();
+          const serializableResult = parseDispatchFormsToLaunchersSerializable(
+            injectedPrimitives,
+            current.fieldTypeConverters,
+            current.lookupTypeRenderer,
+            current.defaultRecordConcreteRenderer,
+            current.defaultNestedRecordConcreteRenderer,
+            current.concreteRenderers,
+            current.IdWrapper,
+            current.ErrorRenderer,
+          )(deserializationResult.value);
+          const afterSerializableResult = performance.now();
+          const serializableResultDuration =
+            afterSerializableResult - deserializationStartTime;
+
           const result = parseDispatchFormsToLaunchers(
             injectedPrimitives,
             current.fieldTypeConverters,
@@ -99,6 +115,13 @@ export const LoadAndDeserializeSpecification = <
             current.IdWrapper,
             current.ErrorRenderer,
           )(deserializationResult.value);
+          const afterResult = performance.now();
+          const resultDuration = afterResult - afterSerializableResult;
+
+          console.debug(
+            `parseDispatchFormsToLaunchersSerializable: ${serializableResultDuration}ms`,
+          );
+          console.debug(`parseDispatchFormsToLaunchers: ${resultDuration}ms`);
 
           if (result.kind == "errors") {
             console.error(result.errors.valueSeq().toArray().join("\n"));
