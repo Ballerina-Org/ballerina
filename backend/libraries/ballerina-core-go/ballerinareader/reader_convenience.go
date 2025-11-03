@@ -28,7 +28,6 @@ func DecorateReaderError[Ctx, O any](f func(err error) error) func(m ReaderWithE
 			Apply: func(input Ctx) (O, error) {
 				mapped, err := m.Apply(input)
 				if err != nil {
-
 					return mapped, f(err)
 				}
 				return mapped, nil

@@ -1,5 +1,9 @@
 package ballerinaupdater
 
+import (
+	"fmt"
+)
+
 func Then[Ctx any](updaterA Updater[Ctx], updaterB Updater[Ctx]) Updater[Ctx] {
 	return Updater[Ctx]{
 		ApplyTo: func(input Ctx) Ctx {
@@ -11,12 +15,32 @@ func Then[Ctx any](updaterA Updater[Ctx], updaterB Updater[Ctx]) Updater[Ctx] {
 func ThenWithError[Ctx any](updaterA UpdaterWithError[Ctx], updaterB UpdaterWithError[Ctx]) UpdaterWithError[Ctx] {
 	return UpdaterWithError[Ctx]{
 		ApplyTo: func(input Ctx) (Ctx, error) {
-			apply, err := updaterA.ApplyTo(input)
+			decoratedUpdaterA := DecorateUpdaterError[Ctx](func(err error) error {
+				return fmt.Errorf("thenWithError error in updaterA: %w", err)
+			})(updaterA)
+			apply, err := decoratedUpdaterA.ApplyTo(input)
 			if err != nil {
 				return apply, err
 			}
-			return updaterB.ApplyTo(apply)
+			decoratedUpdaterB := DecorateUpdaterError[Ctx](func(err error) error {
+				return fmt.Errorf("thenWithError error in updaterB: %w", err)
+			})(updaterB)
+			return decoratedUpdaterB.ApplyTo(apply)
 		},
+	}
+}
+
+func DecorateUpdaterError[Ctx any](f func(err error) error) func(m UpdaterWithError[Ctx]) UpdaterWithError[Ctx] {
+	return func(m UpdaterWithError[Ctx]) UpdaterWithError[Ctx] {
+		return UpdaterWithError[Ctx]{
+			ApplyTo: func(input Ctx) (Ctx, error) {
+				mapped, err := m.ApplyTo(input)
+				if err != nil {
+					return mapped, f(err)
+				}
+				return mapped, nil
+			},
+		}
 	}
 }
 
@@ -44,8 +68,11 @@ func NewUpdaterWithError[T any](convert func(T) (T, error)) UpdaterWithError[T] 
 
 func ApplyAll[Entity any](updaters []UpdaterWithError[Entity]) UpdaterWithError[Entity] {
 	return NewUpdaterWithError(func(entity Entity) (Entity, error) {
-		for _, updater := range updaters {
-			updated, err := updater.ApplyTo(entity)
+		for i, updater := range updaters {
+			decoratedUpdater := DecorateUpdaterError[Entity](func(err error) error {
+				return fmt.Errorf("ApplyAll error in updater_%d: %w", i, err)
+			})(updater)
+			updated, err := decoratedUpdater.ApplyTo(entity)
 			if err != nil {
 				return entity, err
 			}

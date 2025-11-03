@@ -1,6 +1,10 @@
 package ballerinareader
 
-import ballerina "ballerina.com/core"
+import (
+	"fmt"
+
+	ballerina "ballerina.com/core"
+)
 
 type Reader[Ctx, O any] struct {
 	Apply func(Ctx) O
@@ -95,12 +99,12 @@ func ParallelWithError2[Ctx, O1, O2 any](reader1 ReaderWithError[Ctx, O1], reade
 		Apply: func(ctx Ctx) (ballerina.Tuple2[O1, O2], error) {
 			mapped1, err := reader1.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple2(*new(O1), *new(O2)), err
+				return ballerina.NewTuple2(*new(O1), *new(O2)), fmt.Errorf("parallelWithError2 error in reader1: %w", err)
 			}
 
 			mapped2, err := reader2.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple2(mapped1, *new(O2)), err
+				return ballerina.NewTuple2(mapped1, *new(O2)), fmt.Errorf("parallelWithError2 error in reader2: %w", err)
 			}
 
 			return ballerina.NewTuple2(mapped1, mapped2), nil
@@ -113,17 +117,17 @@ func ParallelWithError3[Ctx, O1, O2, O3 any](reader1 ReaderWithError[Ctx, O1], r
 		Apply: func(ctx Ctx) (ballerina.Tuple3[O1, O2, O3], error) {
 			mapped1, err := reader1.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple3(*new(O1), *new(O2), *new(O3)), err
+				return ballerina.NewTuple3(*new(O1), *new(O2), *new(O3)), fmt.Errorf("parallelWithError3 error in reader1: %w", err)
 			}
 
 			mapped2, err := reader2.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple3(mapped1, *new(O2), *new(O3)), err
+				return ballerina.NewTuple3(mapped1, *new(O2), *new(O3)), fmt.Errorf("parallelWithError3 error in reader2: %w", err)
 			}
 
 			mapped3, err := reader3.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple3(mapped1, mapped2, *new(O3)), err
+				return ballerina.NewTuple3(mapped1, mapped2, *new(O3)), fmt.Errorf("parallelWithError3 error in reader3: %w", err)
 			}
 
 			return ballerina.NewTuple3(mapped1, mapped2, mapped3), nil
@@ -136,22 +140,22 @@ func ParallelWithError4[Ctx, O1, O2, O3, O4 any](reader1 ReaderWithError[Ctx, O1
 		Apply: func(ctx Ctx) (ballerina.Tuple4[O1, O2, O3, O4], error) {
 			mapped1, err := reader1.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple4(*new(O1), *new(O2), *new(O3), *new(O4)), err
+				return ballerina.NewTuple4(*new(O1), *new(O2), *new(O3), *new(O4)), fmt.Errorf("parallelWithError4 error in reader1: %w", err)
 			}
 
 			mapped2, err := reader2.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple4(mapped1, *new(O2), *new(O3), *new(O4)), err
+				return ballerina.NewTuple4(mapped1, *new(O2), *new(O3), *new(O4)), fmt.Errorf("parallelWithError4 error in reader2: %w", err)
 			}
 
 			mapped3, err := reader3.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple4(mapped1, mapped2, *new(O3), *new(O4)), err
+				return ballerina.NewTuple4(mapped1, mapped2, *new(O3), *new(O4)), fmt.Errorf("parallelWithError4 error in reader3: %w", err)
 			}
 
 			mapped4, err := reader4.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple4(mapped1, mapped2, mapped3, *new(O4)), err
+				return ballerina.NewTuple4(mapped1, mapped2, mapped3, *new(O4)), fmt.Errorf("parallelWithError4 error in reader4: %w", err)
 			}
 
 			return ballerina.NewTuple4(mapped1, mapped2, mapped3, mapped4), nil
@@ -164,27 +168,27 @@ func ParallelWithError5[Ctx, O1, O2, O3, O4, O5 any](reader1 ReaderWithError[Ctx
 		Apply: func(ctx Ctx) (ballerina.Tuple5[O1, O2, O3, O4, O5], error) {
 			mapped1, err := reader1.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple5(*new(O1), *new(O2), *new(O3), *new(O4), *new(O5)), err
+				return ballerina.NewTuple5(*new(O1), *new(O2), *new(O3), *new(O4), *new(O5)), fmt.Errorf("parallelWithError5 error in reader1: %w", err)
 			}
 
 			mapped2, err := reader2.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple5(mapped1, *new(O2), *new(O3), *new(O4), *new(O5)), err
+				return ballerina.NewTuple5(mapped1, *new(O2), *new(O3), *new(O4), *new(O5)), fmt.Errorf("parallelWithError5 error in reader2: %w", err)
 			}
 
 			mapped3, err := reader3.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple5(mapped1, mapped2, *new(O3), *new(O4), *new(O5)), err
+				return ballerina.NewTuple5(mapped1, mapped2, *new(O3), *new(O4), *new(O5)), fmt.Errorf("parallelWithError5 error in reader3: %w", err)
 			}
 
 			mapped4, err := reader4.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple5(mapped1, mapped2, mapped3, *new(O4), *new(O5)), err
+				return ballerina.NewTuple5(mapped1, mapped2, mapped3, *new(O4), *new(O5)), fmt.Errorf("parallelWithError5 error in reader4: %w", err)
 			}
 
 			mapped5, err := reader5.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple5(mapped1, mapped2, mapped3, mapped4, *new(O5)), err
+				return ballerina.NewTuple5(mapped1, mapped2, mapped3, mapped4, *new(O5)), fmt.Errorf("parallelWithError5 error in reader5: %w", err)
 			}
 
 			return ballerina.NewTuple5(mapped1, mapped2, mapped3, mapped4, mapped5), nil
@@ -197,32 +201,32 @@ func ParallelWithError6[Ctx, O1, O2, O3, O4, O5, O6 any](reader1 ReaderWithError
 		Apply: func(ctx Ctx) (ballerina.Tuple6[O1, O2, O3, O4, O5, O6], error) {
 			mapped1, err := reader1.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple6(*new(O1), *new(O2), *new(O3), *new(O4), *new(O5), *new(O6)), err
+				return ballerina.NewTuple6(*new(O1), *new(O2), *new(O3), *new(O4), *new(O5), *new(O6)), fmt.Errorf("parallelWithError6 error in reader1: %w", err)
 			}
 
 			mapped2, err := reader2.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple6(mapped1, *new(O2), *new(O3), *new(O4), *new(O5), *new(O6)), err
+				return ballerina.NewTuple6(mapped1, *new(O2), *new(O3), *new(O4), *new(O5), *new(O6)), fmt.Errorf("parallelWithError6 error in reader2: %w", err)
 			}
 
 			mapped3, err := reader3.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple6(mapped1, mapped2, *new(O3), *new(O4), *new(O5), *new(O6)), err
+				return ballerina.NewTuple6(mapped1, mapped2, *new(O3), *new(O4), *new(O5), *new(O6)), fmt.Errorf("parallelWithError6 error in reader3: %w", err)
 			}
 
 			mapped4, err := reader4.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple6(mapped1, mapped2, mapped3, *new(O4), *new(O5), *new(O6)), err
+				return ballerina.NewTuple6(mapped1, mapped2, mapped3, *new(O4), *new(O5), *new(O6)), fmt.Errorf("parallelWithError6 error in reader4: %w", err)
 			}
 
 			mapped5, err := reader5.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple6(mapped1, mapped2, mapped3, mapped4, *new(O5), *new(O6)), err
+				return ballerina.NewTuple6(mapped1, mapped2, mapped3, mapped4, *new(O5), *new(O6)), fmt.Errorf("parallelWithError6 error in reader5: %w", err)
 			}
 
 			mapped6, err := reader6.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple6(mapped1, mapped2, mapped3, mapped4, mapped5, *new(O6)), err
+				return ballerina.NewTuple6(mapped1, mapped2, mapped3, mapped4, mapped5, *new(O6)), fmt.Errorf("parallelWithError6 error in reader6: %w", err)
 			}
 
 			return ballerina.NewTuple6(mapped1, mapped2, mapped3, mapped4, mapped5, mapped6), nil
@@ -235,37 +239,37 @@ func ParallelWithError7[Ctx, O1, O2, O3, O4, O5, O6, O7 any](reader1 ReaderWithE
 		Apply: func(ctx Ctx) (ballerina.Tuple7[O1, O2, O3, O4, O5, O6, O7], error) {
 			mapped1, err := reader1.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple7(*new(O1), *new(O2), *new(O3), *new(O4), *new(O5), *new(O6), *new(O7)), err
+				return ballerina.NewTuple7(*new(O1), *new(O2), *new(O3), *new(O4), *new(O5), *new(O6), *new(O7)), fmt.Errorf("parallelWithError7 error in reader1: %w", err)
 			}
 
 			mapped2, err := reader2.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple7(mapped1, *new(O2), *new(O3), *new(O4), *new(O5), *new(O6), *new(O7)), err
+				return ballerina.NewTuple7(mapped1, *new(O2), *new(O3), *new(O4), *new(O5), *new(O6), *new(O7)), fmt.Errorf("parallelWithError7 error in reader2: %w", err)
 			}
 
 			mapped3, err := reader3.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple7(mapped1, mapped2, *new(O3), *new(O4), *new(O5), *new(O6), *new(O7)), err
+				return ballerina.NewTuple7(mapped1, mapped2, *new(O3), *new(O4), *new(O5), *new(O6), *new(O7)), fmt.Errorf("parallelWithError7 error in reader3: %w", err)
 			}
 
 			mapped4, err := reader4.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple7(mapped1, mapped2, mapped3, *new(O4), *new(O5), *new(O6), *new(O7)), err
+				return ballerina.NewTuple7(mapped1, mapped2, mapped3, *new(O4), *new(O5), *new(O6), *new(O7)), fmt.Errorf("parallelWithError7 error in reader4: %w", err)
 			}
 
 			mapped5, err := reader5.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple7(mapped1, mapped2, mapped3, mapped4, *new(O5), *new(O6), *new(O7)), err
+				return ballerina.NewTuple7(mapped1, mapped2, mapped3, mapped4, *new(O5), *new(O6), *new(O7)), fmt.Errorf("parallelWithError7 error in reader5: %w", err)
 			}
 
 			mapped6, err := reader6.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple7(mapped1, mapped2, mapped3, mapped4, mapped5, *new(O6), *new(O7)), err
+				return ballerina.NewTuple7(mapped1, mapped2, mapped3, mapped4, mapped5, *new(O6), *new(O7)), fmt.Errorf("parallelWithError7 error in reader6: %w", err)
 			}
 
 			mapped7, err := reader7.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple7(mapped1, mapped2, mapped3, mapped4, mapped5, mapped6, *new(O7)), err
+				return ballerina.NewTuple7(mapped1, mapped2, mapped3, mapped4, mapped5, mapped6, *new(O7)), fmt.Errorf("parallelWithError7 error in reader7: %w", err)
 			}
 
 			return ballerina.NewTuple7(mapped1, mapped2, mapped3, mapped4, mapped5, mapped6, mapped7), nil
@@ -278,42 +282,42 @@ func ParallelWithError8[Ctx, O1, O2, O3, O4, O5, O6, O7, O8 any](reader1 ReaderW
 		Apply: func(ctx Ctx) (ballerina.Tuple8[O1, O2, O3, O4, O5, O6, O7, O8], error) {
 			mapped1, err := reader1.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple8(*new(O1), *new(O2), *new(O3), *new(O4), *new(O5), *new(O6), *new(O7), *new(O8)), err
+				return ballerina.NewTuple8(*new(O1), *new(O2), *new(O3), *new(O4), *new(O5), *new(O6), *new(O7), *new(O8)), fmt.Errorf("parallelWithError8 error in reader1: %w", err)
 			}
 
 			mapped2, err := reader2.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple8(mapped1, *new(O2), *new(O3), *new(O4), *new(O5), *new(O6), *new(O7), *new(O8)), err
+				return ballerina.NewTuple8(mapped1, *new(O2), *new(O3), *new(O4), *new(O5), *new(O6), *new(O7), *new(O8)), fmt.Errorf("parallelWithError8 error in reader2: %w", err)
 			}
 
 			mapped3, err := reader3.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple8(mapped1, mapped2, *new(O3), *new(O4), *new(O5), *new(O6), *new(O7), *new(O8)), err
+				return ballerina.NewTuple8(mapped1, mapped2, *new(O3), *new(O4), *new(O5), *new(O6), *new(O7), *new(O8)), fmt.Errorf("parallelWithError8 error in reader3: %w", err)
 			}
 
 			mapped4, err := reader4.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple8(mapped1, mapped2, mapped3, *new(O4), *new(O5), *new(O6), *new(O7), *new(O8)), err
+				return ballerina.NewTuple8(mapped1, mapped2, mapped3, *new(O4), *new(O5), *new(O6), *new(O7), *new(O8)), fmt.Errorf("parallelWithError8 error in reader4: %w", err)
 			}
 
 			mapped5, err := reader5.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple8(mapped1, mapped2, mapped3, mapped4, *new(O5), *new(O6), *new(O7), *new(O8)), err
+				return ballerina.NewTuple8(mapped1, mapped2, mapped3, mapped4, *new(O5), *new(O6), *new(O7), *new(O8)), fmt.Errorf("parallelWithError8 error in reader5: %w", err)
 			}
 
 			mapped6, err := reader6.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple8(mapped1, mapped2, mapped3, mapped4, mapped5, *new(O6), *new(O7), *new(O8)), err
+				return ballerina.NewTuple8(mapped1, mapped2, mapped3, mapped4, mapped5, *new(O6), *new(O7), *new(O8)), fmt.Errorf("parallelWithError8 error in reader6: %w", err)
 			}
 
 			mapped7, err := reader7.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple8(mapped1, mapped2, mapped3, mapped4, mapped5, mapped6, *new(O7), *new(O8)), err
+				return ballerina.NewTuple8(mapped1, mapped2, mapped3, mapped4, mapped5, mapped6, *new(O7), *new(O8)), fmt.Errorf("parallelWithError8 error in reader7: %w", err)
 			}
 
 			mapped8, err := reader8.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple8(mapped1, mapped2, mapped3, mapped4, mapped5, mapped6, mapped7, *new(O8)), err
+				return ballerina.NewTuple8(mapped1, mapped2, mapped3, mapped4, mapped5, mapped6, mapped7, *new(O8)), fmt.Errorf("parallelWithError8 error in reader8: %w", err)
 			}
 
 			return ballerina.NewTuple8(mapped1, mapped2, mapped3, mapped4, mapped5, mapped6, mapped7, mapped8), nil
@@ -326,47 +330,47 @@ func ParallelWithError9[Ctx, O1, O2, O3, O4, O5, O6, O7, O8, O9 any](reader1 Rea
 		Apply: func(ctx Ctx) (ballerina.Tuple9[O1, O2, O3, O4, O5, O6, O7, O8, O9], error) {
 			mapped1, err := reader1.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple9(*new(O1), *new(O2), *new(O3), *new(O4), *new(O5), *new(O6), *new(O7), *new(O8), *new(O9)), err
+				return ballerina.NewTuple9(*new(O1), *new(O2), *new(O3), *new(O4), *new(O5), *new(O6), *new(O7), *new(O8), *new(O9)), fmt.Errorf("parallelWithError9 error in reader1: %w", err)
 			}
 
 			mapped2, err := reader2.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple9(mapped1, *new(O2), *new(O3), *new(O4), *new(O5), *new(O6), *new(O7), *new(O8), *new(O9)), err
+				return ballerina.NewTuple9(mapped1, *new(O2), *new(O3), *new(O4), *new(O5), *new(O6), *new(O7), *new(O8), *new(O9)), fmt.Errorf("parallelWithError9 error in reader2: %w", err)
 			}
 
 			mapped3, err := reader3.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple9(mapped1, mapped2, *new(O3), *new(O4), *new(O5), *new(O6), *new(O7), *new(O8), *new(O9)), err
+				return ballerina.NewTuple9(mapped1, mapped2, *new(O3), *new(O4), *new(O5), *new(O6), *new(O7), *new(O8), *new(O9)), fmt.Errorf("parallelWithError9 error in reader3: %w", err)
 			}
 
 			mapped4, err := reader4.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple9(mapped1, mapped2, mapped3, *new(O4), *new(O5), *new(O6), *new(O7), *new(O8), *new(O9)), err
+				return ballerina.NewTuple9(mapped1, mapped2, mapped3, *new(O4), *new(O5), *new(O6), *new(O7), *new(O8), *new(O9)), fmt.Errorf("parallelWithError9 error in reader4: %w", err)
 			}
 
 			mapped5, err := reader5.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple9(mapped1, mapped2, mapped3, mapped4, *new(O5), *new(O6), *new(O7), *new(O8), *new(O9)), err
+				return ballerina.NewTuple9(mapped1, mapped2, mapped3, mapped4, *new(O5), *new(O6), *new(O7), *new(O8), *new(O9)), fmt.Errorf("parallelWithError9 error in reader5: %w", err)
 			}
 
 			mapped6, err := reader6.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple9(mapped1, mapped2, mapped3, mapped4, mapped5, *new(O6), *new(O7), *new(O8), *new(O9)), err
+				return ballerina.NewTuple9(mapped1, mapped2, mapped3, mapped4, mapped5, *new(O6), *new(O7), *new(O8), *new(O9)), fmt.Errorf("parallelWithError9 error in reader6: %w", err)
 			}
 
 			mapped7, err := reader7.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple9(mapped1, mapped2, mapped3, mapped4, mapped5, mapped6, *new(O7), *new(O8), *new(O9)), err
+				return ballerina.NewTuple9(mapped1, mapped2, mapped3, mapped4, mapped5, mapped6, *new(O7), *new(O8), *new(O9)), fmt.Errorf("parallelWithError9 error in reader7: %w", err)
 			}
 
 			mapped8, err := reader8.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple9(mapped1, mapped2, mapped3, mapped4, mapped5, mapped6, mapped7, *new(O8), *new(O9)), err
+				return ballerina.NewTuple9(mapped1, mapped2, mapped3, mapped4, mapped5, mapped6, mapped7, *new(O8), *new(O9)), fmt.Errorf("parallelWithError9 error in reader8: %w", err)
 			}
 
 			mapped9, err := reader9.Apply(ctx)
 			if err != nil {
-				return ballerina.NewTuple9(mapped1, mapped2, mapped3, mapped4, mapped5, mapped6, mapped7, mapped8, *new(O9)), err
+				return ballerina.NewTuple9(mapped1, mapped2, mapped3, mapped4, mapped5, mapped6, mapped7, mapped8, *new(O9)), fmt.Errorf("parallelWithError9 error in reader9: %w", err)
 			}
 
 			return ballerina.NewTuple9(mapped1, mapped2, mapped3, mapped4, mapped5, mapped6, mapped7, mapped8, mapped9), nil
@@ -385,11 +389,17 @@ func Flatten[Ctx, A any](reader Reader[Ctx, Reader[Ctx, A]]) Reader[Ctx, A] {
 func FlattenWithError[Ctx, A any](reader ReaderWithError[Ctx, ReaderWithError[Ctx, A]]) ReaderWithError[Ctx, A] {
 	return ReaderWithError[Ctx, A]{
 		Apply: func(ctx Ctx) (A, error) {
-			inner, err := reader.Apply(ctx)
+			decoratedOuterReader := DecorateReaderError[Ctx, ReaderWithError[Ctx, A]](func(err error) error {
+				return fmt.Errorf("flattenWithError error applying decoratedOuterReader: %w", err)
+			})(reader)
+			inner, err := decoratedOuterReader.Apply(ctx)
 			if err != nil {
 				return *new(A), err
 			}
-			return inner.Apply(ctx)
+			decoratedInnerReader := DecorateReaderError[Ctx, A](func(err error) error {
+				return fmt.Errorf("flattenWithError error applying decoratedInnerReader: %w", err)
+			})(inner)
+			return decoratedInnerReader.Apply(ctx)
 		},
 	}
 }
