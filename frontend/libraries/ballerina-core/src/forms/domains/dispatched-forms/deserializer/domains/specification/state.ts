@@ -188,8 +188,13 @@ export const Specification = {
                     ),
                 ),
           ),
-        ),
-      ).Then((forms) => ValueOrErrors.Default.return(Map(forms))),
+          ),
+        ).Then((forms) => ValueOrErrors.Default.return(Map(forms)));
+        performance.mark("deserialize-forms-done");
+        performance.measure("deserialize-forms", "deserialize-forms-start", "deserialize-forms-done");
+        console.debug("deserialize-forms", performance.getEntriesByType("measure").find((entry) => entry.name == "deserialize-forms")?.duration);
+        return res;
+      },
     Deserialize:
       <
         T extends DispatchInjectablesTypes<T>,
