@@ -146,7 +146,11 @@ export const Specification = {
         ExtraContext
       >,
     ): ValueOrErrors<Map<string, Renderer<T>>, string> =>
-      ValueOrErrors.Operations.All(
+      {
+        let launchers = [];
+        let seenForms = Set<string>();
+        performance.mark("deserialize-forms-start");
+        const res = ValueOrErrors.Operations.All(
         List<ValueOrErrors<[string, Renderer<T>], string>>(
           Object.entries(forms).map(([formName, form]) =>
             !DispatchIsObject(form) ||
@@ -215,8 +219,8 @@ export const Specification = {
         serializedSpecifications:
           | SerializedSpecification
           | SerializedSpecification[],
-      ): ValueOrErrors<Specification<T>, string> =>
-        injectedPrimitives
+      ): ValueOrErrors<Specification<T>, string> => {
+        return injectedPrimitives
           ?.keySeq()
           .toArray()
           .some(
@@ -412,6 +416,7 @@ export const Specification = {
                   errors.map(
                     (error) => `${error}\n...When deserializing specification`,
                   ),
-                ),
+                );
+      },
   },
 };

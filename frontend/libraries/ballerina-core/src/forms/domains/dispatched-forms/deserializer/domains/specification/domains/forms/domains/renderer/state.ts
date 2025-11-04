@@ -117,13 +117,15 @@ export const Renderer = {
       as: string,
       types: Map<string, DispatchParsedType<T>>,
       tableApi: string | undefined,
-    ): ValueOrErrors<Renderer<T>, string> =>
+      lookupForms: Set<string>,
+    ): ValueOrErrors<[Renderer<T>, Set<string>[]], string> =>
       Renderer.Operations.Deserialize(
         type,
         serialized,
         concreteRenderers,
         types,
         tableApi,
+        lookupForms,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
       ),
@@ -143,7 +145,8 @@ export const Renderer = {
       >,
       types: Map<string, DispatchParsedType<T>>,
       tableApi: string | undefined, // Necessary because the table api is currently defined outside of the renderer, so a lookup has to be able to pass it to the looked up renderer
-    ): ValueOrErrors<Renderer<T>, string> =>
+      lookupForms: Set<string>,
+    ): ValueOrErrors<[Renderer<T>, Set<string>[]], string> =>
       /*
         Important semantics of lookup vs inlined renderers and types:
 
