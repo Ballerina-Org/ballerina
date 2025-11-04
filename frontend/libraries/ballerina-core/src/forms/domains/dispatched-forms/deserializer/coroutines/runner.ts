@@ -15,6 +15,7 @@ import {
   DispatchFormsParserState,
   parseDispatchFormsToLaunchers,
 } from "../state";
+import { SpecificationPerformance } from "../domains/specification/statev2";
 
 export const LoadAndDeserializeSpecification = <
   T extends DispatchInjectablesTypes<T>,
@@ -81,6 +82,12 @@ export const LoadAndDeserializeSpecification = <
             current.concreteRenderers,
             injectedPrimitives,
           )(serializedSpecifications);
+          // const deserializationResult = SpecificationPerformance.Operations.PerformanceDeserialization(
+          //   current.fieldTypeConverters,
+          //   current.concreteRenderers,
+          //   serializedSpecifications,
+          //   injectedPrimitives,
+          // );
           performance.mark("deserialize-specification-done");
           performance.measure("deserialize-specification", "deserialize-specification", "deserialize-specification-done");
           console.debug("deserialize-specification", performance.getEntriesByType("measure").find((entry) => entry.name == "deserialize-specification")?.duration);

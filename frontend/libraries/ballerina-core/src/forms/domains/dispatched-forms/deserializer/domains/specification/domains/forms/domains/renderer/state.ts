@@ -117,15 +117,15 @@ export const Renderer = {
       as: string,
       types: Map<string, DispatchParsedType<T>>,
       tableApi: string | undefined,
-      lookupForms: Set<string>,
-    ): ValueOrErrors<[Renderer<T>, Set<string>[]], string> =>
+      lookupsToResolve: Set<string>,
+    ): ValueOrErrors<Renderer<T>, string> =>
       Renderer.Operations.Deserialize(
         type,
         serialized,
         concreteRenderers,
         types,
         tableApi,
-        lookupForms,
+        lookupsToResolve,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
       ),
@@ -145,8 +145,8 @@ export const Renderer = {
       >,
       types: Map<string, DispatchParsedType<T>>,
       tableApi: string | undefined, // Necessary because the table api is currently defined outside of the renderer, so a lookup has to be able to pass it to the looked up renderer
-      lookupForms: Set<string>,
-    ): ValueOrErrors<[Renderer<T>, Set<string>[]], string> =>
+      lookupsToResolve: Set<string>,
+    ): ValueOrErrors<Renderer<T>, string> =>
       /*
         Important semantics of lookup vs inlined renderers and types:
 
@@ -194,6 +194,7 @@ export const Renderer = {
                 tableApi,
                 concreteRenderers,
                 types,
+                lookupsToResolve,
               )
             : LookupRenderer.Operations.Deserialize(
                 // lookup type and inlined renderer (case 2)
@@ -204,6 +205,7 @@ export const Renderer = {
                 tableApi,
                 concreteRenderers,
                 types,
+                lookupsToResolve,
               )
           : typeof serialized == "string"
             ? type.kind == "primitive" // special case
@@ -217,6 +219,7 @@ export const Renderer = {
                   tableApi,
                   concreteRenderers,
                   types,
+                  lookupsToResolve,
                 )
             : // All other cases are inlined renderers and inlined types (case 4)
               Renderer.Operations.HasOptions(serialized) &&
@@ -235,6 +238,7 @@ export const Renderer = {
                       concreteRenderers,
                       types,
                       tableApi,
+                      lookupsToResolve,
                     )
                   : type.kind == "list"
                     ? ListRenderer.Operations.Deserialize(
@@ -242,6 +246,7 @@ export const Renderer = {
                         serialized,
                         concreteRenderers,
                         types,
+                        lookupsToResolve,
                       )
                     : type.kind == "map"
                       ? MapRenderer.Operations.Deserialize(
@@ -249,6 +254,7 @@ export const Renderer = {
                           serialized,
                           concreteRenderers,
                           types,
+                          lookupsToResolve,
                         )
                       : type.kind == "one"
                         ? OneRenderer.Operations.Deserialize(
@@ -256,6 +262,7 @@ export const Renderer = {
                             serialized,
                             concreteRenderers,
                             types,
+                            lookupsToResolve,
                           )
                         : type.kind == "readOnly"
                           ? ReadOnlyRenderer.Operations.Deserialize(
@@ -263,6 +270,7 @@ export const Renderer = {
                               serialized,
                               concreteRenderers,
                               types,
+                              lookupsToResolve,
                             )
                           : Renderer.Operations.IsSumUnitDate(
                                 serialized,
@@ -271,6 +279,7 @@ export const Renderer = {
                             ? BaseSumUnitDateRenderer.Operations.Deserialize(
                                 type,
                                 serialized,
+                                lookupsToResolve,
                               )
                             : type.kind == "sum"
                               ? SumRenderer.Operations.Deserialize(
@@ -278,6 +287,7 @@ export const Renderer = {
                                   serialized,
                                   concreteRenderers,
                                   types,
+                                  lookupsToResolve,
                                 )
                               : type.kind == "record"
                                 ? RecordRenderer.Operations.Deserialize(
@@ -285,6 +295,7 @@ export const Renderer = {
                                     serialized,
                                     concreteRenderers,
                                     types,
+                                    lookupsToResolve,
                                   )
                                 : type.kind == "union"
                                   ? UnionRenderer.Operations.Deserialize(
@@ -292,6 +303,7 @@ export const Renderer = {
                                       serialized,
                                       concreteRenderers,
                                       types,
+                                      lookupsToResolve,
                                     )
                                   : type.kind == "tuple"
                                     ? TupleRenderer.Operations.Deserialize(
@@ -299,6 +311,7 @@ export const Renderer = {
                                         serialized,
                                         concreteRenderers,
                                         types,
+                                        lookupsToResolve,
                                       )
                                     : ValueOrErrors.Default.throwOne<
                                         Renderer<T>,

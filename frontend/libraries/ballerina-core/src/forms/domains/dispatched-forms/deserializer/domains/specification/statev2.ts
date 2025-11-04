@@ -93,19 +93,20 @@ export const SpecificationPerformance = {
 
       const launcherEntries = Object.entries(serializedSpecification.launchers);
       const typeNames = new Set(Object.keys(serializedSpecification.types));
+      let lookupsToResolve = new Set<string>();
 
       function parseLauncherForm(name: string): void {
         if (forms.has(name)) {
           return;
         }
 
-        const form = serializedSpecification.forms[name];
+        const form = (serializedSpecification.forms as any)[name];
         const typeName = form.type;
 
         // Type Parsing
         const typeResult = DispatchParsedType.Operations.ParseRawType(
           typeName,
-          serializedSpecification.types[typeName],
+          (serializedSpecification.types as any)[typeName],
           Immutable.Set(typeNames),
           serializedSpecification.types as Record<string, SerializedType<T>>,
           types.map((type) => ValueOrErrors.Default.return(type)),
@@ -132,6 +133,7 @@ export const SpecificationPerformance = {
           concreteRenderers,
           types,
           undefined,
+          lookupsToResolve,
         );
         if (formResult.kind == "errors") {
           throw new Error(
@@ -152,6 +154,10 @@ export const SpecificationPerformance = {
           parseLauncherForm(launcher.form);
           launchers.passthrough.set(launcherName, launcher);
         }
+      }
+
+      for (const formName of lookupsToResolve) {
+        parseLauncherForm(formName);
       }
 
       const enumsResult = EnumApis.Operations.Deserialize(

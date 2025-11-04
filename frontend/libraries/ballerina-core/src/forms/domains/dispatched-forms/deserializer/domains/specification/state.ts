@@ -1,4 +1,4 @@
-import { Set, Map, List } from "immutable";
+import Immutable, { Map, List } from "immutable";
 import {
   DispatchInjectedPrimitives,
   DispatchIsObject,
@@ -97,7 +97,7 @@ export const Specification = {
       serializedTypes: Record<string, SerializedType<T>>,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
     ): ValueOrErrors<Map<DispatchTypeName, DispatchParsedType<T>>, string> => {
-      const serializedTypeNames = Set(Object.keys(serializedTypes));
+      const serializedTypeNames = Immutable.Set(Object.keys(serializedTypes));
       return ValueOrErrors.Operations.All(
         List<ValueOrErrors<[DispatchTypeName, DispatchParsedType<T>], string>>(
           Object.entries(serializedTypes)
@@ -147,8 +147,6 @@ export const Specification = {
       >,
     ): ValueOrErrors<Map<string, Renderer<T>>, string> =>
       {
-        let launchers = [];
-        let seenForms = Set<string>();
         performance.mark("deserialize-forms-start");
         const res = ValueOrErrors.Operations.All(
         List<ValueOrErrors<[string, Renderer<T>], string>>(
@@ -180,6 +178,7 @@ export const Specification = {
                     >,
                     types,
                     undefined,
+                    new Set<string>(),
                   )
                     .MapErrors((errors) =>
                       errors.map(

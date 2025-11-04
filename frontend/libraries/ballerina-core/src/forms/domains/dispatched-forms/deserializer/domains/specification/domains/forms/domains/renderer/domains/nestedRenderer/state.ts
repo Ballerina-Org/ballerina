@@ -92,12 +92,14 @@ export const NestedRenderer = {
       >,
       as: string,
       types: Map<string, DispatchParsedType<T>>,
+      lookupsToResolve: Set<string>,
     ): ValueOrErrors<NestedRenderer<T>, string> =>
       NestedRenderer.Operations.Deserialize(
         type,
         serialized,
         concreteRenderers,
         types,
+        lookupsToResolve,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
       ),
@@ -116,6 +118,7 @@ export const NestedRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
+      lookupsToResolve: Set<string>,
     ): ValueOrErrors<NestedRenderer<T>, string> =>
       NestedRenderer.Operations.tryAsValidSerializedNestedRenderer(
         serialized,
@@ -134,6 +137,7 @@ export const NestedRenderer = {
           "api" in validatedSerialized && isString(validatedSerialized.api)
             ? validatedSerialized.api
             : undefined,
+          lookupsToResolve,
         ).Then((renderer) =>
           ValueOrErrors.Default.return<NestedRenderer<T>, string>({
             renderer,

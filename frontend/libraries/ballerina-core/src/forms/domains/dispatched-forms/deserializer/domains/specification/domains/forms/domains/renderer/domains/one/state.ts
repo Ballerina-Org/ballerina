@@ -93,6 +93,7 @@ export const OneRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
+      lookupsToResolve: Set<string>,
     ): ValueOrErrors<NestedRenderer<T> | undefined, string> =>
       serialized.previewRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
@@ -102,6 +103,7 @@ export const OneRenderer = {
             concreteRenderers,
             "preview renderer",
             types,
+            lookupsToResolve,
           ),
     Deserialize: <
       T extends DispatchInjectablesTypes<T>,
@@ -118,6 +120,7 @@ export const OneRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
+      lookupsToResolve: Set<string>,
     ): ValueOrErrors<OneRenderer<T>, string> =>
       OneRenderer.Operations.tryAsValidOneRenderer(serialized).Then(
         (validatedSerialized) =>
@@ -127,12 +130,14 @@ export const OneRenderer = {
             concreteRenderers,
             "details renderer",
             types,
+            lookupsToResolve,
           ).Then((detailsRenderer) =>
             OneRenderer.Operations.DeserializePreviewRenderer(
               type,
               validatedSerialized,
               concreteRenderers,
               types,
+              lookupsToResolve,
             ).Then((previewRenderer) =>
               ValueOrErrors.Default.return(
                 OneRenderer.Default(
