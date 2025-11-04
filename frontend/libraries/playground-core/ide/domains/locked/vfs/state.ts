@@ -93,7 +93,6 @@ export const WorkspaceState = {
         selectFolder: (folder: Node): Updater<WorkspaceState> =>
             Updater(workspace => {
                 if(!folder.children || folder.children?.length == 0) {
-                    window.alert("folder has no children");
                     return workspace;
                 }
                 const file = folder.children[0]

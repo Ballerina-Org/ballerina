@@ -1,9 +1,10 @@
 ﻿import {
+    VscAdd,
     VscArrowSmallRight,
     VscDiffAdded,
     VscDiffRemoved,
     VscFile,
-    VscFolder,
+    VscFolder, VscNewFile,
     VscPrimitiveSquare
 } from "react-icons/vsc";
 import React, { useState } from "react";
@@ -50,7 +51,9 @@ export type MultiSelectCheckboxControlledProps = {
     workspace: WorkspaceState, 
     onSelectedFolder?: BasicFun<Node, void>,
     onSelectedFile?: BasicFun<Node, void>
-    onAcceptedNodes?: BasicFun<Node, void> }
+    onAcceptedNodes?: BasicFun<Node, void>
+    onAddNewFile?: BasicFun<string, void>
+}
 
 
 export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlledProps) {
@@ -91,7 +94,7 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
                                        handleSelect,
                                        handleExpand,
                                    }) => {
-                        
+               
                         return (
                             <div
                                 {...getNodeProps({ onClick: handleExpand })}
@@ -100,30 +103,55 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
                                     opacity: isDisabled ? 0.5 : 1,
                                 }}
                             >
-      
+
                                 <div className="w-full group inline-flex items-center h-6">
-                                    <div className={element.metadata?.kind == "dir" ? "w-full flex mt-3" :"contents mt-3"}>
-                                    {isBranch && <div className="flex items-center gap-2 text-base-content font-medium">
-                                        <span><VscFolder size={20} /> </span>
-                                        <span>{element.name}</span>
-                                    </div>}
-                                    {!isBranch && <div 
-                                        className="flex items-center gap-2 text-base-content text-sm"
-                                        onClick={() => {
-                                            const selected = element as unknown as Node
-                                            if (props.onSelectedFile) {
-                                                props.onSelectedFile(selected);
-                                            }
-                                        }}
+                                    <div
+                                        className={
+                                            element.metadata?.kind == "dir"
+                                                ? "w-full flex items-center justify-between mt-3"
+                                                : "contents mt-3"
+                                        }
                                     >
-                                        <span><VscFile  size={20} /></span>
-                                        <span>{element.name}</span>
-                                        
-                                    </div>}
-                                        {element.metadata?.kind == "file" && <div className="ml-2 hidden group-hover:inline text-sm text-base-content/80">
-                                            <SizeBadge bytes={(element.metadata as Meta)?.size} /></div>}
+                                        {isBranch && (
+                                            <div className="flex items-center gap-2 text-base-content font-medium">
+                                                <VscFolder size={20} />
+                                                <span>{element.name}</span>
+                                            </div>
+                                        )}
+
+                                        {!isBranch && (
+                                            <div
+                                                className="flex items-center gap-2 text-base-content text-sm cursor-pointer"
+                                                onClick={() => {
+                                                    const selected = element as unknown as Node;
+                                                    props.onSelectedFile?.(selected);
+                                                }}
+                                            >
+                                                <VscFile size={20} />
+                                                <span>{element.name}</span>
+                                            </div>
+                                        )}
+
+                                        {element.metadata?.kind === "dir" && (
+                                            <button
+                                                className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-base-content/70 hover:text-primary"
+                                                title="Add new file"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    element.metadata?.path && props.onAddNewFile(element.metadata?.path as string)
+                                                }}
+                                            >
+                                                <VscNewFile size={18} />
+                                            </button>
+                                        )}
+
+                                        {element.metadata?.kind === "file" && (
+                                            <div className="ml-2 hidden group-hover:inline text-sm text-base-content/80">
+                                                <SizeBadge bytes={(element.metadata as Meta)?.size} />
+                                            </div>
+                                        )}
                                     </div>
-                            </div>
+                                </div>
                             </div>
                         );
                     }}

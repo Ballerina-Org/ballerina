@@ -13,9 +13,10 @@ type DrawerProps = {
     drawerId?: string;
     onSelectedFolder: (folder: Node) => void;
     onSelectedFile: (file: Node) => void;
+    onAddNewFile: (path: string) => void;
 };
 
-export function Drawer({ mode, workspace, drawerId = 'ide-drawer', name, onSelectedFolder, onSelectedFile }: DrawerProps) {
+export function Drawer({ mode, workspace, drawerId = 'ide-drawer', name, onSelectedFolder, onSelectedFile, onAddNewFile }: DrawerProps) {
     const [root, setRoot] = React.useState<Option<Node>>(Option.Default.none());
     const [nodes, setNodes] = React.useState<Node>(workspace.nodes);
 
@@ -56,6 +57,7 @@ export function Drawer({ mode, workspace, drawerId = 'ide-drawer', name, onSelec
                             mode={'reader'} 
                             workspace={workspace}
                             onSelectedFolder={onSelectedFolder}
+                            onAddNewFile={onAddNewFile}
                             onSelectedFile={onSelectedFile} />
                         </div>
                 </ul>

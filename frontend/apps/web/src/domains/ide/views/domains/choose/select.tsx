@@ -1,7 +1,7 @@
 ﻿import React from "react";
 import {Dropdown} from "../layout/dropdown.tsx"
 import {CommonUI, FlatNode, getOrInitSpec, getSpec, Ide, VirtualFolders, WorkspaceState} from "playground-core";
-import {BasicFun, Updater} from "ballerina-core";
+import {BasicFun, Updater, Value} from "ballerina-core";
 
 type SelectSpecProps = Ide & { setState: BasicFun<Updater<Ide>, void> };
 
@@ -30,6 +30,7 @@ export const SelectSpec = (props: SelectSpecProps): React.ReactElement => {
                             }
 
                             return ({...ide,
+                                name: Value.Default(name),
                                 locked: {
                                     ...ide.locked,
                                     workspace: WorkspaceState.Updater.defaultForSingleFolder()(ide.locked.workspace) }

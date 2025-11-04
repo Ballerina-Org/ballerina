@@ -50,6 +50,7 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
     const drawer =
         props.phase == "locked" 
         ? <Drawer 
+            onAddNewFile={(path)=>{}}
             name={props.name.value}
             workspace={props.locked.workspace}
             mode={props.locked.origin == 'selected' ? 'select-current-folder' : 'upload'}

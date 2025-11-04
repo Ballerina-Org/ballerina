@@ -5,11 +5,11 @@ import {
     unit,
     Unit,
     ValueOrErrors, ValueSum,
-} from "../../../../../../../../main";
+} from "../../../../../../../../../main";
 import {
   DispatchParsedType,
   TupleType,
-} from "../../../../deserializer/domains/specification/domains/types/state";
+} from "../../../../../deserializer/domains/specification/domains/types/state";
 import {List} from "immutable";
 
 export type DeltaV2 = 
