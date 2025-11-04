@@ -4,7 +4,6 @@ import {
   Sum,
   Synchronize,
   Unit,
-  Specification,
   ValueOrErrors,
   DispatchInjectablesTypes,
 } from "../../../../../../main";
@@ -15,6 +14,7 @@ import {
   DispatchFormsParserState,
   parseDispatchFormsToLaunchers,
 } from "../state";
+import { SpecificationV2 } from "../domains/specification-v2/state";
 
 export const LoadAndDeserializeSpecification = <
   T extends DispatchInjectablesTypes<T>,
@@ -76,11 +76,11 @@ export const LoadAndDeserializeSpecification = <
 
           const injectedPrimitives = injectedPrimitivesResult.value;
 
-          const deserializationResult = Specification.Operations.Deserialize(
+          const deserializationResult = SpecificationV2.Operations.Deserialize(
             current.fieldTypeConverters,
             current.concreteRenderers,
             injectedPrimitives,
-          )(serializedSpecifications);
+          )(serializedSpecifications, ["person-transparent"]);
 
           if (deserializationResult.kind == "errors") {
             console.error(
