@@ -70,6 +70,7 @@ export const UnionRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
+      lookupsToResolve: Set<string>,
     ): ValueOrErrors<UnionRenderer<T>, string> =>
       UnionRenderer.Operations.tryAsValidUnionForm(serialized)
         .Then((validSerialized) =>
@@ -96,6 +97,7 @@ export const UnionRenderer = {
                       concreteRenderers,
                       types,
                       undefined,
+                      lookupsToResolve,
                     ).Then((caseRenderer) =>
                       ValueOrErrors.Default.return([caseName, caseRenderer]),
                     ),

@@ -156,6 +156,7 @@ export const LookupRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
+      lookupsToResolve: Set<string>,
     ): ValueOrErrors<LookupRenderer<T>, string> =>
       serialized.kind == "lookupType-inlinedRenderer"
         ? DispatchParsedType.Operations.ResolveLookupType(
@@ -168,6 +169,7 @@ export const LookupRenderer = {
               concreteRenderers,
               types,
               tableApi,
+              lookupsToResolve,
             ).Then((renderer) =>
               ValueOrErrors.Default.return(
                 LookupRenderer.Default.LookupTypeInlinedRenderer(
@@ -179,19 +181,21 @@ export const LookupRenderer = {
             ),
           )
         : serialized.kind == "lookupType-lookupRenderer"
-          ? ValueOrErrors.Default.return(
+          ? (lookupsToResolve.add(serialized.renderer),
+            ValueOrErrors.Default.return(
               LookupRenderer.Default.LookupTypeLookupRenderer(
                 serialized.type,
                 serialized.renderer,
                 tableApi,
               ),
-            )
-          : ValueOrErrors.Default.return(
+            ))
+          : (lookupsToResolve.add(serialized.renderer),
+            ValueOrErrors.Default.return(
               LookupRenderer.Default.InlinedTypeLookupRenderer(
                 serialized.type,
                 serialized.renderer,
                 tableApi,
               ),
-            ),
+            )),
   },
 };

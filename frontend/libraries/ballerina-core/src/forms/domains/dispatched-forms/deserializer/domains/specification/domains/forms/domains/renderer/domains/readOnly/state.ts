@@ -77,6 +77,7 @@ export const ReadOnlyRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
+      lookupsToResolve: Set<string>,
     ): ValueOrErrors<ReadOnlyRenderer<T>, string> =>
       ReadOnlyRenderer.Operations.tryAsValidBaseReadOnlyRenderer(
         serialized,
@@ -89,6 +90,7 @@ export const ReadOnlyRenderer = {
             concreteRenderers,
             "readOnly child",
             types,
+            lookupsToResolve,
           ).Then((childRenderer) =>
             ValueOrErrors.Default.return(
               ReadOnlyRenderer.Default(

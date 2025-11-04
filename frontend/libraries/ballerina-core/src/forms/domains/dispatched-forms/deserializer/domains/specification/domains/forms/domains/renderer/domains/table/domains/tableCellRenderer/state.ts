@@ -59,6 +59,7 @@ export const TableCellRenderer = {
       >,
       types: Map<string, DispatchParsedType<T>>,
       columnName: string,
+      lookupsToResolve: Set<string>,
     ): ValueOrErrors<TableCellRenderer<T>, string> =>
       TableCellRenderer.Operations.tryAsValidTableCellRenderer(serialized).Then(
         (validatedSerialized) =>
@@ -68,6 +69,7 @@ export const TableCellRenderer = {
             concreteRenderers,
             `Table cell renderer for column ${columnName}`,
             types,
+            lookupsToResolve,
           ).Then((deserializedNestedRenderer) =>
             TableCellRenderer.Operations.ComputeDisabled(
               validatedSerialized.disabled,
