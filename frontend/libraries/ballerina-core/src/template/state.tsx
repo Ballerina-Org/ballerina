@@ -329,14 +329,15 @@ export const Template = {
           <>
             {[
               p(props),
-              ...others.map((_) =>
-                _({
-                  context: props.context,
-                  setState: props.setState,
-                  foreignMutations: props.foreignMutations,
-                  view: unit,
-                }),
-              ),
+              ...others.map((Component, idx) => (
+                <Component
+                  key={`template-${idx}`}
+                  context={props.context}
+                  setState={props.setState}
+                  foreignMutations={props.foreignMutations}
+                  view={unit}
+                />
+              )),
             ]}
           </>
         );
