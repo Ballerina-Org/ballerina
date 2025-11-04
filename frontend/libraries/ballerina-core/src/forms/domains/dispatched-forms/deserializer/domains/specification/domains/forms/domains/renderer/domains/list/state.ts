@@ -115,7 +115,6 @@ export const ListRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
-      lookupsToResolve: Set<string>,
     ): ValueOrErrors<ListRenderer<T>, string> =>
       ListRenderer.Operations.tryAsValidBaseListRenderer(serialized, type)
         .Then((serializedRenderer) =>
@@ -125,7 +124,6 @@ export const ListRenderer = {
             concreteRenderers,
             "list element",
             types,
-            lookupsToResolve,
           ).Then((elementRenderer) =>
             ListMethods.Operations.fromRawValue(
               serializedRenderer.actions,

@@ -72,7 +72,6 @@ export const TupleRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
-      lookupsToResolve: Set<string>,
     ): ValueOrErrors<TupleRenderer<T>, string> =>
       TupleRenderer.Operations.tryAsValidTupleRenderer(serialized)
         .Then((validatedSerialized) =>
@@ -85,7 +84,6 @@ export const TupleRenderer = {
                   concreteRenderers,
                   `Item ${index + 1}`,
                   types,
-                  lookupsToResolve,
                 ).Then((deserializedItemRenderer) =>
                   ValueOrErrors.Default.return(deserializedItemRenderer),
                 ),

@@ -70,7 +70,6 @@ export const RecordFieldRenderer = {
     >,
     types: Map<string, DispatchParsedType<T>>,
     fieldName: string,
-    lookupsToResolve: Set<string>,
   ): ValueOrErrors<RecordFieldRenderer<T>, string> =>
     RecordFieldRenderer.tryAsValidRecordFieldRenderer(serialized).Then(
       (validatedSerialized) => {
@@ -80,7 +79,6 @@ export const RecordFieldRenderer = {
           concreteRenderers,
           `Record field renderer for field ${fieldName}`,
           types,
-          lookupsToResolve,
         ).Then((deserializedNestedRenderer) =>
           RecordFieldRenderer.ComputeVisibility(
             validatedSerialized.visible,

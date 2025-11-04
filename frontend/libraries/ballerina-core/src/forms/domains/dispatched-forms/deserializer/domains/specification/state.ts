@@ -1,4 +1,4 @@
-import Immutable, { Map, List } from "immutable";
+import { Map, List, Set as ImmutableSet } from "immutable";
 import {
   DispatchInjectedPrimitives,
   DispatchIsObject,
@@ -97,7 +97,7 @@ export const Specification = {
       serializedTypes: Record<string, SerializedType<T>>,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
     ): ValueOrErrors<Map<DispatchTypeName, DispatchParsedType<T>>, string> => {
-      const serializedTypeNames = Immutable.Set(Object.keys(serializedTypes));
+      const serializedTypeNames = ImmutableSet(Object.keys(serializedTypes));
       return ValueOrErrors.Operations.All(
         List<ValueOrErrors<[DispatchTypeName, DispatchParsedType<T>], string>>(
           Object.entries(serializedTypes)
@@ -178,7 +178,6 @@ export const Specification = {
                     >,
                     types,
                     undefined,
-                    new Set<string>(),
                   )
                     .MapErrors((errors) =>
                       errors.map(

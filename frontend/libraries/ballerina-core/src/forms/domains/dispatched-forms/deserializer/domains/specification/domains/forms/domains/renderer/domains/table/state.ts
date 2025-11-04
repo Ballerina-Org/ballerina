@@ -124,7 +124,6 @@ export const TableRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
-      lookupsToResolve: Set<string>,
     ): ValueOrErrors<NestedRenderer<T> | undefined, string> =>
       serialized.detailsRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
@@ -134,7 +133,6 @@ export const TableRenderer = {
             concreteRenderers,
             "details renderer",
             types,
-            lookupsToResolve,
           ),
     Deserialize: <
       T extends DispatchInjectablesTypes<T>,
@@ -152,7 +150,6 @@ export const TableRenderer = {
       >,
       types: Map<string, DispatchParsedType<T>>,
       api: string | undefined,
-      lookupsToResolve: Set<string>,
     ): ValueOrErrors<TableRenderer<T>, string> =>
       api != undefined && Array.isArray(api)
         ? ValueOrErrors.Default.throwOne("lookup api not supported for table")
@@ -185,7 +182,6 @@ export const TableRenderer = {
                                 concreteRenderers,
                                 types,
                                 columnName,
-                                lookupsToResolve,
                               ).Then((renderer) =>
                                 ValueOrErrors.Default.return<
                                   [string, TableCellRenderer<T>],
@@ -207,7 +203,6 @@ export const TableRenderer = {
                             validTableForm,
                             concreteRenderers,
                             types,
-                            lookupsToResolve,
                           ).Then((detailsRenderer) =>
                             ValueOrErrors.Default.return(
                               TableRenderer.Default(

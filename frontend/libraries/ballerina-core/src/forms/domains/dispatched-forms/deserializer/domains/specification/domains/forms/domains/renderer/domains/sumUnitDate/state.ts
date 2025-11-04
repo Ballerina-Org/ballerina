@@ -55,7 +55,6 @@ export const BaseSumUnitDateRenderer = {
     Deserialize: <T extends DispatchInjectablesTypes<T>>(
       type: SumType<T>,
       serialized: unknown,
-      lookupsToResolve: Set<string>,
     ): ValueOrErrors<BaseSumUnitDateRenderer<T>, string> =>
       BaseSumUnitDateRenderer.Operations.tryAsValidSumUnitDateBaseRenderer(
         serialized,
