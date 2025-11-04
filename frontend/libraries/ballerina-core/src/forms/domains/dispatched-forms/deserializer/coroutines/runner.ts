@@ -88,10 +88,6 @@ export const LoadAndDeserializeSpecification = <
           //   serializedSpecifications,
           //   injectedPrimitives,
           // );
-          performance.mark("deserialize-specification-done");
-          performance.measure("deserialize-specification", "deserialize-specification", "deserialize-specification-done");
-          console.debug("deserialize-specification", performance.getEntriesByType("measure").find((entry) => entry.name == "deserialize-specification")?.duration);
-
 
           if (deserializationResult.kind == "errors") {
             console.error(
@@ -100,7 +96,6 @@ export const LoadAndDeserializeSpecification = <
             return deserializationResult;
           }
 
-          performance.mark("parse-dispatch-forms-to-launchers");
           const result = parseDispatchFormsToLaunchers(
             injectedPrimitives,
             current.fieldTypeConverters,
@@ -111,9 +106,6 @@ export const LoadAndDeserializeSpecification = <
             current.IdWrapper,
             current.ErrorRenderer,
           )(deserializationResult.value);
-          performance.mark("parse-dispatch-forms-to-launchers-done");
-          performance.measure("parse-dispatch-forms-to-launchers", "parse-dispatch-forms-to-launchers", "parse-dispatch-forms-to-launchers-done");
-          console.debug("parse-dispatch-forms-to-launchers", performance.getEntriesByType("measure").find((entry) => entry.name == "parse-dispatch-forms-to-launchers")?.duration);
 
           if (result.kind == "errors") {
             console.error(result.errors.valueSeq().toArray().join("\n"));

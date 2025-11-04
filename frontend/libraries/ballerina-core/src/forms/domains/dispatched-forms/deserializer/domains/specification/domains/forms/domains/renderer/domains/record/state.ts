@@ -122,7 +122,6 @@ export const RecordRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
-      lookupsToResolve: Set<string>,
     ): ValueOrErrors<RecordRenderer<T>, string> =>
       RecordRenderer.Operations.tryAsValidRecordForm(serialized).Then(
         (validRecordForm) =>
@@ -142,7 +141,6 @@ export const RecordRenderer = {
                       concreteRenderers,
                       types,
                       fieldName,
-                      lookupsToResolve,
                     ).Then((renderer) =>
                       ValueOrErrors.Default.return([fieldName, renderer]),
                     ),

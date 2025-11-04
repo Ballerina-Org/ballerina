@@ -74,7 +74,6 @@ export const MapRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
-      lookupsToResolve: Set<string>,
     ): ValueOrErrors<MapRenderer<T>, string> =>
       MapRenderer.Operations.tryAsValidMapBaseRenderer(serialized)
         .Then((renderer) =>
@@ -84,7 +83,6 @@ export const MapRenderer = {
             concreteRenderers,
             "Map key",
             types,
-            lookupsToResolve,
           ).Then((deserializedKeyRenderer) =>
             NestedRenderer.Operations.DeserializeAs(
               type.args[1],
@@ -92,7 +90,6 @@ export const MapRenderer = {
               concreteRenderers,
               "Map value",
               types,
-              lookupsToResolve,
             ).Then((deserializedValueRenderer) =>
               ValueOrErrors.Default.return(
                 MapRenderer.Default(

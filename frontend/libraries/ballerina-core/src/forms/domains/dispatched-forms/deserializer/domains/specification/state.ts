@@ -146,9 +146,7 @@ export const Specification = {
         ExtraContext
       >,
     ): ValueOrErrors<Map<string, Renderer<T>>, string> =>
-      {
-        performance.mark("deserialize-forms-start");
-        const res = ValueOrErrors.Operations.All(
+      ValueOrErrors.Operations.All(
         List<ValueOrErrors<[string, Renderer<T>], string>>(
           Object.entries(forms).map(([formName, form]) =>
             !DispatchIsObject(form) ||
@@ -178,7 +176,6 @@ export const Specification = {
                     >,
                     types,
                     undefined,
-                    new Set<string>(),
                   )
                     .MapErrors((errors) =>
                       errors.map(
@@ -191,13 +188,8 @@ export const Specification = {
                     ),
                 ),
           ),
-          ),
-        ).Then((forms) => ValueOrErrors.Default.return(Map(forms)));
-        performance.mark("deserialize-forms-done");
-        performance.measure("deserialize-forms", "deserialize-forms-start", "deserialize-forms-done");
-        console.debug("deserialize-forms", performance.getEntriesByType("measure").find((entry) => entry.name == "deserialize-forms")?.duration);
-        return res;
-      },
+        ),
+      ).Then((forms) => ValueOrErrors.Default.return(Map(forms))),
     Deserialize:
       <
         T extends DispatchInjectablesTypes<T>,
@@ -218,8 +210,8 @@ export const Specification = {
         serializedSpecifications:
           | SerializedSpecification
           | SerializedSpecification[],
-      ): ValueOrErrors<Specification<T>, string> => {
-        return injectedPrimitives
+      ): ValueOrErrors<Specification<T>, string> =>
+        injectedPrimitives
           ?.keySeq()
           .toArray()
           .some(
@@ -415,7 +407,6 @@ export const Specification = {
                   errors.map(
                     (error) => `${error}\n...When deserializing specification`,
                   ),
-                );
-      },
+                ),
   },
 };
