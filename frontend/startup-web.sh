@@ -1,4 +1,4 @@
-#! /bin/bash
+c#! /bin/bash
 
 (yarn)
 (cd apps/web; yarn dev)

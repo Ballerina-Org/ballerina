@@ -1,4 +1,4 @@
-import { List, Map, Set } from "immutable";
+import { List, Map, Set as ImmutableSet } from "immutable";
 import {
   ConcreteRenderers,
   DispatchInjectablesTypes,
@@ -249,7 +249,7 @@ export const TableApis = {
                                 : DispatchParsedType.Operations.ParseRawType(
                                     "filter",
                                     value.type as SerializedType<T>,
-                                    Set(types.keys()),
+                                    ImmutableSet(types.keys()),
                                     {},
                                     types.map((t) =>
                                       ValueOrErrors.Default.return(t),

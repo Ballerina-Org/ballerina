@@ -1,4 +1,4 @@
-import { Set, Map, List } from "immutable";
+import { Map, List, Set as ImmutableSet } from "immutable";
 import {
   DispatchInjectedPrimitives,
   DispatchIsObject,
@@ -97,7 +97,7 @@ export const Specification = {
       serializedTypes: Record<string, SerializedType<T>>,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
     ): ValueOrErrors<Map<DispatchTypeName, DispatchParsedType<T>>, string> => {
-      const serializedTypeNames = Set(Object.keys(serializedTypes));
+      const serializedTypeNames = ImmutableSet(Object.keys(serializedTypes));
       return ValueOrErrors.Operations.All(
         List<ValueOrErrors<[DispatchTypeName, DispatchParsedType<T>], string>>(
           Object.entries(serializedTypes)
@@ -146,7 +146,9 @@ export const Specification = {
         ExtraContext
       >,
     ): ValueOrErrors<Map<string, Renderer<T>>, string> =>
-      ValueOrErrors.Operations.All(
+      {
+        performance.mark("deserialize-forms-start");
+        const res = ValueOrErrors.Operations.All(
         List<ValueOrErrors<[string, Renderer<T>], string>>(
           Object.entries(forms).map(([formName, form]) =>
             !DispatchIsObject(form) ||
@@ -188,8 +190,13 @@ export const Specification = {
                     ),
                 ),
           ),
-        ),
-      ).Then((forms) => ValueOrErrors.Default.return(Map(forms))),
+          ),
+        ).Then((forms) => ValueOrErrors.Default.return(Map(forms)));
+        performance.mark("deserialize-forms-done");
+        performance.measure("deserialize-forms", "deserialize-forms-start", "deserialize-forms-done");
+        console.debug("deserialize-forms", performance.getEntriesByType("measure").find((entry) => entry.name == "deserialize-forms")?.duration);
+        return res;
+      },
     Deserialize:
       <
         T extends DispatchInjectablesTypes<T>,
@@ -210,8 +217,8 @@ export const Specification = {
         serializedSpecifications:
           | SerializedSpecification
           | SerializedSpecification[],
-      ): ValueOrErrors<Specification<T>, string> =>
-        injectedPrimitives
+      ): ValueOrErrors<Specification<T>, string> => {
+        return injectedPrimitives
           ?.keySeq()
           .toArray()
           .some(
@@ -407,6 +414,7 @@ export const Specification = {
                   errors.map(
                     (error) => `${error}\n...When deserializing specification`,
                   ),
-                ),
+                );
+      },
   },
 };
