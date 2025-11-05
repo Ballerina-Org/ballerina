@@ -104,23 +104,26 @@ export const SpecificationV2 = {
     } =>
       DispatchIsObject(_) && "launchers" in _ && DispatchIsObject(_.launchers),
     DeserializeSpecTypes: <T>(
-      launcherTypes: Set<DispatchTypeName>,
+      launcherTypes: List<DispatchTypeName>,
       serializedTypes: Record<string, SerializedType<T>>,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
     ): ValueOrErrors<Map<DispatchTypeName, DispatchParsedType<T>>, string> => {
       const serializedTypeNames = Set(Object.keys(serializedTypes));
-      return ValueOrErrors.Operations.All(
+      const x = ValueOrErrors.Operations.All(
         List<ValueOrErrors<[DispatchTypeName, DispatchParsedType<T>], string>>(
           launcherTypes
-            .reduce((acc, [rawTypeName, rawType]) => {
+            .reduce((acc, rawTypeName) => {
+              console.debug("rawTypeName", rawTypeName);
+              console.debug("serializedTypes[rawTypeName]", serializedTypes[rawTypeName]);
               const res = DispatchParsedType.Operations.ParseRawType(
                 rawTypeName,
-                rawType,
+                serializedTypes[rawTypeName],
                 serializedTypeNames,
                 serializedTypes,
                 acc,
                 injectedPrimitives,
               );
+              console.debug("res", res);
               return res.kind == "errors"
                 ? acc.set(rawTypeName, res)
                 : res.value[1].set(
@@ -140,7 +143,13 @@ export const SpecificationV2 = {
               ),
             ),
         ),
-      ).Then((parsedTypes) => ValueOrErrors.Default.return(Map(parsedTypes)));
+      ).Then((parsedTypes) =>
+        ValueOrErrors.Default.return(
+          Map<DispatchTypeName, DispatchParsedType<T>>(parsedTypes),
+        ),
+      );
+      console.debug("x", x);
+      return x;
     },
     DeserializeLaunchers: <T>(
       desiredLaunchers: string[],
@@ -202,7 +211,7 @@ export const SpecificationV2 = {
         CustomPresentationContext,
         ExtraContext
       >,
-      launcherForms: string[],
+      launcherForms: List<string>,
     ): ValueOrErrors<Map<string, Renderer<T>>, string> => {
       let lookupsToResolve: string[] = [];
       let seenLookups: Set<string> = Set();
@@ -309,7 +318,24 @@ export const SpecificationV2 = {
         return ValueOrErrors.Default.return(Map(finalForms));
       });
     },
-    GetFormTypes: <T>(launchers: Launchers): Set<DispatchTypeName> => {
+    GetFormType: <T>(form: object): ValueOrErrors<string, string> => {
+      if (!("type" in form) || typeof form.type != "string")
+        return ValueOrErrors.Default.throwOne(
+          `form is missing the required type attribute`,
+        );
+      return ValueOrErrors.Default.return(form.type);
+    },
+    TryFindForm: <T>(
+      formName: string,
+      forms: object,
+    ): ValueOrErrors<object, string> => {
+      if (!(formName in forms))
+        return ValueOrErrors.Default.throwOne(
+          `form ${formName} not found in forms`,
+        );
+      return ValueOrErrors.Default.return(Reflect.get(forms, formName));
+    },
+    GetLauncherFormNames: <T>(launchers: Launchers): List<string> => {
       return launchers.create
         .valueSeq()
         .map((launcher) => launcher.form)
@@ -317,7 +343,42 @@ export const SpecificationV2 = {
         .concat(
           launchers.passthrough.valueSeq().map((launcher) => launcher.form),
         )
-        .toSet();
+        .toList();
+    },
+    GetLaucherFormTypes: <T>(
+      launchers: Launchers,
+      forms: object,
+    ): ValueOrErrors<List<string>, string> => {
+      return ValueOrErrors.Operations.All(
+        launchers.create
+          .valueSeq()
+          .map((launcher) =>
+            SpecificationV2.Operations.TryFindForm(launcher.form, forms).Then(
+              (form) => SpecificationV2.Operations.GetFormType(form),
+            ),
+          )
+          .concat(
+            launchers.edit
+              .valueSeq()
+              .map((launcher) =>
+                SpecificationV2.Operations.TryFindForm(
+                  launcher.form,
+                  forms,
+                ).Then((form) => SpecificationV2.Operations.GetFormType(form)),
+              ),
+          )
+          .concat(
+            launchers.passthrough
+              .valueSeq()
+              .map((launcher) =>
+                SpecificationV2.Operations.TryFindForm(
+                  launcher.form,
+                  forms,
+                ).Then((form) => SpecificationV2.Operations.GetFormType(form)),
+              ),
+          )
+          .toList(),
+      );
     },
     Deserialize:
       <
@@ -369,32 +430,26 @@ export const SpecificationV2 = {
                         SpecificationV2<T>,
                         string
                       >("types are missing from the specificationV2")
-                    : SpecificationV2.Operations.DeserializeSpecTypes(
-                        launchers.create
-                          .valueSeq()
-                          .map((launcher) => launcher.form)
-                          .concat(
-                            launchers.edit
-                              .valueSeq()
-                              .map((launcher) => launcher.form),
-                          )
-                          .concat(
-                            launchers.passthrough
-                              .valueSeq()
-                              .map((launcher) => launcher.form),
-                          )
-                          .toSet(),
-
-                        injectedPrimitives,
-                      ).Then((allTypes) =>
-                        !SpecificationV2.Operations.hasForms(
+                    : !SpecificationV2.Operations.hasForms(
                           serializedSpecificationV2s,
                         )
-                          ? ValueOrErrors.Default.throwOne<
-                              SpecificationV2<T>,
-                              string
-                            >("forms are missing from the specificationV2")
-                          : SpecificationV2.Operations.DeserializeForms<
+                      ? ValueOrErrors.Default.throwOne<
+                          SpecificationV2<T>,
+                          string
+                        >("forms are missing from the specificationV2")
+                      : SpecificationV2.Operations.GetLaucherFormTypes(
+                          launchers,
+                          serializedSpecificationV2s.forms,
+                        )
+                          .Then((formTypes) =>
+                            SpecificationV2.Operations.DeserializeSpecTypes(
+                              formTypes,
+                              serializedSpecificationV2s.types,
+                              injectedPrimitives,
+                            ),
+                          )
+                          .Then((allTypes) =>
+                            SpecificationV2.Operations.DeserializeForms<
                               T,
                               Flags,
                               CustomPresentationContext,
@@ -403,9 +458,7 @@ export const SpecificationV2 = {
                               serializedSpecificationV2s.forms,
                               allTypes,
                               concreteRenderers,
-                              Object.values(
-                                (serializedSpecificationV2s as any).launchers,
-                              ).map((launcher: any) => launcher.form),
+                              SpecificationV2.Operations.GetLauncherFormNames(launchers),
                             ).Then((forms) =>
                               !SpecificationV2.Operations.hasApis(
                                 serializedSpecificationV2s,
@@ -414,8 +467,7 @@ export const SpecificationV2 = {
                                     SpecificationV2<T>,
                                     string
                                   >("apis are missing from the specificationV2")
-                                : // TODO move all apis serialization to the apis state file
-                                  EnumApis.Operations.Deserialize(
+                                : EnumApis.Operations.Deserialize(
                                     serializedSpecificationV2s.apis.enumOptions,
                                   ).Then((enums) =>
                                     StreamApis.Operations.Deserialize(
@@ -485,7 +537,7 @@ export const SpecificationV2 = {
                                     ),
                                   ),
                             ),
-                      ),
+                          ),
                 )
                 .MapErrors((errors) =>
                   errors.map(

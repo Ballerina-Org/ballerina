@@ -1278,10 +1278,14 @@ export const DispatchParsedType = {
         ],
         string
       > = (() => {
+        console.debug("rawType", rawType);
         if (SerializedType.isPrimitive(rawType, injectedPrimitives))
           return ValueOrErrors.Default.return([
             DispatchParsedType.Default.primitive(
-              typeof rawType === "string" && STRINGY_TYPES.includes(rawType as typeof STRINGY_TYPES[number])
+              typeof rawType === "string" &&
+                STRINGY_TYPES.includes(
+                  rawType as (typeof STRINGY_TYPES)[number],
+                )
                 ? "string"
                 : rawType,
             ),
@@ -1431,10 +1435,11 @@ export const DispatchParsedType = {
                 ]),
           );
         }
-        if (SerializedType.isLookup(rawType, typeNames))
+        if (SerializedType.isLookup(rawType, typeNames)) {
+          const resolvedType = serializedTypes[rawType];
           return DispatchParsedType.Operations.ParseRawType(
             typeName,
-            rawType,
+            resolvedType,
             typeNames,
             serializedTypes,
             alreadyParsedTypes,
@@ -1448,6 +1453,7 @@ export const DispatchParsedType = {
               ),
             ]),
           );
+        }
 
         if (SerializedType.isUnit(rawType)) {
           return ValueOrErrors.Default.return([
