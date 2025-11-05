@@ -109,12 +109,10 @@ export const SpecificationV2 = {
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
     ): ValueOrErrors<Map<DispatchTypeName, DispatchParsedType<T>>, string> => {
       const serializedTypeNames = Set(Object.keys(serializedTypes));
-      const x = ValueOrErrors.Operations.All(
+      return ValueOrErrors.Operations.All(
         List<ValueOrErrors<[DispatchTypeName, DispatchParsedType<T>], string>>(
           launcherTypes
             .reduce((acc, rawTypeName) => {
-              console.debug("rawTypeName", rawTypeName);
-              console.debug("serializedTypes[rawTypeName]", serializedTypes[rawTypeName]);
               const res = DispatchParsedType.Operations.ParseRawType(
                 rawTypeName,
                 serializedTypes[rawTypeName],
@@ -123,7 +121,6 @@ export const SpecificationV2 = {
                 acc,
                 injectedPrimitives,
               );
-              console.debug("res", res);
               return res.kind == "errors"
                 ? acc.set(rawTypeName, res)
                 : res.value[1].set(
@@ -148,8 +145,6 @@ export const SpecificationV2 = {
           Map<DispatchTypeName, DispatchParsedType<T>>(parsedTypes),
         ),
       );
-      console.debug("x", x);
-      return x;
     },
     DeserializeLaunchers: <T>(
       desiredLaunchers: string[],
@@ -213,8 +208,6 @@ export const SpecificationV2 = {
       >,
       launcherForms: List<string>,
     ): ValueOrErrors<Map<string, Renderer<T>>, string> => {
-      let lookupsToResolve: string[] = [];
-      let seenLookups: Set<string> = Set();
       return ValueOrErrors.Operations.All(
         List<ValueOrErrors<[string, Renderer<T>], string>>(
           Object.entries(forms)
@@ -261,62 +254,7 @@ export const SpecificationV2 = {
                   ),
             ),
         ),
-      ).Then((launcherForms) => {
-        let finalForms = Map(launcherForms);
-        console.debug("finalForms", finalForms.toJS());
-
-        while (lookupsToResolve.length > 0) {
-          if (seenLookups.has(lookupsToResolve[0])) {
-            lookupsToResolve = lookupsToResolve.filter(
-              (lookup) => lookup !== lookupToResolve,
-            );
-            continue;
-          }
-          const lookupToResolve = lookupsToResolve.shift()!;
-          lookupsToResolve = lookupsToResolve.filter(
-            (lookup) => lookup !== lookupToResolve,
-          );
-          const rawForm = (forms as Record<string, unknown>)[
-            lookupToResolve
-          ] as { type: string };
-          const formResult = MapRepo.Operations.tryFindWithError(
-            (rawForm as { type: string }).type,
-            types,
-            () =>
-              `form type ${(rawForm as { type: string }).type} not found in types`,
-          ).Then((formType) =>
-            Renderer.Operations.Deserialize(
-              "columns" in rawForm
-                ? DispatchParsedType.Default.table(
-                    DispatchParsedType.Default.lookup(rawForm.type as string),
-                  )
-                : formType,
-              rawForm,
-              concreteRenderers as unknown as ConcreteRenderers<
-                T,
-                Flags,
-                CustomPresentationContext
-              >,
-              types,
-              undefined,
-              lookupsToResolve,
-            )
-              .MapErrors((errors) =>
-                errors.map(
-                  (error) =>
-                    `${error}\n...When deserializing form ${lookupToResolve}`,
-                ),
-              )
-              .Then((form) => {
-                seenLookups = seenLookups.add(lookupToResolve);
-                finalForms = finalForms.set(lookupToResolve, form);
-                return ValueOrErrors.Default.return([lookupToResolve, form]);
-              }),
-          );
-        }
-
-        return ValueOrErrors.Default.return(Map(finalForms));
-      });
+      );
     },
     GetFormType: <T>(form: object): ValueOrErrors<string, string> => {
       if (!("type" in form) || typeof form.type != "string")
@@ -458,7 +396,9 @@ export const SpecificationV2 = {
                               serializedSpecificationV2s.forms,
                               allTypes,
                               concreteRenderers,
-                              SpecificationV2.Operations.GetLauncherFormNames(launchers),
+                              SpecificationV2.Operations.GetLauncherFormNames(
+                                launchers,
+                              ),
                             ).Then((forms) =>
                               !SpecificationV2.Operations.hasApis(
                                 serializedSpecificationV2s,

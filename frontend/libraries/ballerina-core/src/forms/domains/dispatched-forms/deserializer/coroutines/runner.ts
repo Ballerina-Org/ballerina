@@ -6,6 +6,7 @@ import {
   Unit,
   ValueOrErrors,
   DispatchInjectablesTypes,
+  Specification,
 } from "../../../../../../main";
 import { CoTypedFactory } from "../../../../../coroutines/builder";
 import {
@@ -81,6 +82,14 @@ export const LoadAndDeserializeSpecification = <
             current.concreteRenderers,
             injectedPrimitives,
           )(serializedSpecifications, ["person-transparent"]);
+
+          console.debug("deserializationResult", deserializationResult);
+
+          // const deserializationResult = Specification.Operations.Deserialize(
+          //   current.fieldTypeConverters,
+          //   current.concreteRenderers,
+          //   injectedPrimitives,
+          // )(serializedSpecifications, ["person-transparent"]);
 
           if (deserializationResult.kind == "errors") {
             console.error(
