@@ -406,7 +406,6 @@ export const DispatcherFormsApp = (props: {}) => {
 
   // console.debug("personEntity", JSON.stringify(personEntity, null, 2));
 
-    console.log('TEST 1111' + JSON.stringify(specificationDeserializer, null, 2))
   return (
     <div className="App">
       <h1>Ballerina 🩰</h1>
@@ -560,17 +559,13 @@ export const DispatcherFormsApp = (props: {}) => {
                         lookupSources:
                           DispatchPersonFromConfigApis.lookupSources,
                       },
-                      // config: {
-                      //   source: "api",
-                      //   getGlobalConfig: () =>
-                      //     DispatchPersonFromConfigApis.entityApis.get(
-                      //       "person-config",
-                      //     )(""),
-                      // },
                       config: {
-                        source: "entity",
-                        value: config,
-                      },
+                        source: "api",
+                        getGlobalConfig: () =>
+                          DispatchPersonFromConfigApis.entityApis.get(
+                            "assistant-config",
+                          )(""),
+                      }
                     },
                     remoteEntityVersionIdentifier,
                     showFormParsingErrors: ShowFormsParsingErrors,

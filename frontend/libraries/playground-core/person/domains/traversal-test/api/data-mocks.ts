@@ -322,7 +322,16 @@ const streamApis: DispatchInfiniteStreamSources = (streamName: string) =>
       : ValueOrErrors.Default.throwOne(`Cannot find stream API ${streamName}`);
 
 const enumApis: DispatchEnumOptionsSources = (enumName: string) =>
-  enumName == "colors"
+    enumName == "employmentTypes"
+        ? ValueOrErrors.Default.return(() =>
+            PromiseRepo.Default.mock(
+                () => colors.map((_) => ({ Value: _ })),
+                undefined,
+                1,
+                0,
+            ),
+        )
+    : enumName == "colors"
     ? ValueOrErrors.Default.return(() =>
         PromiseRepo.Default.mock(
           () => colors.map((_) => ({ Value: _ })),

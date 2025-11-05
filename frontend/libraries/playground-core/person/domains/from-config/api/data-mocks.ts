@@ -1,13 +1,13 @@
 import { faker } from "@faker-js/faker";
 import {
-  CollectionReference,
-  InfiniteStreamSources,
-  PromiseRepo,
-  EnumOptionsSources,
-  EntityApis,
-  unit,
-  Guid,
-  GlobalConfigurationSources,
+    CollectionReference,
+    InfiniteStreamSources,
+    PromiseRepo,
+    EnumOptionsSources,
+    EntityApis,
+    unit,
+    Guid,
+    GlobalConfigurationSources, ValueOrErrors,
 } from "ballerina-core";
 import { OrderedMap, List } from "immutable";
 import { City } from "../../address/state";
@@ -33,7 +33,14 @@ const streamApis: InfiniteStreamSources = (streamName: string) =>
           });
         };
 const enumApis: EnumOptionsSources = (enumName: string) =>
-  enumName == "colors"
+    enumName == "employmentTypes"
+        ? () => PromiseRepo.Default.mock(
+            () => colors.map((_) => ({ Value: _ })),
+            undefined,
+            1,
+            0,
+        )
+    : enumName == "colors"
     ? () =>
         PromiseRepo.Default.mock(
           () => colors.map((_) => ({ Value: _ })),

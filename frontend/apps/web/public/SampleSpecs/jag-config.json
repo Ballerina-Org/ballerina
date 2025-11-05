@@ -6,9 +6,36 @@
         "IsAdmin": "boolean"
       }
     },
+    "EmploymentsEnum": {
+      "fun": "Union",
+      "args": [
+        {
+          "caseName": "Monthly",
+          "fields": {}
+        },
+        {
+          "caseName": "Hourly",
+          "fields": {}
+        },
+        {
+          "caseName": "Substitute",
+          "fields": {}
+        }
+      ]
+    },
+    "EmploymentRef": {
+      "fields": {
+        "Value": "EmploymentsEnum"
+      }
+    },
     "Assistant": {
       "fields": {
-        "Name": "string"
+        "Name": "string",
+        "FirstHire": "Date",
+        "EmploymentType": {
+          "fun": "SingleSelection",
+          "args": ["EmploymentRef"]
+        }
       }
     }
   },
@@ -21,17 +48,29 @@
       "globalConfiguration": {
         "type": "GlobalConfiguration",
         "methods": ["get"]
+      },
+      "enumOptions": {
+        "employmentTypes": "EmploymentRef"
       }
     }
   },
   "forms": {
     "assistant": {
       "type": "Assistant",
-      "renderer": "personDetails",
+      "renderer": "defaultRecordRenderer",
       "fields": {
         "Name": {
           "label": "First Name",
           "renderer": "defaultString"
+        },
+        "FirstHire": {
+          "label": "First hired at",
+          "renderer": "defaultDate"
+        },
+        "EmploymentType": {
+          "label": "Employment type",
+          "renderer": "defaultEnum",
+          "options": "employmentTypes"
         }
       },
       "tabs": {
@@ -39,7 +78,9 @@
           "columns": {
             "groups": {
               "main": [
-                "Name"
+                "Name",
+                "FirstHire",
+                "EmploymentType"
               ]
             }
           }

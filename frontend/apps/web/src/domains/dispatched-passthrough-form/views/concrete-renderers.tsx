@@ -999,6 +999,23 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   record: {
+      defaultRecordRenderer: () => (props) => {
+          return (
+              <>
+                  {props.VisibleFieldKeys.map((fieldName) => (
+                      <div style={{ display: "block" }}>
+                          {props.EmbeddedFields.get(fieldName)!(undefined)({
+                              ...props,
+                              context: {
+                                  ...props.context,
+                                  disabled: props.DisabledFieldKeys.has(fieldName),
+                              },
+                              view: unit,
+                          })}
+                      </div>
+                  ))}
+              </>
+          )},
     personDetails: () => (props) => {
       return (
         <>

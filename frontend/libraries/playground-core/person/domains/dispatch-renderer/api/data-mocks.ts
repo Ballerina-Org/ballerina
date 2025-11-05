@@ -657,7 +657,16 @@ const streamApis: DispatchInfiniteStreamSources = (streamName: string) =>
       : ValueOrErrors.Default.throwOne(`Cannot find stream API ${streamName}`);
 
 const enumApis: DispatchEnumOptionsSources = (enumName: string) =>
-  enumName == "colors"
+  enumName == "employmentTypes"
+    ? ValueOrErrors.Default.return(() =>
+          PromiseRepo.Default.mock(
+              () => colors.map((_) => ({ Value: _ })),
+              undefined,
+              1,
+              0,
+          ),
+      )
+    : enumName == "colors"
     ? ValueOrErrors.Default.return(() =>
         PromiseRepo.Default.mock(
           () => colors.map((_) => ({ Value: _ })),
@@ -738,7 +747,11 @@ const entityApis: EntityApis = {
       case "assistant":
           return (id: Guid) => {
               console.log(`get assistant ${id}`)
-              return Promise.resolve({ Name: "Assistant 2" });
+              return Promise.resolve({
+                  Name: "Assistant 2",
+                  FirstHire: "2000-01-02",
+                  EmploymentType: "Hourly"
+              });
           }
       case "assistant-config":
         return (_: Guid) => {
@@ -1326,7 +1339,9 @@ const entityApis: EntityApis = {
     apiName == "assistant"
     ? (_) => PromiseRepo.Default.mock(() => {
         return Promise.resolve({
-            Name: "Assistant 1"
+            Name: "Assistant 1",
+            FirstHire: "2000-01-02",
+            EmploymentType: "Hourly"
         })
       })
     : apiName == "person"
