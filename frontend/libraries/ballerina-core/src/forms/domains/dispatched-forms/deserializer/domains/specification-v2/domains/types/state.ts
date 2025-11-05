@@ -817,6 +817,7 @@ export const DispatchParsedType = {
         string,
         ValueOrErrors<DispatchParsedType<T>, string>
       >,
+      injectedPrimitives?: DispatchInjectedPrimitives<T>,
     ): ValueOrErrors<
       [
         DispatchParsedType<T>,
@@ -845,6 +846,7 @@ export const DispatchParsedType = {
             typeNames,
             serializedTypes,
             alreadyParsedTypes,
+            injectedPrimitives,
           )
       )
         .Then((parsingResult) =>
@@ -1668,6 +1670,7 @@ export const DispatchParsedType = {
             typeNames,
             serializedTypes,
             alreadyParsedTypes,
+            injectedPrimitives,
           );
         if (SerializedType.isTranslationOverride(rawType))
           return DispatchParsedType.Operations.ParseRawType(

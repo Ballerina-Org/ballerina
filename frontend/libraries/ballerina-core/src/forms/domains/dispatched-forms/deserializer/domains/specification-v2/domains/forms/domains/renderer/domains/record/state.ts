@@ -57,7 +57,7 @@ export const RecordRenderer = {
       _: unknown,
     ): ValueOrErrors<SerializedRecordRenderer, string> =>
       !DispatchIsObject(_)
-        ? ValueOrErrors.Default.throwOne("record form is not an object")
+        ? (console.debug("record form is not an object", _), ValueOrErrors.Default.throwOne("record form is not an object"))
         : !("fields" in _)
           ? ValueOrErrors.Default.throwOne(
               "record form is missing the required fields attribute",

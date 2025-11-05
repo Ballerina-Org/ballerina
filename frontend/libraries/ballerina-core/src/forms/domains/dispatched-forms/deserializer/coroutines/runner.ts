@@ -17,7 +17,7 @@ import {
 } from "../state";
 import { SpecificationV2 } from "../domains/specification-v2/state";
 
-export const LoadAndDeserializeSpecification = <
+export const LoadAndDeserializeSpecificationByDesiredLaunchers = <
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
   CustomPresentationContext = Unit,
@@ -81,7 +81,7 @@ export const LoadAndDeserializeSpecification = <
             current.fieldTypeConverters,
             current.concreteRenderers,
             injectedPrimitives,
-          )(serializedSpecifications, ["person-transparent", "person-config"]);
+          )(serializedSpecifications, current.desiredLaunchers);
 
           console.debug("deserializationResult", deserializationResult);
 

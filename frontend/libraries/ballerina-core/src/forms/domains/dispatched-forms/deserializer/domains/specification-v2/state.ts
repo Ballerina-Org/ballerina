@@ -545,8 +545,6 @@ export const SpecificationV2 = {
                                           },
                                         );
 
-                                        console.debug("forms", forms);
-
                                         return ValueOrErrors.Default.return({
                                           types: allTypes,
                                           forms,

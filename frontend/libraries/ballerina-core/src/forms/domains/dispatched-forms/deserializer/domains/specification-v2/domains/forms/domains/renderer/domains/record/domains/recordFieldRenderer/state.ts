@@ -79,7 +79,6 @@ export const RecordFieldRenderer = {
   > =>
     RecordFieldRenderer.tryAsValidRecordFieldRenderer(serialized).Then(
       (validatedSerialized) => {
-        console.debug(fieldName);
         return NestedRenderer.Operations.DeserializeAs(
           type,
           validatedSerialized,

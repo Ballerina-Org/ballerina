@@ -216,6 +216,7 @@ export * from "./src/forms/domains/dispatched-forms/built-ins/state";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/dispatcher/state";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/injectables/state";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/traversal/state";
+export * from "./src/forms/domains/dispatched-forms/deserializer/domains/specification-v2/state";
 // import { simpleUpdater, simpleUpdaterWithChildren } from "./src/fun/domains/updater/domains/simpleUpdater/state"
 // import { Updater } from "./src/fun/domains/updater/state"
 
