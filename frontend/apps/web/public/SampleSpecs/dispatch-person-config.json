@@ -400,6 +400,7 @@
           "args": ["string", "string"]
         },
         "Birthday": "Date",
+        "Test": "string",
         "SuperSecretNumber": {
           "fun": "ReadOnly",
           "args": ["number"]
@@ -1360,6 +1361,10 @@
             }
           ]
         },
+        "Test": {
+          "label": "Test 1",
+          "renderer": "defaultString"
+        },
         "Birthday": {
           "renderer": "defaultDate",
           "tooltip": "happy Birthday!"
@@ -2127,6 +2132,7 @@
                   "Job",
                   "Category",
                   "FullName",
+                  "Test",
                   "Birthday",
                   "SuperSecretNumber",
                   "MoreSecretNumbers",

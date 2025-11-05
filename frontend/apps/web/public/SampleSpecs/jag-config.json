@@ -1,0 +1,58 @@
+﻿{
+  "types": {
+    "GlobalConfiguration": {
+      "extends": [],
+      "fields": {
+        "IsAdmin": "boolean"
+      }
+    },
+    "Assistant": {
+      "fields": {
+        "Name": "string"
+      }
+    }
+  },
+  "apis": {
+    "entities": {
+      "assistant": {
+        "type": "Assistant",
+        "methods": ["default"]
+      },
+      "globalConfiguration": {
+        "type": "GlobalConfiguration",
+        "methods": ["get"]
+      }
+    }
+  },
+  "forms": {
+    "assistant": {
+      "type": "Assistant",
+      "renderer": "personDetails",
+      "fields": {
+        "Name": {
+          "label": "First Name",
+          "renderer": "defaultString"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "groups": {
+              "main": [
+                "Name"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "launchers": {
+    "create-assistant": {
+      "kind": "create",
+      "form": "assistant",
+      "api": "assistant",
+      "configApi": "globalConfiguration"
+    }
+  }
+}

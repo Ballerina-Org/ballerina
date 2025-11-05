@@ -521,7 +521,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                   },
                   view: unit,
                 })}
-              {props.context.customFormState.status == "open" ? "➖" : "➕"}
+                {props.context.customFormState.status == "open" ? "➖" : "➕"}
             </button>
           </li>
           {props.context.customFormState.status == "closed" ? (
@@ -1003,6 +1003,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       return (
         <>
           <table>
+              <>{console.debug("details")}</>
             <tbody>
               {/* {JSON.stringify(props.VisibleFieldKeys.toArray())} */}
               {props.context.layout.valueSeq().map((tab) =>
@@ -1015,7 +1016,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                         )
                         .map((fieldName) => (
                           <>
-                            {/* <>{console.debug("fieldName", fieldName)}</> */}
+                            {<>{console.debug("fieldName", fieldName)}</>}
                             <td style={{ display: "block" }}>
                               {props.EmbeddedFields.get(fieldName)!(undefined)({
                                 ...props,

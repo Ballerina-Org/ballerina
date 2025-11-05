@@ -26,7 +26,7 @@ import {
 import { Set, OrderedMap } from "immutable";
 import { DispatchPersonFromConfigApis } from "playground-core";
 // import SPEC from "../../../../backend/apps/automatic-tests/input-forms/simple-union-example-lookups.json";
-import SPEC from "../public/SampleSpecs/dispatch-person-config.json";
+import SPEC from "../public/SampleSpecs/jag-config.json";
 import {
   DispatchPersonContainerFormView,
   DispatchPersonLookupTypeRenderer,
@@ -300,48 +300,73 @@ export const DispatcherFormsApp = (props: {}) => {
   //   }
   // };
 
-  useEffect(() => {
-    DispatchPersonFromConfigApis.entityApis
-      .get("person")("")
-      .then((raw) => {
-        if (
-          specificationDeserializer.deserializedSpecification.sync.kind ==
-            "loaded" &&
-          specificationDeserializer.deserializedSpecification.sync.value.kind ==
-            "value"
-        ) {
-          const parsed =
-            specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
-              .get("person-transparent")!
-              .parseEntityFromApi(raw);
-          if (parsed.kind == "errors") {
-            console.error("parsed entity errors", parsed.errors);
-          } else {
-            setPersonEntity(Sum.Default.left(parsed));
-          }
-        }
-      });
-    DispatchPersonFromConfigApis.entityApis
-      .get("person-config")("")
-      .then((raw) => {
-        if (
-          specificationDeserializer.deserializedSpecification.sync.kind ==
-            "loaded" &&
-          specificationDeserializer.deserializedSpecification.sync.value.kind ==
-            "value"
-        ) {
-          const parsed =
-            specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
-              .get("person-config")!
-              .parseEntityFromApi(raw);
-          if (parsed.kind == "errors") {
-            console.error("parsed person config errors", parsed.errors);
-          } else {
-            setConfig(Sum.Default.left(parsed));
-          }
-        }
-      });
-  }, [specificationDeserializer.deserializedSpecification.sync.kind]);
+  // useEffect(() => {
+  //   DispatchPersonFromConfigApis.entityApis
+  //     .get("person")("")
+  //     .then((raw) => {
+  //       if (
+  //         specificationDeserializer.deserializedSpecification.sync.kind ==
+  //           "loaded" &&
+  //         specificationDeserializer.deserializedSpecification.sync.value.kind ==
+  //           "value"
+  //       ) {
+  //         const parsed =
+  //           specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
+  //             .get("person-transparent")!
+  //             .parseEntityFromApi(raw);
+  //         if (parsed.kind == "errors") {
+  //           console.error("parsed entity errors", parsed.errors);
+  //         } else {
+  //           setPersonEntity(Sum.Default.left(parsed));
+  //         }
+  //       }
+  //     });
+  //   DispatchPersonFromConfigApis.entityApis
+  //     .get("person-config")("")
+  //     .then((raw) => {
+  //       if (
+  //         specificationDeserializer.deserializedSpecification.sync.kind ==
+  //           "loaded" &&
+  //         specificationDeserializer.deserializedSpecification.sync.value.kind ==
+  //           "value"
+  //       ) {
+  //         const parsed =
+  //           specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
+  //             .get("person-config")!
+  //             .parseEntityFromApi(raw);
+  //         if (parsed.kind == "errors") {
+  //           console.error("parsed person config errors", parsed.errors);
+  //         } else {
+  //           setConfig(Sum.Default.left(parsed));
+  //         }
+  //       }
+  //     });
+  // }, [specificationDeserializer.deserializedSpecification.sync.kind]);
+
+  // useEffect(() => {
+  //   DispatchPersonFromConfigApis.entityApis
+  //       .get("assistant")("")
+  //       .then((raw) => {
+  //           console.log('Raw assistant ' + raw)
+  //           if (
+  //               specificationDeserializer.deserializedSpecification.sync.kind ==
+  //               "loaded" &&
+  //               specificationDeserializer.deserializedSpecification.sync.value.kind ==
+  //               "value"
+  //           ) {
+  //
+  //               const parsed =
+  //                   specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
+  //                       .get("person-transparent")!
+  //                       .parseEntityFromApi(raw);
+  //               if (parsed.kind == "errors") {
+  //                   console.error("parsed entity errors", parsed.errors);
+  //               } else {
+  //                   setPersonEntity(Sum.Default.left(parsed));
+  //               }
+  //           }
+  //       });
+  //   }, [specificationDeserializer.deserializedSpecification.sync.kind]);
 
   // console.debug(
   //   "personPassthroughFormState",
@@ -381,6 +406,7 @@ export const DispatcherFormsApp = (props: {}) => {
 
   // console.debug("personEntity", JSON.stringify(personEntity, null, 2));
 
+    console.log('TEST 1111' + JSON.stringify(specificationDeserializer, null, 2))
   return (
     <div className="App">
       <h1>Ballerina 🩰</h1>
@@ -422,98 +448,98 @@ export const DispatcherFormsApp = (props: {}) => {
                   foreignMutations={unit}
                 />
                 <h3> Dispatcher Passthrough form</h3>
-
-                <h4>Config</h4>
-                <div style={{ border: "2px dashed lightblue" }}>
-                  <InstantiedPersonDispatchFormRunnerTemplate
-                    context={{
-                      ...specificationDeserializer,
-                      ...personConfigState,
-                      launcherRef: {
-                        name: "person-config",
-                        kind: "passthrough",
-                        entity: config,
-                        config: Sum.Default.left(
-                          ValueOrErrors.Default.return(
-                            PredicateValue.Default.record(OrderedMap()),
-                          ),
-                        ),
-                        onEntityChange: onPersonConfigChange,
-                        apiSources: {
-                          infiniteStreamSources:
-                            DispatchPersonFromConfigApis.streamApis,
-                          enumOptionsSources:
-                            DispatchPersonFromConfigApis.enumApis,
-                          tableApiSources:
-                            DispatchPersonFromConfigApis.tableApiSources,
-                          lookupSources:
-                            DispatchPersonFromConfigApis.lookupSources,
-                        },
-                      },
-                      remoteEntityVersionIdentifier:
-                        remoteConfigEntityVersionIdentifier,
-                      showFormParsingErrors: ShowFormsParsingErrors,
-                      extraContext: {
-                        flags: Set(["BC", "X"]),
-                      },
-                      globallyDisabled: false,
-                      globallyReadOnly: false,
-                    }}
-                    setState={setPersonConfigState}
-                    view={unit}
-                    foreignMutations={unit}
-                  />
-                </div>
-                <h3>Person</h3>
-                {/* {entityPath && entityPath.kind == "value" && (
-                  <pre
-                    style={{
-                      display: "inline-block",
-                      verticalAlign: "top",
-                      textAlign: "left",
-                    }}
-                  >
-                    {JSON.stringify(entityPath.value, null, 2)}
-                  </pre>
-                )} */}
-                {entityPath && entityPath.kind == "errors" && (
-                  <pre>
-                    DeltaErrors: {JSON.stringify(entityPath.errors, null, 2)}
-                  </pre>
-                )}
-                <InstantiedPersonDispatchFormRunnerTemplate
-                  context={{
-                    ...specificationDeserializer,
-                    ...personPassthroughFormState,
-                    launcherRef: {
-                      name: "person-transparent",
-                      kind: "passthrough",
-                      entity: personEntity,
-                      config,
-                      onEntityChange: onPersonEntityChange,
-                      apiSources: {
-                        infiniteStreamSources:
-                          DispatchPersonFromConfigApis.streamApis,
-                        enumOptionsSources:
-                          DispatchPersonFromConfigApis.enumApis,
-                        tableApiSources:
-                          DispatchPersonFromConfigApis.tableApiSources,
-                        lookupSources:
-                          DispatchPersonFromConfigApis.lookupSources,
-                      },
-                    },
-                    remoteEntityVersionIdentifier,
-                    showFormParsingErrors: ShowFormsParsingErrors,
-                    extraContext: {
-                      flags: Set(["BC", "X"]),
-                    },
-                    globallyDisabled: false,
-                    globallyReadOnly: false,
-                  }}
-                  setState={setPersonPassthroughFormState}
-                  view={unit}
-                  foreignMutations={unit}
-                />
+                
+                {/*<h4>Config</h4>*/}
+                {/*<div style={{ border: "2px dashed lightblue" }}>*/}
+                {/*  <InstantiedPersonDispatchFormRunnerTemplate*/}
+                {/*    context={{*/}
+                {/*      ...specificationDeserializer,*/}
+                {/*      ...personConfigState,*/}
+                {/*      launcherRef: {*/}
+                {/*        name: "person-config",*/}
+                {/*        kind: "passthrough",*/}
+                {/*        entity: config,*/}
+                {/*        config: Sum.Default.left(*/}
+                {/*          ValueOrErrors.Default.return(*/}
+                {/*            PredicateValue.Default.record(OrderedMap()),*/}
+                {/*          ),*/}
+                {/*        ),*/}
+                {/*        onEntityChange: onPersonConfigChange,*/}
+                {/*        apiSources: {*/}
+                {/*          infiniteStreamSources:*/}
+                {/*            DispatchPersonFromConfigApis.streamApis,*/}
+                {/*          enumOptionsSources:*/}
+                {/*            DispatchPersonFromConfigApis.enumApis,*/}
+                {/*          tableApiSources:*/}
+                {/*            DispatchPersonFromConfigApis.tableApiSources,*/}
+                {/*          lookupSources:*/}
+                {/*            DispatchPersonFromConfigApis.lookupSources,*/}
+                {/*        },*/}
+                {/*      },*/}
+                {/*      remoteEntityVersionIdentifier:*/}
+                {/*        remoteConfigEntityVersionIdentifier,*/}
+                {/*      showFormParsingErrors: ShowFormsParsingErrors,*/}
+                {/*      extraContext: {*/}
+                {/*        flags: Set(["BC", "X"]),*/}
+                {/*      },*/}
+                {/*      globallyDisabled: false,*/}
+                {/*      globallyReadOnly: false,*/}
+                {/*    }}*/}
+                {/*    setState={setPersonConfigState}*/}
+                {/*    view={unit}*/}
+                {/*    foreignMutations={unit}*/}
+                {/*  />*/}
+                {/*</div>*/}
+                {/*<h3>Person</h3>*/}
+                {/*/!* {entityPath && entityPath.kind == "value" && (*/}
+                {/*  <pre*/}
+                {/*    style={{*/}
+                {/*      display: "inline-block",*/}
+                {/*      verticalAlign: "top",*/}
+                {/*      textAlign: "left",*/}
+                {/*    }}*/}
+                {/*  >*/}
+                {/*    {JSON.stringify(entityPath.value, null, 2)}*/}
+                {/*  </pre>*/}
+                {/*)} *!/*/}
+                {/*{entityPath && entityPath.kind == "errors" && (*/}
+                {/*  <pre>*/}
+                {/*    DeltaErrors: {JSON.stringify(entityPath.errors, null, 2)}*/}
+                {/*  </pre>*/}
+                {/*)}*/}
+                {/*<InstantiedPersonDispatchFormRunnerTemplate*/}
+                {/*  context={{*/}
+                {/*    ...specificationDeserializer,*/}
+                {/*    ...personPassthroughFormState,*/}
+                {/*    launcherRef: {*/}
+                {/*      name: "person-transparent",*/}
+                {/*      kind: "passthrough",*/}
+                {/*      entity: personEntity,*/}
+                {/*      config,*/}
+                {/*      onEntityChange: onPersonEntityChange,*/}
+                {/*      apiSources: {*/}
+                {/*        infiniteStreamSources:*/}
+                {/*          DispatchPersonFromConfigApis.streamApis,*/}
+                {/*        enumOptionsSources:*/}
+                {/*          DispatchPersonFromConfigApis.enumApis,*/}
+                {/*        tableApiSources:*/}
+                {/*          DispatchPersonFromConfigApis.tableApiSources,*/}
+                {/*        lookupSources:*/}
+                {/*          DispatchPersonFromConfigApis.lookupSources,*/}
+                {/*      },*/}
+                {/*    },*/}
+                {/*    remoteEntityVersionIdentifier,*/}
+                {/*    showFormParsingErrors: ShowFormsParsingErrors,*/}
+                {/*    extraContext: {*/}
+                {/*      flags: Set(["BC", "X"]),*/}
+                {/*    },*/}
+                {/*    globallyDisabled: false,*/}
+                {/*    globallyReadOnly: false,*/}
+                {/*  }}*/}
+                {/*  setState={setPersonPassthroughFormState}*/}
+                {/*  view={unit}*/}
+                {/*  foreignMutations={unit}*/}
+                {/*/>*/}
 
                 <h3>Create Person</h3>
                 <InstantiedPersonDispatchFormRunnerTemplate
@@ -521,7 +547,7 @@ export const DispatcherFormsApp = (props: {}) => {
                     ...specificationDeserializer,
                     ...personCreateState,
                     launcherRef: {
-                      name: "create-person",
+                      name: "create-assistant",
                       kind: "create",
                       apiSources: {
                         infiniteStreamSources:

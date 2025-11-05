@@ -735,6 +735,17 @@ const entityApis: EntityApis = {
         },
   get: (apiName: string) => {
     switch (apiName) {
+      case "assistant":
+          return (id: Guid) => {
+              console.log(`get assistant ${id}`)
+              return Promise.resolve({ Name: "Assistant 2" });
+          }
+      case "assistant-config":
+        return (_: Guid) => {
+            return Promise.resolve({
+                IsAdmin: false
+            });
+        };
       case "person":
         return (id: Guid) => {
           console.log(`get person ${id}`);
@@ -1186,6 +1197,7 @@ const entityApis: EntityApis = {
             CityByDepartment: [],
             ShoeColours: [{ Value: "Red" }],
             FriendsBirthdays: [],
+            Test: "",
             Holidays: [],
             FriendsAddresses: [
               {
@@ -1311,7 +1323,13 @@ const entityApis: EntityApis = {
     }
   },
   default: (apiName: string) =>
-    apiName == "person"
+    apiName == "assistant"
+    ? (_) => PromiseRepo.Default.mock(() => {
+        return Promise.resolve({
+            Name: "Assistant 1"
+        })
+      })
+    : apiName == "person"
       ? (_) =>
           PromiseRepo.Default.mock(() => {
             return Promise.resolve({
@@ -1766,6 +1784,7 @@ const entityApis: EntityApis = {
               CityByDepartment: [],
               ShoeColours: [{ Value: "Red" }],
               FriendsBirthdays: [],
+              Test: "",
               Holidays: [],
               FriendsAddresses: [
                 {
