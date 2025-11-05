@@ -285,9 +285,9 @@ export const SpecificationV2 = {
             string
           >([Map<string, Renderer<T>>(), Map<string, Renderer<T>>()]),
         )
-        .Then(([formsMap]) =>
+        .Then(([forms, accumulatedAlreadyParsedForms]) =>
           ValueOrErrors.Default.return<Map<string, Renderer<T>>, string>(
-            formsMap,
+            accumulatedAlreadyParsedForms.concat(forms),
           ),
         );
     },
