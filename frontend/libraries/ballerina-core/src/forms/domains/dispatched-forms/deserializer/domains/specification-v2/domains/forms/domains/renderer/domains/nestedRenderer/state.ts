@@ -92,14 +92,16 @@ export const NestedRenderer = {
       >,
       as: string,
       types: Map<string, DispatchParsedType<T>>,
-      lookupsToResolve: string[],
-    ): ValueOrErrors<NestedRenderer<T>, string> =>
+      forms: object,
+      alreadyParsedForms: Map<string, Renderer<T>>,
+    ): ValueOrErrors<[NestedRenderer<T>, Map<string, Renderer<T>>], string> =>
       NestedRenderer.Operations.Deserialize(
         type,
         serialized,
         concreteRenderers,
         types,
-        lookupsToResolve,
+        forms,
+        alreadyParsedForms,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
       ),
@@ -118,8 +120,9 @@ export const NestedRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
-      lookupsToResolve: string[],
-    ): ValueOrErrors<NestedRenderer<T>, string> =>
+      forms: object,
+      alreadyParsedForms: Map<string, Renderer<T>>,
+    ): ValueOrErrors<[NestedRenderer<T>, Map<string, Renderer<T>>], string> =>
       NestedRenderer.Operations.tryAsValidSerializedNestedRenderer(
         serialized,
       ).Then((validatedSerialized) =>
@@ -137,14 +140,25 @@ export const NestedRenderer = {
           "api" in validatedSerialized && isString(validatedSerialized.api)
             ? validatedSerialized.api
             : undefined,
-          lookupsToResolve,
-        ).Then((renderer) =>
-          ValueOrErrors.Default.return<NestedRenderer<T>, string>({
-            renderer,
-            label: validatedSerialized.label,
-            tooltip: validatedSerialized.tooltip,
-            details: validatedSerialized.details,
-          }).MapErrors<NestedRenderer<T>, string, string>((errors) =>
+          forms,
+          alreadyParsedForms,
+        ).Then(([renderer, newAlreadyParsedForms]) =>
+          ValueOrErrors.Default.return<
+            [NestedRenderer<T>, Map<string, Renderer<T>>],
+            string
+          >([
+            {
+              renderer,
+              label: validatedSerialized.label,
+              tooltip: validatedSerialized.tooltip,
+              details: validatedSerialized.details,
+            },
+            newAlreadyParsedForms,
+          ]).MapErrors<
+            [NestedRenderer<T>, Map<string, Renderer<T>>],
+            string,
+            string
+          >((errors) =>
             errors.map(
               (error) =>
                 `${error}\n...When parsing as ${renderer.kind} nested renderer`,

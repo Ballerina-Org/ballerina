@@ -1555,7 +1555,7 @@ export const DispatchParsedType = {
             ValueOrErrors.Default.return([
               DispatchParsedType.Default.lookup(rawType),
               newAlreadyParsedTypes.set(
-                typeName,
+                rawType,
                 ValueOrErrors.Default.return(parsedType),
               ),
             ]),

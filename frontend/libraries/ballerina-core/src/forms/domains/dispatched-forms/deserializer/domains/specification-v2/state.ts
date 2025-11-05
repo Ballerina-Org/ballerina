@@ -208,53 +208,88 @@ export const SpecificationV2 = {
       >,
       launcherForms: List<string>,
     ): ValueOrErrors<Map<string, Renderer<T>>, string> => {
-      return ValueOrErrors.Operations.All(
-        List<ValueOrErrors<[string, Renderer<T>], string>>(
-          Object.entries(forms)
-            .filter(([formName]) => launcherForms.includes(formName))
-            .map(([formName, form]) =>
+      return Object.entries(forms)
+        .filter(([formName]) => launcherForms.includes(formName))
+        .reduce<
+          ValueOrErrors<
+            [Map<string, Renderer<T>>, Map<string, Renderer<T>>],
+            string
+          >
+        >(
+          (acc, [formName, form]) =>
+            acc.Then(([formsMap, accumulatedAlreadyParsedForms]) =>
               !DispatchIsObject(form) ||
               !("type" in form) ||
               typeof form.type != "string"
-                ? ValueOrErrors.Default.throwOne(
-                    `form ${formName} is missing the required type attribute`,
-                  )
-                : MapRepo.Operations.tryFindWithError(
-                    form.type,
-                    types,
-                    () => `form type ${form.type} not found in types`,
-                  ).Then((formType) =>
-                    Renderer.Operations.Deserialize(
-                      "columns" in form
-                        ? DispatchParsedType.Default.table(
-                            DispatchParsedType.Default.lookup(
-                              form.type as string,
-                            ),
-                          )
-                        : formType,
-                      form,
-                      concreteRenderers as unknown as ConcreteRenderers<
-                        T,
-                        Flags,
-                        CustomPresentationContext
-                      >,
-                      types,
-                      undefined,
-                      lookupsToResolve,
-                    )
-                      .MapErrors((errors) =>
-                        errors.map(
-                          (error) =>
-                            `${error}\n...When deserializing form ${formName}`,
-                        ),
-                      )
-                      .Then((form) =>
-                        ValueOrErrors.Default.return([formName, form]),
+                ? ValueOrErrors.Default.throwOne<
+                    [Map<string, Renderer<T>>, Map<string, Renderer<T>>],
+                    string
+                  >(`form ${formName} is missing the required type attribute`)
+                : accumulatedAlreadyParsedForms.has(formName)
+                  ? ValueOrErrors.Default.return<
+                      [Map<string, Renderer<T>>, Map<string, Renderer<T>>],
+                      string
+                    >([
+                      formsMap.set(
+                        formName,
+                        accumulatedAlreadyParsedForms.get(formName)!,
                       ),
-                  ),
+                      accumulatedAlreadyParsedForms,
+                    ])
+                  : MapRepo.Operations.tryFindWithError(
+                      form.type,
+                      types,
+                      () => `form type ${form.type} not found in types`,
+                    ).Then((formType) =>
+                      Renderer.Operations.Deserialize(
+                        "columns" in form
+                          ? DispatchParsedType.Default.table(
+                              DispatchParsedType.Default.lookup(
+                                form.type as string,
+                              ),
+                            )
+                          : formType,
+                        form,
+                        concreteRenderers as unknown as ConcreteRenderers<
+                          T,
+                          Flags,
+                          CustomPresentationContext
+                        >,
+                        types,
+                        undefined,
+                        forms,
+                        accumulatedAlreadyParsedForms,
+                      )
+                        .MapErrors((errors) =>
+                          errors.map(
+                            (error) =>
+                              `${error}\n...When deserializing form ${formName}`,
+                          ),
+                        )
+                        .Then(([deserializedForm, newAlreadyParsedForms]) =>
+                          ValueOrErrors.Default.return<
+                            [
+                              Map<string, Renderer<T>>,
+                              Map<string, Renderer<T>>,
+                            ],
+                            string
+                          >([
+                            formsMap.set(formName, deserializedForm),
+                            newAlreadyParsedForms,
+                          ]),
+                        ),
+                    ),
             ),
-        ),
-      );
+          ValueOrErrors.Default.return<
+            [Map<string, Renderer<T>>, Map<string, Renderer<T>>],
+            string
+          >([Map<string, Renderer<T>>(), Map<string, Renderer<T>>()]),
+        )
+        .Then(([formsMap]) =>
+          ValueOrErrors.Default.return<Map<string, Renderer<T>>, string>(
+            formsMap,
+          ),
+        );
     },
     GetFormType: <T>(form: object): ValueOrErrors<string, string> => {
       if (!("type" in form) || typeof form.type != "string")
@@ -283,9 +318,44 @@ export const SpecificationV2 = {
         )
         .toList();
     },
+    GetCreateAndEditConfigEntityTypes: <T>(
+      launchers: Launchers,
+      apis: object,
+    ): List<ValueOrErrors<string, string>> => {
+      const entities = Reflect.get(apis, "entities");
+      return launchers.create
+        .valueSeq()
+        .map((launcher) => {
+          const entityType = Reflect.get(entities, launcher.configApi)?.type;
+          return entityType
+            ? ValueOrErrors.Default.return<string, string>(entityType)
+            : ValueOrErrors.Default.throwOne<string, string>(
+                `entity type ${launcher.configApi} not found in entities`,
+              );
+        })
+        .concat(
+          launchers.edit.valueSeq().map((launcher) => {
+            const entityType = Reflect.get(entities, launcher.configApi)?.type;
+            return entityType
+              ? ValueOrErrors.Default.return<string, string>(entityType)
+              : ValueOrErrors.Default.throwOne<string, string>(
+                  `entity type ${launcher.configApi} not found in entities`,
+                );
+          }),
+        )
+        .toList();
+    },
+
+    GetLauncherConfigTypes: <T>(launchers: Launchers): List<string> => {
+      return launchers.passthrough
+        .valueSeq()
+        .map((launcher) => launcher.configType)
+        .toList();
+    },
     GetLaucherFormTypes: <T>(
       launchers: Launchers,
       forms: object,
+      apis: object,
     ): ValueOrErrors<List<string>, string> => {
       return ValueOrErrors.Operations.All(
         launchers.create
@@ -314,6 +384,21 @@ export const SpecificationV2 = {
                   forms,
                 ).Then((form) => SpecificationV2.Operations.GetFormType(form)),
               ),
+          )
+          .concat(
+            launchers.passthrough
+              .valueSeq()
+              .map((launcher) =>
+                ValueOrErrors.Default.return<string, string>(
+                  launcher.configType,
+                ),
+              ),
+          )
+          .concat(
+            SpecificationV2.Operations.GetCreateAndEditConfigEntityTypes(
+              launchers,
+              apis,
+            ),
           )
           .toList(),
       );
@@ -375,109 +460,111 @@ export const SpecificationV2 = {
                           SpecificationV2<T>,
                           string
                         >("forms are missing from the specificationV2")
-                      : SpecificationV2.Operations.GetLaucherFormTypes(
-                          launchers,
-                          serializedSpecificationV2s.forms,
-                        )
-                          .Then((formTypes) =>
-                            SpecificationV2.Operations.DeserializeSpecTypes(
-                              formTypes,
-                              serializedSpecificationV2s.types,
-                              injectedPrimitives,
-                            ),
+                      : !SpecificationV2.Operations.hasApis(
+                            serializedSpecificationV2s,
                           )
-                          .Then((allTypes) =>
-                            SpecificationV2.Operations.DeserializeForms<
-                              T,
-                              Flags,
-                              CustomPresentationContext,
-                              ExtraContext
-                            >(
-                              serializedSpecificationV2s.forms,
-                              allTypes,
-                              concreteRenderers,
-                              SpecificationV2.Operations.GetLauncherFormNames(
-                                launchers,
+                        ? ValueOrErrors.Default.throwOne<
+                            SpecificationV2<T>,
+                            string
+                          >("apis are missing from the specificationV2")
+                        : SpecificationV2.Operations.GetLaucherFormTypes(
+                            launchers,
+                            serializedSpecificationV2s.forms,
+                            serializedSpecificationV2s.apis,
+                          )
+                            .Then((formTypes) =>
+                              SpecificationV2.Operations.DeserializeSpecTypes(
+                                formTypes,
+                                serializedSpecificationV2s.types,
+                                injectedPrimitives,
                               ),
-                            ).Then((forms) =>
-                              !SpecificationV2.Operations.hasApis(
-                                serializedSpecificationV2s,
-                              )
-                                ? ValueOrErrors.Default.throwOne<
-                                    SpecificationV2<T>,
-                                    string
-                                  >("apis are missing from the specificationV2")
-                                : EnumApis.Operations.Deserialize(
-                                    serializedSpecificationV2s.apis.enumOptions,
-                                  ).Then((enums) =>
-                                    StreamApis.Operations.Deserialize(
-                                      serializedSpecificationV2s.apis
-                                        .searchableStreams,
-                                    ).Then((streams) =>
-                                      TableApis.Operations.Deserialize(
-                                        concreteRenderers,
-                                        allTypes,
-                                        serializedSpecificationV2s.apis.tables,
-                                        injectedPrimitives,
-                                      ).Then((tables) =>
-                                        LookupApis.Operations.Deserialize(
+                            )
+                            .Then((allTypes) =>
+                              SpecificationV2.Operations.DeserializeForms<
+                                T,
+                                Flags,
+                                CustomPresentationContext,
+                                ExtraContext
+                              >(
+                                serializedSpecificationV2s.forms,
+                                allTypes,
+                                concreteRenderers,
+                                SpecificationV2.Operations.GetLauncherFormNames(
+                                  launchers,
+                                ),
+                              ).Then((forms) =>
+                                EnumApis.Operations.Deserialize(
+                                  serializedSpecificationV2s.apis.enumOptions,
+                                ).Then((enums) =>
+                                  StreamApis.Operations.Deserialize(
+                                    serializedSpecificationV2s.apis
+                                      .searchableStreams,
+                                  ).Then((streams) =>
+                                    TableApis.Operations.Deserialize(
+                                      concreteRenderers,
+                                      allTypes,
+                                      serializedSpecificationV2s.apis.tables,
+                                      injectedPrimitives,
+                                    ).Then((tables) =>
+                                      LookupApis.Operations.Deserialize(
+                                        serializedSpecificationV2s.apis.lookups,
+                                      ).Then((lookups) => {
+                                        let entities: Map<string, EntityApi> =
+                                          Map();
+                                        Object.entries(
                                           serializedSpecificationV2s.apis
-                                            .lookups,
-                                        ).Then((lookups) => {
-                                          let entities: Map<string, EntityApi> =
-                                            Map();
-                                          Object.entries(
-                                            serializedSpecificationV2s.apis
-                                              .entities,
-                                          ).forEach(
-                                            ([entityApiName, entityApi]: [
-                                              entiyApiName: string,
-                                              entityApi: SerializedEntityApi,
-                                            ]) => {
-                                              entities = entities.set(
-                                                entityApiName,
-                                                {
-                                                  type: entityApi.type,
-                                                  methods: {
-                                                    create:
-                                                      entityApi.methods.includes(
-                                                        "create",
-                                                      ),
-                                                    get: entityApi.methods.includes(
-                                                      "get",
+                                            .entities,
+                                        ).forEach(
+                                          ([entityApiName, entityApi]: [
+                                            entiyApiName: string,
+                                            entityApi: SerializedEntityApi,
+                                          ]) => {
+                                            entities = entities.set(
+                                              entityApiName,
+                                              {
+                                                type: entityApi.type,
+                                                methods: {
+                                                  create:
+                                                    entityApi.methods.includes(
+                                                      "create",
                                                     ),
-                                                    update:
-                                                      entityApi.methods.includes(
-                                                        "update",
-                                                      ),
-                                                    default:
-                                                      entityApi.methods.includes(
-                                                        "default",
-                                                      ),
-                                                  },
+                                                  get: entityApi.methods.includes(
+                                                    "get",
+                                                  ),
+                                                  update:
+                                                    entityApi.methods.includes(
+                                                      "update",
+                                                    ),
+                                                  default:
+                                                    entityApi.methods.includes(
+                                                      "default",
+                                                    ),
                                                 },
-                                              );
-                                            },
-                                          );
+                                              },
+                                            );
+                                          },
+                                        );
 
-                                          return ValueOrErrors.Default.return({
-                                            types: allTypes,
-                                            forms,
-                                            apis: {
-                                              enums,
-                                              streams,
-                                              entities,
-                                              tables,
-                                              lookups,
-                                            },
-                                            launchers,
-                                          });
-                                        }),
-                                      ),
+                                        console.debug("forms", forms);
+
+                                        return ValueOrErrors.Default.return({
+                                          types: allTypes,
+                                          forms,
+                                          apis: {
+                                            enums,
+                                            streams,
+                                            entities,
+                                            tables,
+                                            lookups,
+                                          },
+                                          launchers,
+                                        });
+                                      }),
                                     ),
                                   ),
+                                ),
+                              ),
                             ),
-                          ),
                 )
                 .MapErrors((errors) =>
                   errors.map(

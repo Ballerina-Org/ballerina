@@ -5,6 +5,7 @@ import {
   DispatchParsedType,
   isObject,
   ListType,
+  Renderer,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import { NestedRenderer } from "../nestedRenderer/state";
@@ -115,8 +116,9 @@ export const ListRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
-      lookupsToResolve: string[],
-    ): ValueOrErrors<ListRenderer<T>, string> =>
+      forms: object,
+      alreadyParsedForms: Map<string, Renderer<T>>,
+    ): ValueOrErrors<[ListRenderer<T>, Map<string, Renderer<T>>], string> =>
       ListRenderer.Operations.tryAsValidBaseListRenderer(serialized, type)
         .Then((serializedRenderer) =>
           NestedRenderer.Operations.DeserializeAs(
@@ -125,19 +127,24 @@ export const ListRenderer = {
             concreteRenderers,
             "list element",
             types,
-            lookupsToResolve,
-          ).Then((elementRenderer) =>
+            forms,
+            alreadyParsedForms,
+          ).Then(([elementRenderer, newAlreadyParsedForms]) =>
             ListMethods.Operations.fromRawValue(
               serializedRenderer.actions,
             ).Then((methods) =>
-              ValueOrErrors.Default.return(
+              ValueOrErrors.Default.return<
+                [ListRenderer<T>, Map<string, Renderer<T>>],
+                string
+              >([
                 ListRenderer.Default(
                   type,
                   serializedRenderer.renderer,
                   elementRenderer,
                   methods,
                 ),
-              ),
+                newAlreadyParsedForms,
+              ]),
             ),
           ),
         )

@@ -5,6 +5,7 @@ import {
   DispatchParsedType,
   Expr,
   isObject,
+  Renderer,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../../../main";
 
@@ -70,29 +71,38 @@ export const RecordFieldRenderer = {
     >,
     types: Map<string, DispatchParsedType<T>>,
     fieldName: string,
-    lookupsToResolve: string[],
-  ): ValueOrErrors<RecordFieldRenderer<T>, string> =>
+    forms: object,
+    alreadyParsedForms: Map<string, Renderer<T>>,
+  ): ValueOrErrors<
+    [RecordFieldRenderer<T>, Map<string, Renderer<T>>],
+    string
+  > =>
     RecordFieldRenderer.tryAsValidRecordFieldRenderer(serialized).Then(
       (validatedSerialized) => {
+        console.debug(fieldName);
         return NestedRenderer.Operations.DeserializeAs(
           type,
           validatedSerialized,
           concreteRenderers,
           `Record field renderer for field ${fieldName}`,
           types,
-          lookupsToResolve,
-        ).Then((deserializedNestedRenderer) =>
+          forms,
+          alreadyParsedForms,
+        ).Then(([deserializedNestedRenderer, newAlreadyParsedForms]) =>
           RecordFieldRenderer.ComputeVisibility(
             validatedSerialized.visible,
           ).Then((visible) =>
             RecordFieldRenderer.ComputeDisabled(
               validatedSerialized.disabled,
             ).Then((disabled) =>
-              ValueOrErrors.Default.return({
-                ...deserializedNestedRenderer,
-                visible,
-                disabled,
-              }),
+              ValueOrErrors.Default.return([
+                {
+                  ...deserializedNestedRenderer,
+                  visible,
+                  disabled,
+                },
+                newAlreadyParsedForms,
+              ]),
             ),
           ),
         );

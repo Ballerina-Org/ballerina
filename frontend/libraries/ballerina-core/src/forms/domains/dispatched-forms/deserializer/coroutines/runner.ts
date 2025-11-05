@@ -81,7 +81,7 @@ export const LoadAndDeserializeSpecification = <
             current.fieldTypeConverters,
             current.concreteRenderers,
             injectedPrimitives,
-          )(serializedSpecifications, ["person-transparent"]);
+          )(serializedSpecifications, ["person-transparent", "create-person", "person-config"]);
 
           console.debug("deserializationResult", deserializationResult);
 

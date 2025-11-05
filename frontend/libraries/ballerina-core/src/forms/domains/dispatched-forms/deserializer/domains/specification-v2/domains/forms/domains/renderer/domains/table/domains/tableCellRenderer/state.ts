@@ -5,6 +5,7 @@ import {
   DispatchParsedType,
   Expr,
   isObject,
+  Renderer,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../../../main";
 
@@ -59,8 +60,12 @@ export const TableCellRenderer = {
       >,
       types: Map<string, DispatchParsedType<T>>,
       columnName: string,
-      lookupsToResolve: string[],
-    ): ValueOrErrors<TableCellRenderer<T>, string> =>
+      forms: object,
+      alreadyParsedForms: Map<string, Renderer<T>>,
+    ): ValueOrErrors<
+      [TableCellRenderer<T>, Map<string, Renderer<T>>],
+      string
+    > =>
       TableCellRenderer.Operations.tryAsValidTableCellRenderer(serialized).Then(
         (validatedSerialized) =>
           NestedRenderer.Operations.DeserializeAs(
@@ -69,15 +74,22 @@ export const TableCellRenderer = {
             concreteRenderers,
             `Table cell renderer for column ${columnName}`,
             types,
-            lookupsToResolve,
-          ).Then((deserializedNestedRenderer) =>
+            forms,
+            alreadyParsedForms,
+          ).Then(([deserializedNestedRenderer, newAlreadyParsedForms]) =>
             TableCellRenderer.Operations.ComputeDisabled(
               validatedSerialized.disabled,
             ).Then((disabled) =>
-              ValueOrErrors.Default.return({
-                ...deserializedNestedRenderer,
-                disabled,
-              }),
+              ValueOrErrors.Default.return<
+                [TableCellRenderer<T>, Map<string, Renderer<T>>],
+                string
+              >([
+                {
+                  ...deserializedNestedRenderer,
+                  disabled,
+                },
+                newAlreadyParsedForms,
+              ]),
             ),
           ),
       ),

@@ -156,9 +156,11 @@ export const LookupRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
-      lookupsToResolve: string[],
-    ): ValueOrErrors<LookupRenderer<T>, string> =>
-      serialized.kind == "lookupType-inlinedRenderer"
+      forms: object,
+      alreadyParsedForms: Map<string, Renderer<T>>,
+    ): ValueOrErrors<[LookupRenderer<T>, Map<string, Renderer<T>>], string> => {
+      console.debug('serialized', serialized);
+      return serialized.kind == "lookupType-inlinedRenderer"
         ? DispatchParsedType.Operations.ResolveLookupType(
             serialized.type.name,
             types,
@@ -169,33 +171,85 @@ export const LookupRenderer = {
               concreteRenderers,
               types,
               tableApi,
-              lookupsToResolve,
-            ).Then((renderer) =>
-              ValueOrErrors.Default.return(
+              forms,
+              alreadyParsedForms,
+            ).Then(([renderer, alreadyParsedForms]) =>
+              ValueOrErrors.Default.return([
                 LookupRenderer.Default.LookupTypeInlinedRenderer(
                   serialized.type,
                   renderer,
                   tableApi,
                 ),
-              ),
+                alreadyParsedForms,
+              ]),
             ),
           )
         : serialized.kind == "lookupType-lookupRenderer"
-          ? ValueOrErrors.Default.return(
-              (lookupsToResolve.push(serialized.renderer),
-              LookupRenderer.Default.LookupTypeLookupRenderer(
+          ? alreadyParsedForms.has(serialized.renderer)
+            ? ValueOrErrors.Default.return<
+                [LookupRenderer<T>, Map<string, Renderer<T>>],
+                string
+              >([
+                LookupRenderer.Default.LookupTypeLookupRenderer(
+                  serialized.type,
+                  serialized.renderer,
+                  tableApi,
+                ),
+                alreadyParsedForms,
+              ])
+            : DispatchParsedType.Operations.ResolveLookupType(
+                serialized.type.name,
+                types,
+              ).Then((resolvedType) =>
+                Renderer.Operations.Deserialize(
+                  resolvedType,
+                  Reflect.get(forms, serialized.renderer),
+                  concreteRenderers,
+                  types,
+                  tableApi,
+                  forms,
+                  alreadyParsedForms,
+                ).Then(([renderer, alreadyParsedForms]) =>
+                  ValueOrErrors.Default.return([
+                    LookupRenderer.Default.LookupTypeLookupRenderer(
+                      serialized.type,
+                      serialized.renderer,
+                      tableApi,
+                    ),
+                    alreadyParsedForms.set(serialized.renderer, renderer),
+                  ]),
+                ),
+              )
+          : alreadyParsedForms.has(serialized.renderer)
+            ? ValueOrErrors.Default.return<
+                [LookupRenderer<T>, Map<string, Renderer<T>>],
+                string
+              >([
+                LookupRenderer.Default.InlinedTypeLookupRenderer(
+                  serialized.type,
+                  serialized.renderer,
+                  tableApi,
+                ),
+                alreadyParsedForms,
+              ])
+            : Renderer.Operations.Deserialize(
                 serialized.type,
-                serialized.renderer,
+                Reflect.get(forms, serialized.renderer),
+                concreteRenderers,
+                types,
                 tableApi,
-              )),
-            )
-          : ValueOrErrors.Default.return(
-              (lookupsToResolve.push(serialized.renderer),
-              LookupRenderer.Default.InlinedTypeLookupRenderer(
-                serialized.type,
-                serialized.renderer,
-                tableApi,
-              )),
-            ),
+                forms,
+                alreadyParsedForms,
+              ).Then(([renderer, alreadyParsedForms]) =>
+                ValueOrErrors.Default.return([
+                  LookupRenderer.Default.InlinedTypeLookupRenderer(
+                    serialized.type,
+                    serialized.renderer,
+                    tableApi,
+                  ),
+                  alreadyParsedForms.set(serialized.renderer, renderer),
+                ]),
+              );
+    },
   },
 };
