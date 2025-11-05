@@ -5,7 +5,7 @@ import (
 	"ballerina.com/core/ballerinaupdater"
 )
 
-func newWritableField[FieldType, Record any](
+func NewWritableField[FieldType, Record any](
 	get func(Record) FieldType,
 	set func(Record, FieldType) Record,
 ) WritableField[FieldType, Record] {
@@ -21,7 +21,7 @@ func newWritableField[FieldType, Record any](
 	}
 }
 
-func newWritableFieldWithError[FieldType, Record any](
+func NewWritableFieldWithError[FieldType, Record any](
 	get func(Record) FieldType,
 	set func(Record, FieldType) (Record, error),
 ) WritableFieldWithError[FieldType, Record] {
