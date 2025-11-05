@@ -14,8 +14,8 @@ import {
   DispatchFormsParserContext,
   DispatchFormsParserState,
   parseDispatchFormsToLaunchers,
-  parseDispatchFormsToLaunchersSerializable,
 } from "../state";
+import { parseDispatchFormsToLaunchersSerializable } from "../domains/specification/domains/serializable/state";
 
 export const LoadAndDeserializeSpecification = <
   T extends DispatchInjectablesTypes<T>,
