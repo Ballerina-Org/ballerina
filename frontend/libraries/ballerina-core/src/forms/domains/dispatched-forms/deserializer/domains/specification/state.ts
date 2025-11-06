@@ -314,46 +314,43 @@ export const Specification = {
       return ValueOrErrors.Default.return(Reflect.get(forms, formName));
     },
     GetLauncherFormNames: <T>(launchers: Launchers): List<string> => {
-      return launchers.create
-        .valueSeq()
-        .map((launcher) => launcher.form)
-        .concat(launchers.edit.valueSeq().map((launcher) => launcher.form))
-        .concat(
-          launchers.passthrough.valueSeq().map((launcher) => launcher.form),
-        )
-        .toList();
+      const forms: string[] = [];
+      launchers.create.forEach((launcher) => forms.push(launcher.form));
+      launchers.edit.forEach((launcher) => forms.push(launcher.form));
+      launchers.passthrough.forEach((launcher) => forms.push(launcher.form));
+      return List(forms);
     },
     GetCreateAndEditConfigEntityTypes: <T>(
       launchers: Launchers,
       apis: object,
     ): List<ValueOrErrors<string, string>> => {
       const entities = Reflect.get(apis, "entities");
-      return launchers.create
-        .valueSeq()
-        .map((launcher) => {
-          const entityType = Reflect.get(entities, launcher.configApi)?.type;
-          return entityType
+      const results: ValueOrErrors<string, string>[] = [];
+      launchers.create.forEach((launcher) => {
+        const entityType = Reflect.get(entities, launcher.configApi)?.type;
+        results.push(
+          entityType
             ? ValueOrErrors.Default.return<string, string>(entityType)
             : ValueOrErrors.Default.throwOne<string, string>(
                 `entity type ${launcher.configApi} not found in entities`,
-              );
-        })
-        .concat(
-          launchers.edit.valueSeq().map((launcher) => {
-            const entityType = Reflect.get(entities, launcher.configApi)?.type;
-            return entityType
-              ? ValueOrErrors.Default.return<string, string>(entityType)
-              : ValueOrErrors.Default.throwOne<string, string>(
-                  `entity type ${launcher.configApi} not found in entities`,
-                );
-          }),
-        )
-        .toList();
+              ),
+        );
+      });
+      launchers.edit.forEach((launcher) => {
+        const entityType = Reflect.get(entities, launcher.configApi)?.type;
+        results.push(
+          entityType
+            ? ValueOrErrors.Default.return<string, string>(entityType)
+            : ValueOrErrors.Default.throwOne<string, string>(
+                `entity type ${launcher.configApi} not found in entities`,
+              ),
+        );
+      });
+      return List(results);
     },
 
     GetLauncherConfigTypes: <T>(launchers: Launchers): List<string> => {
       return launchers.passthrough
-        .valueSeq()
         .map((launcher) => launcher.configType)
         .toList();
     },
@@ -362,49 +359,38 @@ export const Specification = {
       forms: object,
       apis: object,
     ): ValueOrErrors<List<string>, string> => {
-      return ValueOrErrors.Operations.All(
-        launchers.create
-          .valueSeq()
-          .map((launcher) =>
-            Specification.Operations.TryFindForm(launcher.form, forms).Then(
-              (form) => Specification.Operations.GetFormType(form),
-            ),
-          )
-          .concat(
-            launchers.edit
-              .valueSeq()
-              .map((launcher) =>
-                Specification.Operations.TryFindForm(launcher.form, forms).Then(
-                  (form) => Specification.Operations.GetFormType(form),
-                ),
-              ),
-          )
-          .concat(
-            launchers.passthrough
-              .valueSeq()
-              .map((launcher) =>
-                Specification.Operations.TryFindForm(launcher.form, forms).Then(
-                  (form) => Specification.Operations.GetFormType(form),
-                ),
-              ),
-          )
-          .concat(
-            launchers.passthrough
-              .valueSeq()
-              .map((launcher) =>
-                ValueOrErrors.Default.return<string, string>(
-                  launcher.configType,
-                ),
-              ),
-          )
-          .concat(
-            Specification.Operations.GetCreateAndEditConfigEntityTypes(
-              launchers,
-              apis,
-            ),
-          )
-          .toList(),
+      const results: ValueOrErrors<string, string>[] = [];
+      launchers.create.forEach((launcher) => {
+        results.push(
+          Specification.Operations.TryFindForm(launcher.form, forms).Then(
+            (form) => Specification.Operations.GetFormType(form),
+          ),
+        );
+      });
+      launchers.edit.forEach((launcher) => {
+        results.push(
+          Specification.Operations.TryFindForm(launcher.form, forms).Then(
+            (form) => Specification.Operations.GetFormType(form),
+          ),
+        );
+      });
+      launchers.passthrough.forEach((launcher) => {
+        results.push(
+          Specification.Operations.TryFindForm(launcher.form, forms).Then(
+            (form) => Specification.Operations.GetFormType(form),
+          ),
+        );
+        results.push(
+          ValueOrErrors.Default.return<string, string>(launcher.configType),
+        );
+      });
+      results.push(
+        ...Specification.Operations.GetCreateAndEditConfigEntityTypes(
+          launchers,
+          apis,
+        ).toArray(),
       );
+      return ValueOrErrors.Operations.All(List(results));
     },
     Deserialize:
       <
@@ -430,12 +416,9 @@ export const Specification = {
       ): ValueOrErrors<Specification<T>, string> =>
         injectedPrimitives
           ?.keySeq()
-          .toArray()
           .some(
             (injectedPrimitiveName) =>
-              !Object.keys(apiConverters).includes(
-                injectedPrimitiveName as string,
-              ),
+              !(injectedPrimitiveName in apiConverters),
           )
           ? ValueOrErrors.Default.throwOne(
               `the formsConfig does not contain an Api Converter for all injected primitives`,
@@ -507,6 +490,7 @@ export const Specification = {
                                         concreteRenderers,
                                         allTypes,
                                         serializedTypeNames,
+                                        serializedSpecificationV2s.types,
                                         serializedSpecificationV2s.apis.tables,
                                         injectedPrimitives,
                                       ).Then((tables) =>
@@ -514,41 +498,42 @@ export const Specification = {
                                           serializedSpecificationV2s.apis
                                             .lookups,
                                         ).Then((lookups) => {
-                                          let entities: Map<string, EntityApi> =
-                                            Map();
-                                          Object.entries(
+                                          const entityEntries: [
+                                            string,
+                                            EntityApi,
+                                          ][] = Object.entries(
                                             serializedSpecificationV2s.apis
                                               .entities,
-                                          ).forEach(
+                                          ).map(
                                             ([entityApiName, entityApi]: [
                                               entiyApiName: string,
                                               entityApi: SerializedEntityApi,
                                             ]) => {
-                                              entities = entities.set(
+                                              const methods = entityApi.methods;
+                                              return [
                                                 entityApiName,
                                                 {
                                                   type: entityApi.type,
                                                   methods: {
-                                                    create:
-                                                      entityApi.methods.includes(
-                                                        "create",
-                                                      ),
-                                                    get: entityApi.methods.includes(
-                                                      "get",
+                                                    create: methods.includes(
+                                                      "create",
                                                     ),
-                                                    update:
-                                                      entityApi.methods.includes(
-                                                        "update",
-                                                      ),
-                                                    default:
-                                                      entityApi.methods.includes(
-                                                        "default",
-                                                      ),
+                                                    get: methods.includes("get"),
+                                                    update: methods.includes(
+                                                      "update",
+                                                    ),
+                                                    default: methods.includes(
+                                                      "default",
+                                                    ),
                                                   },
                                                 },
-                                              );
+                                              ] as [string, EntityApi];
                                             },
                                           );
+                                          const entities: Map<
+                                            string,
+                                            EntityApi
+                                          > = Map(entityEntries);
 
                                           return ValueOrErrors.Default.return({
                                             types: allTypes,

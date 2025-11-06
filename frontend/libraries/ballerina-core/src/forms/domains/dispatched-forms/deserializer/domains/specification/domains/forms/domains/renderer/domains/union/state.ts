@@ -77,7 +77,6 @@ export const UnionRenderer = {
         .Then((validSerialized) =>
           validSerialized.cases
             .entrySeq()
-            .toArray()
             .reduce<
               ValueOrErrors<
                 [Map<string, Renderer<T>>, Map<string, Renderer<T>>],

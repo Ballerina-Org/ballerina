@@ -877,20 +877,31 @@ export const DispatchParsedType = {
               >([
                 DispatchParsedType.Default.union(
                   Map(
-                    parsingResult[0].fields
-                      .keySeq()
-                      .filter(
-                        (key) =>
-                          rawType.args[1] == undefined ||
-                          !rawType.args[1].includes(key),
-                      )
-                      .toArray()
-                      .map((key) => [
-                        key,
-                        DispatchParsedType.Default.record(
-                          Map<string, DispatchParsedType<T>>(),
-                        ),
-                      ]),
+                    (() => {
+                      const excludedKeys: Record<string, true> | null =
+                        rawType.args[1]
+                          ? rawType.args[1].reduce(
+                              (acc, key) => {
+                                acc[key] = true;
+                                return acc;
+                              },
+                              {} as Record<string, true>,
+                            )
+                          : null;
+                      return parsingResult[0].fields
+                        .keySeq()
+                        .filter(
+                          (key) =>
+                            excludedKeys == null || !(key in excludedKeys),
+                        )
+                        .toArray()
+                        .map((key) => [
+                          key,
+                          DispatchParsedType.Default.record(
+                            Map<string, DispatchParsedType<T>>(),
+                          ),
+                        ]);
+                    })(),
                   ),
                 ),
                 parsingResult[1],
@@ -1187,7 +1198,7 @@ export const DispatchParsedType = {
                 string
               >([Map<DispatchTypeName, RecordType<T>>(), alreadyParsedTypes])
           ).Then(([parsedExtendedRecordTypesMap, accumulatedAlreadyParsedTypes]) =>
-            Object.entries(rawType.fields).reduce<
+            Object.keys(rawType.fields).reduce<
               ValueOrErrors<
                 [
                   Map<string, DispatchParsedType<T>>,
@@ -1199,12 +1210,14 @@ export const DispatchParsedType = {
                 string
               >
             >(
-              (acc, [fieldName, fieldType]) =>
+              (acc, fieldName) =>
                 acc.Then(
                   ([parsedFieldsMap, accumulatedAlreadyParsedTypesForFields]) =>
                     DispatchParsedType.Operations.ParseRawType(
                       `Record field type: ${fieldName}`,
-                      fieldType as SerializedType<T>,
+                      (rawType.fields as Record<string, unknown>)[
+                        fieldName
+                      ] as SerializedType<T>,
                       typeNames,
                       serializedTypes,
                       accumulatedAlreadyParsedTypesForFields,
@@ -1239,15 +1252,40 @@ export const DispatchParsedType = {
                 accumulatedAlreadyParsedTypes,
               ]),
             )
-              .Then(([parsedFieldsMap, accumulatedAlreadyParsedTypesForFields]) =>
-                ValueOrErrors.Default.return<RecordType<T>, string>(
-                  DispatchParsedType.Default.record(
-                    parsedFieldsMap.merge(
-                      parsedExtendedRecordTypesMap.reduce(
-                        (acc, type) => acc.merge(type.fields),
-                        Map<DispatchTypeName, DispatchParsedType<T>>(),
+              .Then(([parsedFieldsMap, accumulatedAlreadyParsedTypesForFields]) => {
+                const { mergedFields, updatedAccumulatedTypes } =
+                  parsedExtendedRecordTypesMap.reduce(
+                    (
+                      acc,
+                      type,
+                      name,
+                    ): {
+                      mergedFields: Map<
+                        DispatchTypeName,
+                        DispatchParsedType<T>
+                      >;
+                      updatedAccumulatedTypes: Map<
+                        DispatchTypeName,
+                        ValueOrErrors<DispatchParsedType<T>, string>
+                      >;
+                    } => ({
+                      mergedFields: acc.mergedFields.merge(type.fields),
+                      updatedAccumulatedTypes: acc.updatedAccumulatedTypes.set(
+                        name,
+                        ValueOrErrors.Default.return(type),
                       ),
-                    ),
+                    }),
+                    {
+                      mergedFields: Map<
+                        DispatchTypeName,
+                        DispatchParsedType<T>
+                      >(),
+                      updatedAccumulatedTypes: accumulatedAlreadyParsedTypesForFields,
+                    },
+                  );
+                return ValueOrErrors.Default.return<RecordType<T>, string>(
+                  DispatchParsedType.Default.record(
+                    parsedFieldsMap.merge(mergedFields),
                   ),
                 ).Then((parsedRecord) =>
                   ValueOrErrors.Default.return<
@@ -1259,16 +1297,9 @@ export const DispatchParsedType = {
                       >,
                     ],
                     string
-                  >([
-                    parsedRecord,
-                    parsedExtendedRecordTypesMap.reduce(
-                      (acc, type, name) =>
-                        acc.set(name, ValueOrErrors.Default.return(type)),
-                      accumulatedAlreadyParsedTypesForFields,
-                    ),
-                  ]),
-                ),
-              ),
+                  >([parsedRecord, updatedAccumulatedTypes]),
+                );
+              }),
           ),
     ParseRawFilterType: <T>(
       rawFilterType: unknown,
@@ -1419,7 +1450,7 @@ export const DispatchParsedType = {
           return rawType.args.reduce<
             ValueOrErrors<
               [
-                Array<DispatchParsedType<T>>,
+                List<DispatchParsedType<T>>,
                 Map<
                   DispatchTypeName,
                   ValueOrErrors<DispatchParsedType<T>, string>
@@ -1430,7 +1461,7 @@ export const DispatchParsedType = {
           >(
             (acc, arg, index) =>
               acc.Then(
-                ([parsedArgsArray, accumulatedAlreadyParsedTypes]) =>
+                ([parsedArgsList, accumulatedAlreadyParsedTypes]) =>
                   DispatchParsedType.Operations.ParseRawType(
                     `Tuple:Item ${index + 1}`,
                     arg,
@@ -1441,7 +1472,7 @@ export const DispatchParsedType = {
                   ).Then((parsedArg) =>
                     ValueOrErrors.Default.return<
                       [
-                        Array<DispatchParsedType<T>>,
+                        List<DispatchParsedType<T>>,
                         Map<
                           DispatchTypeName,
                           ValueOrErrors<DispatchParsedType<T>, string>
@@ -1449,24 +1480,24 @@ export const DispatchParsedType = {
                       ],
                       string
                     >([
-                      [...parsedArgsArray, parsedArg[0]],
+                      parsedArgsList.push(parsedArg[0]),
                       parsedArg[1],
                     ]),
                   ),
               ),
             ValueOrErrors.Default.return<
               [
-                Array<DispatchParsedType<T>>,
+                List<DispatchParsedType<T>>,
                 Map<
                   DispatchTypeName,
                   ValueOrErrors<DispatchParsedType<T>, string>
                 >,
               ],
               string
-            >([[], alreadyParsedTypes]),
-          ).Then(([parsedArgsArray, accumulatedAlreadyParsedTypes]) =>
+            >([List<DispatchParsedType<T>>(), alreadyParsedTypes]),
+          ).Then(([parsedArgsList, accumulatedAlreadyParsedTypes]) =>
             ValueOrErrors.Default.return([
-              DispatchParsedType.Default.tuple(parsedArgsArray),
+              DispatchParsedType.Default.tuple(parsedArgsList.toArray()),
               accumulatedAlreadyParsedTypes,
             ]),
           );

@@ -202,6 +202,7 @@ export const TableApis = {
       >,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
       serializedTypeNames: Set<DispatchTypeName>,
+      serializedTypes: Record<string, SerializedType<T>>,
       serializedFiltering?: unknown,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
     ): ValueOrErrors<undefined | TableApiFiltering<T>, string> => {
@@ -253,7 +254,7 @@ export const TableApis = {
                                     "filter",
                                     value.type as SerializedType<T>,
                                     serializedTypeNames,
-                                    {},
+                                    serializedTypes,
                                     Map(),
                                     injectedPrimitives,
                                   ).Then((type) =>
@@ -352,6 +353,7 @@ export const TableApis = {
       >,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
       serializedTypeNames: Set<DispatchTypeName>,
+      serializedTypes: Record<string, SerializedType<T>>,
       serializedApiTables?: unknown,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
     ): ValueOrErrors<undefined | TableApis<T>, string> => {
@@ -391,6 +393,7 @@ export const TableApis = {
                   concreteRenderers,
                   types,
                   serializedTypeNames,
+                  serializedTypes,
                   value.filtering,
                   injectedPrimitives,
                 ).Then((filtering) => {
