@@ -12,6 +12,7 @@ import {
   PredicateFormLayout,
   PredicateComputedOrInlined,
   ValueOrErrors,
+  Renderer,
 } from "../../../../../../../../../../../../../main";
 import { RecordType } from "../../../../../../../../../../../../../main";
 import { RecordFieldRenderer } from "./domains/recordFieldRenderer/state";
@@ -122,14 +123,21 @@ export const RecordRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
-    ): ValueOrErrors<RecordRenderer<T>, string> =>
+      forms: object,
+      alreadyParsedForms: Map<string, Renderer<T>>,
+    ): ValueOrErrors<[RecordRenderer<T>, Map<string, Renderer<T>>], string> =>
       RecordRenderer.Operations.tryAsValidRecordForm(serialized).Then(
         (validRecordForm) =>
-          ValueOrErrors.Operations.All(
-            List<ValueOrErrors<[string, RecordFieldRenderer<T>], string>>(
-              validRecordForm.fields
-                .toArray()
-                .map(([fieldName, recordFieldRenderer]: [string, unknown]) =>
+          validRecordForm.fields
+            .toArray()
+            .reduce<
+              ValueOrErrors<
+                [Map<string, RecordFieldRenderer<T>>, Map<string, Renderer<T>>],
+                string
+              >
+            >(
+              (acc, [fieldName, recordFieldRenderer]: [string, unknown]) =>
+                acc.Then(([fieldsMap, accumulatedAlreadyParsedForms]) =>
                   MapRepo.Operations.tryFindWithError(
                     fieldName,
                     type.fields,
@@ -141,14 +149,28 @@ export const RecordRenderer = {
                       concreteRenderers,
                       types,
                       fieldName,
-                    ).Then((renderer) =>
-                      ValueOrErrors.Default.return([fieldName, renderer]),
+                      forms,
+                      accumulatedAlreadyParsedForms,
+                    ).Then(([renderer, newAlreadyParsedForms]) =>
+                      ValueOrErrors.Default.return<
+                        [
+                          Map<string, RecordFieldRenderer<T>>,
+                          Map<string, Renderer<T>>,
+                        ],
+                        string
+                      >([
+                        fieldsMap.set(fieldName, renderer),
+                        newAlreadyParsedForms,
+                      ]),
                     ),
                   ),
                 ),
-            ),
-          )
-            .Then((fieldTuples) =>
+              ValueOrErrors.Default.return<
+                [Map<string, RecordFieldRenderer<T>>, Map<string, Renderer<T>>],
+                string
+              >([Map<string, RecordFieldRenderer<T>>(), alreadyParsedForms]),
+            )
+            .Then(([fieldsMap, accumulatedAlreadyParsedForms]) =>
               ValueOrErrors.Operations.All(
                 List<
                   ValueOrErrors<
@@ -169,15 +191,19 @@ export const RecordRenderer = {
                   ),
                 ]),
               ).Then(([tabs, disabledFields]) =>
-                ValueOrErrors.Default.return(
+                ValueOrErrors.Default.return<
+                  [RecordRenderer<T>, Map<string, Renderer<T>>],
+                  string
+                >([
                   RecordRenderer.Default(
                     type,
-                    Map(fieldTuples.toArray()),
+                    fieldsMap,
                     tabs as PredicateFormLayout,
                     disabledFields as PredicateComputedOrInlined,
                     validRecordForm.renderer,
                   ),
-                ),
+                  accumulatedAlreadyParsedForms,
+                ]),
               ),
             )
             .MapErrors((errors) =>

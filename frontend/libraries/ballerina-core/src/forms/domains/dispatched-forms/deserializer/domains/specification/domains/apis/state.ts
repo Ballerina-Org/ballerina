@@ -45,8 +45,8 @@ export const EnumApis = {
   Operations: {
     Deserialize: (
       serializedApiEnums?: unknown,
-    ): ValueOrErrors<undefined | EnumApis, string> =>
-      serializedApiEnums === undefined
+    ): ValueOrErrors<undefined | EnumApis, string> => {
+      return serializedApiEnums === undefined
         ? ValueOrErrors.Default.return(undefined)
         : !isObject(serializedApiEnums)
           ? ValueOrErrors.Default.throwOne(
@@ -72,7 +72,8 @@ export const EnumApis = {
                 errors.map(
                   (error) => `${error}\n...When deserializing enum apis`,
                 ),
-              ),
+              );
+    },
   },
 };
 
@@ -82,8 +83,8 @@ export const StreamApis = {
   Operations: {
     Deserialize: (
       serializedApiStreams?: unknown,
-    ): ValueOrErrors<undefined | StreamApis, string> =>
-      serializedApiStreams === undefined
+    ): ValueOrErrors<undefined | StreamApis, string> => {
+      return serializedApiStreams === undefined
         ? ValueOrErrors.Default.return(undefined)
         : !isObject(serializedApiStreams)
           ? ValueOrErrors.Default.throwOne(
@@ -109,7 +110,8 @@ export const StreamApis = {
                 errors.map(
                   (error) => `${error}\n...When deserializing stream apis`,
                 ),
-              ),
+              );
+    },
   },
 };
 
@@ -199,6 +201,7 @@ export const TableApis = {
         ExtraContext
       >,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
+      serializedTypeNames: Set<DispatchTypeName>,
       serializedFiltering?: unknown,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
     ): ValueOrErrors<undefined | TableApiFiltering<T>, string> => {
@@ -249,11 +252,9 @@ export const TableApis = {
                                 : DispatchParsedType.Operations.ParseRawType(
                                     "filter",
                                     value.type as SerializedType<T>,
-                                    Set(types.keys()),
+                                    serializedTypeNames,
                                     {},
-                                    types.map((t) =>
-                                      ValueOrErrors.Default.return(t),
-                                    ),
+                                    Map(),
                                     injectedPrimitives,
                                   ).Then((type) =>
                                     Renderer.Operations.Deserialize(
@@ -269,7 +270,9 @@ export const TableApis = {
                                       concreteRenderers,
                                       types,
                                       undefined,
-                                    ).Then((renderer) =>
+                                      {},
+                                      Map(),
+                                    ).Then(([renderer, _]) =>
                                       ValueOrErrors.Operations.All<
                                         FilterType<T>,
                                         string
@@ -348,110 +351,113 @@ export const TableApis = {
         ExtraContext
       >,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
+      serializedTypeNames: Set<DispatchTypeName>,
       serializedApiTables?: unknown,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
-    ): ValueOrErrors<undefined | TableApis<T>, string> =>
-      serializedApiTables === undefined
-        ? ValueOrErrors.Default.return(undefined)
-        : !TableApis.Operations.IsValidTables(serializedApiTables)
-          ? ValueOrErrors.Default.throwOne(
-              `serializedApiTables is not a valid tables api object`,
-            )
-          : ValueOrErrors.Operations.All(
-              List<
-                ValueOrErrors<
-                  [
-                    TableApiName,
+    ): ValueOrErrors<undefined | TableApis<T>, string> => {
+      if (serializedApiTables === undefined) {
+        return ValueOrErrors.Default.return(undefined);
+      }
+
+      const isValidTables =
+        TableApis.Operations.IsValidTables(serializedApiTables);
+      if (!isValidTables) {
+        return ValueOrErrors.Default.throwOne(
+          `serializedApiTables is not a valid tables api object`,
+        );
+      }
+
+      return ValueOrErrors.Operations.All(
+        List<
+          ValueOrErrors<
+            [
+              TableApiName,
+              {
+                type: DispatchTypeName;
+                methods: Array<TableMethod>;
+                highlightedFilters?: List<ColumnName>;
+                filtering?: TableApiFiltering<T>;
+              },
+            ],
+            string
+          >
+        >(
+          Object.entries(serializedApiTables).map(([key, value], index) =>
+            !TableApis.Operations.IsValidTableApi(value)
+              ? ValueOrErrors.Default.throwOne(
+                  `${key} is not a valid table api object`,
+                )
+              : TableApis.Operations.DeserializeFiltering(
+                  concreteRenderers,
+                  types,
+                  serializedTypeNames,
+                  value.filtering,
+                  injectedPrimitives,
+                ).Then((filtering) => {
+                  if (typeof value.type !== "string") {
+                    return ValueOrErrors.Default.throwOne(
+                      `type is not a string`,
+                    );
+                  }
+
+                  const finalMethods = value.methods ?? [];
+                  const finalSorting = value.sorting ?? [];
+
+                  if (!TableApis.Operations.IsValidSorting(finalSorting)) {
+                    return ValueOrErrors.Default.throwOne(
+                      `sorting is not an array of strings`,
+                    );
+                  }
+
+                  if (!TableApis.Operations.IsMethodsArray(finalMethods)) {
+                    return ValueOrErrors.Default.throwOne(
+                      `methods is not an array of valid table methods`,
+                    );
+                  }
+
+                  if (
+                    !TableApis.Operations.IsValidHighlightedFilters(
+                      value.highlightedFilters,
+                    )
+                  ) {
+                    return ValueOrErrors.Default.throwOne(
+                      `highlightedFilters is not an array of strings`,
+                    );
+                  }
+
+                  return ValueOrErrors.Default.return([
+                    key,
                     {
-                      type: DispatchTypeName;
-                      methods: Array<TableMethod>;
-                      highlightedFilters?: List<ColumnName>;
-                      filtering?: TableApiFiltering<T>;
+                      type: value.type,
+                      methods: finalMethods,
+                      highlightedFilters: value.highlightedFilters
+                        ? List(value.highlightedFilters)
+                        : undefined,
+                      filtering,
+                      sorting: finalSorting,
                     },
-                  ],
-                  string
-                >
-              >(
-                Object.entries(serializedApiTables).map(([key, value]) =>
-                  !TableApis.Operations.IsValidTableApi(value)
-                    ? ValueOrErrors.Default.throwOne(
-                        `${key} is not a valid table api object`,
-                      )
-                    : TableApis.Operations.DeserializeFiltering(
-                        concreteRenderers,
-                        types,
-                        value.filtering,
-                        injectedPrimitives,
-                      ).Then((filtering) => {
-                        if (typeof value.type !== "string") {
-                          return ValueOrErrors.Default.throwOne(
-                            `type is not a string`,
-                          );
-                        }
-
-                        const finalMethods = value.methods ?? [];
-                        const finalSorting = value.sorting ?? [];
-
-                        if (
-                          !TableApis.Operations.IsValidSorting(finalSorting)
-                        ) {
-                          return ValueOrErrors.Default.throwOne(
-                            `sorting is not an array of strings`,
-                          );
-                        }
-
-                        if (
-                          !TableApis.Operations.IsMethodsArray(finalMethods)
-                        ) {
-                          return ValueOrErrors.Default.throwOne(
-                            `methods is not an array of valid table methods`,
-                          );
-                        }
-
-                        if (
-                          !TableApis.Operations.IsValidHighlightedFilters(
-                            value.highlightedFilters,
-                          )
-                        ) {
-                          return ValueOrErrors.Default.throwOne(
-                            `highlightedFilters is not an array of strings`,
-                          );
-                        }
-
-                        return ValueOrErrors.Default.return([
-                          key,
-                          {
-                            type: value.type,
-                            methods: finalMethods,
-                            highlightedFilters: value.highlightedFilters
-                              ? List(value.highlightedFilters)
-                              : undefined,
-                            filtering,
-                            sorting: finalSorting,
-                          },
-                        ]);
-                      }),
-                ),
-              ),
-            )
-              .Then((entries) =>
-                ValueOrErrors.Default.return(
-                  Map<
-                    TableApiName,
-                    {
-                      type: DispatchTypeName;
-                      methods: Array<TableMethod>;
-                      highlightedFilters?: List<ColumnName>;
-                      filtering?: TableApiFiltering<T>;
-                    }
-                  >(entries),
-                ),
-              )
-              .MapErrors((errors) =>
-                errors.map(
-                  (error) => `${error}\n...When deserializing table apis`,
-                ),
-              ),
+                  ]);
+                }),
+          ),
+        ),
+      )
+        .Then((entries) =>
+          ValueOrErrors.Default.return(
+            Map<
+              TableApiName,
+              {
+                type: DispatchTypeName;
+                methods: Array<TableMethod>;
+                highlightedFilters?: List<ColumnName>;
+                filtering?: TableApiFiltering<T>;
+              }
+            >(entries),
+          ),
+        )
+        .MapErrors((errors) =>
+          errors.map((error) => `${error}\n...When deserializing table apis`),
+        );
+    },
   },
 };
 
@@ -524,8 +530,8 @@ export const LookupApis = {
           ),
     Deserialize: (
       serializedApiLookups?: unknown,
-    ): ValueOrErrors<undefined | LookupApis, string> =>
-      serializedApiLookups === undefined
+    ): ValueOrErrors<undefined | LookupApis, string> => {
+      return serializedApiLookups === undefined
         ? ValueOrErrors.Default.return(undefined)
         : !isObject(serializedApiLookups)
           ? ValueOrErrors.Default.throwOne(
@@ -551,6 +557,7 @@ export const LookupApis = {
                 errors.map(
                   (error) => `${error}\n...When deserializing lookup apis`,
                 ),
-              ),
+              );
+    },
   },
 };

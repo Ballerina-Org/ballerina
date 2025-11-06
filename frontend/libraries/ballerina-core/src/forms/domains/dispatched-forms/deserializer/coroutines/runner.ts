@@ -15,7 +15,6 @@ import {
   DispatchFormsParserState,
   parseDispatchFormsToLaunchers,
 } from "../state";
-import { SpecificationV2 } from "../domains/specification-v2/state";
 
 export const LoadAndDeserializeSpecificationByDesiredLaunchers = <
   T extends DispatchInjectablesTypes<T>,
@@ -77,7 +76,7 @@ export const LoadAndDeserializeSpecificationByDesiredLaunchers = <
 
           const injectedPrimitives = injectedPrimitivesResult.value;
 
-          const deserializationResult = SpecificationV2.Operations.Deserialize(
+          const deserializationResult = Specification.Operations.Deserialize(
             current.fieldTypeConverters,
             current.concreteRenderers,
             injectedPrimitives,

@@ -9,6 +9,7 @@ import {
   DispatchInjectablesTypes,
   isString,
   PredicateComputedOrInlined,
+  Renderer,
   TableLayout,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
@@ -124,15 +125,19 @@ export const TableRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
-    ): ValueOrErrors<NestedRenderer<T> | undefined, string> =>
+      forms: object,
+      alreadyParsedForms: Map<string, Renderer<T>>,
+    ): ValueOrErrors<[NestedRenderer<T> | undefined, Map<string, Renderer<T>>], string> =>
       serialized.detailsRenderer == undefined
-        ? ValueOrErrors.Default.return(undefined)
+        ? ValueOrErrors.Default.return<[NestedRenderer<T> | undefined, Map<string, Renderer<T>>], string>([undefined, alreadyParsedForms])
         : NestedRenderer.Operations.DeserializeAs(
             type.arg,
             serialized.detailsRenderer,
             concreteRenderers,
             "details renderer",
             types,
+            forms,
+            alreadyParsedForms,
           ),
     Deserialize: <
       T extends DispatchInjectablesTypes<T>,
@@ -150,9 +155,11 @@ export const TableRenderer = {
       >,
       types: Map<string, DispatchParsedType<T>>,
       api: string | undefined,
-    ): ValueOrErrors<TableRenderer<T>, string> =>
+      forms: object,
+      alreadyParsedForms: Map<string, Renderer<T>>,
+    ): ValueOrErrors<[TableRenderer<T>, Map<string, Renderer<T>>], string> =>
       api != undefined && Array.isArray(api)
-        ? ValueOrErrors.Default.throwOne("lookup api not supported for table")
+        ? ValueOrErrors.Default.throwOne<[TableRenderer<T>, Map<string, Renderer<T>>], string>("lookup api not supported for table")
         : TableRenderer.Operations.tryAsValidTableForm(serialized)
             .Then((validTableForm) =>
               DispatchParsedType.Operations.ResolveLookupType(
@@ -160,65 +167,93 @@ export const TableRenderer = {
                 types,
               ).Then((resolvedType) =>
                 resolvedType.kind != "record"
-                  ? ValueOrErrors.Default.throwOne<TableRenderer<T>, string>(
+                  ? ValueOrErrors.Default.throwOne<[TableRenderer<T>, Map<string, Renderer<T>>], string>(
                       `table arg ${JSON.stringify(
                         resolvedType.kind,
                       )} is not a record type`,
                     )
-                  : ValueOrErrors.Operations.All(
-                      List<
-                        ValueOrErrors<[string, TableCellRenderer<T>], string>
+                  : validTableForm.columns
+                      .toArray()
+                      .reduce<
+                        ValueOrErrors<
+                          [
+                            Map<string, TableCellRenderer<T>>,
+                            Map<string, Renderer<T>>,
+                          ],
+                          string
+                        >
                       >(
-                        validTableForm.columns
-                          .toArray()
-                          .map(([columnName, columnRenderer]) =>
-                            DispatchParsedType.Operations.ResolveLookupType(
-                              columnName,
-                              resolvedType.fields,
-                            ).Then((columnType) =>
-                              TableCellRenderer.Operations.Deserialize(
-                                columnType,
-                                columnRenderer,
-                                concreteRenderers,
-                                types,
+                        (acc, [columnName, columnRenderer]) =>
+                          acc.Then(
+                            ([columnsMap, accumulatedAlreadyParsedForms]) =>
+                              DispatchParsedType.Operations.ResolveLookupType(
                                 columnName,
-                              ).Then((renderer) =>
-                                ValueOrErrors.Default.return<
-                                  [string, TableCellRenderer<T>],
-                                  string
-                                >([columnName, renderer]),
+                                resolvedType.fields,
+                              ).Then((columnType) =>
+                                TableCellRenderer.Operations.Deserialize(
+                                  columnType,
+                                  columnRenderer,
+                                  concreteRenderers,
+                                  types,
+                                  columnName,
+                                  forms,
+                                  accumulatedAlreadyParsedForms,
+                                ).Then(([renderer, newAlreadyParsedForms]) =>
+                                  ValueOrErrors.Default.return<
+                                    [
+                                      Map<string, TableCellRenderer<T>>,
+                                      Map<string, Renderer<T>>,
+                                    ],
+                                    string
+                                  >([
+                                    columnsMap.set(columnName, renderer),
+                                    newAlreadyParsedForms,
+                                  ]),
+                                ),
                               ),
-                            ),
                           ),
-                      ),
-                    ).Then((columns) =>
-                      TableLayout.Operations.ParseLayout(
-                        validTableForm.visibleColumns,
-                      ).Then((visibileColumnsLayout) =>
+                        ValueOrErrors.Default.return<
+                          [
+                            Map<string, TableCellRenderer<T>>,
+                            Map<string, Renderer<T>>,
+                          ],
+                          string
+                        >([Map<string, TableCellRenderer<T>>(), alreadyParsedForms]),
+                      )
+                      .Then(([columnsMap, accumulatedAlreadyParsedForms]) =>
                         TableLayout.Operations.ParseLayout(
-                          validTableForm.disabledColumns,
-                        ).Then((disabledColumnsLayout) =>
-                          TableRenderer.Operations.DeserializeDetailsRenderer(
-                            type,
-                            validTableForm,
-                            concreteRenderers,
-                            types,
-                          ).Then((detailsRenderer) =>
-                            ValueOrErrors.Default.return(
-                              TableRenderer.Default(
-                                type,
-                                Map<string, TableCellRenderer<T>>(columns),
-                                visibileColumnsLayout,
-                                disabledColumnsLayout,
-                                validTableForm.renderer,
-                                detailsRenderer,
-                                api,
-                              ),
+                          validTableForm.visibleColumns,
+                        ).Then((visibileColumnsLayout) =>
+                          TableLayout.Operations.ParseLayout(
+                            validTableForm.disabledColumns,
+                          ).Then((disabledColumnsLayout) =>
+                            TableRenderer.Operations.DeserializeDetailsRenderer(
+                              type,
+                              validTableForm,
+                              concreteRenderers,
+                              types,
+                              forms,
+                              accumulatedAlreadyParsedForms,
+                            ).Then(([detailsRenderer, finalAlreadyParsedForms]) =>
+                              ValueOrErrors.Default.return<
+                                [TableRenderer<T>, Map<string, Renderer<T>>],
+                                string
+                              >([
+                                TableRenderer.Default(
+                                  type,
+                                  columnsMap,
+                                  visibileColumnsLayout,
+                                  disabledColumnsLayout,
+                                  validTableForm.renderer,
+                                  detailsRenderer,
+                                  api,
+                                ),
+                                finalAlreadyParsedForms,
+                              ]),
                             ),
                           ),
                         ),
                       ),
-                    ),
               ),
             )
             .MapErrors((errors) =>

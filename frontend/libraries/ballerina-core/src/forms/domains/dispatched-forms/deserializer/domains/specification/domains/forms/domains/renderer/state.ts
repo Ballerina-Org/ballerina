@@ -117,13 +117,17 @@ export const Renderer = {
       as: string,
       types: Map<string, DispatchParsedType<T>>,
       tableApi: string | undefined,
-    ): ValueOrErrors<Renderer<T>, string> =>
+      forms: object,
+      alreadyParsedForms: Map<string, Renderer<T>>,
+    ): ValueOrErrors<[Renderer<T>, Map<string, Renderer<T>>], string> =>
       Renderer.Operations.Deserialize(
         type,
         serialized,
         concreteRenderers,
         types,
         tableApi,
+        forms,
+        alreadyParsedForms,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
       ),
@@ -143,7 +147,9 @@ export const Renderer = {
       >,
       types: Map<string, DispatchParsedType<T>>,
       tableApi: string | undefined, // Necessary because the table api is currently defined outside of the renderer, so a lookup has to be able to pass it to the looked up renderer
-    ): ValueOrErrors<Renderer<T>, string> =>
+      forms: object,
+      alreadyParsedForms: Map<string, Renderer<T>>,
+    ): ValueOrErrors<[Renderer<T>, Map<string, Renderer<T>>], string> =>
       /*
         Important semantics of lookup vs inlined renderers and types:
 
@@ -191,6 +197,8 @@ export const Renderer = {
                 tableApi,
                 concreteRenderers,
                 types,
+                forms,
+                alreadyParsedForms,
               )
             : LookupRenderer.Operations.Deserialize(
                 // lookup type and inlined renderer (case 2)
@@ -201,10 +209,18 @@ export const Renderer = {
                 tableApi,
                 concreteRenderers,
                 types,
+                forms,
+                alreadyParsedForms,
               )
           : typeof serialized == "string"
             ? type.kind == "primitive" // special case
-              ? PrimitiveRenderer.Operations.Deserialize(type, serialized)
+              ? PrimitiveRenderer.Operations.Deserialize(type, serialized).Then(
+                  (renderer) =>
+                    ValueOrErrors.Default.return([
+                      renderer,
+                      alreadyParsedForms,
+                    ]),
+                )
               : // inlined type and lookup renderer (case 3)
                 LookupRenderer.Operations.Deserialize(
                   SerializedLookup.Default.InlinedTypeLookupRenderer(
@@ -214,16 +230,30 @@ export const Renderer = {
                   tableApi,
                   concreteRenderers,
                   types,
+                  forms,
+                  alreadyParsedForms,
                 )
             : // All other cases are inlined renderers and inlined types (case 4)
               Renderer.Operations.HasOptions(serialized) &&
                 (type.kind == "singleSelection" ||
                   type.kind == "multiSelection")
-              ? EnumRenderer.Operations.Deserialize(type, serialized)
+              ? EnumRenderer.Operations.Deserialize(type, serialized).Then(
+                  (renderer) =>
+                    ValueOrErrors.Default.return([
+                      renderer,
+                      alreadyParsedForms,
+                    ]),
+                )
               : Renderer.Operations.HasStream(serialized) &&
                   (type.kind == "singleSelection" ||
                     type.kind == "multiSelection")
-                ? StreamRenderer.Operations.Deserialize(type, serialized)
+                ? StreamRenderer.Operations.Deserialize(type, serialized).Then(
+                    (renderer) =>
+                      ValueOrErrors.Default.return([
+                        renderer,
+                        alreadyParsedForms,
+                      ]),
+                  )
                 : Renderer.Operations.HasColumns(serialized) &&
                     type.kind == "table"
                   ? TableRenderer.Operations.Deserialize(
@@ -232,6 +262,13 @@ export const Renderer = {
                       concreteRenderers,
                       types,
                       tableApi,
+                      forms,
+                      alreadyParsedForms,
+                    ).Then(([renderer, newAlreadyParsedForms]) =>
+                      ValueOrErrors.Default.return([
+                        renderer,
+                        newAlreadyParsedForms,
+                      ]),
                     )
                   : type.kind == "list"
                     ? ListRenderer.Operations.Deserialize(
@@ -239,6 +276,8 @@ export const Renderer = {
                         serialized,
                         concreteRenderers,
                         types,
+                        forms,
+                        alreadyParsedForms,
                       )
                     : type.kind == "map"
                       ? MapRenderer.Operations.Deserialize(
@@ -246,6 +285,8 @@ export const Renderer = {
                           serialized,
                           concreteRenderers,
                           types,
+                          forms,
+                          alreadyParsedForms,
                         )
                       : type.kind == "one"
                         ? OneRenderer.Operations.Deserialize(
@@ -253,6 +294,8 @@ export const Renderer = {
                             serialized,
                             concreteRenderers,
                             types,
+                            forms,
+                            alreadyParsedForms,
                           )
                         : type.kind == "readOnly"
                           ? ReadOnlyRenderer.Operations.Deserialize(
@@ -260,6 +303,8 @@ export const Renderer = {
                               serialized,
                               concreteRenderers,
                               types,
+                              forms,
+                              alreadyParsedForms,
                             )
                           : Renderer.Operations.IsSumUnitDate(
                                 serialized,
@@ -268,6 +313,11 @@ export const Renderer = {
                             ? BaseSumUnitDateRenderer.Operations.Deserialize(
                                 type,
                                 serialized,
+                              ).Then((renderer) =>
+                                ValueOrErrors.Default.return([
+                                  renderer,
+                                  alreadyParsedForms,
+                                ]),
                               )
                             : type.kind == "sum"
                               ? SumRenderer.Operations.Deserialize(
@@ -275,6 +325,8 @@ export const Renderer = {
                                   serialized,
                                   concreteRenderers,
                                   types,
+                                  forms,
+                                  alreadyParsedForms,
                                 )
                               : type.kind == "record"
                                 ? RecordRenderer.Operations.Deserialize(
@@ -282,6 +334,8 @@ export const Renderer = {
                                     serialized,
                                     concreteRenderers,
                                     types,
+                                    forms,
+                                    alreadyParsedForms,
                                   )
                                 : type.kind == "union"
                                   ? UnionRenderer.Operations.Deserialize(
@@ -289,6 +343,8 @@ export const Renderer = {
                                       serialized,
                                       concreteRenderers,
                                       types,
+                                      forms,
+                                      alreadyParsedForms,
                                     )
                                   : type.kind == "tuple"
                                     ? TupleRenderer.Operations.Deserialize(
@@ -296,9 +352,11 @@ export const Renderer = {
                                         serialized,
                                         concreteRenderers,
                                         types,
+                                        forms,
+                                        alreadyParsedForms,
                                       )
                                     : ValueOrErrors.Default.throwOne<
-                                        Renderer<T>,
+                                        [Renderer<T>, Map<string, Renderer<T>>],
                                         string
                                       >(
                                         `Unknown renderer ${JSON.stringify(serialized, null, 2)} and type of kind ${

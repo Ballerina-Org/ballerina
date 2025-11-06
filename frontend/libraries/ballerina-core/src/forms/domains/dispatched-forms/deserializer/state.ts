@@ -695,7 +695,7 @@ export type DispatchFormsParserContext<
   fieldTypeConverters: DispatchApiConverters<T>;
   getFormsConfig: BasicFun<void, Promise<any>>;
   injectedPrimitives?: DispatchInjectables<T>;
-  desiredLaunchers: string[];
+  desiredLaunchers?: string[];
 };
 
 export type DispatchFormsParserState<
