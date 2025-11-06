@@ -45,20 +45,6 @@ func BindReaderWithError[Ctx, A, B any](
 	}
 }
 
-func AdaptEditProducerToReader[Delta, Value, Edit, A any](
-	editProducer func(Delta) func(ballerina.ReaderWithError[A, Value]) (Edit, error),
-	delta Delta,
-) ReaderWithError[Value, Edit] {
-	return ReaderWithError[Value, Edit]{
-		Apply: func(value Value) (Edit, error) {
-			valueReader := ballerina.PureReader[A, ballerina.Sum[error, Value]](
-				ballerina.Right[error, Value](value),
-			)
-			return editProducer(delta)(ballerina.ReaderWithError[A, Value](valueReader))
-		},
-	}
-}
-
 func Parallel2[Ctx, O1, O2 any](reader1 Reader[Ctx, O1], reader2 Reader[Ctx, O2]) Reader[Ctx, ballerina.Tuple2[O1, O2]] {
 	return Reader[Ctx, ballerina.Tuple2[O1, O2]]{
 		Apply: func(ctx Ctx) ballerina.Tuple2[O1, O2] {
@@ -448,7 +434,7 @@ func All[I, O any](readers []ReaderWithError[I, O]) ReaderWithError[I, []O] {
 			for i := range readers {
 				reader, err := readers[i].Apply(input)
 				if err != nil {
-					return nil, fmt.Errorf("all error in reader %d: %w", i, err)
+					return nil, err
 				}
 				results = append(results, reader)
 			}

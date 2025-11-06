@@ -18,7 +18,7 @@ func ThenMany[Ctx any](updaters []UpdaterWithError[Ctx]) UpdaterWithError[Ctx] {
 		for i := range updaters {
 			v, err = updaters[i].ApplyTo(v)
 			if err != nil {
-				return v, fmt.Errorf("ThenMany error in updater_%d: %w", i, err)
+				return v, err
 			}
 		}
 		return v, nil
