@@ -27,6 +27,7 @@ import { PersonApi } from "../../../apis/mocks";
 
 const colors = ["Red", "Green", "Blue"];
 const interests = ["Soccer", "Hockey", "BoardGames", "HegelianPhilosophy"];
+const employments = ["Monthly", "Hourly", "Substitute"]
 
 const getActiveUsers: DispatchTableApiSource = {
   get: (id: Guid) => {
@@ -325,7 +326,7 @@ const enumApis: DispatchEnumOptionsSources = (enumName: string) =>
     enumName == "employmentTypes"
         ? ValueOrErrors.Default.return(() =>
             PromiseRepo.Default.mock(
-                () => colors.map((_) => ({ Value: _ })),
+                () => employments.map((_) => ({ Value: _ })),
                 undefined,
                 1,
                 0,

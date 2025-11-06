@@ -405,7 +405,7 @@ export const DispatcherFormsApp = (props: {}) => {
   }
 
   // console.debug("personEntity", JSON.stringify(personEntity, null, 2));
-
+  console.log(JSON.stringify(specificationDeserializer, null, 2))
   return (
     <div className="App">
       <h1>Ballerina 🩰</h1>

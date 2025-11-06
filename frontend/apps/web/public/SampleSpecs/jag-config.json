@@ -32,9 +32,15 @@
       "fields": {
         "Name": "string",
         "FirstHire": "Date",
+        "IsProtected": "boolean",
+        "EmploymentID": "number",
         "EmploymentType": {
           "fun": "SingleSelection",
           "args": ["EmploymentRef"]
+        },
+        "Address": {
+          "fun": "Tuple",
+          "args": ["string", "string"]
         }
       }
     }
@@ -48,10 +54,10 @@
       "globalConfiguration": {
         "type": "GlobalConfiguration",
         "methods": ["get"]
-      },
-      "enumOptions": {
-        "employmentTypes": "EmploymentRef"
       }
+    },
+    "enumOptions": {
+      "employmentTypes": "EmploymentRef"
     }
   },
   "forms": {
@@ -67,10 +73,32 @@
           "label": "First hired at",
           "renderer": "defaultDate"
         },
+        "IsProtected": {
+          "label": "Protected Identity",
+          "renderer": "defaultBoolean"
+        },
         "EmploymentType": {
           "label": "Employment type",
           "renderer": "defaultEnum",
           "options": "employmentTypes"
+        },
+        "EmploymentID": {
+          "label": "Employment ID",
+          "renderer": "defaultNumber"
+        },
+        "Address": {
+          "label": "Address",
+          "renderer": "defaultTuple2",
+          "itemRenderers": [
+            {
+              "label": "City",
+              "renderer": "defaultString"
+            },
+            {
+              "label": "Street",
+              "renderer": "defaultString"
+            }
+          ]
         }
       },
       "tabs": {
@@ -80,7 +108,10 @@
               "main": [
                 "Name",
                 "FirstHire",
-                "EmploymentType"
+                "EmploymentType",
+                "IsProtected",
+                "EmploymentID",
+                "Address"
               ]
             }
           }

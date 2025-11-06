@@ -19,6 +19,7 @@ const permissions = ["Create", "Read", "Update", "Delete"];
 const colors = ["Red", "Green", "Blue"];
 const genders = ["M", "F", "X"];
 const interests = ["Soccer", "Hockey", "BoardGames", "HegelianPhilosophy"];
+const employments = ["Monthly", "Hourly", "Substitute"]
 
 const streamApis: InfiniteStreamSources = (streamName: string) =>
   streamName == "departments"
@@ -35,7 +36,7 @@ const streamApis: InfiniteStreamSources = (streamName: string) =>
 const enumApis: EnumOptionsSources = (enumName: string) =>
     enumName == "employmentTypes"
         ? () => PromiseRepo.Default.mock(
-            () => colors.map((_) => ({ Value: _ })),
+            () => employments.map((_) => ({ Value: _ })),
             undefined,
             1,
             0,

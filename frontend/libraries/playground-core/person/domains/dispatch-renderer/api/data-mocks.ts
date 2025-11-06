@@ -32,6 +32,7 @@ const permissions = ["Create", "Read", "Update", "Delete"];
 const colors = ["Red", "Green", "Blue"];
 const genders = ["M", "F", "X"];
 const interests = ["Soccer", "Hockey", "BoardGames", "HegelianPhilosophy"];
+const employments = ["Monthly", "Hourly", "Substitute"]
 
 const getActiveUsers: DispatchTableApiSource = {
   get: (id: Guid) => {
@@ -660,7 +661,7 @@ const enumApis: DispatchEnumOptionsSources = (enumName: string) =>
   enumName == "employmentTypes"
     ? ValueOrErrors.Default.return(() =>
           PromiseRepo.Default.mock(
-              () => colors.map((_) => ({ Value: _ })),
+              () => employments.map((_) => ({ Value: _ })),
               undefined,
               1,
               0,
@@ -750,7 +751,18 @@ const entityApis: EntityApis = {
               return Promise.resolve({
                   Name: "Assistant 2",
                   FirstHire: "2000-01-02",
-                  EmploymentType: "Hourly"
+                  IsProtected: faker.datatype.boolean(),
+                  EmploymentID: 10007002,
+                  EmploymentType: {
+                      Value: {
+                          Value: employments[Math.round(Math.random() * 10) % 3],
+                      },
+                      IsSome: true
+                  },
+                  Address: {
+                      Item1: faker.location.city(),
+                      Item2: faker.location.street()
+                  }
               });
           }
       case "assistant-config":
@@ -1341,7 +1353,18 @@ const entityApis: EntityApis = {
         return Promise.resolve({
             Name: "Assistant 1",
             FirstHire: "2000-01-02",
-            EmploymentType: "Hourly"
+            IsProtected: faker.datatype.boolean(),
+            EmploymentID: 10007001,
+            EmploymentType: {
+                Value: {
+                    Value: employments[Math.round(Math.random() * 10) % 3],
+                },
+                IsSome: true
+            },
+            Address: {
+                Item1: faker.location.city(),
+                Item2: faker.location.street()
+            },
         })
       })
     : apiName == "person"
