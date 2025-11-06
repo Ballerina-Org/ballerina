@@ -367,12 +367,12 @@ export const TableAbstractRendererState = {
                 {
                   kind: "primitive",
                   name: "string",
-                  asString: () => "string",
+                  // asString: () => "string",
                 },
                 {
                   kind: "primitive",
                   name: "string",
-                  asString: () => "string",
+                  // asString: () => "string",
                 },
               ]),
               sorting,
