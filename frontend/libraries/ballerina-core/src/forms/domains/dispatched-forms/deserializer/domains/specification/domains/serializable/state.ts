@@ -122,12 +122,6 @@ export type DeserializedDispatchSpecificationSerializable<
   ExtraContext = Unit,
 > = {
   launchers: DispatchParsedLaunchersSerializable<T>;
-  // dispatcherContext: DispatcherContextSerializable<
-  //   T,
-  //   Flags,
-  //   CustomPresentationContext,
-  //   ExtraContext
-  // >;
 };
 
 export type DispatchSpecificationDeserializationResultSerializable<
@@ -396,229 +390,196 @@ export const hydrateDeserializedDispatchForms =
             ),
         });
 
-export const parseDispatchFormsToLaunchersSerializable =
-  <
-    T extends DispatchInjectablesTypes<T>,
-    Flags,
-    CustomPresentationContext,
-    ExtraContext,
-  >(
-    injectedPrimitives: DispatchInjectedPrimitives<T> | undefined,
-    apiConverters: DispatchApiConverters<T>,
-    lookupTypeRenderer: () => LookupTypeAbstractRendererView<
-      CustomPresentationContext,
-      Flags,
-      ExtraContext
-    >,
-    defaultRecordRenderer: () => RecordAbstractRendererView<
-      CustomPresentationContext,
-      Flags,
-      ExtraContext
-    >,
-    defaultNestedRecordRenderer: () => RecordAbstractRendererView<
-      CustomPresentationContext,
-      Flags,
-      ExtraContext
-    >,
-    concreteRenderers: ConcreteRenderers<
-      T,
-      Flags,
-      CustomPresentationContext,
-      ExtraContext
-    >,
-    IdProvider: (props: IdWrapperProps) => React.ReactNode,
-    ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  ) =>
-  (
-    specification: Specification<T>,
-  ): DispatchSpecificationDeserializationResultSerializable<
-    T,
-    Flags,
-    CustomPresentationContext,
-    ExtraContext
-  > =>
-    ValueOrErrors.Operations.All(
-      List<
-        ValueOrErrors<
-          [string, DispatchParsedPassthroughLauncherSerializable<T>],
-          string
-        >
-      >(
-        specification.launchers.passthrough
-          .entrySeq()
-          .toArray()
-          .map(([launcherName, launcher]) =>
+export const parseDispatchFormsToLaunchersSerializable = <
+  T extends DispatchInjectablesTypes<T>,
+  Flags,
+  CustomPresentationContext,
+  ExtraContext,
+>(
+  specification: Specification<T>,
+): DispatchSpecificationDeserializationResultSerializable<
+  T,
+  Flags,
+  CustomPresentationContext,
+  ExtraContext
+> =>
+  ValueOrErrors.Operations.All(
+    List<
+      ValueOrErrors<
+        [string, DispatchParsedPassthroughLauncherSerializable<T>],
+        string
+      >
+    >(
+      specification.launchers.passthrough
+        .entrySeq()
+        .toArray()
+        .map(([launcherName, launcher]) =>
+          MapRepo.Operations.tryFindWithError(
+            launcher.form,
+            specification.forms,
+            () => `cannot find form "${launcher.form}" when parsing launchers`,
+          ).Then((parsedForm) =>
             MapRepo.Operations.tryFindWithError(
-              launcher.form,
-              specification.forms,
+              launcher.configType,
+              specification.types,
               () =>
-                `cannot find form "${launcher.form}" when parsing launchers`,
-            ).Then((parsedForm) =>
-              MapRepo.Operations.tryFindWithError(
-                launcher.configType,
-                specification.types,
-                () =>
-                  `cannot find global config type "${launcher.configType}" when parsing launchers`,
-              ).Then((globalConfigType) =>
-                ValueOrErrors.Default.return([
-                  launcherName,
-                  {
-                    kind: "passthrough",
-                    renderer: parsedForm,
-                    type: parsedForm.type,
-                    parseEntityFromApi: {
-                      ctx: {
-                        parsedForm,
-                      },
+                `cannot find global config type "${launcher.configType}" when parsing launchers`,
+            ).Then((globalConfigType) =>
+              ValueOrErrors.Default.return([
+                launcherName,
+                {
+                  kind: "passthrough",
+                  renderer: parsedForm,
+                  type: parsedForm.type,
+                  parseEntityFromApi: {
+                    ctx: {
+                      parsedForm,
                     },
-                    parseGlobalConfigurationFromApi: {
-                      ctx: {
-                        parsedForm,
-                        globalConfigType,
-                      },
-                    },
-                    formName: launcher.form,
                   },
-                ]),
-              ),
+                  parseGlobalConfigurationFromApi: {
+                    ctx: {
+                      parsedForm,
+                      globalConfigType,
+                    },
+                  },
+                  formName: launcher.form,
+                },
+              ]),
             ),
           ),
-      ),
-    )
-      .MapErrors((errors) =>
-        errors.map(
-          (error) => `${error}\n...When parsing passthrough launchers`,
         ),
-      )
-      .Then((passthroughLaunchers) =>
-        ValueOrErrors.Operations.All(
-          List<
-            ValueOrErrors<
-              [string, DispatchParsedEntityLauncherSerializable<T>],
-              string
-            >
-          >(
-            specification.launchers.create
-              .entrySeq()
-              .toArray()
-              .map(([launcherName, launcher]) =>
+    ),
+  )
+    .MapErrors((errors) =>
+      errors.map((error) => `${error}\n...When parsing passthrough launchers`),
+    )
+    .Then((passthroughLaunchers) =>
+      ValueOrErrors.Operations.All(
+        List<
+          ValueOrErrors<
+            [string, DispatchParsedEntityLauncherSerializable<T>],
+            string
+          >
+        >(
+          specification.launchers.create
+            .entrySeq()
+            .toArray()
+            .map(([launcherName, launcher]) =>
+              MapRepo.Operations.tryFindWithError(
+                launcher.form,
+                specification.forms,
+                () =>
+                  `cannot find form "${launcher.form}" when parsing launchers`,
+              ).Then((parsedForm) =>
                 MapRepo.Operations.tryFindWithError(
-                  launcher.form,
-                  specification.forms,
+                  launcher.configApi,
+                  specification.apis.entities,
                   () =>
-                    `cannot find form "${launcher.form}" when parsing launchers`,
-                ).Then((parsedForm) =>
+                    `cannot find global config api "${launcher.configApi}" when parsing launchers`,
+                ).Then((globalConfigApi) =>
                   MapRepo.Operations.tryFindWithError(
-                    launcher.configApi,
-                    specification.apis.entities,
+                    globalConfigApi.type,
+                    specification.types,
                     () =>
-                      `cannot find global config api "${launcher.configApi}" when parsing launchers`,
-                  ).Then((globalConfigApi) =>
-                    MapRepo.Operations.tryFindWithError(
-                      globalConfigApi.type,
-                      specification.types,
-                      () =>
-                        `cannot find global config type "${globalConfigApi.type}" when parsing launchers`,
-                    ).Then((globalConfigType) =>
-                      ValueOrErrors.Default.return([
-                        launcherName,
-                        {
-                          kind: "create",
-                          renderer: parsedForm,
-                          type: parsedForm.type,
-                          fromApiParser: {
-                            ctx: {
-                              parsedForm,
-                            },
+                      `cannot find global config type "${globalConfigApi.type}" when parsing launchers`,
+                  ).Then((globalConfigType) =>
+                    ValueOrErrors.Default.return([
+                      launcherName,
+                      {
+                        kind: "create",
+                        renderer: parsedForm,
+                        type: parsedForm.type,
+                        fromApiParser: {
+                          ctx: {
+                            parsedForm,
                           },
-                          parseGlobalConfigurationFromApi: {
-                            ctx: { globalConfigType },
-                          },
-                          formName: launcher.form,
-                          api: launcher.api,
-                          configApi: launcher.configApi,
                         },
-                      ]),
-                    ),
+                        parseGlobalConfigurationFromApi: {
+                          ctx: { globalConfigType },
+                        },
+                        formName: launcher.form,
+                        api: launcher.api,
+                        configApi: launcher.configApi,
+                      },
+                    ]),
                   ),
                 ),
               ),
-          ),
+            ),
+        ),
+      )
+        .MapErrors((errors) =>
+          errors.map((error) => `${error}\n...When parsing create launchers`),
         )
-          .MapErrors((errors) =>
-            errors.map((error) => `${error}\n...When parsing create launchers`),
-          )
-          .Then((createLaunchers) =>
-            ValueOrErrors.Operations.All(
-              List<
-                ValueOrErrors<
-                  [string, DispatchParsedEntityLauncherSerializable<T>],
-                  string
-                >
-              >(
-                specification.launchers.edit
-                  .entrySeq()
-                  .toArray()
-                  .map(([launcherName, launcher]) =>
+        .Then((createLaunchers) =>
+          ValueOrErrors.Operations.All(
+            List<
+              ValueOrErrors<
+                [string, DispatchParsedEntityLauncherSerializable<T>],
+                string
+              >
+            >(
+              specification.launchers.edit
+                .entrySeq()
+                .toArray()
+                .map(([launcherName, launcher]) =>
+                  MapRepo.Operations.tryFindWithError(
+                    launcher.form,
+                    specification.forms,
+                    () =>
+                      `cannot find form "${launcher.form}" when parsing launchers`,
+                  ).Then((parsedForm) =>
                     MapRepo.Operations.tryFindWithError(
-                      launcher.form,
-                      specification.forms,
+                      launcher.configApi,
+                      specification.apis.entities,
                       () =>
-                        `cannot find form "${launcher.form}" when parsing launchers`,
-                    ).Then((parsedForm) =>
+                        `cannot find global config api "${launcher.configApi}" when parsing launchers`,
+                    ).Then((globalConfigApi) =>
                       MapRepo.Operations.tryFindWithError(
-                        launcher.configApi,
-                        specification.apis.entities,
+                        globalConfigApi.type,
+                        specification.types,
                         () =>
-                          `cannot find global config api "${launcher.configApi}" when parsing launchers`,
-                      ).Then((globalConfigApi) =>
-                        MapRepo.Operations.tryFindWithError(
-                          globalConfigApi.type,
-                          specification.types,
-                          () =>
-                            `cannot find global config type "${globalConfigApi.type}" when parsing launchers`,
-                        ).Then((globalConfigType) =>
-                          ValueOrErrors.Default.return([
-                            launcherName,
-                            {
-                              kind: "edit",
-                              renderer: parsedForm,
-                              type: parsedForm.type,
-                              fromApiParser: {
-                                ctx: {
-                                  parsedForm,
-                                },
+                          `cannot find global config type "${globalConfigApi.type}" when parsing launchers`,
+                      ).Then((globalConfigType) =>
+                        ValueOrErrors.Default.return([
+                          launcherName,
+                          {
+                            kind: "edit",
+                            renderer: parsedForm,
+                            type: parsedForm.type,
+                            fromApiParser: {
+                              ctx: {
+                                parsedForm,
                               },
-                              parseGlobalConfigurationFromApi: {
-                                ctx: { globalConfigType },
-                              },
-                              formName: launcher.form,
-                              api: launcher.api,
-                              configApi: launcher.configApi,
                             },
-                          ]),
-                        ),
+                            parseGlobalConfigurationFromApi: {
+                              ctx: { globalConfigType },
+                            },
+                            formName: launcher.form,
+                            api: launcher.api,
+                            configApi: launcher.configApi,
+                          },
+                        ]),
                       ),
                     ),
                   ),
-              ),
-            )
-              .MapErrors((errors) =>
-                errors.map(
-                  (error) => `${error}\n...When parsing edit launchers`,
                 ),
-              )
-              .Then((editLaunchers) =>
-                ValueOrErrors.Default.return({
-                  launchers: {
-                    passthrough: Map(passthroughLaunchers),
-                    edit: Map(editLaunchers),
-                    create: Map(createLaunchers),
-                  },
-                }),
-              ),
-          ),
-      )
-      .MapErrors((errors) =>
-        errors.map((error) => `${error}\n...When parsing launchers`),
-      );
+            ),
+          )
+            .MapErrors((errors) =>
+              errors.map((error) => `${error}\n...When parsing edit launchers`),
+            )
+            .Then((editLaunchers) =>
+              ValueOrErrors.Default.return({
+                launchers: {
+                  passthrough: Map(passthroughLaunchers),
+                  edit: Map(editLaunchers),
+                  create: Map(createLaunchers),
+                },
+              }),
+            ),
+        ),
+    )
+    .MapErrors((errors) =>
+      errors.map((error) => `${error}\n...When parsing launchers`),
+    );
