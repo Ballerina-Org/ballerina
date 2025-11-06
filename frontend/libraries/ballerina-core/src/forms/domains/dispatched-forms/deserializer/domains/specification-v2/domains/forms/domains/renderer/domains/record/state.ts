@@ -57,7 +57,7 @@ export const RecordRenderer = {
       _: unknown,
     ): ValueOrErrors<SerializedRecordRenderer, string> =>
       !DispatchIsObject(_)
-        ? (console.debug("record form is not an object", _), ValueOrErrors.Default.throwOne("record form is not an object"))
+        ? ValueOrErrors.Default.throwOne("record form is not an object")
         : !("fields" in _)
           ? ValueOrErrors.Default.throwOne(
               "record form is missing the required fields attribute",
@@ -132,48 +132,41 @@ export const RecordRenderer = {
             .toArray()
             .reduce<
               ValueOrErrors<
-                [
-                  Map<string, RecordFieldRenderer<T>>,
-                  Map<string, Renderer<T>>,
-                ],
+                [Map<string, RecordFieldRenderer<T>>, Map<string, Renderer<T>>],
                 string
               >
             >(
               (acc, [fieldName, recordFieldRenderer]: [string, unknown]) =>
-                acc.Then(
-                  ([fieldsMap, accumulatedAlreadyParsedForms]) =>
-                    MapRepo.Operations.tryFindWithError(
+                acc.Then(([fieldsMap, accumulatedAlreadyParsedForms]) =>
+                  MapRepo.Operations.tryFindWithError(
+                    fieldName,
+                    type.fields,
+                    () => `Cannot find field type for ${fieldName} in fields`,
+                  ).Then((fieldType) =>
+                    RecordFieldRenderer.Deserialize(
+                      fieldType,
+                      recordFieldRenderer,
+                      concreteRenderers,
+                      types,
                       fieldName,
-                      type.fields,
-                      () => `Cannot find field type for ${fieldName} in fields`,
-                    ).Then((fieldType) =>
-                      RecordFieldRenderer.Deserialize(
-                        fieldType,
-                        recordFieldRenderer,
-                        concreteRenderers,
-                        types,
-                        fieldName,
-                        forms,
-                        accumulatedAlreadyParsedForms,
-                      ).Then(([renderer, newAlreadyParsedForms]) =>
-                        ValueOrErrors.Default.return<
-                          [
-                            Map<string, RecordFieldRenderer<T>>,
-                            Map<string, Renderer<T>>,
-                          ],
-                          string
-                        >([
-                          fieldsMap.set(fieldName, renderer),
-                          newAlreadyParsedForms,
-                        ]),
-                      ),
+                      forms,
+                      accumulatedAlreadyParsedForms,
+                    ).Then(([renderer, newAlreadyParsedForms]) =>
+                      ValueOrErrors.Default.return<
+                        [
+                          Map<string, RecordFieldRenderer<T>>,
+                          Map<string, Renderer<T>>,
+                        ],
+                        string
+                      >([
+                        fieldsMap.set(fieldName, renderer),
+                        newAlreadyParsedForms,
+                      ]),
                     ),
+                  ),
                 ),
               ValueOrErrors.Default.return<
-                [
-                  Map<string, RecordFieldRenderer<T>>,
-                  Map<string, Renderer<T>>,
-                ],
+                [Map<string, RecordFieldRenderer<T>>, Map<string, Renderer<T>>],
                 string
               >([Map<string, RecordFieldRenderer<T>>(), alreadyParsedForms]),
             )

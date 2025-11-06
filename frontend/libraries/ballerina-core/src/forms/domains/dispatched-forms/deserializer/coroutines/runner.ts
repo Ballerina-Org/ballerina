@@ -83,8 +83,6 @@ export const LoadAndDeserializeSpecificationByDesiredLaunchers = <
             injectedPrimitives,
           )(serializedSpecifications, current.desiredLaunchers);
 
-          console.debug("deserializationResult", deserializationResult);
-
           // const deserializationResult = Specification.Operations.Deserialize(
           //   current.fieldTypeConverters,
           //   current.concreteRenderers,

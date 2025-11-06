@@ -1203,7 +1203,7 @@ export const DispatchParsedType = {
                 acc.Then(
                   ([parsedFieldsMap, accumulatedAlreadyParsedTypesForFields]) =>
                     DispatchParsedType.Operations.ParseRawType(
-                      fieldName,
+                      `Record field type: ${fieldName}`,
                       fieldType as SerializedType<T>,
                       typeNames,
                       serializedTypes,
@@ -1546,6 +1546,13 @@ export const DispatchParsedType = {
         }
         if (SerializedType.isLookup(rawType, typeNames)) {
           const resolvedType = serializedTypes[rawType];
+          if(alreadyParsedTypes.has(rawType)) {
+            return ValueOrErrors.Default.return([
+              DispatchParsedType.Default.lookup(rawType),
+              alreadyParsedTypes,
+            ]);
+          }
+
           return DispatchParsedType.Operations.ParseRawType(
             typeName,
             resolvedType,

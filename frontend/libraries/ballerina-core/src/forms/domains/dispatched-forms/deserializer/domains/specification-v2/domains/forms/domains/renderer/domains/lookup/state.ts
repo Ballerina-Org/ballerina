@@ -159,7 +159,6 @@ export const LookupRenderer = {
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
     ): ValueOrErrors<[LookupRenderer<T>, Map<string, Renderer<T>>], string> => {
-      console.debug('serialized', serialized);
       return serialized.kind == "lookupType-inlinedRenderer"
         ? DispatchParsedType.Operations.ResolveLookupType(
             serialized.type.name,

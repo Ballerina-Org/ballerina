@@ -108,11 +108,17 @@ export const SpecificationV2 = {
       serializedTypes: Record<string, SerializedType<T>>,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
     ): ValueOrErrors<Map<DispatchTypeName, DispatchParsedType<T>>, string> => {
+      console.debug("launcher types", launcherTypes);
+      performance.mark('deserializeSpecTypesV2Start');
       const serializedTypeNames = Set(Object.keys(serializedTypes));
-      return ValueOrErrors.Operations.All(
+      const x = ValueOrErrors.Operations.All(
         List<ValueOrErrors<[DispatchTypeName, DispatchParsedType<T>], string>>(
           launcherTypes
             .reduce((acc, rawTypeName) => {
+              if(acc.has(rawTypeName)) {
+                console.debug("type already parsed", rawTypeName);
+                return acc;
+              }
               const res = DispatchParsedType.Operations.ParseRawType(
                 rawTypeName,
                 serializedTypes[rawTypeName],
@@ -145,6 +151,10 @@ export const SpecificationV2 = {
           Map<DispatchTypeName, DispatchParsedType<T>>(parsedTypes),
         ),
       );
+      performance.mark('deserializeSpecTypesV2End');
+      performance.measure('deserializeSpecTypesV2', 'deserializeSpecTypesV2Start', 'deserializeSpecTypesV2End');
+      console.debug('deserializeSpecTypesV2', performance.getEntriesByName('deserializeSpecTypesV2')[0].duration);
+      return x
     },
     DeserializeLaunchers: <T>(
       desiredLaunchers: string[],
@@ -208,7 +218,8 @@ export const SpecificationV2 = {
       >,
       launcherForms: List<string>,
     ): ValueOrErrors<Map<string, Renderer<T>>, string> => {
-      return Object.entries(forms)
+      performance.mark('deserializeFormsV2Start');
+      const x = Object.entries(forms)
         .filter(([formName]) => launcherForms.includes(formName))
         .reduce<
           ValueOrErrors<
@@ -290,6 +301,10 @@ export const SpecificationV2 = {
             accumulatedAlreadyParsedForms.concat(forms),
           ),
         );
+        performance.mark('deserializeFormsV2End');
+        performance.measure('deserializeFormsV2', 'deserializeFormsV2Start', 'deserializeFormsV2End');
+        console.debug('deserializeFormsV2', performance.getEntriesByName('deserializeFormsV2')[0].duration);
+        return x
     },
     GetFormType: <T>(form: object): ValueOrErrors<string, string> => {
       if (!("type" in form) || typeof form.type != "string")

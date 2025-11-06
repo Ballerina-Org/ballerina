@@ -97,8 +97,9 @@ export const Specification = {
       serializedTypes: Record<string, SerializedType<T>>,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
     ): ValueOrErrors<Map<DispatchTypeName, DispatchParsedType<T>>, string> => {
+      performance.mark('deserializeSpecTypesV1Start');
       const serializedTypeNames = Set(Object.keys(serializedTypes));
-      return ValueOrErrors.Operations.All(
+      const x = ValueOrErrors.Operations.All(
         List<ValueOrErrors<[DispatchTypeName, DispatchParsedType<T>], string>>(
           Object.entries(serializedTypes)
             .reduce((acc, [rawTypeName, rawType]) => {
@@ -130,6 +131,10 @@ export const Specification = {
             ),
         ),
       ).Then((parsedTypes) => ValueOrErrors.Default.return(Map(parsedTypes)));
+      performance.mark('deserializeSpecTypesV1End');
+      performance.measure('deserializeSpecTypesV1', 'deserializeSpecTypesV1Start', 'deserializeSpecTypesV1End');
+      console.debug('deserializeSpecTypesV1', performance.getEntriesByName('deserializeSpecTypesV1')[0].duration);
+      return x;
     },
     DeserializeForms: <
       T extends DispatchInjectablesTypes<T>,
@@ -145,8 +150,9 @@ export const Specification = {
         CustomPresentationContext,
         ExtraContext
       >,
-    ): ValueOrErrors<Map<string, Renderer<T>>, string> =>
-      ValueOrErrors.Operations.All(
+    ): ValueOrErrors<Map<string, Renderer<T>>, string> => {
+      performance.mark('deserializeFormsV1Start');
+      const x = ValueOrErrors.Operations.All(
         List<ValueOrErrors<[string, Renderer<T>], string>>(
           Object.entries(forms).map(([formName, form]) =>
             !DispatchIsObject(form) ||
@@ -189,7 +195,12 @@ export const Specification = {
                 ),
           ),
         ),
-      ).Then((forms) => ValueOrErrors.Default.return(Map(forms))),
+      ).Then((forms) => ValueOrErrors.Default.return(Map(forms)));
+      performance.mark('deserializeFormsV1End');
+      performance.measure('deserializeFormsV1', 'deserializeFormsV1Start', 'deserializeFormsV1End');
+      console.debug('deserializeFormsV1', performance.getEntriesByName('deserializeFormsV1')[0].duration);
+      return x;
+    },
     Deserialize:
       <
         T extends DispatchInjectablesTypes<T>,
