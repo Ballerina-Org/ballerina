@@ -45,16 +45,16 @@ func BindReaderWithError[Ctx, A, B any](
 	}
 }
 
-func AdaptEditProducerToReader[Delta, Value, Edit any](
-	editProducer func(Delta) func(ballerina.ReaderWithError[ballerina.Unit, Value]) (Edit, error),
+func AdaptEditProducerToReader[Delta, Value, Edit, A any](
+	editProducer func(Delta) func(ballerina.ReaderWithError[A, Value]) (Edit, error),
 	delta Delta,
 ) ReaderWithError[Value, Edit] {
 	return ReaderWithError[Value, Edit]{
 		Apply: func(value Value) (Edit, error) {
-			valueReader := ballerina.PureReader[ballerina.Unit, ballerina.Sum[error, Value]](
+			valueReader := ballerina.PureReader[A, ballerina.Sum[error, Value]](
 				ballerina.Right[error, Value](value),
 			)
-			return editProducer(delta)(ballerina.ReaderWithError[ballerina.Unit, Value](valueReader))
+			return editProducer(delta)(ballerina.ReaderWithError[A, Value](valueReader))
 		},
 	}
 }
@@ -441,14 +441,14 @@ func Pipeline2WithError[Ctx, A, B any](readerA ReaderWithError[Ctx, A], fn func(
 	return FlattenWithError(MapWithError(readerA, fn))
 }
 
-func All[I, O any](readers ...ReaderWithError[I, O]) ReaderWithError[I, []O] {
+func All[I, O any](readers []ReaderWithError[I, O]) ReaderWithError[I, []O] {
 	return ReaderWithError[I, []O]{
 		Apply: func(input I) ([]O, error) {
 			results := make([]O, 0, len(readers))
 			for i := range readers {
 				reader, err := readers[i].Apply(input)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("all error in reader %d: %w", i, err)
 				}
 				results = append(results, reader)
 			}
