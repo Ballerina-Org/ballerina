@@ -53,44 +53,16 @@ export type DispatchParsedPassthroughLauncherSerializable<
   kind: "passthrough";
   formName: string;
   renderer: Renderer<T>;
-  commonCtx: {
-    specification: Specification<T>;
-  };
   parseEntityFromApi: {
     ctx: {
       parsedForm: Renderer<T>;
     };
-    // TODO: probably the fn is not needed? - once we have the ctx, we can just define the function inline
-    // fn: (props: {
-    //   parsedForm: Renderer<T>;
-    //   specification: Specification<T>;
-    //   injectedPrimitives: DispatchInjectedPrimitives<T> | undefined;
-    //   apiConverters: DispatchApiConverters<T>;
-    // }) => (_: any) => ValueOrErrors<PredicateValue, string>;
   };
   parseGlobalConfigurationFromApi: {
     ctx: {
       parsedForm: Renderer<T>;
       globalConfigType: DispatchParsedType<T>;
     };
-    // fn: (props: {
-    //   globalConfigType: DispatchParsedType<T>;
-    //   specification: Specification<T>;
-    //   injectedPrimitives: DispatchInjectedPrimitives<T> | undefined;
-    //   apiConverters: DispatchApiConverters<T>;
-    // }) => (_: any) => ValueOrErrors<PredicateValue, string>;
-  };
-  parseValueToApi: {
-    ctx: {};
-    // fn: (props: {
-    //   specification: Specification<T>;
-    //   injectedPrimitives: DispatchInjectedPrimitives<T> | undefined;
-    //   apiConverters: DispatchApiConverters<T>;
-    // }) => (
-    //   value: PredicateValue,
-    //   type: DispatchParsedType<T>,
-    //   state: any,
-    // ) => ValueOrErrors<any, string>;
   };
   type: DispatchParsedType<T>;
 };
@@ -101,16 +73,10 @@ export type DispatchParsedEntityLauncherSerializable<
   kind: "create" | "edit";
   formName: string;
   renderer: Renderer<T>;
-  commonCtx: {
-    specification: Specification<T>;
-  };
   fromApiParser: {
     ctx: {
       parsedForm: Renderer<T>;
     };
-  };
-  toApiParser: {
-    ctx: {};
   };
   parseGlobalConfigurationFromApi: {
     ctx: {
@@ -500,49 +466,16 @@ export const parseDispatchFormsToLaunchersSerializable =
                     kind: "passthrough",
                     renderer: parsedForm,
                     type: parsedForm.type,
-                    commonCtx: {
-                      specification,
-                    },
                     parseEntityFromApi: {
                       ctx: {
                         parsedForm,
                       },
-                      // fn: (props) => (raw: any) =>
-                      //   dispatchFromAPIRawValue(
-                      //     props.parsedForm.type,
-                      //     props.specification.types,
-                      //     props.apiConverters,
-                      //     props.injectedPrimitives,
-                      //   )(raw),
                     },
                     parseGlobalConfigurationFromApi: {
                       ctx: {
                         parsedForm,
                         globalConfigType,
                       },
-                      // fn: (props) => (raw: any) =>
-                      //   dispatchFromAPIRawValue(
-                      //     props.globalConfigType,
-                      //     props.specification.types,
-                      //     props.apiConverters,
-                      //     props.injectedPrimitives,
-                      //   )(raw),
-                    },
-                    parseValueToApi: {
-                      ctx: {},
-                      // fn:
-                      //   (props) =>
-                      //   (
-                      //     value: PredicateValue,
-                      //     type: DispatchParsedType<T>,
-                      //     state: any,
-                      //   ) =>
-                      //     dispatchToAPIRawValue(
-                      //       type,
-                      //       props.specification.types,
-                      //       props.apiConverters,
-                      //       props.injectedPrimitives,
-                      //     )(value, state),
                     },
                     formName: launcher.form,
                   },
@@ -593,9 +526,6 @@ export const parseDispatchFormsToLaunchersSerializable =
                           kind: "create",
                           renderer: parsedForm,
                           type: parsedForm.type,
-                          commonCtx: {
-                            specification,
-                          },
                           fromApiParser: {
                             ctx: {
                               parsedForm,
@@ -603,9 +533,6 @@ export const parseDispatchFormsToLaunchersSerializable =
                           },
                           parseGlobalConfigurationFromApi: {
                             ctx: { globalConfigType },
-                          },
-                          toApiParser: {
-                            ctx: {},
                           },
                           formName: launcher.form,
                           api: launcher.api,
@@ -657,9 +584,6 @@ export const parseDispatchFormsToLaunchersSerializable =
                               kind: "edit",
                               renderer: parsedForm,
                               type: parsedForm.type,
-                              commonCtx: {
-                                specification,
-                              },
                               fromApiParser: {
                                 ctx: {
                                   parsedForm,
@@ -667,9 +591,6 @@ export const parseDispatchFormsToLaunchersSerializable =
                               },
                               parseGlobalConfigurationFromApi: {
                                 ctx: { globalConfigType },
-                              },
-                              toApiParser: {
-                                ctx: {},
                               },
                               formName: launcher.form,
                               api: launcher.api,
