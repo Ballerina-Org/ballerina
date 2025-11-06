@@ -105,7 +105,6 @@ export const Specification = {
     DeserializeSpecTypes: <T>(
       launcherTypes: List<DispatchTypeName>,
       serializedTypes: Record<string, SerializedType<T>>,
-      serializedTypeNames: Set<DispatchTypeName>,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
     ): ValueOrErrors<Map<DispatchTypeName, DispatchParsedType<T>>, string> => {
       return ValueOrErrors.Operations.All(
@@ -118,7 +117,6 @@ export const Specification = {
               const res = DispatchParsedType.Operations.ParseRawType(
                 rawTypeName,
                 serializedTypes[rawTypeName],
-                serializedTypeNames,
                 serializedTypes,
                 acc,
                 injectedPrimitives,
@@ -455,100 +453,86 @@ export const Specification = {
                             serializedSpecificationV2s.forms,
                             serializedSpecificationV2s.apis,
                           ).Then((formTypes) =>
-                            ValueOrErrors.Operations.Return(
-                              Set(
-                                Object.keys(serializedSpecificationV2s.types),
-                              ),
-                            ).Then((serializedTypeNames) =>
-                              Specification.Operations.DeserializeSpecTypes(
-                                formTypes,
-                                serializedSpecificationV2s.types,
-                                serializedTypeNames,
-                                injectedPrimitives,
-                              ).Then((allTypes) =>
-                                Specification.Operations.DeserializeForms<
-                                  T,
-                                  Flags,
-                                  CustomPresentationContext,
-                                  ExtraContext
-                                >(
-                                  serializedSpecificationV2s.forms,
-                                  allTypes,
-                                  concreteRenderers,
-                                  Specification.Operations.GetLauncherFormNames(
-                                    launchers,
-                                  ),
-                                ).Then((forms) =>
-                                  EnumApis.Operations.Deserialize(
-                                    serializedSpecificationV2s.apis.enumOptions,
-                                  ).Then((enums) =>
-                                    StreamApis.Operations.Deserialize(
-                                      serializedSpecificationV2s.apis
-                                        .searchableStreams,
-                                    ).Then((streams) =>
-                                      TableApis.Operations.Deserialize(
-                                        concreteRenderers,
-                                        allTypes,
-                                        serializedTypeNames,
-                                        serializedSpecificationV2s.types,
-                                        serializedSpecificationV2s.apis.tables,
-                                        injectedPrimitives,
-                                      ).Then((tables) =>
-                                        LookupApis.Operations.Deserialize(
+                            Specification.Operations.DeserializeSpecTypes(
+                              formTypes,
+                              serializedSpecificationV2s.types,
+                              injectedPrimitives,
+                            ).Then((allTypes) =>
+                              Specification.Operations.DeserializeForms<
+                                T,
+                                Flags,
+                                CustomPresentationContext,
+                                ExtraContext
+                              >(
+                                serializedSpecificationV2s.forms,
+                                allTypes,
+                                concreteRenderers,
+                                Specification.Operations.GetLauncherFormNames(
+                                  launchers,
+                                ),
+                              ).Then((forms) =>
+                                EnumApis.Operations.Deserialize(
+                                  serializedSpecificationV2s.apis.enumOptions,
+                                ).Then((enums) =>
+                                  StreamApis.Operations.Deserialize(
+                                    serializedSpecificationV2s.apis
+                                      .searchableStreams,
+                                  ).Then((streams) =>
+                                    TableApis.Operations.Deserialize(
+                                      concreteRenderers,
+                                      allTypes,
+                                      serializedSpecificationV2s.types,
+                                      serializedSpecificationV2s.apis.tables,
+                                      injectedPrimitives,
+                                    ).Then((tables) =>
+                                      LookupApis.Operations.Deserialize(
+                                        serializedSpecificationV2s.apis.lookups,
+                                      ).Then((lookups) => {
+                                        const entityEntries: [
+                                          string,
+                                          EntityApi,
+                                        ][] = Object.entries(
                                           serializedSpecificationV2s.apis
-                                            .lookups,
-                                        ).Then((lookups) => {
-                                          const entityEntries: [
-                                            string,
-                                            EntityApi,
-                                          ][] = Object.entries(
-                                            serializedSpecificationV2s.apis
-                                              .entities,
-                                          ).map(
-                                            ([entityApiName, entityApi]: [
-                                              entiyApiName: string,
-                                              entityApi: SerializedEntityApi,
-                                            ]) => {
-                                              const methods = entityApi.methods;
-                                              return [
-                                                entityApiName,
-                                                {
-                                                  type: entityApi.type,
-                                                  methods: {
-                                                    create: methods.includes(
-                                                      "create",
-                                                    ),
-                                                    get: methods.includes("get"),
-                                                    update: methods.includes(
-                                                      "update",
-                                                    ),
-                                                    default: methods.includes(
-                                                      "default",
-                                                    ),
-                                                  },
+                                            .entities,
+                                        ).map(
+                                          ([entityApiName, entityApi]: [
+                                            entiyApiName: string,
+                                            entityApi: SerializedEntityApi,
+                                          ]) => {
+                                            const methods = entityApi.methods;
+                                            return [
+                                              entityApiName,
+                                              {
+                                                type: entityApi.type,
+                                                methods: {
+                                                  create:
+                                                    methods.includes("create"),
+                                                  get: methods.includes("get"),
+                                                  update:
+                                                    methods.includes("update"),
+                                                  default:
+                                                    methods.includes("default"),
                                                 },
-                                              ] as [string, EntityApi];
-                                            },
-                                          );
-                                          const entities: Map<
-                                            string,
-                                            EntityApi
-                                          > = Map(entityEntries);
+                                              },
+                                            ] as [string, EntityApi];
+                                          },
+                                        );
+                                        const entities: Map<string, EntityApi> =
+                                          Map(entityEntries);
 
-                                          return ValueOrErrors.Default.return({
-                                            types: allTypes,
-                                            forms,
-                                            apis: {
-                                              enums,
-                                              streams,
-                                              entities,
-                                              tables,
-                                              lookups,
-                                            },
-                                            launchers,
-                                          });
-                                        }),
-                                      ),
+                                        return ValueOrErrors.Default.return({
+                                          types: allTypes,
+                                          forms,
+                                          apis: {
+                                            enums,
+                                            streams,
+                                            entities,
+                                            tables,
+                                            lookups,
+                                          },
+                                          launchers,
+                                        });
+                                      }),
                                     ),
                                   ),
                                 ),

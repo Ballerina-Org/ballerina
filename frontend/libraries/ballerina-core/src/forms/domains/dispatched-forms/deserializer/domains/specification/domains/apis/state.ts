@@ -201,7 +201,6 @@ export const TableApis = {
         ExtraContext
       >,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
-      serializedTypeNames: Set<DispatchTypeName>,
       serializedTypes: Record<string, SerializedType<T>>,
       serializedFiltering?: unknown,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
@@ -253,7 +252,6 @@ export const TableApis = {
                                 : DispatchParsedType.Operations.ParseRawType(
                                     "filter",
                                     value.type as SerializedType<T>,
-                                    serializedTypeNames,
                                     serializedTypes,
                                     Map(),
                                     injectedPrimitives,
@@ -352,7 +350,6 @@ export const TableApis = {
         ExtraContext
       >,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
-      serializedTypeNames: Set<DispatchTypeName>,
       serializedTypes: Record<string, SerializedType<T>>,
       serializedApiTables?: unknown,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
@@ -392,7 +389,6 @@ export const TableApis = {
               : TableApis.Operations.DeserializeFiltering(
                   concreteRenderers,
                   types,
-                  serializedTypeNames,
                   serializedTypes,
                   value.filtering,
                   injectedPrimitives,
