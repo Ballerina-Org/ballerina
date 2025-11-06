@@ -610,159 +610,214 @@ export const DispatchParsedType = {
     table: <T>(arg: LookupType): TableType<T> => ({
       kind: "table",
       arg,
-      // asString: () => TableType.SerializeToString(arg.asString()),
     }),
     record: <T>(
       fields: Map<DispatchFieldName, DispatchParsedType<T>>,
     ): RecordType<T> => ({
       kind: "record",
       fields,
-      // asString: () => RecordType.SerializeToString(fields.map((v) => v.asString())),
     }),
     primitive: <T>(
       name: DispatchPrimitiveTypeName<T>,
     ): DispatchParsedType<T> => ({
       kind: "primitive",
       name,
-      // asString: () => DispatchPrimitiveType.SerializeToString(name),
     }),
     singleSelection: <T>(
       args: Array<DispatchParsedType<T>>,
     ): DispatchParsedType<T> => ({
       kind: "singleSelection",
       args,
-      // asString: () => SingleSelectionType.SerializeToString(args.map((v) => v.asString())),
     }),
     multiSelection: <T>(
       args: Array<DispatchParsedType<T>>,
     ): DispatchParsedType<T> => ({
       kind: "multiSelection",
       args,
-      // asString: () => MultiSelectionType.SerializeToString(args.map((v) => v.asString())),
     }),
     list: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "list",
       args,
-      // asString: () => ListType.SerializeToString(args.map((v) => v.asString())),
     }),
     tuple: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "tuple",
       args,
-      // asString: () => TupleType.SerializeToString(args.map((v) => v.asString())),
     }),
     sum: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "sum",
       args,
-      // asString: () => SumType.SerializeToString(args.map((v) => v.asString())),
     }),
     sumN: <T>(args: Array<DispatchParsedType<T>>): SumNType<T> => ({
       kind: "sumN",
       args,
-      // asString: () =>
-      // SumNType.SerializeToString(
-      //   args.map((v) => v.asString()),
-      //   args.length,
-      // ),
     }),
     map: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "map",
       args,
-      // asString: () => MapType.SerializeToString(args.map((v) => v.asString())),
     }),
     union: <T>(
       args: Map<DispatchCaseName, DispatchParsedType<T>>,
     ): DispatchParsedType<T> => ({
       kind: "union",
       args,
-      // asString: () =>UnionType.SerializeToString(args.map((v) => v.asString())),
     }),
     readOnly: <T>(arg: DispatchParsedType<T>): ReadOnlyType<T> => ({
       kind: "readOnly",
       arg,
-      // asString: () => ReadOnlyType.SerializeToString(arg.asString()),
     }),
     lookup: <T>(name: string): LookupType => ({
       kind: "lookup",
       name,
-      // asString: () => LookupType.SerializeToString(name),
     }),
     one: <T>(arg: LookupType): OneType<T> => ({
       kind: "one",
       arg,
-      // asString: () => OneType.SerializeToString(arg.asString()),
     }),
     filterContains: <T>(
       contains: DispatchParsedType<T>,
     ): FilterContainsType<T> => ({
       kind: "contains",
       contains,
-      // asString: () => FilterContainsType.SerializeToString(contains.asString()),
     }),
     filterEqualsTo: <T>(
       equalsTo: DispatchParsedType<T>,
     ): FilterEqualsToType<T> => ({
       kind: "=",
       equalsTo,
-      // asString: () => FilterEqualsToType.SerializeToString(equalsTo.asString()),
     }),
     filterNotEqualsTo: <T>(
       notEqualsTo: DispatchParsedType<T>,
     ): FilterNotEqualsToType<T> => ({
       kind: "!=",
       notEqualsTo,
-      // asString: () =>FilterNotEqualsToType.SerializeToString(notEqualsTo.asString()),
     }),
     filterGreaterThanOrEqualsTo: <T>(
       greaterThanOrEqualsTo: DispatchParsedType<T>,
     ): FilterGreaterThanOrEqualsToType<T> => ({
       kind: ">=",
       greaterThanOrEqualsTo,
-      // asString: () =>
-      // FilterGreaterThanOrEqualsToType.SerializeToString(
-      //   greaterThanOrEqualsTo.asString(),
-      // ),
     }),
     filterGreaterThan: <T>(
       greaterThan: DispatchParsedType<T>,
     ): FilterGreaterThanType<T> => ({
       kind: ">",
       greaterThan,
-      // asString: () =>FilterGreaterThanType.SerializeToString(greaterThan.asString()),
     }),
     filterIsNotNull: <T>(): FilterIsNotNullType<T> => ({
       kind: "!=null",
-      // asString: () => FilterIsNotNullType.SerializeToString(),
     }),
     filterIsNull: <T>(): FilterIsNullType<T> => ({
       kind: "=null",
-      // asString: () => FilterIsNullType.SerializeToString(),
     }),
     filterSmallerThanOrEqualsTo: <T>(
       smallerThanOrEqualsTo: DispatchParsedType<T>,
     ): FilterSmallerThanOrEqualsToType<T> => ({
       kind: "<=",
       smallerThanOrEqualsTo,
-      // asString: () =>
-      // FilterSmallerThanOrEqualsToType.SerializeToString(
-      //   smallerThanOrEqualsTo.asString(),
-      // ),
     }),
     filterSmallerThan: <T>(
       smallerThan: DispatchParsedType<T>,
     ): FilterSmallerThanType<T> => ({
       kind: "<",
       smallerThan,
-      // asString: () =>FilterSmallerThanType.SerializeToString(smallerThan.asString()),
     }),
     filterStartsWith: <T>(
       startsWith: DispatchParsedType<T>,
     ): FilterStartsWithType<T> => ({
       kind: "startsWith",
       startsWith,
-      // asString: () =>FilterStartsWithType.SerializeToString(startsWith.asString()),
     }),
   },
   Operations: {
+    AsString: (type: DispatchParsedType<unknown>): StringSerializedType => {
+      switch (type.kind) {
+        case "record":
+          return RecordType.SerializeToString(
+            type.fields.map((v) => DispatchParsedType.Operations.AsString(v)),
+          );
+        case "table":
+          return TableType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.arg),
+          );
+        case "one":
+          return OneType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.arg),
+          );
+        case "singleSelection":
+          return SingleSelectionType.SerializeToString(
+            type.args.map((v) => DispatchParsedType.Operations.AsString(v)),
+          );
+        case "multiSelection":
+          return MultiSelectionType.SerializeToString(
+            type.args.map((v) => DispatchParsedType.Operations.AsString(v)),
+          );
+        case "list":
+          return ListType.SerializeToString(
+            type.args.map((v) => DispatchParsedType.Operations.AsString(v)),
+          );
+        case "tuple":
+          return TupleType.SerializeToString(
+            type.args.map((v) => DispatchParsedType.Operations.AsString(v)),
+          );
+        case "sum":
+          return SumType.SerializeToString(
+            type.args.map((v) => DispatchParsedType.Operations.AsString(v)),
+          );
+        case "sumN":
+          return SumNType.SerializeToString(
+            type.args.map((v) => DispatchParsedType.Operations.AsString(v)),
+            type.args.length,
+          );
+        case "map":
+          return MapType.SerializeToString(
+            type.args.map((v) => DispatchParsedType.Operations.AsString(v)),
+          );
+        case "union":
+          return UnionType.SerializeToString(
+            type.args.map((v) => DispatchParsedType.Operations.AsString(v)),
+          );
+        case "lookup":
+          return LookupType.SerializeToString(type.name);
+        case "contains":
+          return FilterContainsType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.contains),
+          );
+        case "=":
+          return FilterEqualsToType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.equalsTo),
+          );
+        case "!=":
+          return FilterNotEqualsToType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.notEqualsTo),
+          );
+        case ">=":
+          return FilterGreaterThanOrEqualsToType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.greaterThanOrEqualsTo),
+          );
+        case ">":
+          return FilterGreaterThanType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.greaterThan),
+          );
+        case "!=null":
+          return FilterIsNotNullType.SerializeToString();
+        case "=null":
+          return FilterIsNullType.SerializeToString();
+        case "<=":
+          return FilterSmallerThanOrEqualsToType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.smallerThanOrEqualsTo),
+          );
+        case "<":
+          return FilterSmallerThanType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.smallerThan),
+          );
+        case "startsWith":
+          return FilterStartsWithType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.startsWith),
+          );
+        default:
+          throw new Error(`Unknown type: ${JSON.stringify(type)}`);
+      }
+    },
     // We don't use this at the moment, if we need it, then we can fix
     // Equals: <T>(
     //   fst: DispatchParsedType<T>,
