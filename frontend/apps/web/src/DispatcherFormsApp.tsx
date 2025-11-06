@@ -415,7 +415,7 @@ export const DispatcherFormsApp = (props: {}) => {
                         DispatchCategoryState.Default(),
                       ),
                     ],
-                    desiredLaunchers: ["person-transparent", "person-config"]
+                    desiredLaunchers: ["person-transparent", "person-config"],
                   }}
                   setState={setSpecificationDeserializer}
                   view={unit}

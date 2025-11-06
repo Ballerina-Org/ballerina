@@ -1046,7 +1046,6 @@ export const DispatchParsedType = {
       );
     },
     ParseRecord: <T>(
-      typeName: DispatchTypeName,
       rawType: unknown,
       serializedTypes: Record<string, SerializedType<T>>,
       alreadyParsedTypes: Map<
@@ -1530,7 +1529,6 @@ export const DispatchParsedType = {
           );
         if (SerializedType.isRecord(rawType))
           return DispatchParsedType.Operations.ParseRecord(
-            typeName,
             rawType,
             serializedTypes,
             alreadyParsedTypes,
