@@ -312,7 +312,7 @@ export const DispatcherFormsApp = (props: {}) => {
         ) {
           const parsed =
             specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
-              .get("person-transparent")! 
+              .get("person-transparent")!
               .parseEntityFromApi(raw);
           if (parsed.kind == "errors") {
             console.error("parsed entity errors", parsed.errors);

@@ -84,40 +84,36 @@ export const UnionRenderer = {
               >
             >(
               (acc, [caseName, caseRenderer]) =>
-                acc.Then(
-                  ([casesMap, accumulatedAlreadyParsedForms]) =>
-                    MapRepo.Operations.tryFindWithError(
-                      caseName,
-                      type.args,
-                      () =>
-                        `case ${caseName} not found in type ${JSON.stringify(type, null, 2)}`,
-                    ).Then((caseType) =>
-                      Renderer.Operations.Deserialize(
-                        caseType,
-                        // TODO likely the cases should be typed as nested renderers to avoid this
-                        typeof caseRenderer === "object" &&
-                          caseRenderer !== null &&
-                          "renderer" in caseRenderer
-                          ? caseRenderer.renderer
-                          : caseRenderer,
-                        concreteRenderers,
-                        types,
-                        undefined,
-                        forms,
-                        accumulatedAlreadyParsedForms,
-                      ).Then(([caseRenderer, newAlreadyParsedForms]) =>
-                        ValueOrErrors.Default.return<
-                          [
-                            Map<string, Renderer<T>>,
-                            Map<string, Renderer<T>>,
-                          ],
-                          string
-                        >([
-                          casesMap.set(caseName, caseRenderer),
-                          newAlreadyParsedForms,
-                        ]),
-                      ),
+                acc.Then(([casesMap, accumulatedAlreadyParsedForms]) =>
+                  MapRepo.Operations.tryFindWithError(
+                    caseName,
+                    type.args,
+                    () =>
+                      `case ${caseName} not found in type ${JSON.stringify(type, null, 2)}`,
+                  ).Then((caseType) =>
+                    Renderer.Operations.Deserialize(
+                      caseType,
+                      // TODO likely the cases should be typed as nested renderers to avoid this
+                      typeof caseRenderer === "object" &&
+                        caseRenderer !== null &&
+                        "renderer" in caseRenderer
+                        ? caseRenderer.renderer
+                        : caseRenderer,
+                      concreteRenderers,
+                      types,
+                      undefined,
+                      forms,
+                      accumulatedAlreadyParsedForms,
+                    ).Then(([caseRenderer, newAlreadyParsedForms]) =>
+                      ValueOrErrors.Default.return<
+                        [Map<string, Renderer<T>>, Map<string, Renderer<T>>],
+                        string
+                      >([
+                        casesMap.set(caseName, caseRenderer),
+                        newAlreadyParsedForms,
+                      ]),
                     ),
+                  ),
                 ),
               ValueOrErrors.Default.return<
                 [Map<string, Renderer<T>>, Map<string, Renderer<T>>],
@@ -129,11 +125,7 @@ export const UnionRenderer = {
                 [UnionRenderer<T>, Map<string, Renderer<T>>],
                 string
               >([
-                UnionRenderer.Default(
-                  type,
-                  casesMap,
-                  validSerialized.renderer,
-                ),
+                UnionRenderer.Default(type, casesMap, validSerialized.renderer),
                 accumulatedAlreadyParsedForms,
               ]),
             ),

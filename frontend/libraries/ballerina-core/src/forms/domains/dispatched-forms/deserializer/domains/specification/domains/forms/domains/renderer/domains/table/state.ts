@@ -127,9 +127,15 @@ export const TableRenderer = {
       types: Map<string, DispatchParsedType<T>>,
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
-    ): ValueOrErrors<[NestedRenderer<T> | undefined, Map<string, Renderer<T>>], string> =>
+    ): ValueOrErrors<
+      [NestedRenderer<T> | undefined, Map<string, Renderer<T>>],
+      string
+    > =>
       serialized.detailsRenderer == undefined
-        ? ValueOrErrors.Default.return<[NestedRenderer<T> | undefined, Map<string, Renderer<T>>], string>([undefined, alreadyParsedForms])
+        ? ValueOrErrors.Default.return<
+            [NestedRenderer<T> | undefined, Map<string, Renderer<T>>],
+            string
+          >([undefined, alreadyParsedForms])
         : NestedRenderer.Operations.DeserializeAs(
             type.arg,
             serialized.detailsRenderer,
@@ -159,7 +165,10 @@ export const TableRenderer = {
       alreadyParsedForms: Map<string, Renderer<T>>,
     ): ValueOrErrors<[TableRenderer<T>, Map<string, Renderer<T>>], string> =>
       api != undefined && Array.isArray(api)
-        ? ValueOrErrors.Default.throwOne<[TableRenderer<T>, Map<string, Renderer<T>>], string>("lookup api not supported for table")
+        ? ValueOrErrors.Default.throwOne<
+            [TableRenderer<T>, Map<string, Renderer<T>>],
+            string
+          >("lookup api not supported for table")
         : TableRenderer.Operations.tryAsValidTableForm(serialized)
             .Then((validTableForm) =>
               DispatchParsedType.Operations.ResolveLookupType(
@@ -167,7 +176,10 @@ export const TableRenderer = {
                 types,
               ).Then((resolvedType) =>
                 resolvedType.kind != "record"
-                  ? ValueOrErrors.Default.throwOne<[TableRenderer<T>, Map<string, Renderer<T>>], string>(
+                  ? ValueOrErrors.Default.throwOne<
+                      [TableRenderer<T>, Map<string, Renderer<T>>],
+                      string
+                    >(
                       `table arg ${JSON.stringify(
                         resolvedType.kind,
                       )} is not a record type`,
@@ -218,7 +230,10 @@ export const TableRenderer = {
                             Map<string, Renderer<T>>,
                           ],
                           string
-                        >([Map<string, TableCellRenderer<T>>(), alreadyParsedForms]),
+                        >([
+                          Map<string, TableCellRenderer<T>>(),
+                          alreadyParsedForms,
+                        ]),
                       )
                       .Then(([columnsMap, accumulatedAlreadyParsedForms]) =>
                         TableLayout.Operations.ParseLayout(
@@ -234,22 +249,23 @@ export const TableRenderer = {
                               types,
                               forms,
                               accumulatedAlreadyParsedForms,
-                            ).Then(([detailsRenderer, finalAlreadyParsedForms]) =>
-                              ValueOrErrors.Default.return<
-                                [TableRenderer<T>, Map<string, Renderer<T>>],
-                                string
-                              >([
-                                TableRenderer.Default(
-                                  type,
-                                  columnsMap,
-                                  visibileColumnsLayout,
-                                  disabledColumnsLayout,
-                                  validTableForm.renderer,
-                                  detailsRenderer,
-                                  api,
-                                ),
-                                finalAlreadyParsedForms,
-                              ]),
+                            ).Then(
+                              ([detailsRenderer, finalAlreadyParsedForms]) =>
+                                ValueOrErrors.Default.return<
+                                  [TableRenderer<T>, Map<string, Renderer<T>>],
+                                  string
+                                >([
+                                  TableRenderer.Default(
+                                    type,
+                                    columnsMap,
+                                    visibileColumnsLayout,
+                                    disabledColumnsLayout,
+                                    validTableForm.renderer,
+                                    detailsRenderer,
+                                    api,
+                                  ),
+                                  finalAlreadyParsedForms,
+                                ]),
                             ),
                           ),
                         ),

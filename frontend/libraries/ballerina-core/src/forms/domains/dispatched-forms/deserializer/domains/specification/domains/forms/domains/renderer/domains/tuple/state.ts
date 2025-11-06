@@ -80,45 +80,10 @@ export const TupleRenderer = {
           validatedSerialized.itemRenderers
             .reduce<
               ValueOrErrors<
-                [
-                  Array<NestedRenderer<T>>,
-                  Map<string, Renderer<T>>,
-                ],
+                [Array<NestedRenderer<T>>, Map<string, Renderer<T>>],
                 string
               >
-            >(
-              (acc, itemRenderer, index) =>
-                acc.Then(
-                  ([itemRenderersArray, accumulatedAlreadyParsedForms]) =>
-                    NestedRenderer.Operations.DeserializeAs(
-                      type.args[index],
-                      itemRenderer,
-                      concreteRenderers,
-                      `Item ${index + 1}`,
-                      types,
-                      forms,
-                      accumulatedAlreadyParsedForms,
-                    ).Then(([deserializedItemRenderer, newAlreadyParsedForms]) =>
-                      ValueOrErrors.Default.return<
-                        [
-                          Array<NestedRenderer<T>>,
-                          Map<string, Renderer<T>>,
-                        ],
-                        string
-                      >([
-                        [...itemRenderersArray, deserializedItemRenderer],
-                        newAlreadyParsedForms,
-                      ]),
-                    ),
-                ),
-              ValueOrErrors.Default.return<
-                [
-                  Array<NestedRenderer<T>>,
-                  Map<string, Renderer<T>>,
-                ],
-                string
-              >([[], alreadyParsedForms]),
-            )
+            >((acc, itemRenderer, index) => acc.Then(([itemRenderersArray, accumulatedAlreadyParsedForms]) => NestedRenderer.Operations.DeserializeAs(type.args[index], itemRenderer, concreteRenderers, `Item ${index + 1}`, types, forms, accumulatedAlreadyParsedForms).Then(([deserializedItemRenderer, newAlreadyParsedForms]) => ValueOrErrors.Default.return<[Array<NestedRenderer<T>>, Map<string, Renderer<T>>], string>([[...itemRenderersArray, deserializedItemRenderer], newAlreadyParsedForms]))), ValueOrErrors.Default.return<[Array<NestedRenderer<T>>, Map<string, Renderer<T>>], string>([[], alreadyParsedForms]))
             .Then(([itemRenderersArray, accumulatedAlreadyParsedForms]) =>
               ValueOrErrors.Default.return<
                 [TupleRenderer<T>, Map<string, Renderer<T>>],
