@@ -5,11 +5,11 @@ import {
   DispatchParsedType,
   isObject,
   isString,
+  Renderer,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import { OneType } from "../../../../../types/state";
 import { NestedRenderer } from "../nestedRenderer/state";
-import { Renderer } from "../../state";
 
 export type SerializedOneRenderer = {
   renderer: string;
@@ -93,15 +93,25 @@ export const OneRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
-    ): ValueOrErrors<NestedRenderer<T> | undefined, string> =>
+      forms: object,
+      alreadyParsedForms: Map<string, Renderer<T>>,
+    ): ValueOrErrors<
+      [NestedRenderer<T> | undefined, Map<string, Renderer<T>>],
+      string
+    > =>
       serialized.previewRenderer == undefined
-        ? ValueOrErrors.Default.return(undefined)
+        ? ValueOrErrors.Default.return<
+            [NestedRenderer<T> | undefined, Map<string, Renderer<T>>],
+            string
+          >([undefined, alreadyParsedForms])
         : NestedRenderer.Operations.DeserializeAs(
             type.arg,
             serialized.previewRenderer,
             concreteRenderers,
             "preview renderer",
             types,
+            forms,
+            alreadyParsedForms,
           ),
     Deserialize: <
       T extends DispatchInjectablesTypes<T>,
@@ -118,7 +128,9 @@ export const OneRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
-    ): ValueOrErrors<OneRenderer<T>, string> =>
+      forms: object,
+      alreadyParsedForms: Map<string, Renderer<T>>,
+    ): ValueOrErrors<[OneRenderer<T>, Map<string, Renderer<T>>], string> =>
       OneRenderer.Operations.tryAsValidOneRenderer(serialized).Then(
         (validatedSerialized) =>
           NestedRenderer.Operations.DeserializeAs(
@@ -127,14 +139,21 @@ export const OneRenderer = {
             concreteRenderers,
             "details renderer",
             types,
-          ).Then((detailsRenderer) =>
+            forms,
+            alreadyParsedForms,
+          ).Then(([detailsRenderer, detailsAlreadyParsedForms]) =>
             OneRenderer.Operations.DeserializePreviewRenderer(
               type,
               validatedSerialized,
               concreteRenderers,
               types,
-            ).Then((previewRenderer) =>
-              ValueOrErrors.Default.return(
+              forms,
+              detailsAlreadyParsedForms,
+            ).Then(([previewRenderer, previewAlreadyParsedForms]) =>
+              ValueOrErrors.Default.return<
+                [OneRenderer<T>, Map<string, Renderer<T>>],
+                string
+              >([
                 OneRenderer.Default(
                   type,
                   validatedSerialized.api,
@@ -142,7 +161,8 @@ export const OneRenderer = {
                   detailsRenderer,
                   previewRenderer,
                 ),
-              ),
+                previewAlreadyParsedForms,
+              ]),
             ),
           ),
       ),

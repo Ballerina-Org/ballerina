@@ -1,4 +1,4 @@
-import { List, Map } from "immutable";
+import { Map } from "immutable";
 import { NestedRenderer } from "../nestedRenderer/state";
 import { DispatchParsedType, TupleType } from "../../../../../types/state";
 import { Renderer } from "../../state";
@@ -72,32 +72,31 @@ export const TupleRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
-    ): ValueOrErrors<TupleRenderer<T>, string> =>
+      forms: object,
+      alreadyParsedForms: Map<string, Renderer<T>>,
+    ): ValueOrErrors<[TupleRenderer<T>, Map<string, Renderer<T>>], string> =>
       TupleRenderer.Operations.tryAsValidTupleRenderer(serialized)
         .Then((validatedSerialized) =>
-          ValueOrErrors.Operations.All(
-            List<ValueOrErrors<NestedRenderer<T>, string>>(
-              validatedSerialized.itemRenderers.map((itemRenderer, index) =>
-                NestedRenderer.Operations.DeserializeAs(
-                  type.args[index],
-                  itemRenderer,
-                  concreteRenderers,
-                  `Item ${index + 1}`,
-                  types,
-                ).Then((deserializedItemRenderer) =>
-                  ValueOrErrors.Default.return(deserializedItemRenderer),
+          validatedSerialized.itemRenderers
+            .reduce<
+              ValueOrErrors<
+                [Array<NestedRenderer<T>>, Map<string, Renderer<T>>],
+                string
+              >
+            >((acc, itemRenderer, index) => acc.Then(([itemRenderersArray, accumulatedAlreadyParsedForms]) => NestedRenderer.Operations.DeserializeAs(type.args[index], itemRenderer, concreteRenderers, `Item ${index + 1}`, types, forms, accumulatedAlreadyParsedForms).Then(([deserializedItemRenderer, newAlreadyParsedForms]) => ValueOrErrors.Default.return<[Array<NestedRenderer<T>>, Map<string, Renderer<T>>], string>([[...itemRenderersArray, deserializedItemRenderer], newAlreadyParsedForms]))), ValueOrErrors.Default.return<[Array<NestedRenderer<T>>, Map<string, Renderer<T>>], string>([[], alreadyParsedForms]))
+            .Then(([itemRenderersArray, accumulatedAlreadyParsedForms]) =>
+              ValueOrErrors.Default.return<
+                [TupleRenderer<T>, Map<string, Renderer<T>>],
+                string
+              >([
+                TupleRenderer.Default(
+                  type,
+                  validatedSerialized.renderer,
+                  itemRenderersArray,
                 ),
-              ),
+                accumulatedAlreadyParsedForms,
+              ]),
             ),
-          ).Then((deserializedItemRenderers) =>
-            ValueOrErrors.Default.return(
-              TupleRenderer.Default(
-                type,
-                validatedSerialized.renderer,
-                deserializedItemRenderers.toArray(),
-              ),
-            ),
-          ),
         )
         .MapErrors((errors) =>
           errors.map((error) => `${error}\n...When parsing as Tuple renderer`),
