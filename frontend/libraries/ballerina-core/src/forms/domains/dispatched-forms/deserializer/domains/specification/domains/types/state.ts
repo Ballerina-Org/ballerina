@@ -1137,7 +1137,12 @@ export const DispatchParsedType = {
                                       extendedTypeName,
                                       parsedType[0],
                                     ),
-                                    parsedType[1],
+                                    parsedType[1].set(
+                                      extendedTypeName,
+                                      ValueOrErrors.Default.return(
+                                        parsedType[0],
+                                      ),
+                                    ),
                                   ])
                                 : ValueOrErrors.Default.throwOne<
                                     [
@@ -1554,6 +1559,16 @@ export const DispatchParsedType = {
         }
         if (SerializedType.isLookup(rawType, injectedPrimitives)) {
           const resolvedType = serializedTypes[rawType];
+          if (!resolvedType) {
+            return ValueOrErrors.Default.throwOne(
+              `Error: ${JSON.stringify(rawType)} is not a valid lookup type (not found in serializedTypes)`,
+            );
+          }
+          if (!isString(rawType)) {
+            return ValueOrErrors.Default.throwOne(
+              `Error: ${JSON.stringify(rawType)} is not a valid lookup type (not a string)`,
+            );
+          }
           if (alreadyParsedTypes.has(rawType)) {
             return ValueOrErrors.Default.return([
               DispatchParsedType.Default.lookup(rawType),
@@ -1562,7 +1577,7 @@ export const DispatchParsedType = {
           }
 
           return DispatchParsedType.Operations.ParseRawType(
-            typeName,
+            rawType,
             resolvedType,
             serializedTypes,
             alreadyParsedTypes,
