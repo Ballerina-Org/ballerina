@@ -1,5 +1,5 @@
 import { DispatchInjectablesTypes, Unit } from "../../../../../main";
-import { LoadAndDeserializeSpecificationByDesiredLaunchers } from "./coroutines/runner";
+import { LoadAndDeserializeSpecification } from "./coroutines/runner";
 
 export const DispatchFormsParserTemplate = <
   T extends DispatchInjectablesTypes<T> = Unit,
@@ -7,7 +7,7 @@ export const DispatchFormsParserTemplate = <
   CustomPresentationContext = Unit,
   ExtraContext = Unit,
 >() =>
-  LoadAndDeserializeSpecificationByDesiredLaunchers<
+  LoadAndDeserializeSpecification<
     T,
     Flags,
     CustomPresentationContext,

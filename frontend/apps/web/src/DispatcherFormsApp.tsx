@@ -45,7 +45,6 @@ import {
 } from "./domains/dispatched-passthrough-form/views/concrete-renderers";
 import { DispatchFieldTypeConverters } from "./domains/dispatched-passthrough-form/apis/field-converters";
 import { v4 } from "uuid";
-import { DispatchCreateFormLauncherState } from "ballerina-core/src/forms/domains/dispatched-forms/runner/domains/kind/create/state";
 
 const ShowFormsParsingErrors = (
   parsedFormsConfig: DispatchSpecificationDeserializationResult<
@@ -416,8 +415,8 @@ export const DispatcherFormsApp = (props: {}) => {
                         DispatchCategoryState.Default(),
                       ),
                     ],
+                    desiredLaunchers: ["person-transparent", "person-config"]
                   }}
-                  desiredLaunchers={["person-transparent", "person-config"]}
                   setState={setSpecificationDeserializer}
                   view={unit}
                   foreignMutations={unit}

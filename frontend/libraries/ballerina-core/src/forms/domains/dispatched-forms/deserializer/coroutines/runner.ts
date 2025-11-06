@@ -16,7 +16,7 @@ import {
   parseDispatchFormsToLaunchers,
 } from "../state";
 
-export const LoadAndDeserializeSpecificationByDesiredLaunchers = <
+export const LoadAndDeserializeSpecification = <
   T extends DispatchInjectablesTypes<T>,
   Flags = Unit,
   CustomPresentationContext = Unit,
@@ -81,12 +81,6 @@ export const LoadAndDeserializeSpecificationByDesiredLaunchers = <
             current.concreteRenderers,
             injectedPrimitives,
           )(serializedSpecifications, current.desiredLaunchers);
-
-          // const deserializationResult = Specification.Operations.Deserialize(
-          //   current.fieldTypeConverters,
-          //   current.concreteRenderers,
-          //   injectedPrimitives,
-          // )(serializedSpecifications, ["person-transparent"]);
 
           if (deserializationResult.kind == "errors") {
             console.error(
