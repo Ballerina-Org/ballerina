@@ -136,6 +136,18 @@ export const DispatcherFormsApp = (props: {}) => {
     >().Default.create(),
   );
 
+    const [assistantConfigState, setAssistantConfigState] = useState(
+        DispatchFormRunnerState<
+            DispatchPassthroughFormInjectedTypes,
+            DispatchPassthroughFormFlags,
+            DispatchPassthroughFormCustomPresentationContext,
+            DispatchPassthroughFormExtraContext
+        >().Default.passthrough(),
+    );
+
+  const [assistantEntity, setAssistantEntity] = useState<
+    Sum<ValueOrErrors<PredicateValue, string>, "not initialized">
+  >(Sum.Default.right("not initialized"));
   const [personEntity, setPersonEntity] = useState<
     Sum<ValueOrErrors<PredicateValue, string>, "not initialized">
   >(Sum.Default.right("not initialized"));
@@ -230,11 +242,11 @@ export const DispatcherFormsApp = (props: {}) => {
     }
   };
 
-  const onPersonEntityChange: DispatchOnChange<
+  const onAssistantEntityChange: DispatchOnChange<
     PredicateValue,
     DispatchPassthroughFormFlags
   > = (updater, delta) => {
-    setPersonEntity((prev) => {
+      setAssistantEntity((prev) => {
       if (prev.kind == "r" || prev.value.kind == "errors") {
         return prev;
       }
@@ -257,7 +269,7 @@ export const DispatcherFormsApp = (props: {}) => {
     ) {
       const toApiRawParser =
         specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
-          "person-transparent",
+          "assistant-transparent",
         )!.parseValueToApi;
       const dispatchDeltaTransfer = DispatchDeltaTransfer.Default.FromDelta(
         toApiRawParser as any, //TODO - fix type issue if worth it
@@ -300,48 +312,52 @@ export const DispatcherFormsApp = (props: {}) => {
   //   }
   // };
 
-  // useEffect(() => {
-  //   DispatchPersonFromConfigApis.entityApis
-  //     .get("person")("")
-  //     .then((raw) => {
-  //       if (
-  //         specificationDeserializer.deserializedSpecification.sync.kind ==
-  //           "loaded" &&
-  //         specificationDeserializer.deserializedSpecification.sync.value.kind ==
-  //           "value"
-  //       ) {
-  //         const parsed =
-  //           specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
-  //             .get("person-transparent")!
-  //             .parseEntityFromApi(raw);
-  //         if (parsed.kind == "errors") {
-  //           console.error("parsed entity errors", parsed.errors);
-  //         } else {
-  //           setPersonEntity(Sum.Default.left(parsed));
-  //         }
-  //       }
-  //     });
-  //   DispatchPersonFromConfigApis.entityApis
-  //     .get("person-config")("")
-  //     .then((raw) => {
-  //       if (
-  //         specificationDeserializer.deserializedSpecification.sync.kind ==
-  //           "loaded" &&
-  //         specificationDeserializer.deserializedSpecification.sync.value.kind ==
-  //           "value"
-  //       ) {
-  //         const parsed =
-  //           specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
-  //             .get("person-config")!
-  //             .parseEntityFromApi(raw);
-  //         if (parsed.kind == "errors") {
-  //           console.error("parsed person config errors", parsed.errors);
-  //         } else {
-  //           setConfig(Sum.Default.left(parsed));
-  //         }
-  //       }
-  //     });
-  // }, [specificationDeserializer.deserializedSpecification.sync.kind]);
+  useEffect(() => {
+    DispatchPersonFromConfigApis.entityApis
+      .get("assistant")("")
+      .then((raw) => {
+          console.log('test ' + JSON.stringify(raw, null, 2))
+          console.log('test ' + JSON.stringify(specificationDeserializer, null, 2))
+        if (
+          specificationDeserializer.deserializedSpecification.sync.kind ==
+            "loaded" &&
+          specificationDeserializer.deserializedSpecification.sync.value.kind ==
+            "value"
+        ) {
+          const parsed =
+            specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
+              .get("assistant-transparent")!
+              .parseEntityFromApi(raw);
+
+            console.log(JSON.stringify(parsed, null, 2));
+          if (parsed.kind == "errors") {
+            console.error("parsed entity errors", parsed.errors);
+          } else {
+            setAssistantEntity(Sum.Default.left(parsed));
+          }
+        }
+      });
+    // DispatchPersonFromConfigApis.entityApis
+    //   .get("assistant-config")("")
+    //   .then((raw) => {
+    //     if (
+    //       specificationDeserializer.deserializedSpecification.sync.kind ==
+    //         "loaded" &&
+    //       specificationDeserializer.deserializedSpecification.sync.value.kind ==
+    //         "value"
+    //     ) {
+    //       const parsed =
+    //         specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
+    //           .get("assistant-config")!
+    //           .parseEntityFromApi(raw);
+    //       if (parsed.kind == "errors") {
+    //         console.error("parsed person config errors", parsed.errors);
+    //       } else {
+    //         setConfig(Sum.Default.left(parsed));
+    //       }
+    //     }
+    //   });
+  }, [specificationDeserializer.deserializedSpecification.sync.kind]);
 
   // useEffect(() => {
   //   DispatchPersonFromConfigApis.entityApis
@@ -357,12 +373,12 @@ export const DispatcherFormsApp = (props: {}) => {
   //
   //               const parsed =
   //                   specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
-  //                       .get("person-transparent")!
+  //                       .get("assistant-transparent")!
   //                       .parseEntityFromApi(raw);
   //               if (parsed.kind == "errors") {
   //                   console.error("parsed entity errors", parsed.errors);
   //               } else {
-  //                   setPersonEntity(Sum.Default.left(parsed));
+  //                   setAssistantEntity(Sum.Default.left(parsed));
   //               }
   //           }
   //       });
@@ -405,7 +421,6 @@ export const DispatcherFormsApp = (props: {}) => {
   }
 
   // console.debug("personEntity", JSON.stringify(personEntity, null, 2));
-  console.log(JSON.stringify(specificationDeserializer, null, 2))
   return (
     <div className="App">
       <h1>Ballerina 🩰</h1>
@@ -448,124 +463,84 @@ export const DispatcherFormsApp = (props: {}) => {
                 />
                 <h3> Dispatcher Passthrough form</h3>
                 
-                {/*<h4>Config</h4>*/}
-                {/*<div style={{ border: "2px dashed lightblue" }}>*/}
-                {/*  <InstantiedPersonDispatchFormRunnerTemplate*/}
-                {/*    context={{*/}
-                {/*      ...specificationDeserializer,*/}
-                {/*      ...personConfigState,*/}
-                {/*      launcherRef: {*/}
-                {/*        name: "person-config",*/}
-                {/*        kind: "passthrough",*/}
-                {/*        entity: config,*/}
-                {/*        config: Sum.Default.left(*/}
-                {/*          ValueOrErrors.Default.return(*/}
-                {/*            PredicateValue.Default.record(OrderedMap()),*/}
-                {/*          ),*/}
-                {/*        ),*/}
-                {/*        onEntityChange: onPersonConfigChange,*/}
-                {/*        apiSources: {*/}
-                {/*          infiniteStreamSources:*/}
-                {/*            DispatchPersonFromConfigApis.streamApis,*/}
-                {/*          enumOptionsSources:*/}
-                {/*            DispatchPersonFromConfigApis.enumApis,*/}
-                {/*          tableApiSources:*/}
-                {/*            DispatchPersonFromConfigApis.tableApiSources,*/}
-                {/*          lookupSources:*/}
-                {/*            DispatchPersonFromConfigApis.lookupSources,*/}
-                {/*        },*/}
-                {/*      },*/}
-                {/*      remoteEntityVersionIdentifier:*/}
-                {/*        remoteConfigEntityVersionIdentifier,*/}
-                {/*      showFormParsingErrors: ShowFormsParsingErrors,*/}
-                {/*      extraContext: {*/}
-                {/*        flags: Set(["BC", "X"]),*/}
-                {/*      },*/}
-                {/*      globallyDisabled: false,*/}
-                {/*      globallyReadOnly: false,*/}
-                {/*    }}*/}
-                {/*    setState={setPersonConfigState}*/}
-                {/*    view={unit}*/}
-                {/*    foreignMutations={unit}*/}
-                {/*  />*/}
-                {/*</div>*/}
-                {/*<h3>Person</h3>*/}
-                {/*/!* {entityPath && entityPath.kind == "value" && (*/}
-                {/*  <pre*/}
-                {/*    style={{*/}
-                {/*      display: "inline-block",*/}
-                {/*      verticalAlign: "top",*/}
-                {/*      textAlign: "left",*/}
-                {/*    }}*/}
-                {/*  >*/}
-                {/*    {JSON.stringify(entityPath.value, null, 2)}*/}
-                {/*  </pre>*/}
-                {/*)} *!/*/}
-                {/*{entityPath && entityPath.kind == "errors" && (*/}
-                {/*  <pre>*/}
-                {/*    DeltaErrors: {JSON.stringify(entityPath.errors, null, 2)}*/}
-                {/*  </pre>*/}
-                {/*)}*/}
-                {/*<InstantiedPersonDispatchFormRunnerTemplate*/}
-                {/*  context={{*/}
-                {/*    ...specificationDeserializer,*/}
-                {/*    ...personPassthroughFormState,*/}
-                {/*    launcherRef: {*/}
-                {/*      name: "person-transparent",*/}
-                {/*      kind: "passthrough",*/}
-                {/*      entity: personEntity,*/}
-                {/*      config,*/}
-                {/*      onEntityChange: onPersonEntityChange,*/}
-                {/*      apiSources: {*/}
-                {/*        infiniteStreamSources:*/}
-                {/*          DispatchPersonFromConfigApis.streamApis,*/}
-                {/*        enumOptionsSources:*/}
-                {/*          DispatchPersonFromConfigApis.enumApis,*/}
-                {/*        tableApiSources:*/}
-                {/*          DispatchPersonFromConfigApis.tableApiSources,*/}
-                {/*        lookupSources:*/}
-                {/*          DispatchPersonFromConfigApis.lookupSources,*/}
-                {/*      },*/}
-                {/*    },*/}
-                {/*    remoteEntityVersionIdentifier,*/}
-                {/*    showFormParsingErrors: ShowFormsParsingErrors,*/}
-                {/*    extraContext: {*/}
-                {/*      flags: Set(["BC", "X"]),*/}
-                {/*    },*/}
-                {/*    globallyDisabled: false,*/}
-                {/*    globallyReadOnly: false,*/}
-                {/*  }}*/}
-                {/*  setState={setPersonPassthroughFormState}*/}
-                {/*  view={unit}*/}
-                {/*  foreignMutations={unit}*/}
-                {/*/>*/}
-
-                <h3>Create Person</h3>
+                <h4>Config</h4>
+                <div style={{ border: "2px dashed lightblue" }}>
+                  <InstantiedPersonDispatchFormRunnerTemplate
+                    context={{
+                      ...specificationDeserializer,
+                      ...assistantConfigState,
+                      launcherRef: {
+                        name: "assistant-transparent",
+                        kind: "passthrough",
+                        entity: assistantEntity,
+                        config: Sum.Default.left(
+                          ValueOrErrors.Default.return(
+                            PredicateValue.Default.record(OrderedMap()),
+                          ),
+                        ),
+                        onEntityChange: onAssistantEntityChange,
+                        apiSources: {
+                          infiniteStreamSources:
+                            DispatchPersonFromConfigApis.streamApis,
+                          enumOptionsSources:
+                            DispatchPersonFromConfigApis.enumApis,
+                          tableApiSources:
+                            DispatchPersonFromConfigApis.tableApiSources,
+                          lookupSources:
+                            DispatchPersonFromConfigApis.lookupSources,
+                        },
+                      },
+                      remoteEntityVersionIdentifier:
+                        remoteConfigEntityVersionIdentifier,
+                      showFormParsingErrors: ShowFormsParsingErrors,
+                      extraContext: {
+                        flags: Set(["BC", "X"]),
+                      },
+                      globallyDisabled: false,
+                      globallyReadOnly: false,
+                    }}
+                    setState={setAssistantConfigState}
+                    view={unit}
+                    foreignMutations={unit}
+                  />
+                </div>
+                <h3>Assistant</h3>
+                {/* {entityPath && entityPath.kind == "value" && (
+                  <pre
+                    style={{
+                      display: "inline-block",
+                      verticalAlign: "top",
+                      textAlign: "left",
+                    }}
+                  >
+                    {JSON.stringify(entityPath.value, null, 2)}
+                  </pre>
+                )} */}
+                {entityPath && entityPath.kind == "errors" && (
+                  <pre>
+                    DeltaErrors: {JSON.stringify(entityPath.errors, null, 2)}
+                  </pre>
+                )}
                 <InstantiedPersonDispatchFormRunnerTemplate
                   context={{
                     ...specificationDeserializer,
-                    ...personCreateState,
+                    ...assistantConfigState,
                     launcherRef: {
-                      name: "create-assistant",
-                      kind: "create",
+                      name: "assistant-transparent",
+                      kind: "passthrough",
+                      entity: assistantEntity,
+                      config,
+                      onEntityChange: onAssistantEntityChange,
                       apiSources: {
                         infiniteStreamSources:
                           DispatchPersonFromConfigApis.streamApis,
                         enumOptionsSources:
                           DispatchPersonFromConfigApis.enumApis,
-                        entityApis: DispatchPersonFromConfigApis.entityApis,
                         tableApiSources:
                           DispatchPersonFromConfigApis.tableApiSources,
                         lookupSources:
                           DispatchPersonFromConfigApis.lookupSources,
                       },
-                      config: {
-                        source: "api",
-                        getGlobalConfig: () =>
-                          DispatchPersonFromConfigApis.entityApis.get(
-                            "assistant-config",
-                          )(""),
-                      }
                     },
                     remoteEntityVersionIdentifier,
                     showFormParsingErrors: ShowFormsParsingErrors,
@@ -575,36 +550,76 @@ export const DispatcherFormsApp = (props: {}) => {
                     globallyDisabled: false,
                     globallyReadOnly: false,
                   }}
-                  setState={setPersonCreateState}
+                  setState={setAssistantConfigState}
                   view={unit}
                   foreignMutations={unit}
                 />
-                <button
-                  onClick={() => {
-                    setPersonCreateState((_) =>
-                      _.innerFormState.kind == "create"
-                        ? {
-                            ..._,
-                            ...DispatchFormRunnerState<
-                              DispatchPassthroughFormInjectedTypes,
-                              DispatchPassthroughFormFlags,
-                              DispatchPassthroughFormCustomPresentationContext,
-                              DispatchPassthroughFormExtraContext
-                            >().Updaters.Template.create(
-                              DispatchCreateFormLauncherState<
-                                DispatchPassthroughFormInjectedTypes,
-                                DispatchPassthroughFormFlags,
-                                DispatchPassthroughFormCustomPresentationContext,
-                                DispatchPassthroughFormExtraContext
-                              >().Updaters.Template.submit(),
-                            )(_),
-                          }
-                        : _,
-                    );
-                  }}
-                >
-                  Create Person
-                </button>
+
+                {/*<h3>Create Person</h3>*/}
+                {/*<InstantiedPersonDispatchFormRunnerTemplate*/}
+                {/*  context={{*/}
+                {/*    ...specificationDeserializer,*/}
+                {/*    ...personCreateState,*/}
+                {/*    launcherRef: {*/}
+                {/*      name: "create-assistant",*/}
+                {/*      kind: "create",*/}
+                {/*      apiSources: {*/}
+                {/*        infiniteStreamSources:*/}
+                {/*          DispatchPersonFromConfigApis.streamApis,*/}
+                {/*        enumOptionsSources:*/}
+                {/*          DispatchPersonFromConfigApis.enumApis,*/}
+                {/*        entityApis: DispatchPersonFromConfigApis.entityApis,*/}
+                {/*        tableApiSources:*/}
+                {/*          DispatchPersonFromConfigApis.tableApiSources,*/}
+                {/*        lookupSources:*/}
+                {/*          DispatchPersonFromConfigApis.lookupSources,*/}
+                {/*      },*/}
+                {/*      config: {*/}
+                {/*        source: "api",*/}
+                {/*        getGlobalConfig: () =>*/}
+                {/*          DispatchPersonFromConfigApis.entityApis.get(*/}
+                {/*            "assistant-config",*/}
+                {/*          )(""),*/}
+                {/*      }*/}
+                {/*    },*/}
+                {/*    remoteEntityVersionIdentifier,*/}
+                {/*    showFormParsingErrors: ShowFormsParsingErrors,*/}
+                {/*    extraContext: {*/}
+                {/*      flags: Set(["BC", "X"]),*/}
+                {/*    },*/}
+                {/*    globallyDisabled: false,*/}
+                {/*    globallyReadOnly: false,*/}
+                {/*  }}*/}
+                {/*  setState={setPersonCreateState}*/}
+                {/*  view={unit}*/}
+                {/*  foreignMutations={unit}*/}
+                {/*/>*/}
+                {/*<button*/}
+                {/*  onClick={() => {*/}
+                {/*    setPersonCreateState((_) =>*/}
+                {/*      _.innerFormState.kind == "create"*/}
+                {/*        ? {*/}
+                {/*            ..._,*/}
+                {/*            ...DispatchFormRunnerState<*/}
+                {/*              DispatchPassthroughFormInjectedTypes,*/}
+                {/*              DispatchPassthroughFormFlags,*/}
+                {/*              DispatchPassthroughFormCustomPresentationContext,*/}
+                {/*              DispatchPassthroughFormExtraContext*/}
+                {/*            >().Updaters.Template.create(*/}
+                {/*              DispatchCreateFormLauncherState<*/}
+                {/*                DispatchPassthroughFormInjectedTypes,*/}
+                {/*                DispatchPassthroughFormFlags,*/}
+                {/*                DispatchPassthroughFormCustomPresentationContext,*/}
+                {/*                DispatchPassthroughFormExtraContext*/}
+                {/*              >().Updaters.Template.submit(),*/}
+                {/*            )(_),*/}
+                {/*          }*/}
+                {/*        : _,*/}
+                {/*    );*/}
+                {/*  }}*/}
+                {/*>*/}
+                {/*  Create Person*/}
+                {/*</button>*/}
               </td>
             </tr>
           </tbody>

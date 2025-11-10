@@ -478,6 +478,62 @@ const getChildren: DispatchTableApiSource = {
       })),
 };
 
+const getEmployments: DispatchOneSource = {
+    get: (id: Guid) => {
+        return PromiseRepo.Default.mock(
+            () => ({
+                Id: v4(),
+                Started: faker.date.birthdate(),
+                EmploymentID: faker.number.int(),
+                EmploymentType: {
+                    Value: {
+                        Value: employments[Math.round(Math.random() * 10) % 3],
+                    },
+                    IsSome: true
+                }
+            }),
+            undefined,
+            undefined,
+            1,
+        );
+    },
+    getManyUnlinked:
+        (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+        (id: Guid) =>
+        (streamParams: Map<string, string>) =>
+        ([streamPosition]: [ValueStreamPosition]) => {
+            return PromiseRepo.Default.mock(() => ({
+                Values: Range(1, 5)
+                    .map((_) => ({
+                        Id: v4(),
+                        Started: faker.date.birthdate(),
+                        EmploymentID: faker.number.int(),
+                        EmploymentType: {
+                            Value: {
+                                Value: employments[Math.round(Math.random() * 10) % 3],
+                            },
+                            IsSome: true
+                        }
+                    }))
+                    .reduce((acc, curr) => {
+                        acc[curr.EmploymentID] = curr;
+                        return acc;
+                    }, {} as any),
+                HasMore: false,
+                From: 1,
+                To: 5,
+            })).then((res) => ({
+                hasMoreValues: res.HasMore,
+                to: res.To,
+                from: res.From,
+                data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
+                    res.Values,
+                    fromApiRaw,
+                ),
+            }));
+        },
+};
+
 const getFriends: DispatchOneSource = {
   get: (id: Guid) => {
     return PromiseRepo.Default.mock(
@@ -624,7 +680,15 @@ const lazyReadonlyOne: DispatchOneSource = {
 };
 
 const lookupSources: DispatchLookupSources = (typeName: string) =>
-  typeName == "User"
+  typeName == "Assistant"
+    ? ValueOrErrors.Default.return({
+          one: (apiName: string) =>
+              apiName == "CurrentEmploymentApi"
+                  ? ValueOrErrors.Default.return(getEmployments)
+                  : ValueOrErrors.Default.throwOne(
+                      `can't find api ${apiName} when getting lookup api sources`)
+      })
+  : typeName == "User"
     ? ValueOrErrors.Default.return({
         one: (apiName: string) =>
           apiName == "BestFriendApi"
@@ -749,19 +813,16 @@ const entityApis: EntityApis = {
           return (id: Guid) => {
               console.log(`get assistant ${id}`)
               return Promise.resolve({
+                  Id: faker.string.uuid(),
                   Name: "Assistant 2",
-                  FirstHire: "2000-01-02",
                   IsProtected: faker.datatype.boolean(),
-                  EmploymentID: 10007002,
-                  EmploymentType: {
-                      Value: {
-                          Value: employments[Math.round(Math.random() * 10) % 3],
-                      },
-                      IsSome: true
-                  },
                   Address: {
                       Item1: faker.location.city(),
                       Item2: faker.location.street()
+                  },
+                  CurrentEmployment: {
+                      isRight: false,
+                      right: {},
                   }
               });
           }
@@ -1351,20 +1412,27 @@ const entityApis: EntityApis = {
     apiName == "assistant"
     ? (_) => PromiseRepo.Default.mock(() => {
         return Promise.resolve({
+            Id: faker.string.uuid(),
             Name: "Assistant 1",
-            FirstHire: "2000-01-02",
             IsProtected: faker.datatype.boolean(),
-            EmploymentID: 10007001,
-            EmploymentType: {
-                Value: {
-                    Value: employments[Math.round(Math.random() * 10) % 3],
-                },
-                IsSome: true
-            },
             Address: {
                 Item1: faker.location.city(),
                 Item2: faker.location.street()
             },
+            CurrentEmployment: {
+                isRight: true,
+                right: {
+                    Id: v4(),
+                    Started: faker.date.birthdate(),
+                    EmploymentID: faker.number.int(),
+                    EmploymentType: {
+                        Value: {
+                            Value: employments[Math.round(Math.random() * 10) % 3],
+                        },
+                        IsSome: true
+                    }
+                },
+            }
         })
       })
     : apiName == "person"

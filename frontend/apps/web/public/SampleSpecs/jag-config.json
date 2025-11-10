@@ -6,6 +6,11 @@
         "IsAdmin": "boolean"
       }
     },
+    "Identifiable": {
+      "fields": {
+        "Id": "string"
+      }
+    },
     "EmploymentsEnum": {
       "fun": "Union",
       "args": [
@@ -23,29 +28,52 @@
         }
       ]
     },
-    "EmploymentRef": {
+    "EmploymentTypeRef": {
       "fields": {
         "Value": "EmploymentsEnum"
       }
     },
-    "Assistant": {
+    "Employment": {
+      "extends": ["Identifiable"],
       "fields": {
-        "Name": "string",
-        "FirstHire": "Date",
-        "IsProtected": "boolean",
+        "Started": "Date",
         "EmploymentID": "number",
         "EmploymentType": {
           "fun": "SingleSelection",
-          "args": ["EmploymentRef"]
-        },
+          "args": ["EmploymentTypeRef"]
+        }
+      }
+    },
+    "AssistantConfig": {
+      "fields": {}
+    },
+    "Assistant": {
+      "extends": ["Identifiable"],
+      "fields": {
+        "Name": "string",
+        "IsProtected": "boolean",
         "Address": {
           "fun": "Tuple",
           "args": ["string", "string"]
+        },
+        "CurrentEmployment": {
+          "fun": "One",
+          "args": ["Employment"]
         }
       }
     }
   },
   "apis": {
+    "lookups": {
+      "Assistant": {
+        "one": {
+          "CurrentEmploymentApi": {
+            "type": "Employment",
+            "methods": ["get", "getManyUnlinked"]
+          }
+        }
+      }
+    },
     "entities": {
       "assistant": {
         "type": "Assistant",
@@ -57,7 +85,7 @@
       }
     },
     "enumOptions": {
-      "employmentTypes": "EmploymentRef"
+      "employmentTypes": "EmploymentTypeRef"
     }
   },
   "forms": {
@@ -69,22 +97,9 @@
           "label": "First Name",
           "renderer": "defaultString"
         },
-        "FirstHire": {
-          "label": "First hired at",
-          "renderer": "defaultDate"
-        },
         "IsProtected": {
           "label": "Protected Identity",
           "renderer": "defaultBoolean"
-        },
-        "EmploymentType": {
-          "label": "Employment type",
-          "renderer": "defaultEnum",
-          "options": "employmentTypes"
-        },
-        "EmploymentID": {
-          "label": "Employment ID",
-          "renderer": "defaultNumber"
         },
         "Address": {
           "label": "Address",
@@ -99,6 +114,60 @@
               "renderer": "defaultString"
             }
           ]
+        },
+        "CurrentEmployment": {
+          "label": "Current employment",
+          "renderer": "currentEmployment",
+          "detailsRenderer": {
+            "renderer": {
+              "type": "Employment",
+              "fields": {
+                "EmploymentID": {
+                  "renderer": "defaultNumber"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["EmploymentID"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "previewRenderer": {
+            "renderer": {
+              "type": "Employment",
+              "fields": {
+                "Started": {
+                  "renderer": "defaultDate"
+                },
+                "EmploymentID": {
+                  "renderer": "defaultNumber"
+                },
+                "EmploymentType": {
+                  "renderer": "defaultEnum",
+                  "options": "employmentTypes"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Started", "EmploymentID", "EmploymentType"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "api": ["Assistant", "CurrentEmploymentApi"]
         }
       },
       "tabs": {
@@ -107,12 +176,30 @@
             "groups": {
               "main": [
                 "Name",
-                "FirstHire",
-                "EmploymentType",
                 "IsProtected",
-                "EmploymentID",
-                "Address"
+                "Address",
+                "CurrentEmployment"
               ]
+            }
+          }
+        }
+      }
+    },
+    "assistantConfig": {
+      "type": "Assistant",
+      "fields": {
+        "Name": {
+          "label": "First name",
+          "renderer": "defaultString"
+        }
+      },
+      "tabs": {
+        "main": {
+          "columns": {
+            "main": {
+              "groups": {
+                "main": ["Name"]
+              }
             }
           }
         }
@@ -125,6 +212,11 @@
       "form": "assistant",
       "api": "assistant",
       "configApi": "globalConfiguration"
+    },
+    "assistant-transparent": {
+      "kind": "passthrough",
+      "form": "assistantConfig",
+      "configType": "AssistantConfig"
     }
   }
 }
