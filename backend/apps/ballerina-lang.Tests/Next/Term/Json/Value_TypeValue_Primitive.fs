@@ -34,7 +34,7 @@ let ``Dsl:Term:Value.PrimitiveValue json round-trip`` () =
       PrimitiveValue.Guid(System.Guid("00000000-0000-0000-0000-000000000001"))
       """{"discriminator": "string", "value":"hello"}""", PrimitiveValue.String "hello"
       """{"discriminator": "date", "value":"2023-10-01"}""", PrimitiveValue.Date(System.DateOnly(2023, 10, 1))
-      """{"discriminator": "datetime", "value":"2023-10-01T12:00:00Z"}""",
+      """{"discriminator": "datetime", "value":"2023-10-01T12:00:00.0000000Z"}""",
       PrimitiveValue.DateTime(System.DateTime(2023, 10, 1, 12, 0, 0, DateTimeKind.Utc))
       """{"discriminator": "unit"}""", PrimitiveValue.Unit ]
 

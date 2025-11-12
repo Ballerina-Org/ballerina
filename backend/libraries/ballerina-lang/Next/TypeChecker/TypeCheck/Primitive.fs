@@ -23,10 +23,10 @@ module Primitive =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member internal TypeCheckPrimitive
-      (_typeCheckExpr: TypeChecker, loc0: Location)
-      : TypeChecker<PrimitiveValue> =
+      (_typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      : TypeChecker<PrimitiveValue, 'valueExt> =
       fun _context_t (p: PrimitiveValue) ->
         state {
           let! ctx = state.GetContext()

@@ -14,8 +14,11 @@ module If =
 
   let private discriminator = "if"
 
-  type Expr<'T, 'Id when 'Id: comparison> with
-    static member FromJsonIf (fromRootJson: ExprParser<'T, 'Id>) (value: JsonValue) : ExprParserReader<'T, 'Id> =
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
+    static member FromJsonIf
+      (fromRootJson: ExprParser<'T, 'Id, 'valueExt>)
+      (value: JsonValue)
+      : ExprParserReader<'T, 'Id, 'valueExt> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun ifJson ->
         reader {
           let! cond, thenBranch, elseBranch = ifJson |> JsonValue.AsTriple |> reader.OfSum
@@ -26,10 +29,10 @@ module If =
         })
 
     static member ToJsonIf
-      (rootToJson: ExprEncoder<'T, 'Id>)
-      (cond: Expr<'T, 'Id>)
-      (thenBranch: Expr<'T, 'Id>)
-      (elseBranch: Expr<'T, 'Id>)
+      (rootToJson: ExprEncoder<'T, 'Id, 'valueExt>)
+      (cond: Expr<'T, 'Id, 'valueExt>)
+      (thenBranch: Expr<'T, 'Id, 'valueExt>)
+      (elseBranch: Expr<'T, 'Id, 'valueExt>)
       : ExprEncoderReader<'T, 'Id> =
       reader {
         let! condJson = cond |> rootToJson

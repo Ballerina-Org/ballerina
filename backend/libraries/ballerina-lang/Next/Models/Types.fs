@@ -27,6 +27,12 @@ module Model =
         Type = type_
         Name = name }
 
+    static member Create(name: string) : ResolvedIdentifier =
+      { Assembly = ""
+        Module = ""
+        Type = None
+        Name = name }
+
     override id.ToString() =
       let elements =
         [

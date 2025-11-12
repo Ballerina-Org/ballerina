@@ -39,6 +39,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\libraries\ballerina-cat\ballerina-cat.fsproj" />
+    <ProjectReference Include="..\..\libraries\ballerina-lang-stdlib-json\ballerina-lang-stdlib-json.fsproj" />
     <ProjectReference
       Include="..\..\libraries\ballerina-lang\Next\Models\ballerina-lang-models.fsproj" />
     <ProjectReference Include="..\..\libraries\ballerina-lang\Next\Json\ballerina-lang-json.fsproj" />

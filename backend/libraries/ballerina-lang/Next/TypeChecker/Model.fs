@@ -59,10 +59,10 @@ module Model =
 
   type TypeCheckerResult<'r> = State<'r, TypeCheckContext, TypeCheckState, Errors>
 
-  type TypeChecker<'res> =
-    Option<TypeValue> -> 'res -> TypeCheckerResult<Expr<TypeValue, ResolvedIdentifier> * TypeValue * Kind>
+  type TypeChecker<'res, 'valueExt> =
+    Option<TypeValue> -> 'res -> TypeCheckerResult<Expr<TypeValue, ResolvedIdentifier, 'valueExt> * TypeValue * Kind>
 
-  type TypeChecker = TypeChecker<Expr<TypeExpr, Identifier>>
+  type ExprTypeChecker<'valueExt> = TypeChecker<Expr<TypeExpr, Identifier, 'valueExt>, 'valueExt>
 
   type TypeInstantiateContext =
     { Bindings: TypeExprEvalState

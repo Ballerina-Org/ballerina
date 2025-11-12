@@ -38,10 +38,10 @@ module TypeApply =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member internal TypeCheckTypeApply
-      (typeCheckExpr: TypeChecker, loc0: Location)
-      : TypeChecker<ExprTypeApply<TypeExpr, Identifier>> =
+      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      : TypeChecker<ExprTypeApply<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Func = fExpr; TypeArg = tExpr }) ->
         let (!) = typeCheckExpr context_t
 

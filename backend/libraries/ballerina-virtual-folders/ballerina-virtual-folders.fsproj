@@ -17,6 +17,7 @@
         <Compile Include="Interactions.fs" />
         <Compile Include="Validator.fs" />
         <Compile Include="Updaters.fs" />
+        <Compile Include="Forms.fs" />
         <Compile Include="Json.fs" />
     </ItemGroup>
     <ItemGroup>

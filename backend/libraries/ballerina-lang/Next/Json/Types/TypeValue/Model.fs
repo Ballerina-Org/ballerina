@@ -24,6 +24,7 @@ module TypeValue =
           TypeValue.FromJsonSum TypeValue.FromJson json
           TypeValue.FromJsonSet TypeValue.FromJson json
           TypeValue.FromJsonMap TypeValue.FromJson json
+          TypeValue.FromJsonImported TypeValue.FromJson json
           $"Unknown TypeValue JSON: {json.ToFSharpString.ReasonablyClamped}"
           |> Errors.Singleton
           |> Errors.WithPriority ErrorPriority.Medium
@@ -46,5 +47,4 @@ module TypeValue =
       | TypeValue.Set { value = itemType } -> TypeValue.ToJsonSet TypeValue.ToJson itemType
       | TypeValue.Map { value = keyType, valueType } -> TypeValue.ToJsonMap TypeValue.ToJson (keyType, valueType)
       | TypeValue.Apply { value = var, arg } -> TypeValue.ToJsonApply TypeValue.ToJson (var, arg)
-      | TypeValue.Imported _ ->
-        failwith "this should fallback to TypeExpr.ToJson once the type value carries its origin"
+      | TypeValue.Imported i -> TypeValue.ToJsonImported TypeValue.ToJson i

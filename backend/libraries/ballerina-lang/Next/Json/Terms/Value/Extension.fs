@@ -33,7 +33,7 @@ module Extensions =
       (listToJson: ValueEncoder<'T, 'valueExtension>)
       (optionToJson: ValueEncoder<'T, 'valueExtension>)
       (value: Value<'T, 'valueExtension>)
-      : ValueEncoderReader<'T> =
+      : ValueEncoderReader<'T, 'valueExtension> =
       reader.Any(
         listToJson value,
         [ optionToJson value

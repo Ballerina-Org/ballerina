@@ -46,6 +46,7 @@
         <Compile Include="Types\TypeValue\Lambda.fs" />
         <Compile Include="Types\TypeValue\Arrow.fs" />
         <Compile Include="Types\TypeValue\Apply.fs" />
+        <Compile Include="Types\TypeValue\Imported.fs" />
         <Compile Include="Types\TypeValue\Model.fs" />
 
         <Compile Include="Terms\Primitive.fs" />

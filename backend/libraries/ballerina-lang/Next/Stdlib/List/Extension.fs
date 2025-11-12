@@ -12,11 +12,6 @@ module Extension =
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.List.Model
-  open Ballerina.DSL.Next.Json
-  open FSharp.Data
-  open Ballerina.StdLib.Json.Reader
-  open Ballerina.StdLib.Json.Patterns
-  open Ballerina.DSL.Next.Json.Keys
 
 
   let ListExtension<'ext>
@@ -62,7 +57,7 @@ module Extension =
         v
       }
 
-    let toValueFromList (v: List<Value<TypeValue, 'ext>>) : Value<TypeValue, 'ext> =
+    let _toValueFromList (v: List<Value<TypeValue, 'ext>>) : Value<TypeValue, 'ext> =
       ListValues.List v |> valueLens.Set |> Ext
 
     let lengthOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
@@ -438,29 +433,6 @@ module Extension =
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
-    let valueParser
-      (rootValueParser: ValueParser<TypeValue, ResolvedIdentifier, 'ext>)
-      (v: JsonValue)
-      : ValueParserReader<TypeValue, ResolvedIdentifier, 'ext> =
-      Reader.assertDiscriminatorAndContinueWithValue "list" v (fun elementsJson ->
-        reader {
-          let! elements = elementsJson |> JsonValue.AsArray |> reader.OfSum
-
-          let! elements = elements |> Seq.map rootValueParser |> reader.All
-          return toValueFromList elements
-        })
-
-    let valueEncoder
-      (rootValueEncoder: ValueEncoder<TypeValue, 'ext>)
-      (v: Value<TypeValue, 'ext>)
-      : ValueEncoderReader<TypeValue> =
-      reader {
-        let! v = getValueAsList v |> reader.OfSum
-        let! elements = v |> List.map rootValueEncoder |> reader.All
-
-        return elements |> List.toArray |> JsonValue.Array |> Json.discriminator "list"
-      }
-
     { TypeName = listId, listSymbolId
       TypeVars = [ (aVar, aKind) ]
       WrapTypeVars = fun t -> TypeValue.CreateLambda(TypeParameter.Create(aVar.Name, aKind), t)
@@ -479,6 +451,4 @@ module Extension =
           match v with
           | ListValues.List(v :: vs) ->
             Value<TypeValue, 'ext>.Tuple([ v; vs |> ListValues.List |> valueLens.Set |> Ext ])
-          | _ -> Value<TypeValue, 'ext>.Primitive PrimitiveValue.Unit
-      Parser = valueParser
-      Encoder = valueEncoder }
+          | _ -> Value<TypeValue, 'ext>.Primitive PrimitiveValue.Unit }

@@ -19,9 +19,6 @@ let symbol name : TypeSymbol =
 let ``Delta.Union: Updates matching union case correctly`` () =
   let caseName = "some"
   let caseSymbol = symbol caseName
-  let caseType = TypeValue.CreateInt32()
-
-  let unionType = TypeValue.CreateUnion(OrderedMap.ofList [ caseSymbol, caseType ])
 
   let unionValue =
     Value<Unit>
@@ -30,7 +27,7 @@ let ``Delta.Union: Updates matching union case correctly`` () =
   let delta =
     Delta<Unit>.Union(caseName, Delta.Replace(PrimitiveValue.Int32 99 |> Value<Unit>.Primitive))
 
-  match Delta.ToUpdater unionType delta with
+  match Delta.ToUpdater delta with
   | Sum.Left updater ->
     match updater unionValue with
     | Sum.Left(Value.UnionCase(updatedSymbol, updatedValue)) ->
@@ -43,11 +40,6 @@ let ``Delta.Union: Updates matching union case correctly`` () =
 [<Test>]
 let ``Delta.Union: Returns original value when case does not match`` () =
   let actualSymbol = symbol "actual"
-  let unmatchedSymbol = symbol "unmatched"
-  let caseType = TypeValue.CreateInt32()
-
-  let unionType =
-    TypeValue.CreateUnion(OrderedMap.ofList [ unmatchedSymbol, caseType ])
 
   let unionValue =
     Value<Unit>
@@ -56,20 +48,9 @@ let ``Delta.Union: Returns original value when case does not match`` () =
   let delta =
     Delta.Union("unmatched", Delta.Replace(PrimitiveValue.Int32 999 |> Value<Unit>.Primitive))
 
-  match Delta.ToUpdater unionType delta with
+  match Delta.ToUpdater delta with
   | Sum.Left updater ->
     match updater unionValue with
     | Sum.Left(v) -> Assert.That(v, Is.EqualTo unionValue)
     | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"
   | Sum.Right err -> Assert.Fail $"Delta.ToUpdater failed: {err}"
-
-[<Test>]
-let ``Delta.Union: Fails when case not found in type`` () =
-  let unionType = TypeValue.CreateUnion OrderedMap.empty
-
-  let delta =
-    Delta.Union("missing", Delta.Replace(PrimitiveValue.Int32 1 |> Value<Unit>.Primitive))
-
-  match Delta.ToUpdater unionType delta with
-  | Sum.Left _ -> Assert.Fail "Expected failure due to missing case in union type"
-  | Sum.Right _ -> Assert.Pass()

@@ -43,7 +43,7 @@ module Record =
     static member ToJsonRecord
       (rootToJson: ValueEncoder<'T, 'valueExtension>)
       (fields: Map<ResolvedIdentifier, Value<'T, 'valueExtension>>)
-      : ValueEncoderReader<'T> =
+      : ValueEncoderReader<'T, 'valueExtension> =
       reader {
         let! fields =
           fields
@@ -73,7 +73,7 @@ module Record =
     static member ToJsonRecordDes
       (_rootToJson: ValueEncoder<'T, 'valueExtension>)
       (k: ResolvedIdentifier)
-      : ValueEncoderReader<'T> =
+      : ValueEncoderReader<'T, 'valueExtension> =
       reader {
         let k = ResolvedIdentifier.ToJson k
         return k |> Json.discriminator discriminator_des

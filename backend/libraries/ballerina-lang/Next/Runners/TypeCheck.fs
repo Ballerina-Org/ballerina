@@ -35,7 +35,7 @@ module TypeCheck =
   open Ballerina.DSL.Next.Types.TypeChecker.TupleCons
   open Ballerina.DSL.Next.Types.TypeChecker.TypeLambda
   open Ballerina.DSL.Next.Types.TypeChecker.TypeLet
-  open Ballerina.DSL.Next.Types.TypeChecker.TypeApply
+  open Ballerina.DSL.Next.Types.TypeChecker.Expr
   open Ballerina.Fun
   open Ballerina.StdLib.OrderPreservingMap
   open Ballerina.Cat.Collections.OrderedMap
@@ -45,7 +45,7 @@ module TypeCheck =
   open Ballerina.Parser
   open Ballerina.DSL.Next.Syntax
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member TypeCheckString (languageContext: LanguageContext<'ValueExt>) (program: string) =
       let initialLocation = Location.Initial "input"
       let actual = tokens |> Parser.Run(program |> Seq.toList, initialLocation)
@@ -53,7 +53,7 @@ module TypeCheck =
       match actual with
       | Right(e, _) -> Right e
       | Left(ParserResult(actual, _)) ->
-        let parsed = Parser.Expr.program |> Parser.Run(actual, initialLocation)
+        let parsed = Parser.Expr.program () |> Parser.Run(actual, initialLocation)
 
         match parsed with
         | Right(e, _) -> Right e

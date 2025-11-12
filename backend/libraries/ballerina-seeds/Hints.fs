@@ -2,6 +2,7 @@
 
 open System
 open Bogus
+open Bogus.Extensions.Poland
 
 module Hints =
   let programmingLanguages =
@@ -36,8 +37,14 @@ module Hints =
       "Black"
       "White" ]
 
+  let removeEnding (suffix: string) (input: string) =
+    if input.EndsWith(suffix) then
+      input.Substring(0, input.Length - suffix.Length)
+    else
+      input
+
   let ``for`` (faker: Faker) (person: Bogus.Person) (source: string) =
-    match source.ToLower() with
+    match source.ToLower() |> removeEnding "ref" |> removeEnding "enum" with
     | "city" -> faker.Address.City()
     | "department" -> faker.Commerce.Department()
     | "product"
@@ -71,4 +78,10 @@ module Hints =
     | "jobarea" -> faker.Name.JobArea()
     | "job" -> faker.Name.JobType()
     | "certifications" -> faker.Name.JobArea() + " " + faker.Name.JobType()
+
+    | "userid" -> person.Pesel.ToString()
+    | "organizationid" -> faker.Company.Nip().ToString()
+    | "projectmanagername" -> person.FullName
+    | "jiragoliveticket" -> faker.Internet.Url()
+    | "timetrackingproject" -> $"{faker.Commerce.Department()}-{faker.Random.AlphaNumeric(4).ToUpper()}"
     | _ -> faker.Lorem.Sentence(Nullable 3, Nullable 5)

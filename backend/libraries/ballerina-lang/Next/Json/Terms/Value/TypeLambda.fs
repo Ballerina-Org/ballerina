@@ -27,8 +27,8 @@ module TypeLambda =
 
     static member ToJsonTypeLambda
       (typeParam: TypeParameter)
-      (body: Expr<'T, ResolvedIdentifier>)
-      : ValueEncoderReader<'T> =
+      (body: Expr<'T, ResolvedIdentifier, 'valueExtension>)
+      : ValueEncoderReader<'T, 'valueExtension> =
       reader {
         let! rootExprEncoder, _ = reader.GetContext()
         let tp = TypeParameter.ToJson typeParam

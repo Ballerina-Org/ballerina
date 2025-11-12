@@ -4,9 +4,16 @@ namespace Ballerina.DSL.Next.StdLib.DateOnly
 module Model =
   open System
 
-  type DateOnlyConstructors<'ext> = | DateOnly_New
+  type DateOnlyConstructors =
+    | DateOnly_New
+    | DateOnly_Now
+    | DateOnly_UTCNow
 
-  type DateOnlyValues<'ext> = DateOnly of DateOnly
+    override self.ToString() : string =
+      match self with
+      | DateOnly_New -> "dateOnly::new"
+      | DateOnly_Now -> "dateOnly::now"
+      | DateOnly_UTCNow -> "dateOnly::utcNow"
 
   type DateOnlyOperations<'ext> =
     | Diff of {| v1: Option<DateOnly> |}

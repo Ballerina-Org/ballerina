@@ -28,5 +28,5 @@ module String =
         String.Concat(self[0].ToString().ToUpper(), self.AsSpan(1))
 
     static member ToFirstUpper(self: String) = self.ToFirstUpper
-    // static member Join (separator:string) (self: string seq) = join separator self
     static member JoinSeq (separator: char) (self: string seq) = join' separator self
+    static member join (separator: string) (self: string seq) = String.Join(separator, self)

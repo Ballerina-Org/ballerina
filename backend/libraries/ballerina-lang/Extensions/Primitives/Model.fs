@@ -15,6 +15,7 @@ module Primitives =
   open Ballerina.DSL.Parser.Patterns
   open Ballerina.DSL.Expr.Types.TypeCheck
   open Ballerina.Collections.NonEmptyList
+  open Ballerina.StdLib.Formats
   open System
 
   type UnaryOperator =
@@ -61,7 +62,7 @@ module Primitives =
       | ConstBool v -> v.ToString()
       | ConstGuid v -> v.ToString()
       | ConstString v -> v.ToString()
-      | ConstDate v -> v.ToString()
+      | ConstDate v -> Iso8601.DateOnly.print v
       | Rest e -> e.ToString()
 
   type ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> =
@@ -181,9 +182,9 @@ module Primitives =
             let! valueJson = fieldsJson |> sum.TryFindField "value"
             let! value = JsonValue.AsString valueJson
 
-            match DateOnly.TryParse value with
-            | true, v -> return ValueExtension.ConstDate v |> ctx.toValue |> Expr.Value
-            | false, _ -> return! sum.Throw(Errors.Singleton $"Error: could not parse {value} as date")
+            match Iso8601.DateOnly.tryParse value with
+            | Some v -> return ValueExtension.ConstDate v |> ctx.toValue |> Expr.Value
+            | None -> return! sum.Throw(Errors.Singleton $"Error: could not parse {value} as date")
           }
           |> sum.MapError(Errors.WithPriority ErrorPriority.High)
       }
@@ -312,8 +313,11 @@ module Primitives =
                "value", JsonValue.String(value.ToString()) |]
       | ConstBool b -> return JsonValue.Boolean b
       | ConstString s -> return JsonValue.String s
-      | ConstDate d ->
-        return JsonValue.Record [| "kind", JsonValue.String "date"; "value", JsonValue.String(d.ToString()) |]
+      | ConstDate date ->
+        return
+          JsonValue.Record
+            [| "kind", JsonValue.String "date"
+               "value", date |> Iso8601.DateOnly.print |> JsonValue.String |]
       | ConstGuid _ -> return! "Error: ConstGuid not implemented" |> Errors.Singleton |> sum.Throw
       | Rest t -> return! toJsonValueTail t
     }

@@ -10,12 +10,11 @@ open Ballerina.DSL.Next.Types.Patterns
 
 [<Test>]
 let ``Delta.Replace: replaces primitive int value`` () =
-  let t = TypeValue.CreateInt32()
   let original = Value<Unit>.Primitive(PrimitiveValue.Int32 10)
   let replacement = Value<Unit>.Primitive(PrimitiveValue.Int32 99)
   let delta = Delta.Replace(replacement)
 
-  match Delta.ToUpdater t delta with
+  match Delta.ToUpdater delta with
   | Sum.Left updater ->
     match updater original with
     | Sum.Left result -> Assert.That(result, Is.EqualTo replacement)
@@ -24,12 +23,11 @@ let ``Delta.Replace: replaces primitive int value`` () =
 
 [<Test>]
 let ``Delta.Replace: replaces string with anything (no validation)`` () =
-  let t = TypeValue.CreateString()
   let original = Value<Unit>.Primitive(PrimitiveValue.String "abc")
   let replacement = Value<Unit>.Primitive(PrimitiveValue.Bool true)
   let delta = Delta.Replace(replacement)
 
-  match Delta.ToUpdater t delta with
+  match Delta.ToUpdater delta with
   | Sum.Left updater ->
     match updater original with
     | Sum.Left result -> Assert.That(result, Is.EqualTo replacement)

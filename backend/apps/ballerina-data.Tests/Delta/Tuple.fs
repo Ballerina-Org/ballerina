@@ -15,9 +15,6 @@ let symbol name : TypeSymbol =
 
 [<Test>]
 let ``Delta.Tuple: Updates correct index in a tuple`` () =
-  let tupleType =
-    [ TypeValue.CreateInt32(); TypeValue.CreateString() ] |> TypeValue.CreateTuple
-
   let tupleValue =
     [ PrimitiveValue.Int32 42 |> Value<Unit>.Primitive
       PrimitiveValue.String "hello" |> Value<Unit>.Primitive ]
@@ -26,7 +23,7 @@ let ``Delta.Tuple: Updates correct index in a tuple`` () =
   let delta =
     Delta.Tuple(0, Delta.Replace(PrimitiveValue.Int32 99 |> Value<Unit>.Primitive))
 
-  match Delta.ToUpdater tupleType delta with
+  match Delta.ToUpdater delta with
   | Sum.Left updater ->
     match updater tupleValue with
     | Sum.Left(Value.Tuple [ updated; second ]) ->
@@ -36,28 +33,14 @@ let ``Delta.Tuple: Updates correct index in a tuple`` () =
   | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"
 
 [<Test>]
-let ``Delta.Tuple: Fails if index out of bounds in type`` () =
-  let tupleType = [ TypeValue.CreateInt32() ] |> TypeValue.CreateTuple
-
-  let delta =
-    Delta.Tuple(5, Delta.Replace(PrimitiveValue.Int32 1 |> Value<Unit>.Primitive))
-
-  match Delta.ToUpdater tupleType delta with
-  | Sum.Left _ -> Assert.Fail "Expected error due to out-of-range index"
-  | Sum.Right _ -> Assert.Pass()
-
-[<Test>]
 let ``Delta.Tuple: Fails if index out of bounds in value`` () =
-  let tupleType =
-    [ TypeValue.CreateInt32(); TypeValue.CreateString() ] |> TypeValue.CreateTuple
-
   let tupleValue =
     [ PrimitiveValue.Int32 1 |> Value<Unit>.Primitive ] |> Value<Unit>.Tuple
 
   let delta =
     Delta.Tuple(1, Delta.Replace(PrimitiveValue.String "changed" |> Value<Unit>.Primitive))
 
-  match Delta.ToUpdater tupleType delta with
+  match Delta.ToUpdater delta with
   | Sum.Left updater ->
     match updater tupleValue with
     | Sum.Right _ -> Assert.Pass()

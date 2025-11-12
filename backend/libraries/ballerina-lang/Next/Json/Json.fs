@@ -13,34 +13,34 @@ open Keys
 // parsing
 type JsonParser<'T> = JsonValue -> Sum<'T, Errors>
 
-type ValueParserReader<'T, 'Id, 'valueExtension when 'Id: comparison> =
-  Reader<Value<'T, 'valueExtension>, JsonParser<Expr<'T, 'Id>> * JsonParser<'T> * JsonParser<'Id>, Errors>
+type ValueParserReader<'T, 'Id, 'valueExt when 'Id: comparison> =
+  Reader<Value<'T, 'valueExt>, JsonParser<Expr<'T, 'Id, 'valueExt>> * JsonParser<'T> * JsonParser<'Id>, Errors>
 
-type ExprParserReader<'T, 'Id when 'Id: comparison> = Reader<Expr<'T, 'Id>, JsonParser<'T> * JsonParser<'Id>, Errors>
+type ExprParserReader<'T, 'Id, 'valueExt when 'Id: comparison> =
+  Reader<Expr<'T, 'Id, 'valueExt>, JsonParser<'T> * JsonParser<'Id>, Errors>
 
-type ValueParser<'T, 'Id, 'valueExtension when 'Id: comparison> =
-  JsonValue -> ValueParserReader<'T, 'Id, 'valueExtension>
+type ValueParser<'T, 'Id, 'valueExt when 'Id: comparison> = JsonValue -> ValueParserReader<'T, 'Id, 'valueExt>
 
-type ExprParser<'T, 'Id when 'Id: comparison> = JsonValue -> ExprParserReader<'T, 'Id>
+type ExprParser<'T, 'Id, 'valueExt when 'Id: comparison> = JsonValue -> ExprParserReader<'T, 'Id, 'valueExt>
 
 type TypeExprParser = JsonParser<TypeExpr>
 
-type ValueParserLayer<'T, 'Id, 'valueExtension when 'Id: comparison> =
-  ValueParser<'T, 'Id, 'valueExtension> -> ValueParser<'T, 'Id, 'valueExtension>
+type ValueParserLayer<'T, 'Id, 'valueExt when 'Id: comparison> =
+  ValueParser<'T, 'Id, 'valueExt> -> ValueParser<'T, 'Id, 'valueExt>
 
 // encoding/serializing
 type JsonEncoder<'T> = 'T -> JsonValue
 type JsonEncoderWithError<'T> = 'T -> Sum<JsonValue, Errors>
 
 type ExprEncoderReader<'T, 'Id> = Reader<JsonValue, JsonEncoder<'T> * JsonEncoder<'Id>, Errors>
-type ExprEncoder<'T, 'Id when 'Id: comparison> = Expr<'T, 'Id> -> ExprEncoderReader<'T, 'Id>
+type ExprEncoder<'T, 'Id, 'valueExt when 'Id: comparison> = Expr<'T, 'Id, 'valueExt> -> ExprEncoderReader<'T, 'Id>
 
-type ValueEncoderReader<'T> =
-  Reader<JsonValue, JsonEncoderWithError<Expr<'T, ResolvedIdentifier>> * JsonEncoder<'T>, Errors>
+type ValueEncoderReader<'T, 'valueExt> =
+  Reader<JsonValue, JsonEncoderWithError<Expr<'T, ResolvedIdentifier, 'valueExt>> * JsonEncoder<'T>, Errors>
 
-type ValueEncoder<'T, 'valueExtension> = Value<'T, 'valueExtension> -> ValueEncoderReader<'T>
+type ValueEncoder<'T, 'valueExt> = Value<'T, 'valueExt> -> ValueEncoderReader<'T, 'valueExt>
 
-type ValueEncoderLayer<'T, 'valueExtension> = ValueEncoder<'T, 'valueExtension> -> ValueEncoder<'T, 'valueExtension>
+type ValueEncoderLayer<'T, 'valueExt> = ValueEncoder<'T, 'valueExt> -> ValueEncoder<'T, 'valueExt>
 
 module Json =
   let discriminator (discriminatorValue: string) (value: JsonValue) =

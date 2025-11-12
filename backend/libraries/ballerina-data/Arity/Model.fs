@@ -1,5 +1,7 @@
 ﻿namespace Ballerina.Data.Arity
 
+open Ballerina.DSL.Expr.Model
+
 module Model =
   open MathNet.Numerics.Distributions
 
@@ -64,3 +66,34 @@ module Model =
       [ 1..100 ]
       |> List.map (fun _ -> Arity.anyFrom (fun () -> Poisson(1.7)) 7)
       |> List.max
+
+  // ∇ bridge
+  type Cardinality =
+    | One
+    | Many
+
+  let rec private traverse (prev: ExprType option) (expr: ExprType) : Cardinality option =
+    match expr, prev with
+    | ExprType.OptionType e, _
+    | ExprType.SetType e, _ -> traverse (Some expr) e
+    | ExprType.LookupType _IsRef, Some p when p.IsSetType -> Some Many
+    | ExprType.LookupType _IsRef, Some p when p.IsOptionType -> Some One
+    | ExprType.OneType _, _ -> Some One
+    | ExprType.ManyType _, _ -> Some Many
+    | _ -> None
+
+  type Cardinality with
+
+    /// <summary>
+    /// V2
+    /// </summary>
+    static member FromArity(arity: LookupArity) =
+      match arity.Min, arity.Max with
+      | _, Some n when n > 1 -> Many
+      | _, None -> Many
+      | _ -> One
+
+    /// <summary>
+    /// V1
+    /// </summary>
+    static member FromExprType(expr: ExprType) = traverse None expr

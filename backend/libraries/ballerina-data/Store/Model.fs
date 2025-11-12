@@ -19,13 +19,13 @@ module Model =
 
   type TenantId = TenantId of Guid
 
-  type Seeder = Schema<TypeValue, ResolvedIdentifier> -> Sum<SpecData<TypeValue, ValueExt>, Errors>
+  type Seeder = Schema<TypeValue, ResolvedIdentifier, ValueExt> -> Sum<SpecData<TypeValue, ValueExt>, Errors>
 
   type TenantStore = { ListTenants: unit -> TenantId list }
 
   type SpecsStore =
     { GetSpecApi: TenantId -> Sum<SpecApi<TypeValue, ValueExt>, Errors>
-      GetDataApi: TenantId -> SpecName -> Sum<SpecDataApi<ValueExt>, Errors> }
+      GetDataApi: TenantId -> SpecName -> VirtualPath option -> Sum<SpecDataApi<ValueExt>, Errors> }
 
   type Workspace =
     { SeedSpecEval:

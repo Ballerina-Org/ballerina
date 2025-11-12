@@ -27,10 +27,10 @@ module TypeLambda =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member internal TypeCheckTypeLambda
-      (typeCheckExpr: TypeChecker, loc0: Location)
-      : TypeChecker<ExprTypeLambda<TypeExpr, Identifier>> =
+      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      : TypeChecker<ExprTypeLambda<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Param = t_par; Body = body }) ->
         let (!) = typeCheckExpr context_t
 
