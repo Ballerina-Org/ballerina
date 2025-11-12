@@ -30,7 +30,7 @@ export const caseUpdater =
               ? {
                   ...currentEntity,
                   [field]: caseUpdater(
-                    currentEntity as Entity[Field] & { kind: CaseName },
+                    currentEntity[field] as Entity[Field] & { kind: CaseName },
                   ),
                 }
               : currentEntity,
