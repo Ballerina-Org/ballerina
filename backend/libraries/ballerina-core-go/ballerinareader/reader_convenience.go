@@ -60,6 +60,18 @@ func NewReaderWithError[T, U any](convert func(T) (U, error)) ReaderWithError[T,
 	}
 }
 
+func LiftWithError[Context, A, B any](
+	f func(A) (B, error),
+) func(A) ReaderWithError[Context, B] {
+	return func(a A) ReaderWithError[Context, B] {
+		return ReaderWithError[Context, B]{
+			Apply: func(_ Context) (B, error) {
+				return f(a)
+			},
+		}
+	}
+}
+
 func MergeReader2[I, O1, O2, O any](
 	reader1 Reader[I, O1],
 	reader2 Reader[I, O2],

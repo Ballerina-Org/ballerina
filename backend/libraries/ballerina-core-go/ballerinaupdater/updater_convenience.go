@@ -12,6 +12,19 @@ func Then[Ctx any](updaterA Updater[Ctx], updaterB Updater[Ctx]) Updater[Ctx] {
 	}
 }
 
+func ThenMany[Ctx any](updaters []UpdaterWithError[Ctx]) UpdaterWithError[Ctx] {
+	return NewUpdaterWithError(func(v Ctx) (Ctx, error) {
+		var err error
+		for i := range updaters {
+			v, err = updaters[i].ApplyTo(v)
+			if err != nil {
+				return v, err
+			}
+		}
+		return v, nil
+	})
+}
+
 func ThenWithError[Ctx any](updaterA UpdaterWithError[Ctx], updaterB UpdaterWithError[Ctx]) UpdaterWithError[Ctx] {
 	return UpdaterWithError[Ctx]{
 		ApplyTo: func(input Ctx) (Ctx, error) {

@@ -30,6 +30,21 @@ func MapReaderWithError[Ctx, A, B any](reader ReaderWithError[Ctx, A], f func(a 
 	}
 }
 
+func BindReaderWithError[Ctx, A, B any](
+	reader ReaderWithError[Ctx, A],
+	f func(A) ReaderWithError[Ctx, B],
+) ReaderWithError[Ctx, B] {
+	return ReaderWithError[Ctx, B]{
+		Apply: func(a Ctx) (B, error) {
+			b, err := reader.Apply(a)
+			if err != nil {
+				return *new(B), err
+			}
+			return f(b).Apply(a)
+		},
+	}
+}
+
 func Parallel2[Ctx, O1, O2 any](reader1 Reader[Ctx, O1], reader2 Reader[Ctx, O2]) Reader[Ctx, ballerina.Tuple2[O1, O2]] {
 	return Reader[Ctx, ballerina.Tuple2[O1, O2]]{
 		Apply: func(ctx Ctx) ballerina.Tuple2[O1, O2] {
@@ -410,4 +425,20 @@ func Pipeline2[Ctx, A, B any](readerA Reader[Ctx, A], fn func(A) Reader[Ctx, B])
 
 func Pipeline2WithError[Ctx, A, B any](readerA ReaderWithError[Ctx, A], fn func(A) ReaderWithError[Ctx, B]) ReaderWithError[Ctx, B] {
 	return FlattenWithError(MapWithError(readerA, fn))
+}
+
+func All[I, O any](readers []ReaderWithError[I, O]) ReaderWithError[I, []O] {
+	return ReaderWithError[I, []O]{
+		Apply: func(input I) ([]O, error) {
+			results := make([]O, 0, len(readers))
+			for i := range readers {
+				reader, err := readers[i].Apply(input)
+				if err != nil {
+					return nil, err
+				}
+				results = append(results, reader)
+			}
+			return results, nil
+		},
+	}
 }
