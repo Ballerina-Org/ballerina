@@ -3,7 +3,6 @@ import { List, Map } from "immutable";
 import {
   DispatchParsedType,
   DispatchTypeName,
-  FilterType,
   SumNType,
 } from "./domains/specification/domains/types/state";
 import { unit, Unit } from "../../../../fun/domains/unit/state";
@@ -23,7 +22,6 @@ import {
   DispatchInjectables,
   RecordAbstractRendererView,
   DispatchInjectablesTypes,
-  TableApis,
   SpecificationApis,
   LookupTypeAbstractRendererView,
   ValueFilter,
@@ -695,6 +693,7 @@ export type DispatchFormsParserContext<
   fieldTypeConverters: DispatchApiConverters<T>;
   getFormsConfig: BasicFun<void, Promise<any>>;
   injectedPrimitives?: DispatchInjectables<T>;
+  desiredLaunchers?: string[];
 };
 
 export type DispatchFormsParserState<

@@ -5,11 +5,11 @@ import {
   DispatchParsedType,
   isObject,
   isString,
+  Renderer,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import { MapType } from "../../../../../types/state";
 import { NestedRenderer } from "../nestedRenderer/state";
-import { Renderer } from "../../state";
 
 export type SerializedMapRenderer = {
   renderer: string;
@@ -74,7 +74,9 @@ export const MapRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
-    ): ValueOrErrors<MapRenderer<T>, string> =>
+      forms: object,
+      alreadyParsedForms: Map<string, Renderer<T>>,
+    ): ValueOrErrors<[MapRenderer<T>, Map<string, Renderer<T>>], string> =>
       MapRenderer.Operations.tryAsValidMapBaseRenderer(serialized)
         .Then((renderer) =>
           NestedRenderer.Operations.DeserializeAs(
@@ -83,22 +85,30 @@ export const MapRenderer = {
             concreteRenderers,
             "Map key",
             types,
-          ).Then((deserializedKeyRenderer) =>
+            forms,
+            alreadyParsedForms,
+          ).Then(([deserializedKeyRenderer, keyAlreadyParsedForms]) =>
             NestedRenderer.Operations.DeserializeAs(
               type.args[1],
               renderer.valueRenderer,
               concreteRenderers,
               "Map value",
               types,
-            ).Then((deserializedValueRenderer) =>
-              ValueOrErrors.Default.return(
+              forms,
+              keyAlreadyParsedForms,
+            ).Then(([deserializedValueRenderer, valueAlreadyParsedForms]) =>
+              ValueOrErrors.Default.return<
+                [MapRenderer<T>, Map<string, Renderer<T>>],
+                string
+              >([
                 MapRenderer.Default(
                   type,
                   renderer.renderer,
                   deserializedKeyRenderer,
                   deserializedValueRenderer,
                 ),
-              ),
+                valueAlreadyParsedForms,
+              ]),
             ),
           ),
         )

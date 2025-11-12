@@ -78,7 +78,9 @@ export const SumRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
-    ): ValueOrErrors<SumRenderer<T>, string> =>
+      forms: object,
+      alreadyParsedForms: Map<string, Renderer<T>>,
+    ): ValueOrErrors<[SumRenderer<T>, Map<string, Renderer<T>>], string> =>
       SumRenderer.Operations.tryAsValidSumBaseRenderer(serialized)
         .Then((validatedSerialized) =>
           NestedRenderer.Operations.DeserializeAs(
@@ -87,22 +89,30 @@ export const SumRenderer = {
             concreteRenderers,
             "Left renderer",
             types,
-          ).Then((deserializedLeftRenderer) =>
+            forms,
+            alreadyParsedForms,
+          ).Then(([deserializedLeftRenderer, leftAlreadyParsedForms]) =>
             NestedRenderer.Operations.DeserializeAs(
               type.args[1],
               validatedSerialized.rightRenderer,
               concreteRenderers,
               "Right renderer",
               types,
-            ).Then((deserializedRightRenderer) =>
-              ValueOrErrors.Default.return(
+              forms,
+              leftAlreadyParsedForms,
+            ).Then(([deserializedRightRenderer, rightAlreadyParsedForms]) =>
+              ValueOrErrors.Default.return<
+                [SumRenderer<T>, Map<string, Renderer<T>>],
+                string
+              >([
                 SumRenderer.Default(
                   type,
                   validatedSerialized.renderer,
                   deserializedLeftRenderer,
                   deserializedRightRenderer,
                 ),
-              ),
+                rightAlreadyParsedForms,
+              ]),
             ),
           ),
         )

@@ -4,9 +4,9 @@ import {
   Sum,
   Synchronize,
   Unit,
-  Specification,
   ValueOrErrors,
   DispatchInjectablesTypes,
+  Specification,
 } from "../../../../../../main";
 import { CoTypedFactory } from "../../../../../coroutines/builder";
 import {
@@ -80,7 +80,7 @@ export const LoadAndDeserializeSpecification = <
             current.fieldTypeConverters,
             current.concreteRenderers,
             injectedPrimitives,
-          )(serializedSpecifications);
+          )(serializedSpecifications, current.desiredLaunchers);
 
           if (deserializationResult.kind == "errors") {
             console.error(

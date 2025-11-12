@@ -8,6 +8,7 @@ import {
   MapRepo,
   DispatchInjectedPrimitives,
   ParsedType,
+  isString,
 } from "../../../../../../../../../main";
 
 export const DispatchisString = (_: any): _ is string => typeof _ == "string";
@@ -83,6 +84,13 @@ export const DispatchPrimitiveTypeNames = [
   "base64File",
   "secret",
 ] as const;
+
+const STRINGY_TYPES = [
+  "guid",
+  "entityIdUUID",
+  "entityIdString",
+  "calculatedDisplayValue",
+] as const;
 export type DispatchPrimitiveTypeName<T> =
   | (typeof DispatchPrimitiveTypeNames)[number]
   | keyof T;
@@ -110,8 +118,13 @@ export const SerializedType = {
     _: SerializedType<T>,
   ): _ is { fun: DispatchGenericType; args: Array<SerializedType<T>> } =>
     DispatchHasFun(_) && DispatchIsGenericType(_.fun) && DispatchHasArgs(_),
-  isLookup: (_: unknown, forms: Set<DispatchTypeName>): _ is DispatchTypeName =>
-    DispatchisString(_) && forms.has(_),
+  isLookup: <T>(
+    _: unknown,
+    injectedPrimitives: DispatchInjectedPrimitives<T> | undefined,
+  ): _ is DispatchTypeName =>
+    DispatchisString(_) &&
+    !injectedPrimitives?.has(_ as keyof T) &&
+    !(_ in DispatchPrimitiveTypeNames),
   isList: <T>(
     _: SerializedType<T>,
   ): _ is { fun: "List"; args: Array<SerializedType<T>> } =>
@@ -221,7 +234,7 @@ export type StringSerializedType = string;
 export type UnionType<T> = {
   kind: "union";
   args: Map<DispatchCaseName, DispatchParsedType<T>>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const UnionType = {
@@ -235,7 +248,7 @@ export const UnionType = {
 export type RecordType<T> = {
   kind: "record";
   fields: OrderedMap<DispatchFieldName, DispatchParsedType<T>>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const RecordType = {
@@ -249,7 +262,7 @@ export const RecordType = {
 export type LookupType = {
   kind: "lookup";
   name: string;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const LookupType = {
@@ -261,7 +274,7 @@ export const LookupType = {
 export type DispatchPrimitiveType<T> = {
   kind: "primitive";
   name: DispatchPrimitiveTypeName<T>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const DispatchPrimitiveType = {
@@ -275,7 +288,7 @@ export const DispatchPrimitiveType = {
 export type SingleSelectionType<T> = {
   kind: "singleSelection";
   args: Array<DispatchParsedType<T>>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const SingleSelectionType = {
@@ -289,7 +302,7 @@ export const SingleSelectionType = {
 export type MultiSelectionType<T> = {
   kind: "multiSelection";
   args: Array<DispatchParsedType<T>>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const MultiSelectionType = {
@@ -303,7 +316,7 @@ export const MultiSelectionType = {
 export type ListType<T> = {
   kind: "list";
   args: Array<DispatchParsedType<T>>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const ListType = {
@@ -317,7 +330,7 @@ export const ListType = {
 export type TupleType<T> = {
   kind: "tuple";
   args: Array<DispatchParsedType<T>>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const TupleType = {
@@ -331,7 +344,7 @@ export const TupleType = {
 export type SumType<T> = {
   kind: "sum";
   args: Array<DispatchParsedType<T>>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const SumType = {
@@ -345,7 +358,7 @@ export const SumType = {
 export type SumNType<T> = {
   kind: "sumN";
   args: Array<DispatchParsedType<T>>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const SumNType = {
@@ -360,7 +373,7 @@ export const SumNType = {
 export type MapType<T> = {
   kind: "map";
   args: Array<DispatchParsedType<T>>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const MapType = {
@@ -374,7 +387,7 @@ export const MapType = {
 export type TableType<T> = {
   kind: "table";
   arg: LookupType;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const TableType = {
@@ -388,7 +401,7 @@ export const TableType = {
 export type ReadOnlyType<T> = {
   kind: "readOnly";
   arg: DispatchParsedType<T>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const ReadOnlyType = {
@@ -402,7 +415,7 @@ export const ReadOnlyType = {
 export type OneType<T> = {
   kind: "one";
   arg: LookupType;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const OneType = {
@@ -417,7 +430,7 @@ export const OneType = {
 export type FilterContainsType<T> = {
   kind: "contains";
   contains: DispatchParsedType<T>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const FilterContainsType = {
@@ -431,7 +444,7 @@ export const FilterContainsType = {
 export type FilterEqualsToType<T> = {
   kind: "=";
   equalsTo: DispatchParsedType<T>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const FilterEqualsToType = {
@@ -445,7 +458,7 @@ export const FilterEqualsToType = {
 export type FilterNotEqualsToType<T> = {
   kind: "!=";
   notEqualsTo: DispatchParsedType<T>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const FilterNotEqualsToType = {
@@ -459,7 +472,7 @@ export const FilterNotEqualsToType = {
 export type FilterGreaterThanOrEqualsToType<T> = {
   kind: ">=";
   greaterThanOrEqualsTo: DispatchParsedType<T>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const FilterGreaterThanOrEqualsToType = {
@@ -473,7 +486,7 @@ export const FilterGreaterThanOrEqualsToType = {
 export type FilterGreaterThanType<T> = {
   kind: ">";
   greaterThan: DispatchParsedType<T>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const FilterGreaterThanType = {
@@ -486,7 +499,7 @@ export const FilterGreaterThanType = {
 
 export type FilterIsNotNullType<T> = {
   kind: "!=null";
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const FilterIsNotNullType = {
@@ -497,7 +510,7 @@ export const FilterIsNotNullType = {
 
 export type FilterIsNullType<T> = {
   kind: "=null";
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const FilterIsNullType = {
@@ -509,7 +522,7 @@ export const FilterIsNullType = {
 export type FilterSmallerThanOrEqualsToType<T> = {
   kind: "<=";
   smallerThanOrEqualsTo: DispatchParsedType<T>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const FilterSmallerThanOrEqualsToType = {
@@ -523,7 +536,7 @@ export const FilterSmallerThanOrEqualsToType = {
 export type FilterSmallerThanType<T> = {
   kind: "<";
   smallerThan: DispatchParsedType<T>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const FilterSmallerThanType = {
@@ -537,7 +550,7 @@ export const FilterSmallerThanType = {
 export type FilterStartsWithType<T> = {
   kind: "startsWith";
   startsWith: DispatchParsedType<T>;
-  asString: () => StringSerializedType;
+  // asString: () => StringSerializedType;
 };
 
 export const FilterStartsWithType = {
@@ -597,168 +610,214 @@ export const DispatchParsedType = {
     table: <T>(arg: LookupType): TableType<T> => ({
       kind: "table",
       arg,
-      asString: () => TableType.SerializeToString(arg.asString()),
     }),
     record: <T>(
       fields: Map<DispatchFieldName, DispatchParsedType<T>>,
     ): RecordType<T> => ({
       kind: "record",
       fields,
-      asString: () =>
-        RecordType.SerializeToString(fields.map((v) => v.asString())),
     }),
     primitive: <T>(
       name: DispatchPrimitiveTypeName<T>,
     ): DispatchParsedType<T> => ({
       kind: "primitive",
       name,
-      asString: () => DispatchPrimitiveType.SerializeToString(name),
     }),
     singleSelection: <T>(
       args: Array<DispatchParsedType<T>>,
     ): DispatchParsedType<T> => ({
       kind: "singleSelection",
       args,
-      asString: () =>
-        SingleSelectionType.SerializeToString(args.map((v) => v.asString())),
     }),
     multiSelection: <T>(
       args: Array<DispatchParsedType<T>>,
     ): DispatchParsedType<T> => ({
       kind: "multiSelection",
       args,
-      asString: () =>
-        MultiSelectionType.SerializeToString(args.map((v) => v.asString())),
     }),
     list: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "list",
       args,
-      asString: () => ListType.SerializeToString(args.map((v) => v.asString())),
     }),
     tuple: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "tuple",
       args,
-      asString: () =>
-        TupleType.SerializeToString(args.map((v) => v.asString())),
     }),
     sum: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "sum",
       args,
-      asString: () => SumType.SerializeToString(args.map((v) => v.asString())),
     }),
     sumN: <T>(args: Array<DispatchParsedType<T>>): SumNType<T> => ({
       kind: "sumN",
       args,
-      asString: () =>
-        SumNType.SerializeToString(
-          args.map((v) => v.asString()),
-          args.length,
-        ),
     }),
     map: <T>(args: Array<DispatchParsedType<T>>): DispatchParsedType<T> => ({
       kind: "map",
       args,
-      asString: () => MapType.SerializeToString(args.map((v) => v.asString())),
     }),
     union: <T>(
       args: Map<DispatchCaseName, DispatchParsedType<T>>,
     ): DispatchParsedType<T> => ({
       kind: "union",
       args,
-      asString: () =>
-        UnionType.SerializeToString(args.map((v) => v.asString())),
     }),
     readOnly: <T>(arg: DispatchParsedType<T>): ReadOnlyType<T> => ({
       kind: "readOnly",
       arg,
-      asString: () => ReadOnlyType.SerializeToString(arg.asString()),
     }),
     lookup: <T>(name: string): LookupType => ({
       kind: "lookup",
       name,
-      asString: () => LookupType.SerializeToString(name),
     }),
     one: <T>(arg: LookupType): OneType<T> => ({
       kind: "one",
       arg,
-      asString: () => OneType.SerializeToString(arg.asString()),
     }),
     filterContains: <T>(
       contains: DispatchParsedType<T>,
     ): FilterContainsType<T> => ({
       kind: "contains",
       contains,
-      asString: () => FilterContainsType.SerializeToString(contains.asString()),
     }),
     filterEqualsTo: <T>(
       equalsTo: DispatchParsedType<T>,
     ): FilterEqualsToType<T> => ({
       kind: "=",
       equalsTo,
-      asString: () => FilterEqualsToType.SerializeToString(equalsTo.asString()),
     }),
     filterNotEqualsTo: <T>(
       notEqualsTo: DispatchParsedType<T>,
     ): FilterNotEqualsToType<T> => ({
       kind: "!=",
       notEqualsTo,
-      asString: () =>
-        FilterNotEqualsToType.SerializeToString(notEqualsTo.asString()),
     }),
     filterGreaterThanOrEqualsTo: <T>(
       greaterThanOrEqualsTo: DispatchParsedType<T>,
     ): FilterGreaterThanOrEqualsToType<T> => ({
       kind: ">=",
       greaterThanOrEqualsTo,
-      asString: () =>
-        FilterGreaterThanOrEqualsToType.SerializeToString(
-          greaterThanOrEqualsTo.asString(),
-        ),
     }),
     filterGreaterThan: <T>(
       greaterThan: DispatchParsedType<T>,
     ): FilterGreaterThanType<T> => ({
       kind: ">",
       greaterThan,
-      asString: () =>
-        FilterGreaterThanType.SerializeToString(greaterThan.asString()),
     }),
     filterIsNotNull: <T>(): FilterIsNotNullType<T> => ({
       kind: "!=null",
-      asString: () => FilterIsNotNullType.SerializeToString(),
     }),
     filterIsNull: <T>(): FilterIsNullType<T> => ({
       kind: "=null",
-      asString: () => FilterIsNullType.SerializeToString(),
     }),
     filterSmallerThanOrEqualsTo: <T>(
       smallerThanOrEqualsTo: DispatchParsedType<T>,
     ): FilterSmallerThanOrEqualsToType<T> => ({
       kind: "<=",
       smallerThanOrEqualsTo,
-      asString: () =>
-        FilterSmallerThanOrEqualsToType.SerializeToString(
-          smallerThanOrEqualsTo.asString(),
-        ),
     }),
     filterSmallerThan: <T>(
       smallerThan: DispatchParsedType<T>,
     ): FilterSmallerThanType<T> => ({
       kind: "<",
       smallerThan,
-      asString: () =>
-        FilterSmallerThanType.SerializeToString(smallerThan.asString()),
     }),
     filterStartsWith: <T>(
       startsWith: DispatchParsedType<T>,
     ): FilterStartsWithType<T> => ({
       kind: "startsWith",
       startsWith,
-      asString: () =>
-        FilterStartsWithType.SerializeToString(startsWith.asString()),
     }),
   },
   Operations: {
+    AsString: (type: DispatchParsedType<unknown>): StringSerializedType => {
+      switch (type.kind) {
+        case "record":
+          return RecordType.SerializeToString(
+            type.fields.map((v) => DispatchParsedType.Operations.AsString(v)),
+          );
+        case "table":
+          return TableType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.arg),
+          );
+        case "one":
+          return OneType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.arg),
+          );
+        case "singleSelection":
+          return SingleSelectionType.SerializeToString(
+            type.args.map((v) => DispatchParsedType.Operations.AsString(v)),
+          );
+        case "multiSelection":
+          return MultiSelectionType.SerializeToString(
+            type.args.map((v) => DispatchParsedType.Operations.AsString(v)),
+          );
+        case "list":
+          return ListType.SerializeToString(
+            type.args.map((v) => DispatchParsedType.Operations.AsString(v)),
+          );
+        case "tuple":
+          return TupleType.SerializeToString(
+            type.args.map((v) => DispatchParsedType.Operations.AsString(v)),
+          );
+        case "sum":
+          return SumType.SerializeToString(
+            type.args.map((v) => DispatchParsedType.Operations.AsString(v)),
+          );
+        case "sumN":
+          return SumNType.SerializeToString(
+            type.args.map((v) => DispatchParsedType.Operations.AsString(v)),
+            type.args.length,
+          );
+        case "map":
+          return MapType.SerializeToString(
+            type.args.map((v) => DispatchParsedType.Operations.AsString(v)),
+          );
+        case "union":
+          return UnionType.SerializeToString(
+            type.args.map((v) => DispatchParsedType.Operations.AsString(v)),
+          );
+        case "lookup":
+          return LookupType.SerializeToString(type.name);
+        case "contains":
+          return FilterContainsType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.contains),
+          );
+        case "=":
+          return FilterEqualsToType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.equalsTo),
+          );
+        case "!=":
+          return FilterNotEqualsToType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.notEqualsTo),
+          );
+        case ">=":
+          return FilterGreaterThanOrEqualsToType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.greaterThanOrEqualsTo),
+          );
+        case ">":
+          return FilterGreaterThanType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.greaterThan),
+          );
+        case "!=null":
+          return FilterIsNotNullType.SerializeToString();
+        case "=null":
+          return FilterIsNullType.SerializeToString();
+        case "<=":
+          return FilterSmallerThanOrEqualsToType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.smallerThanOrEqualsTo),
+          );
+        case "<":
+          return FilterSmallerThanType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.smallerThan),
+          );
+        case "startsWith":
+          return FilterStartsWithType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.startsWith),
+          );
+        default:
+          throw new Error(`Unknown type: ${JSON.stringify(type)}`);
+      }
+    },
     // We don't use this at the moment, if we need it, then we can fix
     // Equals: <T>(
     //   fst: DispatchParsedType<T>,
@@ -803,12 +862,12 @@ export const DispatchParsedType = {
     //                           : false,
     ParseRawKeyOf: <T>(
       rawType: ValidatedSerializedKeyOfType<T>,
-      typeNames: Set<DispatchTypeName>,
       serializedTypes: Record<string, SerializedType<T>>,
       alreadyParsedTypes: Map<
         string,
         ValueOrErrors<DispatchParsedType<T>, string>
       >,
+      injectedPrimitives?: DispatchInjectedPrimitives<T>,
     ): ValueOrErrors<
       [
         DispatchParsedType<T>,
@@ -834,9 +893,9 @@ export const DispatchParsedType = {
         : DispatchParsedType.Operations.ParseRawType(
             rawType.args[0],
             serializedTypes[rawType.args[0]],
-            typeNames,
             serializedTypes,
             alreadyParsedTypes,
+            injectedPrimitives,
           )
       )
         .Then((parsingResult) =>
@@ -867,20 +926,31 @@ export const DispatchParsedType = {
               >([
                 DispatchParsedType.Default.union(
                   Map(
-                    parsingResult[0].fields
-                      .keySeq()
-                      .filter(
-                        (key) =>
-                          rawType.args[1] == undefined ||
-                          !rawType.args[1].includes(key),
-                      )
-                      .toArray()
-                      .map((key) => [
-                        key,
-                        DispatchParsedType.Default.record(
-                          Map<string, DispatchParsedType<T>>(),
-                        ),
-                      ]),
+                    (() => {
+                      const excludedKeys: Record<string, true> | null = rawType
+                        .args[1]
+                        ? rawType.args[1].reduce(
+                            (acc, key) => {
+                              acc[key] = true;
+                              return acc;
+                            },
+                            {} as Record<string, true>,
+                          )
+                        : null;
+                      return parsingResult[0].fields
+                        .keySeq()
+                        .filter(
+                          (key) =>
+                            excludedKeys == null || !(key in excludedKeys),
+                        )
+                        .toArray()
+                        .map((key) => [
+                          key,
+                          DispatchParsedType.Default.record(
+                            Map<string, DispatchParsedType<T>>(),
+                          ),
+                        ]);
+                    })(),
                   ),
                 ),
                 parsingResult[1],
@@ -961,20 +1031,29 @@ export const DispatchParsedType = {
         case "lookup":
           return LookupType.SerializeToString(type.name);
         case "contains":
-          return FilterContainsType.SerializeToString(type.contains.asString());
+          return FilterContainsType.SerializeToString(
+            // type.contains.asString(),
+            "",
+          );
         case "=":
-          return FilterEqualsToType.SerializeToString(type.equalsTo.asString());
+          return FilterEqualsToType.SerializeToString(
+            // type.equalsTo.asString(),
+            "",
+          );
         case "!=":
           return FilterNotEqualsToType.SerializeToString(
-            type.notEqualsTo.asString(),
+            // type.notEqualsTo.asString(),
+            "",
           );
         case ">=":
           return FilterGreaterThanOrEqualsToType.SerializeToString(
-            type.greaterThanOrEqualsTo.asString(),
+            // type.greaterThanOrEqualsTo.asString(),
+            "",
           );
         case ">":
           return FilterGreaterThanType.SerializeToString(
-            type.greaterThan.asString(),
+            "",
+            // type.greaterThan.asString(),
           );
         case "!=null":
           return FilterIsNotNullType.SerializeToString();
@@ -982,24 +1061,50 @@ export const DispatchParsedType = {
           return FilterIsNullType.SerializeToString();
         case "<=":
           return FilterSmallerThanOrEqualsToType.SerializeToString(
-            type.smallerThanOrEqualsTo.asString(),
+            "",
+            // type.smallerThanOrEqualsTo.asString(),
           );
         case "<":
           return FilterSmallerThanType.SerializeToString(
-            type.smallerThan.asString(),
+            // type.smallerThan.asString(),
+            "",
           );
         case "startsWith":
           return FilterStartsWithType.SerializeToString(
-            type.startsWith.asString(),
+            // type.startsWith.asString(),
+            "",
           );
         default:
           throw new Error(`Unknown type: ${JSON.stringify(type)}`);
       }
     },
+    GetExtendedRecordTypes: <T>(
+      extendedTypeName: DispatchTypeName,
+      alreadyParsedTypes: Map<
+        DispatchTypeName,
+        ValueOrErrors<DispatchParsedType<T>, string>
+      >,
+    ): ValueOrErrors<[string, RecordType<T>], string> => {
+      return MapRepo.Operations.tryFindWithError(
+        extendedTypeName,
+        alreadyParsedTypes,
+        () => `cannot find extended type ${extendedTypeName} in types`,
+      ).Then((extendedType) =>
+        extendedType.Then((extendedType) =>
+          extendedType.kind != "record"
+            ? ValueOrErrors.Default.throwOne<
+                [DispatchTypeName, RecordType<T>],
+                string
+              >(`Error: ${JSON.stringify(extendedType)} is not a record type`)
+            : ValueOrErrors.Default.return<
+                [DispatchTypeName, RecordType<T>],
+                string
+              >([extendedTypeName, extendedType]),
+        ),
+      );
+    },
     ParseRecord: <T>(
-      typeName: DispatchTypeName,
       rawType: unknown,
-      typeNames: Set<DispatchTypeName>,
       serializedTypes: Record<string, SerializedType<T>>,
       alreadyParsedTypes: Map<
         DispatchTypeName,
@@ -1013,51 +1118,54 @@ export const DispatchParsedType = {
       ],
       string
     > =>
-      // will already been parsed if it was extended by another type which was already parsed
-      alreadyParsedTypes.has(typeName)
-        ? alreadyParsedTypes
-            .get(typeName)!
-            .Then((parsedType) =>
-              parsedType.kind != "record"
-                ? ValueOrErrors.Default.throwOne(
-                    `Error: ${JSON.stringify(parsedType)} is not a record type`,
-                  )
-                : ValueOrErrors.Default.return([
-                    parsedType,
-                    alreadyParsedTypes,
-                  ]),
-            )
-        : !SerializedType.isRecord(rawType)
-          ? ValueOrErrors.Default.throwOne(
-              `Error: ${JSON.stringify(rawType)} is not a valid record`,
-            )
-          : (SerializedType.isExtendedType(rawType)
-              ? ValueOrErrors.Operations.All(
-                  List<
-                    ValueOrErrors<[DispatchTypeName, RecordType<T>], string>
-                  >(
-                    rawType.extends.map((extendedTypeName) =>
-                      alreadyParsedTypes.has(extendedTypeName)
-                        ? alreadyParsedTypes
-                            .get(extendedTypeName)!
-                            .Then((extendedType) =>
-                              extendedType.kind != "record"
-                                ? ValueOrErrors.Default.throwOne<
-                                    [DispatchTypeName, RecordType<T>],
-                                    string
-                                  >(
-                                    `Error: ${JSON.stringify(
-                                      extendedType,
-                                    )} is not a record type`,
-                                  )
-                                : ValueOrErrors.Default.return<
-                                    [DispatchTypeName, RecordType<T>],
-                                    string
-                                  >([extendedTypeName, extendedType]),
-                            )
+      !SerializedType.isRecord(rawType)
+        ? ValueOrErrors.Default.throwOne(
+            `Error: ${JSON.stringify(rawType)} is not a valid record`,
+          )
+        : (SerializedType.isExtendedType(rawType)
+            ? rawType.extends
+                .reduce<
+                  ValueOrErrors<
+                    [
+                      Map<DispatchTypeName, RecordType<T>>,
+                      Map<
+                        DispatchTypeName,
+                        ValueOrErrors<DispatchParsedType<T>, string>
+                      >,
+                    ],
+                    string
+                  >
+                >(
+                  (acc, extendedTypeName) =>
+                    acc.Then(([resultMap, accumulatedAlreadyParsedTypes]) =>
+                      accumulatedAlreadyParsedTypes.has(extendedTypeName)
+                        ? DispatchParsedType.Operations.GetExtendedRecordTypes(
+                            extendedTypeName,
+                            accumulatedAlreadyParsedTypes,
+                          ).Then(([extendedTypeName, recordType]) =>
+                            ValueOrErrors.Default.return<
+                              [
+                                Map<DispatchTypeName, RecordType<T>>,
+                                Map<
+                                  DispatchTypeName,
+                                  ValueOrErrors<DispatchParsedType<T>, string>
+                                >,
+                              ],
+                              string
+                            >([
+                              resultMap.set(extendedTypeName, recordType),
+                              accumulatedAlreadyParsedTypes,
+                            ]),
+                          )
                         : serializedTypes[extendedTypeName] == undefined
                           ? ValueOrErrors.Default.throwOne<
-                              [DispatchTypeName, RecordType<T>],
+                              [
+                                Map<DispatchTypeName, RecordType<T>>,
+                                Map<
+                                  DispatchTypeName,
+                                  ValueOrErrors<DispatchParsedType<T>, string>
+                                >,
+                              ],
                               string
                             >(
                               `Error: cannot find extended type ${extendedTypeName} in types`,
@@ -1065,18 +1173,46 @@ export const DispatchParsedType = {
                           : DispatchParsedType.Operations.ParseRawType(
                               extendedTypeName,
                               serializedTypes[extendedTypeName],
-                              typeNames,
                               serializedTypes,
-                              alreadyParsedTypes,
+                              accumulatedAlreadyParsedTypes,
                               injectedPrimitives,
                             ).Then((parsedType) =>
                               parsedType[0].kind == "record"
                                 ? ValueOrErrors.Default.return<
-                                    [DispatchTypeName, RecordType<T>],
+                                    [
+                                      Map<DispatchTypeName, RecordType<T>>,
+                                      Map<
+                                        DispatchTypeName,
+                                        ValueOrErrors<
+                                          DispatchParsedType<T>,
+                                          string
+                                        >
+                                      >,
+                                    ],
                                     string
-                                  >([extendedTypeName, parsedType[0]])
+                                  >([
+                                    resultMap.set(
+                                      extendedTypeName,
+                                      parsedType[0],
+                                    ),
+                                    parsedType[1].set(
+                                      extendedTypeName,
+                                      ValueOrErrors.Default.return(
+                                        parsedType[0],
+                                      ),
+                                    ),
+                                  ])
                                 : ValueOrErrors.Default.throwOne<
-                                    [DispatchTypeName, RecordType<T>],
+                                    [
+                                      Map<DispatchTypeName, RecordType<T>>,
+                                      Map<
+                                        DispatchTypeName,
+                                        ValueOrErrors<
+                                          DispatchParsedType<T>,
+                                          string
+                                        >
+                                      >,
+                                    ],
                                     string
                                   >(
                                     `Error: ${JSON.stringify(
@@ -1085,84 +1221,33 @@ export const DispatchParsedType = {
                                   ),
                             ),
                     ),
-                  ),
-                )
-                  .MapErrors((errors) =>
-                    errors.map(
-                      (error) => `${error}\n...When parsing extended types`,
-                    ),
-                  )
-                  .Then((parsedExtendedRecordTypes) =>
-                    ValueOrErrors.Default.return<
-                      Map<DispatchTypeName, RecordType<T>>,
-                      string
-                    >(
-                      parsedExtendedRecordTypes.reduce(
-                        (acc, type) => acc.set(type[0], type[1]),
-                        Map<DispatchTypeName, RecordType<T>>(),
-                      ),
-                    ),
-                  )
-              : ValueOrErrors.Default.return<
-                  Map<DispatchTypeName, RecordType<T>>,
-                  string
-                >(Map<DispatchTypeName, RecordType<T>>())
-            ).Then((parsedExtendedRecordTypesMap) =>
-              ValueOrErrors.Operations.All(
-                List(
-                  Object.entries(rawType.fields).map(([fieldName, fieldType]) =>
-                    DispatchParsedType.Operations.ParseRawType(
-                      fieldName,
-                      fieldType as SerializedType<T>,
-                      typeNames,
-                      serializedTypes,
-                      alreadyParsedTypes,
-                      injectedPrimitives,
-                    ).Then((parsedField) =>
-                      ValueOrErrors.Default.return<
-                        readonly [
-                          string,
-                          [
-                            DispatchParsedType<T>,
-                            Map<
-                              string,
-                              ValueOrErrors<DispatchParsedType<T>, string>
-                            >,
-                          ],
-                        ],
-                        string
-                      >([fieldName, parsedField] as const),
-                    ),
-                  ),
-                ),
-              )
-                .Then((parsedFields) =>
                   ValueOrErrors.Default.return<
-                    Map<string, DispatchParsedType<T>>,
+                    [
+                      Map<DispatchTypeName, RecordType<T>>,
+                      Map<
+                        DispatchTypeName,
+                        ValueOrErrors<DispatchParsedType<T>, string>
+                      >,
+                    ],
                     string
-                  >(
-                    Map(
-                      parsedFields.map(([fieldName, parsedField]) => [
-                        fieldName,
-                        parsedField[0],
-                      ]),
-                    ),
+                  >([
+                    Map<DispatchTypeName, RecordType<T>>(),
+                    alreadyParsedTypes,
+                  ]),
+                )
+                .MapErrors((errors) =>
+                  errors.map(
+                    (error) => `${error}\n...When parsing extended types`,
                   ),
                 )
-                .Then((parsedFieldsMap) =>
-                  ValueOrErrors.Default.return<RecordType<T>, string>(
-                    DispatchParsedType.Default.record(
-                      parsedFieldsMap.merge(
-                        parsedExtendedRecordTypesMap.reduce(
-                          (acc, type) => acc.merge(type.fields),
-                          Map<DispatchTypeName, DispatchParsedType<T>>(),
-                        ),
-                      ),
-                    ),
-                  ).Then((parsedRecord) =>
+                .Then(
+                  ([
+                    parsedExtendedRecordTypesMap,
+                    accumulatedAlreadyParsedTypes,
+                  ]) =>
                     ValueOrErrors.Default.return<
                       [
-                        RecordType<T>,
+                        Map<DispatchTypeName, RecordType<T>>,
                         Map<
                           DispatchTypeName,
                           ValueOrErrors<DispatchParsedType<T>, string>
@@ -1170,16 +1255,135 @@ export const DispatchParsedType = {
                       ],
                       string
                     >([
-                      parsedRecord,
-                      parsedExtendedRecordTypesMap.reduce(
-                        (acc, type, name) =>
-                          acc.set(name, ValueOrErrors.Default.return(type)),
-                        alreadyParsedTypes,
-                      ),
+                      parsedExtendedRecordTypesMap,
+                      accumulatedAlreadyParsedTypes,
                     ]),
-                  ),
+                )
+            : ValueOrErrors.Default.return<
+                [
+                  Map<DispatchTypeName, RecordType<T>>,
+                  Map<
+                    DispatchTypeName,
+                    ValueOrErrors<DispatchParsedType<T>, string>
+                  >,
+                ],
+                string
+              >([Map<DispatchTypeName, RecordType<T>>(), alreadyParsedTypes])
+          ).Then(
+            ([parsedExtendedRecordTypesMap, accumulatedAlreadyParsedTypes]) =>
+              Object.keys(rawType.fields)
+                .reduce<
+                  ValueOrErrors<
+                    [
+                      Map<string, DispatchParsedType<T>>,
+                      Map<
+                        DispatchTypeName,
+                        ValueOrErrors<DispatchParsedType<T>, string>
+                      >,
+                    ],
+                    string
+                  >
+                >(
+                  (acc, fieldName) =>
+                    acc.Then(
+                      ([
+                        parsedFieldsMap,
+                        accumulatedAlreadyParsedTypesForFields,
+                      ]) =>
+                        DispatchParsedType.Operations.ParseRawType(
+                          `Record field type: ${fieldName}`,
+                          (rawType.fields as Record<string, unknown>)[
+                            fieldName
+                          ] as SerializedType<T>,
+                          serializedTypes,
+                          accumulatedAlreadyParsedTypesForFields,
+                          injectedPrimitives,
+                        ).Then((parsedField) =>
+                          ValueOrErrors.Default.return<
+                            [
+                              Map<string, DispatchParsedType<T>>,
+                              Map<
+                                DispatchTypeName,
+                                ValueOrErrors<DispatchParsedType<T>, string>
+                              >,
+                            ],
+                            string
+                          >([
+                            parsedFieldsMap.set(fieldName, parsedField[0]),
+                            parsedField[1],
+                          ]),
+                        ),
+                    ),
+                  ValueOrErrors.Default.return<
+                    [
+                      Map<string, DispatchParsedType<T>>,
+                      Map<
+                        DispatchTypeName,
+                        ValueOrErrors<DispatchParsedType<T>, string>
+                      >,
+                    ],
+                    string
+                  >([
+                    Map<string, DispatchParsedType<T>>(),
+                    accumulatedAlreadyParsedTypes,
+                  ]),
+                )
+                .Then(
+                  ([
+                    parsedFieldsMap,
+                    accumulatedAlreadyParsedTypesForFields,
+                  ]) => {
+                    const { mergedFields, updatedAccumulatedTypes } =
+                      parsedExtendedRecordTypesMap.reduce(
+                        (
+                          acc,
+                          type,
+                          name,
+                        ): {
+                          mergedFields: Map<
+                            DispatchTypeName,
+                            DispatchParsedType<T>
+                          >;
+                          updatedAccumulatedTypes: Map<
+                            DispatchTypeName,
+                            ValueOrErrors<DispatchParsedType<T>, string>
+                          >;
+                        } => ({
+                          mergedFields: acc.mergedFields.merge(type.fields),
+                          updatedAccumulatedTypes:
+                            acc.updatedAccumulatedTypes.set(
+                              name,
+                              ValueOrErrors.Default.return(type),
+                            ),
+                        }),
+                        {
+                          mergedFields: Map<
+                            DispatchTypeName,
+                            DispatchParsedType<T>
+                          >(),
+                          updatedAccumulatedTypes:
+                            accumulatedAlreadyParsedTypesForFields,
+                        },
+                      );
+                    return ValueOrErrors.Default.return<RecordType<T>, string>(
+                      DispatchParsedType.Default.record(
+                        parsedFieldsMap.merge(mergedFields),
+                      ),
+                    ).Then((parsedRecord) =>
+                      ValueOrErrors.Default.return<
+                        [
+                          RecordType<T>,
+                          Map<
+                            DispatchTypeName,
+                            ValueOrErrors<DispatchParsedType<T>, string>
+                          >,
+                        ],
+                        string
+                      >([parsedRecord, updatedAccumulatedTypes]),
+                    );
+                  },
                 ),
-            ),
+          ),
     ParseRawFilterType: <T>(
       rawFilterType: unknown,
       arg: DispatchParsedType<T>,
@@ -1244,7 +1448,6 @@ export const DispatchParsedType = {
     ParseRawType: <T>(
       typeName: DispatchTypeName,
       rawType: SerializedType<T>,
-      typeNames: Set<DispatchTypeName>,
       serializedTypes: Record<string, SerializedType<T>>,
       alreadyParsedTypes: Map<
         DispatchTypeName,
@@ -1258,6 +1461,15 @@ export const DispatchParsedType = {
       ],
       string
     > => {
+      if (
+        alreadyParsedTypes.has(typeName) &&
+        !SerializedType.isLookup(rawType, injectedPrimitives)
+      )
+        return alreadyParsedTypes
+          .get(typeName)!
+          .Then((parsedType) =>
+            ValueOrErrors.Default.return([parsedType, alreadyParsedTypes]),
+          );
       const result: ValueOrErrors<
         [
           DispatchParsedType<T>,
@@ -1265,16 +1477,13 @@ export const DispatchParsedType = {
         ],
         string
       > = (() => {
-        const stringyTypes = [
-          "guid",
-          "entityIdUUID",
-          "entityIdString",
-          "calculatedDisplayValue",
-        ];
         if (SerializedType.isPrimitive(rawType, injectedPrimitives))
           return ValueOrErrors.Default.return([
             DispatchParsedType.Default.primitive(
-              typeof rawType === "string" && stringyTypes.includes(rawType)
+              typeof rawType === "string" &&
+                STRINGY_TYPES.includes(
+                  rawType as (typeof STRINGY_TYPES)[number],
+                )
                 ? "string"
                 : rawType,
             ),
@@ -1284,89 +1493,79 @@ export const DispatchParsedType = {
           return DispatchParsedType.Operations.ParseRawType(
             `SingleSelection:Element`,
             rawType.args[0],
-            typeNames,
             serializedTypes,
             alreadyParsedTypes,
             injectedPrimitives,
-          ).Then((parsedArgs) =>
+          ).Then(([parsedArg, newAlreadyParsedTypes]) =>
             ValueOrErrors.Default.return([
-              DispatchParsedType.Default.singleSelection([parsedArgs[0]]),
-              alreadyParsedTypes,
+              DispatchParsedType.Default.singleSelection([parsedArg]),
+              newAlreadyParsedTypes,
             ]),
           );
         if (SerializedType.isMultiSelection(rawType))
           return DispatchParsedType.Operations.ParseRawType(
             `MultiSelection:Element`,
             rawType.args[0],
-            typeNames,
             serializedTypes,
             alreadyParsedTypes,
             injectedPrimitives,
-          ).Then((parsedArgs) =>
+          ).Then(([parsedArg, newAlreadyParsedTypes]) =>
             ValueOrErrors.Default.return([
-              DispatchParsedType.Default.multiSelection([parsedArgs[0]]),
-              alreadyParsedTypes,
+              DispatchParsedType.Default.multiSelection([parsedArg]),
+              newAlreadyParsedTypes,
             ]),
           );
         if (SerializedType.isList(rawType))
           return DispatchParsedType.Operations.ParseRawType(
             `List:Element`,
             rawType.args[0],
-            typeNames,
             serializedTypes,
             alreadyParsedTypes,
             injectedPrimitives,
-          ).Then((parsedArgs) =>
+          ).Then(([parsedArg, newAlreadyParsedTypes]) =>
             ValueOrErrors.Default.return([
-              DispatchParsedType.Default.list([parsedArgs[0]]),
-              alreadyParsedTypes,
+              DispatchParsedType.Default.list([parsedArg]),
+              newAlreadyParsedTypes,
             ]),
           );
         if (SerializedType.isTuple(rawType))
-          return ValueOrErrors.Operations.All(
-            List(
-              rawType.args.map((arg, index) =>
-                DispatchParsedType.Operations.ParseRawType(
-                  `Tuple:Item ${index + 1}`,
-                  arg,
-                  typeNames,
-                  serializedTypes,
-                  alreadyParsedTypes,
-                  injectedPrimitives,
-                ),
-              ),
-            ),
-          ).Then((parsedArgs) =>
-            ValueOrErrors.Default.return([
-              DispatchParsedType.Default.tuple(
-                parsedArgs.map(([parsedArg]) => parsedArg).toArray(),
-              ),
-              alreadyParsedTypes,
-            ]),
-          );
+          return rawType.args
+            .reduce<
+              ValueOrErrors<
+                [
+                  List<DispatchParsedType<T>>,
+                  Map<
+                    DispatchTypeName,
+                    ValueOrErrors<DispatchParsedType<T>, string>
+                  >,
+                ],
+                string
+              >
+            >((acc, arg, index) => acc.Then(([parsedArgsList, accumulatedAlreadyParsedTypes]) => DispatchParsedType.Operations.ParseRawType(`Tuple:Item ${index + 1}`, arg, serializedTypes, accumulatedAlreadyParsedTypes, injectedPrimitives).Then((parsedArg) => ValueOrErrors.Default.return<[List<DispatchParsedType<T>>, Map<DispatchTypeName, ValueOrErrors<DispatchParsedType<T>, string>>], string>([parsedArgsList.push(parsedArg[0]), parsedArg[1]]))), ValueOrErrors.Default.return<[List<DispatchParsedType<T>>, Map<DispatchTypeName, ValueOrErrors<DispatchParsedType<T>, string>>], string>([List<DispatchParsedType<T>>(), alreadyParsedTypes]))
+            .Then(([parsedArgsList, accumulatedAlreadyParsedTypes]) =>
+              ValueOrErrors.Default.return([
+                DispatchParsedType.Default.tuple(parsedArgsList.toArray()),
+                accumulatedAlreadyParsedTypes,
+              ]),
+            );
         if (SerializedType.isMap(rawType))
           return DispatchParsedType.Operations.ParseRawType(
             "Map:Key",
             rawType.args[0],
-            typeNames,
             serializedTypes,
             alreadyParsedTypes,
             injectedPrimitives,
-          ).Then((parsedArgs0) =>
+          ).Then(([parsedArg0, newAlreadyParsedTypes]) =>
             DispatchParsedType.Operations.ParseRawType(
               "Map:Value",
               rawType.args[1],
-              typeNames,
               serializedTypes,
-              alreadyParsedTypes,
+              newAlreadyParsedTypes,
               injectedPrimitives,
-            ).Then((parsedArgs1) =>
+            ).Then(([parsedArg1, newAlreadyParsedTypes2]) =>
               ValueOrErrors.Default.return([
-                DispatchParsedType.Default.map([
-                  parsedArgs0[0],
-                  parsedArgs1[0],
-                ]),
-                alreadyParsedTypes,
+                DispatchParsedType.Default.map([parsedArg0, parsedArg1]),
+                newAlreadyParsedTypes2,
               ]),
             ),
           );
@@ -1374,33 +1573,26 @@ export const DispatchParsedType = {
           return DispatchParsedType.Operations.ParseRawType(
             "Sum:Left",
             rawType.args[0],
-            typeNames,
             serializedTypes,
             alreadyParsedTypes,
             injectedPrimitives,
-          ).Then((parsedArgs0) =>
+          ).Then(([parsedArg0, newAlreadyParsedTypes]) =>
             DispatchParsedType.Operations.ParseRawType(
               "Sum:Right",
               rawType.args[1],
-              typeNames,
               serializedTypes,
-              alreadyParsedTypes,
+              newAlreadyParsedTypes,
               injectedPrimitives,
-            ).Then((parsedArgs1) =>
+            ).Then(([parsedArg1, newAlreadyParsedTypes2]) =>
               ValueOrErrors.Default.return([
-                DispatchParsedType.Default.sum([
-                  parsedArgs0[0],
-                  parsedArgs1[0],
-                ]),
-                alreadyParsedTypes,
+                DispatchParsedType.Default.sum([parsedArg0, parsedArg1]),
+                newAlreadyParsedTypes2,
               ]),
             ),
           );
         if (SerializedType.isRecord(rawType))
           return DispatchParsedType.Operations.ParseRecord(
-            typeName,
             rawType,
-            typeNames,
             serializedTypes,
             alreadyParsedTypes,
             injectedPrimitives,
@@ -1409,26 +1601,56 @@ export const DispatchParsedType = {
           return DispatchParsedType.Operations.ParseRawType(
             "TableArg",
             rawType.args[0],
-            typeNames,
             serializedTypes,
             alreadyParsedTypes,
             injectedPrimitives,
-          ).Then((parsedArg) =>
-            parsedArg[0].kind != "lookup"
+          ).Then(([parsedArg, newAlreadyParsedTypes]) =>
+            parsedArg.kind != "lookup"
               ? ValueOrErrors.Default.throwOne(
-                  `Error: ${JSON.stringify(parsedArg[0])} is not a lookup type`,
+                  `Error: ${JSON.stringify(parsedArg)} is not a lookup type`,
                 )
               : ValueOrErrors.Default.return([
-                  DispatchParsedType.Default.table(parsedArg[0]),
-                  alreadyParsedTypes,
+                  DispatchParsedType.Default.table(parsedArg),
+                  newAlreadyParsedTypes,
                 ]),
           );
         }
-        if (SerializedType.isLookup(rawType, typeNames))
-          return ValueOrErrors.Default.return([
-            DispatchParsedType.Default.lookup(rawType),
+        if (SerializedType.isLookup(rawType, injectedPrimitives)) {
+          const resolvedType = serializedTypes[rawType];
+          if (!resolvedType) {
+            return ValueOrErrors.Default.throwOne(
+              `Error: ${JSON.stringify(rawType)} is not a valid lookup type (not found in serializedTypes)`,
+            );
+          }
+          if (!isString(rawType)) {
+            return ValueOrErrors.Default.throwOne(
+              `Error: ${JSON.stringify(rawType)} is not a valid lookup type (not a string)`,
+            );
+          }
+          if (alreadyParsedTypes.has(rawType)) {
+            return ValueOrErrors.Default.return([
+              DispatchParsedType.Default.lookup(rawType),
+              alreadyParsedTypes,
+            ]);
+          }
+
+          return DispatchParsedType.Operations.ParseRawType(
+            rawType,
+            resolvedType,
+            serializedTypes,
             alreadyParsedTypes,
-          ]);
+            injectedPrimitives,
+          ).Then(([parsedType, newAlreadyParsedTypes]) =>
+            ValueOrErrors.Default.return([
+              DispatchParsedType.Default.lookup(rawType),
+              newAlreadyParsedTypes.set(
+                rawType,
+                ValueOrErrors.Default.return(parsedType),
+              ),
+            ]),
+          );
+        }
+
         if (SerializedType.isUnit(rawType)) {
           return ValueOrErrors.Default.return([
             DispatchParsedType.Default.primitive("unit"),
@@ -1436,91 +1658,121 @@ export const DispatchParsedType = {
           ]);
         }
         if (SerializedType.isUnion(rawType))
-          // for now we assume all union cases are lookup types
-          return ValueOrErrors.Operations.All(
-            List<ValueOrErrors<[string, DispatchParsedType<T>], string>>(
-              rawType.args.map((unionCase) =>
-                DispatchParsedType.Operations.ParseRawType(
-                  `Union:Case ${unionCase.caseName}`,
-                  unionCase.fields == undefined
-                    ? { fields: {} }
-                    : // we allow the record fields to be defined directly in the spec instead of
-                      // inside a fields key
-                      SerializedType.isRecordFields(unionCase.fields)
-                      ? { fields: unionCase.fields }
-                      : unionCase.fields,
-                  typeNames,
-                  serializedTypes,
-                  alreadyParsedTypes,
-                  injectedPrimitives,
-                ).Then((parsedType) =>
-                  ValueOrErrors.Default.return([
-                    unionCase.caseName,
-                    parsedType[0],
-                  ]),
+          return rawType.args
+            .reduce<
+              ValueOrErrors<
+                [
+                  Map<string, DispatchParsedType<T>>,
+                  Map<
+                    DispatchTypeName,
+                    ValueOrErrors<DispatchParsedType<T>, string>
+                  >,
+                ],
+                string
+              >
+            >(
+              (acc, unionCase) =>
+                acc.Then(
+                  ([parsedUnionCasesMap, accumulatedAlreadyParsedTypes]) =>
+                    DispatchParsedType.Operations.ParseRawType(
+                      isString(unionCase.fields)
+                        ? unionCase.fields
+                        : `Union:Case ${unionCase.caseName}`,
+                      unionCase.fields == undefined
+                        ? { fields: {} }
+                        : // we allow the record fields to be defined directly in the spec instead of
+                          // inside a fields key
+                          SerializedType.isRecordFields(unionCase.fields)
+                          ? { fields: unionCase.fields }
+                          : unionCase.fields,
+                      serializedTypes,
+                      accumulatedAlreadyParsedTypes,
+                      injectedPrimitives,
+                    ).Then(([parsedType, newAlreadyParsedTypes]) =>
+                      ValueOrErrors.Default.return<
+                        [
+                          Map<string, DispatchParsedType<T>>,
+                          Map<
+                            DispatchTypeName,
+                            ValueOrErrors<DispatchParsedType<T>, string>
+                          >,
+                        ],
+                        string
+                      >([
+                        parsedUnionCasesMap.set(unionCase.caseName, parsedType),
+                        newAlreadyParsedTypes,
+                      ]),
+                    ),
                 ),
-              ),
-            ),
-          ).Then((parsedUnionCases) =>
-            ValueOrErrors.Default.return([
-              DispatchParsedType.Default.union(Map(parsedUnionCases)),
-              alreadyParsedTypes,
-            ]),
-          );
-        if (SerializedType.isOne(rawType))
+              ValueOrErrors.Default.return<
+                [
+                  Map<string, DispatchParsedType<T>>,
+                  Map<
+                    DispatchTypeName,
+                    ValueOrErrors<DispatchParsedType<T>, string>
+                  >,
+                ],
+                string
+              >([Map<string, DispatchParsedType<T>>(), alreadyParsedTypes]),
+            )
+            .Then(([parsedUnionCasesMap, accumulatedAlreadyParsedTypes]) =>
+              ValueOrErrors.Default.return([
+                DispatchParsedType.Default.union(parsedUnionCasesMap),
+                accumulatedAlreadyParsedTypes,
+              ]),
+            );
+        if (SerializedType.isOne(rawType)) {
           return DispatchParsedType.Operations.ParseRawType(
-            "One:Element",
+            rawType.args[0] as string,
             rawType.args[0],
-            typeNames,
             serializedTypes,
             alreadyParsedTypes,
             injectedPrimitives,
-          ).Then((parsedArg) =>
-            parsedArg[0].kind != "lookup"
+          ).Then(([parsedArg, newAlreadyParsedTypes]) =>
+            parsedArg.kind != "lookup"
               ? ValueOrErrors.Default.throwOne(
-                  `one content type ${JSON.stringify(parsedArg[0])} is not a lookup type`,
+                  `one content type ${JSON.stringify(parsedArg)} is not a lookup type`,
                 )
               : ValueOrErrors.Default.return([
-                  DispatchParsedType.Default.one(parsedArg[0]),
-                  alreadyParsedTypes,
+                  DispatchParsedType.Default.one(parsedArg),
+                  newAlreadyParsedTypes,
                 ]),
           );
+        }
         if (SerializedType.isReadOnly(rawType))
           return DispatchParsedType.Operations.ParseRawType(
             "ReadOnly:Element",
             rawType.args[0],
-            typeNames,
             serializedTypes,
             alreadyParsedTypes,
             injectedPrimitives,
-          ).Then(([parsedArg, _]) =>
+          ).Then(([parsedArg, newAlreadyParsedTypes]) =>
             ValueOrErrors.Default.return([
               DispatchParsedType.Default.readOnly(parsedArg),
-              alreadyParsedTypes,
+              newAlreadyParsedTypes,
             ]),
           );
         if (SerializedType.isKeyOf(rawType))
           return DispatchParsedType.Operations.ParseRawKeyOf(
             rawType,
-            typeNames,
             serializedTypes,
             alreadyParsedTypes,
+            injectedPrimitives,
           );
         if (SerializedType.isTranslationOverride(rawType))
           return DispatchParsedType.Operations.ParseRawType(
             "TranslationOverride:Language",
             rawType.args[0],
-            typeNames,
             serializedTypes,
             alreadyParsedTypes,
             injectedPrimitives,
-          ).Then(([parsedArg0, ..._]) =>
+          ).Then(([parsedArg0, newAlreadyParsedTypes]) =>
             ValueOrErrors.Default.return([
               DispatchParsedType.Default.map([
                 DispatchParsedType.Default.singleSelection([parsedArg0]),
                 DispatchParsedType.Default.primitive("string"),
               ]),
-              alreadyParsedTypes,
+              newAlreadyParsedTypes,
             ]),
           );
         return ValueOrErrors.Default.throwOne(

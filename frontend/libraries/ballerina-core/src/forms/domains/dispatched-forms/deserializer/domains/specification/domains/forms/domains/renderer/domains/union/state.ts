@@ -7,7 +7,7 @@ import {
 } from "../../../../../../../../../../../../../main";
 import { DispatchIsObject, UnionType } from "../../../../../types/state";
 import { DispatchParsedType } from "../../../../../types/state";
-import { List, Map } from "immutable";
+import { Map } from "immutable";
 import { Renderer } from "../../state";
 
 export type SerializedUnionRenderer = {
@@ -70,15 +70,21 @@ export const UnionRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
-    ): ValueOrErrors<UnionRenderer<T>, string> =>
+      forms: object,
+      alreadyParsedForms: Map<string, Renderer<T>>,
+    ): ValueOrErrors<[UnionRenderer<T>, Map<string, Renderer<T>>], string> =>
       UnionRenderer.Operations.tryAsValidUnionForm(serialized)
         .Then((validSerialized) =>
-          ValueOrErrors.Operations.All(
-            List<ValueOrErrors<[string, Renderer<T>], string>>(
-              validSerialized.cases
-                .entrySeq()
-                .toArray()
-                .map(([caseName, caseRenderer]) =>
+          validSerialized.cases
+            .entrySeq()
+            .reduce<
+              ValueOrErrors<
+                [Map<string, Renderer<T>>, Map<string, Renderer<T>>],
+                string
+              >
+            >(
+              (acc, [caseName, caseRenderer]) =>
+                acc.Then(([casesMap, accumulatedAlreadyParsedForms]) =>
                   MapRepo.Operations.tryFindWithError(
                     caseName,
                     type.args,
@@ -96,21 +102,33 @@ export const UnionRenderer = {
                       concreteRenderers,
                       types,
                       undefined,
-                    ).Then((caseRenderer) =>
-                      ValueOrErrors.Default.return([caseName, caseRenderer]),
+                      forms,
+                      accumulatedAlreadyParsedForms,
+                    ).Then(([caseRenderer, newAlreadyParsedForms]) =>
+                      ValueOrErrors.Default.return<
+                        [Map<string, Renderer<T>>, Map<string, Renderer<T>>],
+                        string
+                      >([
+                        casesMap.set(caseName, caseRenderer),
+                        newAlreadyParsedForms,
+                      ]),
                     ),
                   ),
                 ),
+              ValueOrErrors.Default.return<
+                [Map<string, Renderer<T>>, Map<string, Renderer<T>>],
+                string
+              >([Map<string, Renderer<T>>(), alreadyParsedForms]),
+            )
+            .Then(([casesMap, accumulatedAlreadyParsedForms]) =>
+              ValueOrErrors.Default.return<
+                [UnionRenderer<T>, Map<string, Renderer<T>>],
+                string
+              >([
+                UnionRenderer.Default(type, casesMap, validSerialized.renderer),
+                accumulatedAlreadyParsedForms,
+              ]),
             ),
-          ).Then((caseTuples) =>
-            ValueOrErrors.Default.return(
-              UnionRenderer.Default(
-                type,
-                Map(caseTuples),
-                validSerialized.renderer,
-              ),
-            ),
-          ),
         )
         .MapErrors((errors) =>
           errors.map((error) => `${error}\n...When parsing as union form`),
