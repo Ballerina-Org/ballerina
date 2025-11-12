@@ -8,8 +8,7 @@ open Ballerina.Reader.WithError
 open Ballerina.StdLib.Json.Reader
 
 module Keys =
-  let discriminatorKey = "discriminator"
-  let valueKey = "value"
+
 
   module Sum =
 

@@ -56,7 +56,7 @@ module Eval =
       (Value<TypeValue, 'valueExtension> -> ExprEvaluator<'valueExtension, Value<TypeValue, 'valueExtension>>)
     | TypeApplicable of (TypeValue -> ExprEvaluator<'valueExtension, Value<TypeValue, 'valueExtension>>)
     | Matchable of
-      (Map<ResolvedIdentifier, CaseHandler<TypeValue, ResolvedIdentifier>>
+      (Map<ResolvedIdentifier, CaseHandler<TypeValue, ResolvedIdentifier, 'valueExtension>>
         -> ExprEvaluator<'valueExtension, Value<TypeValue, 'valueExtension>>)
 
   and ExtensionEvaluator<'valueExtension> =
@@ -91,7 +91,7 @@ module Eval =
                 ExtensionOps = u (c.ExtensionOps) }
          Symbols = fun u (c: ExprEvalContext<'valueExtension>) -> { c with Symbols = u (c.Symbols) } |}
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member EvalApply (loc0: Location) (fV, argV) =
       reader {
         let! fVVar, fvBody, closure, _scope =
@@ -112,17 +112,17 @@ module Eval =
             match res with
             | Left res -> return res
             | Right err ->
-              do Console.WriteLine($"Warning: error during function application {fV} {argV} ({fvBody})")
-              do Console.ReadLine() |> ignore
-              do closure |> Map.iter (fun k v -> Console.WriteLine($"  {k} = {v}"))
-              do Console.ReadLine() |> ignore
+              // do Console.WriteLine($"Warning: error during function application {fV} {argV} ({fvBody})")
+              // do Console.ReadLine() |> ignore
+              // do closure |> Map.iter (fun k v -> Console.WriteLine($"  {k} = {v}"))
+              // do Console.ReadLine() |> ignore
               return! err |> reader.Throw
           }
           |> reader.MapError(Errors.SetPriority ErrorPriority.High)
       }
 
     static member Eval<'valueExtension>
-      (e: Expr<TypeValue, ResolvedIdentifier>)
+      (e: Expr<TypeValue, ResolvedIdentifier, 'valueExtension>)
       : ExprEvaluator<'valueExtension, Value<TypeValue, 'valueExtension>> =
       let (!) = Expr.Eval<'valueExtension>
       let loc0 = e.Location
@@ -298,7 +298,8 @@ module Eval =
                       | Some fallback -> return! !fallback
                       | None ->
                         return!
-                          (loc0, $"Error: cannot find case handler for union case {unionVCase.Name}")
+                          (loc0,
+                           $"Error: cannot find case handler for union case. Cases = {cases.Keys.ToFSharpString}. Case = {unionVCase.ToFSharpString}.")
                           |> Errors.Singleton
                           |> reader.Throw
                   }
@@ -341,6 +342,77 @@ module Eval =
             |> reader.MapContext(
               ExprEvalContext.Updaters.Values(Map.add (caseVar.Name |> Identifier.LocalScope |> e.Scope.Resolve) sumV)
             )
+
+        | ExprRec.ApplyValue({ F = f; Arg = argV }) ->
+          let! fV = !f
+
+          return!
+            reader.Any(
+              reader { return! Expr.EvalApply loc0 (fV, argV) },
+              [ (reader {
+                  let! fUnionCons = fV |> Value.AsUnionCons |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+                  return Value.UnionCase(fUnionCons, argV)
+                })
+                (reader {
+                  let! fRecord = fV |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                  return!
+                    reader {
+                      let! fRecordCons =
+                        fRecord
+                        |> Map.tryFindWithError
+                          ("cons" |> Identifier.LocalScope |> e.Scope.Resolve)
+                          "record field"
+                          "cons"
+                          loc0
+                        |> reader.OfSum
+
+                      let! fUnionCons =
+                        fRecordCons
+                        |> Value.AsUnionCons
+                        |> sum.MapError(Errors.FromErrors loc0)
+                        |> reader.OfSum
+
+                      return Value.UnionCase(fUnionCons, argV)
+                    }
+                    |> reader.MapError(Errors.SetPriority ErrorPriority.High)
+                })
+                (reader {
+                  let! fieldId = fV |> Value.AsRecordDes |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                  return!
+                    reader {
+                      // let fieldId = fieldId.Name
+                      let! recordV = argV |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                      return!
+                        recordV
+                        |> Map.tryFindWithError fieldId "record field" (fieldId.ToString()) loc0
+                        |> reader.OfSum
+                        |> reader.MapError(Errors.Map(String.append $" in record {argV}"))
+                    }
+                    |> reader.MapError(Errors.SetPriority ErrorPriority.High)
+                })
+                (reader {
+                  let! fExt = fV |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                  return!
+                    reader {
+                      let! ctx = reader.GetContext()
+                      let! fExt = ctx.ExtensionOps.Eval loc0 fExt
+
+                      match fExt with
+                      | Applicable f -> return! f argV
+                      | _ ->
+                        return!
+                          (loc0, "Expected an applicable or matchable extension function")
+                          |> Errors.Singleton
+                          |> reader.Throw
+                    }
+                    |> reader.MapError(Errors.SetPriority ErrorPriority.High)
+                }) ]
+            )
+            |> reader.MapError(Errors.FilterHighestPriorityOnly)
 
         | ExprRec.Apply({ F = f; Arg = argE }) ->
           let! fV = !f

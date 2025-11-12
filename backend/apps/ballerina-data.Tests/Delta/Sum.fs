@@ -10,16 +10,13 @@ open Ballerina.DSL.Next.Types.Patterns
 
 [<Test>]
 let ``Delta.Sum: Updates correct case index in sum value`` () =
-  let sumType =
-    [ TypeValue.CreateInt32(); TypeValue.CreateString() ] |> TypeValue.CreateSum
-
   let sumValue =
     Value<Unit>.Sum({ Case = 1; Count = 1 }, PrimitiveValue.Int32 42 |> Value<Unit>.Primitive)
 
   let delta =
     Delta.Sum(1, Delta.Replace(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive))
 
-  match Delta.ToUpdater sumType delta with
+  match Delta.ToUpdater delta with
   | Sum.Left updater ->
     match updater sumValue with
     | Sum.Left(Value.Sum(updatedIndex, updatedValue)) ->
@@ -30,45 +27,29 @@ let ``Delta.Sum: Updates correct case index in sum value`` () =
 
 [<Test>]
 let ``Delta.Sum: Returns original value when index does not match`` () =
-  let sumType =
-    [ TypeValue.CreateInt32(); TypeValue.CreateString() ] |> TypeValue.CreateSum
-
   let sumValue =
     Value<Unit>.Sum({ Case = 2; Count = 1 }, PrimitiveValue.String "untouched" |> Value<Unit>.Primitive)
 
   let delta =
     Delta.Sum(1, Delta.Replace(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive))
 
-  match Delta.ToUpdater sumType delta with
+  match Delta.ToUpdater delta with
   | Sum.Left updater ->
     match updater sumValue with
     | Sum.Left v -> Assert.That(v, Is.EqualTo sumValue)
     | _ -> Assert.Fail "Expected original value unchanged"
   | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"
 
-[<Test>]
-let ``Delta.Sum: Fails when index is out of bounds in type`` () =
-  let sumType = [ TypeValue.CreateInt32() ] |> TypeValue.CreateSum
-
-  let delta =
-    Delta.Sum(3, Delta.Replace(PrimitiveValue.Int32 999 |> Value<Unit>.Primitive))
-
-  match Delta.ToUpdater sumType delta with
-  | Sum.Left _ -> Assert.Fail "Expected failure due to invalid case index"
-  | Sum.Right _ -> Assert.Pass()
 
 [<Test>]
 let ``Delta.Sum: Fails when delta type does not match case type TODO:decide`` () =
-  let sumType =
-    [ TypeValue.CreateInt32(); TypeValue.CreateString() ] |> TypeValue.CreateSum
-
   let sumValue =
     Value<Unit>.Sum({ Case = 1; Count = 1 }, PrimitiveValue.Int32 42 |> Value<Unit>.Primitive)
 
   let delta =
     Delta.Sum(1, Delta.Replace(PrimitiveValue.String "wrong type" |> Value<Unit>.Primitive))
 
-  match Delta.ToUpdater sumType delta with
+  match Delta.ToUpdater delta with
   | Sum.Left updater ->
     match updater sumValue with
     | Sum.Right _ -> Assert.Fail("Updater shouldn't fail due to type mismatch, TODO: confirm")

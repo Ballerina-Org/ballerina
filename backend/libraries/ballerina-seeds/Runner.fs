@@ -18,14 +18,14 @@ module Runner =
   let _extensions, languageContext = stdExtensions
 
   let seed
-    (schema: Schema<TypeValue, ResolvedIdentifier>)
+    (schema: Schema<TypeValue, ResolvedIdentifier, ValueExt>)
     : Reader<SpecData<TypeValue, ValueExt>, SeedingContext, Errors> =
     reader {
       let! ctx = reader.GetContext()
 
       let! entities, _ =
         schema.Entities
-        |> Map.map (fun _k -> EntityDescriptor.seed)
+        |> Map.map (fun en d -> EntityDescriptor.seed d en)
         |> state.AllMap
         |> State.Run(ctx, SeedingState.Default(languageContext.TypeCheckState.Types))
         |> reader.OfSum

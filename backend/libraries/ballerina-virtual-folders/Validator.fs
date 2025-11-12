@@ -56,5 +56,6 @@ module Validator =
       return
         {| CodegenConfig = codegenConfig
            InitialContext = initialContext
+           InjectedTypes = injectedTypes |> Map.keys |> Seq.toList
            LangSpecificConfig = generatedLanguageSpecificConfig |}
     }

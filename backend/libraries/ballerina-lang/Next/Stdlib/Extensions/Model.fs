@@ -5,10 +5,8 @@ module Model =
   open Ballerina.DSL.Next.Types
   open Ballerina.DSL.Next.Terms
   open Ballerina.Lenses
-  open Ballerina.DSL.Next.Json
   open Ballerina.Collections.NonEmptyList
   open Ballerina.LocalizedErrors
-  open Ballerina.DSL.Next.Types.TypeChecker.Expr
   open Ballerina.DSL.Next.Types.TypeChecker.Model
 
   type LanguageContext<'ext> =
@@ -46,9 +44,7 @@ module Model =
         Map<
           ResolvedIdentifier,  // example: ("Option.Some", "OptionSome")
           TypeOperationExtension<'ext, 'extConstructors, 'extValues, 'extOperations>
-         >
-      Parser: ValueParserLayer<TypeValue, ResolvedIdentifier, 'ext>
-      Encoder: ValueEncoderLayer<TypeValue, 'ext> }
+         > }
 
   and TypeOperationExtension<'ext, 'extConstructors, 'extValues, 'extOperations> =
     { Type: TypeValue // "a => b => (a -> b) -> Option a -> Option b"

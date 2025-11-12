@@ -169,6 +169,14 @@ module Unification =
           let! items = List.zip e1.value e2.value |> Seq.map (fun (v1, v2) -> v1 == v2) |> reader.All
 
           return TypeValue.CreateTuple items
+
+        | TypeValue.Imported e1, TypeValue.Imported e2 when e1.Arguments.Length = e2.Arguments.Length ->
+          let! arguments =
+            List.zip e1.Arguments e2.Arguments
+            |> Seq.map (fun (v1, v2) -> v1 == v2)
+            |> reader.All
+
+          return TypeValue.Imported { e1 with Arguments = arguments }
         | TypeValue.Sum e1, TypeValue.Sum e2 when e1.value.Length = e2.value.Length ->
           let! items = List.zip e1.value e2.value |> Seq.map (fun (v1, v2) -> v1 == v2) |> reader.All
 

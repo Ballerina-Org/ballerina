@@ -24,6 +24,11 @@ module Patterns =
       | JsonValue.Record fields -> fields |> Map.ofSeq |> sum.Return
       | _ -> sum.Throw(Errors.Singleton $"Error: expected record, found '{json.ToFSharpString.ReasonablyClamped}'")
 
+    static member AsRecordKeys(json: JsonValue) =
+      match json with
+      | JsonValue.Record fields -> fields |> Array.map fst |> Array.toSeq
+      | _ -> []
+
     static member AsArray json =
       match json with
       | JsonValue.Array fields -> sum.Return fields
