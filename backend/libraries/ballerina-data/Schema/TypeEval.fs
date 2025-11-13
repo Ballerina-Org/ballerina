@@ -10,7 +10,7 @@ module TypeEval =
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Types.TypeChecker.Eval
   open Ballerina.DSL.Next.Types.TypeChecker.Model
-  open Ballerina.DSL.Next.Types.TypeChecker
+  open Ballerina.DSL.Next.Types.TypeChecker.Patterns
   open Ballerina.Errors
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.TypeEval
@@ -20,18 +20,32 @@ module TypeEval =
 
   let inline private (>>=) f g = fun x -> state.Bind(f x, g)
 
-  type EntityDescriptor<'T, 'Id when 'Id: comparison> with
+  type EntityDescriptor<'T, 'Id, 'ValueExt when 'Id: comparison> with
     static member Updaters =
-      {| Type = fun u (c: EntityDescriptor<'T, 'Id>) -> { c with Type = c.Type |> u }
-         Methods = fun u (c: EntityDescriptor<'T, 'Id>) -> { c with Methods = c.Methods |> u } |}
+      {| Type = fun u (c: EntityDescriptor<'T, 'Id, 'ValueExt>) -> { c with Type = c.Type |> u }
+         Methods = fun u (c: EntityDescriptor<'T, 'Id, 'ValueExt>) -> { c with Methods = c.Methods |> u } |}
 
-  type Schema<'T, 'Id when 'Id: comparison> with
-    static member SchemaEval
-      : Schema<TypeExpr, Identifier>
-          -> OrderedMap<Identifier, TypeValue>
-          -> State<Schema<TypeValue, ResolvedIdentifier>, TypeExprEvalContext, TypeExprEvalState, Errors> =
-      fun schema types ->
+  type Schema<'T, 'Id, 'ValueExt when 'Id: comparison> with
+    static member CreateTypeContext
+      (schema: Schema<TypeExpr, Identifier, 'ValueExt>)
+      : State<OrderedMap<Identifier, TypeValue * Kind>, TypeExprEvalContext, TypeExprEvalState, Errors> =
+      schema.Types
+      |> OrderedMap.map (fun identifier typeExpr ->
         state {
+
+          let! tv, kind = TypeExpr.Eval None Location.Unknown typeExpr
+          do! TypeExprEvalState.bindType (identifier |> TypeCheckScope.Empty.Resolve) (tv, kind)
+          return tv, kind
+        })
+      |> state.AllMapOrdered
+
+    static member SchemaEval
+      : Schema<TypeExpr, Identifier, 'ValueExt>
+          -> State<Schema<TypeValue, ResolvedIdentifier, 'ValueExt>, TypeExprEvalContext, TypeExprEvalState, Errors> =
+      fun schema ->
+        state {
+          let! types = Schema.CreateTypeContext schema
+
           let! entities =
             schema.Entities
             |> Map.map (fun _ v ->
@@ -73,7 +87,7 @@ module TypeEval =
             |> state.AllMap
 
           return
-            { Types = types
+            { Types = types |> OrderedMap.map (fun _k -> fst)
               Entities = entities
               Lookups = schema.Lookups }
         }

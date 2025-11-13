@@ -35,7 +35,7 @@ module Union =
       (rootToJson: ValueEncoder<'T, 'valueExtension>)
       (k: ResolvedIdentifier)
       (v: Value<'T, 'valueExtension>)
-      : ValueEncoderReader<'T> =
+      : ValueEncoderReader<'T, 'valueExtension> =
       reader {
         let k = ResolvedIdentifier.ToJson k
         let! v = rootToJson v
@@ -55,7 +55,7 @@ module Union =
     static member ToJsonUnionCons
       (_rootToJson: ValueEncoder<'T, 'valueExtension>)
       (k: ResolvedIdentifier)
-      : ValueEncoderReader<'T> =
+      : ValueEncoderReader<'T, 'valueExtension> =
       reader {
         let k = ResolvedIdentifier.ToJson k
         return k |> Json.discriminator discriminator_cons

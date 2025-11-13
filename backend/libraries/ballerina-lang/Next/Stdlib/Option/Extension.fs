@@ -12,7 +12,6 @@ module Extension =
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.Option
-  open Ballerina.DSL.Next.Json
   open FSharp.Data
 
   let OptionExtension<'ext>
@@ -141,18 +140,6 @@ module Extension =
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
-    let valueParser
-      (_rootValueParser: ValueParser<TypeValue, ResolvedIdentifier, 'ext>)
-      (_v: JsonValue)
-      : ValueParserReader<TypeValue, ResolvedIdentifier, 'ext> =
-      reader.Throw(Ballerina.Errors.Errors.Singleton("Option value parser not implemented"))
-
-    let valueEncoder
-      (_rootValueEncoder: ValueEncoder<TypeValue, 'ext>)
-      (_v: Value<TypeValue, 'ext>)
-      : ValueEncoderReader<TypeValue> =
-      reader.Throw(Ballerina.Errors.Errors.Singleton("Option value encoder not implemented"))
-
     { TypeName = optionId, optionSymbolId
       TypeVars = [ (aVar, aKind) ]
       WrapTypeVars = fun t -> TypeValue.CreateLambda(TypeParameter.Create(aVar.Name, aKind), t)
@@ -162,6 +149,4 @@ module Extension =
         fun (v: OptionValues<'ext>) ->
           match v with
           | OptionValues.Option(Some v) -> v
-          | _ -> Value<TypeValue, 'ext>.Primitive PrimitiveValue.Unit
-      Parser = valueParser
-      Encoder = valueEncoder }
+          | _ -> Value<TypeValue, 'ext>.Primitive PrimitiveValue.Unit }

@@ -26,12 +26,12 @@ module Expr =
     | ApplicationArguments
     | BinaryExpressionChain
 
-  type ComplexExpression =
+  type ComplexExpression<'valueExt> =
     | ScopedIdentifier of NonEmptyList<string>
     | RecordOrTupleDesChain of NonEmptyList<Sum<string, int>>
-    | TupleCons of NonEmptyList<Expr<TypeExpr, Identifier>>
-    | ApplicationArguments of NonEmptyList<Sum<Expr<TypeExpr, Identifier>, TypeExpr>>
-    | BinaryExpressionChain of NonEmptyList<BinaryExprOperator * Expr<TypeExpr, Identifier>>
+    | TupleCons of NonEmptyList<Expr<TypeExpr, Identifier, 'valueExt>>
+    | ApplicationArguments of NonEmptyList<Sum<Expr<TypeExpr, Identifier, 'valueExt>, TypeExpr>>
+    | BinaryExpressionChain of NonEmptyList<BinaryExprOperator * Expr<TypeExpr, Identifier, 'valueExt>>
 
   let private parseAllComplexShapes: Set<ComplexExpressionKind> =
     [ ComplexExpressionKind.ApplicationArguments
@@ -614,7 +614,7 @@ module Expr =
 
                 match e with
                 | BinaryExpressionChain fields ->
-                  let fields: List<BinaryOperatorsElement<Expr<_, _>, BinaryExprOperator>> =
+                  let fields: List<BinaryOperatorsElement<Expr<_, _, _>, BinaryExprOperator>> =
                     fields
                     |> NonEmptyList.ToList
                     |> Seq.collect (fun (op, e) -> [ op |> Precedence.Operator; e |> Precedence.Operand ])
@@ -730,7 +730,7 @@ module Expr =
         | Sum.Left res -> return res
     }
 
-  let program =
+  let program<'valueExt> () : Parser<Expr<TypeExpr, Identifier, 'valueExt>, _, _, _> =
     parser {
       let! e = expr 0 parseAllComplexShapes
       do! parser.EndOfStream()

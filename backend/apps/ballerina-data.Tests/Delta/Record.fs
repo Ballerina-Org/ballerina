@@ -11,6 +11,9 @@ open Ballerina.Collections.Sum
 open Ballerina.StdLib.OrderPreservingMap
 open Ballerina.Cat.Collections.OrderedMap
 
+let deltaExt (_ext: unit) : Value<TypeValue, Unit> -> Sum<Value<TypeValue, Unit>, 'a> =
+  fun (v: Value<TypeValue, Unit>) -> sum.Return v
+
 let symbol name : TypeSymbol =
   { Name = name |> Identifier.LocalScope
     Guid = Guid.CreateVersion7() }
@@ -19,9 +22,6 @@ let symbol name : TypeSymbol =
 let ``Delta.Record: Updates field in a record correctly`` () =
   let fieldName = "age"
   let typeSymbol = symbol fieldName
-  let typeValue = TypeValue.CreateInt32()
-
-  let recordType = TypeValue.CreateRecord(OrderedMap.ofList [ typeSymbol, typeValue ])
 
   let recordValue =
     Value<Unit>
@@ -36,7 +36,7 @@ let ``Delta.Record: Updates field in a record correctly`` () =
   let delta =
     Delta.Record(fieldName, Delta.Replace(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive))
 
-  match Delta.ToUpdater recordType delta with
+  match Delta.ToUpdater deltaExt delta with
   | Sum.Left updater ->
     match updater recordValue with
     | Sum.Left(Value.Record updated) ->
@@ -51,30 +51,15 @@ let ``Delta.Record: Updates field in a record correctly`` () =
   | Sum.Right err -> Assert.Fail $"Delta.ToUpdater failed: {err}"
 
 [<Test>]
-let ``Delta.Record: Fails when field not found in type`` () =
-  let recordType = TypeValue.CreateRecord OrderedMap.empty
-
-  let delta =
-    Delta.Record("missing", Delta.Replace(PrimitiveValue.Int32 1 |> Value<Unit>.Primitive))
-
-  match Delta.ToUpdater recordType delta with
-  | Sum.Left _ -> Assert.Fail "Expected failure when field is missing in type"
-  | Sum.Right _err -> Assert.Pass()
-
-[<Test>]
 let ``Delta.Record: Fails when field not found in value`` () =
   let fieldName = "age"
-  let typeSymbol = symbol fieldName
-  let typeValue = TypeValue.CreateInt32()
-
-  let recordType = TypeValue.CreateRecord(OrderedMap.ofList [ typeSymbol, typeValue ])
 
   let recordValue = Value<Unit>.Record(Map.empty)
 
   let delta =
     Delta.Record(fieldName, Delta.Replace(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive))
 
-  match Delta.ToUpdater recordType delta with
+  match Delta.ToUpdater deltaExt delta with
   | Sum.Left updater ->
     match updater recordValue with
     | Sum.Right _err -> Assert.Pass()

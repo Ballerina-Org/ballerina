@@ -18,7 +18,7 @@ open Ballerina.Data.TypeEval
 
 [<Test>]
 let ``SpecNext-Schema evaluates`` () =
-  let source: Schema<TypeExpr, Identifier> =
+  let source: Schema<TypeExpr, Identifier, Unit> =
     { Types = OrderedMap.empty
       Entities =
         Map.ofList
@@ -27,17 +27,17 @@ let ``SpecNext-Schema evaluates`` () =
                Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters =
                  [ { Updater.Path = []
-                     Condition = Expr<TypeExpr, Identifier>.Primitive(PrimitiveValue.Bool true)
-                     Expr = Expr<TypeExpr, Identifier>.Primitive(PrimitiveValue.Int32 42) } ]
+                     Condition = Expr<TypeExpr, Identifier, Unit>.Primitive(PrimitiveValue.Bool true)
+                     Expr = Expr<TypeExpr, Identifier, Unit>.Primitive(PrimitiveValue.Int32 42) } ]
                Predicates =
-                 [ ("SomePredicate", Expr<TypeExpr, Identifier>.Primitive(PrimitiveValue.Bool false)) ]
+                 [ ("SomePredicate", Expr<TypeExpr, Identifier, Unit>.Primitive(PrimitiveValue.Bool false)) ]
                  |> Map.ofList })
             ({ EntityName = "TargetTable" },
              { Type = "AnotherType" |> Identifier.LocalScope |> TypeExpr.Lookup
                Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters = []
                Predicates =
-                 [ ("AnotherPredicate", Expr<TypeExpr, Identifier>.Primitive(PrimitiveValue.Bool true)) ]
+                 [ ("AnotherPredicate", Expr<TypeExpr, Identifier, Unit>.Primitive(PrimitiveValue.Bool true)) ]
                  |> Map.ofList }) ]
       Lookups = Map.empty }
 
@@ -51,7 +51,7 @@ let ``SpecNext-Schema evaluates`` () =
       OrderedMap.ofList [ ("Bar" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateString()) ]
     )
 
-  let expected: Schema<TypeValue, ResolvedIdentifier> =
+  let expected: Schema<TypeValue, ResolvedIdentifier, Unit> =
     { Types = OrderedMap.empty
       Entities =
         Map.ofList
@@ -78,7 +78,8 @@ let ``SpecNext-Schema evaluates`` () =
               ("AnotherType" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve, (AnotherType, Kind.Star)) ] }
 
   match
-    source |> Schema.SchemaEval <| OrderedMap.empty
+    source
+    |> Schema.SchemaEval
     |> State.Run(TypeExprEvalContext.Empty("", ""), initialState)
   with
   | Right e -> Assert.Fail($"Failed to eval schema: {e}")

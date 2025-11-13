@@ -13,11 +13,11 @@ module Union =
   open Ballerina.DSL.Next.Json.Keys
   open FSharp.Data
 
-  type Delta<'valueExtension> with
+  type Delta<'valueExtension, 'deltaExtension> with
     static member FromJsonUnion
-      (fromJsonRoot: DeltaParser<'valueExtension>)
+      (fromJsonRoot: DeltaParser<'valueExtension, 'deltaExtension>)
       (json: JsonValue)
-      : DeltaParserReader<'valueExtension> =
+      : DeltaParserReader<'valueExtension, 'deltaExtension> =
       Reader.assertDiscriminatorAndContinueWithValue "union" json (fun json ->
         reader {
           let! caseName, caseDelta = json |> JsonValue.AsPair |> reader.OfSum
@@ -27,10 +27,10 @@ module Union =
         })
 
     static member ToJsonUnion
-      (rootToJson: DeltaEncoder<'valueExtension>)
+      (rootToJson: DeltaEncoder<'valueExtension, 'deltaExtension>)
       (caseName: string)
-      (caseDelta: Delta<'valueExtension>)
-      : DeltaEncoderReader<'valueExtension> =
+      (caseDelta: Delta<'valueExtension, 'deltaExtension>)
+      : DeltaEncoderReader<'valueExtension, 'deltaExtension> =
       reader {
         let caseName = caseName |> JsonValue.String
         let! caseDelta = caseDelta |> rootToJson

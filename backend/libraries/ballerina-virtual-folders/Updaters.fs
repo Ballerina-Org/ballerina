@@ -10,7 +10,11 @@ open Ballerina.VirtualFolders.Model
 open Ballerina.VirtualFolders.Patterns
 
 module Updaters =
-  let private validate (workspace: WorkspaceVariant) (validator: Validator<'ExprExt, 'ValExt>) (root: VfsNode) =
+  let private validate
+    (workspace: WorkspaceVariant)
+    (validator: Validator<'ExprExt, 'ValExt>)
+    (root: VfsNode)
+    : Sum<JsonValue * ParsedFormsContext<'ExprExt, 'ValExt> * string list, Errors> =
 
     sum {
       let! init = Validator.init root
@@ -22,35 +26,31 @@ module Updaters =
       | Explore(_fileSplit, path) ->
         let! path =
           Transient.value path
-          |> sum.OfOption(Errors.Singleton "explore (no transient path")
+          |> sum.OfOption(Errors.Singleton "explore (no transient path)")
 
         let! node = VfsNode.AsFolder root
         let! files = Explore.getFiles (node, path)
-        return! validate files
+        return! validate files |> sum.Map(fun (json, model) -> json, model, init.InjectedTypes)
       | Compose ->
         let! node = VfsNode.AsFolder root
         let files = Compose.getFiles node
-        return! validate files
+        return! validate files |> sum.Map(fun (json, model) -> json, model, init.InjectedTypes)
     }
 
   let compose
     (validator: Validator<'ExprExt, 'ValExt>)
     (u: U<VfsNode>)
-    : VfsNode -> Sum<JsonValue * ParsedFormsContext<'ExprExt, 'ValExt>, Errors> =
+    : VfsNode -> Sum<JsonValue * ParsedFormsContext<'ExprExt, 'ValExt> * string list, Errors> =
 
-    fun node ->
-      sum {
-        let! result = validate Compose validator (u node)
-        return result
-      }
+    fun node -> validate Compose validator (u node)
 
   let explore
-    (path: VirtualPath)
+    (path: VirtualPath option)
     (validator: Validator<'ExprExt, 'ValExt>)
     (u: U<VfsNode>)
-    : VfsNode -> Sum<JsonValue * ParsedFormsContext<'ExprExt, 'ValExt>, Errors> =
+    : VfsNode -> Sum<JsonValue * ParsedFormsContext<'ExprExt, 'ValExt> * string list, Errors> =
     fun node ->
       sum {
-        let! result = validate (Explore(FileSplit.Partial [], Transient.some path)) validator (u node)
-        return result
+        let! path = path |> sum.OfOption(Errors.Singleton "Path is required in 'explore' variant")
+        return! validate (Explore(FileSplit.Partial [], Transient.some path)) validator (u node)
       }

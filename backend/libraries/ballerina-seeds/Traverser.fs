@@ -8,6 +8,8 @@ open Ballerina.DSL.Next.Types.TypeChecker.Patterns
 open Ballerina.DSL.Next.Types.TypeChecker
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Patterns
+open Ballerina.Data.Schema.Model
+open Ballerina.Data.Schema.ActivePatterns
 open Ballerina.LocalizedErrors
 open Ballerina.Seeds.Fakes
 open Ballerina.Reader.WithError
@@ -45,10 +47,12 @@ type SeedingState =
 
 module Traverser =
 
-  let rec seed: TypeValue -> State<Value<TypeValue, ValueExt>, SeedingContext, SeedingState, Errors> =
+  let rec seed
+    (entity: EntityName)
+    : TypeValue -> State<Value<TypeValue, ValueExt>, SeedingContext, SeedingState, Errors> =
     fun typeValue ->
 
-      let (!) = seed
+      let (!) = seed entity
 
       let setLabel label =
         state.SetState(fun s -> { s with Label = FromContext label })
@@ -60,7 +64,7 @@ module Traverser =
         match typeValue with
         | TypeValue.Imported x when x.Id.Name = "List" && List.length x.Arguments = 1 ->
           let! values = [ 0..2 ] |> List.map (fun _ -> (!) x.Arguments.Head) |> state.All
-          let listExtValue = ListValues >> Choice1Of3 >> ValueExt.ValueExt
+          let listExtValue = ListValues >> Choice1Of4 >> ValueExt.ValueExt
           let lv = List.Model.ListValues.List values |> listExtValue
           return Value.Ext lv
 
@@ -91,43 +95,48 @@ module Traverser =
             |> Value.Record
 
         | TypeValue.Sum { value = elements } ->
-          let! values = elements |> Seq.map (!) |> state.All
-          return Value.Sum({ Case = 1; Count = elements.Length }, values.Head)
+          match elements with
+          | [] ->
+            return! state.Throw(Errors.Singleton(Location.Unknown, "TypeValue.Sum with no elements can't be seeded"))
+          | elements ->
+            let! values = elements |> Seq.map (!) |> state.All
 
+            return
+              Value.Sum(
+                { Case = elements.Length - 1
+                  Count = elements.Length },
+                values |> List.head
+              )
         | TypeValue.Tuple { value = elements } ->
           let! values = elements |> Seq.map (!) |> state.All
           return Value.Tuple values
 
         | TypeValue.Map({ value = key, value }) ->
-          let! k = !key
-          let! v = !value
+          let! key = (!) key
+          let! value = (!) value
 
           return
             Value.Record(
               Map.ofList
-                [ "Key" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve, k
-                  "Value" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve, v ]
+                [ "Key" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve, key
+                  "Value" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve, value ]
             )
+            |> List.singleton
+            |> Value.Tuple
 
         | TypeValue.Union cases ->
           let! ctx = state.GetContext()
 
-          let sampled =
+          let ts, tv =
             match ctx.PickItemStrategy with
             | RandomItem -> cases.value |> OrderedMap.toList |> List.randomSample 1
             | First -> cases.value |> OrderedMap.toList |> List.head |> List.singleton
             | Last -> cases.value |> OrderedMap.toList |> List.last |> List.singleton
+            |> List.head
 
-          let! cases =
-            sampled
-            |> List.map (fun (ts, tv) ->
-              state {
-                let! v = !! ts.Name.LocalName tv
-                return ts.Name |> TypeCheckScope.Empty.Resolve, v
-              })
-            |> state.All
-
-          return cases |> List.map Value.UnionCase |> Value.Tuple
+          let! v = !! ts.Name.LocalName tv
+          let case = ts.Name |> TypeCheckScope.Empty.Resolve, v
+          return Value.UnionCase case
 
         | TypeValue.Lookup id ->
           let! ctx = state.GetState()
@@ -138,7 +147,18 @@ module Traverser =
             |> state.OfSum
 
           return! (!!id.ToFSharpString) tv
+        | TypeValue.Record(CollectionReference fields) ->
+          let! fields =
+            fields
+            |> OrderedMap.toList
+            |> List.map (fun (ts, tv) ->
+              state {
+                let! v = !! entity.EntityName tv
+                return ts.Name |> TypeCheckScope.Empty.Resolve, v
+              })
+            |> state.All
 
+          return Value.Record(Map.ofList fields)
         | TypeValue.Record fields ->
           let! fields =
             fields.value

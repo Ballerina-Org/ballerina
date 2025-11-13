@@ -23,12 +23,12 @@ module SumDes =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member internal TypeCheckSumDes
-      (typeCheckExpr: TypeChecker, loc0: Location)
-      : TypeChecker<ExprSumDes<TypeExpr, Identifier>> =
+      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      : TypeChecker<ExprSumDes<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Handlers = handlers }) ->
-        let (!) = typeCheckExpr context_t
+        let (!) = typeCheckExpr None
 
         let ofSum (p: Sum<'a, Ballerina.Errors.Errors>) =
           p |> Sum.mapRight (Errors.FromErrors loc0) |> state.OfSum
@@ -135,12 +135,12 @@ module SumDes =
           //   do!
           //       UnificationState.DeleteVariable kv
           //         |> TypeValue.EquivalenceClassesOp
-          //         |> Expr<'T, 'Id>.liftUnification
+          //         |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
           // do!
           //     UnificationState.DeleteVariable result_var
           //       |> TypeValue.EquivalenceClassesOp
-          //       |> Expr<'T, 'Id>.liftUnification
+          //       |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
           return Expr.SumDes(handlerExprs, loc0, ctx.Types.Scope), arrowValue, Kind.Star
         }

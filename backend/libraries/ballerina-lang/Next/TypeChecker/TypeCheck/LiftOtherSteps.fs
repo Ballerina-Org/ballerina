@@ -21,7 +21,7 @@ module LiftOtherSteps =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member liftUnification
       (p: State<'a, UnificationContext, UnificationState, Errors>)
       : State<'a, TypeCheckContext, TypeCheckState, Errors> =

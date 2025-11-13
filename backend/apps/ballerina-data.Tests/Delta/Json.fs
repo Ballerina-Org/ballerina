@@ -1,5 +1,7 @@
 module Ballerina.Data.Tests.Delta.Json
 
+open Ballerina.DSL.Next.StdLib.Extensions
+open Ballerina.Data.Delta.Extensions
 open NUnit.Framework
 open FSharp.Data
 open Ballerina.Reader.WithError
@@ -9,13 +11,15 @@ open Ballerina.DSL.Next.Terms.Model
 open Ballerina.DSL.Next.Terms.Json.Value
 open Ballerina.Data.Delta.Model
 open Ballerina.DSL.Next.Delta.Json.Model
+open Ballerina.DSL.Next.Delta.Json.DeltaExt
 open Ballerina.DSL.Next.Types.Json.TypeValue
 open Ballerina.DSL.Next.Json
 open Ballerina.Collections.NonEmptyList
 open Ballerina.DSL.Next.Terms.Json
 open Ballerina.DSL.Next.Types.Json.ResolvedTypeIdentifier
+open Ballerina.DSL.Next.StdLib.List.Model
 
-let ``Assert Delta -> ToJson -> FromJson -> Delta`` (expression: Delta<Unit>) (expectedJson: JsonValue) =
+let ``Assert Delta -> ToJson -> FromJson -> Delta`` (expression: Delta<ValueExt, DeltaExt>) (expectedJson: JsonValue) =
   let normalize (json: JsonValue) =
     json.ToString JsonSaveOptions.DisableFormatting
 
@@ -23,11 +27,13 @@ let ``Assert Delta -> ToJson -> FromJson -> Delta`` (expression: Delta<Unit>) (e
     Expr.ToJson >> Reader.Run(TypeValue.ToJson, ResolvedIdentifier.ToJson)
 
   let rootValueToJson =
-    Json.buildRootEncoder<TypeValue, Unit> (NonEmptyList.OfList(Value.ToJson, []))
+    Json.buildRootEncoder<TypeValue, ValueExt> (NonEmptyList.OfList(Value.ToJson, []))
 
   let valueEncoder = rootValueToJson >> Reader.Run(rootExprToJson, TypeValue.ToJson)
 
-  let encoded = Delta.ToJson expression |> Reader.Run valueEncoder
+  let encoded =
+    Delta.ToJson expression
+    |> Reader.Run(valueEncoder, DeltaExt.ToJson valueEncoder)
 
   match encoded with
   | Right err -> Assert.Fail $"Encode failed: {err}"
@@ -38,13 +44,15 @@ let ``Assert Delta -> ToJson -> FromJson -> Delta`` (expression: Delta<Unit>) (e
       Expr.FromJson >> Reader.Run(TypeValue.FromJson, ResolvedIdentifier.FromJson)
 
     let rootValueFromJson =
-      Json.buildRootParser<TypeValue, ResolvedIdentifier, Unit> (NonEmptyList.OfList(Value.FromJson, []))
+      Json.buildRootParser<TypeValue, ResolvedIdentifier, ValueExt> (NonEmptyList.OfList(Value.FromJson, []))
 
     let valueParser =
       rootValueFromJson
       >> Reader.Run(rootExprFromJson, TypeValue.FromJson, ResolvedIdentifier.FromJson)
 
-    let parsed = Delta.FromJson expectedJson |> Reader.Run valueParser
+    let parsed =
+      Delta.FromJson expectedJson
+      |> Reader.Run(valueParser, DeltaExt.FromJson valueParser)
 
     match parsed with
     | Right err -> Assert.Fail $"Parse failed: {err}"
@@ -54,7 +62,7 @@ let ``Assert Delta -> ToJson -> FromJson -> Delta`` (expression: Delta<Unit>) (e
 [<Test>]
 let ``Delta.Multiple json round-trip`` () =
 
-  let delta = Delta<Unit>.Multiple [ Delta.Multiple [] ]
+  let delta = Delta<ValueExt, DeltaExt>.Multiple [ Delta.Multiple [] ]
 
   let json =
     """ 
@@ -85,7 +93,8 @@ let ``Delta.Replace json round-trip`` () =
     """
     |> JsonValue.Parse
 
-  let delta = Delta<Unit>.Replace(Value.Primitive(PrimitiveValue.Int32 99))
+  let delta =
+    Delta<ValueExt, DeltaExt>.Replace(Value.Primitive(PrimitiveValue.Int32 99))
 
   (delta, json) ||> ``Assert Delta -> ToJson -> FromJson -> Delta``
 
@@ -93,7 +102,7 @@ let ``Delta.Replace json round-trip`` () =
 [<Test>]
 let ``Delta.Record json round-trip`` () =
   let delta =
-    Delta<Unit>.Record("Foo", Delta.Replace(Value.Primitive(PrimitiveValue.Int32 99)))
+    Delta<ValueExt, DeltaExt>.Record("Foo", Delta.Replace(Value.Primitive(PrimitiveValue.Int32 99)))
 
   let json =
     """ 
@@ -170,6 +179,89 @@ let ``Delta.Sum json round-trip`` () =
         }
       ]
       }
+    """
+    |> JsonValue.Parse
+
+  (delta, json) ||> ``Assert Delta -> ToJson -> FromJson -> Delta``
+
+
+[<Test>]
+let ``Delta.Ext list append json round-trip`` () =
+  let str v =
+    Value.Primitive(PrimitiveValue.String v)
+
+  let delta =
+    Delta.Ext(DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.AppendElement(str "x"))))
+
+  let json =
+    """ 
+      {
+        "discriminator": "deltaExt",
+        "value": {
+          "discriminator": "list",
+          "value": {
+            "discriminator": "appendElement",
+            "value": {
+              "discriminator": "string",
+              "value": "x"
+            }
+          }
+        }
+      }
+    """
+    |> JsonValue.Parse
+
+  (delta, json) ||> ``Assert Delta -> ToJson -> FromJson -> Delta``
+
+
+[<Test>]
+let ``Delta.Ext list update json round-trip`` () =
+  let str v =
+    Value.Primitive(PrimitiveValue.String v)
+
+  let delta =
+    Delta.Ext(DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.UpdateElement(11, str "x"))))
+
+  let json =
+    """ 
+      {
+        "discriminator": "deltaExt",
+        "value": {
+          "discriminator": "list",
+          "value": {
+            "discriminator": "updateElementAt",
+            "value": {
+              "index": 11,
+              "value": {
+                "discriminator": "string",
+                "value": "x"
+              }
+            }
+          }
+        }
+      }
+    """
+    |> JsonValue.Parse
+
+  (delta, json) ||> ``Assert Delta -> ToJson -> FromJson -> Delta``
+
+[<Test>]
+let ``Delta.Ext list remove json round-trip`` () =
+
+  let delta = Delta.Ext(DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.RemoveElement(4))))
+
+  let json =
+    """ {
+        "discriminator": "deltaExt",
+        "value": {
+          "discriminator": "list",
+          "value": {
+            "discriminator": "removeElementAt",
+            "index": 4
+          }
+        }
+      }
+
     """
     |> JsonValue.Parse
 
