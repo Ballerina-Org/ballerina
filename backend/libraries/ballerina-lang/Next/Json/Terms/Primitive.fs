@@ -11,9 +11,9 @@ module Primitive =
   open Ballerina.Errors
   open System
   open Ballerina.DSL.Next.Json
+  open Ballerina.StdLib.Formats
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json.Keys
-
 
   type Int32 with
     static member FromString: string -> Sum<int, Errors> =
@@ -107,29 +107,28 @@ module Primitive =
 
   type DateOnly with
     static member FromString: string -> Sum<DateOnly, Errors> =
-      DateOnly.TryParse
+      Iso8601.DateOnly.tryParse
       >> function
-        | true, value -> sum.Return value
-        | false, _ -> sum.Throw(Errors.Singleton "Error: expected DateOnly, found non-DateOnly string")
+        | Some value -> sum.Return value
+        | None -> sum.Throw(Errors.Singleton "Error: expected DateOnly, found non-DateOnly string")
 
-    static member ToJsonString: DateOnly -> JsonValue =
-      fun d ->
-        JsonValue.Record
-          [| discriminatorKey, JsonValue.String "date"
-             valueKey, JsonValue.String(d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)) |]
+    static member ToJsonString date =
+      JsonValue.Record
+        [| discriminatorKey, JsonValue.String "date"
+           valueKey, date |> Iso8601.DateOnly.print |> JsonValue.String |]
 
   type DateTime with
     static member FromString: string -> Sum<DateTime, Errors> =
-      (fun date -> System.DateTime.TryParse(date, null, System.Globalization.DateTimeStyles.RoundtripKind))
+      Iso8601.DateTime.tryParse
       >> function
-        | true, value -> sum.Return value
-        | false, _ -> sum.Throw(Errors.Singleton "Error: expected DateTime, found non-DateTime string")
+        | Some value -> sum.Return value
+        | None -> sum.Throw(Errors.Singleton "Error: expected DateTime, found non-DateTime string")
 
     static member ToJsonString: DateTime -> JsonValue =
-      fun d ->
+      fun date ->
         JsonValue.Record
           [| discriminatorKey, JsonValue.String "datetime"
-             valueKey, JsonValue.String(d.ToString("yyyy-MM-ddTHH:mm:ss'Z'", CultureInfo.InvariantCulture)) |]
+             valueKey, date |> Iso8601.DateTime.printUtc |> JsonValue.String |]
 
   type TimeSpan with
     static member FromString: string -> Sum<TimeSpan, Errors> =
@@ -227,7 +226,7 @@ module Primitive =
       Sum.assertDiscriminatorAndContinueWithValue
         "datetime"
         (JsonValue.AsString
-         >>= System.DateTime.FromString
+         >>= DateTime.FromString
          >>= (PrimitiveValue.DateTime >> sum.Return))
         json
 

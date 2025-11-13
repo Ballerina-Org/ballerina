@@ -42,15 +42,19 @@
         <Compile Include="Bool/Extension.fs" />
         <Compile Include="Guid/Model.fs" />
         <Compile Include="Guid/Patterns.fs" />
+        <Compile Include="Guid/ConsExt.fs" />
         <Compile Include="Guid/Extension.fs" />
         <Compile Include="DateTime/Model.fs" />
         <Compile Include="DateTime/Patterns.fs" />
+        <Compile Include="DateTime/ConsExt.fs" />
         <Compile Include="DateTime/Extension.fs" />
         <Compile Include="DateOnly/Model.fs" />
         <Compile Include="DateOnly/Patterns.fs" />
+        <Compile Include="DateOnly/ConsExt.fs" />
         <Compile Include="DateOnly/Extension.fs" />
         <Compile Include="TimeSpan/Model.fs" />
         <Compile Include="TimeSpan/Patterns.fs" />
+        <Compile Include="TimeSpan/ConsExt.fs" />
         <Compile Include="TimeSpan/Extension.fs" />
         <Compile Include="StdExtensions.fs" />
     </ItemGroup>
@@ -66,7 +70,6 @@
         <ProjectReference Include="..\Models\ballerina-lang-models.fsproj" />
         <ProjectReference Include="..\TypeChecker\ballerina-lang-typecheck.fsproj" />
         <ProjectReference Include="..\Eval\ballerina-lang-eval.fsproj" />
-        <ProjectReference Include="..\Json\ballerina-lang-json.fsproj" />
     </ItemGroup>
 
 

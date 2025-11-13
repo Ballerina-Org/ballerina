@@ -29,7 +29,7 @@ module Tuple =
     static member ToJsonTuple
       (rootToJson: ValueEncoder<'T, 'valueExtension>)
       (elements: List<Value<'T, 'valueExtension>>)
-      : ValueEncoderReader<'T> =
+      : ValueEncoderReader<'T, 'valueExtension> =
       reader {
         let! elements = elements |> List.map rootToJson |> reader.All
         return elements |> List.toArray |> JsonValue.Array |> Json.discriminator discriminator

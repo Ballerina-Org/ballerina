@@ -14,8 +14,11 @@ module Apply =
 
   let private discriminator = "apply"
 
-  type Expr<'T, 'Id when 'Id: comparison> with
-    static member FromJsonApply (fromRootJson: ExprParser<'T, 'Id>) (value: JsonValue) : ExprParserReader<'T, 'Id> =
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
+    static member FromJsonApply
+      (fromRootJson: ExprParser<'T, 'Id, 'valueExt>)
+      (value: JsonValue)
+      : ExprParserReader<'T, 'Id, 'valueExt> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun application ->
         reader {
           let! f, arg = application |> JsonValue.AsPair |> reader.OfSum
@@ -25,9 +28,9 @@ module Apply =
         })
 
     static member ToJsonApply
-      (rootToJson: ExprEncoder<'T, 'Id>)
-      (f: Expr<'T, 'Id>)
-      (arg: Expr<'T, 'Id>)
+      (rootToJson: ExprEncoder<'T, 'Id, 'valueExt>)
+      (f: Expr<'T, 'Id, 'valueExt>)
+      (arg: Expr<'T, 'Id, 'valueExt>)
       : ExprEncoderReader<'T, 'Id> =
       reader {
         let! f = f |> rootToJson

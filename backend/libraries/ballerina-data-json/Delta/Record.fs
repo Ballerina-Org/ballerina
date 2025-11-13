@@ -12,11 +12,11 @@ module Record =
   open Ballerina.DSL.Next.Json.Keys
   open FSharp.Data
 
-  type Delta<'valueExtension> with
+  type Delta<'valueExtension, 'deltaExtension> with
     static member FromJsonRecord
-      (fromJsonRoot: DeltaParser<'valueExtension>)
+      (fromJsonRoot: DeltaParser<'valueExtension, 'deltaExtension>)
       (json: JsonValue)
-      : DeltaParserReader<'valueExtension> =
+      : DeltaParserReader<'valueExtension, 'deltaExtension> =
       Reader.assertDiscriminatorAndContinueWithValue "record" json (fun json ->
         reader {
           let! fieldName, fieldDelta = json |> JsonValue.AsPair |> reader.OfSum
@@ -26,10 +26,10 @@ module Record =
         })
 
     static member ToJsonRecord
-      (rootToJson: DeltaEncoder<'valueExtension>)
+      (rootToJson: DeltaEncoder<'valueExtension, 'deltaExtension>)
       (name: string)
-      (delta: Delta<'valueExtension>)
-      : DeltaEncoderReader<'valueExtension> =
+      (delta: Delta<'valueExtension, 'deltaExtension>)
+      : DeltaEncoderReader<'valueExtension, 'deltaExtension> =
       reader {
         let name = name |> JsonValue.String
         let! delta = delta |> rootToJson

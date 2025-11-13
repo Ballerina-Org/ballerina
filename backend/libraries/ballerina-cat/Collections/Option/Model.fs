@@ -5,12 +5,6 @@ module Option =
   open System
   open System.Threading.Tasks
 
-  type Option<'a> with
-    static member fromObject: obj -> Option<'a> =
-      function
-      | null -> None
-      | :? 'a as a -> Some a
-      | _ -> None
 
   type OptionBuilder() =
     member _.Zero() = Option.None
@@ -35,3 +29,21 @@ module Option =
 
 
   let option = OptionBuilder()
+
+  type Option<'a> with
+    static member fromObject: obj -> Option<'a> =
+      function
+      | null -> None
+      | :? 'a as a -> Some a
+      | _ -> None
+
+    static member All(options: list<Option<'a>>) : Option<list<'a>> =
+      List.foldBack
+        (fun opt acc ->
+          option {
+            let! x = opt
+            let! xs = acc
+            return x :: xs
+          })
+        options
+        (Some [])

@@ -21,14 +21,15 @@ module RecordDes =
   open Ballerina.StdLib.OrderPreservingMap
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
+  open Ballerina.DSL.Next.Types.TypeChecker.LiftOtherSteps
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member internal TypeCheckRecordDes
-      (typeCheckExpr: TypeChecker, loc0: Location)
-      : TypeChecker<ExprRecordDes<TypeExpr, Identifier>> =
+      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      : TypeChecker<ExprRecordDes<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
-          ({ Expr = fields_expr
+          ({ Expr = record_expr
              Field = fieldName }) ->
         let (!) = typeCheckExpr context_t
 
@@ -37,24 +38,38 @@ module RecordDes =
 
         state {
           let! ctx = state.GetContext()
-          let! fields, t_fields, fields_k = !fields_expr
-          do! fields_k |> Kind.AsStar |> ofSum |> state.Ignore
+          let! record_v, record_t, record_k = !record_expr
+          do! record_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-          let! t_fields =
-            t_fields
-            |> TypeValue.AsRecord
-            |> ofSum
-            |> state.Map WithTypeExprSourceMapping.Getters.Value
+          let! fields_t =
+            state.Either
+              (record_t
+               |> TypeValue.AsRecord
+               |> ofSum
+               |> state.Map WithTypeExprSourceMapping.Getters.Value)
+              (state {
+                let! id = TypeCheckState.TryResolveIdentifier(fieldName, loc0)
+                let! fields_t = TypeCheckState.TryFindRecordField(id, loc0) |> state.Map fst
+                let expected_record_t = TypeValue.CreateRecord fields_t
+
+                do!
+                  TypeValue.Unify(loc0, record_t, expected_record_t)
+                  |> Expr.liftUnification
+                  |> state.MapError(Errors.SetPriority ErrorPriority.High)
+
+                return fields_t
+              })
+            |> state.MapError Errors.FilterHighestPriorityOnly
 
           return!
             state {
               let! field_k, field_t =
-                t_fields
+                fields_t
                 |> OrderedMap.toSeq
                 |> Seq.map (fun (k, v) -> (k, v))
                 |> Seq.tryFind (fun (k, _v) -> k.Name.LocalName = fieldName.LocalName)
                 |> sum.OfOption(
-                  $"Error: cannot find field {fieldName} in record {fields}"
+                  $"Error: cannot find field {fieldName} in record {record_v}"
                   |> Ballerina.Errors.Errors.Singleton
                 )
                 |> ofSum
@@ -79,7 +94,7 @@ module RecordDes =
               //   |> OrderedMap.tryFindWithError fieldName "fields" fieldName.ToFSharpString
               //   |> ofSum
 
-              return Expr.RecordDes(fields, fieldName, loc0, ctx.Types.Scope), field_t, Kind.Star
+              return Expr.RecordDes(record_v, fieldName, loc0, ctx.Types.Scope), field_t, Kind.Star
             }
             |> state.MapError(Errors.SetPriority ErrorPriority.High)
         }

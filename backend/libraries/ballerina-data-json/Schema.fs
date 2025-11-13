@@ -87,10 +87,10 @@ module Json =
           [| JsonValue.String "sumCase"
              JsonValue.Array [| JsonValue.Number(decimal index); JsonValue.String var.Name |] |]
 
-  type Updater<'Type, 'Id when 'Id: comparison> with
+  type Updater<'Type, 'Id, 'ValueExt when 'Id: comparison> with
     static member FromJson
       (jsonValue: JsonValue)
-      : Reader<Updater<'Type, 'Id>, JsonParser<'Type> * JsonParser<'Id>, Errors> =
+      : Reader<Updater<'Type, 'Id, 'ValueExt>, JsonParser<'Type> * JsonParser<'Id>, Errors> =
       reader {
         let! path, condition, expr = jsonValue |> JsonValue.AsTriple |> reader.OfSum
         let! path = path |> JsonValue.AsArray |> reader.OfSum
@@ -105,7 +105,7 @@ module Json =
       }
 
     static member ToJson
-      (updater: Updater<'Type, 'Id>)
+      (updater: Updater<'Type, 'Id, 'ValueExt>)
       : Reader<JsonValue, JsonEncoder<'Type> * JsonEncoder<'Id>, Errors> =
       let pathJson =
         updater.Path
@@ -143,10 +143,10 @@ module Json =
 
   type JsonParser<'T> = JsonValue -> Sum<'T, Errors>
 
-  type EntityDescriptor<'T, 'Id when 'Id: comparison> with
+  type EntityDescriptor<'T, 'Id, 'ValueExt when 'Id: comparison> with
     static member FromJson
       (jsonValue: JsonValue)
-      : Reader<EntityDescriptor<'T, 'Id>, JsonParser<'T> * JsonParser<'Id>, Errors> =
+      : Reader<EntityDescriptor<'T, 'Id, 'ValueExt>, JsonParser<'T> * JsonParser<'Id>, Errors> =
       reader {
         let! jsonValue = jsonValue |> JsonValue.AsRecordMap |> reader.OfSum
         let! typeValue = jsonValue |> Map.tryFindWithError "type" "entity" "type" |> reader.OfSum
@@ -165,7 +165,7 @@ module Json =
 
         let! updaters = jsonValue |> Map.tryFindWithError "updaters" "entity" "updaters" |> reader.OfSum
         let! updaters = updaters |> JsonValue.AsArray |> reader.OfSum
-        let! updaters = updaters |> Seq.map Updater<'T, 'Id>.FromJson |> reader.All
+        let! updaters = updaters |> Seq.map Updater<'T, 'Id, 'ValueExt>.FromJson |> reader.All
 
         let! predicates =
           jsonValue
@@ -183,7 +183,7 @@ module Json =
       }
 
     static member ToJson
-      (entity: EntityDescriptor<'T, 'Id>)
+      (entity: EntityDescriptor<'T, 'Id, 'ValueExt>)
       : Reader<JsonValue, JsonEncoder<'T> * JsonEncoder<'Id>, Errors> =
       reader {
         let! ctx, _ = reader.GetContext()
@@ -192,7 +192,7 @@ module Json =
         let methodsJson =
           entity.Methods |> Seq.map EntityMethod.ToJson |> Seq.toArray |> JsonValue.Array
 
-        let! updatersJson = entity.Updaters |> Seq.map Updater<'T, 'Id>.ToJson |> reader.All
+        let! updatersJson = entity.Updaters |> Seq.map Updater<'T, 'Id, 'ValueExt>.ToJson |> reader.All
 
         let! predicatesJson = entity.Predicates |> Map.map (fun _ -> Expr.ToJson) |> reader.AllMap
 
@@ -304,8 +304,10 @@ module Json =
            "forward", forwardJson
            "backward", backwardJson |]
 
-  type Schema<'T, 'Id when 'Id: comparison> with
-    static member FromJson(jsonValue: JsonValue) : Reader<Schema<'T, 'Id>, JsonParser<'T> * JsonParser<'Id>, Errors> =
+  type Schema<'T, 'Id, 'ValueExt when 'Id: comparison> with
+    static member FromJson
+      (jsonValue: JsonValue)
+      : Reader<Schema<'T, 'Id, 'ValueExt>, JsonParser<'T> * JsonParser<'Id>, Errors> =
       reader {
         let! jsonValue = jsonValue |> JsonValue.AsRecordMap |> reader.OfSum
 
@@ -331,7 +333,7 @@ module Json =
           entities
           |> Map.map (fun _ entityJson ->
             reader {
-              let! entityDescriptor = EntityDescriptor<'T, 'Id>.FromJson entityJson
+              let! entityDescriptor = EntityDescriptor<'T, 'Id, 'ValueExt>.FromJson entityJson
               return entityDescriptor
             })
           |> reader.AllMap
@@ -365,12 +367,14 @@ module Json =
             Lookups = lookupsMap }
       }
 
-    static member ToJson(schema: Schema<'T, 'Id>) : Reader<JsonValue, JsonEncoder<'T> * JsonEncoder<'Id>, Errors> =
+    static member ToJson
+      (schema: Schema<'T, 'Id, 'ValueExt>)
+      : Reader<JsonValue, JsonEncoder<'T> * JsonEncoder<'Id>, Errors> =
 
       reader {
         let! entitiesJson =
           schema.Entities
-          |> Map.map (fun _ -> EntityDescriptor<'T, 'Id>.ToJson)
+          |> Map.map (fun _ -> EntityDescriptor<'T, 'Id, 'ValueExt>.ToJson)
           |> reader.AllMap
 
         let lookupsJson =
@@ -402,7 +406,7 @@ module Json =
     static member FromJsonVirtualFolder
       (variant: WorkspaceVariant)
       (root: FolderNode)
-      : Sum<Schema<TypeExpr, Identifier>, Errors> =
+      : Sum<Schema<TypeExpr, Identifier, 'ValueExpr>, Errors> =
       sum {
         let! merged =
           getWellKnownFile (Folder root) Merged
@@ -444,4 +448,11 @@ module Json =
 
         let! schema = Schema.FromJson schemaJson |> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
         return schema
+      }
+
+    static member InsertTypesToSchema(schemaJson: JsonValue, typesJson: JsonValue) : Sum<JsonValue, Errors> =
+      sum {
+        let! schema = JsonValue.AsRecordMap schemaJson
+        let schema = Map.add "types" typesJson schema
+        return JsonValue.Record(Map.toArray schema)
       }

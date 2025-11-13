@@ -1,5 +1,7 @@
 namespace Ballerina.DSL.Expr.Types
 
+open Ballerina.DSL.Expr.Model
+
 module Patterns =
   open Ballerina.Collections.Sum
   open Ballerina.Errors
@@ -61,6 +63,13 @@ module Patterns =
         match t with
         | ExprType.UnionType c -> return c
         | _ -> return! sum.Throw(Errors.Singleton $$"""Error: type {{t}} cannot be converted to a union.""")
+      }
+
+    static member AsMap(m: ExprType) : Sum<_, Errors> =
+      sum {
+        match m with
+        | ExprType.MapType(k, v) -> return (k, v)
+        | _ -> return! sum.Throw(Errors.Singleton $$"""Error: type {{m}} cannot be converted to a map.""")
       }
 
     static member AsUnit(t: ExprType) : Sum<Unit, Errors> =

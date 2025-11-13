@@ -16,7 +16,7 @@ open Ballerina.DSL.Next.EquivalenceClasses
 open Ballerina.DSL.Next.Unification
 open Ballerina.State.WithError
 
-let ``Assert Kind -> ToJson -> FromJson -> Kind`` (expression: Kind) (expectedJson: JsonValue) =
+let ``Assert Kind -> ToJson -> FromJson -> Kind`` (expression: Kind) (expectedJson: JsonValue) : unit =
   let toJson = Kind.ToJson expression
   Assert.That(toJson, Is.EqualTo(expectedJson))
 
@@ -26,7 +26,7 @@ let ``Assert Kind -> ToJson -> FromJson -> Kind`` (expression: Kind) (expectedJs
   | Right err -> Assert.Fail $"Parse failed: {err}"
   | Left result -> Assert.That(result, Is.EqualTo(expression))
 
-let ``Assert Symbol -> ToJson -> FromJson -> Symbol`` (expression: TypeSymbol) (expectedJson: JsonValue) =
+let ``Assert Symbol -> ToJson -> FromJson -> Symbol`` (expression: TypeSymbol) (expectedJson: JsonValue) : unit =
   let toJson = TypeSymbol.ToJson expression
   Assert.That(toJson, Is.EqualTo(expectedJson))
 
@@ -36,7 +36,10 @@ let ``Assert Symbol -> ToJson -> FromJson -> Symbol`` (expression: TypeSymbol) (
   | Right err -> Assert.Fail $"Parse failed: {err}"
   | Left result -> Assert.That(result, Is.EqualTo(expression))
 
-let ``Assert Parameter -> ToJson -> FromJson -> Parameter`` (expression: TypeParameter) (expectedJson: JsonValue) =
+let ``Assert Parameter -> ToJson -> FromJson -> Parameter``
+  (expression: TypeParameter)
+  (expectedJson: JsonValue)
+  : unit =
   let toJson = TypeParameter.ToJson expression
   Assert.That(toJson, Is.EqualTo(expectedJson))
 
@@ -46,7 +49,7 @@ let ``Assert Parameter -> ToJson -> FromJson -> Parameter`` (expression: TypePar
   | Right err -> Assert.Fail $"Parse failed: {err}"
   | Left result -> Assert.That(result, Is.EqualTo(expression))
 
-let ``Assert Var -> ToJson -> FromJson -> Var`` (expression: TypeVar) (expectedJson: JsonValue) =
+let ``Assert Var -> ToJson -> FromJson -> Var`` (expression: TypeVar) (expectedJson: JsonValue) : unit =
   let toJson = TypeVar.ToJson expression
   Assert.That(toJson, Is.EqualTo(expectedJson))
 
@@ -55,6 +58,21 @@ let ``Assert Var -> ToJson -> FromJson -> Var`` (expression: TypeVar) (expectedJ
   match parsed with
   | Right err -> Assert.Fail $"Parse failed: {err}"
   | Left result -> Assert.That(result, Is.EqualTo(expression))
+
+let ``Assert ResolvedIdentifier -> ToJson -> FromJson -> ResolvedIdentifier``
+  (expression: ResolvedIdentifier)
+  (expectedJson: JsonValue)
+  : unit =
+  let toJson = ResolvedIdentifier.ToJson expression
+  Assert.That(toJson, Is.EqualTo(expectedJson))
+
+  let parsed = ResolvedIdentifier.FromJson expectedJson
+
+  match parsed with
+  | Right err -> Assert.Fail $"Parse failed: {err}"
+  | Left result -> Assert.That(result, Is.EqualTo(expression))
+
+
 
 [<Test>]
 let ``Dsl:Type.Kind json round-trip`` () =
@@ -106,3 +124,21 @@ let ``Dsl:Type.Var json round-trip`` () =
       TypeVar.Guid = guid }
 
   (expected, JsonValue.Parse json) ||> ``Assert Var -> ToJson -> FromJson -> Var``
+
+[<Test>]
+let ``Dsl:Type.ResolvedIdentifier json round-trip`` () =
+  let testCases =
+    [ """{"discriminator": "id", "value": ["MyAssembly", "MyModule", "MyType", "MyName"]}""",
+      { ResolvedIdentifier.Assembly = "MyAssembly"
+        Module = "MyModule"
+        Type = Some "MyType"
+        Name = "MyName" }
+      """{"discriminator": "id", "value": ["MyAssembly", "MyModule", null, "MyName"]}""",
+      { ResolvedIdentifier.Assembly = "MyAssembly"
+        Module = "MyModule"
+        Type = None
+        Name = "MyName" } ]
+
+  for (json, expected) in testCases do
+    (expected, JsonValue.Parse json)
+    ||> ``Assert ResolvedIdentifier -> ToJson -> FromJson -> ResolvedIdentifier``

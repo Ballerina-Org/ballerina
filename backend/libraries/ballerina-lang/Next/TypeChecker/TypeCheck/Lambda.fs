@@ -25,10 +25,10 @@ module Lambda =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member internal TypeCheckLambda
-      (typeCheckExpr: TypeChecker, loc0: Location)
-      : TypeChecker<ExprLambda<TypeExpr, Identifier>> =
+      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      : TypeChecker<ExprLambda<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
           ({ Param = x
@@ -44,7 +44,7 @@ module Lambda =
 
           let! t =
             t
-            |> Option.map (fun t -> t |> TypeExpr.Eval None loc0 |> Expr<'T, 'Id>.liftTypeEval)
+            |> Option.map (fun t -> t |> TypeExpr.Eval None loc0 |> Expr<'T, 'Id, 'valueExt>.liftTypeEval)
             |> state.RunOption
 
           // (p: State<'a, UnificationContext, UnificationState, Errors>)
@@ -75,13 +75,13 @@ module Lambda =
             freshVarType
             |> fst
             |> TypeValue.Instantiate loc0
-            |> Expr<'T, 'Id>.liftInstantiation
-          // let! t_body = t_body |> TypeValue.Instantiate loc0 |> Expr<'T, 'Id>.liftInstantiation
+            |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
+          // let! t_body = t_body |> TypeValue.Instantiate loc0 |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
           // do!
           //     UnificationState.DeleteVariable freshVar
           //       |> TypeValue.EquivalenceClassesOp
-          //       |> Expr<'T, 'Id>.liftUnification
+          //       |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
           let! t_res =
             TypeValue.CreateArrow(t_x, t_body)

@@ -26,10 +26,10 @@ module Apply =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member internal TypeCheckApply
-      (typeCheckExpr: TypeChecker, loc0: Location)
-      : TypeChecker<ExprApply<TypeExpr, Identifier>> =
+      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      : TypeChecker<ExprApply<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ F = f_expr; Arg = a_expr }) ->
         let (!) = typeCheckExpr context_t
         let (=>) c e = typeCheckExpr c e
@@ -83,7 +83,7 @@ module Apply =
                       let f_i = union_cons_t |> fst
                       let f_o = union_cons_t |> snd |> TypeValue.CreateUnion
                       let f_k = Kind.Star
-                      do! TypeValue.Unify(loc0, f_i, t_a) |> Expr<'T, 'Id>.liftUnification
+                      do! TypeValue.Unify(loc0, f_i, t_a) |> Expr<'T, 'Id, 'valueExt>.liftUnification
                       let! f_o = f_o |> TypeValue.Instantiate loc0 |> Expr.liftInstantiation
 
                       return Expr.Apply(Expr.Lookup f_lookup, a, loc0, ctx.Types.Scope), f_o, f_k
@@ -132,7 +132,7 @@ module Apply =
                                 ),
                                 adhoc_op_t
                               )
-                              |> Expr<'T, 'Id>.liftUnification
+                              |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
                             let! t_res =
                               TypeValue.CreateArrow(
@@ -151,7 +151,7 @@ module Apply =
                           state {
                             do!
                               TypeValue.Unify(loc0, TypeValue.CreatePrimitive PrimitiveType.Bool, t_a)
-                              |> Expr<'T, 'Id>.liftUnification
+                              |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
                             return!
                               state {
@@ -171,7 +171,7 @@ module Apply =
                                     ),
                                     bool_op_t
                                   )
-                                  |> Expr<'T, 'Id>.liftUnification
+                                  |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
                                 let t_res = TypeValue.CreatePrimitive PrimitiveType.Bool
                                 let k_res = Kind.Star
@@ -209,7 +209,7 @@ module Apply =
 
                     Some(TypeValue.CreateArrow(t_a, freshVar))
 
-                let rec pad (f_expr: Expr<TypeExpr, Identifier>) =
+                let rec pad (f_expr: Expr<TypeExpr, Identifier, 'valueExt>) =
                   state {
                     let! f, t_f, f_k = f_constraint => f_expr
 
@@ -252,24 +252,32 @@ module Apply =
                         state {
                           let! aCasesT =
                             aCasesT
-                            |> OrderedMap.map (fun _ -> TypeExpr.Eval None loc0 >> Expr<'T, 'Id>.liftTypeEval)
+                            |> OrderedMap.map (fun _ ->
+                              TypeExpr.Eval None loc0 >> Expr<'T, 'Id, 'valueExt>.liftTypeEval)
                             |> state.AllMapOrdered
 
                           let aCasesT = aCasesT |> OrderedMap.map (fun _ -> fst)
 
                           do!
                             TypeValue.Unify(loc0, f_input, TypeValue.CreateUnion aCasesT)
-                            |> Expr<'T, 'Id>.liftUnification
+                            |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
-                          let! f_output = f_output |> TypeValue.Instantiate loc0 |> Expr<'T, 'Id>.liftInstantiation
+                          let! f_output =
+                            f_output
+                            |> TypeValue.Instantiate loc0
+                            |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
                           return Expr.Apply(f, a, loc0, ctx.Types.Scope), f_output, Kind.Star
                         }
                         |> state.MapError(Errors.SetPriority ErrorPriority.High)
                     },
                     [ state {
-                        do! TypeValue.Unify(loc0, f_input, t_a) |> Expr<'T, 'Id>.liftUnification
-                        let! f_output = f_output |> TypeValue.Instantiate loc0 |> Expr<'T, 'Id>.liftInstantiation
+                        do! TypeValue.Unify(loc0, f_input, t_a) |> Expr<'T, 'Id, 'valueExt>.liftUnification
+
+                        let! f_output =
+                          f_output
+                          |> TypeValue.Instantiate loc0
+                          |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
                         return Expr.Apply(f, a, loc0, ctx.Types.Scope), f_output, Kind.Star
                       }

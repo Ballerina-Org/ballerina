@@ -14,18 +14,20 @@ module Replace =
   open Ballerina.DSL.Next.Json.Keys
   open FSharp.Data
 
-  type Delta<'valueExtension> with
-    static member FromJsonReplace(json: JsonValue) : DeltaParserReader<'valueExtension> =
+  type Delta<'valueExtension, 'deltaExtension> with
+    static member FromJsonReplace(json: JsonValue) : DeltaParserReader<'valueExtension, 'deltaExtension> =
       Reader.assertDiscriminatorAndContinueWithValue "replace" json (fun json ->
         reader {
-          let! ctx = reader.GetContext()
+          let! ctx, _ = reader.GetContext()
           let! value = ctx json |> reader.OfSum
           return value |> Delta.Replace
         })
 
-    static member ToJsonReplace(value: Value<TypeValue, 'valueExtension>) : DeltaEncoderReader<'valueExtension> =
+    static member ToJsonReplace
+      (value: Value<TypeValue, 'valueExtension>)
+      : DeltaEncoderReader<'valueExtension, 'deltaExtension> =
       reader {
-        let! rootToJson = reader.GetContext()
+        let! rootToJson, _ = reader.GetContext()
         let! value = value |> rootToJson |> reader.OfSum
         return value |> Json.discriminator "replace"
       }

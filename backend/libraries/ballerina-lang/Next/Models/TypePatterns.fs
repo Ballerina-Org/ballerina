@@ -176,6 +176,8 @@ module Patterns =
         { value = v
           source = NoSourceMapping "Map" }
 
+    static member CreateImported(v: ImportedTypeValue) : TypeValue = TypeValue.Imported v
+
     static member AsLambda(t: TypeValue) =
       sum {
         match t with
@@ -191,22 +193,14 @@ module Patterns =
       sum {
         match t with
         | TypeValue.Union(cases) -> return cases
-        | _ ->
-          return!
-            $"Error: expected union type (ie generic), got {t}"
-            |> Errors.Singleton
-            |> sum.Throw
+        | _ -> return! $"Error: expected union type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
     static member AsRecord(t: TypeValue) =
       sum {
         match t with
         | TypeValue.Record(fields) -> return fields
-        | _ ->
-          return!
-            $"Error: expectedrecord type (ie generic), got {t}"
-            |> Errors.Singleton
-            |> sum.Throw
+        | _ -> return! $"Error: expected record type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
     static member AsTuple(t: TypeValue) =
@@ -224,11 +218,7 @@ module Patterns =
       sum {
         match t with
         | TypeValue.Sum(variants) -> return variants
-        | _ ->
-          return!
-            $"Error: expected sum type (ie generic), got {t}"
-            |> Errors.Singleton
-            |> sum.Throw
+        | _ -> return! $"Error: expected sum type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
     static member AsArrow(t: TypeValue) =

@@ -6,10 +6,7 @@ module Updaters =
   type SpecData<'T, 'valueExtension> with
     static member Updaters =
       {| Entities =
-          fun u (s: SpecData<'T, 'valueExtension>) ->
-            { s with
-                SpecData.Entities = u s.Entities }
-         Lookups =
-          fun u (s: SpecData<'T, 'valueExtension>) ->
-            { s with
-                SpecData.Lookups = u s.Lookups } |}
+          fun u (state: SpecData<'T, 'valueExtension>) ->
+            { state with
+                Entities = u state.Entities }
+         Lookups = fun u (state: SpecData<'T, 'valueExtension>) -> { state with Lookups = u state.Lookups } |}

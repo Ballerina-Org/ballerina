@@ -2,95 +2,105 @@ namespace Ballerina.DSL.Next.Terms
 
 [<AutoOpen>]
 module Model =
-  open Ballerina.Collections.Sum
-  open Ballerina.Reader.WithError
-  open Ballerina.Errors
   open System
   open Ballerina.DSL.Next.Types.Model
-  open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.LocalizedErrors
+  open Ballerina.StdLib.Formats
 
   type Var =
     { Name: string }
 
     static member Create name : Var = { Var.Name = name }
 
-  type ExprLookup<'T, 'Id when 'Id: comparison> =
+  type ExprLookup<'T, 'Id, 'valueExt when 'Id: comparison> =
     { Id: 'Id }
 
     override self.ToString() = self.Id.ToString()
 
-  and ExprLambda<'T, 'Id when 'Id: comparison> =
+  and ExprLambda<'T, 'Id, 'valueExt when 'Id: comparison> =
     { Param: Var
       ParamType: Option<'T>
-      Body: Expr<'T, 'Id> }
+      Body: Expr<'T, 'Id, 'valueExt> }
 
-  and ExprApply<'T, 'Id when 'Id: comparison> =
-    { F: Expr<'T, 'Id>; Arg: Expr<'T, 'Id> }
+  and ExprApply<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { F: Expr<'T, 'Id, 'valueExt>
+      Arg: Expr<'T, 'Id, 'valueExt> }
 
-  and ExprLet<'T, 'Id when 'Id: comparison> =
+  and ExprApplyValue<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { F: Expr<'T, 'Id, 'valueExt>
+      Arg: Value<TypeValue, 'valueExt>
+      ArgT: TypeValue }
+
+  and ExprLet<'T, 'Id, 'valueExt when 'Id: comparison> =
     { Var: Var
       Type: Option<'T>
-      Val: Expr<'T, 'Id>
-      Rest: Expr<'T, 'Id> }
+      Val: Expr<'T, 'Id, 'valueExt>
+      Rest: Expr<'T, 'Id, 'valueExt> }
 
-  and ExprIf<'T, 'Id when 'Id: comparison> =
-    { Cond: Expr<'T, 'Id>
-      Then: Expr<'T, 'Id>
-      Else: Expr<'T, 'Id> }
+  and ExprIf<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Cond: Expr<'T, 'Id, 'valueExt>
+      Then: Expr<'T, 'Id, 'valueExt>
+      Else: Expr<'T, 'Id, 'valueExt> }
 
-  and ExprTypeLambda<'T, 'Id when 'Id: comparison> =
+  and ExprTypeLambda<'T, 'Id, 'valueExt when 'Id: comparison> =
     { Param: TypeParameter
-      Body: Expr<'T, 'Id> }
+      Body: Expr<'T, 'Id, 'valueExt> }
 
-  and ExprTypeApply<'T, 'Id when 'Id: comparison> = { Func: Expr<'T, 'Id>; TypeArg: 'T }
+  and ExprTypeApply<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Func: Expr<'T, 'Id, 'valueExt>
+      TypeArg: 'T }
 
-  and ExprTypeLet<'T, 'Id when 'Id: comparison> =
+  and ExprTypeLet<'T, 'Id, 'valueExt when 'Id: comparison> =
     { Name: string
       TypeDef: 'T
-      Body: Expr<'T, 'Id> }
+      Body: Expr<'T, 'Id, 'valueExt> }
 
-  and ExprRecordCons<'T, 'Id when 'Id: comparison> = { Fields: List<'Id * Expr<'T, 'Id>> }
+  and ExprRecordCons<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Fields: List<'Id * Expr<'T, 'Id, 'valueExt>> }
 
-  and ExprRecordWith<'T, 'Id when 'Id: comparison> =
-    { Record: Expr<'T, 'Id>
-      Fields: List<'Id * Expr<'T, 'Id>> }
+  and ExprRecordWith<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Record: Expr<'T, 'Id, 'valueExt>
+      Fields: List<'Id * Expr<'T, 'Id, 'valueExt>> }
 
-  and ExprTupleCons<'T, 'Id when 'Id: comparison> = { Items: List<Expr<'T, 'Id>> }
+  and ExprTupleCons<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Items: List<Expr<'T, 'Id, 'valueExt>> }
 
-  and ExprTupleDes<'T, 'Id when 'Id: comparison> =
-    { Tuple: Expr<'T, 'Id>
+  and ExprTupleDes<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Tuple: Expr<'T, 'Id, 'valueExt>
       Item: TupleDesSelector }
 
-  and ExprSumCons<'T, 'Id when 'Id: comparison> = { Selector: SumConsSelector }
+  and ExprSumCons<'T, 'Id, 'valueExt when 'Id: comparison> = { Selector: SumConsSelector }
 
-  and ExprRecordDes<'T, 'Id when 'Id: comparison> = { Expr: Expr<'T, 'Id>; Field: 'Id }
+  and ExprRecordDes<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Expr: Expr<'T, 'Id, 'valueExt>
+      Field: 'Id }
 
-  and ExprUnionDes<'T, 'Id when 'Id: comparison> =
-    { Handlers: Map<'Id, CaseHandler<'T, 'Id>>
-      Fallback: Option<Expr<'T, 'Id>> }
+  and ExprUnionDes<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Handlers: Map<'Id, CaseHandler<'T, 'Id, 'valueExt>>
+      Fallback: Option<Expr<'T, 'Id, 'valueExt>> }
 
-  and ExprSumDes<'T, 'Id when 'Id: comparison> =
-    { Handlers: Map<SumConsSelector, CaseHandler<'T, 'Id>> }
+  and ExprSumDes<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Handlers: Map<SumConsSelector, CaseHandler<'T, 'Id, 'valueExt>> }
 
-  and ExprRec<'T, 'Id when 'Id: comparison> =
+  and ExprRec<'T, 'Id, 'valueExt when 'Id: comparison> =
     | Primitive of PrimitiveValue
-    | Lookup of ExprLookup<'T, 'Id>
-    | TypeLambda of ExprTypeLambda<'T, 'Id>
-    | TypeApply of ExprTypeApply<'T, 'Id>
-    | TypeLet of ExprTypeLet<'T, 'Id>
-    | Lambda of ExprLambda<'T, 'Id>
-    | Apply of ExprApply<'T, 'Id>
-    | Let of ExprLet<'T, 'Id>
-    | If of ExprIf<'T, 'Id>
-    | RecordCons of ExprRecordCons<'T, 'Id>
-    | RecordWith of ExprRecordWith<'T, 'Id>
-    | TupleCons of ExprTupleCons<'T, 'Id>
-    | SumCons of ExprSumCons<'T, 'Id>
-    | RecordDes of ExprRecordDes<'T, 'Id>
-    | UnionDes of ExprUnionDes<'T, 'Id>
-    | TupleDes of ExprTupleDes<'T, 'Id>
-    | SumDes of ExprSumDes<'T, 'Id>
+    | Lookup of ExprLookup<'T, 'Id, 'valueExt>
+    | TypeLambda of ExprTypeLambda<'T, 'Id, 'valueExt>
+    | TypeApply of ExprTypeApply<'T, 'Id, 'valueExt>
+    | TypeLet of ExprTypeLet<'T, 'Id, 'valueExt>
+    | Lambda of ExprLambda<'T, 'Id, 'valueExt>
+    | Apply of ExprApply<'T, 'Id, 'valueExt>
+    | ApplyValue of ExprApplyValue<'T, 'Id, 'valueExt>
+    | Let of ExprLet<'T, 'Id, 'valueExt>
+    | If of ExprIf<'T, 'Id, 'valueExt>
+    | RecordCons of ExprRecordCons<'T, 'Id, 'valueExt>
+    | RecordWith of ExprRecordWith<'T, 'Id, 'valueExt>
+    | TupleCons of ExprTupleCons<'T, 'Id, 'valueExt>
+    | SumCons of ExprSumCons<'T, 'Id, 'valueExt>
+    | RecordDes of ExprRecordDes<'T, 'Id, 'valueExt>
+    | UnionDes of ExprUnionDes<'T, 'Id, 'valueExt>
+    | TupleDes of ExprTupleDes<'T, 'Id, 'valueExt>
+    | SumDes of ExprSumDes<'T, 'Id, 'valueExt>
 
     override self.ToString() : string =
       match self with
@@ -104,6 +114,7 @@ module Model =
         | Some t -> $"(fun ({v.Name}: {t.ToString()}) -> {body.ToString()})"
         | None -> $"(fun {v.Name} -> {body.ToString()})"
       | Apply({ F = e1; Arg = e2 }) -> $"({e1.ToString()} {e2.ToString()})"
+      | ApplyValue({ F = e1; Arg = e2 }) -> $"({e1.ToString()} {e2.ToString()})"
       | Let({ Var = v
               Type = topt
               Val = e1
@@ -160,8 +171,8 @@ module Model =
              Then = thenExpr
              Else = elseExpr }) -> $"(if {cond.ToString()} then {thenExpr.ToString()} else {elseExpr.ToString()})"
 
-  and Expr<'T, 'Id when 'Id: comparison> =
-    { Expr: ExprRec<'T, 'Id>
+  and Expr<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Expr: ExprRec<'T, 'Id, 'valueExt>
       Location: Location
       Scope: TypeCheckScope }
 
@@ -170,7 +181,7 @@ module Model =
   and SumConsSelector = { Case: int; Count: int }
   and TupleDesSelector = { Index: int }
 
-  and CaseHandler<'T, 'Id when 'Id: comparison> = Var * Expr<'T, 'Id>
+  and CaseHandler<'T, 'Id, 'valueExt when 'Id: comparison> = Var * Expr<'T, 'Id, 'valueExt>
 
   and PrimitiveValue =
     | Int32 of Int32
@@ -196,14 +207,18 @@ module Model =
       | Bool v -> v.ToString()
       | Guid v -> v.ToString()
       | String v -> $"\"{v}\""
-      | Date v -> v.ToString("yyyy-MM-dd")
-      | DateTime v -> v.ToString("o")
+      | Date v -> Iso8601.DateOnly.print v
+      | DateTime v -> Iso8601.DateTime.printUtc v
       | TimeSpan v -> v.ToString()
       | Unit -> "()"
 
   and Value<'T, 'valueExt> =
-    | TypeLambda of TypeParameter * Expr<'T, ResolvedIdentifier>
-    | Lambda of Var * Expr<'T, ResolvedIdentifier> * Map<ResolvedIdentifier, Value<'T, 'valueExt>> * TypeCheckScope
+    | TypeLambda of TypeParameter * Expr<'T, ResolvedIdentifier, 'valueExt>
+    | Lambda of
+      Var *
+      Expr<'T, ResolvedIdentifier, 'valueExt> *
+      Map<ResolvedIdentifier, Value<'T, 'valueExt>> *
+      TypeCheckScope
     | Record of Map<ResolvedIdentifier, Value<'T, 'valueExt>>
     | UnionCase of ResolvedIdentifier * Value<'T, 'valueExt>
     | RecordDes of ResolvedIdentifier

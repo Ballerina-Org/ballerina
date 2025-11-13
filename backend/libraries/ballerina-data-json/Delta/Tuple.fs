@@ -12,11 +12,11 @@ module Tuple =
   open Ballerina.DSL.Next.Json.Keys
   open FSharp.Data
 
-  type Delta<'valueExtension> with
+  type Delta<'valueExtension, 'deltaExtension> with
     static member FromJsonTuple
-      (fromJsonRoot: DeltaParser<'valueExtension>)
+      (fromJsonRoot: DeltaParser<'valueExtension, 'deltaExtension>)
       (json: JsonValue)
-      : DeltaParserReader<'valueExtension> =
+      : DeltaParserReader<'valueExtension, 'deltaExtension> =
       Reader.assertDiscriminatorAndContinueWithValue "tuple" json (fun json ->
         reader {
           let! fieldIndex, fieldDelta = json |> JsonValue.AsPair |> reader.OfSum
@@ -26,10 +26,10 @@ module Tuple =
         })
 
     static member ToJsonTuple
-      (rootToJson: DeltaEncoder<'valueExtension>)
+      (rootToJson: DeltaEncoder<'valueExtension, 'deltaExtension>)
       (i: int)
-      (v: Delta<'valueExtension>)
-      : DeltaEncoderReader<'valueExtension> =
+      (v: Delta<'valueExtension, 'deltaExtension>)
+      : DeltaEncoderReader<'valueExtension, 'deltaExtension> =
       reader {
         let i = i |> decimal |> JsonValue.Number
         let! v = v |> rootToJson

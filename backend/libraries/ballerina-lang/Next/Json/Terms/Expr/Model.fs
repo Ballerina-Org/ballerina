@@ -13,8 +13,8 @@ module ExprJson =
   open Ballerina.StdLib.String
   open Ballerina.StdLib.Object
 
-  type Expr<'T, 'Id when 'Id: comparison> with
-    static member FromJson: ExprParser<'T, 'Id> =
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
+    static member FromJson: ExprParser<'T, 'Id, 'valueExt> =
       fun json ->
         reader.Any(
           Expr.FromJsonLambda Expr.FromJson json,
@@ -41,7 +41,7 @@ module ExprJson =
         |> reader.MapError(Errors.HighestPriority)
         |> reader.MapError(Errors.Map(fun e -> $"{e}\n..when parsing {json.ToString().ReasonablyClamped}"))
 
-    static member ToJson: ExprEncoder<'T, 'Id> =
+    static member ToJson: ExprEncoder<'T, 'Id, 'valueExt> =
       fun expr ->
         match expr.Expr with
         | ExprRec.Lambda({ Param = name
@@ -50,6 +50,9 @@ module ExprJson =
         | ExprRec.TypeLambda({ Param = name; Body = body }) -> Expr.ToJsonTypeLambda Expr.ToJson name body
         | ExprRec.TypeApply({ TypeArg = t; Func = e }) -> Expr.ToJsonTypeApply Expr.ToJson e t
         | ExprRec.Apply({ F = e1; Arg = e2 }) -> Expr.ToJsonApply Expr.ToJson e1 e2
+        | ExprRec.ApplyValue({ F = _e1; Arg = _e2 }) ->
+          // Expr.ToJsonApply Expr.ToJson e1 e2
+          failwith "Not implemented"
         | ExprRec.Let({ Var = v
                         Type = _
                         Val = e1

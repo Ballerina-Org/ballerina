@@ -37,7 +37,7 @@ module Value =
     static member ToJson
       (toJsonRoot: ValueEncoder<'T, 'valueExtension>)
       (value: Value<'T, 'valueExtension>)
-      : ValueEncoderReader<'T> =
+      : ValueEncoderReader<'T, 'valueExtension> =
       match value with
       | Value.Primitive p -> Value.ToJsonPrimitive p
       | Value.Record m -> Value.ToJsonRecord toJsonRoot m

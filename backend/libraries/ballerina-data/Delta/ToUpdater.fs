@@ -1,39 +1,31 @@
 ﻿namespace Ballerina.Data.Delta
 
+[<AutoOpen>]
 module ToUpdater =
   open Ballerina.Collections.Sum
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Terms.Patterns
-  open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.Data.Delta.Model
   open Ballerina.Errors
   open Ballerina.Fun
-  open Ballerina.Cat.Collections.OrderedMap
-  open Ballerina.StdLib.OrderPreservingMap
 
   type Value<'valueExtension> = Ballerina.DSL.Next.Terms.Model.Value<TypeValue, 'valueExtension>
 
-  type Delta<'valueExtension> with
+  type Delta<'valueExtension, 'deltaExtension> with
     static member ToUpdater
-      (valueType: TypeValue)
-      (delta: Delta<'valueExtension>)
+      (deltaExtensionHandler: 'deltaExtension -> Value<'valueExtension> -> Sum<Value<'valueExtension>, Errors>)
+      (delta: Delta<'valueExtension, 'deltaExtension>)
       : Sum<Value<'valueExtension> -> Sum<Value<'valueExtension>, Errors>, Errors> =
       sum {
         match delta with
         | Multiple deltas ->
-          let! updaters = deltas |> Seq.map (Delta.ToUpdater valueType) |> sum.All
+          let! updaters = deltas |> Seq.map (Delta.ToUpdater deltaExtensionHandler) |> sum.All
 
           return updaters |> List.fold (fun acc updater -> acc >> Sum.bind updater) Sum.Left
 
         | Replace v -> return replaceWith v >> sum.Return
         | Delta.Record(fieldName, fieldDelta) ->
-          let! fields = TypeValue.AsRecord valueType
-
-          let! _, fieldType =
-            fields.value
-            |> OrderedMap.tryFindByWithError (fun (ts, _) -> ts.Name.LocalName = fieldName) "fields" fieldName
-
-          let! fieldUpdater = Delta.ToUpdater fieldType fieldDelta
+          let! fieldUpdater = Delta.ToUpdater deltaExtensionHandler fieldDelta
 
           return
             fun (v: Value<'valueExtension>) ->
@@ -50,13 +42,7 @@ module ToUpdater =
               }
 
         | Delta.Union(caseName, caseDelta) ->
-          let! cases = valueType |> TypeValue.AsUnion
-
-          let! _, caseType =
-            cases.value
-            |> OrderedMap.tryFindByWithError (fun (ts, _) -> ts.Name.LocalName = caseName) "cases" caseName
-
-          let! caseUpdater = caseDelta |> Delta.ToUpdater caseType
+          let! caseUpdater = caseDelta |> Delta.ToUpdater deltaExtensionHandler
 
           return
             fun v ->
@@ -70,14 +56,7 @@ module ToUpdater =
                   return Value.UnionCase(valueCaseName, caseValue)
               }
         | Delta.Tuple(fieldIndex, fieldDelta) ->
-          let! fields = valueType |> TypeValue.AsTuple
-
-          let! fieldType =
-            fields.value
-            |> List.tryItem fieldIndex
-            |> Sum.fromOption (fun () -> Errors.Singleton $"Error: tuple does not have field at index {fieldIndex}")
-
-          let! fieldUpdater = fieldDelta |> Delta.ToUpdater fieldType
+          let! fieldUpdater = fieldDelta |> Delta.ToUpdater deltaExtensionHandler
 
           return
             fun v ->
@@ -95,14 +74,7 @@ module ToUpdater =
                 return Value.Tuple(fields)
               }
         | Delta.Sum(caseIndex, caseDelta) ->
-          let! cases = valueType |> TypeValue.AsSum
-
-          let! caseType =
-            cases.value
-            |> List.tryItem caseIndex
-            |> Sum.fromOption (fun () -> Errors.Singleton $"Error: sum does not have case at index {caseIndex}")
-
-          let! caseUpdater = caseDelta |> Delta.ToUpdater caseType
+          let! caseUpdater = caseDelta |> Delta.ToUpdater deltaExtensionHandler
 
           return
             fun v ->
@@ -115,4 +87,5 @@ module ToUpdater =
                   let! caseValue = caseUpdater caseValue
                   return Value.Sum(valueCaseIndex, caseValue)
               }
+        | Delta.Ext ext -> return deltaExtensionHandler ext
       }

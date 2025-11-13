@@ -15,8 +15,11 @@ module TupleCons =
 
   let private discriminator = "tuple-cons"
 
-  type Expr<'T, 'Id when 'Id: comparison> with
-    static member FromJsonTupleCons (fromRootJson: ExprParser<'T, 'Id>) (value: JsonValue) : ExprParserReader<'T, 'Id> =
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
+    static member FromJsonTupleCons
+      (fromRootJson: ExprParser<'T, 'Id, 'valueExt>)
+      (value: JsonValue)
+      : ExprParserReader<'T, 'Id, 'valueExt> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun elementsJson ->
         reader {
           let! elements = elementsJson |> JsonValue.AsArray |> reader.OfSum
@@ -25,8 +28,8 @@ module TupleCons =
         })
 
     static member ToJsonTupleCons
-      (rootToJson: ExprEncoder<'T, 'Id>)
-      (tuple: List<Expr<'T, 'Id>>)
+      (rootToJson: ExprEncoder<'T, 'Id, 'valueExt>)
+      (tuple: List<Expr<'T, 'Id, 'valueExt>>)
       : ExprEncoderReader<'T, 'Id> =
       tuple
       |> List.map rootToJson

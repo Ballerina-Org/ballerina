@@ -31,7 +31,7 @@ module Sum =
       (rootToJson: ValueEncoder<'T, 'valueExtension>)
       (selector: SumConsSelector)
       (v: Value<'T, 'valueExtension>)
-      : ValueEncoderReader<'T> =
+      : ValueEncoderReader<'T, 'valueExtension> =
       reader {
         let i = selector.Case |> decimal |> JsonValue.Number
         let n = selector.Count |> decimal |> JsonValue.Number

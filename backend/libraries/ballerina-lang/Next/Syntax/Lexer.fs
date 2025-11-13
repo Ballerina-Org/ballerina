@@ -266,13 +266,13 @@ module Lexer =
 
   let operator =
     tokenizer.Any
-      [ word "=" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Equals)
-        word "->" |> tokenizer.Map(LocalizedToken.FromOperator Operator.SingleArrow)
+      [ word "->" |> tokenizer.Map(LocalizedToken.FromOperator Operator.SingleArrow)
         word "=>" |> tokenizer.Map(LocalizedToken.FromOperator Operator.DoubleArrow)
         word "." |> tokenizer.Map(LocalizedToken.FromOperator Operator.Dot)
         word "," |> tokenizer.Map(LocalizedToken.FromOperator Operator.Comma)
         word "@" |> tokenizer.Map(LocalizedToken.FromOperator Operator.At)
         word "==" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Equal)
+        word "=" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Equals)
         word "!=" |> tokenizer.Map(LocalizedToken.FromOperator Operator.NotEqual)
         word "|>" |> tokenizer.Map(LocalizedToken.FromOperator Operator.PipeGreaterThan)
         word ">>"

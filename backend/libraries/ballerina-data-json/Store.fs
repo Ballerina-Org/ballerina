@@ -20,7 +20,7 @@ module Model =
     static member ToJson
       (rootToJson: ValueEncoder<'T, 'valueExtension>)
       (seeds: SpecData<'T, 'valueExtension>)
-      : ValueEncoderReader<'T> =
+      : ValueEncoderReader<'T, 'valueExtension> =
       reader {
         let! entities =
           seeds.Entities

@@ -1,6 +1,6 @@
 ﻿namespace Ballerina.VirtualFolders.Interactions
 (*
-modes of engagement for  user/system behavior (UI/workspace state)
+modes of engagement for user/system behavior (UI/workspace state)
 *)
 
 open System.IO

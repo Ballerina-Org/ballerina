@@ -232,7 +232,6 @@
           "MathNet.Numerics": "[6.0.0-beta2, )",
           "ballerina-cat": "[1.0.0, )",
           "ballerina-lang": "[1.0.0, )",
-          "ballerina-lang-json": "[1.0.0, )",
           "ballerina-lang-models": "[1.0.0, )",
           "ballerina-virtual-folders": "[1.0.0, )"
         }
@@ -272,16 +271,6 @@
           "ballerina-stdlib": "[1.0.0, )"
         }
       },
-      "ballerina-lang-json": {
-        "type": "Project",
-        "dependencies": {
-          "FSharp.Core": "[9.0.303, )",
-          "FSharp.Data": "[6.6.0, )",
-          "ballerina-cat": "[1.0.0, )",
-          "ballerina-lang-models": "[1.0.0, )",
-          "ballerina-stdlib": "[1.0.0, )"
-        }
-      },
       "ballerina-lang-models": {
         "type": "Project",
         "dependencies": {
@@ -308,7 +297,6 @@
           "FSharp.Data": "[6.6.0, )",
           "ballerina-cat": "[1.0.0, )",
           "ballerina-lang-eval": "[1.0.0, )",
-          "ballerina-lang-json": "[1.0.0, )",
           "ballerina-lang-models": "[1.0.0, )",
           "ballerina-lang-typecheck": "[1.0.0, )",
           "ballerina-stdlib": "[1.0.0, )"

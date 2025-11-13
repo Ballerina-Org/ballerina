@@ -23,10 +23,10 @@ module TupleDes =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member internal TypeCheckTupleDes
-      (typeCheckExpr: TypeChecker, loc0: Location)
-      : TypeChecker<ExprTupleDes<TypeExpr, Identifier>> =
+      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      : TypeChecker<ExprTupleDes<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
           ({ ExprTupleDes.Tuple = fields

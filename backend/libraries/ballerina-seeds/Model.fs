@@ -59,7 +59,8 @@ module Arity =
 
 module EntityDescriptor =
   let seed
-    (e: EntityDescriptor<TypeValue, ResolvedIdentifier>)
+    (e: EntityDescriptor<TypeValue, ResolvedIdentifier, ValueExt>)
+    (en: EntityName)
     : State<Map<Guid, Value<TypeValue, ValueExt>>, SeedingContext, SeedingState, Errors> =
     state {
       let! ctx = state.GetContext()
@@ -68,7 +69,7 @@ module EntityDescriptor =
       return!
         seq {
           for _ in 0 .. itemsToSeed - 1 do
-            let value = Traverser.seed e.Type
+            let value = Traverser.seed en e.Type
             yield Guid.CreateVersion7(), value
         }
         |> Seq.map (fun (guid, value) ->

@@ -17,8 +17,11 @@ module RecordDes =
 
   let private discriminator = "record-field-lookup"
 
-  type Expr<'T, 'Id when 'Id: comparison> with
-    static member FromJsonRecordDes (fromRootJson: ExprParser<'T, 'Id>) (value: JsonValue) : ExprParserReader<'T, 'Id> =
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
+    static member FromJsonRecordDes
+      (fromRootJson: ExprParser<'T, 'Id, 'valueExt>)
+      (value: JsonValue)
+      : ExprParserReader<'T, 'Id, 'valueExt> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun recordDesJson ->
         reader {
           let! expr, field = recordDesJson |> JsonValue.AsPair |> reader.OfSum
@@ -29,8 +32,8 @@ module RecordDes =
         })
 
     static member ToJsonRecordDes
-      (rootToJson: ExprEncoder<'T, 'Id>)
-      (expr: Expr<'T, 'Id>)
+      (rootToJson: ExprEncoder<'T, 'Id, 'valueExt>)
+      (expr: Expr<'T, 'Id, 'valueExt>)
       (field: 'Id)
       : ExprEncoderReader<'T, 'Id> =
       reader {

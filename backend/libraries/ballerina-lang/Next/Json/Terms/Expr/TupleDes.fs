@@ -15,8 +15,11 @@ module TupleDes =
 
   let private discriminator = "tuple-des"
 
-  type Expr<'T, 'Id when 'Id: comparison> with
-    static member FromJsonTupleDes (fromRootJson: ExprParser<'T, 'Id>) (value: JsonValue) : ExprParserReader<'T, 'Id> =
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
+    static member FromJsonTupleDes
+      (fromRootJson: ExprParser<'T, 'Id, 'valueExt>)
+      (value: JsonValue)
+      : ExprParserReader<'T, 'Id, 'valueExt> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun tupleDesJson ->
         reader {
           let! (expr, index) = tupleDesJson |> JsonValue.AsPair |> reader.OfSum
@@ -26,8 +29,8 @@ module TupleDes =
         })
 
     static member ToJsonTupleDes
-      (rootToJson: ExprEncoder<'T, 'Id>)
-      (e: Expr<'T, 'Id>)
+      (rootToJson: ExprEncoder<'T, 'Id, 'valueExt>)
+      (e: Expr<'T, 'Id, 'valueExt>)
       (sel: TupleDesSelector)
       : ExprEncoderReader<'T, 'Id> =
       reader {

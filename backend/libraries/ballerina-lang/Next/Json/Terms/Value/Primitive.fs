@@ -17,6 +17,6 @@ module PrimitiveValue =
         return Value.Primitive primitive
       }
 
-    static member ToJsonPrimitive(primitive: PrimitiveValue) : ValueEncoderReader<'T> =
+    static member ToJsonPrimitive(primitive: PrimitiveValue) : ValueEncoderReader<'T, 'valueExtension> =
       let primitive = PrimitiveValue.ToJson primitive
       primitive |> reader.Return

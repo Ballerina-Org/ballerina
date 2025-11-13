@@ -16,8 +16,11 @@ module Let =
 
   let private discriminator = "let"
 
-  type Expr<'T, 'Id when 'Id: comparison> with
-    static member FromJsonLet (fromRootJson: ExprParser<'T, 'Id>) (value: JsonValue) : ExprParserReader<'T, 'Id> =
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
+    static member FromJsonLet
+      (fromRootJson: ExprParser<'T, 'Id, 'valueExt>)
+      (value: JsonValue)
+      : ExprParserReader<'T, 'Id, 'valueExt> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun letJson ->
         reader {
           let! (var, value, body) = letJson |> JsonValue.AsTriple |> reader.OfSum
@@ -29,10 +32,10 @@ module Let =
         })
 
     static member ToJsonLet
-      (rootToJson: ExprEncoder<'T, 'Id>)
+      (rootToJson: ExprEncoder<'T, 'Id, 'valueExt>)
       (var: Var)
-      (value: Expr<'T, 'Id>)
-      (body: Expr<'T, 'Id>)
+      (value: Expr<'T, 'Id, 'valueExt>)
+      (body: Expr<'T, 'Id, 'valueExt>)
       : ExprEncoderReader<'T, 'Id> =
       reader {
         let var = var.Name |> JsonValue.String

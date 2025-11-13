@@ -36,16 +36,16 @@ module Model =
     | UnionCase of string * Var
     | SumCase of int * Var
 
-  and Updater<'Type, 'Id when 'Id: comparison> =
+  and Updater<'Type, 'Id, 'ValueExt when 'Id: comparison> =
     { Path: List<UpdaterPathStep>
-      Condition: Expr<'Type, 'Id>
-      Expr: Expr<'Type, 'Id> }
+      Condition: Expr<'Type, 'Id, 'ValueExt>
+      Expr: Expr<'Type, 'Id, 'ValueExt> }
 
-  and EntityDescriptor<'Type, 'Id when 'Id: comparison> =
+  and EntityDescriptor<'Type, 'Id, 'ValueExt when 'Id: comparison> =
     { Type: 'Type
       Methods: Set<EntityMethod>
-      Updaters: List<Updater<'Type, 'Id>>
-      Predicates: Map<string, Expr<'Type, 'Id>> }
+      Updaters: List<Updater<'Type, 'Id, 'ValueExt>>
+      Predicates: Map<string, Expr<'Type, 'Id, 'ValueExt>> }
 
   and LookupDescriptor =
     { Source: EntityName
@@ -53,7 +53,7 @@ module Model =
       Forward: DirectedLookupDescriptor
       Backward: Option<LookupName * DirectedLookupDescriptor> }
 
-  type Schema<'Type, 'Id when 'Id: comparison> =
+  type Schema<'Type, 'Id, 'ValueExt when 'Id: comparison> =
     { Types: OrderedMap<Identifier, 'Type>
-      Entities: Map<EntityName, EntityDescriptor<'Type, 'Id>>
+      Entities: Map<EntityName, EntityDescriptor<'Type, 'Id, 'ValueExt>>
       Lookups: Map<LookupName, LookupDescriptor> }

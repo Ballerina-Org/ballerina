@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <RootNamespace>ballerina_data_json</RootNamespace>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Delta\Parser.fs" />
+        <Compile Include="Delta\Multiple.fs" />
+        <Compile Include="Delta\Replace.fs" />
+        <Compile Include="Delta\Record.fs" />
+        <Compile Include="Delta\Tuple.fs" />
+        <Compile Include="Delta\Union.fs" />
+        <Compile Include="Delta\Sum.fs" />
+        <Compile Include="Delta\Extensions.fs" />
+        <Compile Include="Delta\Model.fs" />
+        <Compile Include="Schema.fs" />
+        <Compile Include="Extract.fs" />
+        <Compile Include="Store.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\ballerina-data\ballerina-data.fsproj" />
+      <ProjectReference Include="..\ballerina-lang-stdlib-json\ballerina-lang-stdlib-json.fsproj" />
+      <ProjectReference Include="..\ballerina-lang\Next\Json\ballerina-lang-json.fsproj" />
+    </ItemGroup>
+
+</Project>
