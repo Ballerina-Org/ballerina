@@ -22,6 +22,7 @@ export type ValueStreamPosition = {
   chunkIndex: ValueChunkIndex;
   shouldLoad: ValueStreamingStatus;
   lastModifiedTime: number;
+  disallowParamsChange: boolean;
 };
 
 export const ValueStreamPosition = {
@@ -34,6 +35,7 @@ export const ValueStreamPosition = {
     chunkIndex: 0,
     shouldLoad,
     lastModifiedTime: Date.now(),
+    disallowParamsChange: false,
   }),
   Updaters: {
     Template: {
@@ -75,6 +77,7 @@ export const ValueStreamPosition = {
         ),
     },
     Core: {
+      ...simpleUpdater<ValueStreamPosition>()("disallowParamsChange"),
       ...simpleUpdater<ValueStreamPosition>()("lastModifiedTime"),
       ...simpleUpdater<ValueStreamPosition>()("shouldLoad"),
       ...simpleUpdater<ValueStreamPosition>()("chunkIndex"),
