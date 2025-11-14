@@ -43,6 +43,7 @@ export const initializeOne = <
         )
         .then((value) =>
           InitializeCo<CustomPresentationContext, ExtraContext>().Do(() => {
+      
             current
               .fromApiParser(value.value)
               .Then((result) => {

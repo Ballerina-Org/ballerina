@@ -1,5 +1,5 @@
 import { useState } from "react";
-import "./App.css";
+// import "./App.css";
 import {
   UncleTemplate,
   ParentTemplate2,
@@ -16,17 +16,20 @@ import { DataDrivenFieldsApp } from "./DataDrivenFieldsApp";
 import { DispatcherFormsApp } from "./DispatcherFormsApp";
 import { DispatcherFormsAppTables } from "./DispatcherFormsAppTables.";
 import { TraversalDispatchTest } from "./TraversalDispatchTest";
+import {IdeApp} from "./Ide.tsx";
 
 function App(props: {
   app:
     | "regular"
-    | "forms"
+    | "forms" 
+    | "ide"
     | "data-driven-fields"
     | "dispatcher-forms"
     | "dispatcher-forms-tables"
     | "traversal-dispatch-test";
 }) {
   if (props.app == "forms") return FormsApp({});
+  if (props.app == "ide") return IdeApp({});
   if (props.app == "data-driven-fields") return DataDrivenFieldsApp({});
   if (props.app == "dispatcher-forms") return DispatcherFormsApp({});
   if (props.app == "dispatcher-forms-tables")

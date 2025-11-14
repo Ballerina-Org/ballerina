@@ -1,13 +1,13 @@
 import { List, Map, Set } from "immutable";
 import {
-  ConcreteRenderers,
-  DispatchInjectablesTypes,
-  DispatchInjectedPrimitives,
-  EntityApi,
-  isObject,
-  isString,
-  Renderer,
-  ValueOrErrors,
+    ConcreteRenderers,
+    DispatchInjectablesTypes,
+    DispatchInjectedPrimitives, DispatchIsEmptyObject, DispatchisString,
+    EntityApi,
+    isObject,
+    isString,
+    Renderer,
+    ValueOrErrors,
 } from "../../../../../../../../../main";
 import {
   DispatchIsObject,
@@ -475,7 +475,9 @@ export type LookupApiOne = Map<
     };
   }
 >;
-
+export type LookupApiStreams = Map<
+    string, DispatchTypeName
+>;
 // TODO add many deserialization
 export const LookupApis = {
   Operations: {
@@ -501,33 +503,66 @@ export const LookupApis = {
           Array.isArray(value.methods) &&
           value.methods.every((method) => isString(method)),
       ),
+      isStreamsApi: (
+          _: unknown,
+      ): _ is {
+          streams: {
+              [key: string]: {
+                  type: DispatchTypeName
+              };
+          };
+      } =>
+          DispatchIsObject(_) &&
+          "streams" in _ && DispatchIsObject(_.streams) &&
+          Object.values(_.streams).every(
+              (value) =>
+                  isObject(value) &&
+                  "type" in value &&
+                  isString(value.type),
+          ),
     DeserializeOne: (
       serializedOneApi: unknown,
     ): ValueOrErrors<LookupApiOne, string> =>
       !LookupApis.Operations.isOneApi(serializedOneApi)
         ? ValueOrErrors.Default.throwOne<LookupApiOne, string>(
-            `serializedLookupApi is not a valid lookup api`,
+            `serializedLookupApi is not a valid lookup api:${JSON.stringify(serializedOneApi)}`,
           )
         : ValueOrErrors.Default.return<LookupApiOne, string>(
             Map(
-              Object.entries(serializedOneApi.one).map(([key, value]) => [
-                key,
-                {
-                  type: value.type,
-                  methods: {
-                    get: value.methods.includes("get"),
-                    update: value.methods.includes("update"),
-                    getManyUnlinked: value.methods.includes("getManyUnlinked"),
-                    create: value.methods.includes("create"),
-                    delete: value.methods.includes("delete"),
-                  },
-                },
-              ]),
+                    Object.entries(serializedOneApi.one).map(([key, value]) => [
+                        key,
+                        {
+                            type: value.type,
+                            methods: {
+                                get: value.methods.includes("get"),
+                                update: value.methods.includes("update"),
+                                getManyUnlinked: value.methods.includes("getManyUnlinked"),
+                                create: value.methods.includes("create"),
+                                delete: value.methods.includes("delete"),
+                            },
+                        },
+                    ]),
             ),
           ).MapErrors((errors) =>
             errors.map((error) => `${error}\n...When deserializing lookup api`),
-          ),
-    Deserialize: (
+          ), 
+    DeserializeStreams: (
+          serializedStreamsApi: unknown,
+      ): ValueOrErrors<LookupApiStreams, string> =>
+        !LookupApis.Operations.isStreamsApi(serializedStreamsApi)
+            ? ValueOrErrors.Default.throwOne<LookupApiStreams, string>(
+                `serializedLookupApi is not a valid lookup api:${JSON.stringify(serializedStreamsApi)}`,
+            )
+            : ValueOrErrors.Default.return<LookupApiStreams, string>(
+                Map(
+                    Object.entries(serializedStreamsApi.streams).map(([key, value]) => [
+                        key,value.type,
+                    ]),
+                ),
+            ).MapErrors((errors) =>
+                errors.map((error) => `${error}\n...When deserializing lookup api`),
+            ),
+      Deserialize: (
       serializedApiLookups?: unknown,
     ): ValueOrErrors<undefined | LookupApis, string> => {
       return serializedApiLookups === undefined
@@ -542,7 +577,9 @@ export const LookupApis = {
               >(
                 Object.entries(serializedApiLookups).map(([key, value]) =>
                   LookupApis.Operations.DeserializeOne(value).Then((one) =>
-                    ValueOrErrors.Default.return([key, { one }]),
+                 
+                          ValueOrErrors.Default.return([key, { one }])
+                
                   ),
                 ),
               ),

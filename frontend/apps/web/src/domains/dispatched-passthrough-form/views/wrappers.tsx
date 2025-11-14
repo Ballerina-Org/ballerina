@@ -24,7 +24,7 @@ import {
   DispatchPassthroughFormFlags,
 } from "./concrete-renderers";
 
-export const DispatchPersonContainerFormView: () => RecordAbstractRendererView<
+export const DispatchEntityContainerFormView: () => RecordAbstractRendererView<
   DispatchPassthroughFormCustomPresentationContext,
   DispatchPassthroughFormFlags,
   DispatchPassthroughFormExtraContext
@@ -73,7 +73,7 @@ export const DispatchPersonContainerFormView: () => RecordAbstractRendererView<
   );
 };
 
-export const DispatchPersonNestedContainerFormView: () => RecordAbstractRendererView<
+export const DispatchEntityNestedContainerFormView: () => RecordAbstractRendererView<
   DispatchPassthroughFormCustomPresentationContext,
   DispatchPassthroughFormFlags,
   DispatchPassthroughFormExtraContext
@@ -114,7 +114,7 @@ export const DispatchPersonNestedContainerFormView: () => RecordAbstractRenderer
   );
 };
 
-export const DispatchPersonLookupTypeRenderer: () => LookupTypeAbstractRendererView<
+export const DispatchLookupTypeRenderer: () => LookupTypeAbstractRendererView<
   DispatchPassthroughFormCustomPresentationContext,
   DispatchPassthroughFormFlags,
   DispatchPassthroughFormExtraContext

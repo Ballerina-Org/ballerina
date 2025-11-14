@@ -1325,6 +1325,7 @@ export const dispatchFromAPIRawValue =
     injectedPrimitives?: DispatchInjectedPrimitives<T>,
   ) =>
   (raw: any): ValueOrErrors<PredicateValue, string> => {
+
     const result: ValueOrErrors<PredicateValue, string> = (() => {
       if (t.kind == "primitive") {
         // unit is a special kind of primitive
@@ -1401,6 +1402,7 @@ export const dispatchFromAPIRawValue =
           ValueOrErrors.Default.return(PredicateValue.Default.tuple(values)),
         );
       }
+      
       if (t.kind == "map" && t.args.length == 2) {
         const result = converters["Map"].fromAPIRawValue(raw);
 
@@ -1455,7 +1457,7 @@ export const dispatchFromAPIRawValue =
 
       if (t.kind == "sum" && t.args.length === 2) {
         const result = converters["Sum"].fromAPIRawValue(raw);
-
+        debugger
         return dispatchFromAPIRawValue(
           result.kind == "l" ? t.args[0] : t.args[1],
           types,
@@ -1819,6 +1821,7 @@ export const dispatchToAPIRawValue =
         }
 
         if (raw.isSome) {
+            debugger
           if (!PredicateValue.Operations.IsRecord(raw.value)) {
             return ValueOrErrors.Default.throwOne(
               `Record expected but got ${JSON.stringify(raw.value)}`,

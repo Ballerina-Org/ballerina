@@ -76,6 +76,7 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
     },
     union: {
       fromAPIRawValue: (_) => {
+  
         if (_ == undefined) {
           return _;
         }
@@ -85,6 +86,7 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
         ) {
           return _;
         }
+       
         return {
           caseName: _.Discriminator,
           fields: _[_.Discriminator],
@@ -157,8 +159,9 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
           ),
     },
     Sum: {
-      fromAPIRawValue: (_: any) =>
-        _?.IsRight ? Sum.Default.right(_?.Value) : Sum.Default.left(_?.Value),
+      fromAPIRawValue: (_: any) => {
+     
+          return _?.IsRight ? Sum.Default.right(_?.Value) : Sum.Default.left(_?.Value)},
       toAPIRawValue: ([_, __]) => ({
         IsRight: _.kind == "r",
         Value: _.value,

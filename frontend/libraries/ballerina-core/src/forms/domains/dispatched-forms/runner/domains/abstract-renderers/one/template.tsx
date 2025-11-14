@@ -342,6 +342,7 @@ export const OneAbstractRenderer = <
           value.isSome &&
           !PredicateValue.Operations.IsRecord(value.value)))
     ) {
+
       return (
         <ErrorRenderer
           message={`${domNodeId}: Option of record or unit expected but got ${JSON.stringify(

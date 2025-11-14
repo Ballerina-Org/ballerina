@@ -1,167 +1,167 @@
-#root {
-  max-width: 1920x;
-  margin: 0 auto;
-  padding: 2rem;
-}
+/*#root {*/
+/*  max-width: 1920x;*/
+/*  margin: 0 auto;*/
+/*  padding: 2rem;*/
+/*}*/
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
+/*.logo {*/
+/*  height: 6em;*/
+/*  padding: 1.5em;*/
+/*  will-change: filter;*/
+/*}*/
+/*.logo:hover {*/
+/*  filter: drop-shadow(0 0 2em #646cffaa);*/
+/*}*/
+/*.logo.react:hover {*/
+/*  filter: drop-shadow(0 0 2em #61dafbaa);*/
+/*}*/
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
+/*@keyframes logo-spin {*/
+/*  from {*/
+/*    transform: rotate(0deg);*/
+/*  }*/
+/*  to {*/
+/*    transform: rotate(360deg);*/
+/*  }*/
+/*}*/
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
+/*@media (prefers-reduced-motion: no-preference) {*/
+/*  a:nth-of-type(2) .logo {*/
+/*    animation: logo-spin infinite 20s linear;*/
+/*  }*/
+/*}*/
 
-.card {
-  padding: 2em;
-}
+/*.card {*/
+/*  padding: 2em;*/
+/*}*/
 
-.read-the-docs {
-  color: #888;
-}
+/*.read-the-docs {*/
+/*  color: #888;*/
+/*}*/
 
-/* ----- React Grid Layout ----- */
-.react-grid-layout {
-  position: relative;
-  transition: height 200ms ease;
-}
-.react-grid-item {
-  transition: all 200ms ease;
-  transition-property: left, top;
-}
-.react-grid-item img {
-  pointer-events: none;
-  user-select: none;
-}
+/*!* ----- React Grid Layout ----- *!*/
+/*.react-grid-layout {*/
+/*  position: relative;*/
+/*  transition: height 200ms ease;*/
+/*}*/
+/*.react-grid-item {*/
+/*  transition: all 200ms ease;*/
+/*  transition-property: left, top;*/
+/*}*/
+/*.react-grid-item img {*/
+/*  pointer-events: none;*/
+/*  user-select: none;*/
+/*}*/
 
-.react-grid-item.cssTransforms {
-  transition-property: none;
-}
+/*.react-grid-item.cssTransforms {*/
+/*  transition-property: none;*/
+/*}*/
 
-.animated .react-grid-item.cssTransforms {
-  transition-property: transform;
-}
+/*.animated .react-grid-item.cssTransforms {*/
+/*  transition-property: transform;*/
+/*}*/
 
-.react-grid-item.resizing {
-  z-index: 1;
-  will-change: width, height;
-}
+/*.react-grid-item.resizing {*/
+/*  z-index: 1;*/
+/*  will-change: width, height;*/
+/*}*/
 
-.react-grid-item.react-draggable-dragging {
-  transition: none;
-  z-index: 3;
-  will-change: transform;
-}
+/*.react-grid-item.react-draggable-dragging {*/
+/*  transition: none;*/
+/*  z-index: 3;*/
+/*  will-change: transform;*/
+/*}*/
 
-.react-grid-item.dropping {
-  visibility: hidden;
-}
+/*.react-grid-item.dropping {*/
+/*  visibility: hidden;*/
+/*}*/
 
-.react-grid-item.react-grid-placeholder {
-  background: #3367d6;
-  opacity: 0.2;
-  transition-duration: 100ms;
-  z-index: 2;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  -o-user-select: none;
-  user-select: none;
-}
+/*.react-grid-item.react-grid-placeholder {*/
+/*  background: #3367d6;*/
+/*  opacity: 0.2;*/
+/*  transition-duration: 100ms;*/
+/*  z-index: 2;*/
+/*  -webkit-user-select: none;*/
+/*  -moz-user-select: none;*/
+/*  -ms-user-select: none;*/
+/*  -o-user-select: none;*/
+/*  user-select: none;*/
+/*}*/
 
-.react-resizable-hide > .react-resizable-handle {
-  display: none;
-}
+/*.react-resizable-hide > .react-resizable-handle {*/
+/*  display: none;*/
+/*}*/
 
-/* ----- React Resizable ----- */
-.resize-handle {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  background: #3367d6;
-  width: 3px;
-  cursor: col-resize;
-}
+/*!* ----- React Resizable ----- *!*/
+/*.resize-handle {*/
+/*  position: absolute;*/
+/*  top: 0;*/
+/*  right: 0;*/
+/*  bottom: 0;*/
+/*  background: #3367d6;*/
+/*  width: 3px;*/
+/*  cursor: col-resize;*/
+/*}*/
 
-.react-resizable {
-  position: relative;
-}
-.react-resizable-handle {
-  content: "";
-  position: absolute;
-  right: 3px;
-  bottom: 3px;
-  width: 10px;
-  height: 10px;
-  border-right: 4px solid #3367d6;
-  border-bottom: 4px solid #3367d6;
-}
-.react-resizable-handle-sw {
-  bottom: 0;
-  left: 0;
-  cursor: sw-resize;
-  transform: rotate(90deg);
-}
-.react-resizable-handle-se {
-  cursor: se-resize;
-}
-.react-resizable-handle-nw {
-  top: 0;
-  left: 0;
-  cursor: nw-resize;
-  transform: rotate(180deg);
-}
-.react-resizable-handle-ne {
-  top: 0;
-  right: 0;
-  cursor: ne-resize;
-  transform: rotate(270deg);
-}
-.react-resizable-handle-w,
-.react-resizable-handle-e {
-  top: 50%;
-  margin-top: -10px;
-  cursor: ew-resize;
-}
-.react-resizable-handle-w {
-  left: 0;
-  transform: rotate(135deg);
-}
-.react-resizable-handle-e {
-  right: 0;
-  transform: rotate(315deg);
-}
-.react-resizable-handle-n,
-.react-resizable-handle-s {
-  left: 50%;
-  margin-left: -10px;
-  cursor: ns-resize;
-}
-.react-resizable-handle-n {
-  top: 0;
-  transform: rotate(225deg);
-}
-.react-resizable-handle-s {
-  bottom: 0;
-  transform: rotate(45deg);
-}
+/*.react-resizable {*/
+/*  position: relative;*/
+/*}*/
+/*.react-resizable-handle {*/
+/*  content: "";*/
+/*  position: absolute;*/
+/*  right: 3px;*/
+/*  bottom: 3px;*/
+/*  width: 10px;*/
+/*  height: 10px;*/
+/*  border-right: 4px solid #3367d6;*/
+/*  border-bottom: 4px solid #3367d6;*/
+/*}*/
+/*.react-resizable-handle-sw {*/
+/*  bottom: 0;*/
+/*  left: 0;*/
+/*  cursor: sw-resize;*/
+/*  transform: rotate(90deg);*/
+/*}*/
+/*.react-resizable-handle-se {*/
+/*  cursor: se-resize;*/
+/*}*/
+/*.react-resizable-handle-nw {*/
+/*  top: 0;*/
+/*  left: 0;*/
+/*  cursor: nw-resize;*/
+/*  transform: rotate(180deg);*/
+/*}*/
+/*.react-resizable-handle-ne {*/
+/*  top: 0;*/
+/*  right: 0;*/
+/*  cursor: ne-resize;*/
+/*  transform: rotate(270deg);*/
+/*}*/
+/*.react-resizable-handle-w,*/
+/*.react-resizable-handle-e {*/
+/*  top: 50%;*/
+/*  margin-top: -10px;*/
+/*  cursor: ew-resize;*/
+/*}*/
+/*.react-resizable-handle-w {*/
+/*  left: 0;*/
+/*  transform: rotate(135deg);*/
+/*}*/
+/*.react-resizable-handle-e {*/
+/*  right: 0;*/
+/*  transform: rotate(315deg);*/
+/*}*/
+/*.react-resizable-handle-n,*/
+/*.react-resizable-handle-s {*/
+/*  left: 50%;*/
+/*  margin-left: -10px;*/
+/*  cursor: ns-resize;*/
+/*}*/
+/*.react-resizable-handle-n {*/
+/*  top: 0;*/
+/*  transform: rotate(225deg);*/
+/*}*/
+/*.react-resizable-handle-s {*/
+/*  bottom: 0;*/
+/*  transform: rotate(45deg);*/
+/*}*/
