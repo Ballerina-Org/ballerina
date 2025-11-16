@@ -1,4 +1,4 @@
-import { Unit } from "../../../main";
+import { id, Unit } from "../../../main";
 import { AsyncState } from "../../async/state";
 import { Coroutine } from "../../coroutines/state";
 import { replaceWith } from "../../fun/domains/updater/domains/replaceWith/state";
@@ -12,7 +12,6 @@ import { ValueStreamCo } from "./builder";
 export const ValueInfiniteStreamLoader = (maxRetries = 3) => {
   const Co = ValueStreamCo();
   const updaters = ValueInfiniteStreamState.Updaters;
-
   const attemptLoad = (
     retryCount = 0,
   ): Coroutine<
@@ -27,36 +26,46 @@ export const ValueInfiniteStreamLoader = (maxRetries = 3) => {
             () => current.getChunk([current.position]),
             () => "error" as const,
           ).then((apiResult) => {
-            return apiResult.kind == "l"
-              ? Co.SetState(
-                  updaters.Core.loadingMore(
-                    replaceWith(AsyncState.Default.loaded({})),
-                  )
-                    .then(
-                      updaters.Coroutine.addLoadedChunk(
-                        current.position.chunkIndex,
-                        apiResult.value,
-                      ).then(
+            return Co.GetState().then((current) => {
+              return apiResult.kind == "l"
+                ? Co.SetState(
+                    updaters.Core.loadingMore(
+                      replaceWith(AsyncState.Default.loaded({})),
+                    )
+                      .then(
+                        updaters.Coroutine.addLoadedChunk(
+                          current.position.chunkIndex,
+                          apiResult.value,
+                        ).then(
+                          updaters.Core.position(
+                            ValueStreamPosition.Updaters.Core.shouldLoad(
+                              replaceWith<ValueStreamPosition["shouldLoad"]>(
+                                false,
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                      .then(
                         updaters.Core.position(
-                          ValueStreamPosition.Updaters.Core.shouldLoad(
-                            replaceWith<ValueStreamPosition["shouldLoad"]>(
-                              false,
+                          ValueStreamPosition.Updaters.Core.nextStart(
+                            current.position.disallowParamsChange
+                              ? id
+                              : replaceWith(apiResult.value.to),
+                          ),
+                        ).then(
+                          updaters.Core.position(
+                            ValueStreamPosition.Updaters.Core.disallowParamsChange(
+                              replaceWith(false),
                             ),
                           ),
                         ),
                       ),
-                    )
-                    .then(
-                      updaters.Core.position(
-                        ValueStreamPosition.Updaters.Core.nextStart(
-                          replaceWith(apiResult.value.to),
-                        ),
-                      ),
-                    ),
-                )
-              : retryCount < maxRetries
-                ? Co.Wait(500).then(() => attemptLoad(retryCount + 1))
-                : Co.Return(false);
+                  )
+                : retryCount < maxRetries
+                  ? Co.Wait(500).then(() => attemptLoad(retryCount + 1))
+                  : Co.Return(false);
+            });
           }),
     );
 

@@ -416,6 +416,12 @@ export const OneAbstractRenderer = <
                           ValueStreamPosition.Updaters.Core.nextStart(
                             replaceWith(0),
                           ),
+                        ).then(
+                          ValueInfiniteStreamState.Updaters.Core.position(
+                            ValueStreamPosition.Updaters.Core.disallowParamsChange(
+                              replaceWith(true),
+                            ),
+                          ),
                         ),
                       ),
                     ),
