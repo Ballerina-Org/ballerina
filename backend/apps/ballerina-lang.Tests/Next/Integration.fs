@@ -1,37 +1,19 @@
 ﻿module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Integration
 
 open NUnit.Framework
-open FSharp.Data
 open Ballerina.StdLib.Object
-open Ballerina.StdLib.String
 open Ballerina.Collections.Sum
-open Ballerina.Coroutines.Model
 open Ballerina.Reader.WithError
-open Ballerina.Errors
-open System
-open Ballerina.DSL.Next.Unification
 open Ballerina.DSL.Next.Terms.Model
-open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Types.Model
-open Ballerina.DSL.Next.Types.Patterns
-open Ballerina.DSL.Next.Types.TypeChecker.Expr
 open Ballerina.DSL.Next.Types.TypeChecker.Model
-open Ballerina.DSL.Next.Types.TypeChecker.Eval
-open Ballerina.DSL.Next.Types.TypeChecker.Model
-open Ballerina.DSL.Next.Types.TypeChecker
 open Ballerina.DSL.Next.Terms
-open Ballerina.State.WithError
-open Ballerina.DSL.Next.StdLib.Option
 open Ballerina.DSL.Next.Extensions
-open Ballerina.LocalizedErrors
-open Ballerina.Parser
-open Ballerina.StdLib.Object
-open Ballerina.DSL.Next.Syntax
-open Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval
 open Ballerina.DSL.Next
 open Ballerina.DSL.Next.StdLib
-open Ballerina.DSL.Next.Types.TypeChecker.Patterns
 open Ballerina.DSL.Next.Runners
+open Ballerina.DSL.Next.StdLib.Extensions
+open Ballerina.DSL.Next.StdLib.List.Model
 
 let context = Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval.context
 
@@ -471,7 +453,7 @@ in f true, f false
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Tuple [ Ext(ValueExt(Choice1Of3(_v1))); Ext(ValueExt(Choice1Of3(_v2))) ] -> Assert.Pass()
+    | Tuple [ Ext(ValueExt(Choice1Of4(_v1))); Ext(ValueExt(Choice1Of4(_v2))) ] -> Assert.Pass()
     | _ -> Assert.Fail($"Expected a tuple of two list values, got {value.ToFSharpString}")
 
   | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
@@ -494,13 +476,13 @@ in l,l1,l2,l3,l4
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Tuple [ Ext(ValueExt(Choice1Of3(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
+    | Tuple [ Ext(ValueExt(Choice1Of4(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
                                                                                              Value.Primitive(Int32 -2)
                                                                                              Value.Primitive(Int32 3) ]))))
-              Ext(ValueExt(Choice1Of3(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Bool true)
+              Ext(ValueExt(Choice1Of4(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Bool true)
                                                                                              Value.Primitive(Bool false)
                                                                                              Value.Primitive(Bool true) ]))))
-              Ext(ValueExt(Choice1Of3(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
+              Ext(ValueExt(Choice1Of4(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
                                                                                              Value.Primitive(Int32 3) ]))))
               Value.Primitive(Int32 2)
               Value.Primitive(Bool false) ] -> Assert.Pass()
@@ -579,7 +561,7 @@ in List::append [string] l1 l2
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Ext(ValueExt(Choice1Of3(ListExt.ListValues(List.Model.ListValues.List [ Value.Primitive(String "hello")
+    | Ext(ValueExt(Choice1Of4(ListExt.ListValues(List.Model.ListValues.List [ Value.Primitive(String "hello")
                                                                               Value.Primitive(String " ")
                                                                               Value.Primitive(String "world")
                                                                               Value.Primitive(String "bonjour")
@@ -674,9 +656,9 @@ let PrimitiveOpTest (program: string, expectedValue: PrimitiveValue, errMsg: Val
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Primitive res when res = expectedValue -> Assert.Pass()
+    | Value.Primitive res when res = expectedValue -> Assert.Pass $"Correctly evaluated to {expectedValue.ToString()}"
     | _ -> Assert.Fail(errMsg value)
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration int32 literals work`` () =
@@ -782,3 +764,374 @@ let ``LangNext-Integration Decimal operations work`` () =
 
   decimalOps
   |> List.iter (fun (program, expectedValue, errMsg) -> PrimitiveOpTest(program, expectedValue, errMsg))
+
+[<Test>]
+let ``LangNext-Integration DateOnly constructor builds a DateOnly value`` () =
+  let program = "let x = dateOnly::new(\"2021-02-01\") in x"
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Sum({ Case = 0; Count = 1 }, Value.Primitive(PrimitiveValue.Date(d))) when d = System.DateOnly(2021, 2, 1) ->
+      Assert.Pass $"Correctly evaluated to 2021-02-01"
+    | _ -> Assert.Fail $"Expected 2021-02-01, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+[<Test>]
+let ``LangNext-Integration DateOnly (now) constructor builds a DateOnly value`` () =
+  let program = "let x = dateOnly::now() in x"
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive(PrimitiveValue.Date _) -> Assert.Pass $"Correctly evaluated to the current date"
+    | _ -> Assert.Fail $"Expected the current date, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+[<Test>]
+let ``LangNext-Integration DateOnly (utcNow) constructor builds a DateOnly value`` () =
+  let program = "let x = dateOnly::utcNow() in x"
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive(PrimitiveValue.Date _) -> Assert.Pass $"Correctly evaluated to the current utc date"
+    | _ -> Assert.Fail $"Expected the current utc date, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+
+[<Test>]
+let ``LangNext-Integration DateOnly constructor fails with an error if the string is not a valid date`` () =
+  let program = "let x = dateOnly::new(\"GHSBR\") in x"
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
+    | _ -> Assert.Fail $"Expected an error, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+[<Test>]
+let ``LangNext-Integration DateTime constructor builds a DateTime value`` () =
+  let program = "let x = dateTime::new(\"2021-02-01T12:00:00\") in x"
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Sum({ Case = 0; Count = 1 }, Value.Primitive(PrimitiveValue.DateTime(d))) when
+      d = System.DateTime(2021, 2, 1, 12, 0, 0)
+      ->
+      Assert.Pass $"Correctly evaluated to 2021-02-01"
+    | _ -> Assert.Fail $"Expected 2021-02-01, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+[<Test>]
+let ``LangNext-Integration DateTime (now) constructor builds a DateTime value`` () =
+  let program = "let x = dateTime::now() in x"
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive(PrimitiveValue.DateTime _) -> Assert.Pass $"Correctly evaluated to the current date"
+    | _ -> Assert.Fail $"Expected the current date, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+[<Test>]
+let ``LangNext-Integration DateTime (utcNow) constructor builds a DateTime value`` () =
+  let program = "let x = dateTime::utcNow() in x"
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive(PrimitiveValue.DateTime _) -> Assert.Pass $"Correctly evaluated to the current utc date"
+    | _ -> Assert.Fail $"Expected the current utc date, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+
+[<Test>]
+let ``LangNext-Integration DateTime constructor fails with an error if the string is not a valid date`` () =
+  let program = "let x = dateTime::new(\"GHSBR\") in x"
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
+    | _ -> Assert.Fail $"Expected an error, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+[<Test>]
+let ``LangNext-Integration Guid constructor builds a Guid value`` () =
+  let program = "let x = guid::new(\"123e4567-e89b-12d3-a456-426614174000\") in x"
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Sum({ Case = 0; Count = 1 }, Value.Primitive(PrimitiveValue.Guid(g))) when
+      g = System.Guid "123e4567-e89b-12d3-a456-426614174000"
+      ->
+      Assert.Pass $"Correctly evaluated to 123e4567-e89b-12d3-a456-426614174000"
+    | _ -> Assert.Fail $"Expected 123e4567-e89b-12d3-a456-426614174000, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+[<Test>]
+let ``LangNext-Integration Guid (v4) constructor builds a Guid value`` () =
+  let program = "let x = guid::v4() in x"
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive(PrimitiveValue.Guid(g)) when g <> System.Guid.Empty ->
+      Assert.Pass $"Correctly evaluated to a new Guid"
+    | _ -> Assert.Fail $"Expected a new Guid, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+[<Test>]
+let ``LangNext-Integration Guid constructor fails with an error if the string is not a valid guid`` () =
+  let program = "let x = guid::new(\"GHSBR\") in x"
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
+    | _ -> Assert.Fail $"Expected an error, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+[<Test>]
+let ``LangNext-Integration TimeSpan constructor builds a TimeSpan value from "02:00:00"`` () =
+  let program = "let x = timeSpan::new(\"02:00:00\") in x"
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Sum({ Case = 0; Count = 1 }, Value.Primitive(PrimitiveValue.TimeSpan(t))) when
+      t = System.TimeSpan(0, 2, 0, 0)
+      ->
+      Assert.Pass $"Correctly evaluated to 02:00:00"
+    | _ -> Assert.Fail $"Expected 02:00:00, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+[<Test>]
+let ``LangNext-Integration TimeSpan constructor builds a TimeSpan value from "6"`` () =
+  let program = "let x = timeSpan::new(\"6\") in x"
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Sum({ Case = 0; Count = 1 }, Value.Primitive(PrimitiveValue.TimeSpan(t))) when
+      t = System.TimeSpan(6, 0, 0, 0)
+      ->
+      Assert.Pass $"Correctly evaluated to 6.00:00:00"
+    | _ -> Assert.Fail $"Expected 6.00:00:00, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+[<Test>]
+let ``LangNext-Integration TimeSpan constructor builds TimeSpan zero value`` () =
+  let program = "let x = timeSpan::zero() in x"
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive(PrimitiveValue.TimeSpan(t)) when t = System.TimeSpan.Zero ->
+      Assert.Pass $"Correctly evaluated to TimeSpan.Zero"
+    | _ -> Assert.Fail $"Expected TimeSpan.Zero, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+[<Test>]
+let ``LangNext-Integration TimeSpan constructor fails with an error if the string is not a valid time span`` () =
+  let program = "let x = timeSpan::new(\"GHSBR\") in x"
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
+    | _ -> Assert.Fail $"Expected an error, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+[<Test>]
+let ``LangNext-Integration TimeSpan constructor fails with an error if the parsed value overflows`` () =
+  let program = "let x = timeSpan::new(\"6:34:14:45\") in x"
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
+    | _ -> Assert.Fail $"Expected an error, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+[<Test>]
+let ``LangNext-Integration TimeSpan constructor fails with an error if value has a wrong format`` () =
+  let program = "let x = timeSpan::new(\"6:12:14:45,3448\") in x"
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
+    | _ -> Assert.Fail $"Expected an error, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+
+[<Test>]
+let ``LangNext-Integration record construction inside a sum match expression constructs correctly`` () =
+  let program =
+    """
+type R = {
+  X: bool;
+  Y: string;
+}
+in let cons = List::Cons [R]
+in let nil = List::Nil [R] ()
+in let (_:int32+string) = 2Of2 ""
+in match _ with
+  | 1Of2 (_ -> nil)
+  | 2Of2 (_ -> cons ({ X = true; Y = "ABC"; }, nil))
+      """
+
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Ext(ValueExt.ValueExt(Choice1Of4(ListExt.ListValues(ListValues.List([ Value.Record _ ]))))) ->
+      Assert.Pass $"Correctly evaluated to a record"
+    | _ -> Assert.Fail $"Expected a record, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+
+[<Test>]
+let ``LangNext-Integration record construction inside a union match expression constructs correctly`` () =
+  let program =
+    """
+type R = {
+  X: bool;
+  Y: string;
+}
+in type T = | A of int32 | B of string
+in let cons = List::Cons [R]
+in let nil = List::Nil [R] ()
+in let (_:T) = B ""
+in match _ with
+  | A (_ -> nil)
+  | B (_ -> cons ({ X = true; Y = "ABC"; }, nil))
+      """
+
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Ext(ValueExt.ValueExt(Choice1Of4(ListExt.ListValues(ListValues.List([ Value.Record _ ]))))) ->
+      Assert.Pass $"Correctly evaluated to a record"
+    | _ -> Assert.Fail $"Expected a record, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+
+[<Test>]
+let ``LangNext-Integration record destruction is used as a type hint according to scope`` () =
+  let program =
+    """
+type T = { A:int32; B:int32; C:int32; }
+in let f = fun x -> x.A + x.B + x.C
+in f { A=10; B=20; C=30; }
+      """
+
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive(PrimitiveValue.Int32 60) -> Assert.Pass $"Correctly evaluated to 60"
+    | _ -> Assert.Fail $"Expected 60, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+
+[<Test>]
+let ``LangNext-Integration record destruction type hint unifies and fails accordingly`` () =
+  let program =
+    """
+type T = { A:int32; B:int32; C:int32; }
+in type U = { A:int32; B:int32; }
+in let f = fun x -> x.A + x.B + x.C
+in f, f { A=10; B=20; C=30; }
+      """
+
+
+  let actual = program |> run
+
+  match actual with
+  | Left _ -> Assert.Fail $"Expected typechecking error"
+  | Right _ -> Assert.Pass()
+
+
+[<Test>]
+let ``LangNext-Integration union destruction is used as a type hint according to scope`` () =
+  let program =
+    """
+type T = | A of int32 | B of int32 | C of int32
+in let f = fun x -> match x with | A (v -> v) | B (v -> v) | C (v -> v)
+in (f (A 10)) + (f (B 20)) + (f (C 30))
+      """
+
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Primitive(PrimitiveValue.Int32 60) -> Assert.Pass $"Correctly evaluated to 60"
+    | _ -> Assert.Fail $"Expected 60, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+
+[<Test>]
+let ``LangNext-Integration union destruction type hint unifies and fails accordingly`` () =
+  let program =
+    """
+type T = | A of int32 | B of int32 | C of int32
+in type U = | A of int32 | B of int32
+in let f = fun x -> match x with | A (v -> v) | B (v -> v) | C (v -> v)
+in f (A 10), f (B 20), f (C 30)
+      """
+
+
+  let actual = program |> run
+
+  match actual with
+  | Left _ -> Assert.Fail $"Expected typechecking error"
+  | Right _ -> Assert.Pass()

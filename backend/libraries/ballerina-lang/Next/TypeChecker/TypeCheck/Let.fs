@@ -27,10 +27,10 @@ module Let =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member internal TypeCheckLet
-      (typeCheckExpr: TypeChecker, loc0: Location)
-      : TypeChecker<ExprLet<TypeExpr, Identifier>> =
+      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      : TypeChecker<ExprLet<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
           ({ Var = x
@@ -48,7 +48,7 @@ module Let =
 
           let! x_type =
             var_type
-            |> Option.map (TypeExpr.Eval None loc0 >> Expr<'T, 'Id>.liftTypeEval)
+            |> Option.map (TypeExpr.Eval None loc0 >> Expr<'T, 'Id, 'valueExt>.liftTypeEval)
             |> state.RunOption
 
           let! e1, t1, k1 = (x_type |> Option.map fst) => e1
@@ -56,7 +56,7 @@ module Let =
           match x_type with
           | Some(x_type, x_type_kind) ->
             do! x_type_kind |> Kind.AsStar |> ofSum |> state.Ignore
-            do! TypeValue.Unify(loc0, t1, x_type) |> Expr<'T, 'Id>.liftUnification
+            do! TypeValue.Unify(loc0, t1, x_type) |> Expr<'T, 'Id, 'valueExt>.liftUnification
           | _ -> ()
 
           let! e2, t2, k2 =

@@ -1,5 +1,9 @@
 namespace Ballerina.DSL.Next.StdLib.DateOnly
 
+open Ballerina.Collections.Sum
+open System
+open Ballerina.Errors
+
 [<AutoOpen>]
 module Patterns =
   open Ballerina.Collections.Sum

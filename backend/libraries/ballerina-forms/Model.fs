@@ -447,7 +447,6 @@ module Model =
       Tooltip: Option<string>
       Details: Option<string>
       Renderer: Renderer<'ExprExtension, 'ValueExtension>
-      Visible: Expr<'ExprExtension, 'ValueExtension>
       Disabled: Option<Expr<'ExprExtension, 'ValueExtension>> }
 
     static member Id(f: FieldConfig<'ExprExtension, 'ValueExtension>) : FieldConfigId =

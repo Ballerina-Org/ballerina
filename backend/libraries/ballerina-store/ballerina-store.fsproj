@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Ballerina.Store</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="9.0.303" />
+    <PackageReference Include="FSharp.SystemTextJson" Version="1.4.36" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ballerina-cat\ballerina-cat.fsproj" />
+    <ProjectReference Include="..\ballerina-data-json\ballerina-data-json.fsproj" />
+    <ProjectReference Include="..\ballerina-data\ballerina-data.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="InMemory\StoreBackend.fs" />
+    <Compile Include="InMemory\StoreFacade.fs" />
+  </ItemGroup>
+</Project>

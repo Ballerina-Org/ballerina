@@ -1185,8 +1185,6 @@ module Renderers =
           |> Option.map (JsonValue.AsString >> state.OfSum)
           |> state.RunOption
 
-        let! visibleJson = fields |> state.TryFindField "visible" |> state.Catch
-
         let! disabledJson = sum.TryFindField "disabled" fields |> state.OfSum |> state.Catch
         let disabledJson = disabledJson |> Sum.toOption
         let! renderer = Renderer.Parse primitivesExt exprParser fields
@@ -1197,13 +1195,6 @@ module Renderers =
           return!
             state.Throw(Errors.Singleton """For record fields, record renderers must be wrapped in {"renderer": ...}""")
         | _ ->
-          let! visible =
-            visibleJson
-            |> Sum.toOption
-            |> Option.map (exprParser >> state.OfSum)
-            |> state.RunOption
-
-          let visible = visible |> Option.defaultWith (fun () -> primitivesExt.ConstBool true)
 
           let! disabled = disabledJson |> Option.map (exprParser >> state.OfSum) |> state.RunOption
 
@@ -1214,7 +1205,6 @@ module Renderers =
               Tooltip = tooltip
               Details = details
               Renderer = renderer
-              Visible = visible
               Disabled = disabled }
 
           fc
