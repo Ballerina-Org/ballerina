@@ -917,6 +917,15 @@ export const TableAbstractRenderer = <
                 props.setState(
                   TableAbstractRendererState.Updaters.Template.reloadFrom0(),
                 ),
+              reinitalizeFiltersAndSorting: () => {
+                props.setState(
+                  TableAbstractRendererState.Updaters.Core.customFormState.children
+                    .isFilteringInitialized(replaceWith(false))
+                    .then(
+                      TableAbstractRendererState.Updaters.Template.reloadFrom0(),
+                    ),
+                );
+              },
             }}
             DetailsRenderer={embedDetailsRenderer}
             TableData={embeddedTableData}
