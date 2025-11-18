@@ -2,21 +2,17 @@
 import React, {useEffect} from "react";
 import {
     VscCheck,
-    VscCheckAll,
     VscDatabase,
-    VscLock,
     VscSave,
     VscNewFile,
-    VscRedo,
     VscPlay,
-    VscChecklist,
     VscMerge,
-    VscTriangleLeft, VscTriangleRight, VscFolderLibrary, VscSettings, VscTriangleUp, VscBracketError,
-    VscCommentUnresolved, VscCircle, VscHistory
+    VscTriangleLeft, VscTriangleRight, VscFolderLibrary, VscSettings, VscTriangleUp, VscBracketError, VscHistory,
+    VscInsert
 } from "react-icons/vsc";
 
 
-import {Ide, LockedPhase} from "playground-core";
+import {Ide, IdePhase, LockedPhase} from "playground-core";
 
 const size = 22;
 
@@ -40,6 +36,7 @@ type ActionsProps = {
     onSettings?: () => void;
     onErrorPanel?: () => void;
     onDeltaShow?: () => void;
+    onCustomFields?: () => void;
     
 };
 
@@ -49,33 +46,31 @@ export const Actions: React.FC<ActionsProps> = ({
     errorCount = 0,
     hideRight = false,
     onHideUp,
+    onCustomFields,
     onSettings,
     canValidate = false,
     canRun = true,
     onDeltaShow,
     onErrorPanel,
-    onSeed, onNew, onLock, onReSeed, onRun, onMerge, onSave, onHide
-
-        }) => {
+    onSeed, onNew, onRun, onMerge, onSave, onHide}) => {
+    
     useEffect(() => {
         const onKeyDown = async (e: KeyboardEvent) => {
             const isMac = navigator.platform.toUpperCase().includes("MAC");
             const isCtrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
-
-            // Check if it's Ctrl+1..9
+            
             if (isCtrlOrCmd && /^Digit[1-9]$/.test(e.code)) {
                 e.preventDefault();
-
-                // Extract actual number
+                
                 const numberPressed = Number(e.code.replace("Digit", ""));
-
-                // Run async actions sequentially
+                
                 await onSave();
                 await onMerge();
                 await onRun();
 
                 setState(
-                    LockedPhase.Updaters.Step.selectLauncherByNr(numberPressed)
+                    Ide.Updaters.Core.phase.locked(
+                    LockedPhase.Updaters.Core.selectLauncherByNr(numberPressed))
                 );
             }
         };
@@ -84,15 +79,14 @@ export const Actions: React.FC<ActionsProps> = ({
         return () => window.removeEventListener("keydown", onKeyDown);
     }, [onSave, onMerge, onRun, setState]);
 
-    const isWellKnownFile = context.phase === "locked"
-        && context.locked.workspace.kind === "selected"
-        && (context.locked.workspace.current.kind == 'file' 
-            && (context.locked.workspace.current.file.name.replace(".json","") == "go-config"
-        || context.locked.workspace.current.file.name.replace(".json","") == "seeds" 
-            || context.locked.workspace.current.file.name.replace(".json","") == "merged" ))
+    const isWellKnownFile = context.phase.kind === "locked"
+        && context.phase.locked.workspace.kind === "selected"
+        && ((context.phase.locked.workspace.file.name.replace(".json","") == "go-config"
+        || context.phase.locked.workspace.file.name.replace(".json","") == "seeds" 
+            || context.phase.locked.workspace.file.name.replace(".json","") == "merged" ))
     return (
     <div className={"p-5 mt-10.5 flex space-x-1 w-full"}>
-        { context.phase == "locked" &&
+        { context.phase.kind == "locked" &&
             <button
                 className="btn tooltip tooltip-bottom"
                 data-tip="Create new"
@@ -100,13 +94,13 @@ export const Actions: React.FC<ActionsProps> = ({
             >
                 <VscNewFile size={size} />
             </button>}
-        { context.phase == "locked" &&
+        { context.phase.kind == "locked" &&
             <label
                 htmlFor="my-drawer" className="btn tooltip tooltip-bottom" data-tip="Workspace">
                 <VscFolderLibrary className="mt-2" size={size}/>
             </label>}
 
-        {context.phase === "locked" && (
+        {context.phase.kind === "locked" && (
             <button
                 className="btn tooltip tooltip-bottom"
                 data-tip="Save"
@@ -116,10 +110,10 @@ export const Actions: React.FC<ActionsProps> = ({
             </button>
         )}
         {
-            context.phase === "locked"  
+            context.phase.kind === "locked"  
             && !isWellKnownFile && (
             <div className="indicator">
-                {context.locked.validatedSpec.kind == "r"  && <span className="indicator-item indicator-top indicator-center badge badge-xs badge-secondary"><VscCheck size={10}/></span> }
+                {context.phase.locked.validatedSpec.kind == "r"  && <span className="indicator-item indicator-top indicator-center badge badge-xs badge-secondary"><VscCheck size={10}/></span> }
                 <button
                     className="btn tooltip tooltip-bottom"
                     data-tip="Validate"
@@ -130,7 +124,7 @@ export const Actions: React.FC<ActionsProps> = ({
             </div>
 
         )}
-        {context.phase === "locked" && (
+        {context.phase.kind === "locked" && (
             <button
                 className="btn tooltip tooltip-bottom"
                 data-tip="Seed"
@@ -141,10 +135,7 @@ export const Actions: React.FC<ActionsProps> = ({
             </button>
         )}
 
-        {context.phase === "locked" 
-            //&& context.step === "design"
-            //&& context.locked.seeds.kind == "r" 
-            //&& context.locked.virtualFolders.merged.kind == "r" 
+        {context.phase.kind === "locked"
             && (
             <button
                 className="btn tooltip tooltip-bottom"
@@ -156,10 +147,7 @@ export const Actions: React.FC<ActionsProps> = ({
             </button>
         )}
         <div className="ml-auto flex space-x-2">
-        {context.phase === "locked"
-            //&& context.step === "design"
-            //&& context.locked.seeds.kind == "r" 
-            //&& context.locked.virtualFolders.merged.kind == "r" 
+        {context.phase.kind === "locked"
             && (
                 <button
                     className="btn tooltip tooltip-bottom"
@@ -169,8 +157,8 @@ export const Actions: React.FC<ActionsProps> = ({
                     <VscSettings size={size} />
                 </button>
             )}
-            {context.phase === "locked"
-                && context.locked.progress.kind === "preDisplay"
+            {context.phase.kind === "locked"
+                && context.phase.locked.step.kind === "display"
                 && (
                     <button
                         className="btn tooltip tooltip-bottom"
@@ -180,7 +168,7 @@ export const Actions: React.FC<ActionsProps> = ({
                         <VscHistory size={size} />
                     </button>
                 )}
-        {context.phase === "locked" && hideRight && 
+        {context.phase.kind === "locked" && hideRight && 
             <button
                 className="btn tooltip tooltip-bottom"
                 data-tip="Show Forms"
@@ -188,7 +176,7 @@ export const Actions: React.FC<ActionsProps> = ({
             >
                 <VscTriangleLeft size={size} />
             </button>}
-            { context.phase == "locked" &&<div className="indicator">
+            { context.phase.kind == "locked" &&<div className="indicator">
                 {/*<span className=*/}
                 {/*          {errorCount > 0 ?*/}
                 {/*              "indicator-item indicator-top indicator-center badge badge-xs badge-error"*/}
@@ -204,14 +192,23 @@ export const Actions: React.FC<ActionsProps> = ({
                     <VscBracketError size={size} />
                 </button>
             </div>}
-            { context.phase == "locked" &&<button
+            { context.phase.kind == "locked" &&
+                <button
+                    disabled={errorCount == 0}
+                    className="btn tooltip tooltip-bottom"
+                    data-tip="Custom fields"
+                    onClick={onCustomFields}
+                >
+                    <VscInsert size={size} />
+                </button>}
+            { context.phase.kind == "locked" &&<button
                 className="btn tooltip tooltip-bottom"
                 data-tip="Hide Top Menu"
                 onClick={onHideUp}
             >
                 <VscTriangleUp size={size} />
             </button>}
-        {context.phase === "locked" && !hideRight && (
+        {context.phase.kind === "locked" && !hideRight && (
             <button
                 className="btn tooltip tooltip-bottom"
                 data-tip="Hide Forms"

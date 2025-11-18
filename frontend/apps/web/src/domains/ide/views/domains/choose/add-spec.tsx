@@ -1,33 +1,39 @@
 ﻿import React from "react";
-import {Ide} from "playground-core";
-import {BasicFun, Updater, Value} from "ballerina-core";
+import {Ide, IdePhase} from "playground-core";
+import {BasicFun, replaceWith, Updater, Value} from "ballerina-core";
 import {AddSpecButtons} from "./add-spec-buttons.tsx";
 import {AddSpecUploadFolder} from "./add-spec-folders.tsx";
 import {AddSpecUploadZipped} from "./add-spec-zipped.tsx";
-import {CommonUI} from "playground-core/ide/domains/common-ui/state.ts";
+import {SelectionPhase} from "playground-core/ide/domains/phases/selection/state.ts";
+import {MissingSpecsInfoAlert} from "../bootstrap/no-specs-info.tsx";
 
 
-type AddSpecProps = Ide & { setState: BasicFun<Updater<Ide>, void> };
+type AddSpecProps = SelectionPhase & { setState: BasicFun<Updater<Ide>, void> };
 
 export const AddSpecInner = (props: AddSpecProps): React.ReactElement => {
+
     return <fieldset className="fieldset w-full">
         <AddSpecButtons
             name={props.name.value}
             variant={props.variant}
-            onNameChange={(name) => props.setState(CommonUI.Updater.Core.specName(Value.Default(name)))}
-            onErrors={(errors) => props.setState(CommonUI.Updater.Core.chooseErrors(errors))}
-            startUpload={() => props.setState(Ide.Updaters.Phases.choosing.startUpload())}
+            onNameChange={(name) => 
+                props.setState(
+                    Ide.Updaters.Core.phase.selection(SelectionPhase.Updaters.Core.name(replaceWith(Value.Default(name)))))}
+            onErrors={(errors) => 
+                props.setState(Ide.Updaters.Core.phase.selection(SelectionPhase.Updaters.Core.errors(replaceWith(errors))))}
+            startUpload={() => 
+                props.setState(Ide.Updaters.Core.phase.selection( s => ({...s, kind: 'upload-started' })))}
             setState={props.setState}
         />
-        {props.phase == 'selectionOrCreation' && props.variant.kind != 'scratch' && props.variant.upload == 'upload-started' 
-            && <progress className="progress progress-success w-56" value="100" max="100"></progress>}
         <AddSpecUploadFolder {...props} />
         <AddSpecUploadZipped {...props} />
         </fieldset> 
 }
 
 export const AddSpec = (props: AddSpecProps): React.ReactElement => {
-    return props.phase == "selectionOrCreation" && props.origin == 'creating' && props.specSelection.specs.length == 0  ? 
-        <AddSpecInner {...props} /> : <></>
+    return props.specs.length == 0  ? 
+        <>
+            <MissingSpecsInfoAlert specs={props.specs.length} />
+            <AddSpecInner {...props} /></> : <></>
 }
 

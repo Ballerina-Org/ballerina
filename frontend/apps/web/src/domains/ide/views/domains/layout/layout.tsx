@@ -1,24 +1,22 @@
-﻿
-import {
-    Ide,
-    IdeView,
+﻿import {
     seed,
     update,
-    validateCompose, validateExplore, getSpec, seedPath, getKeys, validateBridge, sendDelta,
-    IsBootstrap, IsHero, IsChoose, IsLocked, Variant
+    validateCompose, validateExplore, getSpec, seedPath, getKeys, validateBridge, WorkspaceVariant,
+    Ide, WorkspaceState, LockedDisplay,
+    IdeView, HeroPhase, BootstrapPhase,
+    Deltas, Delta
 } from "playground-core";
 import "react-grid-layout/css/styles.css";
 import React, {useState} from "react";
 import {Actions} from "./actions"
 import {themeChange} from 'theme-change'
 import {useEffect} from 'react'
-import {AppToaster, fromVoe, errorFromList, notify} from "./toaster.tsx";
-
+import {AppToaster, fromVoe,  notify} from "./toaster.tsx";
 import {DispatcherFormsApp} from "../forms/forms.tsx";
 import {Panel, PanelGroup,PanelResizeHandle} from "react-resizable-panels";
 import {MissingSpecsInfoAlert} from "../bootstrap/no-specs-info.tsx";
-import {LockedPhase, LockedStep} from "playground-core/ide/domains/locked/state.ts";
-import {Loader} from "../bootstrap/loader.tsx";
+import {LockedPhase} from "playground-core/ide/domains/phases/locked/state.ts";
+import {Bootstrap} from "../bootstrap/loader.tsx";
 import {Navbar} from "../bootstrap/navbar.tsx";
 import {AddSpec} from "../choose/add-spec.tsx";
 import {SpecificationLabel} from "../locked/specification-label.tsx";
@@ -26,11 +24,14 @@ import {VfsLayout} from "../vfs/layout.tsx";
 import {AddOrSelectSpec} from "../choose/layout.tsx";
 import {FormSkeleton} from "../forms/skeleton.tsx";
 import {SettingsPanel} from "./settings.tsx";
-import {Hero} from "./hero.tsx";
 import {List} from "immutable";
 import {LaunchersDock} from "../forms/launchers-dock.tsx";
-import {ValueOrErrors, Option} from "ballerina-core";
-import {CommonUI} from "playground-core/ide/domains/common-ui/state.ts";
+import {Maybe, ValueOrErrors, replaceWith} from "ballerina-core";
+import {ErrorsPanel} from "./errors.tsx";
+import {Hero} from "../hero/hero.tsx";
+import {languages} from "monaco-editor";
+import json = languages.json;
+
 declare const __ENV__: Record<string, string>;
 console.table(__ENV__);
 
@@ -43,148 +44,193 @@ export const IdeLayout: IdeView = (props) => {
     const [hideNavbar, setHideNavbar] = useState(false);
     const [hideErrors, setHideErrors] = useState(true);
 
+    
+    const [hero, setHero] = useState<Maybe<HeroPhase>>(HeroPhase.Default());
     const forceRerender = () => setVersion(v => v + 1);
     
     useEffect(() => {
         themeChange(false)
-    }, [props.context.bootstrappingError, props.context.choosingError, props.context.lockingError,props.context.phase == 'locked'])
+    }, [props.context.phase.kind == 'locked'])
     
-    // useEffect(() => {
-    //     if(props.context.bootstrappingError.size > 0){
-    //        
-    //         notify.error('IDE Bootstrap Error', errorFromList(props.context.bootstrappingError))
-    //     }
-    // }, [props.context.bootstrappingError, props.context.choosingError, props.context.lockingError]);
-    
-    const noErrors = 
-        props.context.bootstrappingError.size == 0 
-        && props.context.lockingError.size == 0 
-        && props.context.choosingError.size == 0;
+
     return (
         <div data-theme="lofi"  className="flex flex-col min-h-screen">
             <AppToaster />
-            {IsChoose(props.context) && <MissingSpecsInfoAlert specs={props.context.specSelection.specs.length} /> }
-            {IsBootstrap(props.context) && <Loader {...props.context.bootstrap} />}
-            {IsHero(props.context) 
-                && <Hero 
-                    heroVisible={props.context.heroVisible}
-                    onSelection1={() =>
-                        props.setState(
-                            Ide.Updaters.Phases.hero.toBootstrap({kind: 'explore', upload: 'upload-not-started'} as Variant)
-                                .then(CommonUI.Updater.Core.toggleHero()))}
-                    onSelection2={() => {} }
+            {props.context.phase.kind == 'hero'
+                && <Hero
+                    context={hero}
+                    setState={setHero}
+                    foreignMutations={
+                        {
+                            onSelect1: () =>
+                                props.setState(
+                                    Ide.Updaters.Core.phase.toBootstrap(
+                                        {kind: 'explore'} as WorkspaceVariant)
+                                ),
+                            onSelect2: () =>  {},
+                        }
+                    }
                 />}
-            
-            {(IsChoose(props.context) || IsLocked(props.context)) && 
+            {props.context.phase.kind == 'bootstrap' && 
+                <Bootstrap {...props.context.phase.bootstrap} />
+            }
+
+            {(props.context.phase.kind == 'locked' || props.context.phase.kind == 'selection') && 
                 <>
                 {!hideNavbar  && <Navbar theme={theme} setTheme={setTheme} />}
                     <PanelGroup className={"flex-1 min-h-0"} autoSaveId="example" direction="horizontal">
                     <Panel minSize={20} defaultSize={50}>
                         <aside className="relative h-full">
-                        <AddSpec {...props.context} setState={props.setState} />
-                        <AddOrSelectSpec {...props.context} setState={props.setState} />
-                        <div className="w-full flex">
-                            { IsLocked(props.context) && <SpecificationLabel name={props.context.name.value} /> }
-                            <Actions
-                                onNew={()=> props.setState(Ide.Updaters.Phases.hero.toBootstrap(props.context.variant))}
-                                errorCount={5}
-                                canValidate={props.context.phase == 'locked' && props.context.locked.workspace.kind == 'selected'}
-                                onDeltaShow={() =>
-                                    props.setState(Ide.Updaters.Phases.locking.progress(LockedStep.Updaters.Core.toggleDeltas()))
-                                }
-                                hideRight={hideForms}
-                                context={props.context}
-                                setState={props.setState}
-                                onHide={() => setHideForms(!hideForms)}
-                                onHideUp={() => setHideNavbar(!hideNavbar)}
-                                onSave={
-                                    async () => {
-                                        if(!(props.context.phase == "locked" 
-                                            && props.context.locked.workspace.kind == 'selected' 
-                                            && props.context.locked.workspace.current.kind == 'file')) {
-                                            notify.error('UX bad state','Saving should be possible only in a locked phase');
+                            {props.context.phase.kind == 'selection' 
+                                && <AddSpec {...props.context.phase.selection} setState={props.setState} />}
+                            <AddOrSelectSpec {...props.context} setState={props.setState} />
+                            <div className="w-full flex">
+                                {props.context.phase.kind == 'locked' && <SpecificationLabel name={props.context.phase.locked.name} /> }
+                                <Actions
+                                    onNew={()=> {
+                                        if (props.context.phase.kind == 'locked')
+                                            props.setState(Ide.Updaters.Core.phase.toBootstrap(props.context.phase.locked.workspace.variant))
+                                    }
+                                    }
+                                    errorCount={5}
+                                    canValidate={props.context.phase.kind == 'locked' && props.context.phase.locked.workspace.kind == 'selected'}
+                                    onDeltaShow={() =>
+                                        props.setState(
+                                            Ide.Updaters.Core.phase.locked(
+                                                LockedPhase.Updaters.Core.display(
+                                                    LockedDisplay.Updaters.Core.deltas(d => ({
+                                                        ...d, 
+                                                        visibility: d.visibility == 'fully-visible' ? 'fully-invisible' : 'fully-visible'} satisfies Delta)))))
+                                    }
+                                    hideRight={hideForms}
+                                    context={props.context}
+                                    setState={props.setState}
+                                    onHide={() => setHideForms(!hideForms)}
+                                    onHideUp={() => setHideNavbar(!hideNavbar)}
+                                    onSave={
+                                        async () => {
+                                            if(!(props.context.phase.kind == "locked" 
+                                                && props.context.phase.locked.workspace.kind == 'selected')) {
+                                                notify.error('UX bad state','Saving should be possible only in a locked phase');
+                                                return
+                                            }
+                              
+                                            const currentFile = props.context.phase.locked.workspace.file;
+                                            const call = 
+                                                await update(
+                                                    props.context.phase.locked.name, 
+                                                    currentFile.metadata.path, currentFile.metadata.content);
+                                            
+                                            
+                                            fromVoe(call,'Specification save');
+                                            const updated = await getSpec(props.context.phase.locked.name);
+                                            if(updated.kind == "value") {
+                                                debugger
+                                                 props.setState(
+                                                     Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.workspace(
+                                                         WorkspaceState.Updater.reloadContent(updated.value)
+                                                     ))
+                                                     )
+                                            }
+                                            else {
+
+                                                props.setState(
+                                                    Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.errors(
+                                                        replaceWith(updated.errors)
+                                                    ))
+                                                )
+                                            }
+                                        }
+                                    }
+                                    onMerge={ async ()=>{
+                                        if(!(props.context.phase.kind === 'locked' && props.context.phase.locked.workspace.kind === 'selected')) return;
+                                        
+                                        const locked = props.context.phase.locked;
+                                        const variant = locked.workspace.variant.kind
+                                        
+                                        props.setState(Ide.Updaters.Core.phase.locked(
+                                            LockedPhase.Updaters.Core.errors(replaceWith(List()))
+                                        ))
+                                        
+                                        const json =
+                                            variant == 'compose' || variant == 'scratch'
+                                                ? await validateCompose(locked.name)
+                                                : await validateExplore(locked.name, props.context.phase.locked.workspace.file.metadata.path.split("/"))
+                                        
+                                        if(json.kind == "errors") {
+                                            props.setState(Ide.Updaters.Core.phase.locked(
+                                                LockedPhase.Updaters.Core.errors(replaceWith(json.errors))))
                                             return
                                         }
+              
+                                        const bridge =
+                                            locked.workspace.variant.kind  == 'compose' || props.context.phase.locked.workspace.variant.kind  == 'scratch'
+                                            ? ValueOrErrors.Default.throw(List(["compose or scratch bridge validator not implemented yet"]))    
+                                            : await validateBridge(props.context.phase.locked.name,props.context.phase.locked.workspace.file.metadata.path.split("/"));
                                         
-                                        const currentFile = props.context.locked.workspace.current.file;
-                                        const call = 
-                                            await update(
-                                                props.context.name.value, 
-                                                currentFile.metadata.path, currentFile.metadata.content);
-                                        
-                                        
-                                        fromVoe(call,'Specification save');
-                                        const updated = await getSpec(props.context.name.value);
-                                        if(updated.kind == "value") {
-                                             props.setState(Ide.Updaters.Phases.locking.refreshVfs(updated.value));
-                                        }
-                                        
-                                    }
-                                }
-                                onMerge={ async ()=>{
-                                    if(!(props.context.phase == 'locked' && props.context.locked.workspace.kind == 'selected' && props.context.locked.workspace.current.kind == 'file')) return;
-                                    props.setState(
-                                        CommonUI.Updater.Core.clearAllErrors())
-                                    const json =
-                                        props.context.variant.kind == 'compose' || props.context.variant.kind == 'scratch'
-                                            ? await validateCompose(props.context.name.value)
-                                            : await validateExplore(props.context.name.value, props.context.locked.workspace.current.file.metadata.path.split("/"))
-                                    
-                                    if(json.kind == "errors") {
-                                        props.setState(CommonUI.Updater.Core.lockingErrors(json.errors));
-                                        return
-                                    }
-          
-                                    const bridge =
-                                        props.context.variant.kind  == 'compose' || props.context.variant.kind  == 'scratch'
-                                        ? ValueOrErrors.Default.throw(List(["compose or scratch bridge validator not implemented yet"]))    
-                                        : await validateBridge(props.context.name.value,props.context.locked.workspace.current.file.metadata.path.split("/"));
-                                    
-                                    if(bridge.kind == "errors") {
-                                        props.setState(CommonUI.Updater.Core.lockingErrors(bridge.errors));
-                                        return
-                                    }
-                                    props.setState(LockedPhase.Updaters.Core.validated(json.value));
-                                    notify.success("Validation succeeds")
-                                    
-                                }}
-                                onSettings={()=> props.setState(CommonUI.Updater.Core.toggleSettings())}
-                                onRun={async () =>{
-                                    if(!(props.context.phase == "locked" && props.context.locked.workspace.kind == 'selected' && props.context.locked.workspace.current.kind == 'file')) { return;}
-                                    const launchers = await getKeys(props.context.name.value, "launchers", props.context.locked.workspace.current.file.metadata.path.split("/"));
-                                    
-                                    if(launchers.kind == "errors") {
-                                        props.setState(CommonUI.Updater.Core.lockingErrors(launchers.errors));
-                                        return;
-                                    }
-                                    
-                                    props.setState(LockedPhase.Operations.enableRun(launchers.value));
-                                    forceRerender();
-                                }}
-                                onErrorPanel={() => setHideErrors(!hideErrors)}
-                                onSeed={
-                                    async () => {
-                                        if(props.context.phase != "locked") {
-                                            notify.error('UX bad state','Seeding should be possible only in a locked phase');
+                                        if(bridge.kind == "errors") {
+                                            props.setState(Ide.Updaters.Core.phase.locked(
+                                                LockedPhase.Updaters.Core.errors(replaceWith(bridge.errors))))
                                             return
                                         }
+                                        props.setState(Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.validated(json.value)));
+                                        notify.success("Validation succeeds")
                                         
-                                        const call =
-                                            props.context.variant.kind  == 'explore'
-                                            && props.context.locked.workspace.kind == 'selected'
-                                            && props.context.locked.workspace.current.kind == 'file'
-                                            ? await seedPath(props.context.name.value, props.context.locked.workspace.current.file.metadata.path.split("/")) 
-                                            : await seed(props.context.name.value)
-                                        if(call.kind == "errors") notify.error("Seeding failed")
-                                        if(call.kind != "errors") notify.success("Seeding succeed")
-          
-                                        if(call.kind == "errors") props.setState(CommonUI.Updater.Core.lockingErrors(call.errors));
+                                    }}
+                                    onSettings={()=> 
+                                        props.setState(
+                                            Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.toggleSettings())
+                                            
+                                        )}
+                                    onRun={async () =>{
+                                        if(!(props.context.phase.kind == "locked" && props.context.phase.locked.workspace.kind == 'selected')) { return;}
+                                        const launchers = await getKeys(props.context.phase.locked.name, "launchers", props.context.phase.locked.workspace.file.metadata.path.split("/"));
+                                        
+                                        if(launchers.kind == "errors") {
+                                            props.setState(Ide.Updaters.Core.phase.locked(
+                                                LockedPhase.Updaters.Core.errors(replaceWith(launchers.errors))))
+                                            return;
+                                        }
+                                        debugger
+                                        props.setState(
+                                            Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.toDisplay(launchers.value))
+                                            );
+                                        forceRerender();
+                                    }}
+                                    onErrorPanel={() => setHideErrors(!hideErrors)}
+                                    onSeed={
+                                        async () => {
+                                            if(props.context.phase.kind != "locked") {
+                                                notify.error('UX bad state','Seeding should be possible only in a locked phase');
+                                                return
+                                            }
+                                            
+                                            const call =
+                                                props.context.phase.locked.workspace.variant.kind  == 'explore'
+                                                && props.context.phase.locked.workspace.kind == 'selected'
+                                                ? await seedPath(props.context.phase.locked.name, props.context.phase.locked.workspace.file.metadata.path.split("/")) 
+                                                : await seed(props.context.phase.locked.name)
+                                            if(call.kind == "errors") notify.error("Seeding failed")
+                                            if(call.kind != "errors") notify.success("Seeding succeed")
+              
+                                            if(call.kind == "errors") props.setState(Ide.Updaters.Core.phase.locked(
+                                                LockedPhase.Updaters.Core.errors(replaceWith(call.errors))))
+                                        }
                                     }
-                                }
-                            />
-                        </div>
-                            <SettingsPanel  {...props.context} setState={props.setState}/>
-                            <VfsLayout {...props.context} setState={props.setState} />
+                                />
+                            </div>
+                            {props.context.phase.kind == 'locked' && <SettingsPanel  {...props.context.phase.locked} setState={props.setState}/> }
+                                <VfsLayout {...props.context} setState={props.setState} />
+                                {props.context.phase.kind == "locked" && props.context.phase.locked.step.kind == "display" 
+                                    && 
+                                    <LaunchersDock
+                                    launchers={props.context.phase.locked.step.display.launchers.names}
+                                    selected={props.context.phase.locked.step.display.launchers.selected}
+                                    onSelect={(launcher:string) =>
+                                        props.setState(
+                                            Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.selectLauncher(launcher))
+                                        )}
+                                />}
                       
                     </aside>
                     </Panel>
@@ -195,100 +241,72 @@ export const IdeLayout: IdeView = (props) => {
                             <Panel minSize={0} defaultSize={50}  >
                                 {/*<Panel minSize={0} defaultSize={50} style={{overflow: 'auto !important'}} >*/}
                                 
-                                <div data-theme={theme}  className="mockup-window border border-base-300 w-full  rounded-none">
-                                    <aside className="relative h-full">
+                                <div data-theme={theme}  className="overflow-auto mockup-window border border-base-300 w-full h-full rounded-none relative flex flex-col">
+                                    <aside className="flex-1">
                                         <FormSkeleton {...props.context} setState={props.setState} />
                      
-                                        { props.context.phase == "locked" 
-                                            &&  props.context.locked.progress.kind == 'preDisplay' 
-                                            && props.context.locked.progress.dataEntry.kind == 'launchers'
-                                            && props.context.locked.workspace.kind == 'selected' && props.context.locked.workspace.current.kind == 'file'
-                                            && <div className="card bg-base-100 w-full mt-1">
-                                            <div className="card-body w-full">
-                                                { props.context.locked.validatedSpec.kind == "r" 
-                                                    && props.context.locked.progress.dataEntry.kind == 'launchers' 
-                                                    && props.context.locked.progress.dataEntry.selected.kind == "r"
+                                        { props.context.phase.kind == "locked" 
+                                            &&  props.context.phase.locked.step.kind == 'display'
+                                            && props.context.phase.locked.workspace.kind == 'selected'
+                                            && <div className="m-5 h-full">
+                                       
+                                                { props.context.phase.locked.validatedSpec.kind == "r" 
+                                                    && props.context.phase.locked.step.display.launchers.selected.kind == "r"
                                                     
                                                     && <>
-                                
+                                                        <div role="tablist" className="tabs tabs-lift w-full">
+                                                            <a role="tab" className={`tab ${props.context.phase.locked.step.display.ui.kind === "ui-kit" ? "tab-active" : ""}`}
+                                                                onClick={()=> {
+                                                                    props.setState(
+                                                                        Ide.Updaters.Core.phase.locked(
+                                                                            LockedPhase.Updaters.Core.display(
+                                                                                LockedDisplay.Updaters.Core.change ('ui-kit', 'blp')
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                    forceRerender();
+                                                                }
+                                                                }>ui-kit</a>
+                                                            <a role="tab" className={`tab ${props.context.phase.locked.step.display.ui.kind === "tailwind" ? "tab-active" : ""}`}
+                                                               onClick={()=> {
+                                                                   props.setState(
+                                                                       Ide.Updaters.Core.phase.locked(
+                                                                           LockedPhase.Updaters.Core.display(
+                                                                               LockedDisplay.Updaters.Core.change ('tailwind', 'lofi')
+                                                                           )
+                                                                       )
+                                                                   )
+                                                                   forceRerender();
+                                                               }
+                                                               }>tailwind</a>
+                                            
+                                                        </div>
                                                         <DispatcherFormsApp
                                                         key={version}
-                                                        showDeltas={props.context.locked.progress.showDeltas}
-                                                        deltas={props.context.locked.progress.deltas}
-                                                        specName={props.context.name.value}
-                                                        path={props.context.locked.workspace.current.file.metadata.path.split("/")}
-                                                        launcher={props.context.locked.progress.dataEntry.selected.value}
+                                                        ui={props.context.phase.locked.step.display.ui}
+                                                        showDeltas={props.context.phase.locked.step.display.deltas.visibility == 'fully-visible'}
+                                                        deltas={props.context.phase.locked.step.display.deltas.drain}
+                                                        specName={props.context.phase.locked.name}
+                                                        path={props.context.phase.locked.workspace.file.metadata.path.split("/")}
+                                                        launcher={props.context.phase.locked.step.display.launchers.selected.value}
                                                         setState={props.setState}
                                                         //typeName={"Person"}
-                                                        spec={props.context.locked.validatedSpec.value}/></>
+                                                        spec={props.context.phase.locked.validatedSpec.value}/></>
                                                 }
                                             </div>
-                                            </div>
                                             }
-                              
                                     </aside>
-                                  
-                                        {props.context.phase == "locked" && props.context.locked.progress.kind == "preDisplay" &&
-                                            props.context.locked.progress.dataEntry.kind == 'launchers' &&
-                                            <div className="flex justify-center items-start h-full  mt-auto p-4">
-                                            <LaunchersDock
-                                                launchers={props.context.locked.progress.dataEntry.launchers}
-                                                selected={props.context.locked.progress.dataEntry.selected}
-                                                onSelect={(launcher:string) => props.setState(LockedPhase.Updaters.Step.selectLauncher(launcher))}
-                                            />
-                                    </div>}
-
+                                    
                                 </div>
 
                             </Panel>
                             <PanelResizeHandle  className="h-[1px] bg-neutral text-neutral-content" />
-                            {hideErrors && <Panel minSize={30} defaultSize={50} maxSize={90}>
-                                <div className="no-radius w-full mx-auto">
-                                    <div className="inset-0 top-0 z-20 m-0 p-0">
-                                        <div className="space-y-2  w-full">
-                                            {
-                                                props.context.bootstrappingError.map(error => 
-                                                    (<pre 
-                                                        data-prefix="6"
-                                                        className="m-0 pl-3 bg-rose-700 text-warning-content">
-                                                        {error}
-                                                    </pre>))
-                                            }
-                                            {
-                                                props.context.choosingError.map(error => 
-                                                    (<pre data-prefix="6"
-                                                          className="m-0 pl-3 bg-rose-500 text-warning-content">
-                                                        {error}
-                                                    </pre>))
-                                            }
-                                            {
-                                                props.context.lockingError.map(error => 
-                                                    (<pre data-prefix="6"
-                                                          className="m-0 pl-3 bg-rose-300 text-warning-content">
-                                                        {error}</pre>))
-                                            }
-                                            {
-                                                props.context.formsError.map(error => 
-                                                    (<pre data-prefix="6"
-                                                          className="m-0 pl-3 bg-rose-300 text-warning-content">
-                                                        <code>Forms!</code>
-                                                        {error}</pre>))
-                                            }
-                                        </div>
-                                    </div>
-                                    <div className="relative w-120 mx-auto rounded-lg overflow-hidden">
-                                        <img style={{opacity: noErrors? 0.8 : 0.2}}
-                                             src="https://framerusercontent.com/images/umluhwUKaIcQzUGEWAe9SRafnc4.png?width=1024&height=1024"
-                                             alt="Descriptive alt"
-                                             className="w-full object-cover rounded-lg"/>
-                                        {noErrors && <div className="absolute inset-0 grid place-items-center">
-                                            <span className="px-3 py-1 rounded-full bg-black/60 text-white text-sm">No issues so far</span>
-                                        </div>}
-                                    </div>
-                                </div>
-
-                            </Panel> }
+                            {hideErrors && 
+                                <Panel minSize={30} defaultSize={50} maxSize={90}>
+                                    <ErrorsPanel {...props.context} />
+                                </Panel>}
                         </PanelGroup>
+
                      </Panel>}
                 </PanelGroup></>}
         </div>)

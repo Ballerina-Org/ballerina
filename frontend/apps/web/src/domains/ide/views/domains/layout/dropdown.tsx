@@ -1,6 +1,4 @@
-﻿/** @jsxImportSource @emotion/react */
-import React, { useState } from 'react';
-import styled from '@emotion/styled';
+﻿import React, { useState } from 'react';
 
 type Props = {
     label: string;

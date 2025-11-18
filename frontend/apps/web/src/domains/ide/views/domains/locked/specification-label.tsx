@@ -1,5 +1,4 @@
 ﻿import React from "react";
-import {Ide} from "playground-core";
 
 type SpecificationLabelProps = { name: string }
 

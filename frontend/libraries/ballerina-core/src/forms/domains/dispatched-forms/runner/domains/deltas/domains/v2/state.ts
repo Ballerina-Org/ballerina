@@ -14,13 +14,17 @@ import {List} from "immutable";
 
 export type DeltaV2 = 
     //| { kind: 'multiple', items: DispatchDeltaTransferV2 [] }
-    | { kind: 'list', op: { kind: 'updateAt', index: number }}
+    | { kind: 'list', op: { kind: 'updateElementAt', index: number }}
+    | { kind: 'list', op: { kind: 'removeElementAt', index: number }}
     | { kind: 'list', op: { kind: 'replace' }}
-    | { kind: 'list', op: { kind: 'append' }}
+    | { kind: 'list', op: { kind: 'appendElement' }}
+    | { kind: 'list', op: { kind: 'appendElementAt', index: number  }}
     | { kind: 'replace' }
-    | { kind: 'edge', cardinality: 'one' | 'many', op: 'link' | 'unlink' }
+    | { kind: 'edge', cardinality: 'one' | 'many', op: 'link' | 'unlink' | 'replace' }
     | { kind: 'field', field: string }
-    | { kind: 'tuple', index: number }
+    | { kind: 'tuple', op: { kind: 'updateElementAt', index: number }}
+    | { kind: 'tuple', op: { kind: 'removeElementAt', index: number }}
+    | { kind: 'tuple', op: { kind: 'appendElementAt'}}
     | { kind: 'sum', index: number }
     | { kind: 'union', caseName: string }
 
@@ -28,7 +32,7 @@ export type DeltaV2 =
 export type DeltaTransferV2Body = { discriminator: string, value?: any | any [] } 
 
 export type DispatchDeltaTransferV2 =
-    { delta: DeltaV2, transfer: DeltaTransferV2Body | DispatchDeltaTransferV2 }
+    { delta: DeltaV2, transfer: DeltaTransferV2Body | DispatchDeltaTransferV2 | Unit }
 
 export const DispatchDeltaTransferV2 = {
     Default: {
@@ -86,8 +90,9 @@ export const DispatchDeltaTransferV2 = {
                     > = (() => {
                         if (delta.kind == "NumberReplace") {
                             return toRawObject(delta.replace, delta.type, delta.state).Then(
-                                (value) =>
-                                    ValueOrErrors.Default.return<
+                                (value) =>{
+                                    debugger
+                                    return ValueOrErrors.Default.return<
                                         [
                                             DispatchDeltaTransferV2,
                                             DispatchDeltaTransferComparand,
@@ -97,14 +102,16 @@ export const DispatchDeltaTransferV2 = {
                                     >([
                                         {
                                             delta: { kind: 'replace' },
-                                            transfer: { discriminator: "float32", value: delta.replace }
+                                            transfer: { discriminator: "float32", value: String(delta.replace) }
                                         },
                                         "[NumberReplace]",
                                         delta.flags ? [[delta.flags, "[NumberReplace]"]] : [],
-                                    ]),
+                                    ])},
                             );
                         }
+                  
                         if (delta.kind == "StringReplace") {
+                            debugger
                             return toRawObject(delta.replace, delta.type, delta.state).Then(
                                 (value) =>
                                     ValueOrErrors.Default.return<
@@ -126,8 +133,10 @@ export const DispatchDeltaTransferV2 = {
                         }
                         if (delta.kind == "BoolReplace") {
                             return toRawObject(delta.replace, delta.type, delta.state).Then(
-                                (value) =>
-                                    ValueOrErrors.Default.return<
+                                (value) =>{
+                                    
+           
+                                    return ValueOrErrors.Default.return<
                                         [
                                             DispatchDeltaTransferV2,
                                             DispatchDeltaTransferComparand,
@@ -137,11 +146,11 @@ export const DispatchDeltaTransferV2 = {
                                     >([
                                         {
                                             delta: { kind: 'replace' },
-                                            transfer: { discriminator: "bool", value: delta.replace }
+                                            transfer: { discriminator: "boolean", value: String(delta.replace) }
                                         },
                                         "[BoolReplace]",
                                         delta.flags ? [[delta.flags, "[BoolReplace]"]] : [],
-                                    ]),
+                                    ])},
                             );
                         }
                         if (delta.kind == "TimeReplace") {
@@ -204,7 +213,7 @@ export const DispatchDeltaTransferV2 = {
                         if (delta.kind == "OptionReplace") {
                             return toRawObject(delta.replace, delta.type, delta.state).Then(
                                 (value) =>{
-                                    const op = value.IsSome ? 'link':'unlink';
+                                    const op = value.IsSome ? 'replace':'unlink';
                                     const id: Maybe<string> = value.Value.Value != null || value.Value.DisplayValue != null ? value.Value.Id : undefined
 
                                     if(!id) return ValueOrErrors.Default.throw(List(["Can't determine Id for OptionReplace delta transfer"]))
@@ -341,20 +350,12 @@ export const DispatchDeltaTransferV2 = {
                                         string
                                     >([
                                         {
-                                            delta: {kind: "replace"},
+                                            delta: { kind: "list", op: {kind: 'replace' }},
                                             transfer:
 
                                                 {
                                                     "discriminator": "list",
-                                                    "value": [
-                                                        {
-                                                        "discriminator": "string",
-                                                        "value": "abc"
-                                                        }, 
-                                                        {
-                                                            "discriminator": "string", 
-                                                            "value": "efg"
-                                                        }]
+                                                    "value": value
                                                 }
                                         },
 
@@ -378,7 +379,7 @@ export const DispatchDeltaTransferV2 = {
                                         string
                                     >([
                                         {
-                                            delta: { kind: "list", op: {kind: 'updateAt', index: delta.value[0]}},
+                                            delta: { kind: "list", op: {kind: 'updateElementAt', index: delta.value[0]}},
                                             transfer: value[0]
                                         },
                                         `[ArrayValue][${delta.value[0]}]${value[1]}`,
@@ -423,9 +424,11 @@ export const DispatchDeltaTransferV2 = {
                             );
                         }
                         if (delta.kind == "ArrayAdd") {
+                            debugger
                             return toRawObject(delta.value, delta.type, delta.state).Then(
-                                (value) =>
-                                    ValueOrErrors.Default.return<
+                                (value) => {
+                                    debugger
+                                    return ValueOrErrors.Default.return<
                                         [
                                             DispatchDeltaTransferV2,
                                             DispatchDeltaTransferComparand,
@@ -434,59 +437,59 @@ export const DispatchDeltaTransferV2 = {
                                         string
                                     >([
                                         {
-                                            delta: { kind: "list", op: { kind: 'append' }},
-                                            transfer: {
-                                                "discriminator": "list",
-                                                "value": value[0]
-                                            }
+                                            delta: { kind: "list", op: { kind: 'appendElement' }},
+                                            transfer: value
                                         },
                                         "[ArrayAdd]",
                                         delta.flags ? [[delta.flags, "[ArrayAdd]"]] : [],
-                                    ]),
+                                    ])},
                             );
                         }
-                        // if (delta.kind == "ArrayAddAt") {
-                        //     return toRawObject(
-                        //         delta.value[1],
-                        //         delta.elementType,
-                        //         delta.elementState,
-                        //     ).Then((element) =>
-                        //         ValueOrErrors.Default.return<
-                        //             [
-                        //                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
-                        //                 DispatchDeltaTransferComparand,
-                        //                 AggregatedFlags<Flags>,
-                        //             ],
-                        //             string
-                        //         >([
-                        //             {
-                        //                 Discriminator: "ArrayAddAt",
-                        //                 AddAt: { Item1: delta.value[0], Item2: element },
-                        //             },
-                        //             `[ArrayAddAt][${delta.value[0]}]`,
-                        //             delta.flags
-                        //                 ? [[delta.flags, `[ArrayAddAt][${delta.value[0]}]`]]
-                        //                 : [],
-                        //         ]),
-                        //     );
-                        // }
-                        // if (delta.kind == "ArrayRemoveAt") {
-                        //     return ValueOrErrors.Default.return<
-                        //         [
-                        //             DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
-                        //             DispatchDeltaTransferComparand,
-                        //             AggregatedFlags<Flags>,
-                        //         ],
-                        //         string
-                        //     >([
-                        //         {
-                        //             Discriminator: "ArrayRemoveAt",
-                        //             RemoveAt: delta.index,
-                        //         },
-                        //         `[ArrayRemoveAt]`,
-                        //         delta.flags ? [[delta.flags, "[ArrayRemoveAt]"]] : [],
-                        //     ]);
-                        // }
+                        if (delta.kind == "ArrayAddAt") {
+                            return toRawObject(
+                                delta.value[1],
+                                delta.elementType,
+                                delta.elementState,
+                            ).Then((element) =>
+                                ValueOrErrors.Default.return<
+                                    [
+                                        DispatchDeltaTransferV2,
+                                        DispatchDeltaTransferComparand,
+                                        AggregatedFlags<Flags>,
+                                    ],
+                                    string
+                                >([
+                                    {
+                                        delta: { kind: "list", op: { kind: 'appendElementAt', index: element }},
+                                        transfer: {
+                                            "discriminator": "list",
+                                            "value": delta.value[0]
+                                        }
+                                    },
+                                    `[ArrayAddAt][${delta.value[0]}]`,
+                                    delta.flags
+                                        ? [[delta.flags, `[ArrayAddAt][${delta.value[0]}]`]]
+                                        : [],
+                                ]),
+                            );
+                        }
+                        if (delta.kind == "ArrayRemoveAt") {
+                            return ValueOrErrors.Default.return<
+                                [
+                                    DispatchDeltaTransferV2,
+                                    DispatchDeltaTransferComparand,
+                                    AggregatedFlags<Flags>,
+                                ],
+                                string
+                            >([
+                                {
+                                    delta: { kind: "list", op: { kind: 'removeElementAt', index: delta.index }},
+                                    transfer: {}
+                                },
+                                `[ArrayRemoveAt]`,
+                                delta.flags ? [[delta.flags, "[ArrayRemoveAt]"]] : [],
+                            ]);
+                        }
                         if (delta.kind == "ArrayRemoveAll") {
                             return ValueOrErrors.Default.return<
                                 [
@@ -537,6 +540,7 @@ export const DispatchDeltaTransferV2 = {
                         //     >([
                         //         {
                         //             Discriminator: "ArrayDuplicateAt",
+                        //             Discriminator: "ArrayDuplicateAt",
                         //             DuplicateAt: delta.index,
                         //         },
                         //         `[ArrayDuplicateAt]`,
@@ -545,8 +549,9 @@ export const DispatchDeltaTransferV2 = {
                         // }
                         if (delta.kind == "SetReplace") {
                             return toRawObject(delta.replace, delta.type, delta.state).Then(
-                                (value) =>
-                                    ValueOrErrors.Default.return<
+                                (value) =>{
+                                    debugger
+                                    return ValueOrErrors.Default.return<
                                         [
                                             DispatchDeltaTransferV2,
                                             DispatchDeltaTransferComparand,
@@ -555,14 +560,19 @@ export const DispatchDeltaTransferV2 = {
                                         string
                                     >([
                                         {
-                                            delta: { kind: "edge", cardinality: "many", op: 'link'},
-                                            transfer: { discriminator: "union-case", value: [
-                                                    { discriminator: "string", value: value.Value}
-                                                ] },
+                                            delta: { kind: "edge", cardinality: "many", op: 'replace'},
+                                            transfer: {
+                                                "discriminator": "list",
+                                                "value": value.map((item: any) =>
+                                                    ({
+                                                        discriminator: "guid",
+                                                        value: item.Id!
+                                                    }))
+                                            }
                                         },
                                         "[SetReplace]",
                                         delta.flags ? [[delta.flags, "[SetReplace]"]] : [],
-                                    ]),
+                                    ])},
                             );
                         }
                         // if (delta.kind == "SetValue") {
@@ -668,7 +678,7 @@ export const DispatchDeltaTransferV2 = {
                                         string
                                     >([
                                         {
-                                            delta: { kind: 'tuple', index: delta.value[0]},
+                                            delta: { kind: 'tuple', op: { kind: 'updateElementAt', index: delta.value[0]}},
                                             transfer: {
                                                 delta: {kind: 'field', field: 'Key'},
                                                 transfer: value[0]
@@ -703,7 +713,7 @@ export const DispatchDeltaTransferV2 = {
                                     {
                                         // Discriminator: "MapValue",
                                         // Value: { Item1: delta.value[0], Item2: value[0] },
-                                        delta: { kind: 'tuple', index: delta.value[0]},
+                                        delta: { kind: 'tuple', op: { kind: 'updateElementAt', index: delta.value[0]}},
                                         transfer: {
                                             delta: {kind: 'field', field: 'Value'},
                                             transfer: value[0]
@@ -719,52 +729,73 @@ export const DispatchDeltaTransferV2 = {
                                 ]),
                             );
                         }
-                        // if (delta.kind == "MapAdd") {
-                        //     return toRawObject(
-                        //         delta.keyValue[0],
-                        //         delta.keyType,
-                        //         delta.keyState,
-                        //     ).Then((key) =>
-                        //         toRawObject(
-                        //             delta.keyValue[1],
-                        //             delta.valueType,
-                        //             delta.valueState,
-                        //         ).Then((value) =>
-                        //             ValueOrErrors.Default.return<
-                        //                 [
-                        //                     DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
-                        //                     DispatchDeltaTransferComparand,
-                        //                     AggregatedFlags<Flags>,
-                        //                 ],
-                        //                 string
-                        //             >([
-                        //                 {
-                        //                     Discriminator: "MapAdd",
-                        //                     Add: { Item1: key, Item2: value },
-                        //                 },
-                        //                 `[MapAdd]`,
-                        //                 delta.flags ? [[delta.flags, "[MapAdd]"]] : [],
-                        //             ]),
-                        //         ),
-                        //     );
-                        // }
-                        // if (delta.kind == "MapRemove") {
-                        //     return ValueOrErrors.Default.return<
-                        //         [
-                        //             DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
-                        //             DispatchDeltaTransferComparand,
-                        //             AggregatedFlags<Flags>,
-                        //         ],
-                        //         string
-                        //     >([
-                        //         {
-                        //             Discriminator: "MapRemove",
-                        //             Remove: delta.index,
-                        //         },
-                        //         `[MapRemove]`,
-                        //         delta.flags ? [[delta.flags, "[MapRemove]"]] : [],
-                        //     ]);
-                        // }
+                        if (delta.kind == "MapAdd") {
+                            return toRawObject(
+                                delta.keyValue[0],
+                                delta.keyType,
+                                delta.keyState,
+                            ).Then((key) =>
+                                toRawObject(
+                                    delta.keyValue[1],
+                                    delta.valueType,
+                                    delta.valueState,
+                                ).Then((value) => {
+                                    debugger
+                                    return ValueOrErrors.Default.return<
+                                        [
+                                            DispatchDeltaTransferV2,
+                                            DispatchDeltaTransferComparand,
+                                            AggregatedFlags<Flags>,
+                                        ],
+                                        string
+                                    >([ 
+                                        {
+                                            delta: { kind: 'tuple', op: { kind: 'appendElementAt' }},
+                                            transfer: {
+                                                discriminator: "record",
+                                                value: [
+                                                    [
+                                                        {"discriminator":"id","value":["","",null,"Key"]}, 
+                                                        {"discriminator":"string","value":key}
+                                                    ],
+                                                    [
+                                                        {"discriminator":"id","value":["","",null,"Value"]},
+                                                        {"discriminator":"string","value":value}
+                                                    ]
+                                                ]
+                                            }
+                                        },
+                                        // {
+                                        //     Discriminator: "MapAdd",
+                                        //     Add: { Item1: key, Item2: value },
+                                        // },
+                                        `[MapAdd]`,
+                                        delta.flags ? [[delta.flags, "[MapAdd]"]] : [],
+                                    ])},
+                                ),
+                            );
+                        }
+                        if (delta.kind == "MapRemove") {
+                            return ValueOrErrors.Default.return<
+                                [
+                                    DispatchDeltaTransferV2,
+                                    DispatchDeltaTransferComparand,
+                                    AggregatedFlags<Flags>,
+                                ],
+                                string
+                            >([
+                                {
+                                    delta: { kind: 'tuple', op: { kind: 'removeElementAt', index: delta.index }},
+                                    transfer: {}
+                                },
+                                // {
+                                //     Discriminator: "MapRemove",
+                                //     Remove: delta.index,
+                                // },
+                                `[MapRemove]`,
+                                delta.flags ? [[delta.flags, "[MapRemove]"]] : [],
+                            ]);
+                        }
                         // if (delta.kind == "RecordReplace") {
                         //     if (delta.type.kind != "lookup") {
                         //         return ValueOrErrors.Default.throwOne<
@@ -840,28 +871,28 @@ export const DispatchDeltaTransferV2 = {
                                 ])},
                             );
                         }
-                        if (delta.kind == "UnionReplace") {
-                            return toRawObject(delta.replace, delta.type, delta.state).Then(
-                                (value) => {
-                                    debugger
-                                    return ValueOrErrors.Default.return<
-                                        [
-                                            DispatchDeltaTransferV2,
-                                            DispatchDeltaTransferComparand,
-                                            AggregatedFlags<Flags>,
-                                        ],
-                                        string
-                                    >([
-                                        {
-                                            delta: { kind: 'replace' },
-                                            transfer: { discriminator: "union-case",
-                                            value: [{discriminator:"string",value:value}]}
-                                        },
-                                        "[UnionReplace]",
-                                        delta.flags ? [[delta.flags, "[UnionReplace]"]] : [],
-                                    ])},
-                            );
-                        }
+                        // if (delta.kind == "UnionReplace") {
+                        //     return toRawObject(delta.replace, delta.type, delta.state).Then(
+                        //         (value) => {
+                        //             debugger
+                        //             return ValueOrErrors.Default.return<
+                        //                 [
+                        //                     DispatchDeltaTransferV2,
+                        //                     DispatchDeltaTransferComparand,
+                        //                     AggregatedFlags<Flags>,
+                        //                 ],
+                        //                 string
+                        //             >([
+                        //                 {
+                        //                     delta: { kind: 'replace' },
+                        //                     transfer: { discriminator: "union-case",
+                        //                     value: [{discriminator:"string",value:value}]}//this is wrong
+                        //                 },
+                        //                 "[UnionReplace]",
+                        //                 delta.flags ? [[delta.flags, "[UnionReplace]"]] : [],
+                        //             ])},
+                        //     );
+                        // }
                         // if (delta.kind == "UnionCase") {
                         //     return DispatchDeltaTransfer.Default.FromDelta(
                         //         toRawObject,

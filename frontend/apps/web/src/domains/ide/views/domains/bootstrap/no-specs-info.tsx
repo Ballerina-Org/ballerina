@@ -1,11 +1,10 @@
 ﻿import React from "react";
-import {Ide} from "playground-core";
 
 type NoSpecInfoProps = { specs: number }
 
 export const MissingSpecsInfoAlert = (props: NoSpecInfoProps): React.ReactElement => {
     const div =
-        <div role="alert" className="alert alert-warning">
+        <div role="alert" className="alert alert-warning m-5">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                  className="h-6 w-6 shrink-0 stroke-current">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"

@@ -21,7 +21,9 @@
     width: 100%;
     height: 100%;
 }
-
+div#\[record\] {
+    height: 100%;
+}
 .editor-wrapper {
     position: relative;
     width: 100%;

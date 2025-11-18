@@ -1,15 +1,11 @@
 ﻿import axios, {AxiosHeaders, AxiosError, AxiosRequestConfig} from "axios";
-import { test } from "../domains/storage/local";
 import {SimpleCallback, ValueOrErrors, Fun, BasicFun,  parse} from "ballerina-core";
 import {List} from "immutable";
 export const api = axios.create({ baseURL: process.env.API_PREFIX ?? "/api/preview" });
 
 api.interceptors.request.use((cfg) => {
-    const t = test.get();
-    if (!t) return cfg;
-    
+
     cfg.headers = AxiosHeaders.from(cfg.headers);
-    (cfg.headers as AxiosHeaders).set("Test-Dummy-Header", t);
 
     return cfg;
 });

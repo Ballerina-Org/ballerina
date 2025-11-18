@@ -1,21 +1,18 @@
 ﻿import React from "react";
 import {
     Node,
-    getOrInitSpec,
-    Ide,
     initSpec,
     postVfs,
     VirtualFolders,
     FlatNode,
-    WorkspaceState,
-    CommonUI
+    WorkspaceState, Ide
 } from "playground-core";
-import {BasicFun, BasicUpdater, Option, Updater, Value} from "ballerina-core";
+import {BasicFun, BasicUpdater, Option, replaceWith, Updater, Value} from "ballerina-core";
 import {MultiSelectCheckboxControlled} from "../vfs/workspace-picker.tsx"
 import {LocalStorage_SpecName} from "playground-core/ide/domains/storage/local.ts";
-import {Origin} from "playground-core/ide/domains/choose/state.ts";
+import {SelectionPhase} from "playground-core/ide/domains/phases/selection/state.ts";
 
-type AddSpecProps = Ide & { setState: BasicFun<Updater<Ide>, void> };
+type AddSpecProps = SelectionPhase & { setState: BasicFun<Updater<Ide>, void> };
 
 export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => {
     if(props.variant.kind != "compose") return <></>
@@ -27,12 +24,11 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
 
         const node = await VirtualFolders.Operations.fileListToTree(list);
 
-        if(node.kind == "errors") props.setState(CommonUI.Updater.Core.chooseErrors(node.errors))
+        if(node.kind == "errors") props.setState(Ide.Updaters.Core.phase.selection(SelectionPhase.Updaters.Core.errors(replaceWith(node.errors))))
         else setNode(Option.Default.some(node.value));
     }, []);
-
-    const specOrigin: Origin = 'creating'
-    return  (props.phase == 'selectionOrCreation' && props.variant.upload == 'upload-started')
+    
+    return  (props.kind == 'upload-started')
         ?
             <div className="card bg-gray-200 text-black w-full m-5">
                 <div className="card-body items-start gap-3">
@@ -51,14 +47,14 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
                         <div className="mt-4">
                             { node.kind == "r"
                                 && <MultiSelectCheckboxControlled
+                                    mode={'reader'}
                                     workspace={{
                                         kind: "view",
                                         nodes: node.value,
+                                        variant: props.variant
                                     }}
-                                    mode={'uploader'}
-                                    onAcceptedNodes={(node: Node)=> {
-                                    }
-                                    } /> }
+                                    //mode={'uploader'}
+                                    onAcceptedNodes={(node: Node)=> { }} /> }
                         </div>
                     </div>
                     <div className="card-actions justify-end">
@@ -67,7 +63,7 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
                                 //TODO: unify this in updaters/operations
                                 const vfs = await initSpec(props.name.value, props.variant);
                                 if(vfs.kind == "errors") {
-                                    props.setState(CommonUI.Updater.Core.chooseErrors(vfs.errors))
+                                    props.setState(Ide.Updaters.Core.phase.selection(SelectionPhase.Updaters.Core.errors(replaceWith(vfs.errors))))
                                     return;
                                 }
                                 
@@ -80,19 +76,20 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
                               
                                     if(d.kind == "errors") {
                                         props.setState(
-                                            CommonUI.Updater.Core.chooseErrors(d.errors)
-                                                .then(Ide.Updaters.Phases.choosing.finishUpload()))
+                                            Ide.Updaters.Core.phase.selection(
+                                                SelectionPhase.Updaters.Core.errors(replaceWith(d.errors)))
+                                                .then(Ide.Updaters.Core.phase.selection(s=> ({ ...s, kind: 'upload-finished'}))))
+
                                         return;
                                     }
                           
-                                    const u2 = 
-                                        Ide.Updaters.Phases.choosing.finishUpload()
+                                    const u2 =
+                                        Ide.Updaters.Core.phase.selection(s=> ({ ...s, kind: 'upload-finished'}))
                                             .then(
-                                                Ide.Updaters.Phases.choosing.toLocked(
-                                                    node.value
-                                                ))
+                                                Ide.Updaters.Core.phase.toLocked(props.name.value, props.variant, node.value)
+                                            )
                                             .then((ide: Ide) => {
-                                                if(ide.phase != 'locked') return ide;
+                                                if(ide.phase.kind != 'locked') return ide;
                                                 
                                                 if(!FlatNode.Operations.hasSingleFolderBelowRoot(node.value)) {
                                                     return ide;
@@ -100,8 +97,8 @@ export const AddSpecUploadFolder = (props: AddSpecProps): React.ReactElement => 
                                            
                                                 return ({...ide,
                                                    locked: {
-                                                    ...ide.locked, 
-                                                       workspace: WorkspaceState.Updater.defaultForSingleFolder()(ide.locked.workspace) }
+                                                    ...ide.phase.locked, 
+                                                       workspace: WorkspaceState.Updater.defaultForSingleFolder()(ide.phase.locked.workspace) }
                                                 })
                                             })
                                     props.setState(u2)

@@ -3,7 +3,7 @@
     ValueOrErrors
 } from "ballerina-core";
 import {axiosVOE} from "./api";
-import {FormsSeedEntity} from "../domains/seeds/state";
+import {FormsSeedEntity} from "../domains/types/seeds";
 
 export const getSeed = async (specName: string, entityName: string): Promise<ValueOrErrors<FormsSeedEntity, any>> =>
     await axiosVOE<FormsSeedEntity[]>({

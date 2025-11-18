@@ -1,25 +1,17 @@
 ﻿import React from "react";
-
 import {getZippedWorkspace, Node, WorkspaceState} from "playground-core";
-import {BasicFun, FormsConfigMerger, Option, Unit} from "ballerina-core";
-import {List} from "immutable";
 import { MultiSelectCheckboxControlled } from "./workspace-picker.tsx";
 import {VscExport} from "react-icons/vsc";
 
 type DrawerProps = {
-    mode: 'upload' | 'select-current-folder';
+
     workspace: WorkspaceState;
     name: string;
     drawerId?: string;
-    onSelectedFolder: (folder: Node) => void;
     onSelectedFile: (file: Node) => void;
-    onAddNewFile: (path: string) => void;
 };
 
-export function Drawer({ mode, workspace, drawerId = 'ide-drawer', name, onSelectedFolder, onSelectedFile, onAddNewFile }: DrawerProps) {
-    const [root, setRoot] = React.useState<Option<Node>>(Option.Default.none());
-    const [nodes, setNodes] = React.useState<Node>(workspace.nodes);
-
+export function Drawer({ workspace, drawerId = 'ide-drawer', name, onSelectedFile}: DrawerProps) {
     return (
         <div className="drawer pt-16">
             <input id={drawerId} type="checkbox" className="drawer-toggle" />
@@ -56,8 +48,6 @@ export function Drawer({ mode, workspace, drawerId = 'ide-drawer', name, onSelec
                         <MultiSelectCheckboxControlled
                             mode={'reader'} 
                             workspace={workspace}
-                            onSelectedFolder={onSelectedFolder}
-                            onAddNewFile={onAddNewFile}
                             onSelectedFile={onSelectedFile} />
                         </div>
                 </ul>

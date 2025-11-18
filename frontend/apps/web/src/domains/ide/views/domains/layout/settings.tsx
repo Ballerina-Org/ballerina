@@ -1,15 +1,14 @@
 ﻿
-import React, { useState } from 'react';
-import styled from '@emotion/styled';
-import {getSpec, Ide, postCodegen, postVfs} from "playground-core";
+import React, { useState } from 'react'
+import {getSpec, Ide, LockedPhase, postCodegen, WorkspaceState} from "playground-core";
 import {BasicFun, Updater} from "ballerina-core";
-import {CommonUI} from "playground-core/ide/domains/common-ui/state.ts";
 
-type Props = Ide & { setState: BasicFun<Updater<Ide>, void> };
+type Props = LockedPhase & { setState: BasicFun<Updater<Ide>, void> };
 
 export const SettingsPanel: React.FC<Props> = (props: Props) => {
     const [message, setMessage] = useState<string>("");
     const [jsonContent, setJsonContent] = useState<any>(null);
+    
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files; 
         if (!files || files.length === 0) {
@@ -26,8 +25,7 @@ export const SettingsPanel: React.FC<Props> = (props: Props) => {
             setMessage("File must be named codegen.json");
             return;
         }
-
-        //setMessage(`File accepted: ${file.name}`);
+        
         file.text().then(content => {
             const parsed = JSON.parse(content);
             setJsonContent(parsed);
@@ -36,18 +34,19 @@ export const SettingsPanel: React.FC<Props> = (props: Props) => {
         setMessage("");
     };
     const apply = async () => {
-        const result = await postCodegen(props.name.value, jsonContent);
+
+        const result = await postCodegen(props.name, jsonContent);
         
         if(result.kind == "errors") setMessage(result.errors.toArray().join("\n"));
-        const refreshed = await getSpec(props.name.value);
+        const refreshed = await getSpec(props.name);
         if(refreshed.kind == "errors") setMessage(refreshed.errors.toArray().join("\n"));
         
         if(refreshed.kind == "value" && result.kind == "value")
         props.setState(
-            Ide.Updaters.Phases.locking.refreshVfs(refreshed.value)
-                .then(CommonUI.Updater.Core.toggleSettings()))
+            Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.workspace(WorkspaceState.Updater.reloadContent(refreshed.value))
+                .then(LockedPhase.Updaters.Core.toggleSettings())))
     };
-    if(!props.settingsVisible) return <></>;
+    if(props.settings != 'fully-visible') return <></>;
     return (
         <div className="card w-full bg-base-100 card-md shadow-sm">
             <div className="card-body">
@@ -89,7 +88,7 @@ export const SettingsPanel: React.FC<Props> = (props: Props) => {
                             className="btn"
                             type="button"
                             onClick={() => {
-                                props.setState(CommonUI.Updater.Core.toggleSettings());
+                                props.setState(Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.toggleSettings()));
                             }}
                         >
                             Cancel

@@ -1,8 +1,8 @@
 ﻿
 import {axiosVOE} from "./api";
-import {Node} from "../domains/locked/vfs/upload/model";
+
 import {KnownSections} from "../domains/types/Json";
-import {FormsSeedEntity} from "../domains/seeds/state";
+import {FormsSeedEntity} from "../domains/types/seeds";
 
 export const expand = async (name: string, launcherName: string, path: string []) =>
 

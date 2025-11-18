@@ -1,38 +1,50 @@
 ﻿import React from "react";
-import {addMissingVfsFiles, getSpec, Ide, LockedPhase, moveIntoOwnFolder, WorkspaceState} from "playground-core";
+import {
+    FlatNode,
+    getSpec,
+    Ide,
+    LockedPhase,
+    moveIntoOwnFolder,
+    WorkspaceState
+} from "playground-core";
 import {BasicFun, BasicUpdater} from "ballerina-core";
 import {Breadcrumbs} from "./breadcrumbs.tsx";
 import {FolderFilter} from "./folder-filter.tsx";
-import MonacoEditor from "../editor/monaco.tsx";
+import MonacoEditor, {SupportedLanguage} from "../editor/monaco.tsx";
 import {Drawer} from "./drawer.tsx";
-import {CommonUI} from "playground-core/ide/domains/common-ui/state.ts";
+
+
 
 type VfsLayoutProps = Ide & { setState: BasicFun<BasicUpdater<Ide>, void> };
 
 export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
     
     const folder =
-        props.phase == "locked" 
-        && props.locked.workspace.kind == 'selected' ?
+        props.phase.kind == "locked" 
+        && props.phase.locked.workspace.kind == 'selected' ?
         <fieldset className="fieldset ml-5">
-            <Breadcrumbs workspace={props.locked.workspace} />
+            <Breadcrumbs workspace={props.phase.locked.workspace} />
             <div className="join">
                 <FolderFilter
-                    variant={props.variant}
-                    workspace={props.locked.workspace}
+                    variant={props.phase.locked.workspace.variant}
+                    workspace={props.phase.locked.workspace}
                     update={props.setState}
-                    name={props.name.value}
+                    name={props.phase.locked.name}
                     moveIntoOwnFolder={async () => {
-                        if(props.locked.workspace.kind != 'selected' || props.locked.workspace.current.kind != 'file') return;
-                        const added = await moveIntoOwnFolder(props.name.value, props.locked.workspace.current.file.metadata.path.split("/"));
+                        if(props.phase.kind != "locked") return 
+                        if(props.phase.locked.workspace.kind != 'selected') return;
+                        debugger
+                        const added = await moveIntoOwnFolder(props.phase.locked.name, props.phase.locked.workspace.file.metadata.path.split("/"));
                         if(added.kind == 'value') {
-                            const spec = await getSpec(props.name.value);
+                            const spec = await getSpec(props.phase.locked.name);
+                            
                             if (spec.kind == 'value') {
-                                props.setState(
-                                    Ide.Updaters.Phases.locking.refreshVfs(spec.value)
-                                        .then(
-                                            Ide.Updaters.Phases.locking.vfs(
-                                                WorkspaceState.Updater.reselectFileAfterMovingToOwnFolder())))
+                                const file = FlatNode.Operations.findFileByName(spec.value, props.phase.locked.workspace.file.name);
+                                if(file.kind == "r") {
+                                    props.setState(
+                                        Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.workspace(WorkspaceState.Updater.reloadContent(spec.value)))
+                                            .then(Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.workspace(WorkspaceState.Updater.selectFile(file.value)))))
+                                }
                             }
                         }
                     }}
@@ -40,27 +52,23 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
             </div>
         </fieldset> : <></>
     const file =
-        props.phase == "locked"
-        && props.locked.workspace.kind == 'selected' && props.locked.workspace.current.kind == 'file'
+        props.phase.kind == "locked"
+        && props.phase.locked.workspace.kind == 'selected'
             ? <MonacoEditor
+            fileName={props.phase.locked.workspace.file.name}
             onChange={(next:any)=> props.setState(next)}
-            key={props.locked.workspace.current.file.name}
-            content={JSON.stringify(props.locked.workspace.current.file.metadata.content)}/> : <></>
+            key={props.phase.locked.workspace.file.name}
+            content={JSON.stringify(props.phase.locked.workspace.file.metadata.content)}/> : <></>
     
     const drawer =
-        props.phase == "locked" 
-        ? <Drawer 
-            onAddNewFile={(path)=>{}}
-            name={props.name.value}
-            workspace={props.locked.workspace}
-            mode={props.locked.origin == 'selected' ? 'select-current-folder' : 'upload'}
-            onSelectedFolder={(folder) =>
-                props.setState(LockedPhase.Updaters.Core.workspace(WorkspaceState.Updater.selectFolder(folder)))
-            }
+        props.phase.kind == "locked" 
+        ? <Drawer
+            name={props.phase.locked.name}
+            workspace={props.phase.locked.workspace}
             onSelectedFile={(file) => 
                 props.setState(
-                    CommonUI.Updater.Core.clearAllErrors().then(
-                    LockedPhase.Updaters.Core.workspace(WorkspaceState.Updater.selectFile(file))))
+
+                        Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.workspace(WorkspaceState.Updater.selectFile(file))))
             }
             drawerId="my-drawer" /> : <></>
     

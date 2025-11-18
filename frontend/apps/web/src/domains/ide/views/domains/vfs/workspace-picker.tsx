@@ -46,9 +46,9 @@ const SizeBadge: React.FC<{ bytes?: number }> = ({ bytes = 0 }) => {
     );
 };
 
-export type MultiSelectCheckboxControlledProps = { 
+export type MultiSelectCheckboxControlledProps = {
     mode: 'reader' | 'uploader',
-    workspace: WorkspaceState, 
+    workspace: WorkspaceState,
     onSelectedFolder?: BasicFun<Node, void>,
     onSelectedFile?: BasicFun<Node, void>
     onAcceptedNodes?: BasicFun<Node, void>
@@ -58,7 +58,7 @@ export type MultiSelectCheckboxControlledProps = {
 
 export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlledProps) {
 
-    const data: INode<Meta>[] = 
+    const data: INode<Meta>[] =
         flattenTree(props.workspace.nodes);
 
     const [selectedIds, setSelectedIds] = useState(data.map(x => x.id));
@@ -94,7 +94,7 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
                                        handleSelect,
                                        handleExpand,
                                    }) => {
-               
+
                         return (
                             <div
                                 {...getNodeProps({ onClick: handleExpand })}
@@ -138,7 +138,7 @@ export function MultiSelectCheckboxControlled(props:MultiSelectCheckboxControlle
                                                 title="Add new file"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    element.metadata?.path && props.onAddNewFile(element.metadata?.path as string)
+                                                   // element.metadata?.path && props.onAddNewFile(element.metadata?.path as string)
                                                 }}
                                             >
                                                 <VscNewFile size={18} />
@@ -169,19 +169,19 @@ const ArrowIcon = ({ isOpen, className }: { isOpen: any; [key: string]: any }) =
         { [`${baseClass}--open`]: isOpen },
         className
     );
-    return isOpen ? <VscArrowSmallDown size={20} className={classes} /> 
+    return isOpen ? <VscArrowSmallDown size={20} className={classes} />
         :<VscArrowSmallRight size={20} className={classes} />;
 };
 
 const CheckBoxIcon = ({ variant,mode, ...rest }: { variant: any; mode: 'reader' | 'uploader', [key: string]: any }) => {
     switch (variant) {
-    case "all":
-        return <VscDiffAdded size={20} {...rest} />;
-    case "none":
-        return <VscPrimitiveSquare size={20} {...rest} />;
-    case "some":
-        return <VscDiffRemoved size={20} {...rest} />;
-    default:
-        return null;
+        case "all":
+            return <VscDiffAdded size={20} {...rest} />;
+        case "none":
+            return <VscPrimitiveSquare size={20} {...rest} />;
+        case "some":
+            return <VscDiffRemoved size={20} {...rest} />;
+        default:
+            return null;
     }
 };

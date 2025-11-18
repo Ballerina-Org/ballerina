@@ -1,16 +1,15 @@
-﻿import {Node, WorkspaceState} from "playground-core";
+﻿import {WorkspaceState} from "playground-core";
 import React from "react";
-import {VscFile, VscFolder} from "react-icons/vsc";
-import {Option} from "ballerina-core";
+import {VscFolder} from "react-icons/vsc";
 
 type BreadcrumbsProps = { workspace: WorkspaceState };
 
 export function Breadcrumbs({ workspace }: BreadcrumbsProps) {
 
     return (
-        workspace.kind == 'selected' && workspace.current.kind == 'file' && workspace.current.file.metadata.path.split("/").length > 2 && <div className="breadcrumbs text-sm">
+        workspace.kind == 'selected' && workspace.file.metadata.path.split("/").length > 2 && <div className="breadcrumbs text-sm">
             <ul>
-                {workspace.current.folder.metadata.path.split('/').map((part, i) => (
+                {workspace.file.metadata.path.split('/').slice(0, -1).map((part, i) => (
                     <li key={`${part}-${i}`}>
                         <a><VscFolder size={15} />{part}</a>
                     </li>

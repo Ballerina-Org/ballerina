@@ -10,17 +10,18 @@ export * from "./ide/api/Unmock/ones";
 export * from "./ide/api/Unmock/enums";
 export * from "./ide/api/Unmock/streams";
 export * from "./ide/api/Unmock/entities";
-export * from "./ide/domains/editor/template";
-export * from "./ide/domains/editor/state";
-export * from "./ide/domains/locked/state";
-export * from "./ide/domains/locked/vfs/state";
-export * from "./ide/domains/bootstrap/state";
-export * from "./ide/domains/editor/state";
-export * from "./ide/domains/common-ui/state";
-export * from "./ide/domains/locked/vfs/upload/model";
+export * from "./ide/domains/phases/hero/template";
+export * from "./ide/domains/phases/hero/state";
+export * from "./ide/domains/phases/locked/domains/folders/editor/template";
+export * from "./ide/domains/phases/locked/domains/folders/editor/state";
+export * from "./ide/domains/phases/locked/state";
+export * from "./ide/domains/phases/locked/domains/folders/state"
+export * from "./ide/domains/phases/bootstrap/state";
+export * from "./ide/domains/phases/locked/domains/forms/state";
+export * from "./ide/domains/phases/locked/domains/forms/domains/delta/state";
+export * from "./ide/domains/phases/locked/domains/folders/node";
 export * from "./uncle/state";
 export * from "./ide/state";
-export * from "./ide/domains/forms/state";
 export * from "./uncle/template";
 
 export * from "./parent/state";

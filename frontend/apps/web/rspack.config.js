@@ -89,7 +89,9 @@ module.exports = {
             },
         }),
     },
-
+    // experiments: {
+    //     importMeta: true,
+    // },
     optimization: {
         splitChunks: false,
         runtimeChunk: false,

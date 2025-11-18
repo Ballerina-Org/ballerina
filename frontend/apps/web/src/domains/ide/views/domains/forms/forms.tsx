@@ -1,4 +1,6 @@
 ﻿import React, { useEffect, useState } from "react";
+import { getTheme } from "@blp-private-npm/ui";
+import { ThemeProvider } from "@mui/material";
 import {
     unit,
     PromiseRepo,
@@ -7,253 +9,106 @@ import {
     replaceWith,
     DeltaTransfer,
     ValueOrErrors,
-    DispatchFormsParserTemplate,
     DispatchFormsParserState,
-    DispatchFormRunnerTemplate,
     DispatchDeltaTransfer,
     DispatchDeltaCustom,
     DispatchDelta,
-    DispatchSpecificationDeserializationResult,
     DispatchFormRunnerState,
     DispatchParsedType,
-    IdWrapperProps,
-    ErrorRendererProps,
     DispatchInjectedPrimitive,
     DispatchOnChange,
-    AggregatedFlags, LookupApiOne, DispatchDeltaTransferComparand, DispatchDeltaTransferV2,
+    AggregatedFlags, LookupApiOne, DispatchDeltaTransferComparand, DispatchDeltaTransferV2, ConcreteRenderers,
+    dispatchToAPIRawValue, dispatchToAPIRawValueV2,
 } from "ballerina-core";
-import { Set, OrderedMap } from "immutable";
-import {FormsSeedEntity} from "playground-core/ide/domains/seeds/state.ts";
-
+import {List, Set } from "immutable";
+import {FormsSeedEntity} from "playground-core/ide/domains/types/seeds";
 
 import {
     DispatchEntityContainerFormView,
     DispatchLookupTypeRenderer,
     DispatchEntityNestedContainerFormView,
-} from "../../../../dispatched-passthrough-form/views/wrappers";
+} from "./wrappers";
 import {
     CategoryAbstractRenderer,
     DispatchCategoryState,
     DispatchPassthroughFormInjectedTypes,
 } from "../../../../dispatched-passthrough-form/injected-forms/category";
 import {
-    DispatchPassthroughFormConcreteRenderers,
+    DispatchPassthroughFormConcreteRenderers as TailwindRenderers,
     DispatchPassthroughFormCustomPresentationContext,
-    DispatchPassthroughFormFlags,
-    DispatchPassthroughFormExtraContext,
+    //DispatchPassthroughFormFlags,
+    //DispatchPassthroughFormExtraContext,
 } from "../../../../dispatched-passthrough-form/views/tailwind-renderers";
-import { DispatchFieldTypeConverters } from "../../../../dispatched-passthrough-form/apis/field-converters";
+import {
+    DispatchPassthroughFormConcreteRenderers as NoneRenderers,
+
+} from "../../../../dispatched-passthrough-form/views/concrete-renderers.tsx";
 import { v4 } from "uuid";
 import {
-    CommonUI,
     DispatchFromConfigApis, expand,
-    Ide,
-    IdeEntityApis,
-    IdeFormProps, LockedPhase, sendDelta,
+    IdePhase,
+    IdeEntityApis, LockedPhase, sendDelta,
     UnmockingApisEnums,
-    UnmockingApisLookups
+    UnmockingApisLookups, Ide, Forms
 } from "playground-core";
 import { UnmockingApisStreams, getSeed} from "playground-core";
+import {IdeRenderers} from "./domains/loader.tsx";
+import {
+    IdeErrorRenderer, IdeIdWrapper,
+    IdeShowFormsParsingErrors,
+    InstantiatedDispatchFormRunnerTemplate,
+    InstantiatedFormsParserTemplate, parseCustomDelta
+} from "./forms-essentials.tsx";
+import {IdeFlags} from "./domains/common/ide-flags.ts";
+import {FieldExtraContext} from "./domains/common/field-extra-context.ts";
+import {Namespace} from "./domains/common/namespace.ts";
+import {IdeTypeConverters} from "./field-converters.ts";
+import {LocalizationState} from "./domains/common/localization-state.ts";
+import i18n, {t} from "i18next";
 
-type AnyObject = Record<string, unknown>;
 
-const ShowFormsParsingErrors = (
-    parsedFormsConfig: DispatchSpecificationDeserializationResult<
-        DispatchPassthroughFormInjectedTypes,
-        DispatchPassthroughFormFlags,
-        DispatchPassthroughFormCustomPresentationContext,
-        DispatchPassthroughFormExtraContext
-    >,
-) => (
-    <div style={{ display: "flex", border: "red" }}>
-        {parsedFormsConfig.kind == "errors" &&
-            JSON.stringify(parsedFormsConfig.errors)}
-    </div>
-);
+export type IT = DispatchPassthroughFormInjectedTypes
+export type FL = IdeFlags
+export type PC = DispatchPassthroughFormCustomPresentationContext
+export type EC = FieldExtraContext
 
-const IdWrapper = ({ domNodeId, children }: IdWrapperProps) => (
-    <div id={domNodeId}>{children}</div>
-);
-
-const ErrorRenderer = ({ message }: ErrorRendererProps) => (
-    <div
-        style={{
-            display: "flex",
-            border: "2px dashed red",
-            maxWidth: "200px",
-            maxHeight: "50px",
-            overflowY: "scroll",
-            padding: "10px",
-        }}
-    >
-    <pre
-        style={{
-            whiteSpace: "pre-wrap",
-            maxWidth: "200px",
-            lineBreak: "anywhere",
-        }}
-    >{`Error: ${message}`}</pre>
-    </div>
-);
-
-const InstantiatedFormsParserTemplate = DispatchFormsParserTemplate<
-    DispatchPassthroughFormInjectedTypes,
-    DispatchPassthroughFormFlags,
-    DispatchPassthroughFormCustomPresentationContext,
-    DispatchPassthroughFormExtraContext
->();
-
-const InstantiatedDispatchFormRunnerTemplate = DispatchFormRunnerTemplate<
-    DispatchPassthroughFormInjectedTypes,
-    DispatchPassthroughFormFlags,
-    DispatchPassthroughFormCustomPresentationContext,
-    DispatchPassthroughFormExtraContext
->();
-
-export const DispatcherFormsApp = (props: IdeFormProps) => {
- 
+export const DispatcherFormsApp = (props: Forms) => {
+    const theme = getTheme(true,"mocked");
     const [specificationDeserializer, setSpecificationDeserializer] = useState(
-        DispatchFormsParserState<
-            DispatchPassthroughFormInjectedTypes,
-            DispatchPassthroughFormFlags,
-            DispatchPassthroughFormCustomPresentationContext,
-            DispatchPassthroughFormExtraContext
-        >().Default(),
+        DispatchFormsParserState<IT,FL, PC, EC>().Default(),
     );
 
     const [passthroughFormState, setPassthroughFormState] = useState(
-        DispatchFormRunnerState<
-            DispatchPassthroughFormInjectedTypes,
-            DispatchPassthroughFormFlags,
-            DispatchPassthroughFormCustomPresentationContext,
-            DispatchPassthroughFormExtraContext
-        >().Default.passthrough(),
-    );
-    const [configState, setConfigState] = useState(
-        DispatchFormRunnerState<
-            DispatchPassthroughFormInjectedTypes,
-            DispatchPassthroughFormFlags,
-            DispatchPassthroughFormCustomPresentationContext,
-            DispatchPassthroughFormExtraContext
-        >().Default.passthrough(),
+        DispatchFormRunnerState<IT,FL, PC, EC>().Default.passthrough(),
     );
 
-    const [entity, setEntity] = useState<
-        Sum<ValueOrErrors<PredicateValue, string>, "not initialized">
-    >(Sum.Default.right("not initialized"));
-    const [entityName, setEntityName] = useState<
-        Sum<string, "not initialized">
-    >(Sum.Default.right("not initialized"));
-    const [entityId, setEntityId] = useState<
-        Sum<string, "not initialized">
-    >(Sum.Default.right("not initialized"));    
-    
+    const [entity, setEntity] = 
+        useState<Sum<ValueOrErrors<PredicateValue, string>, "not initialized">>(Sum.Default.right("not initialized"));
+    const [entityName, setEntityName] = 
+        useState<Sum<string, "not initialized">>(Sum.Default.right("not initialized"));
+    const [entityId, setEntityId] = 
+        useState<Sum<string, "not initialized">>(Sum.Default.right("not initialized"));
     const [config, setConfig] = useState<
-        Sum<ValueOrErrors<PredicateValue, string>, "not initialized">
-    >(Sum.Default.right("not initialized"));
+        Sum<ValueOrErrors<PredicateValue, string>, "not initialized">>(Sum.Default.right("not initialized"));
+    const [entityPath, setEntityPath] = 
+        useState<any>(null);
 
-    // TODO replace with delta transfer
-    const [entityPath, setEntityPath] = useState<any>(null);
-
-    const [remoteEntityVersionIdentifier, setRemoteEntityVersionIdentifier] =
-        useState(v4());
+    const [remoteEntityVersionIdentifier, setRemoteEntityVersionIdentifier] = useState(v4());
     const [
         remoteConfigEntityVersionIdentifier,
         setRemoteConfigEntityVersionIdentifier,
     ] = useState(v4());
 
-    const parseCustomDelta =
-        <T,>(
-            toRawObject: (
-                value: PredicateValue,
-                type: DispatchParsedType<T>,
-                state: any,
-            ) => ValueOrErrors<any, string>,
-            fromDelta: (
-                delta: DispatchDelta<DispatchPassthroughFormFlags>,
-            ) => ValueOrErrors<DeltaTransfer<T>, string>,
-        ) =>
-            (
-                deltaCustom: DispatchDeltaCustom<DispatchPassthroughFormFlags>,
-            ): ValueOrErrors<
-                [T, string, AggregatedFlags<DispatchPassthroughFormFlags>],
-                string
-            > => {
-                if (deltaCustom.value.kind == "CategoryReplace") {
-                    return toRawObject(
-                        deltaCustom.value.replace,
-                        deltaCustom.value.type,
-                        deltaCustom.value.state,
-                    ).Then((value) => {
-                        return ValueOrErrors.Default.return([
-                            {
-                                kind: "CategoryReplace",
-                                replace: value,
-                            },
-                            "[CategoryReplace]",
-                            deltaCustom.flags ? [[deltaCustom.flags, "[CategoryReplace]"]] : [],
-                        ] as [T, string, AggregatedFlags<DispatchPassthroughFormFlags>]);
-                    });
-                }
-                return ValueOrErrors.Default.throwOne(
-                    `Unsupported delta kind: ${deltaCustom.value.kind}`,
-                );
-            };
-
-    const onEntityConfigChange: DispatchOnChange<
-        PredicateValue,
-        DispatchPassthroughFormFlags
-    > = (updater, delta) => {
-        if (config.kind == "r" || config.value.kind == "errors") {
-            return;
-        }
-
-        const newConfig =
-            updater.kind == "r"
-                ? updater.value(config.value.value)
-                : config.value.value;
-        console.log("patching config", newConfig);
-        setConfig(
-            replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newConfig))),
-        );
-        if (
-            specificationDeserializer.deserializedSpecification.sync.kind ==
-            "loaded" &&
-            specificationDeserializer.deserializedSpecification.sync.value.kind ==
-            "value"
-        ) {
-            debugger
-            const toApiRawParser =
-                specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
-                    "person-config",
-                )!.parseValueToApi;
-            setEntityPath(
-                DispatchDeltaTransfer.Default.FromDelta(
-                    toApiRawParser as any, //TODO - fix type issue if worth it
-                    parseCustomDelta,
-                )(delta),
-            );
-            setRemoteConfigEntityVersionIdentifier(v4());
-        }
-    };
-
-    const onEntityChange: DispatchOnChange<
-        PredicateValue,
-        DispatchPassthroughFormFlags
+    const onEntityChange: DispatchOnChange<PredicateValue, FL
     > = async (updater, delta) => {
 
-        if (entity.kind == "r" || entity.value.kind == "errors") {
-            return;
-        }
+        if (entity.kind == "r" || entity.value.kind == "errors") return;
 
         const newEntity =
             updater.kind == "r"
                 ? updater.value(entity.value.value)
                 : entity.value.value;
-        console.log("patching entity", newEntity);
-        console.log("delta", JSON.stringify(delta, null, 2));
 
-        
         setEntity(
             replaceWith(Sum.Default.left(ValueOrErrors.Default.return(newEntity))),
         );
@@ -279,15 +134,22 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                 string
             >  = DispatchDeltaTransferV2.Default.FromDelta(
                 toApiRawParser as any, 
+               // dispatchToAPIRawValueV2 as any,
                 parseCustomDelta,
             )(delta);
-        
-            debugger
+            
             if(path.kind == "value") {
                 if (props.deltas.kind == "l") {
-                    props.setState(LockedPhase.Operations.startDeltas().then(LockedPhase.Updaters.Step.addDelta(path.value)));
+                    debugger
+                    props.setState(
+                       Ide.Updaters.Core.phase.locked(
+                           LockedPhase.Updaters.Core.startDeltas()
+                               .then(LockedPhase.Updaters.Core.addDelta(path.value))
+                       ));
                 } else {
-                    props.setState(LockedPhase.Updaters.Step.addDelta(path.value));
+                    props.setState(
+                        Ide.Updaters.Core.phase.locked(
+                            LockedPhase.Updaters.Core.addDelta(path.value)));
                 }
             }
             setEntityPath(path);
@@ -308,19 +170,17 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                 .then(async (raw) => {
                     if (raw.kind == "value") {
                         const res: FormsSeedEntity = raw.value;
-                        debugger
                         const parsed =
                             spec.launchers.passthrough
                                 .get(props.launcher)!
                                 .parseEntityFromApi(raw.value.value);
                         debugger
                         if (parsed.kind == "errors") {
-                            console.error("parsed entity errors", parsed.errors);
+                            console.error("parsed entity errors 2", parsed.errors);
+                            props.setState(Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.errors(replaceWith(parsed.errors))));
                         } else {
                             const entity = parsed.value;
-                            
-                            const e = entity as any;
-
+                            const e = entity as any
                             const updated = {
                                 ...e,
                                 fields: e.fields.merge(Object.fromEntries([["Id",  res.id]])),
@@ -331,7 +191,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                         }
                     }
                     else {
-                        props.setState(CommonUI.Updater.Core.formsError(raw.errors));
+                        props.setState(Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.errors(replaceWith(raw.errors))));
                     }
                 });
         }
@@ -377,11 +237,7 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
     }
 
     return (
-        <div className="App pb-12">
-            <div className="card">
-                <table>
-                    <tbody>
-                    <tr><td>
+        <div className="App h-full pb-12">
                         {props.deltas.kind == 'r' && props.showDeltas &&
 
                             <div className="stats bg-base-100 border-base-300 border w-full">
@@ -393,8 +249,10 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                         <button className="btn btn-xs btn-success"
                                                 onClick={async() =>{
                                                     if(props.deltas.kind == "r") {
-                                                        const t = await sendDelta(props.specName, entityName.value, entityId.value, props.deltas.value, props.path, props.launcher);
-                                                        props.setState(LockedPhase.Updaters.Step.drainDeltas());
+                                                        const result = await sendDelta(props.specName, entityName.value, entityId.value, props.deltas.value, props.path, props.launcher);
+                                                        if(result.kind == "value")
+                                                            props.setState(Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.drainDeltas()));
+                                                        else props.setState(Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.errors(replaceWith(result.errors))));
                                                     }
                                                 }}
                                         >Drain</button>
@@ -407,21 +265,18 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                 </div>
                             </div>
                         }
-                    </td></tr>
-                    <tr>
-                        <td>
                             <InstantiatedFormsParserTemplate
                                 context={{
                                     ...specificationDeserializer,
                                     lookupTypeRenderer: DispatchLookupTypeRenderer,
                                     defaultRecordConcreteRenderer: DispatchEntityContainerFormView,
-                                    fieldTypeConverters: DispatchFieldTypeConverters,
+                                    fieldTypeConverters: IdeTypeConverters,
                                     defaultNestedRecordConcreteRenderer:DispatchEntityNestedContainerFormView,
-                                    concreteRenderers: DispatchPassthroughFormConcreteRenderers,
-                                    
+                                    concreteRenderers: 
+                                        props.ui.kind == 'ui-kit' ? IdeRenderers : TailwindRenderers,
                                     getFormsConfig: () => PromiseRepo.Default.mock(() => props.spec),
-                                    IdWrapper,
-                                    ErrorRenderer,
+                                    IdWrapper:IdeIdWrapper,
+                                    ErrorRenderer: IdeErrorRenderer,
                                     injectedPrimitives: [
                                         DispatchInjectedPrimitive.Default(
                                             "injectedCategory",
@@ -441,54 +296,13 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                 view={unit}
                                 foreignMutations={unit}
                             />
-                            {/*<h3> Dispatcher Passthrough form</h3>*/}
-                            
-                            {/*<h4>Config</h4>*/}
-                            {/*<div style={{ border: "2px dashed lightblue" }}>*/}
-                            {/*    <InstantiatedDispatchFormRunnerTemplate*/}
-                            {/*        context={{*/}
-                            {/*            ...specificationDeserializer,*/}
-                            {/*            ...entityConfigState,*/}
-                            {/*            launcherRef: {*/}
-                            {/*                name: "person-config",*/}
-                            {/*                kind: "passthrough",*/}
-                            {/*                entity: config,*/}
-                            {/*                config: Sum.Default.left(*/}
-                            {/*                    ValueOrErrors.Default.return(*/}
-                            {/*                        PredicateValue.Default.record(OrderedMap()),*/}
-                            {/*                    ),*/}
-                            {/*                ),*/}
-                            {/*                onEntityChange: onEntityConfigChange,*/}
-                            {/*            },*/}
-                            {/*            remoteEntityVersionIdentifier:*/}
-                            {/*            remoteConfigEntityVersionIdentifier,*/}
-                            {/*            showFormParsingErrors: ShowFormsParsingErrors,*/}
-                            {/*            extraContext: {*/}
-                            {/*                flags: Set(["BC", "X"]),*/}
-                            {/*            },*/}
-                            {/*        }}*/}
-                            {/*        setState={setEntityConfigState}*/}
-                            {/*        view={unit}*/}
-                            {/*        foreignMutations={unit}*/}
-                            {/*    />*/}
-                            {/*</div>*/}
-                {/*            <h3>Entity</h3>*/}
-                {/*            {entityPath && entityPath.kind == "value" && (*/}
-                {/*  <pre*/}
-                {/*    style={{*/}
-                {/*      display: "inline-block",*/}
-                {/*      verticalAlign: "top",*/}
-                {/*      textAlign: "left",*/}
-                {/*    }}*/}
-                {/*  >*/}
-                {/*    {JSON.stringify(entityPath.value, null, 2)}*/}
-                {/*  </pre>*/}
-                {/*)} */}
                             {entityPath && entityPath.kind == "errors" && (
                                 <pre>
                     DeltaErrors: {JSON.stringify(entityPath.errors, null, 2)}
                   </pre>
                             )}
+                            <ThemeProvider theme={theme}>
+                       
                             <InstantiatedDispatchFormRunnerTemplate
                                 context={{
                                     ...specificationDeserializer,
@@ -508,9 +322,16 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                         },
                                     },
                                     remoteEntityVersionIdentifier,
-                                    showFormParsingErrors: ShowFormsParsingErrors,
+                                    showFormParsingErrors: IdeShowFormsParsingErrors,
                                     extraContext: {
-                                        flags: Set(["BC", "X"]),
+                                        isSuperAdmin: false, 
+                                        locale: ""!, // LocalizationState.Default(null, t, i18n),
+                                        namespace: Namespace.TranslationNamespaceSetupGuide,
+                                        headers: {},
+                                        docId: "",
+                                        foreignMutations: unit as any, 
+                                        downloadExampleAccountingCsv: unit as any,
+                                        customLocks: Set(),
                                     },
                                     globallyDisabled: false,
                                     globallyReadOnly: false,
@@ -519,11 +340,8 @@ export const DispatcherFormsApp = (props: IdeFormProps) => {
                                 view={unit}
                                 foreignMutations={unit}
                             />
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
+                            </ThemeProvider>
+
         </div>
     );
 };

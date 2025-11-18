@@ -1,9 +1,6 @@
-﻿import {getSpec, Ide, LockedPhase, WorkspaceState} from "playground-core";
-import {BasicFun, Option, Updater} from "ballerina-core";
+﻿import {BasicFun, Option} from "ballerina-core";
 import React from "react";
 
-
-import {ProgressiveAB} from "playground-core/ide/domains/types/Progresssive.ts";
 import {VscAdd, VscCodeReview, VscEdit} from "react-icons/vsc";
 
 type LaunchersDockProps = {
@@ -28,7 +25,7 @@ export const LauncherIcon: React.FC<LauncherIconProps> = ({ launcher, size = 20 
 };
 export const LaunchersDock = (props: LaunchersDockProps): React.ReactElement => {
     
-    return <div className="dock bg-neutral absolute text-neutral-content">
+    return <div className="dock bg-neutral text-neutral-content fixed bottom-0 left-0 w-full flex p-4 ">
         {props.launchers.map(launcher =>
             <button 
                 className={props.selected.kind == "r" && launcher == props.selected.value ? "dock-active" :"" }

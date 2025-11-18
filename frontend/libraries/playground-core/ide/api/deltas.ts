@@ -1,7 +1,6 @@
 ﻿import {axiosVOE} from "./api";
-import {FormsSeedEntity} from "../domains/seeds/state";
-import {Guid} from "ballerina-core";
-import {DeltaDrain} from "../domains/forms/deltas/state";
+import {Guid, ValueOrErrors} from "ballerina-core";
+import {DeltaDrain} from "../domains/phases/locked/domains/forms/domains/delta/state";
 
 export const sendDelta = 
     async (
@@ -10,9 +9,9 @@ export const sendDelta =
         id: Guid, 
         delta: DeltaDrain, 
         path: string [], 
-        launcherName: string) => {
+        launcherName: string): Promise<ValueOrErrors<any, any>> => {
     const query = new URLSearchParams(path.map(p => ["path", p])).toString();
-    await axiosVOE<any, any>({
+    return await axiosVOE<any, any>({
         method: "POST",
         url: `/entities/${name}/${entityName}/delta/${id}/${launcherName}?${query}`,
         data: { deltas: delta.left}

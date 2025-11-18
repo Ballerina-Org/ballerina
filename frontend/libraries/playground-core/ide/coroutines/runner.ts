@@ -4,5 +4,5 @@ import { bootstrap } from "./ide-bootstrap";
 
 export const Bootstrap =
     Co.Template<Unit>(bootstrap, {
-        runFilter: (props) => props.context.phase === 'bootstrap',
-    });
+        runFilter: (props) => props.context.phase.kind === 'bootstrap' },
+    );

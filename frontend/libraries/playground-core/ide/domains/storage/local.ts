@@ -2,8 +2,7 @@
     ide: {
         specName?: string;
         
-    },
-    test?: string;
+    }
 };
 const STORAGE_KEY = "ballerina" as const;
 
@@ -26,17 +25,11 @@ function write(next: IdeStorage) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
 }
 
-export const test = {
-    get(): string | undefined { return read().test; },
-    set(v: string){     
-        const s = read();
-        write({ ...s, test: v } ); },
-};
 
 export const LocalStorage_SpecName = {
     get(): string | undefined { return read().ide.specName; },
     set(specName: string){
         const s = read();
         write({ ide: { ...s.ide, specName } }); 
-        }
+    }
 };

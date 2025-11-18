@@ -1,15 +1,23 @@
-﻿import {addMissingVfsFiles, getSpec, Ide, INode, Meta, moveIntoOwnFolder, WorkspaceState} from "playground-core";
+﻿import {
+    addMissingVfsFiles, FlatNode,
+    getSpec,
+    Ide,
+    IdePhase,
+    INode,
+    Meta,
+    moveIntoOwnFolder,
+    WorkspaceState, WorkspaceVariant
+} from "playground-core";
 import React from "react";
-import {LockedPhase} from "playground-core/ide/domains/locked/state.ts";
+import {LockedPhase} from "playground-core/ide/domains/phases/locked/state.ts";
 import {VscAdd, VscCopilot, VscMove} from "react-icons/vsc";
 import {BasicFun, Unit} from "ballerina-core";
-import {CommonUI, Variant} from "playground-core/ide/domains/common-ui/state.ts";
 
 type FolderFilterProps = {
     workspace: WorkspaceState
     update?: any,
     name: string,
-    variant: Variant,
+    variant: WorkspaceVariant,
     moveIntoOwnFolder: BasicFun<void, Promise<void>> }
 
 function extractKindFromFileName(fileName: string): string {
@@ -34,18 +42,19 @@ export const FolderFilter = ({
     
     if (workspace.kind !== "selected" ) return null;
     
-    const files = (workspace.current.folder.children || [])?.filter(x => x.metadata.kind === "file");
+    const folder = FlatNode.Operations.findFolderByPath(workspace.nodes, workspace.file.metadata.path)
+    debugger
+    if(folder.kind !== "r") return <p>Cant find folder for a file</p>
+    const files = (folder.value.children || [])?.filter(x => x.metadata.kind === "file");
     const specialFilesMissing = 
         variant.kind == 'explore'
-        && workspace.current.kind == 'file'
-        && !workspace.current.file.name.endsWith("_schema.json")
-        && !workspace.current.file.name.endsWith("_typesV2.json")
-        && files && !files.map(f => f.name).includes(`${workspace.current.file.name}_schema.json`)
+        && !workspace.file.name.endsWith("_schema.json")
+        && !workspace.file.name.endsWith("_typesV2.json")
+        && files && !files.map(f => f.name).includes(`${workspace.file.name}_schema.json`)
     
     const parentFileNotYetExtracted =
         variant.kind == 'explore'
-        && workspace.current.kind == 'file'
-        && workspace.current.folder.name != removeExtension(workspace.current.file.name)
+        && folder.value.name != removeExtension(workspace.file.name)
     return (
         <>
         <div className="w-full">
@@ -89,11 +98,12 @@ export const FolderFilter = ({
                                     className="btn"
                                     type="checkbox"
                                     //name="virtual-files"
-                                    checked={workspace.current.kind === "file"  && workspace.current.file.name === f.name}
+                                    checked={ workspace.file.name === f.name}
                                     aria-label={extractKindFromFileName(f.name)}
                                     onChange={async () => {
                                         const s_u = 
-                                            LockedPhase.Updaters.Core.workspace(WorkspaceState.Updater.selectFile(f))
+                                            Ide.Updaters.Core.phase.locked(
+                                            LockedPhase.Updaters.Core.workspace(WorkspaceState.Updater.selectFile(f)))
                                         update(s_u);
                                     }}
                                 />

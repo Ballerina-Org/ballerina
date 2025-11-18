@@ -1,23 +1,22 @@
 ﻿import {useEffect,useState } from "react";
 import {IdeTemplate, Ide} from "playground-core";
-import {IdeLayout} from "./domains/ide/views/domains/layout/layout.tsx"
 import "./Ide.css"
-import SPEC from "../public/SampleSpecs/dispatch-person-config.json";
-import {replaceWith} from "ballerina-core";
+import {Unit, unit} from "ballerina-core";
+import {IdeLayout} from "./domains/ide/views/domains/layout/layout.tsx";
 
-export const IdeApp = (props: {}) => {
+export const IdeApp = (props: Unit) => {
 
     const [ide, setIde] = useState(Ide.Default());
 
     useEffect(() => {
     }, []);
-
+    
     return (
         <div className="IDE">
             <IdeTemplate
                 context={ide}
                 setState={setIde}
-                foreignMutations={{}}
+                foreignMutations={unit}
                 view={IdeLayout}
             />
         </div>)

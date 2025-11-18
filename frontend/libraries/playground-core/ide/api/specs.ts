@@ -1,15 +1,17 @@
 ﻿
 import {axiosVOE} from "./api";
-import {Node} from "../domains/locked/vfs/upload/model";
+import {Node} from "../domains/phases/locked/vfs/upload/model";
 import {KnownSections} from "../domains/types/Json";
-import {Variant} from "../domains/common-ui/state";
+import {WorkspaceVariant} from "../domains/common/state";
 
 
-export const listSpecs = async () =>
-    await axiosVOE<string[]>({
+export const listSpecs = async () => {
+    debugger
+    return await axiosVOE<string[]>({
         method: "GET",
         url: "/specs",
     });
+}
 
 export const getSpec = async (name: string) =>
 
@@ -33,7 +35,7 @@ export const getZippedWorkspace = async (name: string) =>
         responseType: "blob"
     });
 
-export const initSpec = async (name: string, variant: Variant) =>
+export const initSpec = async (name: string, variant: WorkspaceVariant) =>
     await axiosVOE<{ folders: Node, settings: {workspaceMode: string}}, any>({
         method: "Post",
         url: `/specs/${name}`,
@@ -56,7 +58,7 @@ export const postCodegen = async (name: string, node: Node) =>
         data: node
     });
 
-export const getOrInitSpec = async (origin: 'create' | 'existing', variant: Variant, name: string) =>
+export const getOrInitSpec = async (origin: 'create' | 'existing', variant: WorkspaceVariant, name: string) =>
     origin == 'existing' ? await getSpec(name) : await initSpec(name, variant).then(() => getSpec(name));
 
 export const validateCompose = async (name: string) =>

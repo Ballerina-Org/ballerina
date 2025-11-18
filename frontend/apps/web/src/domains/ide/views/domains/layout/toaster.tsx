@@ -68,6 +68,14 @@ export const fromVoe = (voe: ValueOrErrors<any, string>, title: string ) =>
             (voe as Extract<ValueOrErrors<any, string>, { kind: "errors" }>).errors
         )) : notify.success(title)
 
+export const fromError = (voe: ValueOrErrors<any, string>, title: string ) => {
+    if (voe.kind == 'errors') {
+        notify.error(title, JSON.stringify(
+            (voe as Extract<ValueOrErrors<any, string>, { kind: "errors" }>).errors
+        ))
+    }
+}
+
 export const errorFromList = (voe: List<string> ): string =>
     JSON.stringify(
         voe

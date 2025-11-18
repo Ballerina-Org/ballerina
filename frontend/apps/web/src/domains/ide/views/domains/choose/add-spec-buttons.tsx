@@ -1,18 +1,17 @@
 ﻿import React from "react";
-import {Ide, initSpec, Variant} from "playground-core";
-import {BasicFun, SimpleCallback, Updater, Value} from "ballerina-core";
+import {Ide, IdePhase, initSpec, WorkspaceVariant} from "playground-core";
+import {BasicFun, replaceWith, SimpleCallback, Updater, Value} from "ballerina-core";
 import {VscFileZip, VscFolderLibrary} from "react-icons/vsc";
 import {LocalStorage_SpecName} from "playground-core/ide/domains/storage/local.ts";
-import {CommonUI} from "playground-core/ide/domains/common-ui/state.ts";
 import {List} from "immutable";
-
+import {SelectionPhase} from "playground-core/ide/domains/phases/selection/state.ts";
 
 type AddSpecProps ={
     name: string
     onNameChange: BasicFun<string, void>
     startUpload: SimpleCallback
     onErrors: BasicFun<List<string>, void>
-    variant: Variant
+    variant: WorkspaceVariant
     setState: BasicFun<Updater<Ide>, void> //remove this
 }
 export const AddSpecButtons = (props: AddSpecProps): React.ReactElement => {
@@ -35,35 +34,24 @@ export const AddSpecButtons = (props: AddSpecProps): React.ReactElement => {
                     onClick={ async () => {
                         const vfs = await initSpec(props.name, props.variant);
                         if(vfs.kind == "errors") {
-                            props.setState(CommonUI.Updater.Core.chooseErrors(vfs.errors))
+                            props.setState(Ide.Updaters.Core.phase.selection(SelectionPhase.Updaters.Core.errors(replaceWith(vfs.errors))))
                             return;
                         }
             
                         LocalStorage_SpecName.set(props.name);
                  
                         const u: Updater<Ide> =
-                            Ide.Updaters.Phases.choosing.toLocked(vfs.value.folders)
+                            Ide.Updaters.Core.phase.toLocked(props.name, props.variant, vfs.value.folders)
                         
                         props.setState(u);
                     }
                     }
                 >Start</button>
-                {/*<label*/}
-                {/*    htmlFor="my-drawer" */}
-                {/*    className="btn tooltip tooltip-bottom join-item mr-2"*/}
-                {/*    disabled={true}*/}
-                {/*    onClick={()=>{*/}
-                {/*        const u = Ide.Updaters.Phases.choosing.startUpload();*/}
-                {/*        props.setState(u)*/}
-                {/*    }}*/}
-                {/*    data-tip="Upload folder">*/}
-                {/*    <VscFolderLibrary className="mt-2" size={20}/>*/}
-                {/*</label>*/}
                 <label
                     htmlFor="my-drawer"
                     className="btn tooltip tooltip-bottom join-item mr-2"
                     onClick={()=>{
-                        const u = Ide.Updaters.Phases.choosing.startUpload();
+                    const u = Ide.Updaters.Core.phase.selection(s=> ({ ...s, kind: 'upload-started'}));
                         props.setState(u)
                     }}
                     data-tip="Upload zipped specs">

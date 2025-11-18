@@ -24,6 +24,7 @@ import React, { useEffect, useState } from "react";
 import { DispatchPassthroughFormInjectedTypes } from "../injected-forms/category";
 import {VscDiffAdded, VscDiffRemoved, VscNewFile, VscRefresh, VscSurroundWith} from "react-icons/vsc";
 import { useId } from "react";
+import {CustomPresentationContexts, FieldExtraContext, IdeFlags} from "../../ide/views/domains/forms/domains/common.tsx";
 export type DispatchPassthroughFormFlags = {
   test: boolean;
 };
@@ -51,9 +52,10 @@ const layoutMode: "grid" | "flex" = "grid";
 
 export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
   DispatchPassthroughFormInjectedTypes,
-  DispatchPassthroughFormFlags,
-  DispatchPassthroughFormCustomPresentationContext,
-  DispatchPassthroughFormExtraContext
+
+    IdeFlags,
+    CustomPresentationContexts & {  listElement: ListElementCustomPresentationContext;},
+    FieldExtraContext
 > = {
   one: {
     admin: () => (props) => {
@@ -2175,7 +2177,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         />
       </>
     ),
-      boolean: () => DispatchPassthroughFormConcreteRenderers.boolean.defaultBoolean(),
+     // boolean: () => DispatchPassthroughFormConcreteRenderers.boolean.defaultBoolean(),
     secondBoolean: () => (props) => (
       <>
         {props.context.label && <h3>{props.context.label}</h3>}
@@ -2201,7 +2203,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         />
       </>
     ), 
-    daisyToggle: () => (props) => (
+    boolean: () => (props) => (
         <fieldset className="fieldset bg-base-100 border-base-300 rounded-box border p-4">
             {props.context.label && <legend className="fieldset-legend">{props.context.label}</legend>}
 
@@ -2249,7 +2251,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     ),
   },
   string: {
-      daisyString: () => (props) => {
+      defaultString: () => (props) => {
           return (
               <div className="tooltip" data-tip={props.context.tooltip}>
               
@@ -2276,7 +2278,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
      )
       },
 
-      defaultString: () => (props) => {
+      defaultString2: () => (props) => {
           return (
               <>
                   {props.context.customPresentationContext?.listElement
@@ -2354,7 +2356,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   enumSingleSelection: {
-    defaultEnum: () => (props) => {
+    defaultEnum2: () => (props) => {
       if (PredicateValue.Operations.IsUnit(props.context.value)) {
         return <></>;
       }
@@ -2408,7 +2410,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </>
       );
     },
-    daisyEnum: () => (props) => {
+    defaultEnum: () => (props) => {
         const [selected, setSelected] = useState(!PredicateValue.Operations.IsUnit(props.context.value)
         && props.context.value.isSome )
           if (PredicateValue.Operations.IsUnit(props.context.value)) {
@@ -2527,7 +2529,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               </>
           );
       },
-      daisyEnumMultiselect: () => (props) =>
+      enumMultiselect: () => (props) =>
           <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
               {props.context.label && <legend className="fieldset-legend">{props.context.label}</legend> }
 
