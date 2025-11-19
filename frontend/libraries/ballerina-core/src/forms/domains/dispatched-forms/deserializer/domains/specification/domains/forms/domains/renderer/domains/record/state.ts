@@ -1,12 +1,16 @@
-import { Map } from "immutable";
+import { List, Map } from "immutable";
 import {
   ConcreteRenderers,
+  DisabledFields,
   DispatchInjectablesTypes,
   DispatchIsObject,
   DispatchParsedType,
+  FormLayout,
   isObject,
   isString,
   MapRepo,
+  PredicateFormLayout,
+  PredicateComputedOrInlined,
   ValueOrErrors,
   Renderer,
 } from "../../../../../../../../../../../../../main";
@@ -17,6 +21,7 @@ export type SerializedRecordRenderer = {
   type: string;
   renderer?: string;
   fields: Map<string, unknown>;
+  tabs: object;
   extends?: string[];
 };
 
@@ -25,17 +30,20 @@ export type RecordRenderer<T> = {
   concreteRenderer?: string;
   fields: Map<string, RecordFieldRenderer<T>>;
   type: RecordType<T>;
+  tabs: PredicateFormLayout;
 };
 
 export const RecordRenderer = {
   Default: <T>(
     type: RecordType<T>,
     fields: Map<string, RecordFieldRenderer<T>>,
+    tabs: PredicateFormLayout,
     concreteRenderer?: string,
   ): RecordRenderer<T> => ({
     kind: "recordRenderer",
     type,
     fields,
+    tabs,
     concreteRenderer,
   }),
   Operations: {
@@ -55,31 +63,48 @@ export const RecordRenderer = {
             ? ValueOrErrors.Default.throwOne(
                 "fields attribute is not an object",
               )
-            : "extends" in _ &&
-                !RecordRenderer.Operations.hasValidExtends(_.extends)
+            : !("tabs" in _)
               ? ValueOrErrors.Default.throwOne(
-                  "extends attribute is not an array of strings",
+                  "record form is missing the required tabs attribute",
                 )
-              : !("type" in _)
+              : !isObject(_.tabs)
                 ? ValueOrErrors.Default.throwOne(
-                    "top level record form type attribute is not a string",
+                    "tabs attribute is not an object",
                   )
-                : !isString(_.type)
+                : "extends" in _ &&
+                    !RecordRenderer.Operations.hasValidExtends(_.extends)
                   ? ValueOrErrors.Default.throwOne(
-                      "type attribute is not a string",
+                      "extends attribute is not an array of strings",
                     )
-                  : "renderer" in _ && typeof _.renderer != "string"
+                  : !("type" in _)
                     ? ValueOrErrors.Default.throwOne(
-                        "renderer attribute is not a string",
+                        "top level record form type attribute is not a string",
                       )
-                    : ValueOrErrors.Default.return({
-                        type: _.type,
-                        renderer:
-                          "renderer" in _ ? (_.renderer as string) : undefined,
-                        fields: Map(_.fields),
-                        extends:
-                          "extends" in _ ? (_.extends as string[]) : undefined,
-                      }),
+                    : !isString(_.type)
+                      ? ValueOrErrors.Default.throwOne(
+                          "type attribute is not a string",
+                        )
+                      : "renderer" in _ && typeof _.renderer != "string"
+                        ? ValueOrErrors.Default.throwOne(
+                            "renderer attribute is not a string",
+                          )
+                        : ValueOrErrors.Default.return({
+                            type: _.type,
+                            renderer:
+                              "renderer" in _
+                                ? (_.renderer as string)
+                                : undefined,
+                            fields: Map(_.fields),
+                            tabs: _.tabs,
+                            extends:
+                              "extends" in _
+                                ? (_.extends as string[])
+                                : undefined,
+                            disabledFields:
+                              "disabledFields" in _
+                                ? _.disabledFields
+                                : undefined,
+                          }),
     Deserialize: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
@@ -143,17 +168,39 @@ export const RecordRenderer = {
               >([Map<string, RecordFieldRenderer<T>>(), alreadyParsedForms]),
             )
             .Then(([fieldsMap, accumulatedAlreadyParsedForms]) =>
-              ValueOrErrors.Default.return<
-                [RecordRenderer<T>, Map<string, Renderer<T>>],
-                string
-              >([
-                RecordRenderer.Default(
-                  type,
-                  fieldsMap,
-                  validRecordForm.renderer,
-                ),
-                accumulatedAlreadyParsedForms,
-              ]),
+              ValueOrErrors.Operations.All(
+                List<
+                  ValueOrErrors<
+                    PredicateFormLayout | PredicateComputedOrInlined,
+                    string
+                  >
+                >([
+                  FormLayout.Operations.ParseLayout(validRecordForm).MapErrors(
+                    (errors) =>
+                      errors.map((error) => `${error}\n...When parsing tabs`),
+                  ),
+                  DisabledFields.Operations.ParseLayout(
+                    validRecordForm,
+                  ).MapErrors((errors) =>
+                    errors.map(
+                      (error) => `${error}\n...When parsing disabled fields`,
+                    ),
+                  ),
+                ]),
+              ).Then(([tabs]) =>
+                ValueOrErrors.Default.return<
+                  [RecordRenderer<T>, Map<string, Renderer<T>>],
+                  string
+                >([
+                  RecordRenderer.Default(
+                    type,
+                    fieldsMap,
+                    tabs as PredicateFormLayout,
+                    validRecordForm.renderer,
+                  ),
+                  accumulatedAlreadyParsedForms,
+                ]),
+              ),
             )
             .MapErrors((errors) =>
               errors.map(
