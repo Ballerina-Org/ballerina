@@ -470,6 +470,7 @@ export type TableAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
   ) => void;
   removeSorting: (columnName: string) => void;
   reloadFrom0: () => void;
+  reinitalizeFiltersAndSorting: () => void;
 };
 
 export type TableAbstractRendererView<
