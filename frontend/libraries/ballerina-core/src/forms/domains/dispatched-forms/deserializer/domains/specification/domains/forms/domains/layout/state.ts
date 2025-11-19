@@ -58,7 +58,7 @@ export const RawGroupLayout = {
     rawGroupLayout.every((field) => typeof field == "string"),
 };
 
-export type FormLayout =
+export type RecordFormLayout =
   | { kind: "Inlined"; tabs: OrderedMap<string, TabLayout> }
   | { kind: "Lookup" };
 
@@ -73,10 +73,10 @@ export type ColumnLayout = {
 export type GroupLayout = Array<FieldName>;
 
 // We currently still support parsing of table layout with inlined groups here because some existing forms still use it
-export const FormLayout = {
-  Default: (): FormLayout => ({ kind: "Inlined", tabs: OrderedMap() }),
+export const RecordFormLayout = {
+  Default: (): RecordFormLayout => ({ kind: "Inlined", tabs: OrderedMap() }),
   Operations: {
-    Deserialize: (rawLayout: unknown): ValueOrErrors<FormLayout, string> => {
+    Deserialize: (rawLayout: unknown): ValueOrErrors<RecordFormLayout, string> => {
       if (!RawFormLayout.isFormLayout(rawLayout)) {
         return ValueOrErrors.Default.throwOne(
           `Invalid layout, expected object, got ${JSON.stringify(rawLayout)}`,

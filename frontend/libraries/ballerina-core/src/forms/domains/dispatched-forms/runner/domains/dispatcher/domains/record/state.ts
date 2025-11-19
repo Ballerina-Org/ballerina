@@ -99,8 +99,6 @@ export const RecordDispatcher = {
                         fieldName,
                         {
                           template,
-                          visible: fieldRenderer.visible,
-                          disabled: fieldRenderer.disabled,
                           label: fieldRenderer.label,
                           GetDefaultState: () => defaultState,
                         },
@@ -128,7 +126,6 @@ export const RecordDispatcher = {
                 ),
                 renderer.fields,
                 renderer.tabs,
-                renderer.disabledFields,
                 dispatcherContext.IdProvider,
                 dispatcherContext.ErrorRenderer,
                 isInlined,
