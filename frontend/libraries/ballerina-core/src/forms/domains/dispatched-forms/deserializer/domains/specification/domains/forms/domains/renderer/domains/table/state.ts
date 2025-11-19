@@ -8,9 +8,7 @@ import {
   ConcreteRenderers,
   DispatchInjectablesTypes,
   isString,
-  PredicateComputedOrInlined,
   Renderer,
-  TableLayout,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 
@@ -22,16 +20,12 @@ export type SerializedTableRenderer = {
   renderer: string;
   columns: Map<string, unknown>;
   detailsRenderer?: unknown;
-  visibleColumns: unknown;
-  disabledColumns: unknown;
 };
 
 export type TableRenderer<T> = {
   kind: "tableRenderer";
   type: TableType<T>;
   columns: Map<string, TableCellRenderer<T>>;
-  visibleColumns: PredicateComputedOrInlined;
-  disabledColumns: PredicateComputedOrInlined;
   concreteRenderer: string;
   detailsRenderer?: NestedRenderer<T>;
   api?: string;
@@ -41,8 +35,6 @@ export const TableRenderer = {
   Default: <T>(
     type: TableType<T>,
     columns: Map<string, TableCellRenderer<T>>,
-    visibleColumns: PredicateComputedOrInlined,
-    disabledColumns: PredicateComputedOrInlined,
     concreteRenderer: string,
     detailsRenderer?: NestedRenderer<T>,
     api?: string,
@@ -50,8 +42,6 @@ export const TableRenderer = {
     kind: "tableRenderer",
     type,
     columns,
-    visibleColumns,
-    disabledColumns,
     concreteRenderer,
     detailsRenderer,
     api,
@@ -65,18 +55,6 @@ export const TableRenderer = {
       DispatchIsObject(_) && "columns" in _ && DispatchIsObject(_.columns),
     hasValidApi: (_: unknown): _ is { api?: string } =>
       DispatchIsObject(_) && (("api" in _ && isString(_.api)) || !("api" in _)),
-    hasVisibleColumns: (
-      _: unknown,
-    ): _ is { visibleColumns: object | Array<unknown> } =>
-      DispatchIsObject(_) &&
-      "visibleColumns" in _ &&
-      (DispatchIsObject(_.visibleColumns) || Array.isArray(_.visibleColumns)),
-    hasDisabledColumns: (
-      _: unknown,
-    ): _ is { disabledColumns: object | Array<unknown> } =>
-      DispatchIsObject(_) &&
-      "disabledColumns" in _ &&
-      (DispatchIsObject(_.disabledColumns) || Array.isArray(_.disabledColumns)),
     tryAsValidTableForm: (
       _: unknown,
     ): ValueOrErrors<SerializedTableRenderer, string> =>
@@ -94,22 +72,15 @@ export const TableRenderer = {
               ? ValueOrErrors.Default.throwOne(
                   "table form renderer is missing or has invalid columns property",
                 )
-              : !TableRenderer.Operations.hasVisibleColumns(_)
+              : !TableRenderer.Operations.hasValidApi(_)
                 ? ValueOrErrors.Default.throwOne(
-                    "table form renderer is missing or has invakid visible columns property",
+                    "table form renderer has a non string api property",
                   )
-                : !TableRenderer.Operations.hasValidApi(_)
-                  ? ValueOrErrors.Default.throwOne(
-                      "table form renderer has a non string api property",
-                    )
-                  : ValueOrErrors.Default.return({
-                      ..._,
-                      columns: Map<string, unknown>(_.columns),
-                      visibleColumns: _.visibleColumns,
-                      disabledColumns:
-                        "disabledColumns" in _ ? _.disabledColumns : undefined,
-                      api: _?.api,
-                    }),
+                : ValueOrErrors.Default.return({
+                    ..._,
+                    columns: Map<string, unknown>(_.columns),
+                    api: _?.api,
+                  }),
     DeserializeDetailsRenderer: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
@@ -236,38 +207,27 @@ export const TableRenderer = {
                         ]),
                       )
                       .Then(([columnsMap, accumulatedAlreadyParsedForms]) =>
-                        TableLayout.Operations.ParseLayout(
-                          validTableForm.visibleColumns,
-                        ).Then((visibileColumnsLayout) =>
-                          TableLayout.Operations.ParseLayout(
-                            validTableForm.disabledColumns,
-                          ).Then((disabledColumnsLayout) =>
-                            TableRenderer.Operations.DeserializeDetailsRenderer(
+                        TableRenderer.Operations.DeserializeDetailsRenderer(
+                          type,
+                          validTableForm,
+                          concreteRenderers,
+                          types,
+                          forms,
+                          accumulatedAlreadyParsedForms,
+                        ).Then(([detailsRenderer, finalAlreadyParsedForms]) =>
+                          ValueOrErrors.Default.return<
+                            [TableRenderer<T>, Map<string, Renderer<T>>],
+                            string
+                          >([
+                            TableRenderer.Default(
                               type,
-                              validTableForm,
-                              concreteRenderers,
-                              types,
-                              forms,
-                              accumulatedAlreadyParsedForms,
-                            ).Then(
-                              ([detailsRenderer, finalAlreadyParsedForms]) =>
-                                ValueOrErrors.Default.return<
-                                  [TableRenderer<T>, Map<string, Renderer<T>>],
-                                  string
-                                >([
-                                  TableRenderer.Default(
-                                    type,
-                                    columnsMap,
-                                    visibileColumnsLayout,
-                                    disabledColumnsLayout,
-                                    validTableForm.renderer,
-                                    detailsRenderer,
-                                    api,
-                                  ),
-                                  finalAlreadyParsedForms,
-                                ]),
+                              columnsMap,
+                              validTableForm.renderer,
+                              detailsRenderer,
+                              api,
                             ),
-                          ),
+                            finalAlreadyParsedForms,
+                          ]),
                         ),
                       ),
               ),
