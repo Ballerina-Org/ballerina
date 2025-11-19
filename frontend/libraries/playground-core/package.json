@@ -5,20 +5,25 @@
   "version": "1.0.0",
   "main": "main.ts",
   "peerDependencies": {
+    "@faker-js/faker": "^8.4.1",
+    "ballerina-core": "*",
     "immutable": "^5.0.0-beta.5",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "ballerina-core": "*",
-    "@faker-js/faker": "^8.4.1"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@faker-js/faker": "^8.4.1",
+    "@types/jszip": "^3.4.1",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
-    "typescript": "^5.4.5",
+    "ballerina-core": "*",
     "immutable": "^5.0.0-beta.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "ballerina-core": "*",
-    "@faker-js/faker": "^8.4.1"
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "axios": "^1.11.0",
+    "jszip": "^3.10.1"
   }
 }

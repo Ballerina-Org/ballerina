@@ -32,9 +32,9 @@ import { Set, Map, OrderedMap } from "immutable";
 import { TraversalPersonApis } from "playground-core";
 import SPEC from "../public/SampleSpecs/traverse-test-file.json";
 import {
-  DispatchPersonContainerFormView,
-  DispatchPersonLookupTypeRenderer,
-  DispatchPersonNestedContainerFormView,
+  DispatchEntityContainerFormView,
+  DispatchLookupTypeRenderer,
+  DispatchEntityNestedContainerFormView,
 } from "./domains/dispatched-passthrough-form/views/wrappers";
 import {
   CategoryAbstractRenderer,
@@ -360,12 +360,12 @@ export const TraversalDispatchTest = (props: {}) => {
                 <InstantiedPersonFormsParserTemplate
                   context={{
                     ...specificationDeserializer,
-                    lookupTypeRenderer: DispatchPersonLookupTypeRenderer,
+                    lookupTypeRenderer: DispatchLookupTypeRenderer,
                     defaultRecordConcreteRenderer:
-                      DispatchPersonContainerFormView,
+                      DispatchEntityContainerFormView,
                     fieldTypeConverters: DispatchFieldTypeConverters,
                     defaultNestedRecordConcreteRenderer:
-                      DispatchPersonNestedContainerFormView,
+                      DispatchEntityNestedContainerFormView,
                     concreteRenderers: DispatchPassthroughFormConcreteRenderers,
                     getFormsConfig: () => PromiseRepo.Default.mock(() => SPEC),
                     IdWrapper,

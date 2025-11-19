@@ -40,6 +40,7 @@ export const BoolAbstractRenderer = <
       !PredicateValue.Operations.IsBoolean(props.context.value) &&
       !PredicateValue.Operations.IsUnit(props.context.value)
     ) {
+
       console.error(
         `Boolean or unit value expected but got: ${JSON.stringify(
           props.context.value,

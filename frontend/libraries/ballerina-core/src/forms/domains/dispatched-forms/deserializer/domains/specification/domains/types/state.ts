@@ -12,6 +12,11 @@ import {
 } from "../../../../../../../../../main";
 
 export const DispatchisString = (_: any): _ is string => typeof _ == "string";
+export const DispatchIsEmptyObject = (_: unknown): _ is {} =>
+    typeof _ === "object" &&
+    _ !== null &&
+    !Array.isArray(_) &&
+    Object.keys(_ as Record<string, unknown>).length === 0;
 export const DispatchIsObject = (_: any): _ is object => typeof _ == "object";
 export const DispatchIsGenericType = (_: any): _ is DispatchGenericType =>
   _ && DispatchGenericTypes.includes(_);

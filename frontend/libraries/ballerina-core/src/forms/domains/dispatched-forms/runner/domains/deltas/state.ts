@@ -1,13 +1,15 @@
 import {
-  PredicateValue,
-  unit,
-  Unit,
-  ValueOrErrors,
+    DeltaTransferSum, Maybe,
+    PredicateValue, Sum,
+    unit,
+    Unit,
+    ValueOrErrors, ValueSum,
 } from "../../../../../../../main";
 import {
   DispatchParsedType,
   TupleType,
 } from "../../../deserializer/domains/specification/domains/types/state";
+import {List} from "immutable";
 
 export type BaseFlags = { kind: "localOnly" };
 

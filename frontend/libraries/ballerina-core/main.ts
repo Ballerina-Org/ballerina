@@ -143,6 +143,7 @@ export * from "./src/forms/domains/dispatched-forms/deserializer/coroutines/runn
 export * from "./src/forms/domains/dispatched-forms/deserializer/state";
 export * from "./src/forms/domains/dispatched-forms/deserializer/domains/specification/domains/serializable/state";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/deltas/state";
+export * from "./src/forms/domains/dispatched-forms/runner/domains/deltas/domains/v2/state";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/base-64-file/template";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/boolean/template";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/date/template";

@@ -15,3 +15,4 @@ declare global {
 Array.prototype.random = function <a>(this: Array<a>): a {
   return this[Math.floor(Math.random() * this.length)];
 };
+

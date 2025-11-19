@@ -1844,7 +1844,7 @@ const entityApis: EntityApis = {
         },
 };
 
-export const DispatchPersonFromConfigApis = {
+export const DispatchFromConfigApis = {
   streamApis,
   enumApis,
   entityApis,
