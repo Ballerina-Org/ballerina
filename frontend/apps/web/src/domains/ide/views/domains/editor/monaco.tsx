@@ -7,6 +7,14 @@ import {configureBallerina, registerBallerina, setMonarchForBallerina} from "./l
 import {List} from "immutable";
 
 export type SupportedLanguage = 'json' | 'ballerina'
+
+function stripBOM(text: string): string {
+    if (text.charCodeAt(0) === 0xFEFF) {
+        return text.slice(1);
+    }
+    return text;
+}
+
 function unquoteIfQuoted(input: string): string {
     if (!input) return input;
 
@@ -66,7 +74,7 @@ export default function MonacoEditor(props: {
     }, [props.fileName]);
 
     const initialFormatted = React.useMemo(() => {
-        const clean = unquoteIfQuoted(props.content);   // ✔ one universal fix
+        const clean = stripBOM(unquoteIfQuoted(props.content));
 
         if (language !== "json") {
             return clean;                               // fs, ballerina, etc.

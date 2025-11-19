@@ -15,14 +15,13 @@ import {
 import {Node} from "./domains/phases/locked/domains/folders/node"
 import {WorkspaceVariant} from "./domains/phases/locked/domains/folders/state";
 import {HeroPhase, HeroPhaseForeignMutationsExpected, HeroPhaseView} from "./domains/phases/hero/state";
-import {CustomFieldsPhase} from "./domains/phases/custom-fields/state";
+import {CustomFields} from "./domains/phases/custom-fields/state";
 
 export type IdePhase =
     |  { kind: 'hero',              hero:      HeroPhase }
     |  { kind: 'bootstrap',         bootstrap: BootstrapPhase }
     |  { kind: 'selection',         selection: SelectionPhase }
     |  { kind: 'locked',            locked:    LockedPhase }
-    |  { kind: 'customFields',   fields: CustomFieldsPhase }
 
 export type Ide = {
     phase: IdePhase;
@@ -40,7 +39,6 @@ export const Ide = {
                 ...caseUpdater<Ide>()("phase")("locked"),
                 ...caseUpdater<Ide>()("phase")("hero"),
                 ...caseUpdater<Ide>()("phase")("selection"),
-                ...caseUpdater<Ide>()("phase")("customFields"),
                 maybeLocked: (u:BasicUpdater<Maybe<LockedPhase>>): Updater<Ide> =>
                     Updater(ide => {
                         if(ide.phase.kind != 'locked') return ide;
@@ -70,13 +68,6 @@ export const Ide = {
                         phase:  { 
                             kind: 'locked',
                             locked: LockedPhase.Default(name, variant, node)
-                        }
-                    } as Ide)),
-                toCustomFields: (): Updater<Ide> => Updater(ide =>
-                    ({
-                        phase:  {
-                            kind: 'customFields',
-                            fields: CustomFieldsPhase.Default()
                         }
                     } as Ide)),
             },

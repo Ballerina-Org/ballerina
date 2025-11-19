@@ -107,7 +107,9 @@ export const FlatNode = {
 
             return recurse(root);
         },
-        
+        parentPath(path: string): string {
+            return path.replace(/\/[^\/]+$/, "");
+        },
         findFolderByPath: (root: Node, path: string): Option<Node> => {
             const some = Option.Default.some<Node>;
             const none = Option.Default.none<Node>;

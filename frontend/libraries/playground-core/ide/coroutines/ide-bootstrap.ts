@@ -5,6 +5,7 @@ import {listSpecs} from "../api/specs"
 import {List} from "immutable";
 import {BootstrapPhase} from "../domains/phases/bootstrap/state";
 import {fromError, fromVoe} from "web/src/domains/ide/views/domains/layout/toaster";
+import {Spec} from "../domains/phases/selection/state";
 
 export const bootstrap =
     Co.Seq([
@@ -27,7 +28,7 @@ export const bootstrap =
                         BootstrapPhase.Updaters.Core.errors(
                             replaceWith(res.value.errors))));
             }
-            const value = res.value.value
+            const value: Spec [] = res.value.value.map( name => ({ name: name}))
 
             return Co.GetState().then((state) => {
                 if(state.phase.kind != 'bootstrap') return Co.SetState(state => state)
@@ -35,7 +36,7 @@ export const bootstrap =
                         Ide.Updaters.Core.phase.bootstrap(
                             BootstrapPhase.Updaters.Core.ready()
                         ).then(
-                            Ide.Updaters.Core.phase.toChoosePhase(state.phase.bootstrap.variant, value)
+                            Ide.Updaters.Core.phase.toChoosePhase(state.phase.bootstrap.variant, value  )
                         )
                     )
                 }

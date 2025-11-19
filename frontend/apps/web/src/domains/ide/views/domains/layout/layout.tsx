@@ -4,7 +4,7 @@
     validateCompose, validateExplore, getSpec, seedPath, getKeys, validateBridge, WorkspaceVariant,
     Ide, WorkspaceState, LockedDisplay,
     IdeView, HeroPhase, BootstrapPhase,
-    Deltas, Delta
+    Deltas, Delta, CustomFields
 } from "playground-core";
 import "react-grid-layout/css/styles.css";
 import React, {useState} from "react";
@@ -87,6 +87,10 @@ export const IdeLayout: IdeView = (props) => {
                             <div className="w-full flex">
                                 {props.context.phase.kind == 'locked' && <SpecificationLabel name={props.context.phase.locked.name} /> }
                                 <Actions
+                                    customFieldsAvailable={
+                                    props.context.phase.kind == 'locked' 
+                                        && props.context.phase.locked.workspace.kind == 'selected'
+                                        && CustomFields.Operations.isAvailable(props.context.phase.locked.workspace.file)}
                                     onNew={()=> {
                                         if (props.context.phase.kind == 'locked')
                                             props.setState(Ide.Updaters.Core.phase.toBootstrap(props.context.phase.locked.workspace.variant))
@@ -198,6 +202,10 @@ export const IdeLayout: IdeView = (props) => {
                                         forceRerender();
                                     }}
                                     onErrorPanel={() => setHideErrors(!hideErrors)}
+                                    toggleCustomFields={() => 
+                                        props.setState(
+                                            Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.customFields(CustomFields.Updaters.Template.toggle()))
+                                        )}
                                     onSeed={
                                         async () => {
                                             if(props.context.phase.kind != "locked") {

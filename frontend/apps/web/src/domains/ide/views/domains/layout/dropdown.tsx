@@ -1,15 +1,16 @@
 ﻿import React, { useState } from 'react';
+import {Spec} from "playground-core/ide/domains/phases/selection/state.ts";
 
 type Props = {
     label: string;
-    options: string[];
-    onChange?: (value: string) => void;
+    options: Spec[];
+    onChange?: (value: Spec) => void;
 };
 
 export const Dropdown: React.FC<Props> = ({ label, options, onChange }) => {
-    const [selected, setSelected] = useState<string>("");
+    const [selected, setSelected] = useState<Spec>({name:""});
     
-    const handleChange = (opt:string) => {
+    const handleChange = (opt:Spec) => {
   
         setSelected(opt);
         if (onChange) onChange(opt);
@@ -23,7 +24,7 @@ export const Dropdown: React.FC<Props> = ({ label, options, onChange }) => {
                         (
                             <li>
                                 <a onClick={(x) => handleChange(opt)}>
-                                    {opt}
+                                    {opt.name}
                                 </a>
                             </li>
                         )

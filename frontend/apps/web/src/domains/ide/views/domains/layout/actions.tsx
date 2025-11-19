@@ -36,7 +36,8 @@ type ActionsProps = {
     onSettings?: () => void;
     onErrorPanel?: () => void;
     onDeltaShow?: () => void;
-    onCustomFields?: () => void;
+    toggleCustomFields?: () => void;
+    customFieldsAvailable?: boolean;
     
 };
 
@@ -46,12 +47,13 @@ export const Actions: React.FC<ActionsProps> = ({
     errorCount = 0,
     hideRight = false,
     onHideUp,
-    onCustomFields,
     onSettings,
     canValidate = false,
     canRun = true,
     onDeltaShow,
     onErrorPanel,
+    toggleCustomFields,
+    customFieldsAvailable = false,
     onSeed, onNew, onRun, onMerge, onSave, onHide}) => {
     
     useEffect(() => {
@@ -194,10 +196,10 @@ export const Actions: React.FC<ActionsProps> = ({
             </div>}
             { context.phase.kind == "locked" &&
                 <button
-                    disabled={errorCount == 0}
+                    disabled={!customFieldsAvailable}
                     className="btn tooltip tooltip-bottom"
                     data-tip="Custom fields"
-                    onClick={onCustomFields}
+                    onClick={toggleCustomFields}
                 >
                     <VscInsert size={size} />
                 </button>}

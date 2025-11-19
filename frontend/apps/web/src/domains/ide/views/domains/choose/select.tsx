@@ -7,7 +7,7 @@ import {
     WorkspaceState
 } from "playground-core";
 import {BasicFun, replaceWith, Updater, Value} from "ballerina-core";
-import {SelectionPhase} from "playground-core/ide/domains/phases/selection/state.ts";
+import {SelectionPhase, Spec} from "playground-core/ide/domains/phases/selection/state.ts";
 
 type SelectSpecProps = Ide & { setState: BasicFun<Updater<Ide>, void> };
 
@@ -16,15 +16,15 @@ export const SelectSpec = (props: SelectSpecProps): React.ReactElement => {
         ?
         <Dropdown
             label={"Select spec"}
-            onChange={async (name: string) => {
+            onChange={async (name: Spec) => {
                 if(props.phase.kind != "selection") return
-                const spec = await getSpec(name);
-              
+                const spec = await getSpec(name.name);
+                debugger
                 if (spec.kind == "errors") {
                     props.setState(Ide.Updaters.Core.phase.selection(SelectionPhase.Updaters.Core.errors(replaceWith(spec.errors))))
                     return;
                 }
-                debugger
+                
                 const u = 
                     Ide.Updaters.Core.phase.toLocked(props.phase.selection.name.value, props.phase.selection.variant, spec.value)
                         .then(((ide: Ide) => {
@@ -36,7 +36,7 @@ export const SelectSpec = (props: SelectSpecProps): React.ReactElement => {
                             }
 
                             return ({...ide,
-                                name: Value.Default(name),
+                                name: Value.Default(name.name),
                                 locked: {
                                     ...ide.phase.locked,
                                     workspace: WorkspaceState.Updater.defaultForSingleFolder()(ide.phase.locked.workspace) }

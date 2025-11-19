@@ -1,17 +1,20 @@
 ﻿import React from "react";
 import {
+    CustomFieldsTemplate,
     FlatNode,
     getSpec,
-    Ide,
+    Ide, IdeTemplate,
     LockedPhase,
     moveIntoOwnFolder,
     WorkspaceState
 } from "playground-core";
-import {BasicFun, BasicUpdater} from "ballerina-core";
+import {BasicFun, BasicUpdater, unit} from "ballerina-core";
 import {Breadcrumbs} from "./breadcrumbs.tsx";
 import {FolderFilter} from "./folder-filter.tsx";
 import MonacoEditor, {SupportedLanguage} from "../editor/monaco.tsx";
 import {Drawer} from "./drawer.tsx";
+import {CustomFieldsTracker} from "../custom-fields/layout.tsx";
+import {IdeLayout} from "../layout/layout.tsx";
 
 
 
@@ -23,6 +26,7 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
         props.phase.kind == "locked" 
         && props.phase.locked.workspace.kind == 'selected' ?
         <fieldset className="fieldset ml-5">
+            
             <Breadcrumbs workspace={props.phase.locked.workspace} />
             <div className="join">
                 <FolderFilter
@@ -50,6 +54,18 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
                     }}
                 />
             </div>
+            <CustomFieldsTemplate
+                context={{...props.phase.locked.customFields, node: FlatNode.Operations.findFolderByPath(props.phase.locked.workspace.nodes, props.phase.locked.workspace.file.metadata.path) }}
+                setState={(s) => 
+                    props.setState(
+                        Ide.Updaters.Core.phase.locked(
+                            LockedPhase.Updaters.Core.customFields(s)
+                        )
+                    )}
+                foreignMutations={unit}
+                view={CustomFieldsTracker}
+                />
+            {/*<CustomFieldsTracker context={props.phase.locked.customFields} node={props.phase.locked.workspace.file} setState={props.setState} />*/}
         </fieldset> : <></>
     const file =
         props.phase.kind == "locked"
@@ -67,8 +83,7 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
             workspace={props.phase.locked.workspace}
             onSelectedFile={(file) => 
                 props.setState(
-
-                        Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.workspace(WorkspaceState.Updater.selectFile(file))))
+                   Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.workspace(WorkspaceState.Updater.selectFile(file))))
             }
             drawerId="my-drawer" /> : <></>
     

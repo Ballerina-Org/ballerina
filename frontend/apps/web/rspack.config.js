@@ -86,6 +86,12 @@ module.exports = {
                         proxyReq.setHeader("Tenant-Id", process.env.TENANT_ID);
                     },
                 },
+                '/jobs': {
+                    target: 'http://localhost:5002',
+                    changeOrigin: true,
+                    secure: false,
+                    pathRewrite: { '^/jobs': '' }   // <-- correct key
+                }
             },
         }),
     },

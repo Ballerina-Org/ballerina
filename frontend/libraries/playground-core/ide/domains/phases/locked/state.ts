@@ -21,6 +21,7 @@ import {DeltaDrain, Deltas, IdeDeltaTransfer} from "./domains/forms/domains/delt
 import {INode, Meta} from "./domains/folders/node";
 import {Ide} from "../../../state";
 import {LockedDisplay, UI, UIFramework} from "./domains/forms/state";
+import {CustomFields} from "../custom-fields/state";
 
 export type LockedStep =
     | { kind: 'design' }
@@ -33,7 +34,8 @@ export type LockedPhase = {
     settings: Visibility;
     step: LockedStep,
     validatedSpec: Option<KnownSections>,
-    errors: List<string>
+    errors: List<string>,
+    customFields: CustomFields,
     automated: boolean // validate, run forms (for current launcher) on every keystroke / seconds elapsed
 };
 
@@ -45,6 +47,7 @@ export const LockedPhase = {
             validatedSpec: Option.Default.none(),
             automated: false,
             settings: 'fully-invisible',
+            customFields: CustomFields.Default(),
             errors: List<string>()
         }),
     Updaters: {
@@ -55,6 +58,7 @@ export const LockedPhase = {
             ...caseUpdater<LockedPhase>()("workspace")("view"),
             ...simpleUpdater<LockedPhase>()("errors"),
             ...simpleUpdater<LockedPhase>()("automated"),
+            ...simpleUpdater<LockedPhase>()("customFields"),
             toggleSettings: (): Updater<LockedPhase> => 
                  Updater(ls => ({ 
                      ...ls, 

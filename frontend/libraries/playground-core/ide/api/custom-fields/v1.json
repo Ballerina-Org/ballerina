@@ -1,0 +1,948 @@
+﻿{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "web | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5002"
+    }
+  ],
+  "paths": {
+    "/test": {
+      "get": {
+        "tags": [
+          "Pipe #2 input at line 66@68"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeltaOfValueExtAndDeltaExt"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Pipe #3 input at line 78@78"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeltaOfValueExtAndDeltaExt"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeltaOfValueExtAndDeltaExt"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/value/typecheck": {
+      "get": {
+        "tags": [
+          "Pipe #3 input at line 33@35"
+        ],
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FSharpOptionOfJobOfValueDescriptorTypeCheckingPayloadAndValueDescriptorTypeCheckingResultAndError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/values/typecheck": {
+      "get": {
+        "tags": [
+          "Pipe #7 input at line 51@63"
+        ],
+        "parameters": [
+          {
+            "name": "jobStatus",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/JobStatus"
+              }
+            }
+          },
+          {
+            "name": "startedBefore",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "startedAfter",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FSharpListOfJobOfValueDescriptorTypeCheckingPayloadAndValueDescriptorTypeCheckingResultAndError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Pipe #8 input at line 113@115"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Pipe #12 input at line 123@125"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValueDescriptorTypeCheckingPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/values/construction": {
+      "get": {
+        "tags": [
+          "Pipe #3 input at line 33@35"
+        ],
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FSharpOptionOfJobOfValueConstructionPayloadAndValueConstructionResultAndError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/values/constructions": {
+      "get": {
+        "tags": [
+          "Pipe #7 input at line 51@63"
+        ],
+        "parameters": [
+          {
+            "name": "jobStatus",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/JobStatus"
+              }
+            }
+          },
+          {
+            "name": "startedBefore",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "startedAfter",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FSharpListOfJobOfValueConstructionPayloadAndValueConstructionResultAndError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Pipe #8 input at line 113@115"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Pipe #12 input at line 123@125"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValueConstructionPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/values/duplication": {
+      "get": {
+        "tags": [
+          "Pipe #3 input at line 33@35"
+        ],
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FSharpOptionOfJobOfValueDuplicationPayloadAndValueDuplicationResultAndError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/values/duplications": {
+      "get": {
+        "tags": [
+          "Pipe #7 input at line 51@63"
+        ],
+        "parameters": [
+          {
+            "name": "jobStatus",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/JobStatus"
+              }
+            }
+          },
+          {
+            "name": "startedBefore",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "startedAfter",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FSharpListOfJobOfValueDuplicationPayloadAndValueDuplicationResultAndError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Pipe #8 input at line 113@115"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Pipe #12 input at line 123@125"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValueDuplicationPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/values/archival": {
+      "get": {
+        "tags": [
+          "Pipe #3 input at line 33@35"
+        ],
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FSharpOptionOfJobOfValueArchivalPayloadAndValueArchivalResultAndError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/values/archivals": {
+      "get": {
+        "tags": [
+          "Pipe #7 input at line 51@63"
+        ],
+        "parameters": [
+          {
+            "name": "jobStatus",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/JobStatus"
+              }
+            }
+          },
+          {
+            "name": "startedBefore",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "startedAfter",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FSharpListOfJobOfValueArchivalPayloadAndValueArchivalResultAndError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Pipe #8 input at line 113@115"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Pipe #12 input at line 123@125"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValueArchivalPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/values/update": {
+      "get": {
+        "tags": [
+          "Pipe #3 input at line 33@35"
+        ],
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FSharpOptionOfJobOfValueUpdatePayloadDbTOAndValueUpdateResultAndError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/values/updates": {
+      "get": {
+        "tags": [
+          "Pipe #7 input at line 51@63"
+        ],
+        "parameters": [
+          {
+            "name": "jobStatus",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/JobStatus"
+              }
+            }
+          },
+          {
+            "name": "startedBefore",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "startedAfter",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FSharpListOfJobOfValueUpdatePayloadDbTOAndValueUpdateResultAndError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Pipe #8 input at line 113@115"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Pipe #12 input at line 123@125"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValueUpdatePayloadTO"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/value": {
+      "get": {
+        "tags": [
+          "main@162-18"
+        ],
+        "parameters": [
+          {
+            "name": "valueId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FSharpOptionOfValue"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/values": {
+      "get": {
+        "tags": [
+          "main@162-19"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FSharpListOfValue"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "main@162-20"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/values/descriptor": {
+      "get": {
+        "tags": [
+          "main@170-23"
+        ],
+        "parameters": [
+          {
+            "name": "valueId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FSharpOptionOfValueDescriptor"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/values/descriptors": {
+      "get": {
+        "tags": [
+          "main@170-24"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FSharpListOfValueDescriptor"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "main@170-25"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DeltaOfValueExtAndDeltaExt": {},
+      "FSharpListOfJobOfValueArchivalPayloadAndValueArchivalResultAndError": {},
+      "FSharpListOfJobOfValueConstructionPayloadAndValueConstructionResultAndError": {},
+      "FSharpListOfJobOfValueDescriptorTypeCheckingPayloadAndValueDescriptorTypeCheckingResultAndError": {},
+      "FSharpListOfJobOfValueDuplicationPayloadAndValueDuplicationResultAndError": {},
+      "FSharpListOfJobOfValueUpdatePayloadDbTOAndValueUpdateResultAndError": {},
+      "FSharpListOfValue": {},
+      "FSharpListOfValueDescriptor": {},
+      "FSharpOptionOfJobOfValueArchivalPayloadAndValueArchivalResultAndError": {},
+      "FSharpOptionOfJobOfValueConstructionPayloadAndValueConstructionResultAndError": {},
+      "FSharpOptionOfJobOfValueDescriptorTypeCheckingPayloadAndValueDescriptorTypeCheckingResultAndError": {},
+      "FSharpOptionOfJobOfValueDuplicationPayloadAndValueDuplicationResultAndError": {},
+      "FSharpOptionOfJobOfValueUpdatePayloadDbTOAndValueUpdateResultAndError": {},
+      "FSharpOptionOfValue": {},
+      "FSharpOptionOfValueDescriptor": {},
+      "JobStatus": {
+        "type": "integer"
+      },
+      "ValueArchivalPayload": {},
+      "ValueConstructionPayload": {},
+      "ValueDescriptorTypeCheckingPayload": {},
+      "ValueDuplicationPayload": {},
+      "ValueUpdatePayloadTO": {}
+    }
+  },
+  "tags": [
+    {
+      "name": "Pipe #2 input at line 66@68"
+    },
+    {
+      "name": "Pipe #3 input at line 78@78"
+    },
+    {
+      "name": "Pipe #3 input at line 33@35"
+    },
+    {
+      "name": "Pipe #7 input at line 51@63"
+    },
+    {
+      "name": "Pipe #8 input at line 113@115"
+    },
+    {
+      "name": "Pipe #12 input at line 123@125"
+    },
+    {
+      "name": "main@162-18"
+    },
+    {
+      "name": "main@162-19"
+    },
+    {
+      "name": "main@162-20"
+    },
+    {
+      "name": "main@170-23"
+    },
+    {
+      "name": "main@170-24"
+    },
+    {
+      "name": "main@170-25"
+    }
+  ]
+}
