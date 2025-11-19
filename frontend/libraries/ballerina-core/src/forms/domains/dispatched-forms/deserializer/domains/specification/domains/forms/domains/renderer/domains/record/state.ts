@@ -1,16 +1,12 @@
-import { List, Map } from "immutable";
+import { Map } from "immutable";
 import {
   ConcreteRenderers,
-  DisabledFields,
   DispatchInjectablesTypes,
   DispatchIsObject,
   DispatchParsedType,
-  FormLayout,
   isObject,
   isString,
   MapRepo,
-  PredicateFormLayout,
-  PredicateComputedOrInlined,
   ValueOrErrors,
   Renderer,
 } from "../../../../../../../../../../../../../main";
@@ -21,7 +17,6 @@ export type SerializedRecordRenderer = {
   type: string;
   renderer?: string;
   fields: Map<string, unknown>;
-  tabs: object;
   extends?: string[];
 };
 
@@ -30,23 +25,17 @@ export type RecordRenderer<T> = {
   concreteRenderer?: string;
   fields: Map<string, RecordFieldRenderer<T>>;
   type: RecordType<T>;
-  tabs: PredicateFormLayout;
-  disabledFields: PredicateComputedOrInlined;
 };
 
 export const RecordRenderer = {
   Default: <T>(
     type: RecordType<T>,
     fields: Map<string, RecordFieldRenderer<T>>,
-    tabs: PredicateFormLayout,
-    disabledFields: PredicateComputedOrInlined,
     concreteRenderer?: string,
   ): RecordRenderer<T> => ({
     kind: "recordRenderer",
     type,
     fields,
-    tabs,
-    disabledFields,
     concreteRenderer,
   }),
   Operations: {
@@ -66,48 +55,31 @@ export const RecordRenderer = {
             ? ValueOrErrors.Default.throwOne(
                 "fields attribute is not an object",
               )
-            : !("tabs" in _)
+            : "extends" in _ &&
+                !RecordRenderer.Operations.hasValidExtends(_.extends)
               ? ValueOrErrors.Default.throwOne(
-                  "record form is missing the required tabs attribute",
+                  "extends attribute is not an array of strings",
                 )
-              : !isObject(_.tabs)
+              : !("type" in _)
                 ? ValueOrErrors.Default.throwOne(
-                    "tabs attribute is not an object",
+                    "top level record form type attribute is not a string",
                   )
-                : "extends" in _ &&
-                    !RecordRenderer.Operations.hasValidExtends(_.extends)
+                : !isString(_.type)
                   ? ValueOrErrors.Default.throwOne(
-                      "extends attribute is not an array of strings",
+                      "type attribute is not a string",
                     )
-                  : !("type" in _)
+                  : "renderer" in _ && typeof _.renderer != "string"
                     ? ValueOrErrors.Default.throwOne(
-                        "top level record form type attribute is not a string",
+                        "renderer attribute is not a string",
                       )
-                    : !isString(_.type)
-                      ? ValueOrErrors.Default.throwOne(
-                          "type attribute is not a string",
-                        )
-                      : "renderer" in _ && typeof _.renderer != "string"
-                        ? ValueOrErrors.Default.throwOne(
-                            "renderer attribute is not a string",
-                          )
-                        : ValueOrErrors.Default.return({
-                            type: _.type,
-                            renderer:
-                              "renderer" in _
-                                ? (_.renderer as string)
-                                : undefined,
-                            fields: Map(_.fields),
-                            tabs: _.tabs,
-                            extends:
-                              "extends" in _
-                                ? (_.extends as string[])
-                                : undefined,
-                            disabledFields:
-                              "disabledFields" in _
-                                ? _.disabledFields
-                                : undefined,
-                          }),
+                    : ValueOrErrors.Default.return({
+                        type: _.type,
+                        renderer:
+                          "renderer" in _ ? (_.renderer as string) : undefined,
+                        fields: Map(_.fields),
+                        extends:
+                          "extends" in _ ? (_.extends as string[]) : undefined,
+                      }),
     Deserialize: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
@@ -171,40 +143,17 @@ export const RecordRenderer = {
               >([Map<string, RecordFieldRenderer<T>>(), alreadyParsedForms]),
             )
             .Then(([fieldsMap, accumulatedAlreadyParsedForms]) =>
-              ValueOrErrors.Operations.All(
-                List<
-                  ValueOrErrors<
-                    PredicateFormLayout | PredicateComputedOrInlined,
-                    string
-                  >
-                >([
-                  FormLayout.Operations.ParseLayout(validRecordForm).MapErrors(
-                    (errors) =>
-                      errors.map((error) => `${error}\n...When parsing tabs`),
-                  ),
-                  DisabledFields.Operations.ParseLayout(
-                    validRecordForm,
-                  ).MapErrors((errors) =>
-                    errors.map(
-                      (error) => `${error}\n...When parsing disabled fields`,
-                    ),
-                  ),
-                ]),
-              ).Then(([tabs, disabledFields]) =>
-                ValueOrErrors.Default.return<
-                  [RecordRenderer<T>, Map<string, Renderer<T>>],
-                  string
-                >([
-                  RecordRenderer.Default(
-                    type,
-                    fieldsMap,
-                    tabs as PredicateFormLayout,
-                    disabledFields as PredicateComputedOrInlined,
-                    validRecordForm.renderer,
-                  ),
-                  accumulatedAlreadyParsedForms,
-                ]),
-              ),
+              ValueOrErrors.Default.return<
+                [RecordRenderer<T>, Map<string, Renderer<T>>],
+                string
+              >([
+                RecordRenderer.Default(
+                  type,
+                  fieldsMap,
+                  validRecordForm.renderer,
+                ),
+                accumulatedAlreadyParsedForms,
+              ]),
             )
             .MapErrors((errors) =>
               errors.map(
