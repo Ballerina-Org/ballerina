@@ -1,7 +1,5 @@
 ﻿namespace Ballerina.Data.Store.Api
 
-open Ballerina.Data.Schema.Model
-
 module Model =
 
   open System
@@ -10,7 +8,7 @@ module Model =
   open Ballerina.Data.Delta.Model
   open Ballerina.Data.Delta.ToUpdater
   open Ballerina.Data.Spec.Model
-  open Ballerina.VirtualFolders
+  open Ballerina.Data.Schema.Model
 
   type SpecApi<'T, 'valueExtension> =
     { Get: SpecName -> Sum<Spec<'T, 'valueExtension>, Errors>
@@ -19,7 +17,7 @@ module Model =
       Update: SpecName -> Spec<'T, 'valueExtension> -> Sum<Unit, Errors>
       List: unit -> Sum<SpecName list, Errors> }
 
-  type EntitiesApi<'valueExtension> =
+  type EntitiesApi<'valueExtension, 'deltaExtension> =
     { Get: EntityName -> Guid -> Sum<Value<'valueExtension>, Errors>
       GetMany:
         EntityName
@@ -30,7 +28,7 @@ module Model =
             Errors
            >
       Create: EntityName -> Value<'valueExtension> -> Sum<Guid, Errors>
-      Update: EntityName -> Guid * Delta<'valueExtension> -> Sum<Unit, Errors>
+      Update: EntityName -> Guid * Delta<'valueExtension, 'deltaExtension> -> Sum<Unit, Errors>
       Delete: EntityName -> Guid -> Sum<Unit, Errors> }
 
   type LookupsApi<'valueExtension> =
@@ -45,8 +43,9 @@ module Model =
       Create: LookupName -> Guid * Value<'valueExtension> -> Sum<Guid, Errors>
       Delete: LookupName -> Guid * Guid -> Sum<Unit, Errors>
       Link: LookupName -> Guid * Guid -> Sum<Unit, Errors>
-      Unlink: LookupName -> Guid * Guid -> Sum<Unit, Errors> }
+      Unlink: LookupName -> Guid * Guid -> Sum<Unit, Errors>
+      UnlinkFrom: LookupName -> Guid -> Sum<Unit, Errors> }
 
-  type SpecDataApi<'valueExtension> =
-    { Entities: EntitiesApi<'valueExtension>
+  type SpecDataApi<'valueExtension, 'deltaExtension> =
+    { Entities: EntitiesApi<'valueExtension, 'deltaExtension>
       Lookups: LookupsApi<'valueExtension> }

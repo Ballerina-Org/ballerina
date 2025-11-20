@@ -22,16 +22,17 @@ type Validator<'ExprExt, 'ValExt> =
         -> Sum<JsonValue * ParsedFormsContext<'ExprExt, 'ValExt>, Errors> }
 
 module Validator =
-  let init (vfs: VfsNode) =
+  let init (_vfs: VfsNode) =
     sum {
-      let! codegen =
-        getWellKnownFile vfs WellKnowFile.Codegen
-        |> sum.OfOption(Errors.Singleton "Codegen config is missing")
+      // let! codegen =
+      //   getWellKnownFile vfs WellKnowFile.Codegen
+      //   |> sum.OfOption(Errors.Singleton "Codegen config is missing")
+      //
+      // let! _codegen = FileContent.AsJsonString codegen.Content
 
-      let! codegen = FileContent.AsJsonString codegen.Content
+      let codegenConfig = Mock.codegenConfig
+      //JsonSerializer.Deserialize<CodeGenConfig>(codegen, JsonFSharpOptions.Default().ToJsonSerializerOptions())
 
-      let codegenConfig =
-        JsonSerializer.Deserialize<CodeGenConfig>(codegen, JsonFSharpOptions.Default().ToJsonSerializerOptions())
 
       let injectedTypes: Map<string, TypeBinding> =
         codegenConfig.Custom
@@ -56,5 +57,6 @@ module Validator =
       return
         {| CodegenConfig = codegenConfig
            InitialContext = initialContext
+           InjectedTypes = injectedTypes |> Map.keys |> Seq.toList
            LangSpecificConfig = generatedLanguageSpecificConfig |}
     }

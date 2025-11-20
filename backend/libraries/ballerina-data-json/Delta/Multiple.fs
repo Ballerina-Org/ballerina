@@ -13,11 +13,11 @@ module Multiple =
   open Ballerina.DSL.Next.Json.Keys
   open FSharp.Data
 
-  type Delta<'valueExtension> with
+  type Delta<'valueExtension, 'deltaExtension> with
     static member FromJsonMultiple
-      (fromJsonRoot: DeltaParser<'valueExtension>)
+      (fromJsonRoot: DeltaParser<'valueExtension, 'deltaExtension>)
       (json: JsonValue)
-      : DeltaParserReader<'valueExtension> =
+      : DeltaParserReader<'valueExtension, 'deltaExtension> =
       Reader.assertDiscriminatorAndContinueWithValue "multiple" json (fun json ->
         reader {
           let! deltas = json |> JsonValue.AsArray |> reader.OfSum
@@ -26,9 +26,9 @@ module Multiple =
         })
 
     static member ToJsonMultiple
-      (rootToJson: DeltaEncoder<'valueExtension>)
-      (deltas: List<Delta<'valueExtension>>)
-      : DeltaEncoderReader<'valueExtension> =
+      (rootToJson: DeltaEncoder<'valueExtension, 'deltaExtension>)
+      (deltas: List<Delta<'valueExtension, 'deltaExtension>>)
+      : DeltaEncoderReader<'valueExtension, 'deltaExtension> =
       reader {
         let! jsonDeltas = deltas |> List.map rootToJson |> reader.All
 

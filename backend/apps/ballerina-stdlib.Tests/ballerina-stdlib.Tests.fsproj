@@ -11,6 +11,8 @@
         <Compile Include="State\WithError\Model.fs" />
         <Compile Include="Algorithms\TopologicalSort.fs" />
         <Compile Include="Core\OrderedMap.fs" />
+        <Compile Include="Formats\Iso8601\DateOnlyTests.fs" />
+        <Compile Include="Formats\Iso8601\DateTimeTests.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
 

@@ -26,7 +26,10 @@ module Lambda =
           return Value.Lambda(var, body, Map.empty, TypeCheckScope.Empty)
         })
 
-    static member ToJsonLambda (var: Var) (body: Expr<'T, ResolvedIdentifier>) : ValueEncoderReader<'T> =
+    static member ToJsonLambda
+      (var: Var)
+      (body: Expr<'T, ResolvedIdentifier, 'valueExtension>)
+      : ValueEncoderReader<'T, 'valueExtension> =
       reader {
         let! rootExprEncoder, _ = reader.GetContext()
         let var = var.Name |> JsonValue.String

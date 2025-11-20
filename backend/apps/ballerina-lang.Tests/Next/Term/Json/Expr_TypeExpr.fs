@@ -10,11 +10,13 @@ open Ballerina.DSL.Next.Types.Json
 open Ballerina.DSL.Next.Terms.Model
 open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Terms.Json
+open Ballerina.DSL.Next.StdLib.Extensions
+open Ballerina.Errors
 
 let private (!) = Identifier.LocalScope
 
 let ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
-  (expression: Expr<TypeExpr, Identifier>)
+  (expression: Expr<TypeExpr, Identifier, ValueExt>)
   (expectedJson: JsonValue)
   =
   let toJson = Expr.ToJson >> Reader.Run(TypeExpr.ToJson, Identifier.ToJson)
@@ -27,7 +29,8 @@ let ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
 
     Assert.That(toStr json, Is.EqualTo(toStr expectedJson))
 
-    let parser = Expr.FromJson >> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
+    let parser: JsonValue -> Sum<Expr<TypeExpr, Identifier, ValueExt>, Errors> =
+      Expr.FromJson >> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
 
     let parsed = parser expectedJson
 
@@ -40,7 +43,7 @@ let ``Dsl:Terms:Expr.Lambda json round-trip`` () =
   let json =
     """{"discriminator":"lambda","value":["x",{"discriminator":"int32","value":"42"}]}"""
 
-  let expected: Expr<TypeExpr, Identifier> =
+  let expected: Expr<TypeExpr, Identifier, ValueExt> =
     Expr.Lambda(Var.Create "x", None, Expr.Primitive(PrimitiveValue.Int32 42))
 
   (expected, JsonValue.Parse json)
@@ -51,7 +54,7 @@ let ``Dsl:Terms:Expr.TypeLambda json round-trip`` () =
   let json =
     """{"discriminator":"type-lambda","value":[{"name":"T","kind":{"discriminator":"star"}},{"discriminator":"int32","value":"42"}]}"""
 
-  let expected: Expr<TypeExpr, Identifier> =
+  let expected: Expr<TypeExpr, Identifier, ValueExt> =
     Expr.TypeLambda(TypeParameter.Create("T", Kind.Star), Expr.Primitive(PrimitiveValue.Int32 42))
 
   (expected, JsonValue.Parse json)
@@ -62,7 +65,7 @@ let ```Dsl:Terms:Expr.TypeApply json round-trip`` () =
   let json =
     """{"discriminator":"type-apply","value":[{"discriminator":"lookup","value":{"discriminator":"id","value":"f"}}, {"discriminator":"int32"}]}"""
 
-  let expected: Expr<TypeExpr, Identifier> =
+  let expected: Expr<TypeExpr, Identifier, ValueExt> =
     Expr.TypeApply(Expr.Lookup(!"f"), TypeExpr.Primitive PrimitiveType.Int32)
 
   (expected, JsonValue.Parse json)
@@ -73,7 +76,7 @@ let ``Dsl:Terms:Expr.Apply json round-trip`` () =
   let json =
     """{"discriminator":"apply","value":[{"discriminator":"lambda","value":["x",{"discriminator":"int32","value":"1"}]}, {"discriminator":"int32","value":"2"}]}"""
 
-  let expected: Expr<TypeExpr, Identifier> =
+  let expected: Expr<TypeExpr, Identifier, ValueExt> =
     Expr.Apply(
       Expr.Lambda(Var.Create "x", None, Expr.Primitive(PrimitiveValue.Int32 1)),
       Expr.Primitive(PrimitiveValue.Int32 2)
@@ -87,7 +90,7 @@ let ``Dsl:Terms:Expr.Let json round-trip`` () =
   let json =
     """{"discriminator":"let","value":["y", {"discriminator":"int32","value":"5"}, {"discriminator":"int32","value":"6"}]}"""
 
-  let expected: Expr<TypeExpr, Identifier> =
+  let expected: Expr<TypeExpr, Identifier, ValueExt> =
     Expr.Let(Var.Create "y", None, Expr.Primitive(PrimitiveValue.Int32 5), Expr.Primitive(PrimitiveValue.Int32 6))
 
   (expected, JsonValue.Parse json)
@@ -98,7 +101,7 @@ let ``Dsl:Terms:Expr.TypeLet json round-trip`` () =
   let json =
     """{"discriminator":"type-let","value":["T", {"discriminator":"int32"}, {"discriminator":"int32","value":"7"}]}"""
 
-  let expected: Expr<TypeExpr, Identifier> =
+  let expected: Expr<TypeExpr, Identifier, ValueExt> =
     Expr.TypeLet("T", TypeExpr.Primitive PrimitiveType.Int32, Expr.Primitive(PrimitiveValue.Int32 7))
 
   (expected, JsonValue.Parse json)
@@ -109,7 +112,7 @@ let ``Dsl:Terms:Expr.RecordCons json round-trip`` () =
   let json =
     """{"discriminator":"record-cons","value":[[{"discriminator":"id","value":"Bar"},{"discriminator":"int32","value":"1"}],[{"discriminator":"id","value":"Foo"},{"discriminator":"string","value":"baz"}]]}"""
 
-  let expected: Expr<TypeExpr, Identifier> =
+  let expected: Expr<TypeExpr, Identifier, ValueExt> =
     Expr.RecordCons(
       [ !"Bar", Expr.Primitive(PrimitiveValue.Int32 1)
         !"Foo", Expr.Primitive(PrimitiveValue.String "baz") ]
@@ -123,7 +126,7 @@ let ``Dsl:Terms:Expr.TupleCons json round-trip`` () =
   let json =
     """{"discriminator":"tuple-cons","value":[{"discriminator":"int32","value":"1"},{"discriminator":"string","value":"two"}]}"""
 
-  let expected: Expr<TypeExpr, Identifier> =
+  let expected: Expr<TypeExpr, Identifier, ValueExt> =
     Expr.TupleCons(
       [ Expr.Primitive(PrimitiveValue.Int32 1)
         Expr.Primitive(PrimitiveValue.String "two") ]
@@ -136,7 +139,8 @@ let ``Dsl:Terms:Expr.TupleCons json round-trip`` () =
 let ``Dsl:Terms:Expr.SumCons json round-trip`` () =
   let json = """{"discriminator":"sum","value":[3,5]}"""
 
-  let expected: Expr<TypeExpr, Identifier> = Expr.SumCons({ Case = 3; Count = 5 })
+  let expected: Expr<TypeExpr, Identifier, ValueExt> =
+    Expr.SumCons({ Case = 3; Count = 5 })
 
   (expected, JsonValue.Parse json)
   ||> ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
@@ -146,7 +150,7 @@ let ``Dsl:Terms:Expr.RecordDes json round-trip`` () =
   let json =
     """{"discriminator":"record-field-lookup","value":[{"discriminator":"lookup","value":{"discriminator":"id","value":"myRecord"}},{"discriminator":"id","value":"field"}]}"""
 
-  let expected: Expr<TypeExpr, Identifier> =
+  let expected: Expr<TypeExpr, Identifier, ValueExt> =
     Expr.RecordDes(Expr.Lookup("myRecord" |> Identifier.LocalScope), !"field")
 
   (expected, JsonValue.Parse json)
@@ -157,7 +161,7 @@ let ``Dsl:Terms:Expr.UnionDes json round-trip`` () =
   let json =
     """{"discriminator":"union-match","value":[[{"discriminator":"id", "value":"Bar"},["y",{"discriminator":"int32","value":"2"}]],[{"discriminator":"id", "value":"Foo"},["x",{"discriminator":"int32","value":"1"}]]]}"""
 
-  let expected: Expr<TypeExpr, Identifier> =
+  let expected: Expr<TypeExpr, Identifier, ValueExt> =
     Expr.UnionDes(
       Map.ofList
         [ !"Foo", (Var.Create "x", Expr.Primitive(PrimitiveValue.Int32 1))
@@ -173,7 +177,7 @@ let ``Dsl:Terms:Expr.TupleDes json round-trip`` () =
   let json =
     """{"discriminator":"tuple-des","value":[{"discriminator":"lookup","value":{"discriminator":"id","value":"myTuple"}},1]}"""
 
-  let expected: Expr<TypeExpr, Identifier> =
+  let expected: Expr<TypeExpr, Identifier, ValueExt> =
     Expr.TupleDes(Expr.Lookup("myTuple" |> Identifier.LocalScope), { Index = 1 })
 
 
@@ -186,7 +190,7 @@ let ``Dsl:Terms:Expr.SumDes json round-trip`` () =
     """{"discriminator":"sum-des","value":[[1,2,"a",{"discriminator":"int32","value":"1"}],[2,2,"b",{"discriminator":"int32","value":"2"}]]}"""
 
   let expected =
-    Expr<TypeExpr, Identifier>
+    Expr<TypeExpr, Identifier, ValueExt>
       .SumDes(
         [ { Case = 1; Count = 2 }, (Var.Create "a", Expr.Primitive(PrimitiveValue.Int32 1))
           { Case = 2; Count = 2 }, (Var.Create "b", Expr.Primitive(PrimitiveValue.Int32 2)) ]
@@ -201,7 +205,7 @@ let ``Dsl:Terms:Expr.If json round-trip`` () =
   let json =
     """{"discriminator":"if","value":[{"discriminator":"boolean","value":"true"},{"discriminator":"int32","value":"1"},{"discriminator":"int32","value":"2"}]}"""
 
-  let expected: Expr<TypeExpr, Identifier> =
+  let expected: Expr<TypeExpr, Identifier, ValueExt> =
     Expr.If(
       Expr.Primitive(PrimitiveValue.Bool true),
       Expr.Primitive(PrimitiveValue.Int32 1),
@@ -214,7 +218,9 @@ let ``Dsl:Terms:Expr.If json round-trip`` () =
 [<Test>]
 let ``Dsl:Terms:Expr.Primitives json round-trip`` () =
   let json = """{"discriminator":"int32","value":"123"}"""
-  let expected: Expr<TypeExpr, Identifier> = Expr.Primitive(PrimitiveValue.Int32 123)
+
+  let expected: Expr<TypeExpr, Identifier, ValueExt> =
+    Expr.Primitive(PrimitiveValue.Int32 123)
 
   (expected, JsonValue.Parse json)
   ||> ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
@@ -224,7 +230,7 @@ let ``Dsl:Terms:Expr.Lookup json round-trip`` () =
   let json =
     """{"discriminator":"lookup","value":{"discriminator":"id","value":"foo"}}"""
 
-  let expected: Expr<TypeExpr, Identifier> = Expr.Lookup(!"foo")
+  let expected: Expr<TypeExpr, Identifier, ValueExt> = Expr.Lookup(!"foo")
 
   (expected, JsonValue.Parse json)
   ||> ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
