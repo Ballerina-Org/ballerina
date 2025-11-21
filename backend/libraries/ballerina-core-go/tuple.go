@@ -431,3 +431,81 @@ func NewTuple10[a any, b any, c any, d any, e any, f any, g any, h any, i any, j
 	p.Item10 = item10
 	return p
 }
+
+type Tuple11[a any, b any, c any, d any, e any, f any, g any, h any, i any, j any, k any] struct {
+	Item1  a
+	Item2  b
+	Item3  c
+	Item4  d
+	Item5  e
+	Item6  f
+	Item7  g
+	Item8  h
+	Item9  i
+	Item10 j
+	Item11 k
+}
+
+func (t Tuple11[a, b, c, d, e, f, g, h, i, j, k]) Unpack() (a, b, c, d, e, f, g, h, i, j, k) {
+	return t.Item1, t.Item2, t.Item3, t.Item4, t.Item5, t.Item6, t.Item7, t.Item8, t.Item9, t.Item10, t.Item11
+}
+
+func (t Tuple11[a, b, c, d, e, f, g, h, i, j, k]) GetItem1() a {
+	return t.Item1
+}
+
+func (t Tuple11[a, b, c, d, e, f, g, h, i, j, k]) GetItem2() b {
+	return t.Item2
+}
+
+func (t Tuple11[a, b, c, d, e, f, g, h, i, j, k]) GetItem3() c {
+	return t.Item3
+}
+
+func (t Tuple11[a, b, c, d, e, f, g, h, i, j, k]) GetItem4() d {
+	return t.Item4
+}
+
+func (t Tuple11[a, b, c, d, e, f, g, h, i, j, k]) GetItem5() e {
+	return t.Item5
+}
+
+func (t Tuple11[a, b, c, d, e, f, g, h, i, j, k]) GetItem6() f {
+	return t.Item6
+}
+
+func (t Tuple11[a, b, c, d, e, f, g, h, i, j, k]) GetItem7() g {
+	return t.Item7
+}
+
+func (t Tuple11[a, b, c, d, e, f, g, h, i, j, k]) GetItem8() h {
+	return t.Item8
+}
+
+func (t Tuple11[a, b, c, d, e, f, g, h, i, j, k]) GetItem9() i {
+	return t.Item9
+}
+
+func (t Tuple11[a, b, c, d, e, f, g, h, i, j, k]) GetItem10() j {
+	return t.Item10
+}
+
+func (t Tuple11[a, b, c, d, e, f, g, h, i, j, k]) GetItem11() k {
+	return t.Item11
+}
+
+func NewTuple11[a any, b any, c any, d any, e any, f any, g any, h any, i any, j any, k any](item1 a, item2 b, item3 c, item4 d, item5 e, item6 f, item7 g, item8 h, item9 i, item10 j, item11 k) Tuple11[a, b, c, d, e, f, g, h, i, j, k] {
+	var p Tuple11[a, b, c, d, e, f, g, h, i, j, k]
+	p.Item1 = item1
+	p.Item2 = item2
+	p.Item3 = item3
+	p.Item4 = item4
+	p.Item5 = item5
+	p.Item6 = item6
+	p.Item7 = item7
+	p.Item8 = item8
+	p.Item9 = item9
+	p.Item10 = item10
+	p.Item11 = item11
+	return p
+}
