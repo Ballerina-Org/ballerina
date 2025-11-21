@@ -1244,3 +1244,216 @@ func MatchDeltaTuple10[A any, B any, C any, D any, E any, F any, G any, H any, I
 		}
 	}
 }
+
+type deltaTuple11EffectsEnum string
+
+const (
+	tuple11Item1  deltaTuple11EffectsEnum = "Tuple11Item1"
+	tuple11Item2  deltaTuple11EffectsEnum = "Tuple11Item2"
+	tuple11Item3  deltaTuple11EffectsEnum = "Tuple11Item3"
+	tuple11Item4  deltaTuple11EffectsEnum = "Tuple11Item4"
+	tuple11Item5  deltaTuple11EffectsEnum = "Tuple11Item5"
+	tuple11Item6  deltaTuple11EffectsEnum = "Tuple11Item6"
+	tuple11Item7  deltaTuple11EffectsEnum = "Tuple11Item7"
+	tuple11Item8  deltaTuple11EffectsEnum = "Tuple11Item8"
+	tuple11Item9  deltaTuple11EffectsEnum = "Tuple11Item9"
+	tuple11Item10 deltaTuple11EffectsEnum = "Tuple11Item10"
+	tuple11Item11 deltaTuple11EffectsEnum = "Tuple11Item11"
+)
+
+type DeltaTuple11[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any, deltaK any] struct {
+	DeltaBase
+	discriminator deltaTuple11EffectsEnum
+	item1         *deltaA
+	item2         *deltaB
+	item3         *deltaC
+	item4         *deltaD
+	item5         *deltaE
+	item6         *deltaF
+	item7         *deltaG
+	item8         *deltaH
+	item9         *deltaI
+	item10        *deltaJ
+	item11        *deltaK
+}
+
+var _ json.Unmarshaler = &DeltaTuple11[Unit, Unit, Unit, Unit, Unit, Unit, Unit, Unit, Unit, Unit, Unit]{}
+var _ json.Marshaler = DeltaTuple11[Unit, Unit, Unit, Unit, Unit, Unit, Unit, Unit, Unit, Unit, Unit]{}
+
+func (v *DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK]) UnmarshalJSON(data []byte) error {
+	var tmp struct {
+		DeltaBase
+		Discriminator deltaTuple11EffectsEnum
+		Item1         *deltaA
+		Item2         *deltaB
+		Item3         *deltaC
+		Item4         *deltaD
+		Item5         *deltaE
+		Item6         *deltaF
+		Item7         *deltaG
+		Item8         *deltaH
+		Item9         *deltaI
+		Item10        *deltaJ
+		Item11        *deltaK
+	}
+	if err := json.Unmarshal(data, &tmp); err != nil {
+		return err
+	}
+	v.DeltaBase = tmp.DeltaBase
+	v.discriminator = tmp.Discriminator
+	v.item1 = tmp.Item1
+	v.item2 = tmp.Item2
+	v.item3 = tmp.Item3
+	v.item4 = tmp.Item4
+	v.item5 = tmp.Item5
+	v.item6 = tmp.Item6
+	v.item7 = tmp.Item7
+	v.item8 = tmp.Item8
+	v.item9 = tmp.Item9
+	v.item10 = tmp.Item10
+	v.item11 = tmp.Item11
+	return nil
+}
+
+func (v DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK]) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		DeltaBase
+		Discriminator deltaTuple11EffectsEnum
+		Item1         *deltaA
+		Item2         *deltaB
+		Item3         *deltaC
+		Item4         *deltaD
+		Item5         *deltaE
+		Item6         *deltaF
+		Item7         *deltaG
+		Item8         *deltaH
+		Item9         *deltaI
+		Item10        *deltaJ
+		Item11        *deltaK
+	}{
+		DeltaBase:     v.DeltaBase,
+		Discriminator: v.discriminator,
+		Item1:         v.item1,
+		Item2:         v.item2,
+		Item3:         v.item3,
+		Item4:         v.item4,
+		Item5:         v.item5,
+		Item6:         v.item6,
+		Item7:         v.item7,
+		Item8:         v.item8,
+		Item9:         v.item9,
+		Item10:        v.item10,
+		Item11:        v.item11,
+	})
+}
+
+func NewDeltaTuple11Item1[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any, deltaK any](delta deltaA) DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK] {
+	return DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK]{
+		discriminator: tuple11Item1,
+		item1:         &delta,
+	}
+}
+func NewDeltaTuple11Item2[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any, deltaK any](delta deltaB) DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK] {
+	return DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK]{
+		discriminator: tuple11Item2,
+		item2:         &delta,
+	}
+}
+func NewDeltaTuple11Item3[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any, deltaK any](delta deltaC) DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK] {
+	return DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK]{
+		discriminator: tuple11Item3,
+		item3:         &delta,
+	}
+}
+func NewDeltaTuple11Item4[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any, deltaK any](delta deltaD) DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK] {
+	return DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK]{
+		discriminator: tuple11Item4,
+		item4:         &delta,
+	}
+}
+func NewDeltaTuple11Item5[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any, deltaK any](delta deltaE) DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK] {
+	return DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK]{
+		discriminator: tuple11Item5,
+		item5:         &delta,
+	}
+}
+func NewDeltaTuple11Item6[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any, deltaK any](delta deltaF) DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK] {
+	return DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK]{
+		discriminator: tuple11Item6,
+		item6:         &delta,
+	}
+}
+func NewDeltaTuple11Item7[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any, deltaK any](delta deltaG) DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK] {
+	return DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK]{
+		discriminator: tuple11Item7,
+		item7:         &delta,
+	}
+}
+func NewDeltaTuple11Item8[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any, deltaK any](delta deltaH) DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK] {
+	return DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK]{
+		discriminator: tuple11Item8,
+		item8:         &delta,
+	}
+}
+func NewDeltaTuple11Item9[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any, deltaK any](delta deltaI) DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK] {
+	return DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK]{
+		discriminator: tuple11Item9,
+		item9:         &delta,
+	}
+}
+func NewDeltaTuple11Item10[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any, deltaK any](delta deltaJ) DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK] {
+	return DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK]{
+		discriminator: tuple11Item10,
+		item10:        &delta,
+	}
+}
+func NewDeltaTuple11Item11[deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any, deltaK any](delta deltaK) DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK] {
+	return DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK]{
+		discriminator: tuple11Item11,
+		item11:        &delta,
+	}
+}
+func MatchDeltaTuple11[A any, B any, C any, D any, E any, F any, G any, H any, I any, J any, K any, deltaA any, deltaB any, deltaC any, deltaD any, deltaE any, deltaF any, deltaG any, deltaH any, deltaI any, deltaJ any, deltaK any, Result any](
+	onItem1 func(deltaA) func(ReaderWithError[Unit, A]) (Result, error),
+	onItem2 func(deltaB) func(ReaderWithError[Unit, B]) (Result, error),
+	onItem3 func(deltaC) func(ReaderWithError[Unit, C]) (Result, error),
+	onItem4 func(deltaD) func(ReaderWithError[Unit, D]) (Result, error),
+	onItem5 func(deltaE) func(ReaderWithError[Unit, E]) (Result, error),
+	onItem6 func(deltaF) func(ReaderWithError[Unit, F]) (Result, error),
+	onItem7 func(deltaG) func(ReaderWithError[Unit, G]) (Result, error),
+	onItem8 func(deltaH) func(ReaderWithError[Unit, H]) (Result, error),
+	onItem9 func(deltaI) func(ReaderWithError[Unit, I]) (Result, error),
+	onItem10 func(deltaJ) func(ReaderWithError[Unit, J]) (Result, error),
+	onItem11 func(deltaK) func(ReaderWithError[Unit, K]) (Result, error),
+) func(DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK]) func(ReaderWithError[Unit, Tuple11[A, B, C, D, E, F, G, H, I, J, K]]) (Result, error) {
+	return func(delta DeltaTuple11[deltaA, deltaB, deltaC, deltaD, deltaE, deltaF, deltaG, deltaH, deltaI, deltaJ, deltaK]) func(ReaderWithError[Unit, Tuple11[A, B, C, D, E, F, G, H, I, J, K]]) (Result, error) {
+		return func(value ReaderWithError[Unit, Tuple11[A, B, C, D, E, F, G, H, I, J, K]]) (Result, error) {
+			var result Result
+			switch delta.discriminator {
+			case tuple11Item1:
+				return onItem1(*delta.item1)(MapReaderWithError[Unit](Tuple11[A, B, C, D, E, F, G, H, I, J, K].GetItem1)(value))
+			case tuple11Item2:
+				return onItem2(*delta.item2)(MapReaderWithError[Unit](Tuple11[A, B, C, D, E, F, G, H, I, J, K].GetItem2)(value))
+			case tuple11Item3:
+				return onItem3(*delta.item3)(MapReaderWithError[Unit](Tuple11[A, B, C, D, E, F, G, H, I, J, K].GetItem3)(value))
+			case tuple11Item4:
+				return onItem4(*delta.item4)(MapReaderWithError[Unit](Tuple11[A, B, C, D, E, F, G, H, I, J, K].GetItem4)(value))
+			case tuple11Item5:
+				return onItem5(*delta.item5)(MapReaderWithError[Unit](Tuple11[A, B, C, D, E, F, G, H, I, J, K].GetItem5)(value))
+			case tuple11Item6:
+				return onItem6(*delta.item6)(MapReaderWithError[Unit](Tuple11[A, B, C, D, E, F, G, H, I, J, K].GetItem6)(value))
+			case tuple11Item7:
+				return onItem7(*delta.item7)(MapReaderWithError[Unit](Tuple11[A, B, C, D, E, F, G, H, I, J, K].GetItem7)(value))
+			case tuple11Item8:
+				return onItem8(*delta.item8)(MapReaderWithError[Unit](Tuple11[A, B, C, D, E, F, G, H, I, J, K].GetItem8)(value))
+			case tuple11Item9:
+				return onItem9(*delta.item9)(MapReaderWithError[Unit](Tuple11[A, B, C, D, E, F, G, H, I, J, K].GetItem9)(value))
+			case tuple11Item10:
+				return onItem10(*delta.item10)(MapReaderWithError[Unit](Tuple11[A, B, C, D, E, F, G, H, I, J, K].GetItem10)(value))
+			case tuple11Item11:
+				return onItem11(*delta.item11)(MapReaderWithError[Unit](Tuple11[A, B, C, D, E, F, G, H, I, J, K].GetItem11)(value))
+			}
+			return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTuple11")
+		}
+	}
+}
