@@ -1,16 +1,13 @@
-import { List, Map, Set } from "immutable";
+import { Map, Set } from "immutable";
 import {
   BasicUpdater,
   DispatchCommonFormState,
   DispatchDelta,
   DispatchParsedType,
   Expr,
-  FormLayout,
-  PredicateFormLayout,
   PredicateValue,
   replaceWith,
   Updater,
-  ValueOrErrors,
   ValueRecord,
   DispatchOnChange,
   IdWrapperProps,
@@ -20,9 +17,7 @@ import {
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
   CommonAbstractRendererForeignMutationsExpected,
-  StringSerializedType,
-  DisabledFields,
-  PredicateComputedOrInlined,
+  RecordFormLayout,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -52,15 +47,12 @@ export const RecordAbstractRenderer = <
         CommonAbstractRendererState,
         CommonAbstractRendererForeignMutationsExpected<Flags>
       >;
-      visible?: Expr;
-      disabled?: Expr;
       label?: string;
       GetDefaultState: () => CommonAbstractRendererState;
     }
   >,
   FieldRenderers: Map<string, RecordFieldRenderer<any>>,
-  Layout: PredicateFormLayout,
-  DisabledFieldsPredicate: PredicateComputedOrInlined,
+Layout: RecordFormLayout,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   isInlined: boolean,
@@ -244,39 +236,11 @@ export const RecordAbstractRenderer = <
       ? props.context.bindings
       : props.context.bindings.set("local", props.context.value);
 
-    const calculatedLayout = FormLayout.Operations.ComputeLayout(
-      updatedBindings,
-      Layout,
-    );
+    // TODO: resolve this
+    const calculatedLayout = Layout.kind == "Inlined" ? Layout as any : null! as any
 
-    // TODO -- set error template up top
-    if (calculatedLayout.kind == "errors") {
-      console.error(calculatedLayout.errors.map((error) => error).join("\n"));
-      return <></>;
-    }
-
-    const visibleFieldKeys = ValueOrErrors.Operations.All(
-      List(
-        FieldTemplates.map(({ visible }, fieldName) =>
-          visible == undefined
-            ? ValueOrErrors.Default.return(fieldName)
-            : Expr.Operations.EvaluateAs("visibility predicate")(
-                updatedBindings,
-              )(visible).Then((value) =>
-                ValueOrErrors.Default.return(
-                  PredicateValue.Operations.IsBoolean(value) && value
-                    ? fieldName
-                    : null,
-                ),
-              ),
-        ).valueSeq(),
-      ),
-    );
-
-    if (visibleFieldKeys.kind == "errors") {
-      console.error(visibleFieldKeys.errors.map((error) => error).join("\n"));
-      return <></>;
-    }
+    // TODO: resolve this
+    const visibleFieldKeys = null! as any
 
     // TODO: find a better way to warn about missing fields without cluttering the console
     // visibleFieldKeys.value.forEach((field) => {
@@ -289,49 +253,16 @@ export const RecordAbstractRenderer = <
     //   }
     // });
 
+    // TODO: resolve this
     const visibleFieldKeysSet = Set(
-      visibleFieldKeys.value.filter((fieldName) => fieldName != null),
-    );
+      visibleFieldKeys.filter((fieldName: string) => fieldName != null),
+    ) as Set<string>
 
-    const calculatedDisabledFields = DisabledFields.Operations.Compute(
-      updatedBindings,
-      DisabledFieldsPredicate,
-    );
-
-    const disabledFieldsValue =
-      calculatedDisabledFields.kind == "value"
-        ? calculatedDisabledFields.value.fields
-        : [];
-
-    const disabledFieldKeys = ValueOrErrors.Operations.All(
-      List(
-        FieldTemplates.map(({ disabled }, fieldName) =>
-          disabled == undefined
-            ? disabledFieldsValue.includes(fieldName)
-              ? ValueOrErrors.Default.return(fieldName)
-              : ValueOrErrors.Default.return(null)
-            : Expr.Operations.EvaluateAs("disabled predicate")(updatedBindings)(
-                disabled,
-              ).Then((value) =>
-                ValueOrErrors.Default.return(
-                  PredicateValue.Operations.IsBoolean(value) && value
-                    ? fieldName
-                    : null,
-                ),
-              ),
-        ).valueSeq(),
-      ),
-    );
-
-    // TODO -- set the top level state as error
-    if (disabledFieldKeys.kind == "errors") {
-      console.error(disabledFieldKeys.errors.map((error) => error).join("\n"));
-      return <></>;
-    }
-
+    // TODO: resolve this
+    const disabledFieldKeys = null! as any
     const disabledFieldKeysSet = Set(
-      disabledFieldKeys.value.filter((fieldName) => fieldName != null),
-    );
+      disabledFieldKeys.filter((fieldName: string) => fieldName != null),
+    ) as Set<string>
 
     return (
       <>

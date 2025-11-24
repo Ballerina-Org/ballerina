@@ -83,8 +83,6 @@ export const TableAbstractRenderer = <
       >
     | undefined,
   DetailsRendererRaw: NestedRenderer<any> | undefined,
-  VisibleColumnsPredicate: PredicateComputedOrInlined,
-  DisabledColumnsPredicate: PredicateComputedOrInlined,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   TableEntityType: RecordType<any>,
@@ -562,21 +560,9 @@ export const TableAbstractRenderer = <
       "local",
       props.context.value,
     );
-
-    const visibleColumns = TableLayout.Operations.ComputeLayout(
-      updatedBindings,
-      VisibleColumnsPredicate,
-    );
-
-    if (visibleColumns.kind == "errors") {
-      console.error(visibleColumns.errors.map((error) => error).join("\n"));
-      return (
-        <ErrorRenderer
-          message={`${domNodeId}: Error while computing visible columns, check console`}
-        />
-      );
-    }
-
+    
+    // TODO: resolve this
+    const visibleColumns = null! as any
     // TODO: find a better way to warn about missing fields without cluttering the console
     // visibleColumns.value.columns.forEach((column) => {
     //   if (!CellTemplates.has(column)) {
@@ -588,16 +574,9 @@ export const TableAbstractRenderer = <
     //   }
     // });
 
-    const calculatedDisabledColumns = TableLayout.Operations.ComputeLayout(
-      updatedBindings,
-      DisabledColumnsPredicate,
-    );
-
-    const disabledColumnsValue =
-      calculatedDisabledColumns.kind == "value"
-        ? calculatedDisabledColumns.value.columns
-        : [];
-
+    
+    // TODO: resolve this
+    const disabledColumnsValue = null! as any
     // TODO we currently only calculated disabled status on a column basis, predicates will break if we
     // try to use their local binding (the local is the table).
     // Later we need to then calculate the disabled on a CELL level, by giving the calculations
@@ -640,7 +619,8 @@ export const TableAbstractRenderer = <
 
     const validColumns = CellTemplates.keySeq().toArray();
 
-    const validVisibleColumns = visibleColumns.value.columns.filter((_) =>
+    // TODO: resolve this
+    const validVisibleColumns = visibleColumns.value.columns.filter((_: any) =>
       validColumns.includes(_),
     );
 

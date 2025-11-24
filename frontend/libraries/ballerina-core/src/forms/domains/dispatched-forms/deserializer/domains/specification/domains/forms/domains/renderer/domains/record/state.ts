@@ -31,7 +31,6 @@ export type RecordRenderer<T> = {
   fields: Map<string, RecordFieldRenderer<T>>;
   type: RecordType<T>;
   tabs: PredicateFormLayout;
-  disabledFields: PredicateComputedOrInlined;
 };
 
 export const RecordRenderer = {
@@ -39,14 +38,12 @@ export const RecordRenderer = {
     type: RecordType<T>,
     fields: Map<string, RecordFieldRenderer<T>>,
     tabs: PredicateFormLayout,
-    disabledFields: PredicateComputedOrInlined,
     concreteRenderer?: string,
   ): RecordRenderer<T> => ({
     kind: "recordRenderer",
     type,
     fields,
     tabs,
-    disabledFields,
     concreteRenderer,
   }),
   Operations: {
@@ -190,7 +187,7 @@ export const RecordRenderer = {
                     ),
                   ),
                 ]),
-              ).Then(([tabs, disabledFields]) =>
+              ).Then(([tabs]) =>
                 ValueOrErrors.Default.return<
                   [RecordRenderer<T>, Map<string, Renderer<T>>],
                   string
@@ -199,7 +196,6 @@ export const RecordRenderer = {
                     type,
                     fieldsMap,
                     tabs as PredicateFormLayout,
-                    disabledFields as PredicateComputedOrInlined,
                     validRecordForm.renderer,
                   ),
                   accumulatedAlreadyParsedForms,
