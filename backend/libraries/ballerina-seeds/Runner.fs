@@ -12,7 +12,6 @@ open Ballerina.Reader.WithError
 open Ballerina.Seeds
 
 open Ballerina.State.WithError
-open Ballerina.DSL.Next.StdLib.Extensions
 
 module Runner =
   let _extensions, languageContext = stdExtensions
@@ -25,9 +24,9 @@ module Runner =
 
       let! entities, _ =
         schema.Entities
-        |> Map.map (fun en d -> EntityDescriptor.seed d en)
+        |> Map.map EntityDescriptor.seed
         |> state.AllMap
-        |> State.Run(ctx, SeedingState.Default(languageContext.TypeCheckState.Types))
+        |> State.Run(ctx, SeedingState.Default(languageContext.TypeCheckState))
         |> reader.OfSum
         |> reader.MapError fst
 

@@ -112,15 +112,6 @@ module Extension =
     { TypeVars = []
       TypeName = guidId, guidSymbolId
       Cases = guidConstructors |> Map.ofList
-      WrapTypeVars =
-        fun t ->
-          match t with
-          | TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, _) ->
-            TypeValue.CreateArrow(unitTypeValue, guidTypeValue)
-          | TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.String, _) ->
-            TypeValue.CreateArrow(stringTypeValue, guidTypeValue)
-          | TypeExpr.Imported _ -> guidTypeValue
-          | _ -> failwith $"Expected a Arrow or Imported, got {t}"
       Deconstruct =
         fun (v) ->
           match v with

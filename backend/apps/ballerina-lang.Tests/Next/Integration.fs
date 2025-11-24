@@ -27,7 +27,7 @@ let private run (program: string) =
     let evalContext = context.ExprEvalContext
 
     let typeCheckedSymbols: ExprEvalContextSymbols =
-      (typeCheckFinalState.Types.Symbols) |> ExprEvalContextSymbols.FromTypeChecker
+      (typeCheckFinalState.Symbols) |> ExprEvalContextSymbols.FromTypeChecker
 
     let evalContext =
       { evalContext with
@@ -1135,3 +1135,94 @@ in f (A 10), f (B 20), f (C 30)
   match actual with
   | Left _ -> Assert.Fail $"Expected typechecking error"
   | Right _ -> Assert.Pass()
+
+
+[<Test>]
+let ``LangNext-Integration type lambda and application over lists succeds`` () =
+  let program =
+    """
+let singleton = fun [a:*] (x:a) -> List::Cons [a] (x, List::Nil [a] ())
+in singleton [int32] 10, singleton [bool] true
+      """
+
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Tuple [ Value.Ext(ValueExt.ValueExt(Choice1Of4(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Int32 10) ])))))
+                    Value.Ext(ValueExt.ValueExt(Choice1Of4(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ]))))) ] ->
+      Assert.Pass $"Correctly evaluated to (10, true)"
+    | _ -> Assert.Fail $"Expected a record, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+[<Test>]
+let ``LangNext-Integration type lambda and application over lists with implicit type parameter application succeds``
+  ()
+  =
+  let program =
+    """
+let singleton = fun [a:*] (x:a) -> List::Cons [a] (x, List::Nil [a] ())
+in singleton 10, singleton true
+      """
+
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Tuple [ Value.Ext(ValueExt.ValueExt(Choice1Of4(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Int32 10) ])))))
+                    Value.Ext(ValueExt.ValueExt(Choice1Of4(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ]))))) ] ->
+      Assert.Pass $"Correctly evaluated to (10, true)"
+    | _ -> Assert.Fail $"Expected a record, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+
+
+[<Test>]
+let ``LangNext-Integration type lambda and application over tuples with explicit type parameter application succeds``
+  ()
+  =
+  let program =
+    """
+let pair = fun [a:*] [b:*] (x:a) (y:b) -> (x,y)
+in pair [int32] [bool] 10 true
+      """
+
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Tuple [ Value.Primitive(PrimitiveValue.Int32 10); Value.Primitive(PrimitiveValue.Bool true) ] ->
+      Assert.Pass $"Correctly evaluated to (10, true)"
+    | _ -> Assert.Fail $"Expected a record, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+
+
+[<Test>]
+let ``LangNext-Integration type lambda with record body succeeds`` () =
+  let program =
+    """
+type Countainer = [a:*] -> { Value:a; Count:int32; }
+in let getCount = fun [a:*] (x:Countainer[a]) -> x.Count
+in let f = fun (x:Countainer[int32]) -> x.Value + x.Count
+in let x:Countainer[int32] = { Value = 100; Count = 10}
+in let y:Countainer[bool] = { Value = false; Count = 11}
+in f x, getCount x, getCount y
+      """
+
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Tuple [ Value.Primitive(PrimitiveValue.Int32 110)
+                    Value.Primitive(PrimitiveValue.Int32 10)
+                    Value.Primitive(PrimitiveValue.Int32 11) ] -> Assert.Pass $"Correctly evaluated to (110, 10, 11)"
+    | _ -> Assert.Fail $"Expected a record, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"

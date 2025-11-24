@@ -53,8 +53,8 @@ module SumCons =
 
           let! return_t =
             TypeValue.CreateArrow(cases[cons.Case - 1], TypeValue.CreateSum(cases |> List.ofSeq))
-            |> TypeValue.Instantiate loc0
+            |> TypeValue.Instantiate TypeExpr.Eval loc0
             |> Expr.liftInstantiation
 
-          return Expr.SumCons(cons, loc0, ctx.Types.Scope), return_t, Kind.Star
+          return Expr.SumCons(cons, loc0, ctx.Scope), return_t, Kind.Star
         }

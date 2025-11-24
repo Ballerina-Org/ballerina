@@ -23,8 +23,6 @@ module Model =
 
   type TypeSymbols = Map<ResolvedIdentifier, TypeSymbol>
 
-  type TypeExprEvalContext = { Scope: TypeCheckScope }
-
   type TypeExprEvalSymbols =
     { Types: TypeSymbols
       ResolvedIdentifiers: Map<TypeSymbol, ResolvedIdentifier>
@@ -32,30 +30,35 @@ module Model =
       UnionCases: TypeSymbols
       RecordFields: TypeSymbols }
 
-  type TypeExprEvalState =
-    { Bindings: TypeBindings
-      UnionCases: UnionCaseConstructorBindings
-      RecordFields: RecordFieldBindings
-      Symbols: TypeExprEvalSymbols }
+  type KindEvalContext = Map<string, Kind>
 
-  type TypeExprEvalResult = State<TypeValue * Kind, TypeExprEvalContext, TypeExprEvalState, Errors>
-  type TypeExprEval = Option<ExprTypeLetBindingName> -> Location -> TypeExpr -> TypeExprEvalResult
-  type TypeExprSymbolEvalResult = State<TypeSymbol, TypeExprEvalContext, TypeExprEvalState, Errors>
-  type TypeExprSymbolEval = Location -> TypeExpr -> TypeExprSymbolEvalResult
-
-  type UnificationContext =
-    { EvalState: TypeExprEvalState
-      Scope: TypeCheckScope }
+  type TypeCheckContext =
+    { Scope: TypeCheckScope
+      TypeVariables: TypeVariablesScope
+      TypeParameters: TypeParametersScope
+      Values: Map<ResolvedIdentifier, TypeValue * Kind> }
 
   type UnificationState = EquivalenceClasses<TypeVar, TypeValue>
 
-  type TypeCheckContext =
-    { Types: TypeExprEvalContext
-      Values: Map<ResolvedIdentifier, TypeValue * Kind> }
-
   type TypeCheckState =
-    { Types: TypeExprEvalState
+    { Bindings: TypeBindings
+      UnionCases: UnionCaseConstructorBindings
+      RecordFields: RecordFieldBindings
+      Symbols: TypeExprEvalSymbols
       Vars: UnificationState }
+
+  [<Obsolete("Use TypeCheckState instead")>]
+  type TypeExprEvalState = TypeCheckState
+
+  type TypeValueKindEval =
+    Option<ExprTypeLetBindingName> -> Location -> TypeValue -> State<Kind, KindEvalContext, TypeCheckState, Errors>
+
+  type TypeExprKindEval =
+    Option<ExprTypeLetBindingName> -> Location -> TypeExpr -> State<Kind, KindEvalContext, TypeCheckState, Errors>
+
+  type UnificationContext =
+    { EvalState: TypeCheckState
+      Scope: TypeCheckScope }
 
   type TypeCheckerResult<'r> = State<'r, TypeCheckContext, TypeCheckState, Errors>
 
@@ -65,6 +68,13 @@ module Model =
   type ExprTypeChecker<'valueExt> = TypeChecker<Expr<TypeExpr, Identifier, 'valueExt>, 'valueExt>
 
   type TypeInstantiateContext =
-    { Bindings: TypeExprEvalState
-      VisitedVars: Set<TypeVar>
-      Scope: TypeCheckScope }
+    { VisitedVars: Set<TypeVar>
+      Scope: TypeCheckScope
+      TypeVariables: TypeVariablesScope
+      TypeParameters: TypeParametersScope
+      Values: Map<ResolvedIdentifier, TypeValue * Kind> }
+
+  type TypeExprEvalResult = State<TypeValue * Kind, TypeCheckContext, TypeCheckState, Errors>
+  type TypeExprEval = Option<ExprTypeLetBindingName> -> Location -> TypeExpr -> TypeExprEvalResult
+  type TypeExprSymbolEvalResult = State<TypeSymbol, TypeCheckContext, TypeCheckState, Errors>
+  type TypeExprSymbolEval = Location -> TypeExpr -> TypeExprSymbolEvalResult

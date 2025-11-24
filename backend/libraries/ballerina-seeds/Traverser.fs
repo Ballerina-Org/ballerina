@@ -40,12 +40,20 @@ type SeedingContext =
     Generator: BogusDataGenerator }
 
 type SeedingState =
-  { TypeContext: TypeExprEvalState
+  { TypeContext: TypeCheckState
     Label: SeedingClue
     InfinitiveVarNamesIndex: int
     InfinitiveNamesIndex: Map<string, int> }
 
 module Traverser =
+
+  let isSupported =
+    function
+    | TypeValue.Imported x when x.Id.Name <> "List" || List.length x.Arguments <> 1 -> false
+    | TypeValue.Arrow _
+    | TypeValue.Lambda _
+    | TypeValue.Application _ -> false
+    | _ -> true
 
   let rec seed
     (entity: EntityName)
@@ -74,7 +82,7 @@ module Traverser =
           return! state.Throw(Errors.Singleton(Location.Unknown, "Arrow seeds not implemented yet"))
         | TypeValue.Lambda _ ->
           return! state.Throw(Errors.Singleton(Location.Unknown, "Lambda seeds not implemented yet"))
-        | TypeValue.Apply _ ->
+        | TypeValue.Application _ ->
           return! state.Throw(Errors.Singleton(Location.Unknown, "Apply seeds not implemented yet"))
         | TypeValue.Var _ ->
           do!
@@ -142,7 +150,7 @@ module Traverser =
           let! ctx = state.GetState()
 
           let! tv, _ =
-            TypeExprEvalState.tryFindType (id |> TypeCheckScope.Empty.Resolve, Location.Unknown)
+            TypeCheckState.tryFindType (id |> TypeCheckScope.Empty.Resolve, Location.Unknown)
             |> Reader.Run ctx.TypeContext
             |> state.OfSum
 
@@ -209,7 +217,7 @@ type SeedingContext with
       Options = FullStructure }
 
 type SeedingState with
-  static member Default(typeContext: TypeExprEvalState) =
+  static member Default(typeContext: TypeCheckState) =
     { TypeContext = typeContext
       Label = Absent
       InfinitiveVarNamesIndex = 0

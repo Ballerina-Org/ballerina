@@ -65,8 +65,8 @@ module TupleCons =
 
           let! return_t =
             TypeValue.CreateTuple fieldsTypes
-            |> TypeValue.Instantiate loc0
+            |> TypeValue.Instantiate TypeExpr.Eval loc0
             |> Expr.liftInstantiation
 
-          return Expr.TupleCons(fieldsExpr, loc0, ctx.Types.Scope), return_t, Kind.Star
+          return Expr.TupleCons(fieldsExpr, loc0, ctx.Scope), return_t, Kind.Star
         }

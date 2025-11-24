@@ -66,6 +66,7 @@ module Model =
       | ExprType.GenericApplicationType(l, r) -> !l + !r
       | ExprType.GenericType(_, _, e) -> !e
       | ExprType.TranslationOverride _ -> Set.empty
+      | ExprType.AllTranslationOverrides _ -> Set.empty
 
     static member Substitute (tvars: TypeVarBindings) (t: ExprType) : ExprType =
       let (!) = ExprType.Substitute tvars
@@ -98,6 +99,8 @@ module Model =
       | ExprType.ArrowType(l, r) -> ExprType.ArrowType(!l, !r)
       | ExprType.GenericApplicationType(l, r) -> ExprType.GenericApplicationType(!l, !r)
       | ExprType.GenericType(v, k, e) -> ExprType.GenericType(v, k, !e)
+      | ExprType.AllTranslationOverrides { KeyType = keyType } ->
+        ExprType.AllTranslationOverrides { KeyType = !keyType }
 
     static member ToJson(t: ExprType) : JsonValue =
       let rec (!) (t: ExprType) = ExprType.ToJson t
@@ -175,3 +178,7 @@ module Model =
         JsonValue.Record
           [| "fun", JsonValue.String "TranslationOverride"
              "args", JsonValue.Array [| !keyType; JsonValue.String label |] |]
+      | ExprType.AllTranslationOverrides { KeyType = keyType } ->
+        JsonValue.Record
+          [| "fun", JsonValue.String "AllTranslationOverrides"
+             "args", JsonValue.Array [| !keyType |] |]

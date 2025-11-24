@@ -52,10 +52,15 @@ module TypeApply =
 
         state {
           let! ctx = state.GetContext()
+          // do Console.WriteLine($"TypeApply: fExpr = {fExpr}")
           let! f, f_t, f_k = !fExpr
 
           let! f_k_i, f_k_o = f_k |> Kind.AsArrow |> ofSum
+
+          // do Console.WriteLine($"TypeApply: f = {f}, f_t = {f_t}, f_k = {f_k}, f_k_i = {f_k_i}, f_k_o = {f_k_o}")
+
           let! t_val, t_k = tExpr |> TypeExpr.Eval None loc0 |> Expr.liftTypeEval
+          // do Console.WriteLine($"TypeApply: tExpr = {tExpr}, t_val = {t_val}, t_k = {t_k}")
 
           if f_k_i <> t_k then
             return!
@@ -63,10 +68,19 @@ module TypeApply =
               |> error
               |> state.Throw
           else
+            // do Console.WriteLine($"TypeApply: from f_t to f_res")
+
             let! f_res, _ =
               TypeExpr.Apply(f_t.AsExpr, tExpr)
               |> TypeExpr.Eval None loc0
               |> Expr.liftTypeEval
 
-            return Expr.TypeApply(f, t_val, loc0, ctx.Types.Scope), f_res, f_k_o
+            // let! f_res = f_res |> TypeValue.Instantiate TypeExpr.Eval loc0 |> Expr.liftInstantiation
+
+            // do Console.WriteLine($"TypeApply: f_res = {f_res}")
+
+            let res = Expr.TypeApply(f, t_val, loc0, ctx.Scope), f_res, f_k_o
+            // do Console.WriteLine($"TypeApply: {res}")
+            // do Console.ReadLine() |> ignore
+            return res
         }

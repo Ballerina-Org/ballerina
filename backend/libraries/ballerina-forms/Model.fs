@@ -398,6 +398,7 @@ module Model =
          Columns: Map<string, Column<'ExprExtension, 'ValueExtension>>
          VisibleColumns: FormGroup<'ExprExtension, 'ValueExtension>
          DisabledColumns: FormGroup<'ExprExtension, 'ValueExtension>
+         DataContextColumns: FormGroup<'ExprExtension, 'ValueExtension>
          MethodLabels: Map<TableMethod, Label>
          RowTypeId: ExprTypeId |}
 
@@ -423,6 +424,7 @@ module Model =
   and FormFields<'ExprExtension, 'ValueExtension> =
     { Fields: Map<string, FieldConfig<'ExprExtension, 'ValueExtension>>
       Disabled: FormGroup<'ExprExtension, 'ValueExtension>
+      DataContextFields: FormGroup<'ExprExtension, 'ValueExtension>
       Tabs: FormTabs<'ExprExtension, 'ValueExtension> }
 
   and FormTabs<'ExprExtension, 'ValueExtension> =
@@ -446,8 +448,7 @@ module Model =
       Label: Option<Label>
       Tooltip: Option<string>
       Details: Option<string>
-      Renderer: Renderer<'ExprExtension, 'ValueExtension>
-      Disabled: Option<Expr<'ExprExtension, 'ValueExtension>> }
+      Renderer: Renderer<'ExprExtension, 'ValueExtension> }
 
     static member Id(f: FieldConfig<'ExprExtension, 'ValueExtension>) : FieldConfigId =
       { FieldName = f.FieldName
@@ -504,6 +505,14 @@ module Model =
     { Renderer: RendererName
       Cases: Map<string, NestedRenderer<'ExprExtension, 'ValueExtension>> }
 
+  and AllTranslationOverridesRenderer =
+    { Renderer: RendererName
+      MapRenderer: RendererName
+      KeyRenderer: RendererName
+      Options: string
+      ValueRenderer: RendererName
+      TypeId: ExprTypeId }
+
   and Renderer<'ExprExtension, 'ValueExtension> =
     | PrimitiveRenderer of PrimitiveRenderer
     | MapRenderer of MapRenderer<'ExprExtension, 'ValueExtension>
@@ -523,6 +532,7 @@ module Model =
     | InlineFormRenderer of FormBody<'ExprExtension, 'ValueExtension>
     | RecordRenderer of RecordRenderer<'ExprExtension, 'ValueExtension>
     | UnionRenderer of UnionRenderer<'ExprExtension, 'ValueExtension>
+    | AllTranslationOverridesRenderer of AllTranslationOverridesRenderer
 
   and ManyRenderer<'ExprExtension, 'ValueExtension> =
     | ManyLinkedUnlinkedRenderer of

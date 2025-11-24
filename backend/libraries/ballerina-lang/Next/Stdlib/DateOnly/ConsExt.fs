@@ -24,11 +24,11 @@ module ConsExt =
       (dateOnlyNewId, dateOnlyNewSymbol),
       { CaseType = TypeExpr.Primitive PrimitiveType.String
         ConstructorType =
-          TypeExpr.Arrow(
-            TypeExpr.Primitive PrimitiveType.String,
-            TypeExpr.Sum
-              [ TypeExpr.Primitive PrimitiveType.Unit
-                TypeExpr.Lookup(Identifier.LocalScope "dateOnly") ]
+          TypeValue.CreateArrow(
+            TypeValue.CreatePrimitive PrimitiveType.String,
+            TypeValue.CreateSum
+              [ TypeValue.CreatePrimitive PrimitiveType.Unit
+                TypeValue.Lookup(Identifier.LocalScope "dateOnly") ]
           )
         Constructor = DateOnly_New
         Apply =
@@ -59,7 +59,10 @@ module ConsExt =
       (dateOnlyNowId, dateOnlyNowSymbol),
       { CaseType = TypeExpr.Primitive PrimitiveType.Unit
         ConstructorType =
-          TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, TypeExpr.Lookup(Identifier.LocalScope "dateOnly"))
+          TypeValue.CreateArrow(
+            TypeValue.CreatePrimitive PrimitiveType.Unit,
+            TypeValue.Lookup(Identifier.LocalScope "dateOnly")
+          )
         Constructor = DateOnly_Now
         Apply =
           fun loc0 (_, v) ->
@@ -88,7 +91,10 @@ module ConsExt =
       (dateOnlyUTCNowId, dateOnlyUTCNowSymbol),
       { CaseType = TypeExpr.Primitive PrimitiveType.Unit
         ConstructorType =
-          TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, TypeExpr.Lookup(Identifier.LocalScope "dateOnly"))
+          TypeValue.CreateArrow(
+            TypeValue.CreatePrimitive PrimitiveType.Unit,
+            TypeValue.Lookup(Identifier.LocalScope "dateOnly")
+          )
         Constructor = DateOnly_UTCNow
         Apply =
           fun loc0 (_, v) ->

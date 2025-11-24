@@ -506,6 +506,87 @@ module Renderers =
       }
 
   type Renderer<'ExprExtension, 'ValueExtension> with
+    static member private ParseAllTranslationOverridesRenderer
+      (parentJsonFields: (string * JsonValue)[])
+      (name: RendererName)
+      : State<
+          Renderer<'ExprExtension, 'ValueExtension>,
+          CodeGenConfig,
+          ParsedFormsContext<'ExprExtension, 'ValueExtension>,
+          Errors
+         >
+      =
+      state {
+        let! config = state.GetContext()
+
+        let! (mapRendererJson, keyRendererJson, optionsJson, valueRendererJson) =
+          state.All4
+            (parentJsonFields |> state.TryFindField "mapRenderer")
+            (parentJsonFields |> state.TryFindField "keyRenderer")
+            (parentJsonFields |> state.TryFindField "options")
+            (parentJsonFields |> state.TryFindField "valueRenderer")
+
+        let! mapRenderer = mapRendererJson |> JsonValue.AsString |> state.OfSum
+        let! keyRenderer = keyRendererJson |> JsonValue.AsString |> state.OfSum
+        let! options = optionsJson |> JsonValue.AsString |> state.OfSum
+        let! valueRenderer = valueRendererJson |> JsonValue.AsString |> state.OfSum
+
+        let! formsState = state.GetState()
+
+        if formsState.TryFindEnum options |> Sum.toOption |> Option.isNone then
+          return! state.Throw(Errors.Singleton $"Error: cannot find enum {options}")
+
+        if config.Record.SupportedRenderers.Keys |> Seq.contains name |> not then
+          return! state.Throw(Errors.Singleton $"Error: cannot parse record renderer from {name}")
+
+        if config.Map.SupportedRenderers |> Set.contains (RendererName mapRenderer) |> not then
+          return! state.Throw(Errors.Singleton $"Error: cannot parse map renderer from {mapRenderer}")
+
+        let enumRenderers =
+          Set.union config.Option.SupportedRenderers.Enum config.Set.SupportedRenderers.Enum
+
+        if enumRenderers |> Set.contains (RendererName keyRenderer) |> not then
+          return!
+            state.Throw(Errors.Singleton $"Error: cannot parse key renderer from {keyRenderer}, must be enum renderer")
+
+        if
+          config.String.SupportedRenderers
+          |> Set.contains (RendererName valueRenderer)
+          |> not
+        then
+          return!
+            state.Throw(
+              Errors.Singleton $"Error: cannot parse value renderer from {valueRenderer}, must be string renderer"
+            )
+
+        let! typeId =
+          state {
+            let! typeFieldJson = parentJsonFields |> state.TryFindField "type"
+            let! typeName = typeFieldJson |> JsonValue.AsString |> state.OfSum
+            let! formsState = state.GetState()
+            let! typeBinding = formsState.TryFindType typeName |> state.OfSum
+
+            match typeBinding.Type with
+            | ExprType.AllTranslationOverrides _ -> return typeBinding.TypeId
+            | _ ->
+              return!
+                state.Throw(
+                  Errors.Singleton
+                    $"Error: cannot parse AllTranslationOverrides renderer from {name} because type {typeName} is not AllTranslationOverrides"
+                )
+          }
+
+        return
+          Renderer.AllTranslationOverridesRenderer
+            { Renderer = name
+              TypeId = typeId
+              MapRenderer = RendererName mapRenderer
+              KeyRenderer = RendererName keyRenderer
+              Options = options
+              ValueRenderer = RendererName valueRenderer }
+      }
+
+  type Renderer<'ExprExtension, 'ValueExtension> with
     static member private ParseListRenderer
       (label: Label option)
       (parseNestedRenderer)
@@ -876,6 +957,22 @@ module Renderers =
                   (columns |> Map.map (fun _ c -> c.FieldConfig))
                   disabledColumnsJson
 
+              let! dataContextColumnsJson =
+                fields
+                |> state.TryFindField "dataContextColumns"
+                |> state.Catch
+                |> state.Map Sum.toOption
+                |> state.Map(Option.defaultWith (fun () -> JsonValue.Array [||]))
+
+              let! dataContextColumns =
+                FormBody.ParseGroup
+                  primitivesExt
+                  exprParser
+                  "dataContextColumns"
+                  (columns |> Map.map (fun _ c -> c.FieldConfig))
+                  dataContextColumnsJson
+
+
               return
                 {| Columns = columns
                    RowTypeId = t.TypeId
@@ -885,7 +982,8 @@ module Renderers =
                    Renderer = renderer
                    MethodLabels = actionLabels
                    VisibleColumns = visibleColumns
-                   DisabledColumns = disabledColumns |}
+                   DisabledColumns = disabledColumns
+                   DataContextColumns = dataContextColumns |}
                 |> FormBody.Table
           }
           |> state.MapError(Errors.WithPriority ErrorPriority.High)
@@ -1032,6 +1130,7 @@ module Renderers =
                     name
                   Renderer.ParseTupleRenderer primitivesExt exprParser label config parentJsonFields name
                   Renderer.ParseUnionRenderer primitivesExt exprParser parentJsonFields
+                  Renderer.ParseAllTranslationOverridesRenderer parentJsonFields name
                   state.Any(
                     NonEmptyList.OfList(
                       Renderer.ParseGenericRenderer label name,
@@ -1185,8 +1284,6 @@ module Renderers =
           |> Option.map (JsonValue.AsString >> state.OfSum)
           |> state.RunOption
 
-        let! disabledJson = sum.TryFindField "disabled" fields |> state.OfSum |> state.Catch
-        let disabledJson = disabledJson |> Sum.toOption
         let! renderer = Renderer.Parse primitivesExt exprParser fields
 
         match renderer with
@@ -1196,16 +1293,13 @@ module Renderers =
             state.Throw(Errors.Singleton """For record fields, record renderers must be wrapped in {"renderer": ...}""")
         | _ ->
 
-          let! disabled = disabledJson |> Option.map (exprParser >> state.OfSum) |> state.RunOption
-
           let fc =
             { FieldName = fieldName
               FieldId = Guid.CreateVersion7()
               Label = label
               Tooltip = tooltip
               Details = details
-              Renderer = renderer
-              Disabled = disabled }
+              Renderer = renderer }
 
           fc
       }
@@ -1274,12 +1368,23 @@ module Renderers =
             let! disabledFields =
               FormBody.ParseGroup primitivesExt exprParser "disabledFields" fieldConfigs disabledFieldsJson
 
+            let! dataContextFieldsJson =
+              fields
+              |> state.TryFindField "dataContextFields"
+              |> state.Catch
+              |> state.Map Sum.toOption
+              |> state.Map(Option.defaultWith (fun () -> JsonValue.Array [||]))
+
+            let! dataContextFields =
+              FormBody.ParseGroup primitivesExt exprParser "dataContextFields" fieldConfigs dataContextFieldsJson
+
             let! tabs =
               FormBody<'ExprExtension, 'ValueExtension>.ParseTabs primitivesExt exprParser fieldConfigs tabsJson
 
             return
               { FormFields.Fields = fieldConfigs
                 FormFields.Disabled = disabledFields
+                FormFields.DataContextFields = dataContextFields
                 FormFields.Tabs = tabs }
           }
           |> state.MapError(Errors.WithPriority ErrorPriority.High)

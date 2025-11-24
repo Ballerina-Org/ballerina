@@ -662,15 +662,6 @@ module Extension =
     { TypeName = timeSpanId, timeSpanSymbolId
       TypeVars = []
       Cases = timeSpanConstructors |> Map.ofList
-      WrapTypeVars =
-        fun t ->
-          match t with
-          | TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.String, _) ->
-            TypeValue.CreateArrow(stringTypeValue, timeSpanTypeValue)
-          | TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, _) ->
-            TypeValue.CreateArrow(unitTypeValue, timeSpanTypeValue)
-          | TypeExpr.Imported _ -> timeSpanTypeValue
-          | _ -> failwith $"Expected a Arrow or Imported, got {t}"
       Deconstruct =
         fun (v) ->
           match v with

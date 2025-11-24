@@ -79,7 +79,7 @@ module RecordDes =
               let! fieldName =
                 state.Either
                   (TypeCheckState.TryResolveIdentifier(field_k, loc0))
-                  (state { return fieldName |> ctx.Types.Scope.Resolve })
+                  (state { return fieldName |> ctx.Scope.Resolve })
 
               // do Console.WriteLine($"---- TypeChecked RecordDes {fieldName} ----")
               // t_fields
@@ -94,7 +94,7 @@ module RecordDes =
               //   |> OrderedMap.tryFindWithError fieldName "fields" fieldName.ToFSharpString
               //   |> ofSum
 
-              return Expr.RecordDes(record_v, fieldName, loc0, ctx.Types.Scope), field_t, Kind.Star
+              return Expr.RecordDes(record_v, fieldName, loc0, ctx.Scope), field_t, Kind.Star
             }
             |> state.MapError(Errors.SetPriority ErrorPriority.High)
         }

@@ -2,6 +2,7 @@ namespace Ballerina.DSL.Next.StdLib.DateOnly
 
 [<AutoOpen>]
 module Extension =
+  open Ballerina.StdLib.Object
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
   open Ballerina.LocalizedErrors
@@ -537,15 +538,15 @@ module Extension =
     { TypeName = dateOnlyId, dateOnlySymbolId
       TypeVars = []
       Cases = dateOnlyConstructors |> Map.ofList
-      WrapTypeVars =
-        fun t ->
-          match t with
-          | TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.String, _) ->
-            TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateSum [ dateOnlyTypeValue; unitTypeValue ])
-          | TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, _) ->
-            TypeValue.CreateArrow(unitTypeValue, dateOnlyTypeValue)
-          | TypeExpr.Imported _ -> dateOnlyTypeValue
-          | _ -> failwith $"Expected a Arrow or Imported, got {t}"
+      // WrapTypeVars =
+      //   fun t ->
+      //     match t with
+      //     | TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.String, _) ->
+      //       TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateSum [ dateOnlyTypeValue; unitTypeValue ])
+      //     | TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, _) ->
+      //       TypeValue.CreateArrow(unitTypeValue, dateOnlyTypeValue)
+      //     | TypeExpr.FromTypeValue(TypeValue.Imported _) -> dateOnlyTypeValue
+      //     | _ -> failwith $"Expected a Arrow or Imported, got {t}"
       Deconstruct =
         fun (v) ->
           match v with

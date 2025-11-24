@@ -61,8 +61,8 @@ module If =
 
           let! t_then =
             t_then
-            |> TypeValue.Instantiate loc0
+            |> TypeValue.Instantiate TypeExpr.Eval loc0
             |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
-          return Expr.If(cond, thenBranch, elseBranch, loc0, ctx.Types.Scope), t_then, Kind.Star
+          return Expr.If(cond, thenBranch, elseBranch, loc0, ctx.Scope), t_then, Kind.Star
         }

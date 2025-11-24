@@ -23,11 +23,11 @@ module ConsExt =
       (guidNewId, guidNewSymbol),
       { CaseType = TypeExpr.Primitive PrimitiveType.String
         ConstructorType =
-          TypeExpr.Arrow(
-            TypeExpr.Primitive PrimitiveType.String,
-            TypeExpr.Sum
-              [ TypeExpr.Primitive PrimitiveType.Unit
-                TypeExpr.Lookup(Identifier.LocalScope "guid") ]
+          TypeValue.CreateArrow(
+            TypeValue.CreatePrimitive PrimitiveType.String,
+            TypeValue.CreateSum
+              [ TypeValue.CreatePrimitive PrimitiveType.Unit
+                TypeValue.Lookup(Identifier.LocalScope "guid") ]
           )
         Constructor = Guid_New
         Apply =
@@ -59,7 +59,10 @@ module ConsExt =
       (guidV4Id, guidV4Symbol),
       { CaseType = TypeExpr.Primitive PrimitiveType.Unit
         ConstructorType =
-          TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, TypeExpr.Lookup(Identifier.LocalScope "guid"))
+          TypeValue.CreateArrow(
+            TypeValue.CreatePrimitive PrimitiveType.Unit,
+            TypeValue.Lookup(Identifier.LocalScope "guid")
+          )
         Constructor = Guid_V4
         Apply =
           fun loc0 (_, v) ->

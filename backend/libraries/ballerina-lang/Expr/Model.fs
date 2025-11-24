@@ -13,6 +13,8 @@ module Model =
 
   and TranslationOverride = { Label: string; KeyType: ExprType }
 
+  and AllTranslationOverrides = { KeyType: ExprType }
+
   and VarName =
     { VarName: string }
 
@@ -172,6 +174,7 @@ module Model =
     | GenericType of ExprTypeId * ExprTypeKind * ExprType
     | GenericApplicationType of ExprType * ExprType
     | TranslationOverride of TranslationOverride
+    | AllTranslationOverrides of AllTranslationOverrides
 
     override t.ToString() : string =
       let (!) (t: ExprType) = t.ToString()
@@ -213,6 +216,7 @@ module Model =
       | GenericType(typeName, kind, exprType) -> $"{typeName} :: {kind} => {!exprType}"
       | GenericApplicationType(f, a) -> $"{!f} {!a}"
       | TranslationOverride label -> $"TranslationOverride \"{label}\" "
+      | AllTranslationOverrides _ -> $"AllTranslationOverrides"
 
   and UnionCase = { CaseName: string; Fields: ExprType }
   and CaseName = { CaseName: string }

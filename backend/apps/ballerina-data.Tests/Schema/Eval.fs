@@ -70,8 +70,8 @@ let ``SpecNext-Schema evaluates`` () =
               Predicates = Map.ofList [ ("AnotherPredicate", Expr.Primitive(PrimitiveValue.Bool true)) ] } ]
       Lookups = Map.empty }
 
-  let initialState: TypeExprEvalState =
-    { TypeExprEvalState.Empty with
+  let initialState: TypeCheckState =
+    { TypeCheckState.Empty with
         Bindings =
           Map.ofList
             [ ("SomeType" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve, (SomeType, Kind.Star))
@@ -80,7 +80,7 @@ let ``SpecNext-Schema evaluates`` () =
   match
     source
     |> Schema.SchemaEval
-    |> State.Run(TypeExprEvalContext.Empty("", ""), initialState)
+    |> State.Run(TypeCheckContext.Empty("", ""), initialState)
   with
   | Right e -> Assert.Fail($"Failed to eval schema: {e}")
   | Left(actual, _) -> Assert.That(actual, Is.EqualTo(expected))

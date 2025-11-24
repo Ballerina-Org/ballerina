@@ -17,7 +17,7 @@ module TypeEval =
     static member TypeEval
       : Location
           -> Expr<TypeExpr, Identifier, 'valueExt>
-          -> State<Expr<TypeValue, ResolvedIdentifier, 'valueExt>, TypeExprEvalContext, TypeExprEvalState, Errors> =
+          -> State<Expr<TypeValue, ResolvedIdentifier, 'valueExt>, TypeCheckContext, TypeCheckState, Errors> =
       fun loc0 expr ->
         let (!) = Expr.TypeEval loc0
 
@@ -135,7 +135,7 @@ module TypeEval =
                               TypeDef = value
                               Body = body }) ->
             let! valueType = value |> TypeExpr.Eval None loc0
-            do! TypeExprEvalState.bindType (var |> Identifier.LocalScope |> ctx.Scope.Resolve) valueType
+            do! TypeCheckState.bindType (var |> Identifier.LocalScope |> ctx.Scope.Resolve) valueType
 
             let! bodyType = !body
 

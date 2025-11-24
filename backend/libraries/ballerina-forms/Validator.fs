@@ -199,6 +199,7 @@ module Validator =
           | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
           | Renderer.TableFormRenderer _ -> return! error expectedType fr
           | Renderer.TupleRenderer _ -> return! error expectedType fr
+          | Renderer.AllTranslationOverridesRenderer _ -> return! error expectedType fr
         | ExprType.CustomType _ ->
           match fr with
           | Renderer.RecordRenderer _ -> return! error expectedType fr
@@ -217,6 +218,7 @@ module Validator =
           | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
           | Renderer.TableFormRenderer _ -> return! error expectedType fr
           | Renderer.TupleRenderer _ -> return! error expectedType fr
+          | Renderer.AllTranslationOverridesRenderer _ -> return! error expectedType fr
         | ExprType.VarType _ -> return! sum.Throw(Errors.Singleton "Error: unexpected renderer for var type")
         | ExprType.LookupType typeId ->
           let! lookupType = ctx.TryFindType typeId.VarName
@@ -240,6 +242,7 @@ module Validator =
           | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
           | Renderer.TableFormRenderer _ -> return! error expectedType fr
           | Renderer.TupleRenderer _ -> return! error expectedType fr
+          | Renderer.AllTranslationOverridesRenderer _ -> return! error expectedType fr
         | ExprType.RecordType _ ->
           match fr with
           | Renderer.RecordRenderer fields ->
@@ -270,6 +273,7 @@ module Validator =
           | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
           | Renderer.TableFormRenderer _ -> return! error expectedType fr
           | Renderer.TupleRenderer _ -> return! error expectedType fr
+          | Renderer.AllTranslationOverridesRenderer _ -> return! error expectedType fr
         | ExprType.UnionType typeCases ->
           match fr with
           | Renderer.RecordRenderer _ -> return! error expectedType fr
@@ -324,6 +328,7 @@ module Validator =
           | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
           | Renderer.TableFormRenderer _ -> return! error expectedType fr
           | Renderer.TupleRenderer _ -> return! error expectedType fr
+          | Renderer.AllTranslationOverridesRenderer _ -> return! error expectedType fr
         | ExprType.MapType(expectedKeyType, expectedValueType) ->
           match fr with
           | Renderer.RecordRenderer _ -> return! error expectedType fr
@@ -345,6 +350,7 @@ module Validator =
           | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
           | Renderer.TableFormRenderer _ -> return! error expectedType fr
           | Renderer.TupleRenderer _ -> return! error expectedType fr
+          | Renderer.AllTranslationOverridesRenderer _ -> return! error expectedType fr
         | ExprType.SumType(expectedLeftType, expectedRightType) ->
           match fr with
           | Renderer.RecordRenderer _ -> return! error expectedType fr
@@ -366,6 +372,7 @@ module Validator =
           | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
           | Renderer.TableFormRenderer _ -> return! error expectedType fr
           | Renderer.TupleRenderer _ -> return! error expectedType fr
+          | Renderer.AllTranslationOverridesRenderer _ -> return! error expectedType fr
         | ExprType.TupleType elementTypes ->
           match fr with
           | Renderer.RecordRenderer _ -> return! error expectedType fr
@@ -400,6 +407,7 @@ module Validator =
                 |> sum.All
 
               ExprType.TupleType validatedElements
+          | Renderer.AllTranslationOverridesRenderer _ -> return! error expectedType fr
         | ExprType.OptionType expectedInnerType ->
           match fr with
           | Renderer.RecordRenderer _ -> return! error expectedType fr
@@ -442,6 +450,7 @@ module Validator =
           | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
           | Renderer.TableFormRenderer _ -> return! error expectedType fr
           | Renderer.TupleRenderer _ -> return! error expectedType fr
+          | Renderer.AllTranslationOverridesRenderer _ -> return! error expectedType fr
         | ExprType.OneType expectedInnerType ->
           match fr with
           | Renderer.RecordRenderer _ -> return! error expectedType fr
@@ -488,6 +497,7 @@ module Validator =
           | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
           | Renderer.TableFormRenderer _ -> return! error expectedType fr
           | Renderer.TupleRenderer _ -> return! error expectedType fr
+          | Renderer.AllTranslationOverridesRenderer _ -> return! error expectedType fr
         | ExprType.ReadOnlyType innerType ->
           match fr with
           | Renderer.RecordRenderer _ -> return! error expectedType fr
@@ -507,6 +517,7 @@ module Validator =
           | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
           | Renderer.TableFormRenderer _ -> return! error expectedType fr
           | Renderer.TupleRenderer _ -> return! error expectedType fr
+          | Renderer.AllTranslationOverridesRenderer _ -> return! error expectedType fr
         | ExprType.ManyType _ -> return! sum.Throw(Errors.Singleton "Error: unexpected renderer for many type")
         | ExprType.ListType innerType ->
           match fr with
@@ -526,6 +537,7 @@ module Validator =
           | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
           | Renderer.TableFormRenderer _ -> return! error expectedType fr
           | Renderer.TupleRenderer _ -> return! error expectedType fr
+          | Renderer.AllTranslationOverridesRenderer _ -> return! error expectedType fr
         | ExprType.TableType expectedRowType ->
           match fr with
           | Renderer.RecordRenderer _ -> return! error expectedType fr
@@ -551,6 +563,7 @@ module Validator =
 
             ExprType.TableType formRowType // NOTE: nothing to recurse into
           | Renderer.TupleRenderer _ -> return! error expectedType fr
+          | Renderer.AllTranslationOverridesRenderer _ -> return! error expectedType fr
         | ExprType.SetType _ ->
           match fr with
           | Renderer.RecordRenderer _ -> return! error expectedType fr
@@ -590,6 +603,7 @@ module Validator =
           | Renderer.FormRenderer(formId, typeId) -> return! handleFormRenderer formId typeId
           | Renderer.TableFormRenderer _ -> return! error expectedType fr
           | Renderer.TupleRenderer _ -> return! error expectedType fr
+          | Renderer.AllTranslationOverridesRenderer _ -> return! error expectedType fr
         | ExprType.ArrowType _ -> return! sum.Throw(Errors.Singleton "Error: unexpected renderer for arrow type")
         | ExprType.GenericType _ -> return! sum.Throw(Errors.Singleton "Error: unexpected renderer for generic type")
         | ExprType.GenericApplicationType _ ->
@@ -620,6 +634,8 @@ module Validator =
                   sprintf "Error: translation override key type %s is not a lookup type" (keyType.ToString())
                 )
               )
+        | ExprType.AllTranslationOverrides _ ->
+          return! sum.Throw(Errors.Singleton "Error: found AllTranslationOverrides - only one is allowed in the spec")
       }
 
   and NestedRenderer<'ExprExtension, 'ValueExtension> with
@@ -694,6 +710,7 @@ module Validator =
           do! FormBody.ValidatePredicates ctx typeCheck globalType rootType formType i
         | Renderer.PrimitiveRenderer _ -> return ()
         | Renderer.EnumRenderer _ -> return ()
+        | Renderer.AllTranslationOverridesRenderer _ -> return ()
         | Renderer.TupleRenderer e ->
 
           for element in e.Elements do
@@ -799,34 +816,9 @@ module Validator =
       (globalType: ExprType)
       (rootType: ExprType)
       (localType: ExprType)
-      (includeLocalTypeInScope: bool)
       (fc: FieldConfig<'ExprExtension, 'ValueExtension>)
       : State<Unit, _, ValidationState, Errors> =
       state {
-        let vars =
-          [ ("global", globalType); ("root", rootType) ]
-          @ (if includeLocalTypeInScope then
-               [ ("local", localType) ]
-             else
-               [])
-          |> Seq.map (VarName.Create <*> id)
-          |> Map.ofSeq
-
-        match fc.Disabled with
-        | Some disabled ->
-          let! disabledExprType =
-            typeCheck (ctx.Types |> Seq.map (fun tb -> tb.Value.TypeId, tb.Value.Type) |> Map.ofSeq) vars disabled
-            |> state.OfSum
-
-          do!
-            ExprType.Unify
-              Map.empty
-              (ctx.Types |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq)
-              disabledExprType
-              (ExprType.PrimitiveType PrimitiveType.BoolType)
-            |> Sum.map ignore
-            |> state.OfSum
-        | _ -> return ()
 
         do!
           Renderer.ValidatePredicates
@@ -852,7 +844,7 @@ module Validator =
       state {
         for f in formFields.Fields do
           do!
-            FieldConfig.ValidatePredicates ctx typeCheck globalType rootType localType true f.Value
+            FieldConfig.ValidatePredicates ctx typeCheck globalType rootType localType f.Value
             |> state.Map ignore
 
         let disabledFieldsValidation =
@@ -965,8 +957,7 @@ module Validator =
               |> Map.tryFindWithError (column.Key) "fields" "fields"
               |> state.OfSum
 
-            do!
-              FieldConfig.ValidatePredicates ctx typeCheck globalType rootType columnType false column.Value.FieldConfig
+            do! FieldConfig.ValidatePredicates ctx typeCheck globalType rootType columnType column.Value.FieldConfig
 
             match table.Details with
             | Some details ->

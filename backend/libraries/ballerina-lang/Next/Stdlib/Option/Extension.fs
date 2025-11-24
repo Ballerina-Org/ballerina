@@ -37,9 +37,15 @@ module Extension =
       (optionSomeId, optionSomeSymbol),
       { CaseType = TypeExpr.Lookup(Identifier.LocalScope aVar.Name)
         ConstructorType =
-          TypeExpr.Arrow(
-            TypeExpr.Lookup(Identifier.LocalScope "a"),
-            TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope "Option"), TypeExpr.Lookup(Identifier.LocalScope "a"))
+          TypeValue.CreateLambda(
+            TypeParameter.Create(aVar.Name, aKind),
+            TypeExpr.Arrow(
+              TypeExpr.Lookup(Identifier.LocalScope aVar.Name),
+              TypeExpr.Apply(
+                TypeExpr.Lookup(Identifier.LocalScope "Option"),
+                TypeExpr.Lookup(Identifier.LocalScope aVar.Name)
+              )
+            )
           )
         Constructor = Option_Some
         Apply = fun _loc0 (_, v) -> reader { return OptionValues.Option(Some v) |> valueLens.Set |> Ext }
@@ -58,9 +64,15 @@ module Extension =
       (optionNoneId, optionNoneSymbol),
       { CaseType = TypeExpr.Primitive PrimitiveType.Unit
         ConstructorType =
-          TypeExpr.Arrow(
-            TypeExpr.Primitive PrimitiveType.Unit,
-            TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope "Option"), TypeExpr.Lookup(Identifier.LocalScope "a"))
+          TypeValue.CreateLambda(
+            TypeParameter.Create(aVar.Name, aKind),
+            TypeExpr.Arrow(
+              TypeExpr.Primitive PrimitiveType.Unit,
+              TypeExpr.Apply(
+                TypeExpr.Lookup(Identifier.LocalScope "Option"),
+                TypeExpr.Lookup(Identifier.LocalScope aVar.Name)
+              )
+            )
           )
         Constructor = Option_None
         Apply = fun _loc0 (_, _) -> reader { return OptionValues.Option None |> valueLens.Set |> Ext }
@@ -142,7 +154,6 @@ module Extension =
 
     { TypeName = optionId, optionSymbolId
       TypeVars = [ (aVar, aKind) ]
-      WrapTypeVars = fun t -> TypeValue.CreateLambda(TypeParameter.Create(aVar.Name, aKind), t)
       Cases = [ someCase; noneCase ] |> Map.ofList
       Operations = [ mapOperation ] |> Map.ofList
       Deconstruct =
