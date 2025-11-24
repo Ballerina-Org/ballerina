@@ -1,0 +1,81 @@
+namespace Ballerina.DSL.Next.Types.TypeChecker
+
+
+[<AutoOpen>]
+module KindEval =
+  open System
+  open Ballerina.Fun
+  open Ballerina.Collections.Sum
+  open Ballerina.StdLib.Object
+  open Ballerina.State.WithError
+  open Ballerina.Reader.WithError
+  open Ballerina.LocalizedErrors
+  open Ballerina.Collections.Map
+  open System
+  open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.StdLib.OrderPreservingMap
+  open Ballerina.Cat.Collections.OrderedMap
+  open Ballerina.Collections.NonEmptyList
+  open Ballerina.DSL.Next.Types.TypeChecker.Model
+  open Ballerina.DSL.Next.Types.TypeChecker.Patterns
+
+  type TypeExpr with
+    static member KindEval: TypeExprKindEval =
+      fun _n loc0 t ->
+        state {
+          let (!) = TypeValue.KindEval None loc0
+          let (!!) = TypeExpr.KindEval None loc0
+          let error e = Errors.Singleton(loc0, e)
+
+          match t with
+          | TypeExpr.FromTypeValue tv -> return! !tv
+          | TypeExpr.Lookup id ->
+            let! ctx = state.GetContext()
+            return! ctx |> Map.tryFindWithError id.LocalName "variables" "kind" loc0 |> state.OfSum
+          | TypeExpr.Lambda(param, body) ->
+            let! bodyKind = !!body |> state.MapContext(Map.add param.Name param.Kind)
+            return Kind.Arrow(param.Kind, bodyKind)
+          | TypeExpr.Apply(func, arg) ->
+            let! funcKind = !!func
+            let! argKind = !!arg
+
+            match funcKind with
+            | Kind.Arrow(paramKind, returnKind) when paramKind = argKind -> return returnKind
+            | _ -> return! $"Error: kind mismatch" |> error |> state.Throw
+          | _ -> return Kind.Star
+        }
+
+  and TypeValue with
+    static member KindEval: TypeValueKindEval =
+      fun _n loc0 t ->
+        state {
+
+          // let (!) = TypeValue.KindEval None loc0
+          let (!!) = TypeExpr.KindEval None loc0
+
+          // let error e = Errors.Singleton(loc0, e)
+
+          // let ofSum (p: Sum<'a, Ballerina.Errors.Errors>) =
+          //   p |> Sum.mapRight (Errors.FromErrors loc0) |> state.OfSum
+
+          match t with
+          | TypeValue.Lookup id ->
+            let! ctx = state.GetContext()
+            return! ctx |> Map.tryFindWithError id.LocalName "variables" "kind" loc0 |> state.OfSum
+          | TypeValue.Lambda { value = (param, body) } ->
+            let! bodyKind = !!body |> state.MapContext(Map.add param.Name param.Kind)
+            return Kind.Arrow(param.Kind, bodyKind)
+          // | TypeValue.Apply { value = (var, arg) } ->
+          //   let! funcKind = !(TypeValue.Lookup(var.Name |> Identifier.LocalScope))
+          //   let! argKind = !arg
+
+          //   match funcKind with
+          //   | Kind.Arrow(paramKind, returnKind) when paramKind = argKind -> return returnKind
+          //   | _ -> return! $"Error: kind mismatch" |> error |> state.Throw
+          | TypeValue.Imported i ->
+            let paramKinds = i.Parameters |> List.map (fun p -> p.Kind)
+            return List.foldBack (fun k acc -> Kind.Arrow(k, acc)) paramKinds Kind.Star
+
+          | _ -> return Kind.Star
+        }

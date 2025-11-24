@@ -26,7 +26,8 @@ let ``LangNext-Instantiate straightforward var to primitive`` () =
   let program = TypeValue.Var a
 
   let actual =
-    ((TypeValue.Instantiate Location.Unknown program).run (TypeInstantiateContext.Empty, classes))
+    ((TypeValue.Instantiate TypeExpr.Eval Location.Unknown program)
+      .run (TypeInstantiateContext.Empty, classes |> TypeCheckState.CreateFromUnificationState))
 
   let expected = TypeValue.CreateInt32()
 
@@ -46,7 +47,8 @@ let ``LangNext-Instantiate var nested inside generics to primitive`` () =
   let program = TypeValue.Var a |> TypeValue.CreateSet
 
   let actual =
-    ((TypeValue.Instantiate Location.Unknown program).run (TypeInstantiateContext.Empty, classes))
+    ((TypeValue.Instantiate TypeExpr.Eval Location.Unknown program)
+      .run (TypeInstantiateContext.Empty, classes |> TypeCheckState.CreateFromUnificationState))
 
   let expected = TypeValue.CreateInt32() |> TypeValue.CreateSet
 
@@ -69,7 +71,8 @@ let ``LangNext-Instantiate var nested inside generics via other bound var to pri
   let program = TypeValue.Var a |> TypeValue.CreateSet
 
   let actual =
-    ((TypeValue.Instantiate Location.Unknown program).run (TypeInstantiateContext.Empty, classes))
+    ((TypeValue.Instantiate TypeExpr.Eval Location.Unknown program)
+      .run (TypeInstantiateContext.Empty, classes |> TypeCheckState.CreateFromUnificationState))
 
   let expected =
     TypeValue.CreateString() |> TypeValue.CreateSet |> TypeValue.CreateSet
@@ -94,7 +97,8 @@ let ``LangNext-Instantiate var nested inside generics via other bound and aliase
   let program = TypeValue.Var a |> TypeValue.CreateSet |> TypeValue.CreateSet
 
   let actual =
-    ((TypeValue.Instantiate Location.Unknown program).run (TypeInstantiateContext.Empty, classes))
+    ((TypeValue.Instantiate TypeExpr.Eval Location.Unknown program)
+      .run (TypeInstantiateContext.Empty, classes |> TypeCheckState.CreateFromUnificationState))
 
   let expected =
     TypeValue.CreateString()

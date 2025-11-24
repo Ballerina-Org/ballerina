@@ -59,8 +59,8 @@ module Arity =
 
 module EntityDescriptor =
   let seed
-    (e: EntityDescriptor<TypeValue, ResolvedIdentifier, ValueExt>)
     (en: EntityName)
+    (e: EntityDescriptor<TypeValue, ResolvedIdentifier, ValueExt>)
     : State<Map<Guid, Value<TypeValue, ValueExt>>, SeedingContext, SeedingState, Errors> =
     state {
       let! ctx = state.GetContext()

@@ -499,15 +499,15 @@ module Extension =
     { TypeName = dateTimeId, dateTimeSymbolId
       TypeVars = []
       Cases = dateTimeConstructors |> Map.ofList
-      WrapTypeVars =
-        fun t ->
-          match t with
-          | TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.String, _) ->
-            TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateSum [ dateOnlyTypeValue; unitTypeValue ])
-          | TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, _) ->
-            TypeValue.CreateArrow(unitTypeValue, dateOnlyTypeValue)
-          | TypeExpr.Imported _ -> dateOnlyTypeValue
-          | _ -> failwith $"Expected a Arrow or Imported, got {t}"
+      // WrapTypeVars =
+      //   fun t ->
+      //     match t with
+      //     | TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.String, _) ->
+      //       TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateSum [ dateOnlyTypeValue; unitTypeValue ])
+      //     | TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, _) ->
+      //       TypeValue.CreateArrow(unitTypeValue, dateOnlyTypeValue)
+      //     | TypeExpr.FromTypeValue(TypeValue.Imported _) -> dateOnlyTypeValue
+      //     | _ -> failwith $"Expected a Arrow or Imported, got {t}"
 
       Deconstruct =
         fun (v) ->

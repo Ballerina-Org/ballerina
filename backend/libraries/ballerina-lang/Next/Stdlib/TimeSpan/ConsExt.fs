@@ -24,11 +24,11 @@ module ConsExt =
       (timeSpanNewId, timeSpanNewSymbol),
       { CaseType = TypeExpr.Primitive PrimitiveType.String
         ConstructorType =
-          TypeExpr.Arrow(
-            TypeExpr.Primitive PrimitiveType.String,
-            TypeExpr.Sum
-              [ TypeExpr.Primitive PrimitiveType.Unit
-                TypeExpr.Lookup(Identifier.LocalScope "timeSpan") ]
+          TypeValue.CreateArrow(
+            TypeValue.CreatePrimitive PrimitiveType.String,
+            TypeValue.CreateSum
+              [ TypeValue.CreatePrimitive PrimitiveType.Unit
+                TypeValue.Lookup(Identifier.LocalScope "timeSpan") ]
           )
         Constructor = TimeSpan_New
         Apply =
@@ -63,7 +63,10 @@ module ConsExt =
       (timeSpanZeroId, timeSpanZeroSymbol),
       { CaseType = TypeExpr.Primitive PrimitiveType.Unit
         ConstructorType =
-          TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, TypeExpr.Lookup(Identifier.LocalScope "timeSpan"))
+          TypeValue.CreateArrow(
+            TypeValue.CreatePrimitive PrimitiveType.Unit,
+            TypeValue.Lookup(Identifier.LocalScope "timeSpan")
+          )
         Constructor = TimeSpan_Zero
         Apply =
           fun loc0 (_, v) ->

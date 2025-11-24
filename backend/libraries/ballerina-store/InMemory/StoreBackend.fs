@@ -572,7 +572,7 @@ module ConcurrentStore =
     (seeder: Schema<TypeValue, ResolvedIdentifier, ValueExt> -> Sum<SpecData<TypeValue, ValueExt>, Errors>)
     (name: SpecName)
     (path: VirtualPath option)
-    : State<SpecData<TypeValue, ValueExt>, TypeExprEvalContext, TypeExprEvalState, Errors> =
+    : State<SpecData<TypeValue, ValueExt>, TypeCheckContext, TypeCheckState, Errors> =
 
     state {
       match store.ContainsKey name with

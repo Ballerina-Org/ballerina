@@ -62,10 +62,8 @@ module Let =
           let! e2, t2, k2 =
             !e2
             |> state.MapContext(
-              TypeCheckContext.Updaters.Values(
-                Map.add (x.Name |> Identifier.LocalScope |> ctx.Types.Scope.Resolve) (t1, k1)
-              )
+              TypeCheckContext.Updaters.Values(Map.add (x.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) (t1, k1))
             )
 
-          return Expr.Let(x, None, e1, e2, loc0, ctx.Types.Scope), t2, k2
+          return Expr.Let(x, None, e1, e2, loc0, ctx.Scope), t2, k2
         }

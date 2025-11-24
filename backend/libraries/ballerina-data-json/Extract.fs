@@ -56,7 +56,7 @@ module Extract =
       let! schema, _stateOpt =
         schema
         |> Schema.SchemaEval
-        |> State.Run(langContext.TypeCheckContext.Types, langContext.TypeCheckState.Types)
+        |> State.Run(langContext.TypeCheckContext, langContext.TypeCheckState)
         |> sum.MapError(fst >> _.Errors.Head.Message >> Errors.Singleton)
 
       let renderer =

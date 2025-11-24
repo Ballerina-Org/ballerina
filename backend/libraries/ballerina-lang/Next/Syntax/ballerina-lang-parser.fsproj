@@ -9,6 +9,7 @@
         <Compile Include="Parser/Model.fs" />
         <Compile Include="Parser/Precedence.fs" />
         <Compile Include="Parser/Common.fs" />
+        <Compile Include="Parser/Kind.fs" />
         <Compile Include="Parser/Type.fs" />
         <Compile Include="Parser/Expr.fs" />
 

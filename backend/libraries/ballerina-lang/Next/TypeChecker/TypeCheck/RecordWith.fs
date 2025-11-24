@@ -72,8 +72,8 @@ module RecordWith =
           let! t_record =
             t_record
             |> TypeValue.CreateRecord
-            |> TypeValue.Instantiate loc0
+            |> TypeValue.Instantiate TypeExpr.Eval loc0
             |> Expr.liftInstantiation
 
-          return Expr.RecordWith(record, fieldsExpr, loc0, ctx.Types.Scope), t_record, Kind.Star
+          return Expr.RecordWith(record, fieldsExpr, loc0, ctx.Scope), t_record, Kind.Star
         }

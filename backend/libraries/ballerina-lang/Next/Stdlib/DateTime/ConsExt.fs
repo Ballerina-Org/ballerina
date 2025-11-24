@@ -24,11 +24,11 @@ module ConsExt =
       (dateTimeNewId, dateTimeNewSymbol),
       { CaseType = TypeExpr.Primitive PrimitiveType.String
         ConstructorType =
-          TypeExpr.Arrow(
-            TypeExpr.Primitive PrimitiveType.String,
-            TypeExpr.Sum
-              [ TypeExpr.Primitive PrimitiveType.Unit
-                TypeExpr.Lookup(Identifier.LocalScope "dateTime") ]
+          TypeValue.CreateArrow(
+            TypeValue.CreatePrimitive PrimitiveType.String,
+            TypeValue.CreateSum
+              [ TypeValue.CreatePrimitive PrimitiveType.Unit
+                TypeValue.Lookup(Identifier.LocalScope "dateTime") ]
           )
         Constructor = DateTime_New
         Apply =
@@ -59,7 +59,10 @@ module ConsExt =
       (dateTimeNowId, dateTimeNowSymbol),
       { CaseType = TypeExpr.Primitive PrimitiveType.Unit
         ConstructorType =
-          TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, TypeExpr.Lookup(Identifier.LocalScope "dateTime"))
+          TypeValue.CreateArrow(
+            TypeValue.CreatePrimitive PrimitiveType.Unit,
+            TypeValue.Lookup(Identifier.LocalScope "dateTime")
+          )
         Constructor = DateTime_Now
         Apply =
           fun loc0 (_, v) ->
@@ -86,7 +89,10 @@ module ConsExt =
       (dateTimeUTCNowId, dateTimeUTCNowSymbol),
       { CaseType = TypeExpr.Primitive PrimitiveType.Unit
         ConstructorType =
-          TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, TypeExpr.Lookup(Identifier.LocalScope "dateTime"))
+          TypeValue.CreateArrow(
+            TypeValue.CreatePrimitive PrimitiveType.Unit,
+            TypeValue.Lookup(Identifier.LocalScope "dateTime")
+          )
         Constructor = DateTime_UTCNow
         Apply =
           fun loc0 (_, v) ->

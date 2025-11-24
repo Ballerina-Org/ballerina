@@ -46,7 +46,7 @@ let emailRgx = Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled)
 let isEmail (s: string) = emailRgx.IsMatch s
 
 let seedCtx = SeedingContext.Default()
-let seedState = SeedingState.Default(languageContext.TypeCheckState.Types)
+let seedState = SeedingState.Default(languageContext.TypeCheckState)
 
 let private evalJsonAndSeed (e: EntityName) (str: string) =
   sum {
@@ -73,7 +73,7 @@ let private evalJsonAndSeed (e: EntityName) (str: string) =
           |> List.map (fun (name, expr) ->
             state {
               let! tv = TypeExpr.Eval None Location.Unknown expr
-              do! TypeExprEvalState.bindType (name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) tv
+              do! TypeCheckState.bindType (name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) tv
               return ()
             })
           |> state.All
@@ -82,12 +82,13 @@ let private evalJsonAndSeed (e: EntityName) (str: string) =
         let! s = state.GetState()
         return s.Bindings
       }
-      |> State.Run(languageContext.TypeCheckContext.Types, languageContext.TypeCheckState.Types)
+      |> State.Run(languageContext.TypeCheckContext, languageContext.TypeCheckState)
       |> sum.MapError fst
 
     let! seeds, _seedStateOpt =
+      //FIXME: use schema entities (with entity descriptor type) instead of bindings to avoid checking for supported types
       bindings
-      |> Map.filter (fun _i (t, _k) -> not t.IsLambda)
+      |> Map.filter (fun _i (tv, _k) -> Traverser.isSupported tv)
       |> Map.map (fun key (typeValue, kind) -> Traverser.seed e typeValue |> state.Map(fun seed -> key, kind, seed))
       |> state.AllMap
       |> State.Run(seedCtx, seedState)
@@ -242,7 +243,7 @@ let analyze (data: Map<Guid, Set<Guid>>) =
 
 let insert
   (ctx: SeedingContext)
-  : Sum<Value<TypeValue, ValueExt> * Option<TypeExprEvalState>, Errors * Option<TypeExprEvalState>> =
+  : Sum<Value<TypeValue, ValueExt> * Option<TypeCheckState>, Errors * Option<TypeCheckState>> =
   let json = SampleData.Specs.PersonGenders |> JsonValue.Parse
 
   state {
@@ -283,7 +284,7 @@ let insert
       |> Sum.mapRight (Errors.FromErrors Location.Unknown)
       |> state.OfSum
   }
-  |> State.Run(languageContext.TypeCheckContext.Types, languageContext.TypeCheckState.Types)
+  |> State.Run(languageContext.TypeCheckContext, languageContext.TypeCheckState)
 
 let private tryExtractGender
   (value: Value<TypeValue, ValueExt>)

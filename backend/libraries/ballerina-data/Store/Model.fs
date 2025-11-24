@@ -31,7 +31,7 @@ module Model =
           -> SpecName
           -> Seeder
           -> VirtualPath option
-          -> State<SpecData<TypeValue, ValueExt>, TypeExprEvalContext, TypeExprEvalState, Errors>
+          -> State<SpecData<TypeValue, ValueExt>, TypeCheckContext, TypeCheckState, Errors>
       SeedSpec: TenantId * SpecName * SpecData<TypeValue, ValueExt> -> Sum<unit, Errors>
       GetSeeds: TenantId -> SpecName -> Sum<SpecData<TypeValue, ValueExt>, Errors> }
 

@@ -31,7 +31,7 @@ module Lookup =
         state {
           let! ctx = state.GetContext()
 
-          let id = ctx.Types.Scope.Resolve id
+          let id = ctx.Scope.Resolve id
 
           let error e = Errors.Singleton(loc0, e)
 
@@ -45,5 +45,5 @@ module Lookup =
                |> state.Throw)
             |> state.MapError(Errors.FilterHighestPriorityOnly)
 
-          return Expr.Lookup(id, loc0, ctx.Types.Scope), t_id, id_k
+          return Expr.Lookup(id, loc0, ctx.Scope), t_id, id_k
         }

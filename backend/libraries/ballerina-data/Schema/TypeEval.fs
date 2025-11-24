@@ -28,20 +28,20 @@ module TypeEval =
   type Schema<'T, 'Id, 'ValueExt when 'Id: comparison> with
     static member CreateTypeContext
       (schema: Schema<TypeExpr, Identifier, 'ValueExt>)
-      : State<OrderedMap<Identifier, TypeValue * Kind>, TypeExprEvalContext, TypeExprEvalState, Errors> =
+      : State<OrderedMap<Identifier, TypeValue * Kind>, TypeCheckContext, TypeCheckState, Errors> =
       schema.Types
       |> OrderedMap.map (fun identifier typeExpr ->
         state {
 
           let! tv, kind = TypeExpr.Eval None Location.Unknown typeExpr
-          do! TypeExprEvalState.bindType (identifier |> TypeCheckScope.Empty.Resolve) (tv, kind)
+          do! TypeCheckState.bindType (identifier |> TypeCheckScope.Empty.Resolve) (tv, kind)
           return tv, kind
         })
       |> state.AllMapOrdered
 
     static member SchemaEval
       : Schema<TypeExpr, Identifier, 'ValueExt>
-          -> State<Schema<TypeValue, ResolvedIdentifier, 'ValueExt>, TypeExprEvalContext, TypeExprEvalState, Errors> =
+          -> State<Schema<TypeValue, ResolvedIdentifier, 'ValueExt>, TypeCheckContext, TypeCheckState, Errors> =
       fun schema ->
         state {
           let! types = Schema.CreateTypeContext schema

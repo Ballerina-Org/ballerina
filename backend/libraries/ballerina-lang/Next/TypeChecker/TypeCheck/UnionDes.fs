@@ -75,7 +75,7 @@ module UnionDes =
                         |> ofSum
 
                       let! id =
-                        TypeExprEvalState.tryFindResolvedIdentifier (sym, loc0)
+                        TypeCheckState.tryFindResolvedIdentifier (sym, loc0)
                         |> state.OfStateReader
                         |> Expr.liftTypeEval
 
@@ -94,7 +94,7 @@ module UnionDes =
                       let! sym = TypeCheckState.TryFindUnionCaseSymbol(id, loc0)
 
                       let! id =
-                        TypeExprEvalState.tryFindResolvedIdentifier (sym, loc0)
+                        TypeCheckState.tryFindResolvedIdentifier (sym, loc0)
                         |> state.OfStateReader
                         |> Expr.liftTypeEval
 
@@ -128,7 +128,7 @@ module UnionDes =
               //   |> Map.toSeq
               //   |> Seq.map (fun (k, value) ->
               //     state {
-              //       let! k_s = TypeCheckState.TryFindUnionCaseSymbol(k, loc0, ctx.Types.Scope)
+              //       let! k_s = TypeCheckState.TryFindUnionCaseSymbol(k, loc0, ctx.Scope)
               //       return k, (value, k_s)
               //     })
               //   |> state.All
@@ -152,9 +152,7 @@ module UnionDes =
                           None => body // either None, or the instantiation of result_t
                           |> state.MapContext(
                             TypeCheckContext.Updaters.Values(
-                              Map.add
-                                (var.Name |> Identifier.LocalScope |> ctx.Types.Scope.Resolve)
-                                (cons_t, Kind.Star)
+                              Map.add (var.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) (cons_t, Kind.Star)
                             )
                           )
 
@@ -162,7 +160,7 @@ module UnionDes =
 
                         do! TypeValue.Unify(loc0, body_t, result_t) |> Expr.liftUnification
 
-                        let! var_t = TypeValue.Instantiate loc0 cons_t |> Expr.liftInstantiation
+                        let! var_t = TypeValue.Instantiate TypeExpr.Eval loc0 cons_t |> Expr.liftInstantiation
 
                         return (var, body), (k_s, var_t)
                       })
@@ -193,7 +191,7 @@ module UnionDes =
                     if handlers.Count <> union_cases.Count then
                       return! $"Error: incomplete pattern matching" |> error |> state.Throw
 
-                  let! result_t = TypeValue.Instantiate loc0 result_t |> Expr.liftInstantiation
+                  let! result_t = TypeValue.Instantiate TypeExpr.Eval loc0 result_t |> Expr.liftInstantiation
 
                   // do!
                   //     UnificationState.DeleteVariable result_var
@@ -204,7 +202,7 @@ module UnionDes =
 
                   let! arrowValue =
                     TypeValue.CreateArrow(unionValue, result_t)
-                    |> TypeValue.Instantiate loc0
+                    |> TypeValue.Instantiate TypeExpr.Eval loc0
                     |> Expr.liftInstantiation
 
                   let handlerExprs =
@@ -213,7 +211,7 @@ module UnionDes =
                     |> Seq.map (fun (k, v) -> k, v)
                     |> Seq.fold (fun state (k, v) -> Map.add k v state) handlerExprs
 
-                  return Expr.UnionDes(handlerExprs, fallback, loc0, ctx.Types.Scope), arrowValue, Kind.Star
+                  return Expr.UnionDes(handlerExprs, fallback, loc0, ctx.Scope), arrowValue, Kind.Star
                 }
                 |> state.MapError(Errors.SetPriority ErrorPriority.High)
             }

@@ -25,7 +25,7 @@ module TypeLambdas =
     static member RegisterTypeCheckState(ext: TypeLambdaExtension<'ext, 'extTypeLambda>) : Updater<TypeCheckState> =
       fun typeCheckState ->
 
-        let bindings = typeCheckState.Types.Bindings
+        let bindings = typeCheckState.Bindings
 
         let bindings =
           ext.ReferencedTypes
@@ -33,10 +33,8 @@ module TypeLambdas =
           |> Seq.fold (fun acc (id, typeValue, kind) -> acc |> Map.add id (typeValue, kind)) bindings
 
         { typeCheckState with
-            Types =
-              { typeCheckState.Types with
-                  Bindings = bindings
-                  Symbols = typeCheckState.Types.Symbols } }
+            Bindings = bindings
+            Symbols = typeCheckState.Symbols }
 
     static member RegisterExprEvalContext
       (ext: TypeLambdaExtension<'ext, 'extTypeLambda>)

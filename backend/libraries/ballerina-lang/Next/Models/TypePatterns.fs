@@ -131,15 +131,10 @@ module Patterns =
       | PrimitiveType.DateOnly -> TypeValue.CreateDateOnly()
       | PrimitiveType.TimeSpan -> TypeValue.CreateTimeSpan()
 
-    static member CreateLambda(v: TypeParameter * TypeExpr) : TypeValue =
+    static member CreateLambda(v: TypeParameter, t: TypeExpr) : TypeValue =
       TypeValue.Lambda
-        { value = v
+        { value = v, t
           source = NoSourceMapping "Lambda" }
-
-    static member CreateApply(v: TypeVar * TypeValue) : TypeValue =
-      TypeValue.Apply
-        { value = v
-          source = NoSourceMapping "Apply" }
 
     static member CreateArrow(v: TypeValue * TypeValue) : TypeValue =
       TypeValue.Arrow
@@ -175,6 +170,13 @@ module Patterns =
       TypeValue.Map
         { value = v
           source = NoSourceMapping "Map" }
+
+    static member CreateVar(v: TypeVar) : TypeValue = TypeValue.Var v
+
+    static member CreateApplication(v: SymbolicTypeApplication) : TypeValue =
+      TypeValue.Application
+        { source = NoSourceMapping "Application"
+          value = v }
 
     static member CreateImported(v: ImportedTypeValue) : TypeValue = TypeValue.Imported v
 
@@ -287,11 +289,11 @@ module Patterns =
         | _ -> return! $"Error: expected primitive type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
-    static member AsApply(t: TypeValue) =
+    static member AsApplication(t: TypeValue) =
       sum {
         match t with
-        | TypeValue.Apply v -> return v
-        | _ -> return! $"Error: expected apply type, got {t}" |> Errors.Singleton |> sum.Throw
+        | TypeValue.Application v -> return v
+        | _ -> return! $"Error: expected application type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
     static member DropSourceMapping(t: TypeValue) =
@@ -300,8 +302,8 @@ module Patterns =
       | TypeValue.Lookup id -> TypeValue.Lookup id
       | TypeValue.Imported v -> TypeValue.Imported v
       | TypeValue.Primitive p -> TypeValue.CreatePrimitive p.value
-      | TypeValue.Apply v -> TypeValue.CreateApply v.value
-      | TypeValue.Lambda v -> TypeValue.CreateLambda v.value
+      | TypeValue.Application v -> TypeValue.CreateApplication v.value
+      | TypeValue.Lambda { value = (v, t) } -> TypeValue.CreateLambda(v, t)
       | TypeValue.Arrow v -> TypeValue.CreateArrow v.value
       | TypeValue.Record v -> TypeValue.CreateRecord v.value
       | TypeValue.Tuple v -> TypeValue.CreateTuple v.value
@@ -317,7 +319,7 @@ module Patterns =
       | TypeValue.Imported _ -> t
       | TypeValue.Primitive(p: WithTypeExprSourceMapping<PrimitiveType>) ->
         WithTypeExprSourceMapping.Setters.Source(p, source) |> TypeValue.Primitive
-      | TypeValue.Apply v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Apply
+      | TypeValue.Application v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Application
       | TypeValue.Lambda v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Lambda
       | TypeValue.Arrow v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Arrow
       | TypeValue.Record v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Record
@@ -328,31 +330,7 @@ module Patterns =
       | TypeValue.Map v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Map
 
   type TypeValue with
-    member t.AsExpr: TypeExpr =
-      match t with
-      | Primitive p -> TypeExpr.Primitive p.value
-      | Var id -> TypeExpr.Lookup(Identifier.LocalScope id.Name)
-      | Apply { value = v, a } -> TypeExpr.Apply((v |> TypeValue.Var).AsExpr, a.AsExpr)
-      | Lookup id -> TypeExpr.Lookup id
-      | Lambda { value = param, body } -> TypeExpr.Lambda(param, body)
-      | Arrow { value = input, output } -> TypeExpr.Arrow(input.AsExpr, output.AsExpr)
-      | Record { value = fields } ->
-        TypeExpr.Record(
-          fields
-          |> OrderedMap.toList
-          |> List.map (fun (k, v) -> k.Name |> TypeExpr.Lookup, v.AsExpr)
-        )
-      | Tuple { value = elements } -> TypeExpr.Tuple(elements |> List.map (fun e -> e.AsExpr))
-      | Union { value = cases } ->
-        TypeExpr.Union(
-          cases
-          |> OrderedMap.toList
-          |> List.map (fun (k, v) -> k.Name |> TypeExpr.Lookup, v.AsExpr)
-        )
-      | Sum { value = elements } -> TypeExpr.Sum(elements |> List.map (fun e -> e.AsExpr))
-      | Set { value = element } -> TypeExpr.Set(element.AsExpr)
-      | Map { value = key, value } -> TypeExpr.Map(key.AsExpr, value.AsExpr)
-      | Imported i -> TypeExpr.Imported i
+    member t.AsExpr: TypeExpr = TypeExpr.FromTypeValue t
 
   type TypeExpr with
     static member AsLookup(t: TypeExpr) =
@@ -374,7 +352,7 @@ module Patterns =
         match t with
         | TypeExpr.Primitive p -> return TypeValue.CreatePrimitive p
         | TypeExpr.Lookup v -> return! tryFind v
-        | TypeExpr.Lambda(param, body) -> return TypeValue.CreateLambda((param, body))
+        | TypeExpr.Lambda(param, body) -> return TypeValue.CreateLambda(param, body)
         | TypeExpr.Arrow(input, output) ->
           let! input = !input
           let! output = !output

@@ -24,6 +24,17 @@ module Extension =
     let aVar, aKind = TypeVar.Create("a"), Kind.Star
     let listId = listId |> TypeCheckScope.Empty.Resolve
 
+    let listOf (argName: string) =
+      TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope "List"), TypeExpr.Lookup(Identifier.LocalScope argName))
+    // TypeValue.CreateImported(
+    //   { Id = listId
+    //     Sym = listSymbolId
+    //     Parameters = []
+    //     Arguments = [ TypeValue.Lookup(Identifier.LocalScope argName) ]
+    //     UnionLike = None
+    //     RecordLike = None }
+    // )
+
     let listFoldId =
       Identifier.FullyQualified([ "List" ], "fold") |> TypeCheckScope.Empty.Resolve
 
@@ -259,16 +270,7 @@ module Extension =
               TypeParameter.Create("b", Kind.Star),
               TypeExpr.Arrow(
                 TypeExpr.Arrow(TypeExpr.Lookup(Identifier.LocalScope "a"), TypeExpr.Lookup(Identifier.LocalScope "b")),
-                TypeExpr.Arrow(
-                  TypeExpr.Apply(
-                    TypeExpr.Lookup(Identifier.LocalScope "List"),
-                    TypeExpr.Lookup(Identifier.LocalScope "a")
-                  ),
-                  TypeExpr.Apply(
-                    TypeExpr.Lookup(Identifier.LocalScope "List"),
-                    TypeExpr.Lookup(Identifier.LocalScope "b")
-                  )
-                )
+                TypeExpr.Arrow(listOf "a", listOf "b")
               )
             )
           )
@@ -353,16 +355,7 @@ module Extension =
       { Type =
           TypeValue.CreateLambda(
             TypeParameter.Create("a", aKind),
-            TypeExpr.Arrow(
-              TypeExpr.Tuple(
-                [ TypeExpr.Lookup(Identifier.LocalScope "a")
-                  TypeExpr.Apply(
-                    TypeExpr.Lookup(Identifier.LocalScope "List"),
-                    TypeExpr.Lookup(Identifier.LocalScope "a")
-                  ) ]
-              ),
-              TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope "List"), TypeExpr.Lookup(Identifier.LocalScope "a"))
-            )
+            TypeExpr.Arrow(TypeExpr.Tuple([ TypeExpr.Lookup(Identifier.LocalScope "a"); listOf "a" ]), listOf "a")
           )
         Kind = Kind.Arrow(Kind.Star, Kind.Star)
         Operation = List_Cons
@@ -408,10 +401,7 @@ module Extension =
       { Type =
           TypeValue.CreateLambda(
             TypeParameter.Create("a", aKind),
-            TypeExpr.Arrow(
-              TypeExpr.Primitive(PrimitiveType.Unit),
-              TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope "List"), TypeExpr.Lookup(Identifier.LocalScope "a"))
-            )
+            TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, listOf "a")
           )
         Kind = Kind.Arrow(Kind.Star, Kind.Star)
         Operation = List_Nil
@@ -435,7 +425,6 @@ module Extension =
 
     { TypeName = listId, listSymbolId
       TypeVars = [ (aVar, aKind) ]
-      WrapTypeVars = fun t -> TypeValue.CreateLambda(TypeParameter.Create(aVar.Name, aKind), t)
       Cases = Map.empty
       Operations =
         [ lengthOperation

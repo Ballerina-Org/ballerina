@@ -65,7 +65,7 @@ module Lambda =
             !body
             |> state.MapContext(
               TypeCheckContext.Updaters.Values(
-                Map.add (x.Name |> Identifier.LocalScope |> ctx.Types.Scope.Resolve) freshVarType
+                Map.add (x.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) freshVarType
               )
             )
 
@@ -74,9 +74,9 @@ module Lambda =
           let! t_x =
             freshVarType
             |> fst
-            |> TypeValue.Instantiate loc0
+            |> TypeValue.Instantiate TypeExpr.Eval loc0
             |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
-          // let! t_body = t_body |> TypeValue.Instantiate loc0 |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
+          // let! t_body = t_body |> TypeValue.Instantiate TypeExpr.Eval loc0 |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
           // do!
           //     UnificationState.DeleteVariable freshVar
@@ -85,9 +85,9 @@ module Lambda =
 
           let! t_res =
             TypeValue.CreateArrow(t_x, t_body)
-            |> TypeValue.Instantiate loc0
+            |> TypeValue.Instantiate TypeExpr.Eval loc0
             |> Expr.liftInstantiation
 
-          return Expr.Lambda(x, Some t_x, body, loc0, ctx.Types.Scope), t_res, Kind.Star
+          return Expr.Lambda(x, Some t_x, body, loc0, ctx.Scope), t_res, Kind.Star
         }
 // |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `fun {x.Name} -> ...`"))
