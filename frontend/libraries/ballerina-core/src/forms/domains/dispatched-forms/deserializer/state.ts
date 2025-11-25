@@ -1,4 +1,4 @@
-import { List, Map } from "immutable";
+import { List, Map, OrderedMap } from "immutable";
 
 import {
   DispatchParsedType,
@@ -26,6 +26,8 @@ import {
   LookupTypeAbstractRendererView,
   ValueFilter,
   ValueTable,
+  PredicateComputedOrInlined,
+  PredicateFormLayout,
 } from "../../../../../main";
 
 import {
@@ -694,6 +696,58 @@ export type DispatchFormsParserContext<
   getFormsConfig: BasicFun<void, Promise<any>>;
   injectedPrimitives?: DispatchInjectables<T>;
   desiredLaunchers?: string[];
+};
+
+export type FieldsConfigSource =
+  | {
+      kind: "preprocessed";
+      visiblePaths: string[];
+      disabledPaths: string[];
+      layout: PredicateFormLayout; // TODO: only computed value
+    }
+  | {
+      kind: "raw";
+      layoutPredicate: PredicateFormLayout;
+      disabledPredicate: PredicateComputedOrInlined;
+    };
+
+export type ColumnsConfigSource =
+  | {
+      kind: "preprocessed";
+      visiblePaths: string[];
+      disabledPaths: string[];
+    }
+  | {
+      kind: "raw";
+      visiblePredicate: PredicateComputedOrInlined;
+      disabledPredicate: PredicateComputedOrInlined;
+    };
+
+export type SpecVersion =
+  | {
+      kind: "v1";
+    }
+  | {
+      kind: "v1-preprocessed";
+      visiblePaths: string[];
+      disabledPaths: string[];
+      layout: PredicateFormLayout; // TODO: use only computed value
+    };
+export const SpecVersion = {
+  Default: {
+    V1: (): SpecVersion => ({
+      kind: "v1",
+    }),
+    V1Preprocessed: (init: {
+      visiblePaths: string[];
+      disabledPaths: string[];
+    }): SpecVersion => ({
+      kind: "v1-preprocessed",
+      visiblePaths: init.visiblePaths,
+      disabledPaths: init.disabledPaths,
+      layout: OrderedMap(),
+    }),
+  },
 };
 
 export type DispatchFormsParserState<

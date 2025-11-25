@@ -163,6 +163,7 @@ export const OneAbstractRenderer = <
           _.typeAncestors,
         ),
         domNodeAncestorPath: _.domNodeAncestorPath + "[one][details]",
+        predictionAncestorPath: _.predictionAncestorPath + "[Value]",
         lookupTypeAncestorNames: _.lookupTypeAncestorNames,
         labelContext,
       };
@@ -258,6 +259,7 @@ export const OneAbstractRenderer = <
                 _.typeAncestors,
               ),
               domNodeAncestorPath: _.domNodeAncestorPath + "[one][preview]",
+              predictionAncestorPath: _.predictionAncestorPath + "[Value]",
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               labelContext,
             };

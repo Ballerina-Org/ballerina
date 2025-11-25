@@ -34,6 +34,7 @@ import { PrimitiveRenderer } from "./domains/primitive/state";
 import {
   ConcreteRenderers,
   DispatchInjectablesTypes,
+  SpecVersion,
   Unit,
 } from "../../../../../../../../../../../main";
 
@@ -119,6 +120,7 @@ export const Renderer = {
       tableApi: string | undefined,
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
+      specVersionContext: SpecVersion,
     ): ValueOrErrors<[Renderer<T>, Map<string, Renderer<T>>], string> =>
       Renderer.Operations.Deserialize(
         type,
@@ -128,6 +130,7 @@ export const Renderer = {
         tableApi,
         forms,
         alreadyParsedForms,
+        specVersionContext,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
       ),
@@ -149,6 +152,7 @@ export const Renderer = {
       tableApi: string | undefined, // Necessary because the table api is currently defined outside of the renderer, so a lookup has to be able to pass it to the looked up renderer
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
+      specVersionContext: SpecVersion,
     ): ValueOrErrors<[Renderer<T>, Map<string, Renderer<T>>], string> =>
       /*
         Important semantics of lookup vs inlined renderers and types:
@@ -199,6 +203,7 @@ export const Renderer = {
                 types,
                 forms,
                 alreadyParsedForms,
+                specVersionContext,
               )
             : LookupRenderer.Operations.Deserialize(
                 // lookup type and inlined renderer (case 2)
@@ -211,6 +216,7 @@ export const Renderer = {
                 types,
                 forms,
                 alreadyParsedForms,
+                specVersionContext,
               )
           : typeof serialized == "string"
             ? type.kind == "primitive" // special case
@@ -232,6 +238,7 @@ export const Renderer = {
                   types,
                   forms,
                   alreadyParsedForms,
+                  specVersionContext,
                 )
             : // All other cases are inlined renderers and inlined types (case 4)
               Renderer.Operations.HasOptions(serialized) &&
@@ -264,6 +271,7 @@ export const Renderer = {
                       tableApi,
                       forms,
                       alreadyParsedForms,
+                      specVersionContext,
                     ).Then(([renderer, newAlreadyParsedForms]) =>
                       ValueOrErrors.Default.return([
                         renderer,
@@ -278,6 +286,7 @@ export const Renderer = {
                         types,
                         forms,
                         alreadyParsedForms,
+                        specVersionContext,
                       )
                     : type.kind == "map"
                       ? MapRenderer.Operations.Deserialize(
@@ -287,6 +296,7 @@ export const Renderer = {
                           types,
                           forms,
                           alreadyParsedForms,
+                          specVersionContext,
                         )
                       : type.kind == "one"
                         ? OneRenderer.Operations.Deserialize(
@@ -296,6 +306,7 @@ export const Renderer = {
                             types,
                             forms,
                             alreadyParsedForms,
+                            specVersionContext,
                           )
                         : type.kind == "readOnly"
                           ? ReadOnlyRenderer.Operations.Deserialize(
@@ -305,6 +316,7 @@ export const Renderer = {
                               types,
                               forms,
                               alreadyParsedForms,
+                              specVersionContext,
                             )
                           : Renderer.Operations.IsSumUnitDate(
                                 serialized,
@@ -327,6 +339,7 @@ export const Renderer = {
                                   types,
                                   forms,
                                   alreadyParsedForms,
+                                  specVersionContext,
                                 )
                               : type.kind == "record"
                                 ? RecordRenderer.Operations.Deserialize(
@@ -336,6 +349,7 @@ export const Renderer = {
                                     types,
                                     forms,
                                     alreadyParsedForms,
+                                    specVersionContext,
                                   )
                                 : type.kind == "union"
                                   ? UnionRenderer.Operations.Deserialize(
@@ -345,6 +359,7 @@ export const Renderer = {
                                       types,
                                       forms,
                                       alreadyParsedForms,
+                                      specVersionContext,
                                     )
                                   : type.kind == "tuple"
                                     ? TupleRenderer.Operations.Deserialize(
@@ -354,6 +369,7 @@ export const Renderer = {
                                         types,
                                         forms,
                                         alreadyParsedForms,
+                                        specVersionContext,
                                       )
                                     : ValueOrErrors.Default.throwOne<
                                         [Renderer<T>, Map<string, Renderer<T>>],

@@ -38,6 +38,7 @@ import {
   DispatchTableApiSource,
   ValueUnit,
   NestedRenderer,
+  ColumnsConfigSource,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import {
@@ -83,6 +84,7 @@ export const TableAbstractRenderer = <
       >
     | undefined,
   DetailsRendererRaw: NestedRenderer<any> | undefined,
+  ColumnsConfigSource: ColumnsConfigSource,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   TableEntityType: RecordType<any>,
@@ -215,6 +217,8 @@ export const TableAbstractRenderer = <
             domNodeAncestorPath:
               _.domNodeAncestorPath +
               `[table][cell][${rowId}][record][${column}]`,
+            predictionAncestorPath:
+              _.predictionAncestorPath + `[Values][element][${column}]`,
             lookupTypeAncestorNames: _.lookupTypeAncestorNames,
             labelContext,
           };
@@ -389,6 +393,8 @@ export const TableAbstractRenderer = <
               ),
               domNodeAncestorPath:
                 _.domNodeAncestorPath + `[table][cell][${selectedDetailRow}]`,
+              predictionAncestorPath:
+                _.predictionAncestorPath + `[Values][element]`,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               labelContext,
             };
@@ -560,9 +566,17 @@ export const TableAbstractRenderer = <
       "local",
       props.context.value,
     );
-    
+
+    console.debug(props.context.predictionAncestorPath);
+
     // TODO: resolve this
-    const visibleColumns = null! as any
+    const visibleColumns =
+      ColumnsConfigSource.kind == "raw"
+        ? TableLayout.Operations.ComputeLayout(
+            updatedBindings,
+            ColumnsConfigSource.visiblePredicate,
+          )
+        : (null! as any);
     // TODO: find a better way to warn about missing fields without cluttering the console
     // visibleColumns.value.columns.forEach((column) => {
     //   if (!CellTemplates.has(column)) {
@@ -574,9 +588,15 @@ export const TableAbstractRenderer = <
     //   }
     // });
 
-    
     // TODO: resolve this
-    const disabledColumnsValue = null! as any
+    const disabledColumnsValue =
+      ColumnsConfigSource.kind == "raw"
+        ? TableLayout.Operations.ComputeLayout(
+            updatedBindings,
+            ColumnsConfigSource.disabledPredicate,
+          )
+        : (null! as any);
+
     // TODO we currently only calculated disabled status on a column basis, predicates will break if we
     // try to use their local binding (the local is the table).
     // Later we need to then calculate the disabled on a CELL level, by giving the calculations
@@ -585,7 +605,8 @@ export const TableAbstractRenderer = <
       List(
         CellTemplates.map(({ disabled }, fieldName) =>
           disabled == undefined
-            ? disabledColumnsValue.includes(fieldName)
+            ? disabledColumnsValue.columns &&
+              disabledColumnsValue.columns.includes(fieldName)
               ? ValueOrErrors.Default.return(fieldName)
               : ValueOrErrors.Default.return(null)
             : Expr.Operations.EvaluateAs("disabled predicate")(updatedBindings)(

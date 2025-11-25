@@ -6,6 +6,7 @@ import {
   isObject,
   isString,
   Renderer,
+  SpecVersion,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import { OneType } from "../../../../../types/state";
@@ -95,6 +96,7 @@ export const OneRenderer = {
       types: Map<string, DispatchParsedType<T>>,
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
+      specVersionContext: SpecVersion,
     ): ValueOrErrors<
       [NestedRenderer<T> | undefined, Map<string, Renderer<T>>],
       string
@@ -112,6 +114,7 @@ export const OneRenderer = {
             types,
             forms,
             alreadyParsedForms,
+            specVersionContext,
           ),
     Deserialize: <
       T extends DispatchInjectablesTypes<T>,
@@ -130,6 +133,7 @@ export const OneRenderer = {
       types: Map<string, DispatchParsedType<T>>,
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
+      specVersionContext: SpecVersion,
     ): ValueOrErrors<[OneRenderer<T>, Map<string, Renderer<T>>], string> =>
       OneRenderer.Operations.tryAsValidOneRenderer(serialized).Then(
         (validatedSerialized) =>
@@ -141,6 +145,7 @@ export const OneRenderer = {
             types,
             forms,
             alreadyParsedForms,
+            specVersionContext,
           ).Then(([detailsRenderer, detailsAlreadyParsedForms]) =>
             OneRenderer.Operations.DeserializePreviewRenderer(
               type,
@@ -149,6 +154,7 @@ export const OneRenderer = {
               types,
               forms,
               detailsAlreadyParsedForms,
+              specVersionContext,
             ).Then(([previewRenderer, previewAlreadyParsedForms]) =>
               ValueOrErrors.Default.return<
                 [OneRenderer<T>, Map<string, Renderer<T>>],

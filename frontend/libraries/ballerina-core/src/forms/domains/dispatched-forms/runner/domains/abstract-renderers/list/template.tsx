@@ -86,6 +86,7 @@ export const ListAbstractRenderer = <
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               domNodeAncestorPath:
                 _.domNodeAncestorPath + `[list][${elementIndex}]`,
+              predictionAncestorPath: _.predictionAncestorPath + `[element]`,
               typeAncestors: [_.type as DispatchParsedType<T>].concat(
                 _.typeAncestors,
               ),
@@ -190,6 +191,7 @@ export const ListAbstractRenderer = <
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               domNodeAncestorPath:
                 _.domNodeAncestorPath + `[list][${elementIndex}]`,
+              predictionAncestorPath: _.predictionAncestorPath + `[element]`,
               typeAncestors: [_.type as DispatchParsedType<T>].concat(
                 _.typeAncestors,
               ),

@@ -90,6 +90,7 @@ export const DispatchEditFormLauncherTemplate = <
           remoteEntityVersionIdentifier:
             props.context.remoteEntityVersionIdentifier,
           domNodeAncestorPath: "",
+          predictionAncestorPath: "",
           labelContext: props.context.formName,
           lookupTypeAncestorNames: [],
           customPresentationContext: undefined,

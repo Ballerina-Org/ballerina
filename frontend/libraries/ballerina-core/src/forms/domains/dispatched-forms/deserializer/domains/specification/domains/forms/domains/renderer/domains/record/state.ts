@@ -13,6 +13,8 @@ import {
   PredicateComputedOrInlined,
   ValueOrErrors,
   Renderer,
+  SpecVersion,
+  FieldsConfigSource,
 } from "../../../../../../../../../../../../../main";
 import { RecordType } from "../../../../../../../../../../../../../main";
 import { RecordFieldRenderer } from "./domains/recordFieldRenderer/state";
@@ -30,20 +32,20 @@ export type RecordRenderer<T> = {
   concreteRenderer?: string;
   fields: Map<string, RecordFieldRenderer<T>>;
   type: RecordType<T>;
-  tabs: PredicateFormLayout;
+  fieldsConfigSource: FieldsConfigSource;
 };
 
 export const RecordRenderer = {
   Default: <T>(
     type: RecordType<T>,
     fields: Map<string, RecordFieldRenderer<T>>,
-    tabs: PredicateFormLayout,
+    fieldsConfigSource: FieldsConfigSource,
     concreteRenderer?: string,
   ): RecordRenderer<T> => ({
     kind: "recordRenderer",
     type,
     fields,
-    tabs,
+    fieldsConfigSource,
     concreteRenderer,
   }),
   Operations: {
@@ -122,6 +124,7 @@ export const RecordRenderer = {
       types: Map<string, DispatchParsedType<T>>,
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
+      specVersionContext: SpecVersion,
     ): ValueOrErrors<[RecordRenderer<T>, Map<string, Renderer<T>>], string> =>
       RecordRenderer.Operations.tryAsValidRecordForm(serialized).Then(
         (validRecordForm) =>
@@ -148,6 +151,7 @@ export const RecordRenderer = {
                       fieldName,
                       forms,
                       accumulatedAlreadyParsedForms,
+                      specVersionContext,
                     ).Then(([renderer, newAlreadyParsedForms]) =>
                       ValueOrErrors.Default.return<
                         [
@@ -167,27 +171,48 @@ export const RecordRenderer = {
                 string
               >([Map<string, RecordFieldRenderer<T>>(), alreadyParsedForms]),
             )
-            .Then(([fieldsMap, accumulatedAlreadyParsedForms]) =>
-              ValueOrErrors.Operations.All(
-                List<
-                  ValueOrErrors<
-                    PredicateFormLayout | PredicateComputedOrInlined,
-                    string
-                  >
-                >([
-                  FormLayout.Operations.ParseLayout(validRecordForm).MapErrors(
-                    (errors) =>
-                      errors.map((error) => `${error}\n...When parsing tabs`),
-                  ),
-                  DisabledFields.Operations.ParseLayout(
-                    validRecordForm,
-                  ).MapErrors((errors) =>
-                    errors.map(
-                      (error) => `${error}\n...When parsing disabled fields`,
-                    ),
-                  ),
-                ]),
-              ).Then(([tabs]) =>
+            .Then(([fieldsMap, accumulatedAlreadyParsedForms]) => {
+              const ComputeFieldsConfigSource =
+                specVersionContext.kind == "v1"
+                  ? ValueOrErrors.Operations.All(
+                      List<
+                        ValueOrErrors<
+                          PredicateFormLayout | PredicateComputedOrInlined,
+                          string
+                        >
+                      >([
+                        FormLayout.Operations.ParseLayout(
+                          validRecordForm,
+                        ).MapErrors((errors) =>
+                          errors.map(
+                            (error) => `${error}\n...When parsing tabs`,
+                          ),
+                        ),
+                        DisabledFields.Operations.ParseLayout(
+                          validRecordForm,
+                        ).MapErrors((errors) =>
+                          errors.map(
+                            (error) =>
+                              `${error}\n...When parsing disabled fields`,
+                          ),
+                        ),
+                      ]),
+                    ).Then(([tabs, disabledFields]) =>
+                      ValueOrErrors.Default.return<FieldsConfigSource, string>({
+                        kind: "raw",
+                        layoutPredicate: tabs as PredicateFormLayout,
+                        disabledPredicate:
+                          disabledFields as PredicateComputedOrInlined,
+                      }),
+                    )
+                  : ValueOrErrors.Default.return<FieldsConfigSource, string>({
+                      kind: "preprocessed",
+                      visiblePaths: specVersionContext.visiblePaths,
+                      disabledPaths: specVersionContext.disabledPaths,
+                      layout: specVersionContext.layout,
+                    });
+
+              return ComputeFieldsConfigSource.Then((fieldsConfigSource) =>
                 ValueOrErrors.Default.return<
                   [RecordRenderer<T>, Map<string, Renderer<T>>],
                   string
@@ -195,13 +220,13 @@ export const RecordRenderer = {
                   RecordRenderer.Default(
                     type,
                     fieldsMap,
-                    tabs as PredicateFormLayout,
+                    fieldsConfigSource,
                     validRecordForm.renderer,
                   ),
                   accumulatedAlreadyParsedForms,
                 ]),
-              ),
-            )
+              );
+            })
             .MapErrors((errors) =>
               errors.map(
                 (error) => `${error}\n...When parsing as RecordForm renderer`,

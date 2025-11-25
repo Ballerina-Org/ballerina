@@ -4,6 +4,7 @@ import {
   isString,
   MapRepo,
   ValueOrErrors,
+  SpecVersion,
 } from "../../../../../../../../../../../../../main";
 import { DispatchIsObject, UnionType } from "../../../../../types/state";
 import { DispatchParsedType } from "../../../../../types/state";
@@ -72,6 +73,7 @@ export const UnionRenderer = {
       types: Map<string, DispatchParsedType<T>>,
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
+      specVersionContext: SpecVersion,
     ): ValueOrErrors<[UnionRenderer<T>, Map<string, Renderer<T>>], string> =>
       UnionRenderer.Operations.tryAsValidUnionForm(serialized)
         .Then((validSerialized) =>
@@ -104,6 +106,7 @@ export const UnionRenderer = {
                       undefined,
                       forms,
                       accumulatedAlreadyParsedForms,
+                      specVersionContext,
                     ).Then(([caseRenderer, newAlreadyParsedForms]) =>
                       ValueOrErrors.Default.return<
                         [Map<string, Renderer<T>>, Map<string, Renderer<T>>],

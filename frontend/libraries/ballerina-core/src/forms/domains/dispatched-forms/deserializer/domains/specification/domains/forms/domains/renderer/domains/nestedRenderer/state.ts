@@ -5,6 +5,7 @@ import {
   DispatchParsedType,
   isObject,
   isString,
+  SpecVersion,
 } from "../../../../../../../../../../../../../main";
 import { ValueOrErrors } from "../../../../../../../../../../../../collections/domains/valueOrErrors/state";
 import { Renderer } from "../../state";
@@ -94,6 +95,7 @@ export const NestedRenderer = {
       types: Map<string, DispatchParsedType<T>>,
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
+      specVersionContext: SpecVersion,
     ): ValueOrErrors<[NestedRenderer<T>, Map<string, Renderer<T>>], string> =>
       NestedRenderer.Operations.Deserialize(
         type,
@@ -102,6 +104,7 @@ export const NestedRenderer = {
         types,
         forms,
         alreadyParsedForms,
+        specVersionContext,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When parsing as ${as}`),
       ),
@@ -122,6 +125,7 @@ export const NestedRenderer = {
       types: Map<string, DispatchParsedType<T>>,
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
+      specVersionContext: SpecVersion,
     ): ValueOrErrors<[NestedRenderer<T>, Map<string, Renderer<T>>], string> =>
       NestedRenderer.Operations.tryAsValidSerializedNestedRenderer(
         serialized,
@@ -142,6 +146,7 @@ export const NestedRenderer = {
             : undefined,
           forms,
           alreadyParsedForms,
+          specVersionContext,
         ).Then(([renderer, newAlreadyParsedForms]) =>
           ValueOrErrors.Default.return<
             [NestedRenderer<T>, Map<string, Renderer<T>>],

@@ -16,6 +16,7 @@ import {
   MapRepo,
   DispatchInjectablesTypes,
   Unit,
+  SpecVersion,
 } from "../../../../../../../main";
 import { ValueOrErrors } from "../../../../../../collections/domains/valueOrErrors/state";
 import { DispatchParsedType, SerializedType } from "./domains/types/state";
@@ -210,6 +211,7 @@ export const Specification = {
         ExtraContext
       >,
       launcherForms: List<string>,
+      specVersionContext: SpecVersion,
     ): ValueOrErrors<Map<string, Renderer<T>>, string> => {
       return Object.entries(forms)
         .filter(([formName]) => launcherForms.includes(formName))
@@ -262,6 +264,7 @@ export const Specification = {
                         undefined,
                         forms,
                         accumulatedAlreadyParsedForms,
+                        specVersionContext,
                       )
                         .MapErrors((errors) =>
                           errors.map(
@@ -407,6 +410,7 @@ export const Specification = {
         injectedPrimitives?: DispatchInjectedPrimitives<T>,
       ) =>
       (
+        specVersionContext: SpecVersion,
         serializedSpecificationV2s:
           | SerializedSpecification
           | SerializedSpecification[],
@@ -470,6 +474,7 @@ export const Specification = {
                                 Specification.Operations.GetLauncherFormNames(
                                   launchers,
                                 ),
+                                specVersionContext,
                               ).Then((forms) =>
                                 EnumApis.Operations.Deserialize(
                                   serializedSpecificationV2s.apis.enumOptions,
@@ -481,6 +486,7 @@ export const Specification = {
                                     TableApis.Operations.Deserialize(
                                       concreteRenderers,
                                       allTypes,
+                                      specVersionContext,
                                       serializedSpecificationV2s.types,
                                       serializedSpecificationV2s.apis.tables,
                                       injectedPrimitives,

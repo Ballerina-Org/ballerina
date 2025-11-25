@@ -5,6 +5,7 @@ import {
   DispatchParsedType,
   LookupType,
   MapRepo,
+  SpecVersion,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import { Map } from "immutable";
@@ -158,6 +159,7 @@ export const LookupRenderer = {
       types: Map<string, DispatchParsedType<T>>,
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
+      specVersionContext: SpecVersion,
     ): ValueOrErrors<[LookupRenderer<T>, Map<string, Renderer<T>>], string> => {
       return serialized.kind == "lookupType-inlinedRenderer"
         ? DispatchParsedType.Operations.ResolveLookupType(
@@ -172,6 +174,7 @@ export const LookupRenderer = {
               tableApi,
               forms,
               alreadyParsedForms,
+              specVersionContext,
             ).Then(([renderer, alreadyParsedForms]) =>
               ValueOrErrors.Default.return([
                 LookupRenderer.Default.LookupTypeInlinedRenderer(
@@ -208,6 +211,7 @@ export const LookupRenderer = {
                   tableApi,
                   forms,
                   alreadyParsedForms,
+                  specVersionContext,
                 ).Then(([renderer, alreadyParsedForms]) =>
                   ValueOrErrors.Default.return([
                     LookupRenderer.Default.LookupTypeLookupRenderer(
@@ -239,6 +243,7 @@ export const LookupRenderer = {
                 tableApi,
                 forms,
                 alreadyParsedForms,
+                specVersionContext,
               ).Then(([renderer, alreadyParsedForms]) =>
                 ValueOrErrors.Default.return([
                   LookupRenderer.Default.InlinedTypeLookupRenderer(

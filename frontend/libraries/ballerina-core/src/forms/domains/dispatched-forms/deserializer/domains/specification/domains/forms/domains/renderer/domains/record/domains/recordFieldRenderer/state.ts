@@ -4,6 +4,7 @@ import {
   DispatchInjectablesTypes,
   DispatchParsedType,
   Renderer,
+  SpecVersion,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../../../main";
 
@@ -45,6 +46,7 @@ export const RecordFieldRenderer = {
     fieldName: string,
     forms: object,
     alreadyParsedForms: Map<string, Renderer<T>>,
+    specVersionContext: SpecVersion,
   ): ValueOrErrors<
     [RecordFieldRenderer<T>, Map<string, Renderer<T>>],
     string
@@ -59,6 +61,7 @@ export const RecordFieldRenderer = {
           types,
           forms,
           alreadyParsedForms,
+          specVersionContext,
         ).Then(([deserializedNestedRenderer, newAlreadyParsedForms]) =>
           ValueOrErrors.Default.return([
             deserializedNestedRenderer,

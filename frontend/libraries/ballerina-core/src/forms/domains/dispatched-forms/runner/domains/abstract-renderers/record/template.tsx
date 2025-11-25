@@ -1,4 +1,4 @@
-import { Map, Set } from "immutable";
+import { List, Map, Set } from "immutable";
 import {
   BasicUpdater,
   DispatchCommonFormState,
@@ -18,6 +18,10 @@ import {
   CommonAbstractRendererState,
   CommonAbstractRendererForeignMutationsExpected,
   RecordFormLayout,
+  FieldsConfigSource,
+  FormLayout,
+  ValueOrErrors,
+  DisabledFields,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -52,7 +56,7 @@ export const RecordAbstractRenderer = <
     }
   >,
   FieldRenderers: Map<string, RecordFieldRenderer<any>>,
-Layout: RecordFormLayout,
+  FieldsConfigSource: FieldsConfigSource,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   isInlined: boolean,
@@ -116,6 +120,8 @@ Layout: RecordFormLayout,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               domNodeAncestorPath:
                 _.domNodeAncestorPath + `[record][${fieldName}]`,
+              predictionAncestorPath:
+                _.predictionAncestorPath + `[${fieldName}]`,
               labelContext,
               typeAncestors: [_.type as DispatchParsedType<any>].concat(
                 _.typeAncestors,
@@ -232,15 +238,40 @@ Layout: RecordFormLayout,
       );
     }
 
+    console.debug(props.context.predictionAncestorPath);
+
     const updatedBindings = isInlined
       ? props.context.bindings
       : props.context.bindings.set("local", props.context.value);
 
-    // TODO: resolve this
-    const calculatedLayout = Layout.kind == "Inlined" ? Layout as any : null! as any
+    const calculatedLayout =
+      FieldsConfigSource.kind == "raw"
+        ? FormLayout.Operations.ComputeLayout(
+            updatedBindings,
+            FieldsConfigSource.layoutPredicate,
+          )
+        : (null! as any);
 
-    // TODO: resolve this
-    const visibleFieldKeys = null! as any
+    // TODO -- set error template up top
+    if (calculatedLayout.kind == "errors") {
+      console.error(
+        calculatedLayout.errors.map((error: any) => error).join("\n"),
+      );
+      return <></>;
+    }
+
+    const visibleFieldKeys = ValueOrErrors.Operations.All(
+      List(
+        FieldTemplates.map((_, fieldName) =>
+          ValueOrErrors.Default.return(fieldName),
+        ).valueSeq(),
+      ),
+    );
+
+    if (visibleFieldKeys.kind == "errors") {
+      console.error(visibleFieldKeys.errors.map((error) => error).join("\n"));
+      return <></>;
+    }
 
     // TODO: find a better way to warn about missing fields without cluttering the console
     // visibleFieldKeys.value.forEach((field) => {
@@ -253,16 +284,42 @@ Layout: RecordFormLayout,
     //   }
     // });
 
-    // TODO: resolve this
     const visibleFieldKeysSet = Set(
-      visibleFieldKeys.filter((fieldName: string) => fieldName != null),
-    ) as Set<string>
+      visibleFieldKeys.value.filter((fieldName) => fieldName != null),
+    );
 
-    // TODO: resolve this
-    const disabledFieldKeys = null! as any
+    const calculatedDisabledFields =
+      FieldsConfigSource.kind == "raw"
+        ? DisabledFields.Operations.Compute(
+            updatedBindings,
+            FieldsConfigSource.disabledPredicate,
+          )
+        : (null! as any);
+
+    const disabledFieldsValue =
+      calculatedDisabledFields.kind == "value"
+        ? calculatedDisabledFields.value.fields
+        : [];
+
+    const disabledFieldKeys = ValueOrErrors.Operations.All(
+      List(
+        FieldTemplates.map((_, fieldName) =>
+          disabledFieldsValue.includes(fieldName)
+            ? ValueOrErrors.Default.return(fieldName)
+            : ValueOrErrors.Default.return(null),
+        ).valueSeq(),
+      ),
+    );
+
+    // TODO -- set the top level state as error
+    if (disabledFieldKeys.kind == "errors") {
+      console.error(disabledFieldKeys.errors.map((error) => error).join("\n"));
+      return <></>;
+    }
+
     const disabledFieldKeysSet = Set(
-      disabledFieldKeys.filter((fieldName: string) => fieldName != null),
-    ) as Set<string>
+      disabledFieldKeys.value.filter((fieldName) => fieldName != null),
+    );
 
     return (
       <>

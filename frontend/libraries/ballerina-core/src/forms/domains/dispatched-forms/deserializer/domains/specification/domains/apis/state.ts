@@ -7,6 +7,7 @@ import {
   isObject,
   isString,
   Renderer,
+  SpecVersion,
   ValueOrErrors,
 } from "../../../../../../../../../main";
 import {
@@ -202,6 +203,7 @@ export const TableApis = {
       >,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
       serializedTypes: Record<string, SerializedType<T>>,
+      specVersionContext: SpecVersion,
       serializedFiltering?: unknown,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
     ): ValueOrErrors<undefined | TableApiFiltering<T>, string> => {
@@ -271,6 +273,7 @@ export const TableApis = {
                                       undefined,
                                       {},
                                       Map(),
+                                      specVersionContext,
                                     ).Then(([renderer, _]) =>
                                       ValueOrErrors.Operations.All<
                                         FilterType<T>,
@@ -350,6 +353,7 @@ export const TableApis = {
         ExtraContext
       >,
       types: Map<DispatchTypeName, DispatchParsedType<T>>,
+      specVersionContext: SpecVersion,
       serializedTypes: Record<string, SerializedType<T>>,
       serializedApiTables?: unknown,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
@@ -390,6 +394,7 @@ export const TableApis = {
                   concreteRenderers,
                   types,
                   serializedTypes,
+                  specVersionContext,
                   value.filtering,
                   injectedPrimitives,
                 ).Then((filtering) => {

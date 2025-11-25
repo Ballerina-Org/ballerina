@@ -78,6 +78,7 @@ export const ReadOnlyAbstractRenderer = <
           customPresentationContext: _.customPresentationContext,
           remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
           domNodeAncestorPath: _.domNodeAncestorPath + `[readOnly]`,
+          predictionAncestorPath: _.predictionAncestorPath + "[ReadOnly]",
           typeAncestors: [_.type as DispatchParsedType<any>].concat(
             _.typeAncestors,
           ),

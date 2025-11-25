@@ -14,6 +14,7 @@ import {
   DispatchFormsParserContext,
   DispatchFormsParserState,
   parseDispatchFormsToLaunchers,
+  SpecVersion,
 } from "../state";
 
 export const LoadAndDeserializeSpecification = <
@@ -80,7 +81,11 @@ export const LoadAndDeserializeSpecification = <
             current.fieldTypeConverters,
             current.concreteRenderers,
             injectedPrimitives,
-          )(serializedSpecifications, current.desiredLaunchers);
+          )(
+            SpecVersion.Default.V1(),
+            serializedSpecifications,
+            current.desiredLaunchers,
+          );
 
           if (deserializationResult.kind == "errors") {
             console.error(

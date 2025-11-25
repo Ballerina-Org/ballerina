@@ -88,6 +88,8 @@ export const DispatchTupleAbstractRenderer = <
               type: _.type.args[itemIndex],
               domNodeAncestorPath:
                 _.domNodeAncestorPath + `[tuple][${itemIndex + 1}]`,
+              predictionAncestorPath:
+                _.predictionAncestorPath + `[Item${itemIndex + 1}]`,
               typeAncestors: [_.type as DispatchParsedType<any>].concat(
                 _.typeAncestors,
               ),

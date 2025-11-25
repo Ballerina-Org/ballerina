@@ -216,7 +216,7 @@ export const RendererTraversal = {
                   (fieldTraversal) => {
                     return ValueOrErrors.Default.return({
                       fieldName: fieldName,
-                      visibility: fieldRenderer.visible,
+                      visibility: true, // TODO: check this
                       fieldTraversal: fieldTraversal,
                     });
                   },
@@ -246,14 +246,18 @@ export const RendererTraversal = {
                   )}`,
                 );
               const visibleFieldsRes =
-                FormLayout.Operations.ComputeVisibleFieldsForRecord(
-                  Map([
-                    ["global", evalContext.global],
-                    ["local", evalContext.local],
-                    ["root", evalContext.root],
-                  ]),
-                  renderer.tabs,
-                );
+                renderer.fieldsConfigSource.kind == "raw"
+                  ? FormLayout.Operations.ComputeVisibleFieldsForRecord(
+                      Map([
+                        ["global", evalContext.global],
+                        ["local", evalContext.local],
+                        ["root", evalContext.root],
+                      ]),
+                      renderer.fieldsConfigSource.layoutPredicate,
+                    )
+                  : ValueOrErrors.Default.return<string[], string>(
+                      renderer.fieldsConfigSource.visiblePaths,
+                    );
               // TODO later, make this monadic
               if (visibleFieldsRes.kind == "errors") {
                 return visibleFieldsRes;
@@ -613,14 +617,23 @@ export const RendererTraversal = {
                     `Error: traversal iterator is not a table, got ${evalContext.traversalIterator}`,
                   );
                 }
-                return TableLayout.Operations.ComputeLayout(
-                  Map([
-                    ["global", evalContext.global],
-                    ["local", evalContext.local],
-                    ["root", evalContext.root],
-                  ]),
-                  renderer.visibleColumns,
-                ).Then((visibleColumns) => {
+                const ComputeLayout =
+                  renderer.columnsConfig.kind == "raw"
+                    ? TableLayout.Operations.ComputeLayout(
+                        Map([
+                          ["global", evalContext.global],
+                          ["local", evalContext.local],
+                          ["root", evalContext.root],
+                        ]),
+                        renderer.columnsConfig.visiblePredicate,
+                      ).Then((visibleColumns) =>
+                        ValueOrErrors.Default.return(visibleColumns.columns),
+                      )
+                    : ValueOrErrors.Default.return<string[], string>(
+                        // TODO: this will probably need mapping at some point
+                        renderer.columnsConfig.visiblePaths,
+                      );
+                return ComputeLayout.Then((visibleColumns) => {
                   // Note: we do not allow visiblity predicates on individual column cells
                   return ValueOrErrors.Operations.All<Res, string>(
                     columnTraversals
@@ -628,7 +641,7 @@ export const RendererTraversal = {
                         const colTraversal = c.columnTraversal;
                         if (
                           colTraversal.kind == "l" ||
-                          !visibleColumns.columns.includes(c.columnName)
+                          !visibleColumns.includes(c.columnName)
                         ) {
                           return [];
                         }

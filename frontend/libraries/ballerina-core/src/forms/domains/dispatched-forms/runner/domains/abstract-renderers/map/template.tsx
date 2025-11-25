@@ -102,6 +102,8 @@ export const MapAbstractRenderer = <
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               domNodeAncestorPath:
                 _.domNodeAncestorPath + `[map][${elementIndex}][key]`,
+              predictionAncestorPath:
+                _.predictionAncestorPath + `[element][Key]`,
               typeAncestors: [_.type as DispatchParsedType<any>].concat(
                 _.typeAncestors,
               ),
@@ -217,6 +219,8 @@ export const MapAbstractRenderer = <
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               domNodeAncestorPath:
                 _.domNodeAncestorPath + `[map][${elementIndex}][value]`,
+              predictionAncestorPath:
+                _.predictionAncestorPath + `[element][Value]`,
               typeAncestors: [_.type as DispatchParsedType<any>].concat(
                 _.typeAncestors,
               ),

@@ -34,6 +34,7 @@ export type CommonAbstractRendererReadonlyContext<
   customPresentationContext: C | undefined;
   remoteEntityVersionIdentifier: string;
   domNodeAncestorPath: string;
+  predictionAncestorPath: string;
   typeAncestors: DispatchParsedType<any>[];
   lookupTypeAncestorNames: string[];
 };

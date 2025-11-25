@@ -90,6 +90,8 @@ export const UnionAbstractRenderer = <
               ),
               domNodeAncestorPath:
                 _.domNodeAncestorPath + `[union][${caseName}]`,
+              predictionAncestorPath:
+                _.predictionAncestorPath + `[${caseName}]`,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               labelContext,
             };

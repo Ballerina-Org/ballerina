@@ -8,6 +8,7 @@ import {
   DispatchInjectablesTypes,
   isObject,
   isString,
+  SpecVersion,
 } from "../../../../../../../../../../../../../main";
 
 export type SerializedTupleRenderer = {
@@ -74,6 +75,7 @@ export const TupleRenderer = {
       types: Map<string, DispatchParsedType<T>>,
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
+      specVersionContext: SpecVersion,
     ): ValueOrErrors<[TupleRenderer<T>, Map<string, Renderer<T>>], string> =>
       TupleRenderer.Operations.tryAsValidTupleRenderer(serialized)
         .Then((validatedSerialized) =>
@@ -83,7 +85,7 @@ export const TupleRenderer = {
                 [Array<NestedRenderer<T>>, Map<string, Renderer<T>>],
                 string
               >
-            >((acc, itemRenderer, index) => acc.Then(([itemRenderersArray, accumulatedAlreadyParsedForms]) => NestedRenderer.Operations.DeserializeAs(type.args[index], itemRenderer, concreteRenderers, `Item ${index + 1}`, types, forms, accumulatedAlreadyParsedForms).Then(([deserializedItemRenderer, newAlreadyParsedForms]) => ValueOrErrors.Default.return<[Array<NestedRenderer<T>>, Map<string, Renderer<T>>], string>([[...itemRenderersArray, deserializedItemRenderer], newAlreadyParsedForms]))), ValueOrErrors.Default.return<[Array<NestedRenderer<T>>, Map<string, Renderer<T>>], string>([[], alreadyParsedForms]))
+            >((acc, itemRenderer, index) => acc.Then(([itemRenderersArray, accumulatedAlreadyParsedForms]) => NestedRenderer.Operations.DeserializeAs(type.args[index], itemRenderer, concreteRenderers, `Item ${index + 1}`, types, forms, accumulatedAlreadyParsedForms, specVersionContext).Then(([deserializedItemRenderer, newAlreadyParsedForms]) => ValueOrErrors.Default.return<[Array<NestedRenderer<T>>, Map<string, Renderer<T>>], string>([[...itemRenderersArray, deserializedItemRenderer], newAlreadyParsedForms]))), ValueOrErrors.Default.return<[Array<NestedRenderer<T>>, Map<string, Renderer<T>>], string>([[], alreadyParsedForms]))
             .Then(([itemRenderersArray, accumulatedAlreadyParsedForms]) =>
               ValueOrErrors.Default.return<
                 [TupleRenderer<T>, Map<string, Renderer<T>>],

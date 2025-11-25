@@ -89,6 +89,7 @@ export const SumAbstractRenderer = <
                   remoteEntityVersionIdentifier:
                     _.remoteEntityVersionIdentifier,
                   domNodeAncestorPath: _.domNodeAncestorPath + "[sum][left]",
+                  predictionAncestorPath: _.predictionAncestorPath + "[Value]",
                   typeAncestors: [_.type as DispatchParsedType<any>].concat(
                     _.typeAncestors,
                   ),
@@ -185,6 +186,7 @@ export const SumAbstractRenderer = <
                   remoteEntityVersionIdentifier:
                     _.remoteEntityVersionIdentifier,
                   domNodeAncestorPath: _.domNodeAncestorPath + "[sum][right]",
+                  predictionAncestorPath: _.predictionAncestorPath + "[Value]",
                   typeAncestors: [_.type as DispatchParsedType<any>].concat(
                     _.typeAncestors,
                   ),

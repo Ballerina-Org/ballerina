@@ -9,6 +9,7 @@ import {
   isString,
   SumType,
   ValueOrErrors,
+  SpecVersion,
 } from "../../../../../../../../../../../../../main";
 
 export type SerializedSumRenderer = {
@@ -80,6 +81,7 @@ export const SumRenderer = {
       types: Map<string, DispatchParsedType<T>>,
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
+      specVersionContext: SpecVersion,
     ): ValueOrErrors<[SumRenderer<T>, Map<string, Renderer<T>>], string> =>
       SumRenderer.Operations.tryAsValidSumBaseRenderer(serialized)
         .Then((validatedSerialized) =>
@@ -91,6 +93,7 @@ export const SumRenderer = {
             types,
             forms,
             alreadyParsedForms,
+            specVersionContext,
           ).Then(([deserializedLeftRenderer, leftAlreadyParsedForms]) =>
             NestedRenderer.Operations.DeserializeAs(
               type.args[1],
@@ -100,6 +103,7 @@ export const SumRenderer = {
               types,
               forms,
               leftAlreadyParsedForms,
+              specVersionContext,
             ).Then(([deserializedRightRenderer, rightAlreadyParsedForms]) =>
               ValueOrErrors.Default.return<
                 [SumRenderer<T>, Map<string, Renderer<T>>],
