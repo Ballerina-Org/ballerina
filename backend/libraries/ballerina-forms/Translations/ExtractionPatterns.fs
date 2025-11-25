@@ -43,7 +43,10 @@ module ExtractionPatterns =
 
   and NestedRenderer<'ExprExtension, 'ValueExtension> with
     static member AllLabels(r: NestedRenderer<'ExprExtension, 'ValueExtension>) : seq<Label> =
-      r.Renderer |> Renderer.AllLabels
+      seq {
+        yield! r.Label |> Option.toList |> List.toSeq
+        yield! r.Renderer |> Renderer.AllLabels
+      }
 
   and Renderer<'ExprExtension, 'ValueExtension> with
     static member AllTopLevelLabels(r: Renderer<'ExprExtension, 'ValueExtension>) =
@@ -113,11 +116,10 @@ module ExtractionPatterns =
           yield! !!!r.None
           yield! !!!r.Some
         | Renderer.PrimitiveRenderer r -> yield! r.Label |> Option.toArray
-        | Renderer.EnumRenderer _
         | Renderer.FormRenderer _
         | Renderer.TableFormRenderer _
         | Renderer.AllTranslationOverridesRenderer _ -> ()
-        | Renderer.StreamRenderer _ -> ()
+        | Renderer.StreamRenderer(_, labelOption, _, _, _) -> yield! labelOption |> Option.toArray
         | Renderer.SumRenderer r ->
           yield! r.Label |> Option.toArray
           yield! !!!r.Left
