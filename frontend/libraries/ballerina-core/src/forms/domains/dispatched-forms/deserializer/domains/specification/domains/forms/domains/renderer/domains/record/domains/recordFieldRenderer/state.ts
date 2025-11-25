@@ -17,11 +17,13 @@ import {
 export type SerializedRecordFieldRenderer = {
   visible?: unknown;
   disabled?: unknown;
+  api?: unknown;
 } & SerializedNestedRenderer;
 
 export type RecordFieldRenderer<T> = {
   visible?: Expr;
   disabled?: Expr;
+  api?: string;
 } & NestedRenderer<T>;
 
 export const RecordFieldRenderer = {
@@ -52,6 +54,10 @@ export const RecordFieldRenderer = {
         disabled:
           isObject(serialized) && "disabled" in serialized
             ? serialized.disabled
+            : undefined,
+        api:
+          isObject(serialized) && "api" in serialized
+            ? serialized.api
             : undefined,
       }),
     ),

@@ -6,7 +6,6 @@ import {
   Template,
   ValueOrErrors,
   DispatchParsedType,
-  LookupTypeAbstractRenderer,
 } from "../../../../../../../../../main";
 import { OneRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/one/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
@@ -28,7 +27,6 @@ export const OneDispatcher = {
         ExtraContext
       >,
       isInlined: boolean,
-      tableApi: string | undefined,
     ): ValueOrErrors<undefined | Template<any, any, any, any>, string> =>
       renderer.previewRenderer == undefined
         ? ValueOrErrors.Default.return(undefined)
@@ -37,7 +35,6 @@ export const OneDispatcher = {
             dispatcherContext,
             "previewRenderer",
             isInlined,
-            tableApi,
           ),
     GetApi: <
       T extends DispatchInjectablesTypes<T>,
@@ -99,7 +96,6 @@ export const OneDispatcher = {
         ExtraContext
       >,
       isInlined: boolean,
-      tableApi: string | undefined,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       DispatchParsedType.Operations.ResolveLookupType(
         renderer.type.arg.name,
@@ -113,14 +109,12 @@ export const OneDispatcher = {
               renderer,
               dispatcherContext,
               isInlined,
-              tableApi,
             ).Then((previewRenderer) =>
               NestedDispatcher.Operations.DispatchAs(
                 renderer.detailsRenderer,
                 dispatcherContext,
                 "detailsRenderer",
                 isInlined,
-                tableApi,
               ).Then((detailsRenderer) =>
                 OneDispatcher.Operations.GetApi(
                   renderer.api,

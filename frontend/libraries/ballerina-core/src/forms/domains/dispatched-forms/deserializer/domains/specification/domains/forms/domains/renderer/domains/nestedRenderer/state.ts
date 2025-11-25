@@ -45,6 +45,7 @@ export type NestedRenderer<T> = {
   label?: string;
   tooltip?: string;
   details?: string;
+  api?: string | Array<string>;
 };
 
 export const NestedRenderer = {
@@ -60,6 +61,7 @@ export const NestedRenderer = {
         label?: string;
         tooltip?: string;
         details?: string;
+        api?: string | Array<string>;
       },
       string
     > =>
@@ -137,9 +139,6 @@ export const NestedRenderer = {
             : validatedSerialized,
           concreteRenderers,
           types,
-          "api" in validatedSerialized && isString(validatedSerialized.api)
-            ? validatedSerialized.api
-            : undefined,
           forms,
           alreadyParsedForms,
         ).Then(([renderer, newAlreadyParsedForms]) =>
@@ -152,6 +151,7 @@ export const NestedRenderer = {
               label: validatedSerialized.label,
               tooltip: validatedSerialized.tooltip,
               details: validatedSerialized.details,
+              api: validatedSerialized.api,
             },
             newAlreadyParsedForms,
           ]).MapErrors<

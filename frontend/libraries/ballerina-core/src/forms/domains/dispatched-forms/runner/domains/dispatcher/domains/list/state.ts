@@ -25,14 +25,12 @@ export const ListDispatcher = {
         ExtraContext
       >,
       isInlined: boolean,
-      tableApi: string | undefined,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       NestedDispatcher.Operations.DispatchAs(
         renderer.elementRenderer,
         dispatcherContext,
         "listElement",
         isInlined,
-        tableApi,
       )
         .Then((elementTemplate) =>
           dispatcherContext

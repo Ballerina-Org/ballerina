@@ -24,13 +24,11 @@ export const NestedDispatcher = {
       >,
       as: string,
       isInlined: boolean,
-      tableApi: string | undefined,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       NestedDispatcher.Operations.Dispatch(
         renderer,
         dispatcherContext,
         isInlined,
-        tableApi,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When dispatching as ${as}`),
       ),
@@ -48,14 +46,13 @@ export const NestedDispatcher = {
         ExtraContext
       >,
       isInlined: boolean,
-      tableApi: string | undefined,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       Dispatcher.Operations.Dispatch(
         renderer.renderer,
         dispatcherContext,
         true,
         isInlined,
-        tableApi,
+        renderer.api,
       )
         .Then((template) =>
           ValueOrErrors.Default.return<Template<any, any, any, any>, string>(
