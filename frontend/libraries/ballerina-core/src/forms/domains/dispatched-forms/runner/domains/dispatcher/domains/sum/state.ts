@@ -26,7 +26,6 @@ export const SumDispatcher = {
         ExtraContext
       >,
       isInlined: boolean,
-      tableApi: string | undefined,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       (renderer.kind == "sumRenderer"
         ? NestedDispatcher.Operations.DispatchAs(
@@ -34,7 +33,6 @@ export const SumDispatcher = {
             dispatcherContext,
             "left",
             isInlined,
-            tableApi,
           )
         : ValueOrErrors.Default.return<undefined, string>(undefined)
       )
@@ -45,7 +43,6 @@ export const SumDispatcher = {
                 dispatcherContext,
                 "right",
                 isInlined,
-                tableApi,
               )
             : ValueOrErrors.Default.return<undefined, string>(undefined)
           ).Then((rightForm) => {

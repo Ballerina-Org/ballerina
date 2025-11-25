@@ -24,14 +24,12 @@ export const MapDispatcher = {
         ExtraContext
       >,
       isInlined: boolean,
-      tableApi: string | undefined,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       NestedDispatcher.Operations.DispatchAs(
         renderer.keyRenderer,
         dispatcherContext,
         "key",
         isInlined,
-        tableApi,
       )
         .Then((keyTemplate) =>
           dispatcherContext
@@ -48,7 +46,6 @@ export const MapDispatcher = {
                     dispatcherContext,
                     "value",
                     isInlined,
-                    tableApi,
                   ).Then((valueTemplate) =>
                     dispatcherContext
                       .defaultState(

@@ -56,7 +56,6 @@ export const RecordDispatcher = {
       >,
       isNested: boolean,
       isInlined: boolean,
-      tableApi: string | undefined,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       ValueOrErrors.Operations.All(
         List<
@@ -90,7 +89,6 @@ export const RecordDispatcher = {
                   fieldRenderer,
                   dispatcherContext,
                   isInlined,
-                  tableApi,
                 ).Then((template) =>
                   dispatcherContext
                     .defaultState(fieldType, fieldRenderer.renderer)

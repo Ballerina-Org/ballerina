@@ -1,6 +1,5 @@
 import {
   DispatchInjectablesTypes,
-  LookupType,
   LookupTypeAbstractRenderer,
   Template,
 } from "../../../../../../../../../main";
@@ -24,7 +23,7 @@ export const LookupDispatcher = {
         CustomPresentationContext,
         ExtraContext
       >,
-      tableApi: string | undefined,
+      api: string | Array<string> | undefined,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       renderer.kind == "inlinedType-lookupRenderer"
         ? ValueOrErrors.Default.throwOne(
@@ -40,7 +39,7 @@ export const LookupDispatcher = {
                 dispatcherContext,
                 true,
                 renderer.kind == "lookupType-inlinedRenderer",
-                renderer.tableApi ?? tableApi,
+                api,
               ),
             )
             .Then((template) =>

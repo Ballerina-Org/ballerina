@@ -29,7 +29,6 @@ export const TupleDispatcher = {
         ExtraContext
       >,
       isInlined: boolean,
-      tableApi: string | undefined,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       ValueOrErrors.Operations.All(
         List<ValueOrErrors<[number, Template<any, any, any, any>], string>>(
@@ -39,7 +38,6 @@ export const TupleDispatcher = {
               dispatcherContext,
               `Item ${index + 1}`,
               isInlined,
-              tableApi,
             ).Then((template) =>
               ValueOrErrors.Default.return([index, template]),
             ),
