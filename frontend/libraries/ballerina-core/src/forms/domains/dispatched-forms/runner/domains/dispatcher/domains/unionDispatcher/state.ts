@@ -31,7 +31,6 @@ export const UnionDispatcher = {
         ExtraContext
       >,
       isNested: boolean,
-      tableApi: string | undefined,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       ValueOrErrors.Operations.All(
         List<ValueOrErrors<[string, Template<any, any, any, any>], string>>(
@@ -49,7 +48,7 @@ export const UnionDispatcher = {
                   `case ${caseName}`,
                   isNested,
                   false,
-                  tableApi,
+                  undefined,
                 ).Then((template) =>
                   ValueOrErrors.Default.return<
                     [string, Template<any, any, any, any>],

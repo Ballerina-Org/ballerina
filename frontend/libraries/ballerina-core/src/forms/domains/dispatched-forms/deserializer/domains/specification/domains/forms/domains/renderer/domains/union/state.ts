@@ -101,7 +101,6 @@ export const UnionRenderer = {
                         : caseRenderer,
                       concreteRenderers,
                       types,
-                      undefined,
                       forms,
                       accumulatedAlreadyParsedForms,
                     ).Then(([caseRenderer, newAlreadyParsedForms]) =>

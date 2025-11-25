@@ -259,7 +259,6 @@ export const Specification = {
                           CustomPresentationContext
                         >,
                         types,
-                        undefined,
                         forms,
                         accumulatedAlreadyParsedForms,
                       )
