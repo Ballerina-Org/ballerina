@@ -1,15 +1,5 @@
 ﻿namespace Ballerina.DSL.Next.StdLib.List.Json
 
-open Ballerina.Collections.Sum
-open Ballerina.DSL.Next.Terms.Patterns
-open Ballerina.DSL.Next.Json
-open Ballerina.DSL.Next.Json.Keys
-open Ballerina.DSL.Next.StdLib
-open Ballerina.DSL.Next.StdLib.List.Patterns
-open Ballerina.DSL.Next.StdLib.List.Model
-open Ballerina.Lenses
-open Ballerina.StdLib.Json.Patterns
-
 [<AutoOpen>]
 module Extension =
 
@@ -17,6 +7,14 @@ module Extension =
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Types
   open FSharp.Data
+  open Ballerina.Collections.Sum
+  open Ballerina.DSL.Next.Terms.Patterns
+  open Ballerina.DSL.Next.Json
+  open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.DSL.Next.StdLib.List.Patterns
+  open Ballerina.DSL.Next.StdLib.List.Model
+  open Ballerina.Lenses
+  open Ballerina.StdLib.Json.Patterns
 
   let parser
     (lens: PartialLens<'ext, ListValues<'ext>>)

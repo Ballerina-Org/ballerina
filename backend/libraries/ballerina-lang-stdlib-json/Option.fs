@@ -1,23 +1,55 @@
 ﻿namespace Ballerina.DSL.Next.StdLib.Option.Json
 
-open Ballerina.DSL.Next.Json
-
 [<AutoOpen>]
 module Extension =
 
-  open Ballerina.Reader.WithError
+  open Ballerina.Collections.Sum
+  open Ballerina.DSL.Next.Terms.Patterns
+  open Ballerina.DSL.Next.Json
+  open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.DSL.Next.StdLib.Option.Patterns
+  open Ballerina.DSL.Next.StdLib.Option.Model
+  open Ballerina.Lenses
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Types
+  open Ballerina.Reader.WithError
   open FSharp.Data
 
   let parser<'ext>
-    (_rootValueParser: ValueParser<TypeValue, ResolvedIdentifier, 'ext>)
-    (_v: JsonValue)
+    (lens: PartialLens<'ext, OptionValues<'ext>>)
+    (rootValueParser: ValueParser<TypeValue, ResolvedIdentifier, 'ext>)
+    (v: JsonValue)
     : ValueParserReader<TypeValue, ResolvedIdentifier, 'ext> =
-    reader.Throw(Ballerina.Errors.Errors.Singleton "Option value parser not implemented")
+    Reader.assertDiscriminatorAndContinueWithValue "option" v (fun elementJson ->
+      reader {
+        let opt =
+          match elementJson with
+          | JsonValue.Null -> None
+          | jsonValue -> Some jsonValue
+
+        let! opt = opt |> Option.map rootValueParser |> reader.RunOption
+        return OptionValues.Option opt |> lens.Set |> Ext
+      })
 
   let encoder
-    (_rootValueEncoder: ValueEncoder<TypeValue, 'ext>)
-    (_v: Value<TypeValue, 'ext>)
+    (lens: PartialLens<'ext, OptionValues<'ext>>)
+    (rootValueEncoder: ValueEncoder<TypeValue, 'ext>)
+    (v: Value<TypeValue, 'ext>)
     : ValueEncoderReader<TypeValue, 'ext> =
-    reader.Throw(Ballerina.Errors.Errors.Singleton("Option value encoder not implemented"))
+    reader {
+      let! v = Value.AsExt v |> reader.OfSum
+
+      let! v =
+        lens.Get v
+        |> sum.OfOption("cannot get option value" |> Ballerina.Errors.Errors.Singleton)
+        |> reader.OfSum
+
+      let! v = v |> OptionValues.AsOption |> reader.OfSum
+      let! element = v |> Option.map rootValueEncoder |> reader.RunOption
+
+      return
+        match element with
+        | Some jsonValue -> jsonValue
+        | None -> JsonValue.Null
+        |> Json.discriminator "option"
+    }

@@ -21,7 +21,6 @@ module Model =
       match self with
       | Option_Map _ -> "Option::map"
 
-
   type OptionValues<'ext> =
     | Option of Option<Value<TypeValue, 'ext>>
 
