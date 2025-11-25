@@ -23,7 +23,7 @@ export type SerializedRecordFieldRenderer = {
 export type RecordFieldRenderer<T> = {
   visible?: Expr;
   disabled?: Expr;
-  api?: string;
+  api?: string | Array<string>;
 } & NestedRenderer<T>;
 
 export const RecordFieldRenderer = {
