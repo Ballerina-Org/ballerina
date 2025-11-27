@@ -75,7 +75,11 @@ module Traverser =
           let listExtValue = ListValues >> Choice1Of4 >> ValueExt.ValueExt
           let lv = List.Model.ListValues.List values |> listExtValue
           return Value.Ext lv
-
+        | TypeValue.Imported x when x.Id.Name = "Option" && List.length x.Arguments = 1 ->
+          let! value = (!) x.Arguments.Head
+          let ext = OptionValues >> Choice2Of4 >> ValueExt.ValueExt
+          let valueExt = Option.Model.OptionValues.Option(Some value) |> ext
+          return Value.Ext valueExt
         | TypeValue.Imported _ ->
           return! state.Throw(Errors.Singleton(Location.Unknown, "Imported seeds not implemented yet"))
         | TypeValue.Arrow _ ->

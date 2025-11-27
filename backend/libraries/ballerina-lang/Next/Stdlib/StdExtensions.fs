@@ -77,8 +77,8 @@ and GuidExt =
     | GuidConstructors cons -> cons.ToString()
 
 and TimeSpanExt =
-  | TimeSpanOperations of TimeSpan.Model.TimeSpanOperations<ValueExt>
-  | TimeSpanConstructors of TimeSpan.Model.TimeSpanConstructors
+  | TimeSpanOperations of TimeSpanOperations<ValueExt>
+  | TimeSpanConstructors of TimeSpanConstructors
 
   override self.ToString() : string =
     match self with
@@ -145,6 +145,15 @@ type ListExt with
         | _ -> None)
       Set = ListValues >> Choice1Of4 >> ValueExt.ValueExt }
 
+type OptionExt with
+  static member ValueLens =
+    { Get =
+        ValueExt.Getters.ValueExt
+        >> (function
+        | Choice2Of4(OptionValues x) -> Some x
+        | _ -> None)
+      Set = OptionValues >> Choice2Of4 >> ValueExt.ValueExt }
+
 let stdExtensions =
 
   let listExtension =
@@ -159,12 +168,7 @@ let stdExtensions =
 
   let optionExtension =
     Option.Extension.OptionExtension<ValueExt>
-      { Get =
-          ValueExt.Getters.ValueExt
-          >> (function
-          | Choice2Of4(OptionValues x) -> Some x
-          | _ -> None)
-        Set = OptionValues >> Choice2Of4 >> ValueExt.ValueExt }
+      OptionExt.ValueLens
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
