@@ -14,8 +14,8 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v5.0.0
-      - run: npx prettier . --check
       - run: yarn
+      - run: yarn prettier:check
       - run: yarn compile-ballerina-core
 
   backend:

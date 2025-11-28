@@ -15,7 +15,11 @@
     "declarationMap": true,
     // "noUnusedLocals": true,
     // "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "ballerina-core": ["./main.ts"]
+    }
   },
   "exclude": ["**/node_modules/*", "**/.*/"],
   "include": ["main.ts"]
