@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "marp-to-pdf": "npx @marp-team/marp-cli main.md -o output.pdf --allow-local-files",
-    "prettier": "npx prettier --write .",
+    "prettier": "prettier --write .",
+    "prettier:check": "prettier --check .",
     "compile-web": "cd apps/web && yarn tsc",
     "compile-mobile": "cd apps/mobile && yarn tsc",
     "compile-test": "cd apps/test && yarn tsc",
@@ -11,6 +12,9 @@
     "compile-create-domain": "cd libraries/create-domain && yarn tsc",
     "compile-playground-core": "cd libraries/playground-core && yarn tsc",
     "compile-all": "yarn compile-web && yarn compile-mobile && yarn compile-test && yarn compile-ballerina-core && yarn compile-create-domain && yarn compile-playground-core"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5"
   },
   "workspaces": {
     "packages": [
