@@ -76,8 +76,7 @@ services:
       target: global-dependencies
     working_dir: /app/frontend/libraries/ballerina-core/
     volumes:
-      - .:/app:ro
-      - ./frontend/libraries/ballerina-core/bin:/app/frontend/libraries/ballerina-core/bin
+      - .:/app
       - ./.gitignore:/app/.gitignore:ro
       - ./.prettierrc:/app/.prettierrc:ro
       - ./.prettierignore:/app/.prettierignore:ro
