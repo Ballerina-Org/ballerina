@@ -1,0 +1,38 @@
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5.0.0
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+      
+      - name: Ensure npm >= 11.5.1 for trusted publishing
+        run: npm install -g npm@latest
+      
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+      
+      - name: Build ballerina-core
+        run: yarn compile-ballerina-core
+      
+      - name: Publish to npm
+        working-directory: frontend/libraries/ballerina-core
+        run: npm publish
+
