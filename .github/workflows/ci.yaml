@@ -81,9 +81,6 @@ jobs:
     needs:
       - frontend
     environment: "npm publishing"
-    permissions:
-      id-token: write
-      contents: read
     defaults:
       run:
         working-directory: frontend
