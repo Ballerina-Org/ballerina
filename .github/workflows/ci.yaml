@@ -13,7 +13,7 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v5.0.0
+      - uses: actions/checkout@v6.0.0
       - run: yarn
       - run: yarn prettier:check
       - run: yarn compile-ballerina-core
@@ -21,7 +21,7 @@ jobs:
   backend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5.0.0
+      - uses: actions/checkout@v6.0.0
       - uses: actions/setup-dotnet@v5.0.1
       - run: dotnet tool restore
       - run: dotnet build backend
@@ -34,7 +34,7 @@ jobs:
       run:
         working-directory: ./backend/libraries/ballerina-core-go
     steps:
-      - uses: actions/checkout@v5.0.0
+      - uses: actions/checkout@v6.0.0
       - uses: actions/setup-go@v6.0.0
         with:
           go-version-file: backend/libraries/ballerina-core-go/go.mod
@@ -51,7 +51,7 @@ jobs:
       run:
         working-directory: ./backend/libraries/ballerina-core-python
     steps:
-      - uses: actions/checkout@v5.0.0
+      - uses: actions/checkout@v6.0.0
       - uses: actions/setup-python@v6.1.0
         with:
           python-version: "3.10"
