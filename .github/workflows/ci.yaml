@@ -96,4 +96,6 @@ jobs:
       - run: npm install -g npm@11.6.4
       - name: Publish to npm
         working-directory: frontend/libraries/ballerina-core
-        run: npm publish
+        run: |
+          npm version ${GITHUB_REF#refs/tags/}
+          npm publish
