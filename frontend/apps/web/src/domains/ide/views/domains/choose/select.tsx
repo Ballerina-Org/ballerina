@@ -26,7 +26,7 @@ export const SelectSpec = (props: SelectSpecProps): React.ReactElement => {
                 }
                 
                 const u = 
-                    Ide.Updaters.Core.phase.toLocked(props.phase.selection.name.value, props.phase.selection.variant, spec.value)
+                    Ide.Updaters.Core.phase.toLocked(name.name, props.phase.selection.variant, spec.value)
                         .then(((ide: Ide) => {
                  
                             if(ide.phase.kind != 'locked') return ide;

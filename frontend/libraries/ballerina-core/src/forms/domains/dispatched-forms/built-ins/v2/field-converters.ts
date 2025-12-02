@@ -18,10 +18,15 @@
     ValueFilterStartsWith,
     ValueOption,
     ValueSumN,
+    Option
 } from "ballerina-core";
 import { List, OrderedMap, Map } from "immutable";
-import { DispatchPassthroughFormInjectedTypes } from "src/domains/dispatched-passthrough-form/injected-forms/category";
+import {
+    DispatchPassthroughFormInjectedTypes
+} from "web/src/domains/dispatched-passthrough-form/injected-forms/category";
 
+
+/* only toApi is implemented as per v2 F# backend */
 export const IdeTypeConverters: DispatchApiConverters<DispatchPassthroughFormInjectedTypes> =
     {
         injectedCategory: {
@@ -95,13 +100,15 @@ export const IdeTypeConverters: DispatchApiConverters<DispatchPassthroughFormInj
             toAPIRawValue: ([_, __]) => _,
         },
         SingleSelection: {
-            fromAPIRawValue: (_) =>
-                _?.IsSome == false
+            fromAPIRawValue: (_) => {
+                debugger
+                return _?.IsSome == false
                     ? CollectionSelection().Default.right("no selection")
-                    : CollectionSelection().Default.left(_.Value),
+                    : CollectionSelection().Default.left(_.Value)
+            },
             toAPIRawValue: ([_, __]) =>
                 _.kind == "r"
-                    ? { IsSome: false, Value: null }
+                    ? { IsSome: false, Value:  { "discriminator": "unit" }}
                     : { IsSome: true, Value: _.value },
         },
         MultiSelection: {
@@ -132,6 +139,7 @@ export const IdeTypeConverters: DispatchApiConverters<DispatchPassthroughFormInj
         },
         Tuple: {
             fromAPIRawValue: (_) => {
+                debugger
                 if (_ == undefined) {
                     return List();
                 }

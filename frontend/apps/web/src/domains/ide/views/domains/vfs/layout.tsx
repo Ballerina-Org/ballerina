@@ -15,6 +15,7 @@ import MonacoEditor, {SupportedLanguage} from "../editor/monaco.tsx";
 import {Drawer} from "./drawer.tsx";
 import {CustomFieldsTracker} from "../custom-fields/layout.tsx";
 import {IdeLayout} from "../layout/layout.tsx";
+import {cleanString} from "playground-core/ide/domains/phases/custom-fields/domains/data-provider/state.ts";
 
 
 
@@ -37,7 +38,6 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
                     moveIntoOwnFolder={async () => {
                         if(props.phase.kind != "locked") return 
                         if(props.phase.locked.workspace.kind != 'selected') return;
-                        debugger
                         const added = await moveIntoOwnFolder(props.phase.locked.name, props.phase.locked.workspace.file.metadata.path.split("/"));
                         if(added.kind == 'value') {
                             const spec = await getSpec(props.phase.locked.name);
@@ -54,19 +54,9 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
                     }}
                 />
             </div>
-            <CustomFieldsTemplate
-                context={{...props.phase.locked.customFields, node: FlatNode.Operations.findFolderByPath(props.phase.locked.workspace.nodes, props.phase.locked.workspace.file.metadata.path) }}
-                setState={(s) => 
-                    props.setState(
-                        Ide.Updaters.Core.phase.locked(
-                            LockedPhase.Updaters.Core.customFields(s)
-                        )
-                    )}
-                foreignMutations={unit}
-                view={CustomFieldsTracker}
-                />
-            {/*<CustomFieldsTracker context={props.phase.locked.customFields} node={props.phase.locked.workspace.file} setState={props.setState} />*/}
+
         </fieldset> : <></>
+
     const file =
         props.phase.kind == "locked"
         && props.phase.locked.workspace.kind == 'selected'
@@ -74,7 +64,7 @@ export const VfsLayout = (props: VfsLayoutProps): React.ReactElement => {
             fileName={props.phase.locked.workspace.file.name}
             onChange={(next:any)=> props.setState(next)}
             key={props.phase.locked.workspace.file.name}
-            content={JSON.stringify(props.phase.locked.workspace.file.metadata.content)}/> : <></>
+            content={props.phase.locked.workspace.file.metadata.content}/> : <></>
     
     const drawer =
         props.phase.kind == "locked" 

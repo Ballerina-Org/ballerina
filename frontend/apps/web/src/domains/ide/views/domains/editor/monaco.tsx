@@ -5,50 +5,27 @@ import {BasicUpdater, ValueOrErrors} from "ballerina-core";
 import { LockedPhase, WorkspaceState,  Ide} from "playground-core";
 import {configureBallerina, registerBallerina, setMonarchForBallerina} from "./language.ts";
 import {List} from "immutable";
+import {cleanString, unquote} from "playground-core/ide/domains/phases/custom-fields/domains/data-provider/state.ts";
 
-export type SupportedLanguage = 'json' | 'ballerina'
+export type SupportedLanguage = 'json' | 'ballerina' | 'fsharp'
 
-function stripBOM(text: string): string {
-    if (text.charCodeAt(0) === 0xFEFF) {
-        return text.slice(1);
-    }
-    return text;
-}
+const getExtension = (fileName: string): string =>
+    fileName.split(".").pop() ?? "";
 
-function unquoteIfQuoted(input: string): string {
-    if (!input) return input;
+const extToLang: Record<string, SupportedLanguage> = {
+    json: "json",
+    fs: "fsharp",
+    bl: "ballerina",
+};
 
-    try {
-        // Try to parse the string. If it's a quoted string literal,
-        // JSON.parse will succeed and return the inner content.
-        const parsed = JSON.parse(input);
-
-        if (typeof parsed === "string") {
-            // Only unwrap if it's really a double-encoded string.
-            return parsed;
-        }
-
-        // If parsed is an object, array, number etc.
-        // then input wasn't double-encoded text.
-        return input;
-    } catch {
-        // Not JSON at all → leave as-is
-        return input;
-    }
-}
 const getLanguage = (fileName: string): ValueOrErrors<SupportedLanguage, string> => {
-
-    const i = fileName.lastIndexOf(".");
-    const ext = i === -1 ? "" : fileName.slice(i + 1);
-    switch (ext) {
-        case "json":
-            return ValueOrErrors.Default.return('json') ;
-        case "fs":
-            return ValueOrErrors.Default.return("ballerina"); 
-        default:
-            return ValueOrErrors.Default.throw(List([`Unsupported fileName extension for monaco editor:${ext}`]));
-    }
-}
+    const ext = getExtension(fileName);
+    return ext in extToLang
+        ? ValueOrErrors.Default.return(extToLang[ext])
+        : ValueOrErrors.Default.throw(
+            List([`Unsupported fileName extension for monaco editor: ${ext}`])
+        );
+};
 
 export default function MonacoEditor(props: {
     content: string;
@@ -59,7 +36,7 @@ export default function MonacoEditor(props: {
         React.useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
     
     const [errors, setErrors] = React.useState<List<string>>(List());
-    const [language, setLanguage] = React.useState<SupportedLanguage>();
+    const [language, setLanguage] = React.useState<SupportedLanguage>("json");
     
     React.useEffect(() => {
         const lang = getLanguage(props.fileName);
@@ -69,29 +46,31 @@ export default function MonacoEditor(props: {
             return;
         }
 
-        setErrors(List());             
-        setLanguage(lang.value);       
+        setErrors(List());
+        setLanguage(lang.value);
     }, [props.fileName]);
 
-    const initialFormatted = React.useMemo(() => {
-        const clean = stripBOM(unquoteIfQuoted(props.content));
+    const lastContentRef = React.useRef<string>(props.content);
 
-        if (language !== "json") {
-            return clean;                               // fs, ballerina, etc.
+    const initialFormatted = React.useMemo(() => {
+        if (language !== "json") return props.content;
+
+        // Only pretty-format when content actually changes
+        if (props.content === lastContentRef.current) {
+            return editorRef.current?.getValue() ?? props.content;
         }
+
+        lastContentRef.current = props.content;
 
         try {
-            return JSON.stringify(JSON.parse(clean), null, 2);
+            return JSON.stringify(JSON.parse(props.content), null, 2);
         } catch {
-            return clean; // fallback if invalid JSON
+            return props.content;
         }
     }, [props.content, language]);
-
-
     const handleEditorChange = React.useCallback(
         (value: string | undefined) => {
             if (!value) return;
-
             if (language === "json") {
                 try {
                     const parsed = JSON.parse(value);
@@ -190,6 +169,7 @@ export default function MonacoEditor(props: {
         registerBallerina(monacoInstance);
         setMonarchForBallerina(monacoInstance);
         configureBallerina(monacoInstance);
+        format()
     };
 
     const format = () => {

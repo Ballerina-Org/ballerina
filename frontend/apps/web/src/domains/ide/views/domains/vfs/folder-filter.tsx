@@ -43,7 +43,7 @@ export const FolderFilter = ({
     if (workspace.kind !== "selected" ) return null;
     
     const folder = FlatNode.Operations.findFolderByPath(workspace.nodes, workspace.file.metadata.path)
-    debugger
+
     if(folder.kind !== "r") return <p>Cant find folder for a file</p>
     const files = (folder.value.children || [])?.filter(x => x.metadata.kind === "file");
     const specialFilesMissing = 
@@ -59,23 +59,23 @@ export const FolderFilter = ({
         <>
         <div className="w-full">
 
-            {specialFilesMissing && parentFileNotYetExtracted && <div className="flex ">                       
-                <div className="mr-3 mt-12 "><VscCopilot size={15} /></div>
-                <div className="ml-3 chat chat-start">
-                    <div className="chat-bubble chat-bubble-error">
-                        <div className="flex items-center w-full">
-
-                            <p className="flex-1">Move into own folder and add v2 files</p>
-                            <button
-                                className="ml-2 btn btn-xs"
-                                onClick={async () => {
-                                    await moveIntoOwnFolder()
-                                }}
-                            ><VscMove size={15} /></button>
-                        </div>
-                    </div>
-                </div>
-            </div>}
+            {/*{specialFilesMissing && parentFileNotYetExtracted && <div className="flex ">                       */}
+            {/*    <div className="mr-3 mt-12 "><VscCopilot size={15} /></div>*/}
+            {/*    <div className="ml-3 chat chat-start">*/}
+            {/*        <div className="chat-bubble chat-bubble-error">*/}
+            {/*            <div className="flex items-center w-full">*/}
+            
+            {/*                <p className="flex-1">Move into own folder and add v2 files</p>*/}
+            {/*                <button*/}
+            {/*                    className="ml-2 btn btn-xs"*/}
+            {/*                    onClick={async () => {*/}
+            {/*                        await moveIntoOwnFolder()*/}
+            {/*                    }}*/}
+            {/*                ><VscMove size={15} /></button>*/}
+            {/*            </div>*/}
+            {/*        </div>*/}
+            {/*    </div>*/}
+            {/*</div>}*/}
 
             <div className="flex w-full">
                 

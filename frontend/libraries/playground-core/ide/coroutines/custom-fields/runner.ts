@@ -7,7 +7,7 @@ export const CustomFieldsRunner =
     Co.Template<Unit>(customFields, {
             runFilter: (props) => {
                 const currentTrace = CustomFields.Operations.currentJobTrace(props.context.jobFlow)
-                return props.context.status.kind == "type-checking" && currentTrace !== undefined && currentTrace.kind == "requested";
+                return (props.context.jobFlow.kind != "finished" && currentTrace !== undefined) ;
             }
         }
     );

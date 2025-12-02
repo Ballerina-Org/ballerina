@@ -203,6 +203,10 @@ export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-rend
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/record/template";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/record/state";
 export * from "./src/forms/domains/dispatched-forms/built-ins/state";
+
+export * from "./src/forms/domains/dispatched-forms/built-ins/v2/field-converters";
+
+
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/table/state";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/table/template";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/state";

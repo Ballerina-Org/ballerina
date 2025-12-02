@@ -4,7 +4,7 @@ import { id } from "../fun/domains/id/state";
 import { Unit } from "../fun/domains/unit/state";
 import { BasicUpdater } from "../fun/domains/updater/state";
 import { BasicFun, Fun } from "../fun/state";
-import { Guid, SimpleCallback } from "../../main";
+import {Guid, Predicate, SimpleCallback} from "../../main";
 export type DeltaT = number;
 export type Coroutine<context, state, result> = {
   ([context, deltaT]: [context, DeltaT]): CoroutineStep<context, state, result>;

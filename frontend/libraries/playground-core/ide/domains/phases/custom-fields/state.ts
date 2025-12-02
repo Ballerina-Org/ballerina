@@ -1,39 +1,29 @@
 ﻿import {List} from "immutable";
 import {
+    Coroutine,
     ForeignMutationsInput,
-    Guid,
     Maybe, Option,
     replaceWith,
-    SimpleCallback,
-    simpleUpdater, Template, Unit,
-    Updater, Value,
+    simpleUpdater, Sum, Unit,
+    Updater,
     ValueOrErrors,
     View,
     Visibility
 } from "ballerina-core";
-import {VirtualFolders, WorkspaceState} from "../locked/domains/folders/state";
-import {FlatNode, INode, Meta} from "../locked/domains/folders/node";
-import {TypeCheckingPayload} from "./domains/type-checking/state";
-import {JobFlow, JobTrace, TypeCheckingJob} from "./domains/job/state";
+import {INode, Meta} from "../locked/domains/folders/node";
+import {JobFlow, JobTrace} from "./domains/job/state";
 import {CustomFieldsEvent, DomainEvent, JobLifecycleEvent, transitionUpdater} from "./domains/event/state";
-import * as repl from "node:repl";
-import {LockedPhaseForeignMutationsExpected, LockedPhaseView} from "../locked/state";
-import {HeroPhaseForeignMutationsExpected, HeroPhaseView} from "../hero/state";
-import {SelectionPhaseForeignMutationsExpected, SelectionPhaseView} from "../selection/state";
-import {BootstrapPhaseForeignMutationsExpected, BootstrapPhaseView} from "../bootstrap/state";
-
-/*
-
-Domain state machine moves between macro steps (type checking, construction, updater, ...)
-JobFlow manages micro job steps (protocol) (request, initial response, response)
-
-*/
+import {TypeCheckingProvider} from "./domains/data-provider/state";
+import {Guid} from "../../types/Guid";
+import {Co} from "../../../coroutines/custom-fields/builder";
+import {TypeCheckingPayload} from "./domains/type-checking/state";
 
 export type CustomFieldsProcess =
     | { kind: "idle" }
     | { kind: "type-checking" }
     | { kind: "construction" }
     | { kind: "updater" } // optional
+    | { kind: "value" }
     | { kind: "result"; value: ValueOrErrors<any, any> };
 
 export type CustomFieldsContext = {
@@ -41,24 +31,34 @@ export type CustomFieldsContext = {
     flow: JobFlow;
 };
 
+export type SimDocument = {
+    content: string,
+    enabled: boolean,
+}
+
 export type CustomFields = { 
     errors: List<string>,
     status: CustomFieldsProcess,
     visibility: Visibility,
-    folder: Option<INode<Meta>>,
-    jobFlow: JobFlow
+    jobFlow: JobFlow,
+    document: SimDocument,
+    
+    value: Option<Guid>,
+    delta: Option<string>
 }
 
 export const CustomFields = {
     Default: (): CustomFields => ({
         errors: List<string>(),
         visibility: "fully-invisible",
-        folder: Option.Default.none(),
+        document: { content: "", enabled : false },
         status: { kind: 'idle' },
         jobFlow: {
             traces: [],
             kind: "in-progress"
-        }
+        },
+        value: Option.Default.none(),
+        delta: Option.Default.none()
     }),
     Updaters: {
         Core: {
@@ -66,19 +66,89 @@ export const CustomFields = {
             ...simpleUpdater<CustomFields>()("status"),
             ...simpleUpdater<CustomFields>()("jobFlow"),
             ...simpleUpdater<CustomFields>()("visibility"),
-            ...simpleUpdater<CustomFields>()("folder"),
+            ...simpleUpdater<CustomFields>()("value"),
+            ...simpleUpdater<CustomFields>()("delta"),
+            ...simpleUpdater<CustomFields>()("document"),
         },
         Coroutine: {
-            //start: () => CustomFields.Updaters.Core.collectTypeCheckingData()
+            errorAndFail: (msg: string) =>
+                CustomFields.Updaters.Core.errors(
+                    replaceWith(
+                        List([msg])
+                    )
+                ).then(
+                    CustomFields.Updaters.Core.jobFlow(
+                        (flow: JobFlow) => ({
+                            ...flow,
+                            kind: "finished",
+                            result: ValueOrErrors.Default.throw(List([msg]))
+                        })
+                    )
+                ),
             transition: (event: CustomFieldsEvent): Updater<CustomFields> =>
                 Updater(fields => {
-                    console.log("event:" + JSON.stringify(event, null, 2));
-                    const { state, flow } = transitionUpdater(event)({ flow: fields.jobFlow, state: fields.status});
-                    const u = 
+                    //console.log("event:" + JSON.stringify(event, null, 2));
+                    const {state, flow} = transitionUpdater(event)({flow: fields.jobFlow, state: fields.status});
+                    const u =
                         CustomFields.Updaters.Core.status(replaceWith(state))
                             .then(CustomFields.Updaters.Core.jobFlow(replaceWith(flow)))
                     return u(fields)
-                })
+                }),
+            isTypeCheckingRequested(
+                fields: CustomFields
+            ): Option<TypeCheckingPayload> {
+                if (fields.status.kind === "type-checking") {
+                    const currentTrace = CustomFields.Operations.currentJobTrace(fields.jobFlow);
+                    if(currentTrace !== undefined && currentTrace.kind === "requested") return Option.Default.some(currentTrace.job.payload as TypeCheckingPayload)
+                }
+
+                return Option.Default.none();
+            },
+            isTypeCheckingDispatched(
+                fields: CustomFields
+            ): Option<Guid> {
+                if (fields.status.kind === "type-checking") {
+                    const currentTrace = CustomFields.Operations.currentJobTrace(fields.jobFlow);
+                    if(currentTrace !== undefined && currentTrace.kind === "dispatched" && currentTrace.initial.kind == "r") 
+                        return Option.Default.some( currentTrace.initial.value.jobId)
+                }
+
+                return Option.Default.none();
+            },
+            isTypeCheckingCompleted(
+                fields: CustomFields
+            ): Option<Guid> {
+                if (fields.status.kind === "type-checking") {
+                    const currentTrace = CustomFields.Operations.currentJobTrace(fields.jobFlow);
+                    if(currentTrace !== undefined && currentTrace.kind === "completed" && currentTrace.result.kind == 'type-checking')
+                        return Option.Default.some( currentTrace.result.result.result.valueDescriptorId)
+                }
+
+                return Option.Default.none();
+            },
+            isConstructionCompleted(
+                fields: CustomFields
+            ): Option<Guid> {
+                if (fields.status.kind === "construction") {
+                    const currentTrace = CustomFields.Operations.currentJobTrace(fields.jobFlow);
+                    if(currentTrace !== undefined && currentTrace.kind === "completed" && currentTrace.result.kind == 'construction')
+                        return Option.Default.some( currentTrace.result.result.result.valueId)
+                }
+
+                return Option.Default.none();
+            },
+            isConstructionDispatched(
+                fields: CustomFields
+            ): Option<Guid> {
+                if (fields.status.kind === "construction") {
+                    const currentTrace = CustomFields.Operations.currentJobTrace(fields.jobFlow);
+                    if(currentTrace !== undefined && currentTrace.kind === "dispatched" && currentTrace.initial.kind == "r")
+                        return Option.Default.some( currentTrace.initial.value.jobId)
+                }
+    
+                return Option.Default.none();
+            }
+            
         },
         Template: {
             toggle: (): Updater<CustomFields> => 
@@ -86,10 +156,9 @@ export const CustomFields = {
                     CustomFields.Updaters.Core.visibility(
                         replaceWith(cf.visibility == 'fully-invisible' ? 'fully-visible' : 'fully-invisible' as Visibility))(cf)
                 ),
-            start: (): Updater<CustomFields> =>
+            start: (provider: TypeCheckingProvider): Updater<CustomFields> =>
                 Updater(fields => {
-                    if(fields.folder.kind == 'l') return ({...fields, errors: List(["Can't start custom fields without set folder"])})
-                    const payload = CustomFields.Operations.collectTypeCheckingData(fields.folder.value);
+                    const payload = provider.collect()
                     if(payload.kind == "errors") return ({...fields, errors: payload.errors});
                     
                     const u =
@@ -100,51 +169,41 @@ export const CustomFields = {
                                     job: {kind: 'type-checking', payload: payload.value}
                                 } satisfies JobLifecycleEvent))
                     return u(fields)
+                }),
+            update: (provider: TypeCheckingProvider): Updater<CustomFields> =>
+                Updater(fields => {
+                    const delta = provider.delta()
+                    debugger
+                    if(delta.kind == "errors") return ({...fields, errors: delta.errors});
+                    const u =
+                        CustomFields.Updaters.Core.delta(replaceWith(Option.Default.some(delta.value))).then(
+                        CustomFields.Updaters.Coroutine.transition({kind: "begin-updater"} satisfies DomainEvent))
+                  
+                    return u(fields)
                 })
         }
     },
     Operations: {
         idle: (): CustomFieldsProcess => ({ kind: 'idle' }),
         isAvailable: (node: INode<Meta>): boolean => {
-            //debugger
-            return true //node.name == "customfields"
-        } ,// !node.isBranch && node.name.endsWith(".fs"),
+            return true
+        },
         currentJobTrace: (flow: JobFlow): Maybe<JobTrace> => {
             const traces = flow.traces;
             return traces.length === 0 ? undefined : traces[traces.length - 1];
         },
-        // collecting type checking data depends on how the editor is implemented, it can be a simple text box(es)
-        // here we re-use virtual folders for each entry
-        collectTypeCheckingData: (folder: INode<Meta>) : ValueOrErrors<TypeCheckingPayload, string> => {
-            const f = FlatNode.Operations.findFolderByPath(folder, folder.metadata.path)
-            debugger
-            if (f.kind == 'l') return ValueOrErrors.Default.throw(List(["Can't find 'types.fs' file"]));
-            
-            const files = (f.value.children || []).filter( x => x.metadata.kind == 'file')
-            const types = files.filter(x => x.name == 'types.fs')[0]
-            const constructor = files.filter(x => x.name == 'constructor.fs')[0]
-            const evidence = files.filter(x => x.name == 'evidence.fs')[0]
-            const uncertainties = files.filter(x => x.name == 'uncertainties.fs')[0]
-            const updater = files.filter(x => x.name == 'update.fs')[0]
-            
-            const accessors = (f.value.children || []).filter(x => x.name == 'accessors' && x.metadata.kind == 'dir')[0].children
-            const a = Object.fromEntries(
-                (accessors || []).map(a => [a.name.replace(/\.fs$/, ""), a.metadata.content])
-            );
-            
-            const payload = {
-                Constructor: constructor.metadata.content,
-                Updater: updater.metadata.content,
-                Types: types.metadata.content,
-                Uncertainties: uncertainties.metadata.content,
-                Evidence: evidence.metadata.content,
-                Accessors: a,
-            } satisfies TypeCheckingPayload
-            debugger
-            console.log(JSON.stringify(payload, null, 2));
-            return ValueOrErrors.Default.return(payload)
-        
-        }
+        checkResponseForErrors:
+            <response>(res: Sum<ValueOrErrors<response, any>, any>, name: string): Option<Coroutine<CustomFields & {
+                provider: TypeCheckingProvider
+            }, CustomFields, Unit>> => {
+                if (res.kind == "r") {
+                    return Option.Default.some(Co.SetState(CustomFields.Updaters.Coroutine.errorAndFail(`Unknown error on ${name}  status, sum: ${JSON.stringify(res)}`)))
+                } else if (res.value.kind == "errors")
+
+                    return Option.Default.some(Co.SetState(CustomFields.Updaters.Coroutine.errorAndFail(`Unknown error on ${name}  status, voe: ${JSON.stringify(res)}`)))
+
+                return Option.Default.none()
+            },
     },
     ForeignMutations: (
         _: ForeignMutationsInput<Unit, CustomFields>,
@@ -154,8 +213,10 @@ export const CustomFields = {
 
 export type CustomFieldsForeignMutationsExpected = {}
 
+export type CustomFieldsCtx = CustomFields & { provider: TypeCheckingProvider }
+
 export type CustomFieldsView = View<
-    CustomFields & {node: Option<INode<Meta>>},
+    CustomFieldsCtx,
     CustomFields,
     CustomFieldsForeignMutationsExpected,
     {

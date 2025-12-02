@@ -18,7 +18,7 @@ import {
     DispatchInjectedPrimitive,
     DispatchOnChange,
     AggregatedFlags, LookupApiOne, DispatchDeltaTransferComparand, DispatchDeltaTransferV2, ConcreteRenderers,
-    dispatchToAPIRawValue, dispatchToAPIRawValueV2,
+    dispatchToAPIRawValue, dispatchToAPIRawValueV2, IdeTypeConverters,
 } from "ballerina-core";
 import {List, Set } from "immutable";
 import {FormsSeedEntity} from "playground-core/ide/domains/types/seeds";
@@ -62,10 +62,6 @@ import {
 import {IdeFlags} from "./domains/common/ide-flags.ts";
 import {FieldExtraContext} from "./domains/common/field-extra-context.ts";
 import {Namespace} from "./domains/common/namespace.ts";
-import {IdeTypeConverters} from "./field-converters.ts";
-import {LocalizationState} from "./domains/common/localization-state.ts";
-import i18n, {t} from "i18next";
-
 
 export type IT = DispatchPassthroughFormInjectedTypes
 export type FL = IdeFlags
@@ -125,6 +121,7 @@ export const DispatcherFormsApp = (props: Forms) => {
                 specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
                     props.launcher,
                 )!.parseValueToApi;
+            
             const path: ValueOrErrors<
                 [
                     DispatchDeltaTransferV2,
@@ -140,7 +137,7 @@ export const DispatcherFormsApp = (props: Forms) => {
             
             if(path.kind == "value") {
                 if (props.deltas.kind == "l") {
-                    debugger
+               
                     props.setState(
                        Ide.Updaters.Core.phase.locked(
                            LockedPhase.Updaters.Core.startDeltas()
@@ -174,7 +171,7 @@ export const DispatcherFormsApp = (props: Forms) => {
                             spec.launchers.passthrough
                                 .get(props.launcher)!
                                 .parseEntityFromApi(raw.value.value);
-                        debugger
+                 
                         if (parsed.kind == "errors") {
                             console.error("parsed entity errors 2", parsed.errors);
                             props.setState(Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.errors(replaceWith(parsed.errors))));

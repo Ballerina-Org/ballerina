@@ -467,6 +467,7 @@ export const fromAPIRawValue =
     injectedPrimitives?: InjectedPrimitives<T>,
   ) =>
   (raw: any): ValueOrErrors<PredicateValue, string> => {
+    debugger
     if (t.kind == "primitive") {
       // unit is a special kind of primitive
       if (t.value == "unit") {

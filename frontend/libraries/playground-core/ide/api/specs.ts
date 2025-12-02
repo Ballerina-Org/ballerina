@@ -1,9 +1,8 @@
 ﻿
 import {axiosVOE} from "./api";
-import {Node} from "../domains/phases/locked/vfs/upload/model";
 import {KnownSections} from "../domains/types/Json";
-import {WorkspaceVariant} from "../domains/common/state";
-
+import {WorkspaceVariant} from "../domains/phases/locked/domains/folders/state";
+import {INode, Meta} from "../domains/phases/locked/domains/folders/node";
 
 export const listSpecs = async () => {
     debugger
@@ -15,7 +14,7 @@ export const listSpecs = async () => {
 
 export const getSpec = async (name: string) =>
 
-    await axiosVOE<Node, any>({
+    await axiosVOE<INode<Meta>, any>({
         method: "GET",
         url: `/specs/${name}`,
     });

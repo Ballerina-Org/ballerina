@@ -49,7 +49,7 @@ import {
     unit,
 } from "ballerina-core";
 import { Map } from "immutable";
-import {
+import React, {
     ComponentProps,
     Fragment,
     useCallback,
@@ -253,5 +253,74 @@ export const RecordFieldViews = {
             />
         );
     },
-
+    Liters: () => (props) => {
+        return (
+            <>
+                <table>
+                    <tbody>
+                    {props.context.layout.valueSeq().map((tab) =>
+                        tab.columns.valueSeq().map((column) => (
+                            <tr style={{ display: "block", float: "left" }}>
+                                {column.groups.valueSeq().map((group) =>
+                                    group
+                                        .filter((fieldName) =>
+                                            props.VisibleFieldKeys.has(fieldName),
+                                        )
+                                        .map((fieldName) => (
+                                            <td style={{ display: "block" }}>
+                                                {props.EmbeddedFields.get(fieldName)!(undefined)({
+                                                    ...props,
+                                                    context: {
+                                                        ...props.context,
+                                                        disabled:
+                                                            props.DisabledFieldKeys.has(fieldName),
+                                                    },
+                                                    view: unit,
+                                                })}
+                                            </td>
+                                        )),
+                                )}
+                            </tr>
+                        )),
+                    )}
+                    </tbody>
+                </table>
+            </>
+        );
+    },
+    OCREvidence: () => (props) => {
+        return (
+            <>
+                <table>
+                    <tbody>
+                    {props.context.layout.valueSeq().map((tab) =>
+                        tab.columns.valueSeq().map((column) => (
+                            <tr style={{ display: "block", float: "left" }}>
+                                {column.groups.valueSeq().map((group) =>
+                                    group
+                                        .filter((fieldName) =>
+                                            props.VisibleFieldKeys.has(fieldName),
+                                        )
+                                        .map((fieldName) => (
+                                            <td style={{ display: "block" }}>
+                                                {props.EmbeddedFields.get(fieldName)!(undefined)({
+                                                    ...props,
+                                                    context: {
+                                                        ...props.context,
+                                                        disabled:
+                                                            props.DisabledFieldKeys.has(fieldName),
+                                                    },
+                                                    view: unit,
+                                                })}
+                                            </td>
+                                        )),
+                                )}
+                            </tr>
+                        )),
+                    )}
+                    </tbody>
+                </table>
+            </>
+        );
+    },
 } satisfies IdeConcreteRenderers["record"];

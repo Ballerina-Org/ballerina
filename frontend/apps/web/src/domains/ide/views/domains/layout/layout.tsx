@@ -4,7 +4,7 @@
     validateCompose, validateExplore, getSpec, seedPath, getKeys, validateBridge, WorkspaceVariant,
     Ide, WorkspaceState, LockedDisplay,
     IdeView, HeroPhase, BootstrapPhase,
-    Deltas, Delta, CustomFields
+    Deltas, Delta, CustomFields, CustomFieldsTemplate, FlatNode
 } from "playground-core";
 import "react-grid-layout/css/styles.css";
 import React, {useState} from "react";
@@ -26,11 +26,15 @@ import {FormSkeleton} from "../forms/skeleton.tsx";
 import {SettingsPanel} from "./settings.tsx";
 import {List} from "immutable";
 import {LaunchersDock} from "../forms/launchers-dock.tsx";
-import {Maybe, ValueOrErrors, replaceWith} from "ballerina-core";
+import {Maybe, ValueOrErrors, replaceWith, unit} from "ballerina-core";
 import {ErrorsPanel} from "./errors.tsx";
 import {Hero} from "../hero/hero.tsx";
 import {languages} from "monaco-editor";
 import json = languages.json;
+import {CustomFieldsTracker} from "../custom-fields/layout.tsx";
+import {
+    makeTypeCheckingProvider
+} from "playground-core/ide/domains/phases/custom-fields/domains/data-provider/state.ts";
 
 declare const __ENV__: Record<string, string>;
 console.table(__ENV__);
@@ -129,7 +133,7 @@ export const IdeLayout: IdeView = (props) => {
                                             fromVoe(call,'Specification save');
                                             const updated = await getSpec(props.context.phase.locked.name);
                                             if(updated.kind == "value") {
-                                                debugger
+                                        
                                                  props.setState(
                                                      Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.workspace(
                                                          WorkspaceState.Updater.reloadContent(updated.value)
@@ -195,7 +199,7 @@ export const IdeLayout: IdeView = (props) => {
                                                 LockedPhase.Updaters.Core.errors(replaceWith(launchers.errors))))
                                             return;
                                         }
-                                        debugger
+                            
                                         props.setState(
                                             Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.toDisplay(launchers.value))
                                             );
@@ -251,7 +255,27 @@ export const IdeLayout: IdeView = (props) => {
                                 
                                 <div data-theme={theme}  className="overflow-auto mockup-window border border-base-300 w-full h-full rounded-none relative flex flex-col">
                                     <aside className="flex-1">
-                                        <FormSkeleton {...props.context} setState={props.setState} />
+                                        { props.context.phase.kind == "locked"
+                                            && props.context.phase.locked.workspace.kind == 'selected'
+                                            && <CustomFieldsTemplate
+                                            context={{
+                                                ...props.context.phase.locked.customFields, 
+                                                provider: 
+                                                    makeTypeCheckingProvider(
+                                                        FlatNode.Operations.findFolderByPath(
+                                                            props.context.phase.locked.workspace.nodes, 
+                                                            props.context.phase.locked.workspace.file.metadata.path) 
+                                                    ) }}
+                                            setState={(s) =>
+                                                props.setState(
+                                                    Ide.Updaters.Core.phase.locked(
+                                                        LockedPhase.Updaters.Core.customFields(s)
+                                                    )
+                                                )}
+                                            foreignMutations={unit}
+                                            view={CustomFieldsTracker}
+                                        />}
+                                        {/*<FormSkeleton {...props.context} setState={props.setState} />*/}
                      
                                         { props.context.phase.kind == "locked" 
                                             &&  props.context.phase.locked.step.kind == 'display'

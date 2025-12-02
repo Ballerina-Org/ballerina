@@ -35,7 +35,7 @@ const StyledCustomAiBannerWrapper = styled("div")(({ theme: { web3 } }) => ({
 export const SumFieldViews = {
   sum: () => (props) => {
     if (PredicateValue.Operations.IsUnit(props.context.value)) {
-      return <></>;
+      return <>nth</>;
     }
 
     return (

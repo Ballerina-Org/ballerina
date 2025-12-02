@@ -1,25 +1,88 @@
-﻿import {CustomFieldsContext, CustomFieldsProcess } from "../../state";
-import {Updater, ValueOrErrors} from "ballerina-core";
+﻿import {CustomFields, CustomFieldsContext, CustomFieldsProcess} from "../../state";
+import {Updater, ValueOrErrors, Option} from "ballerina-core";
 import {narrowed} from "../../../../types/narrowed";
 import {List} from "immutable";
-import {JobInitialResponse, JobRequest, JobResult, JobTrace, JobFlow, JobResponse } from "../job/state";
+import {
+    JobInitialResponse,
+    JobRequest,
+    JobResult,
+    JobTrace,
+    JobFlow,
+    JobResponse,
+    TypeCheckingJobResponse, RequestValueJobResponse, ConstructionJobResponse
+} from "../job/state";
+import {Guid} from "../../../../types/Guid";
 
-// ∇ main goal of this is to help reason inside the coroutine
 export type DomainEvent =
     | { kind: "begin-type-checking" }
     | { kind: "begin-construction" }
     | { kind: "begin-updater" }
-    | { kind: "finish-flow"; value: ValueOrErrors<any, any> };
+    | { kind: "begin-value", valueId: Guid }
+    | { kind: "begin-result", result: ValueOrErrors<any, any> };
 
 export type JobLifecycleEvent =
     | { kind: "start-job"; job: JobRequest }
     | { kind: "initial"; initial: JobInitialResponse }
     | { kind: "completed"; result: JobResult }
-    | { kind: "fail"; error: string };
 
 export type CustomFieldsEvent =
     | DomainEvent
     | JobLifecycleEvent;
+
+export const CustomFieldsEvent = {
+    typeCheckingCompleted: (res: TypeCheckingJobResponse): CustomFieldsEvent =>
+        ( {
+            kind: 'completed',
+            result: {
+                kind: "type-checking",
+                result: res
+            }
+        }),
+    beginConstruction: () : CustomFieldsEvent =>  ({kind: 'begin-construction'}),
+    startConstruction: (valueDescriptorId: Guid) : CustomFieldsEvent => (
+        {
+            kind: 'start-job', job:{
+                kind: "construction",
+                payload: { ValueDescriptorId: valueDescriptorId }
+            }
+        }),
+    initConstruction: (job: Guid): CustomFieldsEvent =>
+        ({
+            kind: 'initial', initial: {
+                kind: "construction",
+                jobId: job
+            }
+        }),
+    completeConstruction: (job: ConstructionJobResponse): CustomFieldsEvent =>
+        ({
+            kind: 'completed',
+            result: {
+                kind: "construction",
+                result: job
+            }
+        }),
+    typeCheckingInit: (jobId: Guid): CustomFieldsEvent => ({
+        kind: 'initial',
+        initial:  {
+            kind: 'type-checking',
+            jobId: jobId
+        }}),
+    requestValue: (id: Guid): CustomFieldsEvent => ({
+        kind: 'start-job', job:{
+            kind: "request-value",
+            payload: id
+        }
+    }),
+    valueCompleted: (res: RequestValueJobResponse): CustomFieldsEvent => ({
+        kind: 'completed', result: {
+            kind: "request-value",
+            result: res
+        }
+    }),
+    conclude: (res: ValueOrErrors<RequestValueJobResponse,string>): CustomFieldsEvent => ({
+        kind: 'begin-result', result: res
+    })
+}
 
 export const transitionUpdater = (event: CustomFieldsEvent): Updater<CustomFieldsContext> =>
     Updater((ctx:CustomFieldsContext) => {
@@ -34,16 +97,22 @@ export const transitionUpdater = (event: CustomFieldsEvent): Updater<CustomField
         }
 
         if (event.kind === "begin-updater") {
-            return { state: { kind: "updater" }, flow };
+            return { state: { kind: "updater" }, flow: {...flow, kind: 'in-progress' } };
         }
 
-        if (event.kind === "finish-flow") {
+        if (event.kind === "begin-value") {
             return {
-                state: { kind: "result", value: event.value },
+                state: { kind: "value" }, flow
+            };
+        }
+
+        if (event.kind === "begin-result") {
+            return {
+                state: { kind: "result", value: event.result },
                 flow: {
-                    ...flow,
                     kind: "finished",
-                    result: event.value
+                    traces: flow.traces,
+                    result: event.result
                 }
             };
         }
@@ -55,7 +124,7 @@ export const transitionUpdater = (event: CustomFieldsEvent): Updater<CustomField
             };
 
             return {
-                state: { kind: "type-checking" },
+                state: state,
                 flow: {
                     kind: "in-progress",
                     traces: [...flow.traces, newTrace]
@@ -69,13 +138,13 @@ export const transitionUpdater = (event: CustomFieldsEvent): Updater<CustomField
                 return narrowed("Initial response without requested state");
 
             const updated: JobTrace = {
-                kind: "initial",
+                kind: "dispatched",
                 job: last.job,
-                initial: event.initial
+                initial: Option.Default.some(event.initial)
             };
 
             return {
-                state: { kind: "construction" },
+                state: state,
                 flow: {
                     kind: "in-progress",
                     traces: [...flow.traces.slice(0, -1), updated]
@@ -85,18 +154,16 @@ export const transitionUpdater = (event: CustomFieldsEvent): Updater<CustomField
 
         if (event.kind === "completed") {
             const last = flow.traces[flow.traces.length - 1];
-            if (!last || last.kind !== "initial")
-                return narrowed("Completed result without initial");
 
             const updated: JobTrace = {
                 kind: "completed",
                 job: last.job,
-                initial: last.initial,
+                initial: Option.Default.none(), 
                 result: event.result
             };
 
             return {
-                state: { kind: "updater" },
+                state: state,
                 flow: {
                     kind: "in-progress",
                     traces: [...flow.traces.slice(0, -1), updated]
@@ -104,20 +171,6 @@ export const transitionUpdater = (event: CustomFieldsEvent): Updater<CustomField
             };
         }
 
-        if (event.kind === "fail") {
-            const errorResult = ValueOrErrors.Default.throw(
-                List([event.error])
-            );
-
-            return {
-                state: { kind: "result", value: errorResult },
-                flow: {
-                    kind: "finished",
-                    traces: flow.traces,
-                    result: errorResult
-                }
-            };
-        }
 
         return narrowed("Unhandled transition event");
     

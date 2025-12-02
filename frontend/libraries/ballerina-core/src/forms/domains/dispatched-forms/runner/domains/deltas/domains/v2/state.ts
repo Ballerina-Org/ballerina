@@ -24,7 +24,7 @@ export type DeltaV2 =
     | { kind: 'field', field: string }
     | { kind: 'tuple', op: { kind: 'updateElementAt', index: number }}
     | { kind: 'tuple', op: { kind: 'removeElementAt', index: number }}
-    | { kind: 'tuple', op: { kind: 'appendElementAt'}}
+    | { kind: 'tuple', op: { kind: 'appendElementAt', index: number }}
     | { kind: 'sum', index: number }
     | { kind: 'union', caseName: string }
 
@@ -88,6 +88,7 @@ export const DispatchDeltaTransferV2 = {
                         ],
                         string
                     > = (() => {
+                        console.log("Delta: " + JSON.stringify(delta))
                         if (delta.kind == "NumberReplace") {
                             return toRawObject(delta.replace, delta.type, delta.state).Then(
                                 (value) =>{
@@ -750,7 +751,7 @@ export const DispatchDeltaTransferV2 = {
                                         string
                                     >([ 
                                         {
-                                            delta: { kind: 'tuple', op: { kind: 'appendElementAt' }},
+                                            delta: { kind: 'tuple', op: { kind: 'appendElementAt', index: 1 }},
                                             transfer: {
                                                 discriminator: "record",
                                                 value: [
@@ -893,39 +894,44 @@ export const DispatchDeltaTransferV2 = {
                         //             ])},
                         //     );
                         // }
-                        // if (delta.kind == "UnionCase") {
-                        //     return DispatchDeltaTransfer.Default.FromDelta(
-                        //         toRawObject,
-                        //         parseCustomDelta,
-                        //     )(delta.caseName[1]).Then((value) =>
-                        //         ValueOrErrors.Default.return<
-                        //             [
-                        //                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
-                        //                 DispatchDeltaTransferComparand,
-                        //                 AggregatedFlags<Flags>,
-                        //             ],
-                        //             string
-                        //         >([
-                        //             {
-                        //                 Discriminator: `Case${delta.caseName[0]}`,
-                        //                 [`Case${delta.caseName[0]}`]: value[0],
-                        //             } as {
-                        //                 Discriminator: string;
-                        //             } & {
-                        //                 [
-                        //                     caseName: string
-                        //                     ]: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
-                        //             },
-                        //             `[UnionCase][${delta.caseName[0]}]`,
-                        //             delta.flags
-                        //                 ? [
-                        //                     [delta.flags, `[UnionCase][${delta.caseName[0]}]`],
-                        //                     ...value[2],
-                        //                 ]
-                        //                 : value[2],
-                        //         ]),
-                        //     );
-                        // }
+                        if (delta.kind == "UnionCase") {
+                            return DispatchDeltaTransferV2.Default.FromDelta(
+                                toRawObject,
+                                parseCustomDelta,
+                            )(delta.caseName[1]).Then((value) => {
+                                debugger
+                                return ValueOrErrors.Default.return<
+                                    [
+                                        DispatchDeltaTransferV2,
+                                        DispatchDeltaTransferComparand,
+                                        AggregatedFlags<Flags>,
+                                    ],
+                                    string
+                                >([
+                                    {
+                                        delta: { kind: 'union', caseName: delta.caseName[0]},
+                                        transfer: value[0]
+                                    },
+                                    // {
+                                    //     Discriminator: `Case${delta.caseName[0]}`,
+                                    //     [`Case${delta.caseName[0]}`]: value[0],
+                                    // } as {
+                                    //     Discriminator: string;
+                                    // } & {
+                                    //     [
+                                    //         caseName: string
+                                    //         ]: DispatchDeltaTransferV2
+                                    // },
+                                    `[UnionCase][${delta.caseName[0]}]`,
+                                    delta.flags
+                                        ? [
+                                            [delta.flags, `[UnionCase][${delta.caseName[0]}]`],
+                                            ...value[2],
+                                        ]
+                                        : value[2],
+                                ])},
+                            );
+                        }
                         // if (delta.kind == "TupleReplace") {
                         //     return toRawObject(delta.replace, delta.type, delta.state).Then(
                         //         (value) =>
@@ -946,44 +952,48 @@ export const DispatchDeltaTransferV2 = {
                         //             ]),
                         //     );
                         // }
-                        // if (delta.kind == "TupleCase") {
-                        //     return DispatchDeltaTransfer.Default.FromDelta(
-                        //         toRawObject,
-                        //         parseCustomDelta,
-                        //     )(delta.item[1]).Then((value) =>
-                        //         ValueOrErrors.Default.return<
-                        //             [
-                        //                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
-                        //                 DispatchDeltaTransferComparand,
-                        //                 AggregatedFlags<Flags>,
-                        //             ],
-                        //             string
-                        //         >([
-                        //             {
-                        //                 Discriminator: `Tuple${
-                        //                     (delta.tupleType as TupleType<any>).args.length
-                        //                 }Item${delta.item[0] + 1}`,
-                        //                 [`Item${delta.item[0] + 1}`]: value[0],
-                        //             } as {
-                        //                 Discriminator: string;
-                        //             } & {
-                        //                 [
-                        //                     item: string
-                        //                     ]: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
-                        //             },
-                        //             `[TupleCase][${delta.item[0] + 1}]${value[1]}`,
-                        //             delta.flags
-                        //                 ? [
-                        //                     [
-                        //                         delta.flags,
-                        //                         `[TupleCase][${delta.item[0] + 1}]${value[1]}`,
-                        //                     ],
-                        //                     ...value[2],
-                        //                 ]
-                        //                 : value[2],
-                        //         ]),
-                        //     );
-                        // }
+                        if (delta.kind == "TupleCase") {
+                            return DispatchDeltaTransferV2.Default.FromDelta(
+                                toRawObject,
+                                parseCustomDelta,
+                            )(delta.item[1]).Then((value) =>
+                                ValueOrErrors.Default.return<
+                                    [
+                                        DispatchDeltaTransferV2,
+                                        DispatchDeltaTransferComparand,
+                                        AggregatedFlags<Flags>,
+                                    ],
+                                    string
+                                >([
+                                    {
+                                        delta: { kind: 'tuple', op: { kind: 'updateElementAt', index: delta.item[0] } },
+                                        transfer: value[0]
+                                    },
+                                    // {
+                                    //     Discriminator: `Tuple${
+                                    //         (delta.tupleType as TupleType<any>).args.length
+                                    //     }Item${delta.item[0] + 1}`,
+                                    //     [`Item${delta.item[0] + 1}`]: value[0],
+                                    // } as {
+                                    //     Discriminator: string;
+                                    // } & {
+                                    //     [
+                                    //         item: string
+                                    //         ]: DispatchDeltaTransferV2;
+                                    // },
+                                    `[TupleCase][${delta.item[0] + 1}]${value[1]}`,
+                                    delta.flags
+                                        ? [
+                                            [
+                                                delta.flags,
+                                                `[TupleCase][${delta.item[0] + 1}]${value[1]}`,
+                                            ],
+                                            ...value[2],
+                                        ]
+                                        : value[2],
+                                ]),
+                            );
+                        }
                         // if (delta.kind == "TableValue") {
                         //     return DispatchDeltaTransfer.Default.FromDelta(
                         //         toRawObject,

@@ -1,4 +1,4 @@
-﻿import React from "react";
+﻿import React, {useEffect} from "react";
 import {Dropdown} from "../layout/dropdown.tsx"
 import {
     FlatNode,
@@ -9,82 +9,53 @@ import {
 import {BasicFun, replaceWith, Updater, Option, Value, Visibility} from "ballerina-core";
 import {SelectionPhase} from "playground-core/ide/domains/phases/selection/state.ts";
 import {VscCircle, VscCircleFilled} from "react-icons/vsc";
-
-type CustomFieldsProps = { context: CustomFields, node: INode<Meta> , setState: BasicFun<Updater<Ide>, void> };
+import {Job} from "./job.tsx";
 
 export const CustomFieldsTracker: CustomFieldsView = (props): React.ReactElement => {
-    debugger
+    const [counter, setCounter] = React.useState(5);
+    useEffect(() => {
+        if (counter <= -1) return;
+
+        const id = setTimeout(() => {
+            setCounter(v => v - 1);
+        }, 1000);
+
+        return () => clearTimeout(id);
+    }, [counter]);
     const jobs = props.context.jobFlow.traces
     return props.context.visibility == ('fully-visible' as Visibility)
-        && props.context.node.kind == "r" && CustomFields.Operations.isAvailable(props.context.node.value) ? <div className="card bg-base-100 w-full shadow-sm">
+        && props.context.provider.hasNode()? <div className="card bg-base-100 w-full shadow-sm">
         <div className="card-body">
             <h2 className="card-title">Custom fields</h2>
             <p>Evaluate free key value code</p>
-            <p>Do I have a node: {props.context.folder.kind == "r" ? 'yes':'no'}</p>
-            <ul className="timeline">
-                {jobs.map( j=> (
-                    <li>
-                
-                        <div className="timeline-middle">
-                            <VscCircle size={20} />
-                        </div>
-                        <div className="timeline-end timeline-box">{j.kind}:{j.job.kind}</div>
-                        <hr className="bg-primary" />
-                    </li>
-                ))}
-                {/*<li>*/}
-                {/*    <div className="timeline-middle">*/}
-                {/*        <VscCircle size={20} />*/}
-                {/*    </div>*/}
-                {/*    <div className="timeline-end timeline-box">Type Checking</div>*/}
-                {/*    <hr className="bg-primary" />*/}
-                {/*</li>*/}
-                {/*<li>*/}
-                {/*    <hr />*/}
-                {/*    <div className="timeline-middle">*/}
-                {/*        <VscCircle size={20} />*/}
-                {/*    </div>*/}
-                {/*    <div className="timeline-end timeline-box">iMac</div>*/}
-                {/*    <hr className="bg-primary" />*/}
-                {/*</li>*/}
-                {/*<li>*/}
-                {/*    <hr />*/}
-                {/*    <div className="timeline-middle">*/}
-                {/*        <VscCircleFilled size={20} />*/}
-                {/*    </div>*/}
-                {/*    <div className="timeline-end timeline-box">iPod</div>*/}
-                {/*    <hr />*/}
-                {/*</li>*/}
-                {/*<li>*/}
-                {/*    <hr />*/}
-                {/*    <div className="timeline-middle">*/}
-                {/*        <VscCircle size={20} />*/}
-                {/*    </div>*/}
-                {/*    <div className="timeline-end timeline-box">iPhone</div>*/}
-                {/*    <hr />*/}
-                {/*</li>*/}
-                {/*<li>*/}
-                {/*    <hr />*/}
-                {/*    <div className="timeline-middle">*/}
-                {/*        <VscCircle size={20} />*/}
-                {/*    </div>*/}
-                {/*    <div className="timeline-end timeline-box">Apple Watch</div>*/}
-                {/*</li>*/}
+            <ul className="timeline mb-7 ">
+                {jobs.map( (j,i)=> (<Job status={props.context.jobFlow.kind} trace={j} item={i} from={jobs.length} />))}
+
             </ul>
+
             <div className="card-actions justify-end">
-                <button 
+                <button
                     className="btn btn-primary"
                     onClick={() => {
-                        props.setState(
-                            CustomFields.Updaters.Core.folder(
-                                replaceWith(props.context.node)
-                                
-                            ).then(CustomFields.Updaters.Template.start()))}}
+                        props.setState(CustomFields.Updaters.Template.start(props.context.provider))}}
                 >Start</button>
+                <button
+                    className="btn btn-warning"
+                    onClick={() => props.setState(CustomFields.Updaters.Template.update(props.context.provider))}
+                >Apply</button>
+                <button
+                    className="btn btn-info"
+                    onClick={() => {}}
+                >Restart</button>
             </div>
-            <p>status: {props.context.jobFlow.kind}</p>
-            <p>Errors:</p>
-            <ul>{props.context.errors.map(e => (<li>{e}</li>))}</ul>
+            {props.context.errors.size > 0 && <>            <p>Errors:</p>
+                <ul>{props.context.errors.map(e => (<li>{e}</li>))}</ul></> }
+
+     {
+            props.context.jobFlow.kind == 'finished' 
+            && props.context.jobFlow.result.kind == "value" 
+            && <strong>{JSON.stringify(props.context.jobFlow.result.value.evidence)}</strong>
+        }
             
         </div>
     </div>:<></>

@@ -12,7 +12,6 @@ import {JsonEditorTemplate} from "./editor/template";
 import {LockedPhase} from "../../state";
 import {JsonEditor, JsonEditorForeignMutationsExpected, JsonEditorView, JsonEditorWritableState} from "./editor/state";
 import {CustomFields} from "../../../custom-fields/state";
-import {customFields} from "../../../../../coroutines/custom-fields";
 
 export type WorkspaceVariant =
     | { kind: 'compose' }
@@ -228,7 +227,7 @@ export const VirtualFolders = {
                     metadata: {kind: "dir", path: "root", checked: true},
                     children: [],
                 };
-                debugger
+         
                 const tree = await VirtualFolders.Operations.buildTreeFromFolder(files, root);
                 const result = VirtualFolders.Operations.markLeaves(tree);
                 return ValueOrErrors.Default.return(result);

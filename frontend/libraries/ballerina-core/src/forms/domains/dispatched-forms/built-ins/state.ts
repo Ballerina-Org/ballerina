@@ -1346,6 +1346,7 @@ export const dispatchFromAPIRawValue =
         );
       }
       if (t.kind == "union") {
+          debugger
         const result = converters["union"].fromAPIRawValue(raw);
         const caseType = t.args.get(result.caseName);
         if (caseType == undefined)
@@ -1368,6 +1369,7 @@ export const dispatchFromAPIRawValue =
       }
 
       if (t.kind == "singleSelection") {
+          debugger
         const result = converters["SingleSelection"].fromAPIRawValue(raw);
         const isSome = result.kind == "l";
         const value = isSome
@@ -2454,6 +2456,7 @@ export const dispatchToAPIRawValue =
     ) =>
         (raw: PredicateValue, formState: any): ValueOrErrors<any, string> => {
             const result: ValueOrErrors<any, string> = (() => {
+                debugger
                 if (t.kind == "primitive") {
                     if (t.name == "unit") {
                         return ValueOrErrors.Default.return(unit);
@@ -2504,6 +2507,7 @@ export const dispatchToAPIRawValue =
                 }
 
                 if (t.kind == "singleSelection") {
+                    debugger
                     if (!PredicateValue.Operations.IsOption(raw)) {
                         return ValueOrErrors.Default.throwOne(
                             `Option expected but got ${JSON.stringify(raw)}`,
