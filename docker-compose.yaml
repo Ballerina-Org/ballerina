@@ -46,6 +46,12 @@ services:
       target: global-dependencies
     volumes:
       - ./frontend/libraries/ballerina-core/package.json:/app/package.json:ro
+      - ./frontend/libraries/create-domain/package.json:/app/libraries/create-domain/package.json:ro
+      - ./frontend/libraries/playground-core/package.json:/app/libraries/playground-core/package.json:ro
+      - ./frontend/apps/web/package.json:/app/apps/web/package.json:ro
+      - ./frontend/apps/mobile/package.json:/app/apps/mobile/package.json:ro
+      - ./frontend/apps/test/package.json:/app/apps/test/package.json:ro
+      - ./frontend/package.json:/app/package.json:ro
       - ./frontend/yarn.lock:/app/yarn.lock
     command: yarn install --mode update-lockfile
     cap_drop:
