@@ -39,6 +39,20 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  ballerina-core-frontend-dependency-updater:
+    build:
+      context: ./frontend
+      dockerfile: libraries/ballerina-core/Dockerfile
+      target: global-dependencies
+    volumes:
+      - ./frontend/libraries/ballerina-core/package.json:/app/package.json:ro
+      - ./frontend/yarn.lock:/app/yarn.lock
+    command: yarn install --mode update-lockfile
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
   ballerina-core-frontend-dependency-installer:
     build:
       context: ./frontend

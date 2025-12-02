@@ -28,7 +28,6 @@
     "@types/react-grid-layout": "^1.3.3",
     "@types/uuid": "^9.0.8",
     "link": "^2.1.0",
-    "react-data-debugger": "1.1.0",
     "react-refresh": "^0.14.0",
     "tsx": "^4.19.2",
     "typescript": "^5.9.3"
