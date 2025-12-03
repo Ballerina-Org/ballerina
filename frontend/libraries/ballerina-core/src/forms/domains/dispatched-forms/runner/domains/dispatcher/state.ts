@@ -103,7 +103,7 @@ export const Dispatcher = {
                   dispatcherContext,
                   isNested,
                   isInlined ?? true,
-                  currentLookupRenderer
+                  currentLookupRenderer,
                 )
               : renderer.kind == "listRenderer"
                 ? ListDispatcher.Operations.Dispatch(

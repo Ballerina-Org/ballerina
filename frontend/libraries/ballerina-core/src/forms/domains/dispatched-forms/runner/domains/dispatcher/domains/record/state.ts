@@ -132,12 +132,11 @@ export const RecordDispatcher = {
                 .mapContext((_: any) => ({
                   ..._,
                   type: renderer.type,
-                  layoutAncestorPath:
-                    currentLookupRenderer
-                      ? `[${currentLookupRenderer}]`
-                      : isInlined
-                        ? _.layoutAncestorPath + "[inline]"
-                        : _.layoutAncestorPath,
+                  layoutAncestorPath: currentLookupRenderer
+                    ? `[${currentLookupRenderer}]`
+                    : isInlined
+                      ? _.layoutAncestorPath + "[inline]"
+                      : _.layoutAncestorPath,
                 }))
                 .withView(concreteRenderer),
             ),

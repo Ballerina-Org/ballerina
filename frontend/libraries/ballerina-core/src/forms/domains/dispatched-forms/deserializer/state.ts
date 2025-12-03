@@ -704,7 +704,7 @@ export type FieldsConfigSource =
       kind: "preprocessed";
       visiblePaths: string[];
       disabledPaths: string[];
-      layout: Map<string, FormLayout>;  // TODO: find a way not to pass all the layouts but only the relevant one
+      layout: Map<string, FormLayout>; // TODO: find a way not to pass all the layouts but only the relevant one
     }
   | {
       kind: "raw";

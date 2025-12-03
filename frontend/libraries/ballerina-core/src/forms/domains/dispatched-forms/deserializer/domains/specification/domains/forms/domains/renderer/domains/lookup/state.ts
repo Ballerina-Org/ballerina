@@ -123,15 +123,15 @@ export const LookupRenderer = {
         CustomPresentationContext,
         ExtraContext
       >["forms"],
-    ): ValueOrErrors<Renderer<T>, string> => renderer.kind == "lookupType-inlinedRenderer"
+    ): ValueOrErrors<Renderer<T>, string> =>
+      renderer.kind == "lookupType-inlinedRenderer"
         ? ValueOrErrors.Default.return(renderer.inlinedRenderer)
         : MapRepo.Operations.tryFindWithError(
             renderer.lookupRenderer,
             forms,
             () =>
               `cannot find renderer ${JSON.stringify(renderer.lookupRenderer, null, 2)}`,
-          )
-    ,
+          ),
     Deserialize: <
       T extends DispatchInjectablesTypes<T>,
       Flags,

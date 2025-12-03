@@ -76,7 +76,9 @@ export type GroupLayout = Array<FieldName>;
 export const RecordFormLayout = {
   Default: (): RecordFormLayout => ({ kind: "Inlined", tabs: OrderedMap() }),
   Operations: {
-    Deserialize: (rawLayout: unknown): ValueOrErrors<RecordFormLayout, string> => {
+    Deserialize: (
+      rawLayout: unknown,
+    ): ValueOrErrors<RecordFormLayout, string> => {
       if (!RawFormLayout.isFormLayout(rawLayout)) {
         return ValueOrErrors.Default.throwOne(
           `Invalid layout, expected object, got ${JSON.stringify(rawLayout)}`,
