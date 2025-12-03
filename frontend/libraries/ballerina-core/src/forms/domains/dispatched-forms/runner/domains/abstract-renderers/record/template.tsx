@@ -1,10 +1,9 @@
-import { List, Map, OrderedMap, Set } from "immutable";
+import { List, Map, Set } from "immutable";
 import {
   BasicUpdater,
   DispatchCommonFormState,
   DispatchDelta,
   DispatchParsedType,
-  Expr,
   PredicateValue,
   replaceWith,
   Updater,
@@ -17,14 +16,8 @@ import {
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
   CommonAbstractRendererForeignMutationsExpected,
-  RecordFormLayout,
-  FieldsConfigSource,
   FormLayout,
   ValueOrErrors,
-  DisabledFields,
-  Sum,
-  CalculatedDisabledFields,
-  CalculatedTabLayout,
   PredicateFormLayout,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
@@ -261,8 +254,8 @@ export const RecordAbstractRenderer = <
     const calculatedLayout =
       layoutFromPreprocessor != undefined
         ? ValueOrErrors.Default.return(layoutFromPreprocessor)
-        // TODO: remove once the projet room has been migrated to v2 specs
-        : FormLayout.Operations.ComputeLayout(updatedBindings, Layout);
+        : // TODO: remove once the projet room has been migrated to v2 specs
+          FormLayout.Operations.ComputeLayout(updatedBindings, Layout);
 
     // TODO -- set error template up top
     if (calculatedLayout.kind == "errors") {

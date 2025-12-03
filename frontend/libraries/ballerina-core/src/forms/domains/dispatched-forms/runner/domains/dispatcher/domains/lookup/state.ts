@@ -55,12 +55,6 @@ export const LookupDispatcher = {
                   dispatcherContext.ErrorRenderer,
                 )
                   .mapContext((_: any) => {
-                    // console.debug(
-                    //   "lookup dispatcher",
-                    //   renderer,
-                    //   _.layoutAncestorPath,
-                    // );
-
                     return {
                       ..._,
                       type: renderer.type,

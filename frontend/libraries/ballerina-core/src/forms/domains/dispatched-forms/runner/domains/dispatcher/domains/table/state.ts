@@ -164,7 +164,6 @@ export const TableDispatcher = {
                                           ).withView(
                                             dispatcherContext.lookupTypeRenderer(),
                                           ),
-                                          disabled: columnRenderer.disabled,
                                           label: columnRenderer.label,
                                           GetDefaultState: () => defaultState,
                                           GetDefaultValue: () => defaultValue,
@@ -298,9 +297,7 @@ export const TableDispatcher = {
                                 dispatcherContext.parseFromApiByType(
                                   renderer.type.arg,
                                 ),
-                                layoutAncestorPath: currentLookupRenderer
-                                ? `[${currentLookupRenderer}]`
-                                : _.layoutAncestorPath,
+                                tableApiSource,
                               )
                                 .mapContext((_: any) => ({
                                   ..._,
@@ -313,6 +310,9 @@ export const TableDispatcher = {
                                         )?.methods ?? []),
                                   sorting,
                                   highlightedFilters,
+                                  layoutAncestorPath: currentLookupRenderer
+                                    ? `[${currentLookupRenderer}]`
+                                    : _.layoutAncestorPath,
                                 }))
                                 .withView(concreteRenderer),
                             );
