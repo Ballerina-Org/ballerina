@@ -38,14 +38,14 @@ export const Dispatcher = {
       as: string,
       isNested: boolean,
       isInlined: boolean,
-      tableApi: string | undefined,
+      api: string | Array<string> | undefined,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       Dispatcher.Operations.Dispatch(
         renderer,
         dispatcherContext,
         isNested,
         isInlined,
-        tableApi,
+        api,
       ).MapErrors((errors) =>
         errors.map((error) => `${error}\n...When dispatching as: ${as}`),
       ),
@@ -64,7 +64,7 @@ export const Dispatcher = {
       >,
       isNested: boolean,
       isInlined: boolean | undefined,
-      tableApi: string | undefined,
+      api: string | Array<string> | undefined,
       currentLookupRenderer?: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> => {
       // console.debug("Dispatching renderer", renderer, {
@@ -81,7 +81,7 @@ export const Dispatcher = {
           ? LookupDispatcher.Operations.Dispatch(
               renderer,
               dispatcherContext,
-              tableApi,
+              api,
             )
           : renderer.kind == "inlinedType-lookupRenderer"
             ? LookupRenderer.Operations.ResolveRenderer(
@@ -93,7 +93,7 @@ export const Dispatcher = {
                   dispatcherContext,
                   isNested,
                   false,
-                  renderer.tableApi ?? tableApi,
+                  api,
                   renderer.lookupRenderer,
                 ),
               )
@@ -103,22 +103,19 @@ export const Dispatcher = {
                   dispatcherContext,
                   isNested,
                   isInlined ?? true,
-                  tableApi,
-                  currentLookupRenderer,
+                  currentLookupRenderer
                 )
               : renderer.kind == "listRenderer"
                 ? ListDispatcher.Operations.Dispatch(
                     renderer,
                     dispatcherContext,
                     isInlined ?? true,
-                    tableApi,
                   )
                 : renderer.kind == "mapRenderer"
                   ? MapDispatcher.Operations.Dispatch(
                       renderer,
                       dispatcherContext,
                       isInlined ?? true,
-                      tableApi,
                     )
                   : (renderer.kind == "enumRenderer" ||
                         renderer.kind == "streamRenderer") &&
@@ -139,14 +136,12 @@ export const Dispatcher = {
                             renderer,
                             dispatcherContext,
                             isInlined ?? true,
-                            tableApi,
                           )
                         : renderer.kind == "readOnlyRenderer"
                           ? ReadOnlyDispatcher.Operations.Dispatch(
                               renderer,
                               dispatcherContext,
                               isInlined ?? true,
-                              tableApi,
                             )
                           : renderer.kind == "sumRenderer" ||
                               renderer.kind == "sumUnitDateRenderer"
@@ -154,13 +149,12 @@ export const Dispatcher = {
                                 renderer,
                                 dispatcherContext,
                                 isInlined ?? true,
-                                tableApi,
                               )
                             : renderer.kind == "tableRenderer"
                               ? TableDispatcher.Operations.Dispatch(
                                   renderer,
                                   dispatcherContext,
-                                  tableApi,
+                                  api,
                                   isInlined ?? true,
                                   currentLookupRenderer,
                                 )
@@ -169,7 +163,6 @@ export const Dispatcher = {
                                     renderer,
                                     dispatcherContext,
                                     isInlined ?? true,
-                                    tableApi,
                                   )
                                 : renderer.kind == "unionRenderer"
                                   ? UnionDispatcher.Operations.Dispatch(
@@ -177,7 +170,6 @@ export const Dispatcher = {
                                       dispatcherContext,
                                       isNested,
                                       isInlined ?? true,
-                                      tableApi,
                                       currentLookupRenderer,
                                     )
                                   : ValueOrErrors.Default.throwOne(

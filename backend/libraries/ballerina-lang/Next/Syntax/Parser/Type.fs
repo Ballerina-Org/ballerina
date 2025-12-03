@@ -9,7 +9,9 @@ module Type =
   open Ballerina.Collections.NonEmptyList
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Object
+  open Ballerina.DSL.Next.Syntax
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Terms
 
@@ -30,6 +32,16 @@ module Type =
     |> Set.ofList
 
   let parseNoComplexTypeShapes: Set<ComplexTypeKind> = Set.empty
+
+  let typeParam =
+    parser {
+      do! openSquareBracketOperator
+      let! paramName = identifierMatch
+      do! colonOperator
+      let! kind = kindDecl ()
+      do! closeSquareBracketOperator
+      return paramName, kind
+    }
 
   let rec typeDecl (parseComplexShapes: Set<ComplexTypeKind>) : Parser<TypeExpr, _, _, Errors> =
     let lookupTypeDecl () =
@@ -245,8 +257,24 @@ module Type =
         return args |> ComplexType.ApplicationArguments
       }
 
+    let typeLambda () =
+      parser {
+        let! pars = parser.AtLeastOne typeParam
+        do! parseOperator Operator.SingleArrow
+        let pars = pars |> NonEmptyList.ToSeq
+        let! body = typeDecl parseAllComplexTypeShapes
+
+        return
+          Seq.foldBack
+            (fun (par_name, par_kind) (body: TypeExpr) ->
+              TypeExpr.Lambda(TypeParameter.Create(par_name, par_kind), body))
+            pars
+            body
+      }
+
     let simpleShapes =
       [ (fun () -> typeDecl parseAllComplexTypeShapes) |> betweenBrackets
+        typeLambda ()
         record ()
         unionTypeDecl ()
         unitTypeDecl ()

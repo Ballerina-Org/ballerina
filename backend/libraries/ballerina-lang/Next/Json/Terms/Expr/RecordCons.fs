@@ -17,11 +17,11 @@ module RecordCons =
 
   let private discriminator = "record-cons"
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member FromJsonRecordCons
-      (fromRootJson: ExprParser<'T, 'Id>)
+      (fromRootJson: ExprParser<'T, 'Id, 'valueExt>)
       (value: JsonValue)
-      : ExprParserReader<'T, 'Id> =
+      : ExprParserReader<'T, 'Id, 'valueExt> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun fieldsJson ->
         reader {
           let! fields = fieldsJson |> JsonValue.AsArray |> reader.OfSum
@@ -42,8 +42,8 @@ module RecordCons =
         })
 
     static member ToJsonRecordCons
-      (rootToJson: ExprEncoder<'T, 'Id>)
-      (record: List<'Id * Expr<'T, 'Id>>)
+      (rootToJson: ExprEncoder<'T, 'Id, 'valueExt>)
+      (record: List<'Id * Expr<'T, 'Id, 'valueExt>>)
       : ExprEncoderReader<'T, 'Id> =
       reader {
         let! _, ctx = reader.GetContext()

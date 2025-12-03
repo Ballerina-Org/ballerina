@@ -829,3 +829,144 @@ func Tuple10Deserializer[A any, B any, C any, D any, E any, F any, G any, H any,
 		},
 	)
 }
+
+func Tuple11Serializer[A any, B any, C any, D any, E any, F any, G any, H any, I any, J any, K any](serializerA Serializer[A], serializerB Serializer[B], serializerC Serializer[C], serializerD Serializer[D], serializerE Serializer[E], serializerF Serializer[F], serializerG Serializer[G], serializerH Serializer[H], serializerI Serializer[I], serializerJ Serializer[J], serializerK Serializer[K]) Serializer[ballerina.Tuple11[A, B, C, D, E, F, G, H, I, J, K]] {
+	return WithContext(
+		"on tuple11",
+		func(value ballerina.Tuple11[A, B, C, D, E, F, G, H, I, J, K]) ballerina.Sum[error, json.RawMessage] {
+			return ballerina.Bind(
+				WithContext("on item1", serializerA)(value.Item1),
+				func(item1 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
+					return ballerina.Bind(
+						WithContext("on item2", serializerB)(value.Item2),
+						func(item2 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
+							return ballerina.Bind(
+								WithContext("on item3", serializerC)(value.Item3),
+								func(item3 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
+									return ballerina.Bind(
+										WithContext("on item4", serializerD)(value.Item4),
+										func(item4 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
+											return ballerina.Bind(
+												WithContext("on item5", serializerE)(value.Item5),
+												func(item5 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
+													return ballerina.Bind(
+														WithContext("on item6", serializerF)(value.Item6),
+														func(item6 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
+															return ballerina.Bind(
+																WithContext("on item7", serializerG)(value.Item7),
+																func(item7 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
+																	return ballerina.Bind(
+																		WithContext("on item8", serializerH)(value.Item8),
+																		func(item8 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
+																			return ballerina.Bind(
+																				WithContext("on item9", serializerI)(value.Item9),
+																				func(item9 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
+																					return ballerina.Bind(
+																						WithContext("on item10", serializerJ)(value.Item10),
+																						func(item10 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
+																							return ballerina.Bind(
+																								WithContext("on item11", serializerK)(value.Item11),
+																								func(item11 json.RawMessage) ballerina.Sum[error, json.RawMessage] {
+																									return WrappedMarshal(
+																										_sequentialForSerialization{
+																											Discriminator: tupleDiscriminator,
+																											Value:         []json.RawMessage{item1, item2, item3, item4, item5, item6, item7, item8, item9, item10, item11},
+																										},
+																									)
+																								},
+																							)
+																						},
+																					)
+																				},
+																			)
+																		},
+																	)
+																},
+															)
+														},
+													)
+												},
+											)
+										},
+									)
+								},
+							)
+						},
+					)
+				},
+			)
+		},
+	)
+}
+
+func Tuple11Deserializer[A any, B any, C any, D any, E any, F any, G any, H any, I any, J any, K any](deserializerA Deserializer[A], deserializerB Deserializer[B], deserializerC Deserializer[C], deserializerD Deserializer[D], deserializerE Deserializer[E], deserializerF Deserializer[F], deserializerG Deserializer[G], deserializerH Deserializer[H], deserializerI Deserializer[I], deserializerJ Deserializer[J], deserializerK Deserializer[K]) Deserializer[ballerina.Tuple11[A, B, C, D, E, F, G, H, I, J, K]] {
+	return unmarshalWithContext(
+		"on tuple11",
+		func(sequentialForSerialization _sequentialForSerialization) ballerina.Sum[error, ballerina.Tuple11[A, B, C, D, E, F, G, H, I, J, K]] {
+			return ballerina.Bind(
+				sequentialForSerialization.getElementsWithDiscriminator(tupleDiscriminator),
+				func(elements []json.RawMessage) ballerina.Sum[error, ballerina.Tuple11[A, B, C, D, E, F, G, H, I, J, K]] {
+					if len(elements) != 11 {
+						return ballerina.Left[error, ballerina.Tuple11[A, B, C, D, E, F, G, H, I, J, K]](fmt.Errorf("expected 11 elements in tuple, got %d", len(elements)))
+					}
+					return ballerina.Bind(
+						WithContext("on item1", deserializerA)(elements[0]),
+						func(item1 A) ballerina.Sum[error, ballerina.Tuple11[A, B, C, D, E, F, G, H, I, J, K]] {
+							return ballerina.Bind(
+								WithContext("on item2", deserializerB)(elements[1]),
+								func(item2 B) ballerina.Sum[error, ballerina.Tuple11[A, B, C, D, E, F, G, H, I, J, K]] {
+									return ballerina.Bind(
+										WithContext("on item3", deserializerC)(elements[2]),
+										func(item3 C) ballerina.Sum[error, ballerina.Tuple11[A, B, C, D, E, F, G, H, I, J, K]] {
+											return ballerina.Bind(
+												WithContext("on item4", deserializerD)(elements[3]),
+												func(item4 D) ballerina.Sum[error, ballerina.Tuple11[A, B, C, D, E, F, G, H, I, J, K]] {
+													return ballerina.Bind(
+														WithContext("on item5", deserializerE)(elements[4]),
+														func(item5 E) ballerina.Sum[error, ballerina.Tuple11[A, B, C, D, E, F, G, H, I, J, K]] {
+															return ballerina.Bind(
+																WithContext("on item6", deserializerF)(elements[5]),
+																func(item6 F) ballerina.Sum[error, ballerina.Tuple11[A, B, C, D, E, F, G, H, I, J, K]] {
+																	return ballerina.Bind(
+																		WithContext("on item7", deserializerG)(elements[6]),
+																		func(item7 G) ballerina.Sum[error, ballerina.Tuple11[A, B, C, D, E, F, G, H, I, J, K]] {
+																			return ballerina.Bind(
+																				WithContext("on item8", deserializerH)(elements[7]),
+																				func(item8 H) ballerina.Sum[error, ballerina.Tuple11[A, B, C, D, E, F, G, H, I, J, K]] {
+																					return ballerina.Bind(
+																						WithContext("on item9", deserializerI)(elements[8]),
+																						func(item9 I) ballerina.Sum[error, ballerina.Tuple11[A, B, C, D, E, F, G, H, I, J, K]] {
+																							return ballerina.Bind(
+																								WithContext("on item10", deserializerJ)(elements[9]),
+																								func(item10 J) ballerina.Sum[error, ballerina.Tuple11[A, B, C, D, E, F, G, H, I, J, K]] {
+																									return ballerina.MapRight(
+																										WithContext("on item11", deserializerK)(elements[10]),
+																										func(item11 K) ballerina.Tuple11[A, B, C, D, E, F, G, H, I, J, K] {
+																											return ballerina.Tuple11[A, B, C, D, E, F, G, H, I, J, K]{Item1: item1, Item2: item2, Item3: item3, Item4: item4, Item5: item5, Item6: item6, Item7: item7, Item8: item8, Item9: item9, Item10: item10, Item11: item11}
+																										},
+																									)
+																								},
+																							)
+																						},
+																					)
+																				},
+																			)
+																		},
+																	)
+																},
+															)
+														},
+													)
+												},
+											)
+										},
+									)
+								},
+							)
+						},
+					)
+				},
+			)
+		},
+	)
+}

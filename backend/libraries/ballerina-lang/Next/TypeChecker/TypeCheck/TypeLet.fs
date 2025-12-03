@@ -38,10 +38,10 @@ module TypeLet =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member internal TypeCheckTypeLet
-      (typeCheckExpr: TypeChecker, loc0: Location)
-      : TypeChecker<ExprTypeLet<TypeExpr, Identifier>> =
+      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      : TypeChecker<ExprTypeLet<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
           ({ Name = typeIdentifier
@@ -55,19 +55,23 @@ module TypeLet =
         state {
           let! ctx = state.GetContext()
 
+          // do Console.WriteLine($"TypeLet binding evaluating typeDefinition {typeDefinition.ToFSharpString}")
+          // do Console.ReadLine() |> ignore
+
           let! typeDefinition =
             TypeExpr.Eval (Some(ExprTypeLetBindingName typeIdentifier)) loc0 typeDefinition
             |> Expr.liftTypeEval
             |> state.MapContext(
-              TypeCheckContext.Updaters.Types(
-                TypeExprEvalContext.Updaters.Scope(TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier)))
-              )
+              TypeCheckContext.Updaters.Scope(TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier)))
             )
 
-          let! scope = state.GetContext() |> state.Map(fun ctx -> ctx.Types.Scope)
+          // do Console.WriteLine $"Evaluated to {(typeDefinition |> fst)}"
+          // do Console.ReadLine() |> ignore
+
+          let! scope = state.GetContext() |> state.Map(fun ctx -> ctx.Scope)
 
           do!
-            TypeExprEvalState.bindType (typeIdentifier |> Identifier.LocalScope |> scope.Resolve) typeDefinition
+            TypeCheckState.bindType (typeIdentifier |> Identifier.LocalScope |> scope.Resolve) typeDefinition
             |> Expr.liftTypeEval
 
           let scope = scope |> TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier))
@@ -91,7 +95,7 @@ module TypeLet =
               |> Seq.map (fun (k, argT) ->
                 state {
                   do!
-                    TypeExprEvalState.bindUnionCaseConstructor (k.Name |> scope.Resolve) (argT, definition_cases)
+                    TypeCheckState.bindUnionCaseConstructor (k.Name |> scope.Resolve) (argT, definition_cases)
                     |> Expr.liftTypeEval
 
                   return
@@ -135,7 +139,7 @@ module TypeLet =
               |> Seq.map (fun (k, argT) ->
                 state {
                   do!
-                    TypeExprEvalState.bindRecordField (k.Name |> scope.Resolve) (definition_fields, argT)
+                    TypeCheckState.bindRecordField (k.Name |> scope.Resolve) (definition_fields, argT)
                     |> Expr.liftTypeEval
 
                   return
@@ -171,8 +175,7 @@ module TypeLet =
               typeDefinition |> fst,
               rest,
               loc0,
-              ctx.Types.Scope
-              |> TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier))
+              ctx.Scope |> TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier))
             ),
             rest_t,
             rest_k

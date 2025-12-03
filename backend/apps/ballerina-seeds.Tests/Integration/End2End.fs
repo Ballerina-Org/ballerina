@@ -15,7 +15,6 @@ open Ballerina.DSL.Next.Terms.Model
 open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Terms.Json
 open Ballerina.LocalizedErrors
-open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.Reader.WithError
 open Ballerina.Seeds
 open Ballerina.State.WithError
@@ -37,7 +36,13 @@ let private rootExprEncoder =
   Expr.ToJson >> Reader.Run(TypeValue.ToJson, ResolvedIdentifier.ToJson)
 
 let valueEncoderRoot =
-  Json.buildRootEncoder<TypeValue, ValueExt> (NonEmptyList.OfList(Value.ToJson, [ extensions.List.Encoder ]))
+  Json.buildRootEncoder<TypeValue, ValueExt> (
+    NonEmptyList.OfList(
+      Value.ToJson,
+      [ List.Json.Extension.encoder ListExt.ValueLens
+        Option.Json.Extension.encoder OptionExt.ValueLens ]
+    )
+  )
 
 let encoder = valueEncoderRoot >> Reader.Run(rootExprEncoder, TypeValue.ToJson)
 
@@ -45,9 +50,9 @@ let emailRgx = Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.Compiled)
 let isEmail (s: string) = emailRgx.IsMatch s
 
 let seedCtx = SeedingContext.Default()
-let seedState = SeedingState.Default(languageContext.TypeCheckState.Types)
+let seedState = SeedingState.Default(languageContext.TypeCheckState)
 
-let private evalJsonAndSeed (str: string) =
+let private evalJsonAndSeed (e: EntityName) (str: string) =
   sum {
 
     let! bindings, _evalStateOpt =
@@ -72,7 +77,7 @@ let private evalJsonAndSeed (str: string) =
           |> List.map (fun (name, expr) ->
             state {
               let! tv = TypeExpr.Eval None Location.Unknown expr
-              do! TypeExprEvalState.bindType (name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) tv
+              do! TypeCheckState.bindType (name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) tv
               return ()
             })
           |> state.All
@@ -81,13 +86,14 @@ let private evalJsonAndSeed (str: string) =
         let! s = state.GetState()
         return s.Bindings
       }
-      |> State.Run(languageContext.TypeCheckContext.Types, languageContext.TypeCheckState.Types)
+      |> State.Run(languageContext.TypeCheckContext, languageContext.TypeCheckState)
       |> sum.MapError fst
 
     let! seeds, _seedStateOpt =
+      //FIXME: use schema entities (with entity descriptor type) instead of bindings to avoid checking for supported types
       bindings
-      |> Map.filter (fun _i (t, _k) -> not t.IsLambda)
-      |> Map.map (fun key (typeValue, kind) -> Traverser.seed typeValue |> state.Map(fun seed -> key, kind, seed))
+      |> Map.filter (fun _i (tv, _k) -> Traverser.isSupported tv)
+      |> Map.map (fun key (typeValue, kind) -> Traverser.seed e typeValue |> state.Map(fun seed -> key, kind, seed))
       |> state.AllMap
       |> State.Run(seedCtx, seedState)
       |> sum.MapError fst
@@ -100,7 +106,7 @@ let ``Seeds: Json with nested records (Spec fragment) -> Parse TypeExpr -> Eval 
   ()
   =
 
-  evalJsonAndSeed SampleData.Records.nested
+  evalJsonAndSeed { EntityName = "Person" } SampleData.Records.nested
   |> function
     | Right e -> Assert.Fail(e.Errors.Head.Message)
     | Left seeds ->
@@ -150,7 +156,7 @@ let ``Seeds: Json with Flatten expression (Spec fragment) -> Parse TypeExpr -> E
         in v2, instead or relying on the parser/validator, we can use Flatten TypeExpr
         this test verifies if such a structure is seeded as expected """
 
-  evalJsonAndSeed SampleData.Records.flatten
+  evalJsonAndSeed { EntityName = "Person" } SampleData.Records.flatten
   |> function
     | Right e -> Assert.Fail(e.Errors.Head.Message)
     | Left seeds ->
@@ -189,7 +195,7 @@ let ``Seeds: List extension`` () =
         in v2, lists, options and primitive types are extensions and are preloaded as a lang context
         this test verifies if such a structure is seeded as expected """
 
-  evalJsonAndSeed SampleData.Records.withList
+  evalJsonAndSeed { EntityName = "Person" } SampleData.Records.withList
   |> function
     | Right e -> Assert.Fail(e.Errors.Head.Message)
     | Left seeds ->
@@ -214,7 +220,7 @@ let ``Seeds: List extension`` () =
 
         let! listValues =
           match choice with
-          | Choice1Of3(ListExt.ListValues v) -> sum.Return v
+          | Choice1Of4(ListExt.ListValues v) -> sum.Return v
           | _ -> sum.Throw(Ballerina.Errors.Errors.Singleton "Expected List, got other ext")
 
         let (List.Model.ListValues.List values) = listValues
@@ -241,7 +247,7 @@ let analyze (data: Map<Guid, Set<Guid>>) =
 
 let insert
   (ctx: SeedingContext)
-  : Sum<Value<TypeValue, ValueExt> * Option<TypeExprEvalState>, Errors * Option<TypeExprEvalState>> =
+  : Sum<Value<TypeValue, ValueExt> * Option<TypeCheckState>, Errors * Option<TypeCheckState>> =
   let json = SampleData.Specs.PersonGenders |> JsonValue.Parse
 
   state {
@@ -251,15 +257,13 @@ let insert
       |> state.OfSum
       |> state.MapError(Errors.FromErrors Location.Unknown)
 
-    let! types = Ballerina.Data.Spec.Builder.typeContextFromSpecBody spec
-
     let lookupPath =
       spec.Lookups
       |> Map.toSeq
       |> Seq.head
       |> (fun (_name, data) -> data.Forward.Path)
 
-    let! schema = (spec, types) ||> Schema.SchemaEval
+    let! schema = spec |> Schema.SchemaEval
 
     let! seeds = Runner.seed schema |> Reader.Run ctx |> state.OfSum
     let lookups = seeds.Lookups |> Map.find { LookupName = "PeopleGenders" }
@@ -284,7 +288,7 @@ let insert
       |> Sum.mapRight (Errors.FromErrors Location.Unknown)
       |> state.OfSum
   }
-  |> State.Run(languageContext.TypeCheckContext.Types, languageContext.TypeCheckState.Types)
+  |> State.Run(languageContext.TypeCheckContext, languageContext.TypeCheckState)
 
 let private tryExtractGender
   (value: Value<TypeValue, ValueExt>)
@@ -300,8 +304,8 @@ let private tryExtractGender
         "biology field not found"
         Location.Unknown
 
-    let! biology = biology |> Value.AsTuple |> Sum.mapRight (Errors.FromErrors Location.Unknown)
-    let! _, biology = Value.AsUnion biology.Head |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+
+    let! _, biology = Value.AsUnion biology |> Sum.mapRight (Errors.FromErrors Location.Unknown)
     let! fields = Value.AsRecord biology |> Sum.mapRight (Errors.FromErrors Location.Unknown)
     let genderKey = fields |> Map.tryFindKey (fun ts _ -> ts.Name = "Gender")
     return genderKey, fields
@@ -325,8 +329,6 @@ let ``Seed lookups, insert item via path, path satisfied results in item being i
       |> sum.OfOption(Errors.Singleton(Location.Unknown, "Gender not found"))
 
     let gender = fields |> Map.find genderKey
-    let! gender = Value.AsTuple gender |> Sum.mapRight (Errors.FromErrors Location.Unknown)
-    let gender = gender |> List.head
     let! ts, _ = Value.AsUnion gender |> Sum.mapRight (Errors.FromErrors Location.Unknown)
     return ts.Name
   }
@@ -354,9 +356,7 @@ let ``Seed lookups, insert item via path, path not satisfied results with no ins
         "biology field not found"
         Location.Unknown
 
-    let! biology = biology |> Value.AsTuple |> Sum.mapRight (Errors.FromErrors Location.Unknown)
-    let head = biology |> List.exactlyOne
-    let! unionCase = Value.AsUnion head |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+    let! unionCase = biology |> Value.AsUnion |> Sum.mapRight (Errors.FromErrors Location.Unknown)
     return unionCase
   }
   |> function

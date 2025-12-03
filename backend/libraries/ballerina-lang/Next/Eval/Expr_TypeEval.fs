@@ -13,11 +13,11 @@ module TypeEval =
   open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.DSL.Next.Types.TypeChecker.Patterns
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member TypeEval
       : Location
-          -> Expr<TypeExpr, Identifier>
-          -> State<Expr<TypeValue, ResolvedIdentifier>, TypeExprEvalContext, TypeExprEvalState, Errors> =
+          -> Expr<TypeExpr, Identifier, 'valueExt>
+          -> State<Expr<TypeValue, ResolvedIdentifier, 'valueExt>, TypeCheckContext, TypeCheckState, Errors> =
       fun loc0 expr ->
         let (!) = Expr.TypeEval loc0
 
@@ -41,6 +41,9 @@ module TypeEval =
             let! funcType = !func
             let! argType = !arg
             return Expr.Apply(funcType, argType, expr.Location, ctx.Scope)
+          | ExprRec.ApplyValue({ F = func; Arg = arg; ArgT = argT }) ->
+            let! funcType = !func
+            return Expr.ApplyValue(funcType, arg, argT, expr.Location, ctx.Scope)
           | ExprRec.Let({ Var = var
                           Type = var_type
                           Val = value
@@ -132,7 +135,7 @@ module TypeEval =
                               TypeDef = value
                               Body = body }) ->
             let! valueType = value |> TypeExpr.Eval None loc0
-            do! TypeExprEvalState.bindType (var |> Identifier.LocalScope |> ctx.Scope.Resolve) valueType
+            do! TypeCheckState.bindType (var |> Identifier.LocalScope |> ctx.Scope.Resolve) valueType
 
             let! bodyType = !body
 

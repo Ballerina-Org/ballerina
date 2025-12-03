@@ -10,6 +10,7 @@ module Expr =
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Terms.Patterns
@@ -26,12 +27,12 @@ module Expr =
     | ApplicationArguments
     | BinaryExpressionChain
 
-  type ComplexExpression =
+  type ComplexExpression<'valueExt> =
     | ScopedIdentifier of NonEmptyList<string>
     | RecordOrTupleDesChain of NonEmptyList<Sum<string, int>>
-    | TupleCons of NonEmptyList<Expr<TypeExpr, Identifier>>
-    | ApplicationArguments of NonEmptyList<Sum<Expr<TypeExpr, Identifier>, TypeExpr>>
-    | BinaryExpressionChain of NonEmptyList<BinaryExprOperator * Expr<TypeExpr, Identifier>>
+    | TupleCons of NonEmptyList<Expr<TypeExpr, Identifier, 'valueExt>>
+    | ApplicationArguments of NonEmptyList<Sum<Expr<TypeExpr, Identifier, 'valueExt>, TypeExpr>>
+    | BinaryExpressionChain of NonEmptyList<BinaryExprOperator * Expr<TypeExpr, Identifier, 'valueExt>>
 
   let private parseAllComplexShapes: Set<ComplexExpressionKind> =
     [ ComplexExpressionKind.ApplicationArguments
@@ -202,6 +203,21 @@ module Expr =
           |> parser.MapError(Errors.SetPriority ErrorPriority.High)
       }
 
+    let termParam =
+      parser.Any
+        [ parser {
+            do! openRoundBracketOperator
+            let! paramName = identifierMatch
+            do! colonOperator
+            let! typeDecl = typeDecl parseAllComplexTypeShapes
+            do! closeRoundBracketOperator
+            return paramName, typeDecl |> Some
+          }
+          parser {
+            let! paramName = identifierMatch
+            return paramName, None
+          } ]
+
     let exprLambda () =
       parser {
         do! parseKeyword Keyword.Fun
@@ -210,24 +226,24 @@ module Expr =
         return!
           parser {
 
-            let! paramName, paramType =
-              parser.Any
-                [ parser {
-                    do! openRoundBracketOperator
-                    let! paramName = identifierMatch
-                    do! colonOperator
-                    let! typeDecl = typeDecl parseAllComplexTypeShapes
-                    do! closeRoundBracketOperator
-                    return paramName, typeDecl |> Some
-                  }
-                  parser {
-                    let! paramName = identifierMatch
-                    return paramName, None
-                  } ]
+            let! pars = parser.AtLeastOne(parser.Any [ typeParam |> parser.Map Left; termParam |> parser.Map Right ])
+            let pars = pars |> NonEmptyList.ToSeq
 
             do! parseOperator Operator.SingleArrow
             let! body = expr parseAllComplexShapes
-            return Expr.Lambda(Var.Create paramName, paramType, body, loc, TypeCheckScope.Empty)
+
+            return
+              body
+              |> Seq.foldBack
+                (fun p acc ->
+                  match p with
+                  | Right(paramName, paramType: Option<TypeExpr>) ->
+                    Expr.Lambda(Var.Create paramName, paramType, acc, loc, TypeCheckScope.Empty)
+                  | Left(paramName: string, paramKind: Kind) ->
+                    let p = (paramName, paramKind) |> TypeParameter.Create
+                    Expr.TypeLambda(p, acc, loc, TypeCheckScope.Empty))
+                pars
+          // Expr.Lambda(Var.Create paramName, paramType, body, loc, TypeCheckScope.Empty)
           }
           |> parser.MapError(Errors.SetPriority ErrorPriority.High)
 
@@ -408,7 +424,12 @@ module Expr =
             let! body = expr parseAllComplexShapes
 
             let symbols, symbolsKind =
-              match typeDecl with
+              let rec stripLambdas t =
+                match t with
+                | TypeExpr.Lambda(_, t) -> stripLambdas t
+                | _ -> t
+
+              match typeDecl |> stripLambdas with
               | TypeExpr.Record fields ->
                 fields
                 |> List.map fst
@@ -614,7 +635,7 @@ module Expr =
 
                 match e with
                 | BinaryExpressionChain fields ->
-                  let fields: List<BinaryOperatorsElement<Expr<_, _>, BinaryExprOperator>> =
+                  let fields: List<BinaryOperatorsElement<Expr<_, _, _>, BinaryExprOperator>> =
                     fields
                     |> NonEmptyList.ToList
                     |> Seq.collect (fun (op, e) -> [ op |> Precedence.Operator; e |> Precedence.Operand ])
@@ -730,7 +751,7 @@ module Expr =
         | Sum.Left res -> return res
     }
 
-  let program =
+  let program<'valueExt> () : Parser<Expr<TypeExpr, Identifier, 'valueExt>, _, _, _> =
     parser {
       let! e = expr 0 parseAllComplexShapes
       do! parser.EndOfStream()

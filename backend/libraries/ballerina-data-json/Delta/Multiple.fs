@@ -1,0 +1,36 @@
+﻿namespace Ballerina.DSL.Next.Delta.Json
+
+open Ballerina.DSL.Next.Types.Model
+
+[<AutoOpen>]
+module Multiple =
+  open Ballerina.Errors
+  open Ballerina.Reader.WithError
+  open Ballerina.StdLib.Json.Patterns
+  open Ballerina.StdLib.Json.Reader
+  open Ballerina.DSL.Next.Json
+  open Ballerina.Data.Delta.Model
+  open Ballerina.DSL.Next.Json.Keys
+  open FSharp.Data
+
+  type Delta<'valueExtension, 'deltaExtension> with
+    static member FromJsonMultiple
+      (fromJsonRoot: DeltaParser<'valueExtension, 'deltaExtension>)
+      (json: JsonValue)
+      : DeltaParserReader<'valueExtension, 'deltaExtension> =
+      Reader.assertDiscriminatorAndContinueWithValue "multiple" json (fun json ->
+        reader {
+          let! deltas = json |> JsonValue.AsArray |> reader.OfSum
+          let! deltas = deltas |> Seq.map fromJsonRoot |> Seq.toList |> reader.All
+          return deltas |> Seq.toList |> Delta.Multiple
+        })
+
+    static member ToJsonMultiple
+      (rootToJson: DeltaEncoder<'valueExtension, 'deltaExtension>)
+      (deltas: List<Delta<'valueExtension, 'deltaExtension>>)
+      : DeltaEncoderReader<'valueExtension, 'deltaExtension> =
+      reader {
+        let! jsonDeltas = deltas |> List.map rootToJson |> reader.All
+
+        return jsonDeltas |> List.toArray |> JsonValue.Array |> Json.discriminator "multiple"
+      }

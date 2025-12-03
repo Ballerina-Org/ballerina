@@ -3,6 +3,7 @@ import {
   ConcreteRenderers,
   DispatchInjectablesTypes,
   DispatchParsedType,
+  isObject,
   Renderer,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../../../main";
@@ -12,9 +13,13 @@ import {
   SerializedNestedRenderer,
 } from "../../../nestedRenderer/state";
 
-export type SerializedRecordFieldRenderer = SerializedNestedRenderer;
+export type SerializedRecordFieldRenderer = {
+  api?: unknown;
+} & SerializedNestedRenderer;
 
-export type RecordFieldRenderer<T> = NestedRenderer<T>;
+export type RecordFieldRenderer<T> = {
+  api?: string | Array<string>;
+} & NestedRenderer<T>;
 
 export const RecordFieldRenderer = {
   tryAsValidRecordFieldRenderer: (
@@ -23,9 +28,13 @@ export const RecordFieldRenderer = {
     NestedRenderer.Operations.tryAsValidSerializedNestedRenderer(
       serialized,
     ).Then((deserializedRenderer) =>
-      ValueOrErrors.Default.return<SerializedRecordFieldRenderer, string>(
-        deserializedRenderer,
-      ),
+      ValueOrErrors.Default.return<SerializedRecordFieldRenderer, string>({
+        ...deserializedRenderer,
+        api:
+          isObject(serialized) && "api" in serialized
+            ? serialized.api
+            : undefined,
+      }),
     ),
   Deserialize: <
     T extends DispatchInjectablesTypes<T>,

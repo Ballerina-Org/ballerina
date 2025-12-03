@@ -12,22 +12,21 @@ open Ballerina.Reader.WithError
 open Ballerina.Seeds
 
 open Ballerina.State.WithError
-open Ballerina.DSL.Next.StdLib.Extensions
 
 module Runner =
   let _extensions, languageContext = stdExtensions
 
   let seed
-    (schema: Schema<TypeValue, ResolvedIdentifier>)
+    (schema: Schema<TypeValue, ResolvedIdentifier, ValueExt>)
     : Reader<SpecData<TypeValue, ValueExt>, SeedingContext, Errors> =
     reader {
       let! ctx = reader.GetContext()
 
       let! entities, _ =
         schema.Entities
-        |> Map.map (fun _k -> EntityDescriptor.seed)
+        |> Map.map EntityDescriptor.seed
         |> state.AllMap
-        |> State.Run(ctx, SeedingState.Default(languageContext.TypeCheckState.Types))
+        |> State.Run(ctx, SeedingState.Default(languageContext.TypeCheckState))
         |> reader.OfSum
         |> reader.MapError fst
 

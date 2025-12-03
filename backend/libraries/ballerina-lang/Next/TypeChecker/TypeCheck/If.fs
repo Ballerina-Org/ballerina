@@ -27,10 +27,10 @@ module If =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member internal TypeCheckIf
-      (typeCheckExpr: TypeChecker, loc0: Location)
-      : TypeChecker<ExprIf<TypeExpr, Identifier>> =
+      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      : TypeChecker<ExprIf<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
           ({ Cond = cond
@@ -48,15 +48,21 @@ module If =
 
           do!
             TypeValue.Unify(loc0, t_cond, TypeValue.CreatePrimitive PrimitiveType.Bool)
-            |> Expr<'T, 'Id>.liftUnification
+            |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
           let! thenBranch, t_then, then_k = !thenBranch
           let! elseBranch, t_else, else_k = !elseBranch
           do! then_k |> Kind.AsStar |> ofSum |> state.Ignore
           do! else_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-          do! TypeValue.Unify(loc0, t_then, t_else) |> Expr<'T, 'Id>.liftUnification
-          let! t_then = t_then |> TypeValue.Instantiate loc0 |> Expr<'T, 'Id>.liftInstantiation
+          do!
+            TypeValue.Unify(loc0, t_then, t_else)
+            |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
-          return Expr.If(cond, thenBranch, elseBranch, loc0, ctx.Types.Scope), t_then, Kind.Star
+          let! t_then =
+            t_then
+            |> TypeValue.Instantiate TypeExpr.Eval loc0
+            |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
+
+          return Expr.If(cond, thenBranch, elseBranch, loc0, ctx.Scope), t_then, Kind.Star
         }

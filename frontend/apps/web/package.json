@@ -20,17 +20,16 @@
   "devDependencies": {
     "@rspack/cli": "0.5.5",
     "@rspack/core": "0.5.5",
-    "@rspack/plugin-react-refresh": "0.5.5",
+    "@rspack/plugin-react-refresh": "1.0.1",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
     "@types/react-grid-layout": "^1.3.3",
     "@types/uuid": "^9.0.8",
-    "react-data-debugger": "1.1.0",
     "ballerina-core": "*",
     "create-domain": "*",
     "link": "^2.1.0",
     "playground-core": "*",
     "react-refresh": "^0.14.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.9.3"
   }
 }

@@ -30,10 +30,10 @@ module RecordWith =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member internal TypeCheckRecordWith
-      (typeCheckExpr: TypeChecker, loc0: Location)
-      : TypeChecker<ExprRecordWith<TypeExpr, Identifier>> =
+      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      : TypeChecker<ExprRecordWith<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Record = record; Fields = fields }) ->
         let (!) = typeCheckExpr context_t
 
@@ -72,8 +72,8 @@ module RecordWith =
           let! t_record =
             t_record
             |> TypeValue.CreateRecord
-            |> TypeValue.Instantiate loc0
+            |> TypeValue.Instantiate TypeExpr.Eval loc0
             |> Expr.liftInstantiation
 
-          return Expr.RecordWith(record, fieldsExpr, loc0, ctx.Types.Scope), t_record, Kind.Star
+          return Expr.RecordWith(record, fieldsExpr, loc0, ctx.Scope), t_record, Kind.Star
         }

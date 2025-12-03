@@ -27,59 +27,63 @@ module TypeLambda =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member internal TypeCheckTypeLambda
-      (typeCheckExpr: TypeChecker, loc0: Location)
-      : TypeChecker<ExprTypeLambda<TypeExpr, Identifier>> =
+      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      : TypeChecker<ExprTypeLambda<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Param = t_par; Body = body }) ->
         let (!) = typeCheckExpr context_t
 
         state {
           let! ctx = state.GetContext()
 
-          let fresh_t_par_var =
-            let id = Guid.CreateVersion7()
+          // let fresh_t_par_var =
+          //   let id = Guid.CreateVersion7()
 
-            { TypeVar.Name = t_par.Name; Guid = id }
+          //   { TypeVar.Name = t_par.Name; Guid = id }
 
-          do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists fresh_t_par_var))
-          let! scope = state.GetContext() |> state.Map(fun ctx -> ctx.Types.Scope)
+          // do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists fresh_t_par_var))
 
-          let! t_par_type =
-            TypeExprEvalState.tryFindType (t_par.Name |> Identifier.LocalScope |> scope.Resolve, loc0)
-            |> state.OfStateReader
-            |> Expr.liftTypeEval
-            |> state.Catch
+          // let! scope = state.GetContext() |> state.Map(fun ctx -> ctx.Scope)
 
-          // push binding
-          do!
-            TypeExprEvalState.bindType
-              (t_par.Name |> Identifier.LocalScope |> scope.Resolve)
-              (TypeValue.Var fresh_t_par_var, t_par.Kind)
-            |> Expr.liftTypeEval
+          // let! t_par_type =
+          //   TypeExprEvalState.tryFindType (t_par.Name |> Identifier.LocalScope |> scope.Resolve, loc0)
+          //   |> state.OfStateReader
+          //   |> Expr.liftTypeEval
+          //   |> state.Catch
 
-          let! body, t_body, body_k = !body
+          // // push binding
+          // do!
+          //   TypeExprEvalState.bindType
+          //     (t_par.Name |> Identifier.LocalScope |> scope.Resolve)
+          //     (TypeValue.Var fresh_t_par_var, t_par.Kind)
+          //   |> Expr.liftTypeEval
 
+          let! body, t_body, body_k =
+            !body
+            |> state.MapContext(TypeCheckContext.Updaters.TypeParameters(Map.add t_par.Name t_par.Kind))
 
-          // pop binding
-          match t_par_type with
-          | Left t_par_type ->
-            do!
-              TypeExprEvalState.bindType (t_par.Name |> Identifier.LocalScope |> scope.Resolve) t_par_type
-              |> Expr.liftTypeEval
-          | Right _ ->
-            do!
-              TypeExprEvalState.unbindType (t_par.Name |> Identifier.LocalScope |> scope.Resolve)
-              |> Expr.liftTypeEval
+          // // pop binding
+          // match t_par_type with
+          // | Left t_par_type ->
+          //   do!
+          //     TypeExprEvalState.bindType (t_par.Name |> Identifier.LocalScope |> scope.Resolve) t_par_type
+          //     |> Expr.liftTypeEval
+          // | Right _ ->
+          //   do!
+          //     TypeExprEvalState.unbindType (t_par.Name |> Identifier.LocalScope |> scope.Resolve)
+          //     |> Expr.liftTypeEval
 
           // cleanup unification state, slightly more radical than pop
-          do!
-            UnificationState.TryDeleteFreeVariable(fresh_t_par_var, loc0)
-            |> TypeValue.EquivalenceClassesOp loc0
-            |> Expr.liftUnification
+          // do!
+          //   UnificationState.TryDeleteFreeVariable(fresh_t_par_var, loc0)
+          //   |> TypeValue.EquivalenceClassesOp loc0
+          //   |> Expr.liftUnification
+
+          // do Console.WriteLine($"TypeLambda body type: {t_body}")
 
           return
-            Expr.TypeLambda(t_par, body, loc0, ctx.Types.Scope),
+            Expr.TypeLambda(t_par, body, loc0, ctx.Scope),
             TypeValue.CreateLambda(t_par, t_body.AsExpr),
             Kind.Arrow(t_par.Kind, body_k)
         }

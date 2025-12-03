@@ -7,7 +7,6 @@ open Ballerina.Collections.Sum
 open Ballerina.Reader.WithError
 
 open Ballerina.DSL.Next.Types.Model
-open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.DSL.Next.Terms
 open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Terms.Json.Value
@@ -32,7 +31,13 @@ let ``Assert Value<TypeValue> -> ToJson -> FromJson -> Value<TypeValue>``
     Expr.ToJson >> Reader.Run(TypeValue.ToJson, ResolvedIdentifier.ToJson)
 
   let rootToJson =
-    Json.buildRootEncoder<TypeValue, ValueExt> (NonEmptyList.OfList(Value.ToJson, [ stdExtensions.List.Encoder ]))
+    Json.buildRootEncoder<TypeValue, ValueExt> (
+      NonEmptyList.OfList(
+        Value.ToJson,
+        [ List.Json.Extension.encoder ListExt.ValueLens
+          Option.Json.Extension.encoder OptionExt.ValueLens ]
+      )
+    )
 
   let encoder = rootToJson >> Reader.Run(rootExprEncoder, TypeValue.ToJson)
 
@@ -46,7 +51,11 @@ let ``Assert Value<TypeValue> -> ToJson -> FromJson -> Value<TypeValue>``
 
     let rootFromJson =
       Json.buildRootParser<TypeValue, ResolvedIdentifier, ValueExt> (
-        NonEmptyList.OfList(Value.FromJson, [ stdExtensions.List.Parser ])
+        NonEmptyList.OfList(
+          Value.FromJson,
+          [ List.Json.Extension.parser ListExt.ValueLens
+            Option.Json.Extension.parser OptionExt.ValueLens ]
+        )
       )
 
     let parser =
@@ -99,7 +108,7 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
       """{"discriminator": "list", "value":[{"discriminator":"int32","value":"1"},{"discriminator":"int32","value":"2"}]}""",
       Value.Ext(
         ValueExt(
-          Choice1Of3(
+          Choice1Of4(
             ListValues(
               List.Model.ListValues.List
                 [ PrimitiveValue.Int32 1 |> Value.Primitive
@@ -107,7 +116,15 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
             )
           )
         )
-      ) ]
+      )
+      """{"discriminator": "option", "value":{"discriminator":"int32","value":"1"}}""",
+      Value.Ext(
+        ValueExt(
+          Choice2Of4(OptionValues(Option.Model.OptionValues.Option(PrimitiveValue.Int32 1 |> Value.Primitive |> Some)))
+        )
+      )
+      """{"discriminator": "option", "value":null}""",
+      Value.Ext(ValueExt(Choice2Of4(OptionValues(Option.Model.OptionValues.Option None)))) ]
 
   for json, expected in testCases do
     (expected, JsonValue.Parse json)

@@ -18,12 +18,14 @@ module TypeValue =
           TypeValue.FromJsonLookup(json)
           TypeValue.FromJsonArrow TypeValue.FromJson json
           TypeValue.FromJsonLambda TypeExpr.FromJson json
+          TypeValue.FromJsonApplication TypeValue.FromJson json
           TypeValue.FromJsonRecord TypeValue.FromJson json
           TypeValue.FromJsonTuple TypeValue.FromJson json
           TypeValue.FromJsonUnion TypeValue.FromJson json
           TypeValue.FromJsonSum TypeValue.FromJson json
           TypeValue.FromJsonSet TypeValue.FromJson json
           TypeValue.FromJsonMap TypeValue.FromJson json
+          TypeValue.FromJsonImported TypeValue.FromJson json
           $"Unknown TypeValue JSON: {json.ToFSharpString.ReasonablyClamped}"
           |> Errors.Singleton
           |> Errors.WithPriority ErrorPriority.Medium
@@ -39,12 +41,11 @@ module TypeValue =
       | TypeValue.Arrow { value = fromType, toType } -> TypeValue.ToJsonArrow TypeValue.ToJson (fromType, toType)
       | TypeValue.Lambda { value = paramType, returnType } ->
         TypeValue.ToJsonLambda TypeExpr.ToJson (paramType, returnType)
+      | TypeValue.Application { value = symbolicApp } -> TypeValue.ToJsonApplication TypeValue.ToJson symbolicApp
       | TypeValue.Record { value = fields } -> TypeValue.ToJsonRecord TypeValue.ToJson fields
       | TypeValue.Tuple { value = fields } -> TypeValue.ToJsonTuple TypeValue.ToJson fields
       | TypeValue.Union { value = cases } -> TypeValue.ToJsonUnion TypeValue.ToJson cases
       | TypeValue.Sum { value = values } -> TypeValue.ToJsonSum TypeValue.ToJson values
       | TypeValue.Set { value = itemType } -> TypeValue.ToJsonSet TypeValue.ToJson itemType
       | TypeValue.Map { value = keyType, valueType } -> TypeValue.ToJsonMap TypeValue.ToJson (keyType, valueType)
-      | TypeValue.Apply { value = var, arg } -> TypeValue.ToJsonApply TypeValue.ToJson (var, arg)
-      | TypeValue.Imported _ ->
-        failwith "this should fallback to TypeExpr.ToJson once the type value carries its origin"
+      | TypeValue.Imported i -> TypeValue.ToJsonImported TypeValue.ToJson i

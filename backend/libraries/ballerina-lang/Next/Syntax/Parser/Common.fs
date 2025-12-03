@@ -41,6 +41,8 @@ module Common =
   let equalsOperator = parseOperator (Operator.Equals)
   let pipeGreaterThanOperator = parseOperator (Operator.PipeGreaterThan)
   let doubleGreaterThanOperator = parseOperator (Operator.DoubleGreaterThan)
+  let starOperator = parseOperator (Operator.Times)
+  let singleArrowOperator = parseOperator (Operator.SingleArrow)
 
   type BinaryExprOperator =
     | Times

@@ -16,8 +16,11 @@ module UnionDes =
 
   let private discriminator = "union-match"
 
-  type Expr<'T, 'Id when 'Id: comparison> with
-    static member FromJsonUnionDes (fromRootJson: ExprParser<'T, 'Id>) (value: JsonValue) : ExprParserReader<'T, 'Id> =
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
+    static member FromJsonUnionDes
+      (fromRootJson: ExprParser<'T, 'Id, 'valueExt>)
+      (value: JsonValue)
+      : ExprParserReader<'T, 'Id, 'valueExt> =
       Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun unionDesJson ->
         reader {
           let! (_, idFromJson) = reader.GetContext()
@@ -42,9 +45,9 @@ module UnionDes =
         })
 
     static member ToJsonUnionDes
-      (rootToJson: ExprEncoder<'T, 'Id>)
-      (union: Map<'Id, CaseHandler<'T, 'Id>>)
-      (_fallback: Option<Expr<'T, 'Id>>)
+      (rootToJson: ExprEncoder<'T, 'Id, 'valueExt>)
+      (union: Map<'Id, CaseHandler<'T, 'Id, 'valueExt>>)
+      (_fallback: Option<Expr<'T, 'Id, 'valueExt>>)
       : ExprEncoderReader<'T, 'Id> =
       reader {
         let! cases =

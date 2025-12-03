@@ -11,19 +11,29 @@ module Extension =
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
-  open Ballerina.DSL.Next.StdLib.Option
+  open FSharp.Data
 
   let private boolTypeValue = TypeValue.CreatePrimitive PrimitiveType.Bool
   let private guidTypeValue = TypeValue.CreatePrimitive PrimitiveType.Guid
+  let private stringTypeValue = TypeValue.CreatePrimitive PrimitiveType.String
+  let private unitTypeValue = TypeValue.CreatePrimitive PrimitiveType.Unit
 
   let GuidExtension<'ext>
+    (consLens: PartialLens<'ext, GuidConstructors>)
     (operationLens: PartialLens<'ext, GuidOperations<'ext>>)
-    : OperationsExtension<'ext, GuidOperations<'ext>> =
+    : TypeExtension<'ext, GuidConstructors, PrimitiveValue, GuidOperations<'ext>> =
+
+    let guidId = Identifier.LocalScope "guid"
+    let guidSymbolId = guidId |> TypeSymbol.Create
+    let guidId = guidId |> TypeCheckScope.Empty.Resolve
+
+    let guidConstructors = GuidConstructorsExtension<'ext> consLens
 
     let guidEqualId =
       Identifier.FullyQualified([ "guid" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, GuidOperations<'ext>> =
+    let equalOperation
+      : ResolvedIdentifier * TypeOperationExtension<'ext, GuidConstructors, PrimitiveValue, GuidOperations<'ext>> =
       guidEqualId,
       { Type = TypeValue.CreateArrow(guidTypeValue, TypeValue.CreateArrow(guidTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -62,7 +72,8 @@ module Extension =
     let guidNotEqualId =
       Identifier.FullyQualified([ "guid" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, GuidOperations<'ext>> =
+    let notEqualOperation
+      : ResolvedIdentifier * TypeOperationExtension<'ext, GuidConstructors, PrimitiveValue, GuidOperations<'ext>> =
       guidNotEqualId,
       { Type = TypeValue.CreateArrow(guidTypeValue, TypeValue.CreateArrow(guidTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -99,4 +110,11 @@ module Extension =
             } }
 
     { TypeVars = []
+      TypeName = guidId, guidSymbolId
+      Cases = guidConstructors |> Map.ofList
+      Deconstruct =
+        fun (v) ->
+          match v with
+          | PrimitiveValue.Guid v -> Value.Primitive(PrimitiveValue.Guid v)
+          | _ -> Value.Primitive(PrimitiveValue.Unit)
       Operations = [ equalOperation; notEqualOperation ] |> Map.ofList }

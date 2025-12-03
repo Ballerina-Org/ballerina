@@ -124,7 +124,6 @@ export const Renderer = {
         serialized,
         concreteRenderers,
         types,
-        tableApi,
         forms,
         alreadyParsedForms,
       ).MapErrors((errors) =>
@@ -145,7 +144,6 @@ export const Renderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
-      tableApi: string | undefined, // Necessary because the table api is currently defined outside of the renderer, so a lookup has to be able to pass it to the looked up renderer
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
     ): ValueOrErrors<[Renderer<T>, Map<string, Renderer<T>>], string> =>
@@ -193,7 +191,6 @@ export const Renderer = {
                   type,
                   serialized,
                 ),
-                tableApi,
                 concreteRenderers,
                 types,
                 forms,
@@ -205,7 +202,6 @@ export const Renderer = {
                   type,
                   serialized,
                 ),
-                tableApi,
                 concreteRenderers,
                 types,
                 forms,
@@ -226,7 +222,6 @@ export const Renderer = {
                     type,
                     serialized,
                   ),
-                  tableApi,
                   concreteRenderers,
                   types,
                   forms,
@@ -260,7 +255,6 @@ export const Renderer = {
                       serialized,
                       concreteRenderers,
                       types,
-                      tableApi,
                       forms,
                       alreadyParsedForms,
                     ).Then(([renderer, newAlreadyParsedForms]) =>

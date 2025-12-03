@@ -1,11 +1,14 @@
 namespace Ballerina.DSL.Next.Types.TypeChecker
 
 module Eval =
+  open System
+  open Ballerina.Fun
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Object
   open Ballerina.State.WithError
   open Ballerina.Reader.WithError
   open Ballerina.LocalizedErrors
+  open Ballerina.Collections.Map
   open System
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
@@ -14,6 +17,8 @@ module Eval =
   open Ballerina.Collections.NonEmptyList
   open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.DSL.Next.Types.TypeChecker.Patterns
+  open Ballerina.DSL.Next.Types.TypeChecker.KindEval
+  open Ballerina.DSL.Next.Unification
 
   type TypeExpr with
     static member EvalAsSymbol: TypeExprSymbolEval =
@@ -35,9 +40,9 @@ module Eval =
             return!
               reader.Any(
                 NonEmptyList.OfList(
-                  TypeExprEvalState.tryFindTypeSymbol (v |> ctx.Scope.Resolve, loc0),
-                  [ TypeExprEvalState.tryFindRecordFieldSymbol (v |> ctx.Scope.Resolve, loc0)
-                    TypeExprEvalState.tryFindUnionCaseSymbol (v |> ctx.Scope.Resolve, loc0) ]
+                  TypeCheckState.tryFindTypeSymbol (v |> ctx.Scope.Resolve, loc0),
+                  [ TypeCheckState.tryFindRecordFieldSymbol (v |> ctx.Scope.Resolve, loc0)
+                    TypeCheckState.tryFindUnionCaseSymbol (v |> ctx.Scope.Resolve, loc0) ]
                 )
               )
               |> state.OfStateReader
@@ -52,9 +57,12 @@ module Eval =
               |> ofSum
               |> state.Map WithTypeExprSourceMapping.Getters.Value
 
-            do! TypeExprEvalState.bindType (param.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) (a, a_k)
+            let! ctx = state.GetContext()
+            let closure = ctx.TypeVariables |> Map.add (param.Name) (a, a_k)
 
-            return! !body
+            return!
+              !body
+              |> state.MapContext(TypeCheckContext.Updaters.TypeVariables(replaceWith closure))
           | _ ->
             return!
               $"Error: invalid type expression when evaluating for symbol, got {t}"
@@ -80,7 +88,42 @@ module Eval =
             | None -> TypeExprSourceMapping.OriginTypeExpr t
 
           match t with
+          | TypeExpr.FromTypeValue tv ->
+            // do Console.WriteLine($"Instantiating type value {tv}")
+            let! ctx = state.GetContext()
+            let! s = state.GetState()
+            let scope = ctx.TypeVariables |> Map.map (fun _ (_, k) -> k)
+            let scope = Map.merge (fun _ -> id) scope ctx.TypeParameters
+            let! k = TypeValue.KindEval n loc0 tv |> state.MapContext(fun _ -> scope)
+
+            // do Console.WriteLine($"Instantiating type value {tv} with kind {k}")
+
+            // do
+            //   Console.WriteLine(
+            //     $"Eval context is {ctx.TypeVariables.ToFSharpString}, {ctx.TypeParameters.ToFSharpString}"
+            //   )
+
+            let! tv =
+              tv
+              |> TypeValue.Instantiate TypeExpr.Eval loc0
+              |> State.Run(TypeInstantiateContext.FromEvalContext(ctx), s)
+              |> sum.Map fst
+              |> sum.MapError fst
+              |> state.OfSum
+
+            // do Console.WriteLine($"Instantiated type value to {tv}")
+
+            return TypeValue.SetSourceMapping(tv, source), k
           | TypeExpr.Imported i ->
+            // let! ctx = state.GetContext()
+
+            // do
+            //   Console.WriteLine(
+            //     $"Importing type {i} with context {ctx.TypeVariables.ToFSharpString} and {ctx.TypeParameters.ToFSharpString}"
+            //   )
+
+            // do Console.ReadLine() |> ignore
+
             let! parameters =
               i.Parameters
               |> List.map (fun p -> !(TypeExpr.Lookup(Identifier.LocalScope p.Name)) |> state.Map fst)
@@ -97,9 +140,33 @@ module Eval =
           | TypeExpr.NewSymbol _ -> return! $"Errors cannot evaluate {t} as a type" |> error |> state.Throw
           | TypeExpr.Primitive p -> return TypeValue.Primitive { value = p; source = source }, Kind.Star
           | TypeExpr.Lookup v ->
-            return!
-              TypeExprEvalState.tryFindType (v |> TypeCheckScope.Empty.Resolve, loc0)
-              |> state.OfStateReader
+            let! res =
+              state.Any(
+                NonEmptyList.OfList(
+                  TypeCheckContext.tryFindTypeVariable (v.LocalName, loc0) |> state.OfReader,
+                  [ TypeCheckContext.tryFindTypeParameter (v.LocalName, loc0)
+                    |> reader.Map(fun k -> TypeValue.Lookup v, k)
+                    |> state.OfReader
+                    TypeCheckState.tryFindType (v |> TypeCheckScope.Empty.Resolve, loc0)
+                    |> state.OfStateReader
+
+                    state {
+                      let! c = state.GetContext()
+
+                      return!
+                        $"Error: cannot find type for {v} with context ({c.TypeVariables.ToFSharpString})"
+                        |> error
+                        |> state.Throw
+                        |> state.MapError(Errors.SetPriority(ErrorPriority.High))
+                    } ]
+                )
+              )
+              |> state.MapError(Errors.FilterHighestPriorityOnly)
+
+            // do Console.WriteLine($"Lookup {v} resolved to {res}")
+
+            return res
+
           | TypeExpr.LetSymbols(xts, symbolsKind, rest) ->
             do!
               xts
@@ -113,12 +180,12 @@ module Eval =
                   let s_x = TypeSymbol.Create(x0)
                   let x = x0 |> ctx.Scope.Resolve
 
-                  do! TypeExprEvalState.bindIdentifierToResolvedIdentifier x x0
+                  do! TypeCheckState.bindIdentifierToResolvedIdentifier x x0
 
                   match ctx.Scope.Type with
                   | Some t ->
                     do!
-                      TypeExprEvalState.bindIdentifierToResolvedIdentifier
+                      TypeCheckState.bindIdentifierToResolvedIdentifier
                         x
                         (Identifier.FullyQualified([ t ], x0.LocalName))
                   | None -> ()
@@ -126,10 +193,9 @@ module Eval =
                   // do Console.WriteLine($"Binding symbol {s_x.Name.ToString()} to {x.ToString()}")
 
                   match symbolsKind with
-                  | RecordFields -> do! TypeExprEvalState.bindRecordFieldSymbol x s_x
-                  | UnionConstructors -> do! TypeExprEvalState.bindUnionCaseSymbol x s_x
+                  | RecordFields -> do! TypeCheckState.bindRecordFieldSymbol x s_x
+                  | UnionConstructors -> do! TypeCheckState.bindUnionCaseSymbol x s_x
 
-                // do! TypeExprEvalState.bindTypeSymbol x s_x
                 })
               |> state.All
               |> state.Ignore
@@ -137,19 +203,22 @@ module Eval =
             let! resultValue, resultKind = !rest
             return TypeValue.SetSourceMapping(resultValue, source), resultKind
           | TypeExpr.Let(x, t_x, rest) ->
-            let x = Identifier.LocalScope x |> ctx.Scope.Resolve
 
             return!
               state.Either3
                 (state {
                   let! t_x = !t_x
-                  do! TypeExprEvalState.bindType x t_x
-                  let! resultValue, resultKind = !rest
+
+                  let! resultValue, resultKind =
+                    !rest
+                    |> state.MapContext(TypeCheckContext.Updaters.TypeVariables(Map.add x t_x))
+
                   return TypeValue.SetSourceMapping(resultValue, source), resultKind
                 })
                 (state {
                   let! s_x = !!t_x
-                  do! TypeExprEvalState.bindTypeSymbol x s_x
+                  let x = Identifier.LocalScope x |> ctx.Scope.Resolve
+                  do! TypeCheckState.bindTypeSymbol x s_x
                   let! resultValue, resultKind = !rest
                   return TypeValue.SetSourceMapping(resultValue, source), resultKind
                 })
@@ -157,11 +226,16 @@ module Eval =
                  |> state.MapError(Errors.SetPriority ErrorPriority.High))
 
           | TypeExpr.Apply(f, a) ->
+            // do Console.WriteLine($"Evaluating type application of {f} to {a}")
+            // do Console.WriteLine($"Evaluating type application of {f.ToFSharpString}")
+            // do Console.ReadLine() |> ignore
             let! f, f_k = !f
+            // do Console.WriteLine($"Evaluated function part to {f.ToFSharpString}\n{f_k}")
+            // do Console.ReadLine() |> ignore
             let! f_k_i, f_k_o = f_k |> Kind.AsArrow |> ofSum
 
             return!
-              state.Either3
+              state.Either5
                 (state {
                   let! param, body =
                     f
@@ -174,7 +248,7 @@ module Eval =
                     let! a = !!a
 
                     do!
-                      TypeExprEvalState.bindTypeSymbol
+                      TypeCheckState.bindTypeSymbol
                         (param.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
                         a
 
@@ -183,45 +257,103 @@ module Eval =
                   | _ ->
                     let! a = !a
 
-                    do!
-                      TypeExprEvalState.bindType (param.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) a
+                    let! resultValue, resultKind =
+                      !body
+                      |> state.MapContext(TypeCheckContext.Updaters.TypeVariables(Map.add param.Name a))
 
-                    let! resultValue, resultKind = !body
                     return TypeValue.SetSourceMapping(resultValue, source), resultKind
                 })
                 (state {
-                  let! f_var = f |> TypeValue.AsVar |> ofSum
+                  let! f_i = f |> TypeValue.AsImported |> ofSum
 
+                  // let! ctx = state.GetContext()
+                  // do Console.WriteLine($"Evaluating argument part {a.ToFSharpString}")
+                  // do Console.WriteLine($"Context is {ctx.TypeParameters.ToFSharpString}")
+                  // do Console.ReadLine() |> ignore
                   let! a, a_k = !a
+                  // do Console.WriteLine($"aka {a.ToFSharpString}")
+                  // do Console.ReadLine() |> ignore
 
-                  if f_k_i <> a_k then
+                  if a_k <> f_k_i then
                     return!
-                      $"Error: mismatched kind, expected {f_k_i} but got {a_k}"
+                      $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}"
                       |> error
                       |> state.Throw
                   else
-                    return TypeValue.Apply { value = (f_var, a); source = source }, f_k_o
+                    match f_i.Parameters with
+                    | [] ->
+                      return!
+                        $"Error: cannot apply imported type {f_i.Id.Name} with no parameters"
+                        |> error
+                        |> state.Throw
+                    | _ :: ps ->
+                      return
+                        TypeValue.Imported
+                          { f_i with
+                              Parameters = ps
+                              Arguments = f_i.Arguments @ [ a ] },
+                        f_k_o
                 })
-                (state { return! $"Error: cannot evaluate application " |> error |> state.Throw }
+                (state {
+                  let! f_l = f |> TypeValue.AsLookup |> ofSum
+
+                  let! a, a_k = !a
+
+                  if a_k <> f_k_i then
+                    return!
+                      $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}"
+                      |> error
+                      |> state.Throw
+                  else
+                    return TypeValue.CreateApplication(SymbolicTypeApplication.Lookup(f_l, a)), f_k_o
+                })
+                (state {
+                  let! { value = f_app } = f |> TypeValue.AsApplication |> ofSum
+
+                  let! a, a_k = !a
+
+                  if a_k <> f_k_i then
+                    return!
+                      $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}"
+                      |> error
+                      |> state.Throw
+                  else
+                    return TypeValue.CreateApplication(SymbolicTypeApplication.Application(f_app, a)), f_k_o
+                })
+                (state { return! $"Error: cannot evaluate type application {t}" |> error |> state.Throw }
                  |> state.MapError(Errors.SetPriority ErrorPriority.High))
+              |> state.MapError(Errors.FilterHighestPriorityOnly)
           | TypeExpr.Lambda(param, bodyExpr) ->
-            let fresh_var_t =
-              TypeValue.Var(
-                { TypeVar.Name = param.Name
-                  Guid = Guid.CreateVersion7() }
+            // let fresh_var_t =
+            //   TypeValue.Var(
+            //     { TypeVar.Name = param.Name
+            //       Guid = Guid.CreateVersion7() }
+            //   )
+
+            // let! ctx = state.GetContext()
+            // let closure = ctx.TypeVariables
+            // let closure = ctx.TypeVariables |> Map.add param.Name (fresh_var_t, param.Kind)
+            // do Console.WriteLine($"Type lambda closure: {closure.ToFSharpString}")
+            // do Console.ReadLine() |> ignore
+
+            // do Console.WriteLine($"Evaluating type lambda with param {param} and body {bodyExpr}")
+
+            let! body_t, body_k =
+              !bodyExpr
+              // |> TypeExpr.KindEval n loc0
+              |> state.MapContext(
+                TypeCheckContext.Updaters.TypeParameters(Map.add param.Name param.Kind)
+                >> TypeCheckContext.Updaters.TypeVariables(Map.remove param.Name)
               )
 
-            do!
-              TypeExprEvalState.bindType
-                (param.Name |> Identifier.LocalScope |> ctx.Scope.Resolve)
-                (fresh_var_t, param.Kind)
+            // do Console.WriteLine($"Evaluated type lambda body to {body_t}")
+            // do Console.ReadLine() |> ignore
 
-            let! _body, body_k = !bodyExpr
-            do! TypeExprEvalState.unbindType (param.Name |> Identifier.LocalScope |> ctx.Scope.Resolve)
+            // |> state.MapContext(TypeExprEvalContext.Updaters.TypeVariables(replaceWith closure))
 
             return
               TypeValue.Lambda
-                { value = (param, bodyExpr)
+                { value = param, body_t.AsExpr
                   source = source },
               Kind.Arrow(param.Kind, body_k)
           | TypeExpr.Arrow(input, output) ->

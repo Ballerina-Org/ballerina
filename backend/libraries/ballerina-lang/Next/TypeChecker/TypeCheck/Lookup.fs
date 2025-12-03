@@ -23,15 +23,15 @@ module Lookup =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member internal TypeCheckLookup
-      (_typeCheckExpr: TypeChecker, loc0: Location)
-      : TypeChecker<ExprLookup<TypeExpr, Identifier>> =
+      (_typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      : TypeChecker<ExprLookup<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
       fun _context_t ({ Id = id }) ->
         state {
           let! ctx = state.GetContext()
 
-          let id = ctx.Types.Scope.Resolve id
+          let id = ctx.Scope.Resolve id
 
           let error e = Errors.Singleton(loc0, e)
 
@@ -45,5 +45,5 @@ module Lookup =
                |> state.Throw)
             |> state.MapError(Errors.FilterHighestPriorityOnly)
 
-          return Expr.Lookup(id, loc0, ctx.Types.Scope), t_id, id_k
+          return Expr.Lookup(id, loc0, ctx.Scope), t_id, id_k
         }

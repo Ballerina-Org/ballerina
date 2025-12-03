@@ -277,6 +277,31 @@ module ExprType =
                           sum {
                             do!
                               funJson
+                              |> JsonValue.AsEnum(Set.singleton "AllTranslationOverrides")
+
+                              |> sum.Map(ignore)
+
+                            return!
+                              sum {
+                                let! argsJson = (fields |> sum.TryFindField "args")
+                                let! args = JsonValue.AsArray argsJson
+
+                                match args with
+                                | [| keyType |] ->
+                                  let! keyType = !keyType
+                                  return ExprType.AllTranslationOverrides { KeyType = keyType }
+                                | _ ->
+                                  return!
+                                    sum.Throw(
+                                      Errors.Singleton(sprintf "Error: expected 1 argument, got %d" args.Length)
+                                    )
+                              }
+                              |> sum.MapError(Errors.WithPriority ErrorPriority.High)
+                              |> sum.WithErrorContext "...when parsing as AllTranslationOverrides"
+                          }
+                          sum {
+                            do!
+                              funJson
                               |> JsonValue.AsEnum(Set.singleton "Map")
 
                               |> sum.Map(ignore)

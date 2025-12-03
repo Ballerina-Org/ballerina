@@ -31,8 +31,7 @@ module Types =
           typeExt.Cases
           |> Map.toSeq
           |> Seq.fold
-            (fun acc ((caseId, _), caseExt) ->
-              acc |> Map.add caseId (typeExt.WrapTypeVars caseExt.ConstructorType, kind))
+            (fun acc ((caseId, _), caseExt) -> acc |> Map.add caseId (caseExt.ConstructorType, kind))
             typeCheckContext.Values
 
         let values =
@@ -53,42 +52,34 @@ module Types =
           |> List.fold (fun acc k -> Kind.Arrow(k, acc)) Kind.Star
 
         let typeExtUnion =
-          TypeValue
-            .Imported(
-              { Id = typeExt.TypeName |> fst
-                Sym = typeExt.TypeName |> snd
-                Parameters = typeExt.TypeVars |> List.map (fun (tv, k) -> TypeParameter.Create(tv.Name, k))
-                Arguments = []
-                UnionLike =
-                  if typeExt.Cases |> Map.isEmpty then
-                    None
-                  else
-                    typeExt.Cases
-                    |> Map.toSeq
-                    |> Seq.map (fun ((_, sym), caseExt) -> (sym, caseExt.CaseType))
-                    |> OrderedMap.ofSeq
-                    |> Some
-                RecordLike = None }
-            )
-            .AsExpr
-          |> typeExt.WrapTypeVars
+          TypeValue.Imported
+            { Id = typeExt.TypeName |> fst
+              Sym = typeExt.TypeName |> snd
+              Parameters = typeExt.TypeVars |> List.map (fun (tv, k) -> TypeParameter.Create(tv.Name, k))
+              Arguments = []
+              UnionLike =
+                if typeExt.Cases |> Map.isEmpty then
+                  None
+                else
+                  typeExt.Cases
+                  |> Map.toSeq
+                  |> Seq.map (fun ((_, sym), caseExt) -> (sym, caseExt.CaseType))
+                  |> OrderedMap.ofSeq
+                  |> Some
+              RecordLike = None }
 
         let bindings =
-          typeCheckState.Types.Bindings
+          typeCheckState.Bindings
           |> Map.add (typeExt.TypeName |> fst) (typeExtUnion, kind)
 
         { typeCheckState with
-            Types =
-              { typeCheckState.Types with
-                  Bindings = bindings
-                  Symbols =
-                    { typeCheckState.Types.Symbols with
-                        UnionCases =
-                          typeExt.Cases
-                          |> Map.keys
-                          |> Seq.fold
-                            (fun acc (id, sym) -> acc |> Map.add id sym)
-                            typeCheckState.Types.Symbols.UnionCases } } }
+            Bindings = bindings
+            Symbols =
+              { typeCheckState.Symbols with
+                  UnionCases =
+                    typeExt.Cases
+                    |> Map.keys
+                    |> Seq.fold (fun acc (id, sym) -> acc |> Map.add id sym) typeCheckState.Symbols.UnionCases } }
 
     static member RegisterExprEvalContext
       (typeExt: TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations>)

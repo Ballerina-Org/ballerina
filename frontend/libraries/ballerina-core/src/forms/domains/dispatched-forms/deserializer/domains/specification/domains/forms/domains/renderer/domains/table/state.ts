@@ -34,7 +34,6 @@ export type TableRenderer<T> = {
   visibleColumns: PredicateComputedOrInlined;
   concreteRenderer: string;
   detailsRenderer?: NestedRenderer<T>;
-  api?: string;
 };
 
 export const TableRenderer = {
@@ -44,7 +43,6 @@ export const TableRenderer = {
     visibleColumnsLayout: PredicateComputedOrInlined,
     concreteRenderer: string,
     detailsRenderer?: NestedRenderer<T>,
-    api?: string,
   ): TableRenderer<T> => ({
     kind: "tableRenderer",
     type,
@@ -52,7 +50,6 @@ export const TableRenderer = {
     visibleColumns: visibleColumnsLayout,
     concreteRenderer,
     detailsRenderer,
-    api,
   }),
   Operations: {
     hasType: (_: unknown): _ is { type: string } =>
@@ -152,16 +149,10 @@ export const TableRenderer = {
         ExtraContext
       >,
       types: Map<string, DispatchParsedType<T>>,
-      api: string | undefined,
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
     ): ValueOrErrors<[TableRenderer<T>, Map<string, Renderer<T>>], string> =>
-      api != undefined && Array.isArray(api)
-        ? ValueOrErrors.Default.throwOne<
-            [TableRenderer<T>, Map<string, Renderer<T>>],
-            string
-          >("lookup api not supported for table")
-        : TableRenderer.Operations.tryAsValidTableForm(serialized)
+      TableRenderer.Operations.tryAsValidTableForm(serialized)
             .Then((validTableForm) =>
               DispatchParsedType.Operations.ResolveLookupType(
                 type.arg.name,
@@ -227,8 +218,8 @@ export const TableRenderer = {
                           alreadyParsedForms,
                         ]),
                       )
-                      .Then(([columnsMap, accumulatedAlreadyParsedForms]) => {
-                        return TableLayout.Operations.ParseLayout(
+                      .Then(([columnsMap, accumulatedAlreadyParsedForms]) =>
+                        TableLayout.Operations.ParseLayout(
                           validTableForm.visibleColumns,
                         ).Then((visibileColumnsLayout) =>
                           TableRenderer.Operations.DeserializeDetailsRenderer(
@@ -248,14 +239,13 @@ export const TableRenderer = {
                                 columnsMap,
                                 visibileColumnsLayout,
                                 validTableForm.renderer,
-                                detailsRenderer,
-                                api,
+                                detailsRenderer
                               ),
                               finalAlreadyParsedForms,
                             ]),
                           ),
-                        );
-                      }),
+                        )
+                      ),
               ),
             )
             .MapErrors((errors) =>

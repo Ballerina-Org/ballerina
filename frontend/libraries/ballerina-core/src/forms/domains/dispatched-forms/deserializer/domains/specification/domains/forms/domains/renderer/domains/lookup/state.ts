@@ -70,19 +70,16 @@ export type LookupRenderer<T> =
       kind: "lookupType-lookupRenderer";
       type: LookupType;
       lookupRenderer: string;
-      tableApi: string | undefined;
     }
   | {
       kind: "lookupType-inlinedRenderer";
       inlinedRenderer: Renderer<T>;
       type: LookupType;
-      tableApi: string | undefined;
     }
   | {
       kind: "inlinedType-lookupRenderer";
       lookupRenderer: string;
       type: DispatchParsedType<T>;
-      tableApi: string | undefined;
     };
 
 export const LookupRenderer = {
@@ -90,32 +87,26 @@ export const LookupRenderer = {
     LookupTypeLookupRenderer: <T extends DispatchInjectablesTypes<T>>(
       type: LookupType,
       lookupRenderer: string,
-      tableApi: string | undefined,
     ): LookupRenderer<T> => ({
       kind: "lookupType-lookupRenderer",
       lookupRenderer,
       type,
-      tableApi,
     }),
     LookupTypeInlinedRenderer: <T extends DispatchInjectablesTypes<T>>(
       type: LookupType,
       inlinedRenderer: Renderer<T>,
-      tableApi: string | undefined,
     ): LookupRenderer<T> => ({
       kind: "lookupType-inlinedRenderer",
       inlinedRenderer,
       type,
-      tableApi,
     }),
     InlinedTypeLookupRenderer: <T extends DispatchInjectablesTypes<T>>(
       type: DispatchParsedType<T>,
       lookupRenderer: string,
-      tableApi: string | undefined,
     ): LookupRenderer<T> => ({
       kind: "inlinedType-lookupRenderer",
       lookupRenderer,
       type,
-      tableApi,
     }),
   },
   Operations: {
@@ -148,7 +139,6 @@ export const LookupRenderer = {
       ExtraContext,
     >(
       serialized: SerializedLookup<T>,
-      tableApi: string | undefined,
       concreteRenderers: ConcreteRenderers<
         T,
         Flags,
@@ -169,7 +159,6 @@ export const LookupRenderer = {
               serialized.renderer,
               concreteRenderers,
               types,
-              tableApi,
               forms,
               alreadyParsedForms,
             ).Then(([renderer, alreadyParsedForms]) => {
@@ -177,7 +166,6 @@ export const LookupRenderer = {
                 LookupRenderer.Default.LookupTypeInlinedRenderer(
                   serialized.type,
                   renderer,
-                  tableApi,
                 ),
                 alreadyParsedForms,
               ]);
@@ -192,7 +180,6 @@ export const LookupRenderer = {
                 LookupRenderer.Default.LookupTypeLookupRenderer(
                   serialized.type,
                   serialized.renderer,
-                  tableApi,
                 ),
                 alreadyParsedForms,
               ])
@@ -205,7 +192,6 @@ export const LookupRenderer = {
                   Reflect.get(forms, serialized.renderer),
                   concreteRenderers,
                   types,
-                  tableApi,
                   forms,
                   alreadyParsedForms,
                 ).Then(([renderer, alreadyParsedForms]) =>
@@ -213,7 +199,6 @@ export const LookupRenderer = {
                     LookupRenderer.Default.LookupTypeLookupRenderer(
                       serialized.type,
                       serialized.renderer,
-                      tableApi,
                     ),
                     alreadyParsedForms.set(serialized.renderer, renderer),
                   ]),
@@ -227,7 +212,6 @@ export const LookupRenderer = {
                 LookupRenderer.Default.InlinedTypeLookupRenderer(
                   serialized.type,
                   serialized.renderer,
-                  tableApi,
                 ),
                 alreadyParsedForms,
               ])
@@ -236,7 +220,6 @@ export const LookupRenderer = {
                 Reflect.get(forms, serialized.renderer),
                 concreteRenderers,
                 types,
-                tableApi,
                 forms,
                 alreadyParsedForms,
               ).Then(([renderer, alreadyParsedForms]) => {
@@ -244,7 +227,6 @@ export const LookupRenderer = {
                   LookupRenderer.Default.InlinedTypeLookupRenderer(
                     serialized.type,
                     serialized.renderer,
-                    tableApi,
                   ),
                   alreadyParsedForms.set(serialized.renderer, renderer),
                 ]);

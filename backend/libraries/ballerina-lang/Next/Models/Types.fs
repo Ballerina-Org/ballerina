@@ -5,6 +5,7 @@ module Model =
   open System
   open Ballerina.StdLib.OrderPreservingMap
   open Ballerina.Cat.Collections.OrderedMap
+  open Ballerina.StdLib.Object
 
   type Identifier =
     | LocalScope of string
@@ -25,6 +26,12 @@ module Model =
       { Assembly = assembly
         Module = module_
         Type = type_
+        Name = name }
+
+    static member Create(name: string) : ResolvedIdentifier =
+      { Assembly = ""
+        Module = ""
+        Type = None
         Name = name }
 
     override id.ToString() =
@@ -107,12 +114,22 @@ module Model =
 
 
 
-  type TypeParameter = { Name: string; Kind: Kind }
+  type TypeParameter =
+    { Name: string
+      Kind: Kind }
+
+    override p.ToString() = $"[{p.Name}:{p.Kind}]"
 
   and Kind =
     | Symbol
     | Star
     | Arrow of Kind * Kind
+
+    override k.ToString() =
+      match k with
+      | Symbol -> "Symbol"
+      | Star -> "*"
+      | Arrow(k1, k2) -> $"({k1} -> {k2})"
 
   and TypeSymbol =
     { Name: Identifier
@@ -141,6 +158,7 @@ module Model =
       | UnionConstructors -> "UnionConstructors"
 
   and TypeExpr =
+    | FromTypeValue of TypeValue
     | Primitive of PrimitiveType
     | Let of string * TypeExpr * TypeExpr
     | LetSymbols of List<string> * SymbolsKind * TypeExpr
@@ -163,25 +181,24 @@ module Model =
 
     override self.ToString() =
       match self with
-      | Imported i ->
-        let comma = ", "
-        $"{i.Sym.Name}[{String.Join(comma, i.Arguments)}]"
+      | FromTypeValue tv -> tv.ToString()
+      | Imported i -> i.ToString()
       | Primitive p -> p.ToString()
       | Let(name, value, body) -> $"Let {name} = {value} in {body})"
       | LetSymbols(names, symbolsKind, body) ->
         let comma = ", " in $"LetSymbols({String.Join(comma, names)}):{symbolsKind} in {body})"
       | NewSymbol name -> $"NewSymbol({name})"
       | Lookup id -> id.ToString()
-      | Apply(f, a) -> $"{f}[{a}]"
-      | Lambda(param, body) -> $"Fun {param.Name}::{param.Kind} => {body}"
+      | Apply(f, a) -> $"({f})[{a}]"
+      | Lambda(param, body) -> $"({param.Name}::{param.Kind} => {body})"
       | Arrow(t1, t2) -> $"({t1} -> {t2})"
       | Record fields ->
         let comma = ", "
         let fieldStrs = fields |> List.map (fun (name, typ) -> $"{name}: {typ}")
         $"{{{String.Join(comma, fieldStrs)}}}"
       | Tuple types ->
-        let comma = ", "
-        $"[{String.Join(comma, types)}]"
+        let comma = " * "
+        $"({String.Join(comma, types)})"
       | Union types ->
         let comma = " | "
         let typeStrs = types |> List.map (fun (name, typ) -> $"{name}: {typ}")
@@ -203,12 +220,25 @@ module Model =
     { Identifier: Identifier
       Type: TypeExpr }
 
+  and TypeVariablesScope = Map<string, TypeValue * Kind>
+  and TypeParametersScope = Map<string, Kind>
+
+  // all the applicables in type expressions minus lambdas (clear from type expr eval impl)
+  and SymbolicTypeApplication =
+    | Lookup of Identifier * TypeValue
+    | Application of SymbolicTypeApplication * TypeValue
+
+    override sta.ToString() =
+      match sta with
+      | Lookup(id, arg) -> $"{id}[{arg}]"
+      | Application(f, a) -> $"({f})[{a}]"
+
   and TypeValue =
     | Primitive of WithTypeExprSourceMapping<PrimitiveType>
     | Var of TypeVar
     | Lookup of Identifier // TODO: Figure out what to do with this (orig name wise) after recursion in type checking is implement correctly
     | Lambda of WithTypeExprSourceMapping<TypeParameter * TypeExpr>
-    | Apply of WithTypeExprSourceMapping<TypeVar * TypeValue>
+    | Application of WithTypeExprSourceMapping<SymbolicTypeApplication>
     | Arrow of WithTypeExprSourceMapping<TypeValue * TypeValue>
     | Record of WithTypeExprSourceMapping<OrderedMap<TypeSymbol, TypeValue>>
     | Tuple of WithTypeExprSourceMapping<List<TypeValue>>
@@ -224,20 +254,18 @@ module Model =
       | Record({ source = OriginExprTypeLet(id, _) }) -> id.ToString()
       | Record({ source = OriginTypeExpr(TypeExpr.Lookup id) })
       | Primitive({ source = OriginTypeExpr(TypeExpr.Lookup id) })
-      | Apply({ source = OriginTypeExpr(TypeExpr.Lookup id) })
       | Lambda({ source = OriginTypeExpr(TypeExpr.Lookup id) })
       | Arrow({ source = OriginTypeExpr(TypeExpr.Lookup id) })
       | Tuple({ source = OriginTypeExpr(TypeExpr.Lookup id) })
       | Union({ source = OriginTypeExpr(TypeExpr.Lookup id) })
       | Sum({ source = OriginTypeExpr(TypeExpr.Lookup id) }) -> id.ToString()
-      | Imported i ->
-        let comma = ", "
-        $"{i.Sym.Name}[{String.Join(comma, i.Arguments)}]"
+      | Application { value = a } -> a.ToString()
+      | Imported i -> i.ToString()
       | Primitive p -> p.value.ToString()
       | Lookup id -> id.ToString()
       | Var v -> v.Name.ToString()
-      | Apply({ value = (f, a) }) -> $"{f}[{a}]"
-      | Lambda({ value = (param, body) }) -> $"Fun {param.Name} => {body}"
+      // | Apply({ value = (f, a) }) -> $"({f})[{a}]"
+      | Lambda({ value = (param, body) }) -> $"({param.Name} => {body})"
       | Arrow({ value = (t1, t2) }) -> $"({t1} -> {t2})"
       | Record({ value = fields }) ->
         let comma = ", "
@@ -289,8 +317,14 @@ module Model =
       RecordLike: Option<OrderedMap<TypeSymbol, TypeExpr>> }
 
     override self.ToString() =
-      let comma = ", "
-      $"{self.Sym.Name}[{String.Join(comma, self.Arguments)}]"
+      // let pars = String.Join(" ", self.Parameters |> List.map (fun a -> $"{a} => "))
+
+      // let appliedPars =
+      //   String.Join("", self.Parameters |> List.map (fun a -> $"[{a.Name}]"))
+
+      let args = String.Join(" ", self.Arguments |> List.map (fun a -> $"[{a}]"))
+      // $"{pars}{self.Sym.Name}{appliedPars}{args}"
+      $"{self.Sym.Name}{args}"
 
   and PrimitiveType =
     | Unit

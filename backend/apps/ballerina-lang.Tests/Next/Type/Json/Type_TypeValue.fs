@@ -124,6 +124,35 @@ let testCases guid : TypeValueTestCase list =
               { TypeSymbol.Name = "foo" |> Identifier.LocalScope
                 TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000001") },
               TypeValue.CreateInt32() ]
+        ) }
+    { Name = "Application (Lookup)"
+      Json =
+        """{
+          "discriminator":"application",
+          "value":[
+            {"discriminator":"id","value":"List"},
+            {"discriminator":"int32"}
+          ]
+        }"""
+      Expected = TypeValue.CreateApplication(SymbolicTypeApplication.Lookup(!"List", TypeValue.CreateInt32())) }
+    { Name = "Application (Nested Application)"
+      Json =
+        """{
+          "discriminator":"application",
+          "value":[
+            [
+              {"discriminator":"id","value":"Map"},
+              {"discriminator":"string"}
+            ],
+            {"discriminator":"int32"}
+          ]
+        }"""
+      Expected =
+        TypeValue.CreateApplication(
+          SymbolicTypeApplication.Application(
+            SymbolicTypeApplication.Lookup(!"Map", TypeValue.CreateString()),
+            TypeValue.CreateInt32()
+          )
         ) } ]
 
 [<Test>]

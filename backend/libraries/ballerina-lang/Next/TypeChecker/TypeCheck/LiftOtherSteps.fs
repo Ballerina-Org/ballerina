@@ -21,7 +21,7 @@ module LiftOtherSteps =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member liftUnification
       (p: State<'a, UnificationContext, UnificationState, Errors>)
       : State<'a, TypeCheckContext, TypeCheckState, Errors> =
@@ -30,12 +30,7 @@ module LiftOtherSteps =
         let! ctx = state.GetContext()
 
         let newUnificationState =
-          p
-          |> State.Run(
-            { EvalState = s.Types
-              Scope = ctx.Types.Scope },
-            s.Vars
-          )
+          p |> State.Run({ EvalState = s; Scope = ctx.Scope }, s.Vars)
 
         match newUnificationState with
         | Left(res, newUnificationState) ->
@@ -51,20 +46,19 @@ module LiftOtherSteps =
       }
 
     static member liftTypeEval
-      (p: State<'a, TypeExprEvalContext, TypeExprEvalState, Errors>)
+      (p: State<'a, TypeCheckContext, TypeCheckState, Errors>)
       : State<'a, TypeCheckContext, TypeCheckState, Errors> =
       state {
         let! s = state.GetState()
         let! ctx = state.GetContext()
 
-        let newTypesState = p |> State.Run(ctx.Types, s.Types)
+        let newTypesState = p |> State.Run(ctx, s)
 
         match newTypesState with
         | Left(res, newTypesState) ->
           do!
             newTypesState
-            |> Option.map (fun (newTypesState: TypeExprEvalState) ->
-              state.SetState(TypeCheckState.Updaters.Types(replaceWith newTypesState)))
+            |> Option.map (fun (newTypesState: TypeCheckState) -> state.SetState(replaceWith newTypesState))
             |> state.RunOption
             |> state.Map ignore
 
@@ -73,22 +67,20 @@ module LiftOtherSteps =
       }
 
     static member liftInstantiation
-      (p: State<'a, TypeInstantiateContext, UnificationState, Errors>)
+      (p: State<'a, TypeInstantiateContext, TypeCheckState, Errors>)
       : State<'a, TypeCheckContext, TypeCheckState, Errors> =
       state {
         let! s = state.GetState()
         let! ctx = state.GetContext()
 
         let newUnificationState =
-          p
-          |> State.Run(TypeCheckState.ToInstantiationContext(s, ctx.Types.Scope), s.Vars)
+          p |> State.Run(TypeInstantiateContext.FromEvalContext(ctx), s)
 
         match newUnificationState with
         | Left(res, newUnificationState) ->
           do!
             newUnificationState
-            |> Option.map (fun (newUnificationState: UnificationState) ->
-              state.SetState(TypeCheckState.Updaters.Vars(replaceWith newUnificationState)))
+            |> Option.map (fun newState -> state.SetState(replaceWith newState))
             |> state.RunOption
             |> state.Map ignore
 

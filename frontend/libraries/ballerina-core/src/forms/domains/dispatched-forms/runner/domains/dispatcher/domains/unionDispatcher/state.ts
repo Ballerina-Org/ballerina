@@ -32,7 +32,6 @@ export const UnionDispatcher = {
       >,
       isInlined: boolean,
       isNested: boolean,
-      tableApi: string | undefined,
       currentLookupRenderer: string | undefined,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       ValueOrErrors.Operations.All(
@@ -51,7 +50,7 @@ export const UnionDispatcher = {
                   `case ${caseName}`,
                   isNested,
                   false,
-                  tableApi,
+                  undefined,
                 ).Then((template) =>
                   ValueOrErrors.Default.return<
                     [string, Template<any, any, any, any>],

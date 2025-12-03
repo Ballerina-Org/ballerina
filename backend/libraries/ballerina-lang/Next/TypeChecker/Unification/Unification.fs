@@ -15,7 +15,6 @@ module Unification =
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.DSL.Next.Types.TypeChecker.Patterns
-  open Ballerina.DSL.Next.Types.TypeChecker.Eval
   open Ballerina.StdLib.OrderPreservingMap
   open Ballerina.Cat.Collections.OrderedMap
 
@@ -29,12 +28,13 @@ module Unification =
           x |> Identifier.LocalScope |> ctx.Scope.Resolve
 
         match t with
+        | TypeExpr.FromTypeValue tv -> return! TypeValue.FreeVariables tv
         | TypeExpr.Lambda(p, t) ->
           return!
             TypeExpr.FreeVariables t
             |> reader.MapContext(
               UnificationContext.Updaters.EvalState(
-                TypeExprEvalState.Updaters.Bindings(
+                TypeCheckState.Updaters.Bindings(
                   Map.add !p.Name (TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                 )
               )
@@ -66,13 +66,32 @@ module Unification =
         | TypeExpr.NewSymbol _ -> return Set.empty
         | TypeExpr.Lookup l ->
           let! t =
-            TypeExprEvalState.tryFindType (l |> ctx.Scope.Resolve, Location.Unknown)
+            TypeCheckState.tryFindType (l |> ctx.Scope.Resolve, Location.Unknown)
             |> reader.MapContext(fun ctx -> ctx.EvalState)
             |> reader.Catch
 
           match t with
           | Left(t, _) -> return! TypeValue.FreeVariables t
           | Right _ -> return Set.empty
+      }
+
+  and SymbolicTypeApplication with
+    static member FreeVariables(t: SymbolicTypeApplication) : Reader<Set<TypeVar>, UnificationContext, Errors> =
+      reader {
+        // let! ctx = reader.GetContext()
+
+        // let (!) x =
+        //   x |> Identifier.LocalScope |> ctx.Scope.Resolve
+
+        match t with
+        | SymbolicTypeApplication.Lookup(l, a) ->
+          let! tVars = TypeValue.FreeVariables(TypeValue.Lookup l)
+          let! aVars = TypeValue.FreeVariables a
+          return Set.union tVars aVars
+        | SymbolicTypeApplication.Application(f, a) ->
+          let! fVars = SymbolicTypeApplication.FreeVariables f
+          let! aVars = TypeValue.FreeVariables a
+          return Set.union fVars aVars
       }
 
   and TypeValue with
@@ -90,12 +109,13 @@ module Unification =
             return Set.empty
           else
             return Set.singleton v
+        | TypeValue.Application { value = a } -> return! SymbolicTypeApplication.FreeVariables a
         | TypeValue.Lambda { value = p, t } ->
           return!
             TypeExpr.FreeVariables t
             |> reader.MapContext(
               UnificationContext.Updaters.EvalState(
-                TypeExprEvalState.Updaters.Bindings(
+                TypeCheckState.Updaters.Bindings(
                   Map.add !p.Name (TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                 )
               )
@@ -108,7 +128,7 @@ module Unification =
           let! lVars = TypeValue.FreeVariables l
           let! rVars = TypeValue.FreeVariables r
           return Set.union lVars rVars
-        | TypeValue.Apply { value = _, e }
+        // | TypeValue.Apply { value = _, e }
         | TypeValue.Set { value = e } -> return! TypeValue.FreeVariables e
         | TypeValue.Tuple { value = es }
         | TypeValue.Sum { value = es } ->
@@ -127,7 +147,7 @@ module Unification =
         | TypeValue.Primitive _ -> return Set.empty
         | Lookup l ->
           let! t, _ =
-            TypeExprEvalState.tryFindType (l |> ctx.Scope.Resolve, Location.Unknown)
+            TypeCheckState.tryFindType (l |> ctx.Scope.Resolve, Location.Unknown)
             |> reader.MapContext(fun ctx -> ctx.EvalState)
 
           return! TypeValue.FreeVariables t
@@ -136,7 +156,7 @@ module Unification =
   type TypeValue with
     static member MostSpecific
       (loc0: Location, t1: TypeValue, t2: TypeValue)
-      : Reader<TypeValue, TypeExprEvalState, Errors> =
+      : Reader<TypeValue, TypeCheckState, Errors> =
       reader {
         let error e = Errors.Singleton(loc0, e)
         let (==) a b = TypeValue.MostSpecific(loc0, a, b)
@@ -169,6 +189,14 @@ module Unification =
           let! items = List.zip e1.value e2.value |> Seq.map (fun (v1, v2) -> v1 == v2) |> reader.All
 
           return TypeValue.CreateTuple items
+
+        | TypeValue.Imported e1, TypeValue.Imported e2 when e1.Arguments.Length = e2.Arguments.Length ->
+          let! arguments =
+            List.zip e1.Arguments e2.Arguments
+            |> Seq.map (fun (v1, v2) -> v1 == v2)
+            |> reader.All
+
+          return TypeValue.Imported { e1 with Arguments = arguments }
         | TypeValue.Sum e1, TypeValue.Sum e2 when e1.value.Length = e2.value.Length ->
           let! items = List.zip e1.value e2.value |> Seq.map (fun (v1, v2) -> v1 == v2) |> reader.All
 
@@ -267,7 +295,7 @@ module Unification =
         | Lookup l, t2
         | t2, Lookup l ->
           let! t1, _ =
-            TypeExprEvalState.tryFindType (l |> ctx.Scope.Resolve, loc0)
+            TypeCheckState.tryFindType (l |> ctx.Scope.Resolve, loc0)
             |> reader.MapContext(fun ctx -> ctx.EvalState)
             |> state.OfReader
 
@@ -306,12 +334,12 @@ module Unification =
                   return
                     ctx
                     |> UnificationContext.Updaters.EvalState(
-                      TypeExprEvalState.Updaters.Bindings(Map.add !p1.Name v1 >> Map.add !p2.Name v2)
+                      TypeCheckState.Updaters.Bindings(Map.add !p1.Name v1 >> Map.add !p2.Name v2)
                     ),
                     ctx
-                    |> UnificationContext.Updaters.EvalState(TypeExprEvalState.Updaters.Bindings(Map.add !p1.Name v1)),
+                    |> UnificationContext.Updaters.EvalState(TypeCheckState.Updaters.Bindings(Map.add !p1.Name v1)),
                     ctx
-                    |> UnificationContext.Updaters.EvalState(TypeExprEvalState.Updaters.Bindings(Map.add !p2.Name v2))
+                    |> UnificationContext.Updaters.EvalState(TypeCheckState.Updaters.Bindings(Map.add !p2.Name v2))
                 else
                   let s1 = TypeSymbol.Create(Identifier.LocalScope p1.Name)
                   let s2 = TypeSymbol.Create(Identifier.LocalScope p2.Name)
@@ -319,26 +347,22 @@ module Unification =
                   return
                     ctx
                     |> UnificationContext.Updaters.EvalState(
-                      TypeExprEvalState.Updaters.Symbols.Types(Map.add !p1.Name s1 >> Map.add !p2.Name s2)
+                      TypeCheckState.Updaters.Symbols.Types(Map.add !p1.Name s1 >> Map.add !p2.Name s2)
                     ),
                     ctx
-                    |> UnificationContext.Updaters.EvalState(
-                      TypeExprEvalState.Updaters.Symbols.Types(Map.add !p1.Name s1)
-                    ),
+                    |> UnificationContext.Updaters.EvalState(TypeCheckState.Updaters.Symbols.Types(Map.add !p1.Name s1)),
                     ctx
-                    |> UnificationContext.Updaters.EvalState(
-                      TypeExprEvalState.Updaters.Symbols.Types(Map.add !p2.Name s2)
-                    )
+                    |> UnificationContext.Updaters.EvalState(TypeCheckState.Updaters.Symbols.Types(Map.add !p2.Name s2))
               }
 
             let! v1 =
               t1
               |> TypeExpr.AsValue
                 loc0
-                ((fun t -> TypeExprEvalState.tryFindType (t |> ctx1.Scope.Resolve, loc0))
+                ((fun t -> TypeCheckState.tryFindType (t |> ctx1.Scope.Resolve, loc0))
                  >> reader.Map fst
                  >> Reader.Run ctx1.EvalState)
-                ((fun s -> TypeExprEvalState.tryFindTypeSymbol (s |> ctx1.Scope.Resolve, loc0))
+                ((fun s -> TypeCheckState.tryFindTypeSymbol (s |> ctx1.Scope.Resolve, loc0))
                  >> Reader.Run ctx1.EvalState)
               |> state.OfSum
 
@@ -346,10 +370,10 @@ module Unification =
               t2
               |> TypeExpr.AsValue
                 loc0
-                ((fun t -> TypeExprEvalState.tryFindType (t |> ctx2.Scope.Resolve, loc0))
+                ((fun t -> TypeCheckState.tryFindType (t |> ctx2.Scope.Resolve, loc0))
                  >> reader.Map fst
                  >> Reader.Run ctx2.EvalState)
-                ((fun s -> TypeExprEvalState.tryFindTypeSymbol (s |> ctx2.Scope.Resolve, loc0))
+                ((fun s -> TypeCheckState.tryFindTypeSymbol (s |> ctx2.Scope.Resolve, loc0))
                  >> Reader.Run ctx2.EvalState)
               |> state.OfSum
 
@@ -362,9 +386,9 @@ module Unification =
         | Map { value = l1, r1 }, Map { value = l2, r2 } ->
           do! l1 == l2
           do! r1 == r2
-        | TypeValue.Apply { value = v1, a1 }, TypeValue.Apply { value = v2, a2 } ->
-          do! (v1 |> TypeValue.Var) == (v2 |> TypeValue.Var)
-          do! a1 == a2
+        // | TypeValue.Apply { value = v1, a1 }, TypeValue.Apply { value = v2, a2 } ->
+        //   do! (v1 |> TypeValue.Var) == (v2 |> TypeValue.Var)
+        //   do! a1 == a2
         | Set { value = e1 }, Set { value = e2 } -> do! e1 == e2
         | TypeValue.Tuple { value = e1 }, TypeValue.Tuple { value = e2 }
         | TypeValue.Sum { value = e1 }, TypeValue.Sum { value = e2 } when List.length e1 = List.length e2 ->
@@ -381,36 +405,103 @@ module Unification =
         | _ -> return! $"Cannot unify types: {left} and {right}" |> error |> state.Throw
       }
 
-  type TypeValue with
+  type SymbolicTypeApplication with
     static member Instantiate
-      : Location -> TypeValue -> State<TypeValue, TypeInstantiateContext, UnificationState, Errors> =
-      fun loc0 t ->
+      : TypeExprEval
+          -> Location
+          -> SymbolicTypeApplication
+          -> State<TypeValue, TypeInstantiateContext, TypeCheckState, Errors> =
+      fun typeEval loc0 t ->
+        state {
+          // let error e = Errors.Singleton(loc0, e)
+
+          match t with
+          | SymbolicTypeApplication.Lookup(l, a) ->
+            let! f = TypeValue.Instantiate typeEval loc0 (l |> TypeValue.Lookup)
+            let! a = TypeValue.Instantiate typeEval loc0 a
+
+            match f with
+            | TypeValue.Application { value = f } ->
+              return SymbolicTypeApplication.Application(f, a) |> TypeValue.CreateApplication
+            | TypeValue.Lookup l -> return SymbolicTypeApplication.Lookup(l, a) |> TypeValue.CreateApplication
+            | _ ->
+              let application = TypeExpr.Apply(TypeExpr.FromTypeValue f, TypeExpr.FromTypeValue a)
+
+              let! res =
+                typeEval None loc0 application
+                |> state.MapContext(TypeCheckContext.FromInstantiateContext)
+                |> state.Map fst
+
+              return res
+          | SymbolicTypeApplication.Application(f, a) ->
+            let! f = SymbolicTypeApplication.Instantiate typeEval loc0 f
+            let! a = TypeValue.Instantiate typeEval loc0 a
+
+            match f with
+            | TypeValue.Application { value = f } ->
+              return SymbolicTypeApplication.Application(f, a) |> TypeValue.CreateApplication
+            | _ ->
+              let application = TypeExpr.Apply(TypeExpr.FromTypeValue f, TypeExpr.FromTypeValue a)
+
+              let! res =
+                typeEval None loc0 application
+                |> state.MapContext(TypeCheckContext.FromInstantiateContext)
+                |> state.Map fst
+
+              return res
+        }
+
+  and TypeValue with
+    static member Instantiate
+      : TypeExprEval -> Location -> TypeValue -> State<TypeValue, TypeInstantiateContext, TypeCheckState, Errors> =
+      fun typeEval loc0 t ->
         state {
           let error e = Errors.Singleton(loc0, e)
 
           match t with
           | TypeValue.Imported({ Arguments = arguments } as t) ->
-            let! args = arguments |> Seq.map (TypeValue.Instantiate loc0) |> state.All
+            // do Console.WriteLine $"Instantiating imported type {t}"
+            // do Console.WriteLine $"Arguments: {arguments |> Seq.map (fun a -> a.ToFSharpString) |> Seq.toList}"
+            let! args = arguments |> Seq.map (TypeValue.Instantiate typeEval loc0) |> state.All
+            // do Console.WriteLine $"Arguments instantiated: {args |> Seq.map (fun a -> a.ToFSharpString) |> Seq.toList}"
+            // do Console.ReadLine() |> ignore
             let t = { t with Arguments = args }
             return TypeValue.Imported(t)
+          | TypeValue.Application { value = app } -> return! SymbolicTypeApplication.Instantiate typeEval loc0 app
           | TypeValue.Var v ->
             let! ctx = state.GetContext()
+            let! s = state.GetState()
 
             if ctx.VisitedVars.Contains v then
               // return! Errors.Singleton $"Infinite type instantiation for variable {v}" |> state.Throw
               return t
             else
-              let! vClass =
+              let localCtx = { EvalState = s; Scope = ctx.Scope }
+
+              let localState = s.Vars
+
+              let! vClass, newLocalState =
                 EquivalenceClasses.tryFind (v, loc0)
                 |> TypeValue.EquivalenceClassesOp loc0
-                |> state.MapContext(fun ctx ->
-                  { EvalState = ctx.Bindings
-                    Scope = ctx.Scope })
+                |> State.Run(localCtx, localState)
+                |> sum.MapError fst
+                |> state.OfSum
+
+              do!
+                state.SetState(
+                  TypeCheckState.Updaters.Vars(newLocalState |> Option.map replaceWith |> Option.defaultValue id)
+                )
+
+              // |> state.MapContext(fun ctx ->
+              //   { EvalState = ctx.Bindings
+              //     Scope = ctx.Scope })
+
+              // do Console.WriteLine($"Equivalence class for variable {v}: {vClass}")
 
               match vClass.Representative with
               | Some rep ->
                 return!
-                  TypeValue.Instantiate loc0 rep
+                  TypeValue.Instantiate typeEval loc0 rep
                   |> state.MapContext(TypeInstantiateContext.Updaters.VisitedVars(Set.add v))
               | None ->
                 match
@@ -418,7 +509,7 @@ module Unification =
                   |> Set.toSeq
                   |> Seq.map (TypeValue.Var)
                   |> Seq.map (
-                    TypeValue.Instantiate loc0
+                    TypeValue.Instantiate typeEval loc0
                     >> state.MapContext(TypeInstantiateContext.Updaters.VisitedVars(Set.add v))
                   )
                   |> Seq.toList
@@ -431,45 +522,71 @@ module Unification =
                 | x :: xs -> return! NonEmptyList.OfList(x, xs) |> state.Any
           | TypeValue.Lookup l ->
             let! ctx = state.GetContext()
+            let! s = state.GetState()
 
-            let! t, _ =
-              ctx.Bindings.Bindings
+            let! t =
+              s.Bindings
               |> TypeBindings.tryFindWithError (l |> ctx.Scope.Resolve) "lookup" l.ToFSharpString loc0
               |> state.OfSum
+              |> state.Catch
 
-            return! TypeValue.Instantiate loc0 t
-          | TypeValue.Lambda v -> return TypeValue.Lambda v
+            match t with
+            | Left(t, _) -> return! TypeValue.Instantiate typeEval loc0 t
+            | Right _ ->
+              return!
+                state.Either
+                  (ctx.TypeVariables
+                   |> TypeVariablesScope.tryFindWithError l.LocalName "type variable" l.ToFSharpString loc0
+                   |> sum.Map fst
+                   |> state.OfSum)
+                  (ctx.TypeParameters
+                   |> TypeParametersScope.tryFindWithError l.LocalName "type parameter" l.ToFSharpString loc0
+                   |> sum.Map(fun _ -> TypeValue.Lookup l)
+                   |> state.OfSum)
+          | TypeValue.Lambda { value = par, body } ->
+            match body with
+            | TypeExpr.FromTypeValue bodyTv ->
+
+              let! bodyTv' =
+                TypeValue.Instantiate typeEval loc0 bodyTv
+                |> state.MapContext(
+                  TypeInstantiateContext.Updaters.TypeParameters(Map.add par.Name par.Kind)
+                  >> TypeInstantiateContext.Updaters.TypeVariables(Map.remove par.Name)
+                )
+
+              return TypeValue.CreateLambda(par, TypeExpr.FromTypeValue bodyTv')
+            | _ -> return TypeValue.CreateLambda(par, body)
           | TypeValue.Arrow { value = l, r; source = n } ->
-            let! l' = TypeValue.Instantiate loc0 l
-            let! r' = TypeValue.Instantiate loc0 r
+            let! l' = TypeValue.Instantiate typeEval loc0 l
+            let! r' = TypeValue.Instantiate typeEval loc0 r
             return TypeValue.Arrow { value = l', r'; source = n }
-          | TypeValue.Apply { value = var, arg; source = n } ->
-            let! arg' = TypeValue.Instantiate loc0 arg
-            return TypeValue.Apply { value = var, arg'; source = n }
+          // | TypeValue.Apply { value = var, arg; source = n } ->
+          //   let! arg' = TypeValue.Instantiate TypeExpr.Eval loc0 arg
+          //   return TypeValue.Apply { value = var, arg'; source = n }
           | TypeValue.Map { value = l, r; source = n } ->
-            let! l' = TypeValue.Instantiate loc0 l
-            let! r' = TypeValue.Instantiate loc0 r
+            let! l' = TypeValue.Instantiate typeEval loc0 l
+            let! r' = TypeValue.Instantiate typeEval loc0 r
             return TypeValue.Map { value = l', r'; source = n }
           | TypeValue.Set { value = v; source = n } ->
-            let! v' = TypeValue.Instantiate loc0 v
+            let! v' = TypeValue.Instantiate typeEval loc0 v
             return TypeValue.Set { value = v'; source = n }
           | TypeValue.Tuple { value = es; source = n } ->
-            let! es' = es |> Seq.map (TypeValue.Instantiate loc0) |> state.All
+            let! es' = es |> Seq.map (TypeValue.Instantiate typeEval loc0) |> state.All
             return TypeValue.Tuple { value = es'; source = n }
           | TypeValue.Sum { value = es; source = n } ->
-            let! es' = es |> Seq.map (TypeValue.Instantiate loc0) |> state.All
+            let! es' = es |> Seq.map (TypeValue.Instantiate typeEval loc0) |> state.All
             return TypeValue.Sum { value = es'; source = n }
           | TypeValue.Record { value = es; source = n } ->
             let! es' =
               es
-              |> OrderedMap.map (fun _ -> TypeValue.Instantiate loc0)
+              |> OrderedMap.map (fun _ -> TypeValue.Instantiate typeEval loc0)
               |> state.AllMapOrdered
 
             return TypeValue.Record { value = es'; source = n }
           | TypeValue.Union { value = es; source = n } ->
             let! es' =
               es
-              |> OrderedMap.map (fun _ -> TypeValue.Instantiate loc0)
+              |> OrderedMap.map (fun _ -> TypeValue.Instantiate typeEval loc0)
               |> state.AllMapOrdered
 
             return TypeValue.Union { value = es'; source = n }

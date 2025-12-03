@@ -12,11 +12,6 @@ module Extension =
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.List.Model
-  open Ballerina.DSL.Next.Json
-  open FSharp.Data
-  open Ballerina.StdLib.Json.Reader
-  open Ballerina.StdLib.Json.Patterns
-  open Ballerina.DSL.Next.Json.Keys
 
 
   let ListExtension<'ext>
@@ -28,6 +23,17 @@ module Extension =
     let listSymbolId = listId |> TypeSymbol.Create
     let aVar, aKind = TypeVar.Create("a"), Kind.Star
     let listId = listId |> TypeCheckScope.Empty.Resolve
+
+    let listOf (argName: string) =
+      TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope "List"), TypeExpr.Lookup(Identifier.LocalScope argName))
+    // TypeValue.CreateImported(
+    //   { Id = listId
+    //     Sym = listSymbolId
+    //     Parameters = []
+    //     Arguments = [ TypeValue.Lookup(Identifier.LocalScope argName) ]
+    //     UnionLike = None
+    //     RecordLike = None }
+    // )
 
     let listFoldId =
       Identifier.FullyQualified([ "List" ], "fold") |> TypeCheckScope.Empty.Resolve
@@ -62,7 +68,7 @@ module Extension =
         v
       }
 
-    let toValueFromList (v: List<Value<TypeValue, 'ext>>) : Value<TypeValue, 'ext> =
+    let _toValueFromList (v: List<Value<TypeValue, 'ext>>) : Value<TypeValue, 'ext> =
       ListValues.List v |> valueLens.Set |> Ext
 
     let lengthOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
@@ -264,16 +270,7 @@ module Extension =
               TypeParameter.Create("b", Kind.Star),
               TypeExpr.Arrow(
                 TypeExpr.Arrow(TypeExpr.Lookup(Identifier.LocalScope "a"), TypeExpr.Lookup(Identifier.LocalScope "b")),
-                TypeExpr.Arrow(
-                  TypeExpr.Apply(
-                    TypeExpr.Lookup(Identifier.LocalScope "List"),
-                    TypeExpr.Lookup(Identifier.LocalScope "a")
-                  ),
-                  TypeExpr.Apply(
-                    TypeExpr.Lookup(Identifier.LocalScope "List"),
-                    TypeExpr.Lookup(Identifier.LocalScope "b")
-                  )
-                )
+                TypeExpr.Arrow(listOf "a", listOf "b")
               )
             )
           )
@@ -358,16 +355,7 @@ module Extension =
       { Type =
           TypeValue.CreateLambda(
             TypeParameter.Create("a", aKind),
-            TypeExpr.Arrow(
-              TypeExpr.Tuple(
-                [ TypeExpr.Lookup(Identifier.LocalScope "a")
-                  TypeExpr.Apply(
-                    TypeExpr.Lookup(Identifier.LocalScope "List"),
-                    TypeExpr.Lookup(Identifier.LocalScope "a")
-                  ) ]
-              ),
-              TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope "List"), TypeExpr.Lookup(Identifier.LocalScope "a"))
-            )
+            TypeExpr.Arrow(TypeExpr.Tuple([ TypeExpr.Lookup(Identifier.LocalScope "a"); listOf "a" ]), listOf "a")
           )
         Kind = Kind.Arrow(Kind.Star, Kind.Star)
         Operation = List_Cons
@@ -413,10 +401,7 @@ module Extension =
       { Type =
           TypeValue.CreateLambda(
             TypeParameter.Create("a", aKind),
-            TypeExpr.Arrow(
-              TypeExpr.Primitive(PrimitiveType.Unit),
-              TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope "List"), TypeExpr.Lookup(Identifier.LocalScope "a"))
-            )
+            TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, listOf "a")
           )
         Kind = Kind.Arrow(Kind.Star, Kind.Star)
         Operation = List_Nil
@@ -438,32 +423,8 @@ module Extension =
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
-    let valueParser
-      (rootValueParser: ValueParser<TypeValue, ResolvedIdentifier, 'ext>)
-      (v: JsonValue)
-      : ValueParserReader<TypeValue, ResolvedIdentifier, 'ext> =
-      Reader.assertDiscriminatorAndContinueWithValue "list" v (fun elementsJson ->
-        reader {
-          let! elements = elementsJson |> JsonValue.AsArray |> reader.OfSum
-
-          let! elements = elements |> Seq.map rootValueParser |> reader.All
-          return toValueFromList elements
-        })
-
-    let valueEncoder
-      (rootValueEncoder: ValueEncoder<TypeValue, 'ext>)
-      (v: Value<TypeValue, 'ext>)
-      : ValueEncoderReader<TypeValue> =
-      reader {
-        let! v = getValueAsList v |> reader.OfSum
-        let! elements = v |> List.map rootValueEncoder |> reader.All
-
-        return elements |> List.toArray |> JsonValue.Array |> Json.discriminator "list"
-      }
-
     { TypeName = listId, listSymbolId
       TypeVars = [ (aVar, aKind) ]
-      WrapTypeVars = fun t -> TypeValue.CreateLambda(TypeParameter.Create(aVar.Name, aKind), t)
       Cases = Map.empty
       Operations =
         [ lengthOperation
@@ -479,6 +440,4 @@ module Extension =
           match v with
           | ListValues.List(v :: vs) ->
             Value<TypeValue, 'ext>.Tuple([ v; vs |> ListValues.List |> valueLens.Set |> Ext ])
-          | _ -> Value<TypeValue, 'ext>.Primitive PrimitiveValue.Unit
-      Parser = valueParser
-      Encoder = valueEncoder }
+          | _ -> Value<TypeValue, 'ext>.Primitive PrimitiveValue.Unit }

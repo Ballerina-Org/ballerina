@@ -23,10 +23,10 @@ module Primitive =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member internal TypeCheckPrimitive
-      (_typeCheckExpr: TypeChecker, loc0: Location)
-      : TypeChecker<PrimitiveValue> =
+      (_typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      : TypeChecker<PrimitiveValue, 'valueExt> =
       fun _context_t (p: PrimitiveValue) ->
         state {
           let! ctx = state.GetContext()
@@ -34,73 +34,73 @@ module Primitive =
           match p with
           | PrimitiveValue.Int32 v ->
             return
-              Expr.Primitive(PrimitiveValue.Int32 v, loc0, ctx.Types.Scope),
+              Expr.Primitive(PrimitiveValue.Int32 v, loc0, ctx.Scope),
               TypeValue.CreatePrimitive PrimitiveType.Int32,
               Kind.Star
 
           | (PrimitiveValue.Int64 v) ->
             return
-              Expr.Primitive(PrimitiveValue.Int64 v, loc0, ctx.Types.Scope),
+              Expr.Primitive(PrimitiveValue.Int64 v, loc0, ctx.Scope),
               TypeValue.CreatePrimitive PrimitiveType.Int64,
               Kind.Star
 
           | (PrimitiveValue.Float32 v) ->
             return
-              Expr.Primitive(PrimitiveValue.Float32 v, loc0, ctx.Types.Scope),
+              Expr.Primitive(PrimitiveValue.Float32 v, loc0, ctx.Scope),
               TypeValue.CreatePrimitive PrimitiveType.Float32,
               Kind.Star
 
           | (PrimitiveValue.Float64 v) ->
             return
-              Expr.Primitive(PrimitiveValue.Float64 v, loc0, ctx.Types.Scope),
+              Expr.Primitive(PrimitiveValue.Float64 v, loc0, ctx.Scope),
               TypeValue.CreatePrimitive PrimitiveType.Float64,
               Kind.Star
 
           | (PrimitiveValue.Bool v) ->
             return
-              Expr.Primitive(PrimitiveValue.Bool v, loc0, ctx.Types.Scope),
+              Expr.Primitive(PrimitiveValue.Bool v, loc0, ctx.Scope),
               TypeValue.CreatePrimitive PrimitiveType.Bool,
               Kind.Star
 
           | (PrimitiveValue.Date v) ->
             return
-              Expr.Primitive(PrimitiveValue.Date v, loc0, ctx.Types.Scope),
+              Expr.Primitive(PrimitiveValue.Date v, loc0, ctx.Scope),
               TypeValue.CreatePrimitive PrimitiveType.DateOnly,
               Kind.Star
 
           | (PrimitiveValue.DateTime v) ->
             return
-              Expr.Primitive(PrimitiveValue.DateTime v, loc0, ctx.Types.Scope),
+              Expr.Primitive(PrimitiveValue.DateTime v, loc0, ctx.Scope),
               TypeValue.CreatePrimitive PrimitiveType.DateTime,
               Kind.Star
 
           | (PrimitiveValue.TimeSpan v) ->
             return
-              Expr.Primitive(PrimitiveValue.TimeSpan v, loc0, ctx.Types.Scope),
+              Expr.Primitive(PrimitiveValue.TimeSpan v, loc0, ctx.Scope),
               TypeValue.CreatePrimitive PrimitiveType.TimeSpan,
               Kind.Star
 
           | (PrimitiveValue.Decimal v) ->
             return
-              Expr.Primitive(PrimitiveValue.Decimal v, loc0, ctx.Types.Scope),
+              Expr.Primitive(PrimitiveValue.Decimal v, loc0, ctx.Scope),
               TypeValue.CreatePrimitive PrimitiveType.Decimal,
               Kind.Star
 
           | (PrimitiveValue.Guid v) ->
             return
-              Expr.Primitive(PrimitiveValue.Guid v, loc0, ctx.Types.Scope),
+              Expr.Primitive(PrimitiveValue.Guid v, loc0, ctx.Scope),
               TypeValue.CreatePrimitive PrimitiveType.Guid,
               Kind.Star
 
           | (PrimitiveValue.String v) ->
             return
-              Expr.Primitive(PrimitiveValue.String v, loc0, ctx.Types.Scope),
+              Expr.Primitive(PrimitiveValue.String v, loc0, ctx.Scope),
               TypeValue.CreatePrimitive PrimitiveType.String,
               Kind.Star
 
           | (PrimitiveValue.Unit) ->
             return
-              Expr.Primitive(PrimitiveValue.Unit, loc0, ctx.Types.Scope),
+              Expr.Primitive(PrimitiveValue.Unit, loc0, ctx.Scope),
               TypeValue.CreatePrimitive PrimitiveType.Unit,
               Kind.Star
         }

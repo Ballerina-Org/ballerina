@@ -23,12 +23,12 @@ module SumDes =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id when 'Id: comparison> with
+  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member internal TypeCheckSumDes
-      (typeCheckExpr: TypeChecker, loc0: Location)
-      : TypeChecker<ExprSumDes<TypeExpr, Identifier>> =
+      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      : TypeChecker<ExprSumDes<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Handlers = handlers }) ->
-        let (!) = typeCheckExpr context_t
+        let (!) = typeCheckExpr None
 
         let ofSum (p: Sum<'a, Ballerina.Errors.Errors>) =
           p |> Sum.mapRight (Errors.FromErrors loc0) |> state.OfSum
@@ -99,7 +99,7 @@ module SumDes =
                   !body
                   |> state.MapContext(
                     TypeCheckContext.Updaters.Values(
-                      Map.add (var.Name |> Identifier.LocalScope |> ctx.Types.Scope.Resolve) (var_t, Kind.Star)
+                      Map.add (var.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) (var_t, Kind.Star)
                     )
                   )
 
@@ -107,7 +107,7 @@ module SumDes =
 
                 do! TypeValue.Unify(loc0, body_t, result_var_t) |> Expr.liftUnification
 
-                let! var_t = TypeValue.Instantiate loc0 var_t |> Expr.liftInstantiation
+                let! var_t = TypeValue.Instantiate TypeExpr.Eval loc0 var_t |> Expr.liftInstantiation
 
                 return (var, body), var_t
               })
@@ -125,22 +125,22 @@ module SumDes =
 
           let handlerTypes = handlersSorted |> List.map snd
 
-          let! result_t = TypeValue.Instantiate loc0 result_var_t |> Expr.liftInstantiation
+          let! result_t = TypeValue.Instantiate TypeExpr.Eval loc0 result_var_t |> Expr.liftInstantiation
 
           let sumValue = TypeValue.CreateSum handlerTypes
           let arrowValue = TypeValue.CreateArrow(sumValue, result_t)
-          let! arrowValue = TypeValue.Instantiate loc0 arrowValue |> Expr.liftInstantiation
+          let! arrowValue = TypeValue.Instantiate TypeExpr.Eval loc0 arrowValue |> Expr.liftInstantiation
 
           // for kv in handler_vars do
           //   do!
           //       UnificationState.DeleteVariable kv
           //         |> TypeValue.EquivalenceClassesOp
-          //         |> Expr<'T, 'Id>.liftUnification
+          //         |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
           // do!
           //     UnificationState.DeleteVariable result_var
           //       |> TypeValue.EquivalenceClassesOp
-          //       |> Expr<'T, 'Id>.liftUnification
+          //       |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
-          return Expr.SumDes(handlerExprs, loc0, ctx.Types.Scope), arrowValue, Kind.Star
+          return Expr.SumDes(handlerExprs, loc0, ctx.Scope), arrowValue, Kind.Star
         }

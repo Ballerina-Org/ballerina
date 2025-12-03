@@ -11,21 +11,31 @@ module Extension =
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
-  open Ballerina.DSL.Next.StdLib.Option
 
   let private timeSpanTypeValue = TypeValue.CreateTimeSpan()
   let private boolTypeValue = TypeValue.CreateBool()
   let private int32TypeValue = TypeValue.CreateInt32()
   let private float64TypeValue = TypeValue.CreateFloat64()
-
+  let private stringTypeValue = TypeValue.CreateString()
+  let private unitTypeValue = TypeValue.CreateUnit()
 
   let TimeSpanExtension<'ext>
+    (consLens: PartialLens<'ext, TimeSpanConstructors>)
     (operationLens: PartialLens<'ext, TimeSpanOperations<'ext>>)
-    : OperationsExtension<'ext, TimeSpanOperations<'ext>> =
+    : TypeExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
+
+    let timeSpanId = Identifier.LocalScope "timeSpan"
+    let timeSpanSymbolId = timeSpanId |> TypeSymbol.Create
+    let timeSpanId = timeSpanId |> TypeCheckScope.Empty.Resolve
+
+    let timeSpanConstructors = TimeSpanConstructorsExtension<'ext> consLens
+
     let TimeSpanPlusId =
       Identifier.FullyQualified([ "timeSpan" ], "+") |> TypeCheckScope.Empty.Resolve
 
-    let plusOperation: ResolvedIdentifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
+    let plusOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
       TimeSpanPlusId,
       { Type = TypeValue.CreateArrow(timeSpanTypeValue, TypeValue.CreateArrow(timeSpanTypeValue, timeSpanTypeValue))
         Kind = Kind.Star
@@ -63,7 +73,9 @@ module Extension =
     let TimeSpanMinusId =
       Identifier.FullyQualified([ "timeSpan" ], "-") |> TypeCheckScope.Empty.Resolve
 
-    let minusOperation: ResolvedIdentifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
+    let minusOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
       TimeSpanMinusId,
       { Type = TypeValue.CreateArrow(timeSpanTypeValue, timeSpanTypeValue)
         Kind = Kind.Star
@@ -90,7 +102,9 @@ module Extension =
     let TimeSpanEqualId =
       Identifier.FullyQualified([ "timeSpan" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
+    let equalOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
       TimeSpanEqualId,
       { Type = TypeValue.CreateArrow(timeSpanTypeValue, TypeValue.CreateArrow(timeSpanTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -128,7 +142,9 @@ module Extension =
     let TimeSpanNotEqualId =
       Identifier.FullyQualified([ "timeSpan" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
+    let notEqualOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
       TimeSpanNotEqualId,
       { Type = TypeValue.CreateArrow(timeSpanTypeValue, TypeValue.CreateArrow(timeSpanTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -166,7 +182,9 @@ module Extension =
     let TimeSpanGreaterThanId =
       Identifier.FullyQualified([ "timeSpan" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
+    let greaterThanOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
       TimeSpanGreaterThanId,
       { Type = TypeValue.CreateArrow(timeSpanTypeValue, TypeValue.CreateArrow(timeSpanTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -204,7 +222,9 @@ module Extension =
     let TimeSpanGreaterThanOrEqualId =
       Identifier.FullyQualified([ "timeSpan" ], ">=") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
+    let greaterThanOrEqualOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
       TimeSpanGreaterThanOrEqualId,
       { Type = TypeValue.CreateArrow(timeSpanTypeValue, TypeValue.CreateArrow(timeSpanTypeValue, boolTypeValue))
         Kind = Kind.Star
@@ -245,7 +265,9 @@ module Extension =
     let TimeSpanLessThanId =
       Identifier.FullyQualified([ "timeSpan" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
+    let lessThanOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
       TimeSpanLessThanId,
       { Type =
           TypeValue.CreateArrow(
@@ -290,7 +312,9 @@ module Extension =
     let TimeSpanLessThanOrEqualId =
       Identifier.FullyQualified([ "timeSpan" ], "<=") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
+    let lessThanOrEqualOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
       TimeSpanLessThanOrEqualId,
       { Type =
           TypeValue.CreateArrow(
@@ -339,7 +363,9 @@ module Extension =
       Identifier.FullyQualified([ "timeSpan" ], "getDays")
       |> TypeCheckScope.Empty.Resolve
 
-    let getDaysOperation: ResolvedIdentifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
+    let getDaysOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
       timeSpanGetDaysId,
       { Type = TypeValue.CreateArrow(timeSpanTypeValue, int32TypeValue)
         Kind = Kind.Star
@@ -367,7 +393,9 @@ module Extension =
       Identifier.FullyQualified([ "timeSpan" ], "getHours")
       |> TypeCheckScope.Empty.Resolve
 
-    let getHoursOperation: ResolvedIdentifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
+    let getHoursOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
       timeSpanGetHoursId,
       { Type = TypeValue.CreateArrow(timeSpanTypeValue, int32TypeValue)
         Kind = Kind.Star
@@ -395,7 +423,9 @@ module Extension =
       Identifier.FullyQualified([ "timeSpan" ], "getMinutes")
       |> TypeCheckScope.Empty.Resolve
 
-    let getMinutesOperation: ResolvedIdentifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
+    let getMinutesOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
       timeSpanGetMinutesId,
       { Type = TypeValue.CreateArrow(timeSpanTypeValue, int32TypeValue)
         Kind = Kind.Star
@@ -423,7 +453,9 @@ module Extension =
       Identifier.FullyQualified([ "timeSpan" ], "getSeconds")
       |> TypeCheckScope.Empty.Resolve
 
-    let getSecondsOperation: ResolvedIdentifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
+    let getSecondsOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
       timeSpanGetSecondsId,
       { Type = TypeValue.CreateArrow(timeSpanTypeValue, int32TypeValue)
         Kind = Kind.Star
@@ -451,7 +483,9 @@ module Extension =
       Identifier.FullyQualified([ "timeSpan" ], "getMilliseconds")
       |> TypeCheckScope.Empty.Resolve
 
-    let getMillisecondsOperation: ResolvedIdentifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
+    let getMillisecondsOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
       timeSpanGetMillisecondsId,
       { Type = TypeValue.CreateArrow(timeSpanTypeValue, int32TypeValue)
         Kind = Kind.Star
@@ -479,7 +513,9 @@ module Extension =
       Identifier.FullyQualified([ "timeSpan" ], "totalDays")
       |> TypeCheckScope.Empty.Resolve
 
-    let getTotalDaysOperation: ResolvedIdentifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
+    let getTotalDaysOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
       timeSpanGetTotalDaysId,
       { Type = TypeValue.CreateArrow(timeSpanTypeValue, float64TypeValue)
         Kind = Kind.Star
@@ -507,7 +543,9 @@ module Extension =
       Identifier.FullyQualified([ "timeSpan" ], "totalHours")
       |> TypeCheckScope.Empty.Resolve
 
-    let getTotalHoursOperation: ResolvedIdentifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
+    let getTotalHoursOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
       timeSpanGetTotalHoursId,
       { Type = TypeValue.CreateArrow(timeSpanTypeValue, float64TypeValue)
         Kind = Kind.Star
@@ -535,7 +573,9 @@ module Extension =
       Identifier.FullyQualified([ "timeSpan" ], "totalMinutes")
       |> TypeCheckScope.Empty.Resolve
 
-    let getTotalMinutesOperation: ResolvedIdentifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
+    let getTotalMinutesOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
       timeSpanGetTotalMinutesId,
       { Type = TypeValue.CreateArrow(timeSpanTypeValue, float64TypeValue)
         Kind = Kind.Star
@@ -563,7 +603,9 @@ module Extension =
       Identifier.FullyQualified([ "timeSpan" ], "totalSeconds")
       |> TypeCheckScope.Empty.Resolve
 
-    let getTotalSecondsOperation: ResolvedIdentifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
+    let getTotalSecondsOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
       timeSpanGetTotalSecondsId,
       { Type = TypeValue.CreateArrow(timeSpanTypeValue, float64TypeValue)
         Kind = Kind.Star
@@ -591,7 +633,9 @@ module Extension =
       Identifier.FullyQualified([ "timeSpan" ], "totalMilliseconds")
       |> TypeCheckScope.Empty.Resolve
 
-    let getTotalMillisecondsOperation: ResolvedIdentifier * OperationExtension<'ext, TimeSpanOperations<'ext>> =
+    let getTotalMillisecondsOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
       timeSpanGetTotalMillisecondsId,
       { Type = TypeValue.CreateArrow(timeSpanTypeValue, float64TypeValue)
         Kind = Kind.Star
@@ -615,7 +659,14 @@ module Extension =
               return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(v.TotalMilliseconds))
             } }
 
-    { TypeVars = []
+    { TypeName = timeSpanId, timeSpanSymbolId
+      TypeVars = []
+      Cases = timeSpanConstructors |> Map.ofList
+      Deconstruct =
+        fun (v) ->
+          match v with
+          | PrimitiveValue.TimeSpan v -> Value.Primitive(PrimitiveValue.TimeSpan v)
+          | _ -> Value.Primitive(PrimitiveValue.Unit)
       Operations =
         [ plusOperation
           minusOperation

@@ -5,10 +5,8 @@ module Model =
   open Ballerina.DSL.Next.Types
   open Ballerina.DSL.Next.Terms
   open Ballerina.Lenses
-  open Ballerina.DSL.Next.Json
   open Ballerina.Collections.NonEmptyList
   open Ballerina.LocalizedErrors
-  open Ballerina.DSL.Next.Types.TypeChecker.Expr
   open Ballerina.DSL.Next.Types.TypeChecker.Model
 
   type LanguageContext<'ext> =
@@ -35,7 +33,6 @@ module Model =
   and TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations> =
     { TypeName: ResolvedIdentifier * TypeSymbol // example: "Option"
       TypeVars: List<TypeVar * Kind> // example: [ ("a", Star) ]
-      WrapTypeVars: TypeExpr -> TypeValue
       Deconstruct: 'extValues -> Value<TypeValue, 'ext> // function to extract the underlying value from a value
       Cases:
         Map<
@@ -46,9 +43,7 @@ module Model =
         Map<
           ResolvedIdentifier,  // example: ("Option.Some", "OptionSome")
           TypeOperationExtension<'ext, 'extConstructors, 'extValues, 'extOperations>
-         >
-      Parser: ValueParserLayer<TypeValue, ResolvedIdentifier, 'ext>
-      Encoder: ValueEncoderLayer<TypeValue, 'ext> }
+         > }
 
   and TypeOperationExtension<'ext, 'extConstructors, 'extValues, 'extOperations> =
     { Type: TypeValue // "a => b => (a -> b) -> Option a -> Option b"
@@ -59,7 +54,7 @@ module Model =
 
   and TypeCaseExtension<'ext, 'extConstructors, 'extValues> =
     { CaseType: TypeExpr // "a"
-      ConstructorType: TypeExpr // "a => Option a"
+      ConstructorType: TypeValue // "a => Option a"
       Constructor: 'extConstructors
       ValueLens: PartialLens<'ext, 'extValues> // lens to access the value inside the extension value
       ConsLens: PartialLens<'ext, 'extConstructors> // lens to access the constructor inside the extension value

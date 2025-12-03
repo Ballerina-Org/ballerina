@@ -268,7 +268,6 @@ export const TableApis = {
                                         : value.display,
                                       concreteRenderers,
                                       types,
-                                      undefined,
                                       {},
                                       Map(),
                                     ).Then(([renderer, _]) =>
