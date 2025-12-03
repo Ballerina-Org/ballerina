@@ -4,7 +4,6 @@ import {
   DispatchInjectablesTypes,
   DispatchParsedType,
   Renderer,
-  SpecVersion,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../../../main";
 
@@ -37,7 +36,6 @@ export const TableCellRenderer = {
       columnName: string,
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
-      specVersionContext: SpecVersion,
     ): ValueOrErrors<
       [TableCellRenderer<T>, Map<string, Renderer<T>>],
       string
@@ -53,7 +51,6 @@ export const TableCellRenderer = {
           types,
           forms,
           alreadyParsedForms,
-          specVersionContext,
         ).Then(([deserializedNestedRenderer, newAlreadyParsedForms]) =>
           ValueOrErrors.Default.return<
             [TableCellRenderer<T>, Map<string, Renderer<T>>],

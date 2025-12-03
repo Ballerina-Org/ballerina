@@ -164,7 +164,9 @@ export const OneAbstractRenderer = <
         ),
         domNodeAncestorPath: _.domNodeAncestorPath + "[one][details]",
         predictionAncestorPath: _.predictionAncestorPath + "[Value]",
+        layoutAncestorPath: _.layoutAncestorPath + "[one][details]",
         lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+        preprocessedSpecContext: _.preprocessedSpecContext,
         labelContext,
       };
     })
@@ -260,7 +262,9 @@ export const OneAbstractRenderer = <
               ),
               domNodeAncestorPath: _.domNodeAncestorPath + "[one][preview]",
               predictionAncestorPath: _.predictionAncestorPath + "[Value]",
+              layoutAncestorPath: _.layoutAncestorPath + "[one][preview]",
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              preprocessedSpecContext: _.preprocessedSpecContext,
               labelContext,
             };
           })

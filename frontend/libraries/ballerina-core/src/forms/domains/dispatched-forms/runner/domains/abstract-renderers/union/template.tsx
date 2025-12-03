@@ -92,7 +92,10 @@ export const UnionAbstractRenderer = <
                 _.domNodeAncestorPath + `[union][${caseName}]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[${caseName}]`,
+              layoutAncestorPath:
+                _.layoutAncestorPath + `[union][case][${caseName}]`,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              preprocessedSpecContext: _.preprocessedSpecContext,
               labelContext,
             };
           },

@@ -5,7 +5,6 @@ import {
   DispatchParsedType,
   LookupType,
   MapRepo,
-  SpecVersion,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import { Map } from "immutable";
@@ -133,15 +132,15 @@ export const LookupRenderer = {
         CustomPresentationContext,
         ExtraContext
       >["forms"],
-    ): ValueOrErrors<Renderer<T>, string> =>
-      renderer.kind == "lookupType-inlinedRenderer"
+    ): ValueOrErrors<Renderer<T>, string> => renderer.kind == "lookupType-inlinedRenderer"
         ? ValueOrErrors.Default.return(renderer.inlinedRenderer)
         : MapRepo.Operations.tryFindWithError(
             renderer.lookupRenderer,
             forms,
             () =>
               `cannot find renderer ${JSON.stringify(renderer.lookupRenderer, null, 2)}`,
-          ),
+          )
+    ,
     Deserialize: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
@@ -159,7 +158,6 @@ export const LookupRenderer = {
       types: Map<string, DispatchParsedType<T>>,
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
-      specVersionContext: SpecVersion,
     ): ValueOrErrors<[LookupRenderer<T>, Map<string, Renderer<T>>], string> => {
       return serialized.kind == "lookupType-inlinedRenderer"
         ? DispatchParsedType.Operations.ResolveLookupType(
@@ -174,17 +172,16 @@ export const LookupRenderer = {
               tableApi,
               forms,
               alreadyParsedForms,
-              specVersionContext,
-            ).Then(([renderer, alreadyParsedForms]) =>
-              ValueOrErrors.Default.return([
+            ).Then(([renderer, alreadyParsedForms]) => {
+              return ValueOrErrors.Default.return([
                 LookupRenderer.Default.LookupTypeInlinedRenderer(
                   serialized.type,
                   renderer,
                   tableApi,
                 ),
                 alreadyParsedForms,
-              ]),
-            ),
+              ]);
+            }),
           )
         : serialized.kind == "lookupType-lookupRenderer"
           ? alreadyParsedForms.has(serialized.renderer)
@@ -202,8 +199,8 @@ export const LookupRenderer = {
             : DispatchParsedType.Operations.ResolveLookupType(
                 serialized.type.name,
                 types,
-              ).Then((resolvedType) =>
-                Renderer.Operations.Deserialize(
+              ).Then((resolvedType) => {
+                return Renderer.Operations.Deserialize(
                   resolvedType,
                   Reflect.get(forms, serialized.renderer),
                   concreteRenderers,
@@ -211,7 +208,6 @@ export const LookupRenderer = {
                   tableApi,
                   forms,
                   alreadyParsedForms,
-                  specVersionContext,
                 ).Then(([renderer, alreadyParsedForms]) =>
                   ValueOrErrors.Default.return([
                     LookupRenderer.Default.LookupTypeLookupRenderer(
@@ -221,8 +217,8 @@ export const LookupRenderer = {
                     ),
                     alreadyParsedForms.set(serialized.renderer, renderer),
                   ]),
-                ),
-              )
+                );
+              })
           : alreadyParsedForms.has(serialized.renderer)
             ? ValueOrErrors.Default.return<
                 [LookupRenderer<T>, Map<string, Renderer<T>>],
@@ -243,17 +239,16 @@ export const LookupRenderer = {
                 tableApi,
                 forms,
                 alreadyParsedForms,
-                specVersionContext,
-              ).Then(([renderer, alreadyParsedForms]) =>
-                ValueOrErrors.Default.return([
+              ).Then(([renderer, alreadyParsedForms]) => {
+                return ValueOrErrors.Default.return([
                   LookupRenderer.Default.InlinedTypeLookupRenderer(
                     serialized.type,
                     serialized.renderer,
                     tableApi,
                   ),
                   alreadyParsedForms.set(serialized.renderer, renderer),
-                ]),
-              );
+                ]);
+              });
     },
   },
 };

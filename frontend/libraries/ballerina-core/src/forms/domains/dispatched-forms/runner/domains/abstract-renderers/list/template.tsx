@@ -87,11 +87,14 @@ export const ListAbstractRenderer = <
               domNodeAncestorPath:
                 _.domNodeAncestorPath + `[list][${elementIndex}]`,
               predictionAncestorPath: _.predictionAncestorPath + `[element]`,
+              layoutAncestorPath:
+                _.layoutAncestorPath + `[list][${elementIndex}]`,
               typeAncestors: [_.type as DispatchParsedType<T>].concat(
                 _.typeAncestors,
               ),
               labelContext,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              preprocessedSpecContext: _.preprocessedSpecContext,
             };
           },
         )
@@ -192,11 +195,14 @@ export const ListAbstractRenderer = <
               domNodeAncestorPath:
                 _.domNodeAncestorPath + `[list][${elementIndex}]`,
               predictionAncestorPath: _.predictionAncestorPath + `[element]`,
+              layoutAncestorPath:
+                _.layoutAncestorPath + `[list][${elementIndex}]`,
               typeAncestors: [_.type as DispatchParsedType<T>].concat(
                 _.typeAncestors,
               ),
               labelContext,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              preprocessedSpecContext: _.preprocessedSpecContext,
             };
           },
         )

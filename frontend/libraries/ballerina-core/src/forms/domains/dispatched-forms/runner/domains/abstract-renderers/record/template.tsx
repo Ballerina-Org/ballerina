@@ -1,4 +1,4 @@
-import { List, Map, Set } from "immutable";
+import { List, Map, OrderedMap, Set } from "immutable";
 import {
   BasicUpdater,
   DispatchCommonFormState,
@@ -22,6 +22,10 @@ import {
   FormLayout,
   ValueOrErrors,
   DisabledFields,
+  Sum,
+  CalculatedDisabledFields,
+  CalculatedTabLayout,
+  PredicateFormLayout,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -56,7 +60,7 @@ export const RecordAbstractRenderer = <
     }
   >,
   FieldRenderers: Map<string, RecordFieldRenderer<any>>,
-  FieldsConfigSource: FieldsConfigSource,
+  Layout: PredicateFormLayout,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   isInlined: boolean,
@@ -122,11 +126,14 @@ export const RecordAbstractRenderer = <
                 _.domNodeAncestorPath + `[record][${fieldName}]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[${fieldName}]`,
+              layoutAncestorPath:
+                _.layoutAncestorPath + `[record][${fieldName}]`,
               labelContext,
               typeAncestors: [_.type as DispatchParsedType<any>].concat(
                 _.typeAncestors,
               ),
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              preprocessedSpecContext: _.preprocessedSpecContext,
             };
           },
         )
@@ -238,32 +245,35 @@ export const RecordAbstractRenderer = <
       );
     }
 
-    console.debug(props.context.predictionAncestorPath);
-
     const updatedBindings = isInlined
       ? props.context.bindings
       : props.context.bindings.set("local", props.context.value);
 
+    const layoutFromPreprocessor =
+      props.context.preprocessedSpecContext?.formLayouts.get(
+        props.context.layoutAncestorPath,
+      );
+
+    if (layoutFromPreprocessor == undefined) {
+      console.warn("Layout not found for " + props.context.layoutAncestorPath);
+    }
+
     const calculatedLayout =
-      FieldsConfigSource.kind == "raw"
-        ? FormLayout.Operations.ComputeLayout(
-            updatedBindings,
-            FieldsConfigSource.layoutPredicate,
-          )
-        : (null! as any);
+      layoutFromPreprocessor != undefined
+        ? ValueOrErrors.Default.return(layoutFromPreprocessor)
+        // TODO: remove once the projet room has been migrated to v2 specs
+        : FormLayout.Operations.ComputeLayout(updatedBindings, Layout);
 
     // TODO -- set error template up top
     if (calculatedLayout.kind == "errors") {
-      console.error(
-        calculatedLayout.errors.map((error: any) => error).join("\n"),
-      );
+      console.error(calculatedLayout.errors.map((error) => error).join("\n"));
       return <></>;
     }
 
     const visibleFieldKeys = ValueOrErrors.Operations.All(
       List(
         FieldTemplates.map((_, fieldName) =>
-          ValueOrErrors.Default.return(fieldName),
+          ValueOrErrors.Default.return<string, string>(fieldName),
         ).valueSeq(),
       ),
     );
@@ -288,23 +298,12 @@ export const RecordAbstractRenderer = <
       visibleFieldKeys.value.filter((fieldName) => fieldName != null),
     );
 
-    const calculatedDisabledFields =
-      FieldsConfigSource.kind == "raw"
-        ? DisabledFields.Operations.Compute(
-            updatedBindings,
-            FieldsConfigSource.disabledPredicate,
-          )
-        : (null! as any);
-
-    const disabledFieldsValue =
-      calculatedDisabledFields.kind == "value"
-        ? calculatedDisabledFields.value.fields
-        : [];
-
     const disabledFieldKeys = ValueOrErrors.Operations.All(
       List(
         FieldTemplates.map((_, fieldName) =>
-          disabledFieldsValue.includes(fieldName)
+          props.context.preprocessedSpecContext?.disabledFields?.has(
+            props.context.predictionAncestorPath + `[${fieldName}]`,
+          )
             ? ValueOrErrors.Default.return(fieldName)
             : ValueOrErrors.Default.return(null),
         ).valueSeq(),

@@ -84,6 +84,7 @@ export const TableDispatcher = {
       >,
       tableApi: string | undefined,
       isInlined: boolean,
+      currentLookupRenderer: string | undefined,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       DispatchParsedType.Operations.ResolveLookupType(
         renderer.type.arg.name,
@@ -283,7 +284,7 @@ export const TableDispatcher = {
                             renderer.columns,
                             detailsRenderer,
                             renderer.detailsRenderer,
-                            renderer.columnsConfig,
+                            renderer.visibleColumns,
                             dispatcherContext.IdProvider,
                             dispatcherContext.ErrorRenderer,
                             tableEntityType,
@@ -306,6 +307,9 @@ export const TableDispatcher = {
                                     )?.methods ?? []),
                               sorting,
                               highlightedFilters,
+                              layoutAncestorPath: currentLookupRenderer
+                                ? `[${currentLookupRenderer}]`
+                                : _.layoutAncestorPath,
                             }))
                             .withView(concreteRenderer),
                         );

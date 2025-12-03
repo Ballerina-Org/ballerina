@@ -55,10 +55,22 @@ export const LookupDispatcher = {
                   dispatcherContext.IdProvider,
                   dispatcherContext.ErrorRenderer,
                 )
-                  .mapContext((_: any) => ({
-                    ..._,
-                    type: renderer.type,
-                  }))
+                  .mapContext((_: any) => {
+                    // console.debug(
+                    //   "lookup dispatcher",
+                    //   renderer,
+                    //   _.layoutAncestorPath,
+                    // );
+
+                    return {
+                      ..._,
+                      type: renderer.type,
+                      layoutAncestorPath:
+                        renderer.kind == "lookupType-lookupRenderer"
+                          ? `[${renderer.lookupRenderer}]`
+                          : `${_.layoutAncestorPath}`,
+                    };
+                  })
                   .withView(dispatcherContext.lookupTypeRenderer()),
               ),
             )

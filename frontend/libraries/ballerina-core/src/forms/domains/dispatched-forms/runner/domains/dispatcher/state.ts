@@ -65,7 +65,14 @@ export const Dispatcher = {
       isNested: boolean,
       isInlined: boolean | undefined,
       tableApi: string | undefined,
+      currentLookupRenderer?: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> => {
+      // console.debug("Dispatching renderer", renderer, {
+      //   isNested,
+      //   isInlined,
+      //   currentLookupRenderer,
+      // });
+
       // see the deserializer state file for a commeny explaining lookup renderers
       return renderer.kind == "primitiveRenderer"
         ? PrimitiveDispatcher.Operations.Dispatch(renderer, dispatcherContext)
@@ -87,6 +94,7 @@ export const Dispatcher = {
                   isNested,
                   false,
                   renderer.tableApi ?? tableApi,
+                  renderer.lookupRenderer,
                 ),
               )
             : renderer.kind == "recordRenderer"
@@ -96,6 +104,7 @@ export const Dispatcher = {
                   isNested,
                   isInlined ?? true,
                   tableApi,
+                  currentLookupRenderer,
                 )
               : renderer.kind == "listRenderer"
                 ? ListDispatcher.Operations.Dispatch(
@@ -153,6 +162,7 @@ export const Dispatcher = {
                                   dispatcherContext,
                                   tableApi,
                                   isInlined ?? true,
+                                  currentLookupRenderer,
                                 )
                               : renderer.kind == "tupleRenderer"
                                 ? TupleDispatcher.Operations.Dispatch(
@@ -166,7 +176,9 @@ export const Dispatcher = {
                                       renderer,
                                       dispatcherContext,
                                       isNested,
+                                      isInlined ?? true,
                                       tableApi,
+                                      currentLookupRenderer,
                                     )
                                   : ValueOrErrors.Default.throwOne(
                                       `unknown renderer ${renderer.kind}`,

@@ -28,6 +28,7 @@ import {
   ValueTable,
   PredicateComputedOrInlined,
   PredicateFormLayout,
+  FormLayout,
 } from "../../../../../main";
 
 import {
@@ -703,7 +704,7 @@ export type FieldsConfigSource =
       kind: "preprocessed";
       visiblePaths: string[];
       disabledPaths: string[];
-      layout: PredicateFormLayout; // TODO: only computed value
+      layout: Map<string, FormLayout>;  // TODO: find a way not to pass all the layouts but only the relevant one
     }
   | {
       kind: "raw";
@@ -722,33 +723,6 @@ export type ColumnsConfigSource =
       visiblePredicate: PredicateComputedOrInlined;
       disabledPredicate: PredicateComputedOrInlined;
     };
-
-export type SpecVersion =
-  | {
-      kind: "v1";
-    }
-  | {
-      kind: "v1-preprocessed";
-      visiblePaths: string[];
-      disabledPaths: string[];
-      layout: PredicateFormLayout; // TODO: use only computed value
-    };
-export const SpecVersion = {
-  Default: {
-    V1: (): SpecVersion => ({
-      kind: "v1",
-    }),
-    V1Preprocessed: (init: {
-      visiblePaths: string[];
-      disabledPaths: string[];
-    }): SpecVersion => ({
-      kind: "v1-preprocessed",
-      visiblePaths: init.visiblePaths,
-      disabledPaths: init.disabledPaths,
-      layout: OrderedMap(),
-    }),
-  },
-};
 
 export type DispatchFormsParserState<
   T extends DispatchInjectablesTypes<T>,

@@ -6,7 +6,6 @@ import {
   isObject,
   isString,
   Renderer,
-  SpecVersion,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import { MapType } from "../../../../../types/state";
@@ -77,7 +76,6 @@ export const MapRenderer = {
       types: Map<string, DispatchParsedType<T>>,
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
-      specVersionContext: SpecVersion,
     ): ValueOrErrors<[MapRenderer<T>, Map<string, Renderer<T>>], string> =>
       MapRenderer.Operations.tryAsValidMapBaseRenderer(serialized)
         .Then((renderer) =>
@@ -89,7 +87,6 @@ export const MapRenderer = {
             types,
             forms,
             alreadyParsedForms,
-            specVersionContext,
           ).Then(([deserializedKeyRenderer, keyAlreadyParsedForms]) =>
             NestedRenderer.Operations.DeserializeAs(
               type.args[1],
@@ -99,7 +96,6 @@ export const MapRenderer = {
               types,
               forms,
               keyAlreadyParsedForms,
-              specVersionContext,
             ).Then(([deserializedValueRenderer, valueAlreadyParsedForms]) =>
               ValueOrErrors.Default.return<
                 [MapRenderer<T>, Map<string, Renderer<T>>],

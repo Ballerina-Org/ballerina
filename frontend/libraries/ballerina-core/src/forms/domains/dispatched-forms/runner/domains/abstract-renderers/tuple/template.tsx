@@ -90,11 +90,14 @@ export const DispatchTupleAbstractRenderer = <
                 _.domNodeAncestorPath + `[tuple][${itemIndex + 1}]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[Item${itemIndex + 1}]`,
+              layoutAncestorPath:
+                _.layoutAncestorPath + `[tuple][item${itemIndex + 1}]`,
               typeAncestors: [_.type as DispatchParsedType<any>].concat(
                 _.typeAncestors,
               ),
               labelContext: labelContext,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              preprocessedSpecContext: _.preprocessedSpecContext,
             };
           },
         )

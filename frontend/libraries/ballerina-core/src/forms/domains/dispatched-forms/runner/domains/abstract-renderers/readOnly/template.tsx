@@ -79,10 +79,12 @@ export const ReadOnlyAbstractRenderer = <
           remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
           domNodeAncestorPath: _.domNodeAncestorPath + `[readOnly]`,
           predictionAncestorPath: _.predictionAncestorPath + "[ReadOnly]",
+          layoutAncestorPath: _.layoutAncestorPath + "[readOnly]",
           typeAncestors: [_.type as DispatchParsedType<any>].concat(
             _.typeAncestors,
           ),
           lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+          preprocessedSpecContext: _.preprocessedSpecContext,
           labelContext,
         };
       },

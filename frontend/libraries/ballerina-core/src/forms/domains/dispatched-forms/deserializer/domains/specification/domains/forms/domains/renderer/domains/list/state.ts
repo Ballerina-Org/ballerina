@@ -6,7 +6,6 @@ import {
   isObject,
   ListType,
   Renderer,
-  SpecVersion,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import { NestedRenderer } from "../nestedRenderer/state";
@@ -119,7 +118,6 @@ export const ListRenderer = {
       types: Map<string, DispatchParsedType<T>>,
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
-      specVersionContext: SpecVersion,
     ): ValueOrErrors<[ListRenderer<T>, Map<string, Renderer<T>>], string> =>
       ListRenderer.Operations.tryAsValidBaseListRenderer(serialized, type)
         .Then((serializedRenderer) =>
@@ -131,7 +129,6 @@ export const ListRenderer = {
             types,
             forms,
             alreadyParsedForms,
-            specVersionContext,
           ).Then(([elementRenderer, newAlreadyParsedForms]) =>
             ListMethods.Operations.fromRawValue(
               serializedRenderer.actions,

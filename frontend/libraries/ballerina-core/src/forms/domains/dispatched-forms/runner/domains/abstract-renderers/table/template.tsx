@@ -84,7 +84,7 @@ export const TableAbstractRenderer = <
       >
     | undefined,
   DetailsRendererRaw: NestedRenderer<any> | undefined,
-  ColumnsConfigSource: ColumnsConfigSource,
+  VisibleColumnsPredicate: PredicateComputedOrInlined,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   TableEntityType: RecordType<any>,
@@ -219,7 +219,10 @@ export const TableAbstractRenderer = <
               `[table][cell][${rowId}][record][${column}]`,
             predictionAncestorPath:
               _.predictionAncestorPath + `[Values][element][${column}]`,
+            layoutAncestorPath:
+              _.layoutAncestorPath + `[table][row][${column}]`,
             lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+            preprocessedSpecContext: _.preprocessedSpecContext,
             labelContext,
           };
         })
@@ -395,7 +398,9 @@ export const TableAbstractRenderer = <
                 _.domNodeAncestorPath + `[table][cell][${selectedDetailRow}]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[Values][element]`,
+              layoutAncestorPath: _.layoutAncestorPath + `[table][details]`,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              preprocessedSpecContext: _.preprocessedSpecContext,
               labelContext,
             };
           })
@@ -567,35 +572,34 @@ export const TableAbstractRenderer = <
       props.context.value,
     );
 
-    console.debug(props.context.predictionAncestorPath);
+    const preprocessedVisibleColumns =
+      props.context.preprocessedSpecContext?.tableLayouts.get(
+        props.context.layoutAncestorPath,
+      ) ?? undefined;
 
-    // TODO: resolve this
+    if (preprocessedVisibleColumns == undefined) {
+      console.warn(
+        "Visible columns not found for " + props.context.layoutAncestorPath,
+      );
+    }
+
     const visibleColumns =
-      ColumnsConfigSource.kind == "raw"
-        ? TableLayout.Operations.ComputeLayout(
+      preprocessedVisibleColumns != undefined
+        ? ValueOrErrors.Default.return({ columns: preprocessedVisibleColumns })
+        : // TODO: remove once the projet room has been migrated to v2 specs
+          TableLayout.Operations.ComputeLayout(
             updatedBindings,
-            ColumnsConfigSource.visiblePredicate,
-          )
-        : (null! as any);
-    // TODO: find a better way to warn about missing fields without cluttering the console
-    // visibleColumns.value.columns.forEach((column) => {
-    //   if (!CellTemplates.has(column)) {
-    //     console.warn(
-    //       `Column ${column} is defined in the visible columns, but not in the CellTemplates. A renderer in the table columns is missing for this column.
-    //       \n...When rendering \n...${domNodeId}
-    //       `,
-    //     );
-    //   }
-    // });
+            VisibleColumnsPredicate,
+          );
 
-    // TODO: resolve this
-    const disabledColumnsValue =
-      ColumnsConfigSource.kind == "raw"
-        ? TableLayout.Operations.ComputeLayout(
-            updatedBindings,
-            ColumnsConfigSource.disabledPredicate,
-          )
-        : (null! as any);
+    if (visibleColumns.kind == "errors") {
+      console.error(visibleColumns.errors.map((error) => error).join("\n"));
+      return (
+        <ErrorRenderer
+          message={`${domNodeId}: Error while computing visible columns, check console`}
+        />
+      );
+    }
 
     // TODO we currently only calculated disabled status on a column basis, predicates will break if we
     // try to use their local binding (the local is the table).
@@ -603,21 +607,13 @@ export const TableAbstractRenderer = <
     // the row local binding and calculating per row, not per column.
     const disabledColumnKeys = ValueOrErrors.Operations.All(
       List(
-        CellTemplates.map(({ disabled }, fieldName) =>
-          disabled == undefined
-            ? disabledColumnsValue.columns &&
-              disabledColumnsValue.columns.includes(fieldName)
-              ? ValueOrErrors.Default.return(fieldName)
-              : ValueOrErrors.Default.return(null)
-            : Expr.Operations.EvaluateAs("disabled predicate")(updatedBindings)(
-                disabled,
-              ).Then((value) =>
-                ValueOrErrors.Default.return(
-                  PredicateValue.Operations.IsBoolean(value) && value
-                    ? fieldName
-                    : null,
-                ),
-              ),
+        CellTemplates.map((_, fieldName) =>
+          props.context.preprocessedSpecContext != undefined &&
+          props.context.preprocessedSpecContext.disabledFields.includes(
+            `[Values][element][${fieldName}]`,
+          )
+            ? ValueOrErrors.Default.return(fieldName)
+            : ValueOrErrors.Default.return(null),
         ).valueSeq(),
       ),
     );
@@ -640,9 +636,8 @@ export const TableAbstractRenderer = <
 
     const validColumns = CellTemplates.keySeq().toArray();
 
-    // TODO: resolve this
-    const validVisibleColumns = visibleColumns.value.columns.filter((_: any) =>
-      validColumns.includes(_),
+    const validVisibleColumns = validColumns.filter((column) =>
+      visibleColumns.value.columns.includes(column),
     );
 
     const embeddedTableData =

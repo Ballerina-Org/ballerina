@@ -90,10 +90,12 @@ export const SumAbstractRenderer = <
                     _.remoteEntityVersionIdentifier,
                   domNodeAncestorPath: _.domNodeAncestorPath + "[sum][left]",
                   predictionAncestorPath: _.predictionAncestorPath + "[Value]",
+                  layoutAncestorPath: _.layoutAncestorPath + "[sum][left]",
                   typeAncestors: [_.type as DispatchParsedType<any>].concat(
                     _.typeAncestors,
                   ),
                   lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+                  preprocessedSpecContext: _.preprocessedSpecContext,
                   labelContext,
                 };
               },
@@ -187,10 +189,12 @@ export const SumAbstractRenderer = <
                     _.remoteEntityVersionIdentifier,
                   domNodeAncestorPath: _.domNodeAncestorPath + "[sum][right]",
                   predictionAncestorPath: _.predictionAncestorPath + "[Value]",
+                  layoutAncestorPath: _.layoutAncestorPath + "[sum][right]",
                   typeAncestors: [_.type as DispatchParsedType<any>].concat(
                     _.typeAncestors,
                   ),
                   lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+                  preprocessedSpecContext: _.preprocessedSpecContext,
                   labelContext,
                 };
               },

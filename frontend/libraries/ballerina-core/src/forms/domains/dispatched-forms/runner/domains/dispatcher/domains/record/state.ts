@@ -57,6 +57,7 @@ export const RecordDispatcher = {
       isNested: boolean,
       isInlined: boolean,
       tableApi: string | undefined,
+      currentLookupRenderer: string | undefined,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       ValueOrErrors.Operations.All(
         List<
@@ -125,7 +126,7 @@ export const RecordDispatcher = {
                   fieldTemplates.map((template) => [template[0], template[1]]),
                 ),
                 renderer.fields,
-                renderer.fieldsConfigSource,
+                renderer.tabs,
                 dispatcherContext.IdProvider,
                 dispatcherContext.ErrorRenderer,
                 isInlined,
@@ -133,6 +134,12 @@ export const RecordDispatcher = {
                 .mapContext((_: any) => ({
                   ..._,
                   type: renderer.type,
+                  layoutAncestorPath:
+                    currentLookupRenderer
+                      ? `[${currentLookupRenderer}]`
+                      : isInlined
+                        ? _.layoutAncestorPath + "[inline]"
+                        : _.layoutAncestorPath,
                 }))
                 .withView(concreteRenderer),
             ),

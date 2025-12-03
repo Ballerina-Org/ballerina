@@ -6,7 +6,6 @@ import {
   isObject,
   ReadOnlyType,
   Renderer,
-  SpecVersion,
   ValueOrErrors,
 } from "../../../../../../../../../../../../../main";
 import { NestedRenderer } from "../nestedRenderer/state";
@@ -81,7 +80,6 @@ export const ReadOnlyRenderer = {
       types: Map<string, DispatchParsedType<T>>,
       forms: object,
       alreadyParsedForms: Map<string, Renderer<T>>,
-      specVersionContext: SpecVersion,
     ): ValueOrErrors<[ReadOnlyRenderer<T>, Map<string, Renderer<T>>], string> =>
       ReadOnlyRenderer.Operations.tryAsValidBaseReadOnlyRenderer(
         serialized,
@@ -96,7 +94,6 @@ export const ReadOnlyRenderer = {
             types,
             forms,
             alreadyParsedForms,
-            specVersionContext,
           ).Then(([childRenderer, childAlreadyParsedForms]) =>
             ValueOrErrors.Default.return<
               [ReadOnlyRenderer<T>, Map<string, Renderer<T>>],
