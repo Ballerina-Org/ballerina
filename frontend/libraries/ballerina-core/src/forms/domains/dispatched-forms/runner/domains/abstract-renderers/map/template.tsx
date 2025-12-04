@@ -101,7 +101,7 @@ export const MapAbstractRenderer = <
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               domNodeAncestorPath:
-                _.domNodeAncestorPath + `[map][${elementIndex}][key]`,
+                _.domNodeAncestorPath + `[${elementIndex}][Key]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[element][Key]`,
               layoutAncestorPath: _.layoutAncestorPath + `[map][key]`,
@@ -220,7 +220,7 @@ export const MapAbstractRenderer = <
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               domNodeAncestorPath:
-                _.domNodeAncestorPath + `[map][${elementIndex}][value]`,
+                _.domNodeAncestorPath + `[${elementIndex}][Value]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[element][Value]`,
               layoutAncestorPath: _.layoutAncestorPath + `[map][value]`,
@@ -319,7 +319,7 @@ export const MapAbstractRenderer = <
     MapAbstractRendererForeignMutationsExpected<Flags>,
     MapAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const domNodeId = props.context.domNodeAncestorPath + "[map]";
+    const domNodeId = props.context.domNodeAncestorPath;
 
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(

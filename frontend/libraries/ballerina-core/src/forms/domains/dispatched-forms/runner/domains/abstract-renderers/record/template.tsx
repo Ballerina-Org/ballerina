@@ -116,7 +116,7 @@ export const RecordAbstractRenderer = <
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               domNodeAncestorPath:
-                _.domNodeAncestorPath + `[record][${fieldName}]`,
+                _.domNodeAncestorPath + `[${fieldName}]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[${fieldName}]`,
               layoutAncestorPath:
@@ -218,7 +218,7 @@ export const RecordAbstractRenderer = <
     RecordAbstractRendererForeignMutationsExpected<Flags>,
     RecordAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const domNodeId = props.context.domNodeAncestorPath + "[record]";
+    const domNodeId = props.context.domNodeAncestorPath;
 
     if (
       !PredicateValue.Operations.IsRecord(props.context.value) &&

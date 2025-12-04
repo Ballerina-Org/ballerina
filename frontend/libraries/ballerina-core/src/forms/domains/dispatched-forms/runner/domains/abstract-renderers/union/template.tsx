@@ -89,7 +89,7 @@ export const UnionAbstractRenderer = <
                 _.typeAncestors,
               ),
               domNodeAncestorPath:
-                _.domNodeAncestorPath + `[union][${caseName}]`,
+                _.domNodeAncestorPath + `[Case][${caseName}]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[${caseName}]`,
               layoutAncestorPath:
@@ -148,7 +148,7 @@ export const UnionAbstractRenderer = <
     UnionAbstractRendererForeignMutationsExpected<Flags>,
     UnionAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const domNodeId = props.context.domNodeAncestorPath + "[union]";
+    const domNodeId = props.context.domNodeAncestorPath;
 
     if (!PredicateValue.Operations.IsUnionCase(props.context.value)) {
       console.error(

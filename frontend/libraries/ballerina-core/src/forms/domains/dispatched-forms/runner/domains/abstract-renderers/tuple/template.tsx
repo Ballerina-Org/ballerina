@@ -87,7 +87,7 @@ export const DispatchTupleAbstractRenderer = <
               customPresentationContext: _.customPresentationContext,
               type: _.type.args[itemIndex],
               domNodeAncestorPath:
-                _.domNodeAncestorPath + `[tuple][${itemIndex + 1}]`,
+                _.domNodeAncestorPath + `[Item${itemIndex + 1}]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[Item${itemIndex + 1}]`,
               layoutAncestorPath:
@@ -180,7 +180,7 @@ export const DispatchTupleAbstractRenderer = <
     TupleAbstractRendererForeignMutationsExpected<Flags>,
     TupleAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const domNodeId = props.context.domNodeAncestorPath + "[tuple]";
+    const domNodeId = props.context.predictionAncestorPath;
 
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(

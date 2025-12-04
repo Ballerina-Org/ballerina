@@ -165,6 +165,7 @@ export const TableAbstractRenderer = <
       >,
     ) =>
     (rowId: string) =>
+    (idx: number) =>
     (value: PredicateValue) =>
     (disabled: boolean) =>
     (flags: Flags | undefined) =>
@@ -216,7 +217,7 @@ export const TableAbstractRenderer = <
             ),
             domNodeAncestorPath:
               _.domNodeAncestorPath +
-              `[table][cell][${rowId}][record][${column}]`,
+              `[${idx}][${column}]`,
             predictionAncestorPath:
               _.predictionAncestorPath + `[Values][element][${column}]`,
             layoutAncestorPath:
@@ -550,7 +551,7 @@ export const TableAbstractRenderer = <
     TableAbstractRendererForeignMutationsExpected<Flags>,
     TableAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const domNodeId = props.context.domNodeAncestorPath + "[table]";
+    const domNodeId = props.context.predictionAncestorPath;
 
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
       console.error(
@@ -646,10 +647,10 @@ export const TableAbstractRenderer = <
         : props.context.value.data.map((rowData, rowId) =>
             rowData.fields
               .filter((_, column) => validVisibleColumns.includes(column))
-              .map((_, column) =>
-                EmbeddedCellTemplates.get(column)!(rowId)(
+              .mapEntries(([column, _], idx) =>
+                [column, EmbeddedCellTemplates.get(column)!(rowId)(idx)(
                   rowData.fields.get(column)!,
-                )(disabledColumnKeysSet.has(column)),
+                )(disabledColumnKeysSet.has(column))],
               ),
           );
 
@@ -659,11 +660,11 @@ export const TableAbstractRenderer = <
         : props.context.value.data.map((rowData, rowId) =>
             rowData.fields
               .filter((_, column) => validColumns.includes(column))
-              .map((_, column) =>
-                EmbeddedCellTemplates.get(column)!(rowId)(
+              .mapEntries(([column, _], idx) => {
+                return [column, EmbeddedCellTemplates.get(column)!(rowId)(idx)(
                   rowData.fields.get(column)!,
-                )(disabledColumnKeysSet.has(column)),
-              ),
+                )(disabledColumnKeysSet.has(column))]
+              }),
           );
 
     if (props.context.customFormState.isFilteringInitialized == false) {

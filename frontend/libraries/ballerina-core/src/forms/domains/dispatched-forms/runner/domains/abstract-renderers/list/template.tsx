@@ -85,7 +85,7 @@ export const ListAbstractRenderer = <
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               domNodeAncestorPath:
-                _.domNodeAncestorPath + `[list][${elementIndex}]`,
+                _.domNodeAncestorPath + `[${elementIndex}]`,
               predictionAncestorPath: _.predictionAncestorPath + `[element]`,
               layoutAncestorPath:
                 _.layoutAncestorPath + `[list][${elementIndex}]`,
@@ -193,7 +193,7 @@ export const ListAbstractRenderer = <
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               domNodeAncestorPath:
-                _.domNodeAncestorPath + `[list][${elementIndex}]`,
+                _.domNodeAncestorPath + `[${elementIndex}]`,
               predictionAncestorPath: _.predictionAncestorPath + `[element]`,
               layoutAncestorPath:
                 _.layoutAncestorPath + `[list][${elementIndex}]`,
@@ -285,7 +285,7 @@ export const ListAbstractRenderer = <
     ListAbstractRendererForeignMutationsExpected<Flags>,
     ListAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const domNodeId = props.context.domNodeAncestorPath + "[list]";
+    const domNodeId = props.context.domNodeAncestorPath;
 
     if (
       !PredicateValue.Operations.IsTuple(props.context.value) &&

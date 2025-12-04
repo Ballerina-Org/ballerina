@@ -34,7 +34,7 @@ export const UnitAbstractRenderer = <
     UnitAbstractRendererForeignMutationsExpected<Flags>,
     UnitAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const domNodeId = props.context.domNodeAncestorPath + "[unit]";
+    const domNodeId = props.context.domNodeAncestorPath;
 
     if (!PredicateValue.Operations.IsUnit(props.context.value)) {
       console.error(

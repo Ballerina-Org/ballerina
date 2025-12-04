@@ -88,7 +88,7 @@ export const SumAbstractRenderer = <
                   customPresentationContext: _.customPresentationContext,
                   remoteEntityVersionIdentifier:
                     _.remoteEntityVersionIdentifier,
-                  domNodeAncestorPath: _.domNodeAncestorPath + "[sum][left]",
+                  domNodeAncestorPath: _.domNodeAncestorPath + "[Value]",
                   predictionAncestorPath: _.predictionAncestorPath + "[Value]",
                   layoutAncestorPath: _.layoutAncestorPath + "[sum][left]",
                   typeAncestors: [_.type as DispatchParsedType<any>].concat(
@@ -187,7 +187,7 @@ export const SumAbstractRenderer = <
                   customPresentationContext: _.customPresentationContext,
                   remoteEntityVersionIdentifier:
                     _.remoteEntityVersionIdentifier,
-                  domNodeAncestorPath: _.domNodeAncestorPath + "[sum][right]",
+                  domNodeAncestorPath: _.domNodeAncestorPath + "[Value]",
                   predictionAncestorPath: _.predictionAncestorPath + "[Value]",
                   layoutAncestorPath: _.layoutAncestorPath + "[sum][right]",
                   typeAncestors: [_.type as DispatchParsedType<any>].concat(
@@ -257,7 +257,7 @@ export const SumAbstractRenderer = <
     SumAbstractRendererForeignMutationsExpected<Flags>,
     SumAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const domNodeId = props.context.domNodeAncestorPath + "[sum]";
+    const domNodeId = props.context.domNodeAncestorPath;
 
     if (
       !PredicateValue.Operations.IsSum(props.context.value) &&
