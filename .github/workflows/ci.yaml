@@ -20,10 +20,9 @@ jobs:
           node-version: "25.2.1"
           registry-url: "https://registry.npmjs.org"
       - run: npm install -g npm@11.6.4
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-      - name: Build ballerina-core
-        run: yarn compile-ballerina-core
+      - run: yarn install --frozen-lockfile
+      - run: yarn prettier:check
+      - run: yarn compile-ballerina-core
 
   backend:
     runs-on: ubuntu-latest
