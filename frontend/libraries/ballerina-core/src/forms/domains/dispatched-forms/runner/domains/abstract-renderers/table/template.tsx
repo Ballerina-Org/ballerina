@@ -84,7 +84,6 @@ export const TableAbstractRenderer = <
     | undefined,
   DetailsRendererRaw: NestedRenderer<any> | undefined,
   VisibleColumnsPredicate: PredicateComputedOrInlined,
-  DisabledColumnsPredicate: PredicateComputedOrInlined,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   TableEntityType: RecordType<any>,
@@ -165,6 +164,7 @@ export const TableAbstractRenderer = <
       >,
     ) =>
     (rowId: string) =>
+    (idx: number) =>
     (value: PredicateValue) =>
     (disabled: boolean) =>
     (flags: Flags | undefined) =>
@@ -214,10 +214,13 @@ export const TableAbstractRenderer = <
             typeAncestors: [_.type as DispatchParsedType<any>].concat(
               _.typeAncestors,
             ),
-            domNodeAncestorPath:
-              _.domNodeAncestorPath +
-              `[table][cell][${rowId}][record][${column}]`,
+            domNodeAncestorPath: _.domNodeAncestorPath + `[${idx}][${column}]`,
+            predictionAncestorPath:
+              _.predictionAncestorPath + `[Values][element][${column}]`,
+            layoutAncestorPath:
+              _.layoutAncestorPath + `[table][row][${column}]`,
             lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+            preprocessedSpecContext: _.preprocessedSpecContext,
             labelContext,
           };
         })
@@ -391,7 +394,11 @@ export const TableAbstractRenderer = <
               ),
               domNodeAncestorPath:
                 _.domNodeAncestorPath + `[table][cell][${selectedDetailRow}]`,
+              predictionAncestorPath:
+                _.predictionAncestorPath + `[Values][element]`,
+              layoutAncestorPath: _.layoutAncestorPath + `[table][details]`,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              preprocessedSpecContext: _.preprocessedSpecContext,
               labelContext,
             };
           })
@@ -541,7 +548,7 @@ export const TableAbstractRenderer = <
     TableAbstractRendererForeignMutationsExpected<Flags>,
     TableAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const domNodeId = props.context.domNodeAncestorPath + "[table]";
+    const domNodeId = props.context.domNodeAncestorPath;
 
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
       console.error(
@@ -563,10 +570,24 @@ export const TableAbstractRenderer = <
       props.context.value,
     );
 
-    const visibleColumns = TableLayout.Operations.ComputeLayout(
-      updatedBindings,
-      VisibleColumnsPredicate,
-    );
+    const preprocessedVisibleColumns =
+      props.context.preprocessedSpecContext?.tableLayouts.get(
+        props.context.layoutAncestorPath,
+      ) ?? undefined;
+
+    if (preprocessedVisibleColumns == undefined) {
+      console.warn(
+        "Visible columns not found for " + props.context.layoutAncestorPath,
+      );
+    }
+
+    const visibleColumns =
+      preprocessedVisibleColumns != undefined
+        ? ValueOrErrors.Default.return({ columns: preprocessedVisibleColumns })
+        : TableLayout.Operations.ComputeLayout(
+            updatedBindings,
+            VisibleColumnsPredicate,
+          );
 
     if (visibleColumns.kind == "errors") {
       console.error(visibleColumns.errors.map((error) => error).join("\n"));
@@ -577,47 +598,19 @@ export const TableAbstractRenderer = <
       );
     }
 
-    // TODO: find a better way to warn about missing fields without cluttering the console
-    // visibleColumns.value.columns.forEach((column) => {
-    //   if (!CellTemplates.has(column)) {
-    //     console.warn(
-    //       `Column ${column} is defined in the visible columns, but not in the CellTemplates. A renderer in the table columns is missing for this column.
-    //       \n...When rendering \n...${domNodeId}
-    //       `,
-    //     );
-    //   }
-    // });
-
-    const calculatedDisabledColumns = TableLayout.Operations.ComputeLayout(
-      updatedBindings,
-      DisabledColumnsPredicate,
-    );
-
-    const disabledColumnsValue =
-      calculatedDisabledColumns.kind == "value"
-        ? calculatedDisabledColumns.value.columns
-        : [];
-
     // TODO we currently only calculated disabled status on a column basis, predicates will break if we
     // try to use their local binding (the local is the table).
     // Later we need to then calculate the disabled on a CELL level, by giving the calculations
     // the row local binding and calculating per row, not per column.
     const disabledColumnKeys = ValueOrErrors.Operations.All(
       List(
-        CellTemplates.map(({ disabled }, fieldName) =>
-          disabled == undefined
-            ? disabledColumnsValue.includes(fieldName)
-              ? ValueOrErrors.Default.return(fieldName)
-              : ValueOrErrors.Default.return(null)
-            : Expr.Operations.EvaluateAs("disabled predicate")(updatedBindings)(
-                disabled,
-              ).Then((value) =>
-                ValueOrErrors.Default.return(
-                  PredicateValue.Operations.IsBoolean(value) && value
-                    ? fieldName
-                    : null,
-                ),
-              ),
+        CellTemplates.map((_, fieldName) =>
+          props.context.preprocessedSpecContext != undefined &&
+          props.context.preprocessedSpecContext.disabledFields.includes(
+            `[Values][element][${fieldName}]`,
+          )
+            ? ValueOrErrors.Default.return(fieldName)
+            : ValueOrErrors.Default.return(null),
         ).valueSeq(),
       ),
     );
@@ -640,8 +633,8 @@ export const TableAbstractRenderer = <
 
     const validColumns = CellTemplates.keySeq().toArray();
 
-    const validVisibleColumns = visibleColumns.value.columns.filter((_) =>
-      validColumns.includes(_),
+    const validVisibleColumns = validColumns.filter((column) =>
+      visibleColumns.value.columns.includes(column),
     );
 
     const embeddedTableData =
@@ -650,11 +643,12 @@ export const TableAbstractRenderer = <
         : props.context.value.data.map((rowData, rowId) =>
             rowData.fields
               .filter((_, column) => validVisibleColumns.includes(column))
-              .map((_, column) =>
-                EmbeddedCellTemplates.get(column)!(rowId)(
+              .mapEntries(([column, _], idx) => [
+                column,
+                EmbeddedCellTemplates.get(column)!(rowId)(idx)(
                   rowData.fields.get(column)!,
                 )(disabledColumnKeysSet.has(column)),
-              ),
+              ]),
           );
 
     const embeddedUnfilteredTableData =
@@ -663,11 +657,14 @@ export const TableAbstractRenderer = <
         : props.context.value.data.map((rowData, rowId) =>
             rowData.fields
               .filter((_, column) => validColumns.includes(column))
-              .map((_, column) =>
-                EmbeddedCellTemplates.get(column)!(rowId)(
-                  rowData.fields.get(column)!,
-                )(disabledColumnKeysSet.has(column)),
-              ),
+              .mapEntries(([column, _], idx) => {
+                return [
+                  column,
+                  EmbeddedCellTemplates.get(column)!(rowId)(idx)(
+                    rowData.fields.get(column)!,
+                  )(disabledColumnKeysSet.has(column)),
+                ];
+              }),
           );
 
     if (props.context.customFormState.isFilteringInitialized == false) {

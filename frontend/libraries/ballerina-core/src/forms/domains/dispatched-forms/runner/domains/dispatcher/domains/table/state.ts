@@ -78,6 +78,7 @@ export const TableDispatcher = {
       >,
       tableApi: string | Array<string> | undefined,
       isInlined: boolean,
+      currentLookupRenderer: string | undefined,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       Array.isArray(tableApi)
         ? ValueOrErrors.Default.throwOne("lookup api not supported for table")
@@ -163,7 +164,6 @@ export const TableDispatcher = {
                                           ).withView(
                                             dispatcherContext.lookupTypeRenderer(),
                                           ),
-                                          disabled: columnRenderer.disabled,
                                           label: columnRenderer.label,
                                           GetDefaultState: () => defaultState,
                                           GetDefaultValue: () => defaultValue,
@@ -288,7 +288,6 @@ export const TableDispatcher = {
                                 detailsRenderer,
                                 renderer.detailsRenderer,
                                 renderer.visibleColumns,
-                                renderer.disabledColumns,
                                 dispatcherContext.IdProvider,
                                 dispatcherContext.ErrorRenderer,
                                 tableEntityType,
@@ -311,6 +310,9 @@ export const TableDispatcher = {
                                         )?.methods ?? []),
                                   sorting,
                                   highlightedFilters,
+                                  layoutAncestorPath: currentLookupRenderer
+                                    ? `[${currentLookupRenderer}]`
+                                    : _.layoutAncestorPath,
                                 }))
                                 .withView(concreteRenderer),
                             );

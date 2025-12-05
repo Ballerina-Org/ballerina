@@ -65,6 +65,7 @@ export const Dispatcher = {
       isNested: boolean,
       isInlined: boolean | undefined,
       api: string | Array<string> | undefined,
+      currentLookupRenderer?: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> => {
       // see the deserializer state file for a commeny explaining lookup renderers
       return renderer.kind == "primitiveRenderer"
@@ -87,6 +88,7 @@ export const Dispatcher = {
                   isNested,
                   false,
                   api,
+                  renderer.lookupRenderer,
                 ),
               )
             : renderer.kind == "recordRenderer"
@@ -95,6 +97,7 @@ export const Dispatcher = {
                   dispatcherContext,
                   isNested,
                   isInlined ?? true,
+                  currentLookupRenderer,
                 )
               : renderer.kind == "listRenderer"
                 ? ListDispatcher.Operations.Dispatch(
@@ -147,6 +150,7 @@ export const Dispatcher = {
                                   dispatcherContext,
                                   api,
                                   isInlined ?? true,
+                                  currentLookupRenderer,
                                 )
                               : renderer.kind == "tupleRenderer"
                                 ? TupleDispatcher.Operations.Dispatch(
@@ -159,6 +163,8 @@ export const Dispatcher = {
                                       renderer,
                                       dispatcherContext,
                                       isNested,
+                                      isInlined ?? true,
+                                      currentLookupRenderer,
                                     )
                                   : ValueOrErrors.Default.throwOne(
                                       `unknown renderer ${renderer.kind}`,

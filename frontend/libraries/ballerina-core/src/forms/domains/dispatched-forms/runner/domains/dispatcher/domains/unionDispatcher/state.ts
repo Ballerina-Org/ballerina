@@ -30,7 +30,9 @@ export const UnionDispatcher = {
         CustomPresentationContext,
         ExtraContext
       >,
+      isInlined: boolean,
       isNested: boolean,
+      currentLookupRenderer: string | undefined,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       ValueOrErrors.Operations.All(
         List<ValueOrErrors<[string, Template<any, any, any, any>], string>>(
@@ -121,6 +123,11 @@ export const UnionDispatcher = {
                         .mapContext((_: any) => ({
                           ..._,
                           type: renderer.type,
+                          layoutAncestorPath: currentLookupRenderer
+                            ? `[${currentLookupRenderer}]`
+                            : isInlined
+                              ? _.layoutAncestorPath + "[inline]"
+                              : _.layoutAncestorPath,
                         }))
                         .withView(concreteRenderer),
                     ),

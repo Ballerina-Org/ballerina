@@ -162,8 +162,11 @@ export const OneAbstractRenderer = <
         typeAncestors: [_.type as DispatchParsedType<any>].concat(
           _.typeAncestors,
         ),
-        domNodeAncestorPath: _.domNodeAncestorPath + "[one][details]",
+        domNodeAncestorPath: _.domNodeAncestorPath + "[Value]",
+        predictionAncestorPath: _.predictionAncestorPath + "[Value]",
+        layoutAncestorPath: _.layoutAncestorPath + "[one][details]",
         lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+        preprocessedSpecContext: _.preprocessedSpecContext,
         labelContext,
       };
     })
@@ -257,8 +260,11 @@ export const OneAbstractRenderer = <
               typeAncestors: [_.type as DispatchParsedType<any>].concat(
                 _.typeAncestors,
               ),
-              domNodeAncestorPath: _.domNodeAncestorPath + "[one][preview]",
+              domNodeAncestorPath: _.domNodeAncestorPath + "[Value]",
+              predictionAncestorPath: _.predictionAncestorPath + "[Value]",
+              layoutAncestorPath: _.layoutAncestorPath + "[one][preview]",
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              preprocessedSpecContext: _.preprocessedSpecContext,
               labelContext,
             };
           })
@@ -332,7 +338,7 @@ export const OneAbstractRenderer = <
     OneAbstractRendererForeignMutationsExpected<Flags>,
     OneAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const domNodeId = props.context.domNodeAncestorPath + "[one]";
+    const domNodeId = props.context.domNodeAncestorPath;
     const value = props.context.value;
 
     if (

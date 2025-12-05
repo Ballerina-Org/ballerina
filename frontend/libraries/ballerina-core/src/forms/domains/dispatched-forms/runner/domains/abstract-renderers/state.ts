@@ -1,7 +1,9 @@
+import { Map, Set } from "immutable";
 import {
   Bindings,
   DispatchOnChange,
   DispatchParsedType,
+  FormLayout,
   NestedRenderer,
   PredicateValue,
   Renderer,
@@ -34,12 +36,21 @@ export type CommonAbstractRendererReadonlyContext<
   customPresentationContext: C | undefined;
   remoteEntityVersionIdentifier: string;
   domNodeAncestorPath: string;
+  predictionAncestorPath: string;
+  layoutAncestorPath: string;
   typeAncestors: DispatchParsedType<any>[];
   lookupTypeAncestorNames: string[];
+  preprocessedSpecContext?: PreprocessedSpecContext;
 };
 
 export type CommonAbstractRendererViewOnlyReadonlyContext = {
   domNodeId: string;
+};
+
+export type PreprocessedSpecContext = {
+  formLayouts: Map<string, FormLayout>;
+  tableLayouts: Map<string, string[]>;
+  disabledFields: Set<string>;
 };
 
 export type CommonAbstractRendererState = {

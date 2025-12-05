@@ -88,9 +88,13 @@ export const UnionAbstractRenderer = <
               typeAncestors: [_.type as DispatchParsedType<any>].concat(
                 _.typeAncestors,
               ),
-              domNodeAncestorPath:
-                _.domNodeAncestorPath + `[union][${caseName}]`,
+              domNodeAncestorPath: _.domNodeAncestorPath + `[${caseName}]`,
+              predictionAncestorPath:
+                _.predictionAncestorPath + `[${caseName}]`,
+              layoutAncestorPath:
+                _.layoutAncestorPath + `[union][case][${caseName}]`,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              preprocessedSpecContext: _.preprocessedSpecContext,
               labelContext,
             };
           },
@@ -143,7 +147,7 @@ export const UnionAbstractRenderer = <
     UnionAbstractRendererForeignMutationsExpected<Flags>,
     UnionAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const domNodeId = props.context.domNodeAncestorPath + "[union]";
+    const domNodeId = props.context.domNodeAncestorPath;
 
     if (!PredicateValue.Operations.IsUnionCase(props.context.value)) {
       console.error(

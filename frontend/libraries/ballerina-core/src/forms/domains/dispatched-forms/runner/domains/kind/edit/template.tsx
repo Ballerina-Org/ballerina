@@ -87,9 +87,12 @@ export const DispatchEditFormLauncherTemplate = <
           type: DispatchParsedType.Default.primitive("unit"), // currently unused here
           bindings,
           extraContext: props.context.extraContext,
+          preprocessedSpecContext: props.context.preprocessedSpecContext,
           remoteEntityVersionIdentifier:
             props.context.remoteEntityVersionIdentifier,
           domNodeAncestorPath: "",
+          predictionAncestorPath: "",
+          layoutAncestorPath: `[${props.context.formName}]`,
           labelContext: props.context.formName,
           lookupTypeAncestorNames: [],
           customPresentationContext: undefined,

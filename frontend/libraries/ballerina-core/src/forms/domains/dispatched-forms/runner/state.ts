@@ -28,6 +28,7 @@ import {
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
   CommonAbstractRendererForeignMutationsExpected,
+  PreprocessedSpecContext,
 } from "../../../../../main";
 import { DispatchCreateFormLauncherState } from "./domains/kind/create/state";
 import {
@@ -149,6 +150,7 @@ export type DispatchFormRunnerContext<
   remoteEntityVersionIdentifier: string;
   loadingComponent?: JSX.Element;
   errorComponent?: JSX.Element;
+  preprocessedSpecContext?: PreprocessedSpecContext;
 } & DispatchFormsParserState<T, Flags, CustomPresentationContext, ExtraContext>;
 
 export type DispatchFormRunnerState<
