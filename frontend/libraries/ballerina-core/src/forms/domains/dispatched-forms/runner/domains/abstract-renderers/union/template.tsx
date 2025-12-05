@@ -88,8 +88,7 @@ export const UnionAbstractRenderer = <
               typeAncestors: [_.type as DispatchParsedType<any>].concat(
                 _.typeAncestors,
               ),
-              domNodeAncestorPath:
-                _.domNodeAncestorPath + `[${caseName}]`,
+              domNodeAncestorPath: _.domNodeAncestorPath + `[${caseName}]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[${caseName}]`,
               layoutAncestorPath:
