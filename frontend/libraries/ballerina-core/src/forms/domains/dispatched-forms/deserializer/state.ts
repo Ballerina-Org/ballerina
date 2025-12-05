@@ -1,4 +1,4 @@
-import { List, Map, OrderedMap } from "immutable";
+import { List, Map } from "immutable";
 
 import {
   DispatchParsedType,
@@ -26,9 +26,6 @@ import {
   LookupTypeAbstractRendererView,
   ValueFilter,
   ValueTable,
-  PredicateComputedOrInlined,
-  PredicateFormLayout,
-  FormLayout,
 } from "../../../../../main";
 
 import {
@@ -698,31 +695,6 @@ export type DispatchFormsParserContext<
   injectedPrimitives?: DispatchInjectables<T>;
   desiredLaunchers?: string[];
 };
-
-export type FieldsConfigSource =
-  | {
-      kind: "preprocessed";
-      visiblePaths: string[];
-      disabledPaths: string[];
-      layout: Map<string, FormLayout>; // TODO: find a way not to pass all the layouts but only the relevant one
-    }
-  | {
-      kind: "raw";
-      layoutPredicate: PredicateFormLayout;
-      disabledPredicate: PredicateComputedOrInlined;
-    };
-
-export type ColumnsConfigSource =
-  | {
-      kind: "preprocessed";
-      visiblePaths: string[];
-      disabledPaths: string[];
-    }
-  | {
-      kind: "raw";
-      visiblePredicate: PredicateComputedOrInlined;
-      disabledPredicate: PredicateComputedOrInlined;
-    };
 
 export type DispatchFormsParserState<
   T extends DispatchInjectablesTypes<T>,

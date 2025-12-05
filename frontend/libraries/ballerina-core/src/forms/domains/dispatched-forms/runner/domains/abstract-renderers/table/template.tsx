@@ -38,7 +38,6 @@ import {
   DispatchTableApiSource,
   ValueUnit,
   NestedRenderer,
-  ColumnsConfigSource,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import {

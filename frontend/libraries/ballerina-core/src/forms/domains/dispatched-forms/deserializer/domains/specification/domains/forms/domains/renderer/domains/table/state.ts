@@ -7,7 +7,6 @@ import {
 import {
   ConcreteRenderers,
   DispatchInjectablesTypes,
-  ColumnsConfigSource,
   isString,
   Renderer,
   TableLayout,
