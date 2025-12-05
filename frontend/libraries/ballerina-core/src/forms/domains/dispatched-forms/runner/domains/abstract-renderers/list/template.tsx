@@ -84,8 +84,7 @@ export const ListAbstractRenderer = <
               type: _.type.args[0],
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-              domNodeAncestorPath:
-                _.domNodeAncestorPath + `[${elementIndex}]`,
+              domNodeAncestorPath: _.domNodeAncestorPath + `[${elementIndex}]`,
               predictionAncestorPath: _.predictionAncestorPath + `[element]`,
               layoutAncestorPath:
                 _.layoutAncestorPath + `[list][${elementIndex}]`,
@@ -192,8 +191,7 @@ export const ListAbstractRenderer = <
               type: ElementRenderer.renderer.type,
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-              domNodeAncestorPath:
-                _.domNodeAncestorPath + `[${elementIndex}]`,
+              domNodeAncestorPath: _.domNodeAncestorPath + `[${elementIndex}]`,
               predictionAncestorPath: _.predictionAncestorPath + `[element]`,
               layoutAncestorPath:
                 _.layoutAncestorPath + `[list][${elementIndex}]`,

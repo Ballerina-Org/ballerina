@@ -161,15 +161,15 @@ export const LookupRenderer = {
               types,
               forms,
               alreadyParsedForms,
-            ).Then(([renderer, alreadyParsedForms]) => {
-              return ValueOrErrors.Default.return([
+            ).Then(([renderer, alreadyParsedForms]) =>
+              ValueOrErrors.Default.return([
                 LookupRenderer.Default.LookupTypeInlinedRenderer(
                   serialized.type,
                   renderer,
                 ),
                 alreadyParsedForms,
-              ]);
-            }),
+              ]),
+            ),
           )
         : serialized.kind == "lookupType-lookupRenderer"
           ? alreadyParsedForms.has(serialized.renderer)
@@ -186,8 +186,8 @@ export const LookupRenderer = {
             : DispatchParsedType.Operations.ResolveLookupType(
                 serialized.type.name,
                 types,
-              ).Then((resolvedType) => {
-                return Renderer.Operations.Deserialize(
+              ).Then((resolvedType) =>
+                Renderer.Operations.Deserialize(
                   resolvedType,
                   Reflect.get(forms, serialized.renderer),
                   concreteRenderers,
@@ -202,8 +202,8 @@ export const LookupRenderer = {
                     ),
                     alreadyParsedForms.set(serialized.renderer, renderer),
                   ]),
-                );
-              })
+                ),
+              )
           : alreadyParsedForms.has(serialized.renderer)
             ? ValueOrErrors.Default.return<
                 [LookupRenderer<T>, Map<string, Renderer<T>>],
@@ -222,15 +222,15 @@ export const LookupRenderer = {
                 types,
                 forms,
                 alreadyParsedForms,
-              ).Then(([renderer, alreadyParsedForms]) => {
-                return ValueOrErrors.Default.return([
+              ).Then(([renderer, alreadyParsedForms]) =>
+                ValueOrErrors.Default.return([
                   LookupRenderer.Default.InlinedTypeLookupRenderer(
                     serialized.type,
                     serialized.renderer,
                   ),
                   alreadyParsedForms.set(serialized.renderer, renderer),
-                ]);
-              });
+                ]),
+              );
     },
   },
 };

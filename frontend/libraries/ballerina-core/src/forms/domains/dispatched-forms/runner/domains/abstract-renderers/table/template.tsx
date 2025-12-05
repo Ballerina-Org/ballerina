@@ -215,9 +215,7 @@ export const TableAbstractRenderer = <
             typeAncestors: [_.type as DispatchParsedType<any>].concat(
               _.typeAncestors,
             ),
-            domNodeAncestorPath:
-              _.domNodeAncestorPath +
-              `[${idx}][${column}]`,
+            domNodeAncestorPath: _.domNodeAncestorPath + `[${idx}][${column}]`,
             predictionAncestorPath:
               _.predictionAncestorPath + `[Values][element][${column}]`,
             layoutAncestorPath:
@@ -647,11 +645,12 @@ export const TableAbstractRenderer = <
         : props.context.value.data.map((rowData, rowId) =>
             rowData.fields
               .filter((_, column) => validVisibleColumns.includes(column))
-              .mapEntries(([column, _], idx) =>
-                [column, EmbeddedCellTemplates.get(column)!(rowId)(idx)(
+              .mapEntries(([column, _], idx) => [
+                column,
+                EmbeddedCellTemplates.get(column)!(rowId)(idx)(
                   rowData.fields.get(column)!,
-                )(disabledColumnKeysSet.has(column))],
-              ),
+                )(disabledColumnKeysSet.has(column)),
+              ]),
           );
 
     const embeddedUnfilteredTableData =
@@ -661,9 +660,12 @@ export const TableAbstractRenderer = <
             rowData.fields
               .filter((_, column) => validColumns.includes(column))
               .mapEntries(([column, _], idx) => {
-                return [column, EmbeddedCellTemplates.get(column)!(rowId)(idx)(
-                  rowData.fields.get(column)!,
-                )(disabledColumnKeysSet.has(column))]
+                return [
+                  column,
+                  EmbeddedCellTemplates.get(column)!(rowId)(idx)(
+                    rowData.fields.get(column)!,
+                  )(disabledColumnKeysSet.has(column)),
+                ];
               }),
           );
 

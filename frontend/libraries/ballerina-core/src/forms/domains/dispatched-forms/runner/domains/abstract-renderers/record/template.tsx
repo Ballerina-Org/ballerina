@@ -115,8 +115,7 @@ export const RecordAbstractRenderer = <
               extraContext: _.extraContext,
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-              domNodeAncestorPath:
-                _.domNodeAncestorPath + `[${fieldName}]`,
+              domNodeAncestorPath: _.domNodeAncestorPath + `[${fieldName}]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[${fieldName}]`,
               layoutAncestorPath:
