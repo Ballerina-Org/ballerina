@@ -67,12 +67,6 @@ export const Dispatcher = {
       api: string | Array<string> | undefined,
       currentLookupRenderer?: string,
     ): ValueOrErrors<Template<any, any, any, any>, string> => {
-      // console.debug("Dispatching renderer", renderer, {
-      //   isNested,
-      //   isInlined,
-      //   currentLookupRenderer,
-      // });
-
       // see the deserializer state file for a commeny explaining lookup renderers
       return renderer.kind == "primitiveRenderer"
         ? PrimitiveDispatcher.Operations.Dispatch(renderer, dispatcherContext)

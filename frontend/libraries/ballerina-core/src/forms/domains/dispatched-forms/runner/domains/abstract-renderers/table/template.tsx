@@ -548,7 +548,7 @@ export const TableAbstractRenderer = <
     TableAbstractRendererForeignMutationsExpected<Flags>,
     TableAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const domNodeId = props.context.predictionAncestorPath;
+    const domNodeId = props.context.domNodeAncestorPath;
 
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
       console.error(

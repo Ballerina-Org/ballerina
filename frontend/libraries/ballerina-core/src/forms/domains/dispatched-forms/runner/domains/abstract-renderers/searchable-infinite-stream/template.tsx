@@ -109,7 +109,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
       ExtraContext
     >
   >((props) => {
-    const domNodeId = props.context.predictionAncestorPath;
+    const domNodeId = props.context.domNodeAncestorPath;
 
     if (!PredicateValue.Operations.IsOption(props.context.value)) {
       console.error(

@@ -89,7 +89,7 @@ export const UnionAbstractRenderer = <
                 _.typeAncestors,
               ),
               domNodeAncestorPath:
-                _.domNodeAncestorPath + `[Case][${caseName}]`,
+                _.domNodeAncestorPath + `[${caseName}]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[${caseName}]`,
               layoutAncestorPath:

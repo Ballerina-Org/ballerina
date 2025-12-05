@@ -111,7 +111,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
       ExtraContext
     >
   >((props) => {
-    const domNodeId = props.context.predictionAncestorPath;
+    const domNodeId = props.context.domNodeAncestorPath;
 
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(
