@@ -29,7 +29,7 @@
     "create-domain": "*",
     "link": "^2.1.0",
     "playground-core": "*",
-    "react-refresh": "^0.14.0",
+    "react-refresh": "^0.18.0",
     "typescript": "^5.9.3"
   }
 }
