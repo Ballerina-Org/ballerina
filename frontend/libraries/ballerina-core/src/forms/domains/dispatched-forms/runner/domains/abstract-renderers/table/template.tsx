@@ -584,8 +584,7 @@ export const TableAbstractRenderer = <
     const visibleColumns =
       preprocessedVisibleColumns != undefined
         ? ValueOrErrors.Default.return({ columns: preprocessedVisibleColumns })
-        : // TODO: remove once the projet room has been migrated to v2 specs
-          TableLayout.Operations.ComputeLayout(
+        : TableLayout.Operations.ComputeLayout(
             updatedBindings,
             VisibleColumnsPredicate,
           );

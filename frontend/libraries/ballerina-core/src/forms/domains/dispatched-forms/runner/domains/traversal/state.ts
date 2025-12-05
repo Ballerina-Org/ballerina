@@ -216,7 +216,6 @@ export const RendererTraversal = {
                   (fieldTraversal) => {
                     return ValueOrErrors.Default.return({
                       fieldName: fieldName,
-                      visibility: true, // TODO: check this
                       fieldTraversal: fieldTraversal,
                     });
                   },
@@ -269,18 +268,6 @@ export const RendererTraversal = {
                     !visibleFields.includes(f.fieldName)
                   )
                     return [];
-                  if (f.visibility != undefined) {
-                    const visible = Expr.Operations.Evaluate(
-                      Map([
-                        ["global", evalContext.global],
-                        ["local", evalContext.local],
-                        ["root", evalContext.root],
-                      ]),
-                    )(f.visibility);
-                    if (visible.kind == "value" && !visible.value) {
-                      return [];
-                    }
-                  }
 
                   return [
                     f.fieldTraversal.value({

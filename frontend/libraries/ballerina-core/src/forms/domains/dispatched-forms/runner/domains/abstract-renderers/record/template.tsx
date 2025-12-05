@@ -253,8 +253,7 @@ export const RecordAbstractRenderer = <
     const calculatedLayout =
       layoutFromPreprocessor != undefined
         ? ValueOrErrors.Default.return(layoutFromPreprocessor)
-        : // TODO: remove once the projet room has been migrated to v2 specs
-          FormLayout.Operations.ComputeLayout(updatedBindings, Layout);
+        : FormLayout.Operations.ComputeLayout(updatedBindings, Layout);
 
     // TODO -- set error template up top
     if (calculatedLayout.kind == "errors") {

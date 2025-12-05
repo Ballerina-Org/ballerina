@@ -168,39 +168,24 @@ export const RecordRenderer = {
               >([Map<string, RecordFieldRenderer<T>>(), alreadyParsedForms]),
             )
             .Then(([fieldsMap, accumulatedAlreadyParsedForms]) => {
-              return ValueOrErrors.Operations.All(
-                List<
-                  ValueOrErrors<
-                    PredicateFormLayout | PredicateComputedOrInlined,
+              return FormLayout.Operations.ParseLayout(validRecordForm)
+                .MapErrors((errors) =>
+                  errors.map((error) => `${error}\n...When parsing tabs`),
+                )
+                .Then((tabs) =>
+                  ValueOrErrors.Default.return<
+                    [RecordRenderer<T>, Map<string, Renderer<T>>],
                     string
-                  >
-                >([
-                  FormLayout.Operations.ParseLayout(validRecordForm).MapErrors(
-                    (errors) =>
-                      errors.map((error) => `${error}\n...When parsing tabs`),
-                  ),
-                  DisabledFields.Operations.ParseLayout(
-                    validRecordForm,
-                  ).MapErrors((errors) =>
-                    errors.map(
-                      (error) => `${error}\n...When parsing disabled fields`,
+                  >([
+                    RecordRenderer.Default(
+                      type,
+                      fieldsMap,
+                      tabs as PredicateFormLayout,
+                      validRecordForm.renderer,
                     ),
-                  ),
-                ]),
-              ).Then(([tabs, _disabledFields]) =>
-                ValueOrErrors.Default.return<
-                  [RecordRenderer<T>, Map<string, Renderer<T>>],
-                  string
-                >([
-                  RecordRenderer.Default(
-                    type,
-                    fieldsMap,
-                    tabs as PredicateFormLayout,
-                    validRecordForm.renderer,
-                  ),
-                  accumulatedAlreadyParsedForms,
-                ]),
-              );
+                    accumulatedAlreadyParsedForms,
+                  ]),
+                );
             })
             .MapErrors((errors) =>
               errors.map(
