@@ -8,10 +8,10 @@ import {
   ConcreteRenderers,
   DispatchInjectablesTypes,
   isString,
-  PredicateComputedOrInlined,
   Renderer,
   TableLayout,
   ValueOrErrors,
+  PredicateComputedOrInlined,
 } from "../../../../../../../../../../../../../main";
 
 import { NestedRenderer } from "../nestedRenderer/state";
@@ -31,7 +31,6 @@ export type TableRenderer<T> = {
   type: TableType<T>;
   columns: Map<string, TableCellRenderer<T>>;
   visibleColumns: PredicateComputedOrInlined;
-  disabledColumns: PredicateComputedOrInlined;
   concreteRenderer: string;
   detailsRenderer?: NestedRenderer<T>;
 };
@@ -40,16 +39,14 @@ export const TableRenderer = {
   Default: <T>(
     type: TableType<T>,
     columns: Map<string, TableCellRenderer<T>>,
-    visibleColumns: PredicateComputedOrInlined,
-    disabledColumns: PredicateComputedOrInlined,
+    visibleColumnsLayout: PredicateComputedOrInlined,
     concreteRenderer: string,
     detailsRenderer?: NestedRenderer<T>,
   ): TableRenderer<T> => ({
     kind: "tableRenderer",
     type,
     columns,
-    visibleColumns,
-    disabledColumns,
+    visibleColumns: visibleColumnsLayout,
     concreteRenderer,
     detailsRenderer,
   }),
@@ -68,12 +65,6 @@ export const TableRenderer = {
       DispatchIsObject(_) &&
       "visibleColumns" in _ &&
       (DispatchIsObject(_.visibleColumns) || Array.isArray(_.visibleColumns)),
-    hasDisabledColumns: (
-      _: unknown,
-    ): _ is { disabledColumns: object | Array<unknown> } =>
-      DispatchIsObject(_) &&
-      "disabledColumns" in _ &&
-      (DispatchIsObject(_.disabledColumns) || Array.isArray(_.disabledColumns)),
     tryAsValidTableForm: (
       _: unknown,
     ): ValueOrErrors<SerializedTableRenderer, string> =>
@@ -91,22 +82,22 @@ export const TableRenderer = {
               ? ValueOrErrors.Default.throwOne(
                   "table form renderer is missing or has invalid columns property",
                 )
-              : !TableRenderer.Operations.hasVisibleColumns(_)
+              : !TableRenderer.Operations.hasValidApi(_)
                 ? ValueOrErrors.Default.throwOne(
-                    "table form renderer is missing or has invakid visible columns property",
+                    "table form renderer has a non string api property",
                   )
-                : !TableRenderer.Operations.hasValidApi(_)
-                  ? ValueOrErrors.Default.throwOne(
-                      "table form renderer has a non string api property",
+                : ValueOrErrors.Default.return({
+                    ..._,
+                    columns: Map<string, unknown>(_.columns),
+                    visibleColumns: TableRenderer.Operations.hasVisibleColumns(
+                      _,
                     )
-                  : ValueOrErrors.Default.return({
-                      ..._,
-                      columns: Map<string, unknown>(_.columns),
-                      visibleColumns: _.visibleColumns,
-                      disabledColumns:
-                        "disabledColumns" in _ ? _.disabledColumns : undefined,
-                      api: _?.api,
-                    }),
+                      ? _.visibleColumns
+                      : undefined,
+                    disabledColumns:
+                      "disabledColumns" in _ ? _.disabledColumns : undefined,
+                    api: _?.api,
+                  }),
     DeserializeDetailsRenderer: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
@@ -229,32 +220,27 @@ export const TableRenderer = {
                     TableLayout.Operations.ParseLayout(
                       validTableForm.visibleColumns,
                     ).Then((visibileColumnsLayout) =>
-                      TableLayout.Operations.ParseLayout(
-                        validTableForm.disabledColumns,
-                      ).Then((disabledColumnsLayout) =>
-                        TableRenderer.Operations.DeserializeDetailsRenderer(
-                          type,
-                          validTableForm,
-                          concreteRenderers,
-                          types,
-                          forms,
-                          accumulatedAlreadyParsedForms,
-                        ).Then(([detailsRenderer, finalAlreadyParsedForms]) =>
-                          ValueOrErrors.Default.return<
-                            [TableRenderer<T>, Map<string, Renderer<T>>],
-                            string
-                          >([
-                            TableRenderer.Default(
-                              type,
-                              columnsMap,
-                              visibileColumnsLayout,
-                              disabledColumnsLayout,
-                              validTableForm.renderer,
-                              detailsRenderer,
-                            ),
-                            finalAlreadyParsedForms,
-                          ]),
-                        ),
+                      TableRenderer.Operations.DeserializeDetailsRenderer(
+                        type,
+                        validTableForm,
+                        concreteRenderers,
+                        types,
+                        forms,
+                        accumulatedAlreadyParsedForms,
+                      ).Then(([detailsRenderer, finalAlreadyParsedForms]) =>
+                        ValueOrErrors.Default.return<
+                          [TableRenderer<T>, Map<string, Renderer<T>>],
+                          string
+                        >([
+                          TableRenderer.Default(
+                            type,
+                            columnsMap,
+                            visibileColumnsLayout,
+                            validTableForm.renderer,
+                            detailsRenderer,
+                          ),
+                          finalAlreadyParsedForms,
+                        ]),
                       ),
                     ),
                   ),

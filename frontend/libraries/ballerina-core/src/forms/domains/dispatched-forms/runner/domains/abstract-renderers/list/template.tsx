@@ -84,13 +84,16 @@ export const ListAbstractRenderer = <
               type: _.type.args[0],
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-              domNodeAncestorPath:
-                _.domNodeAncestorPath + `[list][${elementIndex}]`,
+              domNodeAncestorPath: _.domNodeAncestorPath + `[${elementIndex}]`,
+              predictionAncestorPath: _.predictionAncestorPath + `[element]`,
+              layoutAncestorPath:
+                _.layoutAncestorPath + `[list][${elementIndex}]`,
               typeAncestors: [_.type as DispatchParsedType<T>].concat(
                 _.typeAncestors,
               ),
               labelContext,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              preprocessedSpecContext: _.preprocessedSpecContext,
             };
           },
         )
@@ -188,13 +191,16 @@ export const ListAbstractRenderer = <
               type: ElementRenderer.renderer.type,
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-              domNodeAncestorPath:
-                _.domNodeAncestorPath + `[list][${elementIndex}]`,
+              domNodeAncestorPath: _.domNodeAncestorPath + `[${elementIndex}]`,
+              predictionAncestorPath: _.predictionAncestorPath + `[element]`,
+              layoutAncestorPath:
+                _.layoutAncestorPath + `[list][${elementIndex}]`,
               typeAncestors: [_.type as DispatchParsedType<T>].concat(
                 _.typeAncestors,
               ),
               labelContext,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              preprocessedSpecContext: _.preprocessedSpecContext,
             };
           },
         )
@@ -277,7 +283,7 @@ export const ListAbstractRenderer = <
     ListAbstractRendererForeignMutationsExpected<Flags>,
     ListAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const domNodeId = props.context.domNodeAncestorPath + "[list]";
+    const domNodeId = props.context.domNodeAncestorPath;
 
     if (
       !PredicateValue.Operations.IsTuple(props.context.value) &&

@@ -31,7 +31,6 @@ export type RecordRenderer<T> = {
   fields: Map<string, RecordFieldRenderer<T>>;
   type: RecordType<T>;
   tabs: PredicateFormLayout;
-  disabledFields: PredicateComputedOrInlined;
 };
 
 export const RecordRenderer = {
@@ -39,14 +38,12 @@ export const RecordRenderer = {
     type: RecordType<T>,
     fields: Map<string, RecordFieldRenderer<T>>,
     tabs: PredicateFormLayout,
-    disabledFields: PredicateComputedOrInlined,
     concreteRenderer?: string,
   ): RecordRenderer<T> => ({
     kind: "recordRenderer",
     type,
     fields,
     tabs,
-    disabledFields,
     concreteRenderer,
   }),
   Operations: {
@@ -170,42 +167,26 @@ export const RecordRenderer = {
                 string
               >([Map<string, RecordFieldRenderer<T>>(), alreadyParsedForms]),
             )
-            .Then(([fieldsMap, accumulatedAlreadyParsedForms]) =>
-              ValueOrErrors.Operations.All(
-                List<
-                  ValueOrErrors<
-                    PredicateFormLayout | PredicateComputedOrInlined,
+            .Then(([fieldsMap, accumulatedAlreadyParsedForms]) => {
+              return FormLayout.Operations.ParseLayout(validRecordForm)
+                .MapErrors((errors) =>
+                  errors.map((error) => `${error}\n...When parsing tabs`),
+                )
+                .Then((tabs) =>
+                  ValueOrErrors.Default.return<
+                    [RecordRenderer<T>, Map<string, Renderer<T>>],
                     string
-                  >
-                >([
-                  FormLayout.Operations.ParseLayout(validRecordForm).MapErrors(
-                    (errors) =>
-                      errors.map((error) => `${error}\n...When parsing tabs`),
-                  ),
-                  DisabledFields.Operations.ParseLayout(
-                    validRecordForm,
-                  ).MapErrors((errors) =>
-                    errors.map(
-                      (error) => `${error}\n...When parsing disabled fields`,
+                  >([
+                    RecordRenderer.Default(
+                      type,
+                      fieldsMap,
+                      tabs as PredicateFormLayout,
+                      validRecordForm.renderer,
                     ),
-                  ),
-                ]),
-              ).Then(([tabs, disabledFields]) =>
-                ValueOrErrors.Default.return<
-                  [RecordRenderer<T>, Map<string, Renderer<T>>],
-                  string
-                >([
-                  RecordRenderer.Default(
-                    type,
-                    fieldsMap,
-                    tabs as PredicateFormLayout,
-                    disabledFields as PredicateComputedOrInlined,
-                    validRecordForm.renderer,
-                  ),
-                  accumulatedAlreadyParsedForms,
-                ]),
-              ),
-            )
+                    accumulatedAlreadyParsedForms,
+                  ]),
+                );
+            })
             .MapErrors((errors) =>
               errors.map(
                 (error) => `${error}\n...When parsing as RecordForm renderer`,

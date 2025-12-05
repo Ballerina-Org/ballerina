@@ -34,7 +34,6 @@ import { PrimitiveRenderer } from "./domains/primitive/state";
 import {
   ConcreteRenderers,
   DispatchInjectablesTypes,
-  Unit,
 } from "../../../../../../../../../../../main";
 
 export type CommonSerializedRendererProperties = {

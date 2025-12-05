@@ -4,13 +4,9 @@ import {
   DispatchCommonFormState,
   DispatchDelta,
   DispatchParsedType,
-  Expr,
-  FormLayout,
-  PredicateFormLayout,
   PredicateValue,
   replaceWith,
   Updater,
-  ValueOrErrors,
   ValueRecord,
   DispatchOnChange,
   IdWrapperProps,
@@ -20,9 +16,9 @@ import {
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
   CommonAbstractRendererForeignMutationsExpected,
-  StringSerializedType,
-  DisabledFields,
-  PredicateComputedOrInlined,
+  FormLayout,
+  ValueOrErrors,
+  PredicateFormLayout,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -52,15 +48,12 @@ export const RecordAbstractRenderer = <
         CommonAbstractRendererState,
         CommonAbstractRendererForeignMutationsExpected<Flags>
       >;
-      visible?: Expr;
-      disabled?: Expr;
       label?: string;
       GetDefaultState: () => CommonAbstractRendererState;
     }
   >,
   FieldRenderers: Map<string, RecordFieldRenderer<any>>,
   Layout: PredicateFormLayout,
-  DisabledFieldsPredicate: PredicateComputedOrInlined,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   isInlined: boolean,
@@ -122,13 +115,17 @@ export const RecordAbstractRenderer = <
               extraContext: _.extraContext,
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-              domNodeAncestorPath:
-                _.domNodeAncestorPath + `[record][${fieldName}]`,
+              domNodeAncestorPath: _.domNodeAncestorPath + `[${fieldName}]`,
+              predictionAncestorPath:
+                _.predictionAncestorPath + `[${fieldName}]`,
+              layoutAncestorPath:
+                _.layoutAncestorPath + `[record][${fieldName}]`,
               labelContext,
               typeAncestors: [_.type as DispatchParsedType<any>].concat(
                 _.typeAncestors,
               ),
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+              preprocessedSpecContext: _.preprocessedSpecContext,
             };
           },
         )
@@ -220,7 +217,7 @@ export const RecordAbstractRenderer = <
     RecordAbstractRendererForeignMutationsExpected<Flags>,
     RecordAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const domNodeId = props.context.domNodeAncestorPath + "[record]";
+    const domNodeId = props.context.domNodeAncestorPath;
 
     if (
       !PredicateValue.Operations.IsRecord(props.context.value) &&
@@ -244,10 +241,19 @@ export const RecordAbstractRenderer = <
       ? props.context.bindings
       : props.context.bindings.set("local", props.context.value);
 
-    const calculatedLayout = FormLayout.Operations.ComputeLayout(
-      updatedBindings,
-      Layout,
-    );
+    const layoutFromPreprocessor =
+      props.context.preprocessedSpecContext?.formLayouts.get(
+        props.context.layoutAncestorPath,
+      );
+
+    if (layoutFromPreprocessor == undefined) {
+      console.warn("Layout not found for " + props.context.layoutAncestorPath);
+    }
+
+    const calculatedLayout =
+      layoutFromPreprocessor != undefined
+        ? ValueOrErrors.Default.return(layoutFromPreprocessor)
+        : FormLayout.Operations.ComputeLayout(updatedBindings, Layout);
 
     // TODO -- set error template up top
     if (calculatedLayout.kind == "errors") {
@@ -257,18 +263,8 @@ export const RecordAbstractRenderer = <
 
     const visibleFieldKeys = ValueOrErrors.Operations.All(
       List(
-        FieldTemplates.map(({ visible }, fieldName) =>
-          visible == undefined
-            ? ValueOrErrors.Default.return(fieldName)
-            : Expr.Operations.EvaluateAs("visibility predicate")(
-                updatedBindings,
-              )(visible).Then((value) =>
-                ValueOrErrors.Default.return(
-                  PredicateValue.Operations.IsBoolean(value) && value
-                    ? fieldName
-                    : null,
-                ),
-              ),
+        FieldTemplates.map((_, fieldName) =>
+          ValueOrErrors.Default.return<string, string>(fieldName),
         ).valueSeq(),
       ),
     );
@@ -293,32 +289,14 @@ export const RecordAbstractRenderer = <
       visibleFieldKeys.value.filter((fieldName) => fieldName != null),
     );
 
-    const calculatedDisabledFields = DisabledFields.Operations.Compute(
-      updatedBindings,
-      DisabledFieldsPredicate,
-    );
-
-    const disabledFieldsValue =
-      calculatedDisabledFields.kind == "value"
-        ? calculatedDisabledFields.value.fields
-        : [];
-
     const disabledFieldKeys = ValueOrErrors.Operations.All(
       List(
-        FieldTemplates.map(({ disabled }, fieldName) =>
-          disabled == undefined
-            ? disabledFieldsValue.includes(fieldName)
-              ? ValueOrErrors.Default.return(fieldName)
-              : ValueOrErrors.Default.return(null)
-            : Expr.Operations.EvaluateAs("disabled predicate")(updatedBindings)(
-                disabled,
-              ).Then((value) =>
-                ValueOrErrors.Default.return(
-                  PredicateValue.Operations.IsBoolean(value) && value
-                    ? fieldName
-                    : null,
-                ),
-              ),
+        FieldTemplates.map((_, fieldName) =>
+          props.context.preprocessedSpecContext?.disabledFields?.has(
+            props.context.predictionAncestorPath + `[${fieldName}]`,
+          )
+            ? ValueOrErrors.Default.return(fieldName)
+            : ValueOrErrors.Default.return(null),
         ).valueSeq(),
       ),
     );
