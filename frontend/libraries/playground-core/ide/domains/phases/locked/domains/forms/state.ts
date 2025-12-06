@@ -12,6 +12,7 @@ import {WorkspaceState, WorkspaceVariant} from "../folders/state";
 import {KnownSections} from "../../../../types/Json";
 import {List} from "immutable";
 import {INode, Meta} from "../folders/node";
+import {CustomEntity} from "../../../custom-fields/state";
 
 type TD = [
     DispatchDeltaTransfer<any>,
@@ -35,6 +36,11 @@ export type Forms = {
     deltas: Option<DeltaDrain>,
     showDeltas: boolean,
     path: string [],
+    customEntity: Option<{
+        nodes: INode<Meta>,
+        selected: INode<Meta>,
+        value: CustomEntity,
+    }>
 }
 
 export type Delta = {

@@ -2151,6 +2151,9 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       );
     },
   },
+    unit: () => (_props) => {
+        return <></>;
+    },
   boolean: {
     defaultBoolean: () => (props) => (
       <>

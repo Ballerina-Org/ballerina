@@ -11,7 +11,7 @@ import {FlatNode, Node} from "./node";
 import {JsonEditorTemplate} from "./editor/template";
 import {LockedPhase} from "../../state";
 import {JsonEditor, JsonEditorForeignMutationsExpected, JsonEditorView, JsonEditorWritableState} from "./editor/state";
-import {CustomFields} from "../../../custom-fields/state";
+import {CustomEntity} from "../../../custom-fields/state";
 
 export type WorkspaceVariant =
     | { kind: 'compose' }

@@ -31,16 +31,12 @@ export function setMonarchForBallerina(monacoInstance: typeof monaco) {
     const ballerinaLanguage: monaco.languages.IMonarchLanguage = {
         defaultToken: "invalid",
 
-        //
-        // ONLY match + with should be red → classify as keyword.control
-        //
         controlKeywords: ["match", "with"],
+        functionKeywords: ["fun"],
+        letInKeywords: ["let", "in"],
 
-        //
-        // Normal keywords (blue)
-        //
         keywords: [
-            "fun", "function", "let", "in",
+            "function", "let", "in", "Value",
             "type", "module", "open", "namespace",
             "if", "then", "else", "elif",
             "try", "finally", "do", "yield", "return",
@@ -48,9 +44,6 @@ export function setMonarchForBallerina(monacoInstance: typeof monaco) {
             "mutable"
         ],
 
-        //
-        // DU case names (brown/red)
-        //
         typeKeywords: ["Some", "None", "Value", "Error", "Ok"],
 
         operators: [
@@ -63,33 +56,68 @@ export function setMonarchForBallerina(monacoInstance: typeof monaco) {
 
         tokenizer: {
             root: [
+                //
+                // HKT binders
+                // [f:*->*]
+                //
+                [
+                    /(\[)([a-zA-Z_]\w*)(\s*:\s*)(\*)(\s*->\s*)(\*)(\])/,
+                    [
+                        "meta.hkt.bracket",   // [
+                        "meta.hkt.var",       // f
+                        "meta.hkt.colon",     // :
+                        "meta.hkt.universe",  // *
+                        "meta.hkt.arrow",     // ->
+                        "meta.hkt.universe",  // *
+                        "meta.hkt.bracket"    // ]
+                    ]
+                ],
 
                 //
-                // THIS IS WHERE IDENTIFIER & KEYWORD COLORING HAPPENS
+                // [a:*] or [b:*] etc.
                 //
+                [
+                    /(\[)([a-zA-Z_]\w*)(\s*:\s*)(\*)(\])/,
+                    [
+                        "meta.hkt.bracket",   // [
+                        "meta.hkt.var",       // a / b / ...
+                        "meta.hkt.colon",     // :
+                        "meta.hkt.universe",  // *
+                        "meta.hkt.bracket"    // ]
+                    ]
+                ],
+
+                //
+                // Your existing delimiters
+                //
+                [/[()]/, "delimiter.paren"],
+                [/[\[\]]/, "delimiter.bracket"],
+                
+                
+                [/(\|)(\s*)(Value)\b/, ["operator", "white", "keyword.matchValue"]],
+                [/(\|)(\s*)(None)\b/, ["operator", "white", "keyword.matchNone"]],
+
                 [
                     /[a-zA-Z_][\w']*/,
                     {
                         cases: {
-                            "@controlKeywords": "keyword.control",  // match, with
-                            "@keywords": "keyword",                 // fun, let, in, type...
-                            "@typeKeywords": "type",                // Some/None/Value
+                            "@controlKeywords": "keyword.control",
+                            "@functionKeywords": "keyword.function",
+                            "@letInKeywords": "keyword.letIn",
+                            "@keywords": "keyword",
+                            "@typeKeywords": "type",
                             "@default": "identifier"
                         }
                     }
                 ],
-
-                // numbers
+                [/\[[a-zA-Z_]\s*:\s*\*+\s*->\s*\*+\]/, "type.hkt"],
                 [/\d+(\.\d+)?([eE][\-+]?\d+)?[fFmM]?/, "number"],
 
-                // strings
                 [/"/, { token: "string.quote", bracket: "@open", next: "@string" }],
 
-                // comments
                 [/\/\/.*$/, "comment"],
                 [/\/\*/, "comment", "@comment"],
 
-                // operators
                 [
                     /@symbols/,
                     {
@@ -100,8 +128,11 @@ export function setMonarchForBallerina(monacoInstance: typeof monaco) {
                     }
                 ],
 
-                // parentheses
-                [/[()]/, "delimiter.parenthesis"]
+                // Parentheses
+                [/[()]/, "delimiter.paren"],
+
+// Brackets
+                [/[\[\]]/, "delimiter.bracket"],
             ],
 
             string: [
@@ -113,6 +144,7 @@ export function setMonarchForBallerina(monacoInstance: typeof monaco) {
 
             comment: [
                 [/[^/*]+/, "comment"],
+                
                 [/\/\*/, "comment", "@push"],
                 [/\*\//, "comment", "@pop"],
                 [/./, "comment"]

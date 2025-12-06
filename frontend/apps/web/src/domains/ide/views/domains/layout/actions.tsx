@@ -194,15 +194,15 @@ export const Actions: React.FC<ActionsProps> = ({
                     <VscBracketError size={size} />
                 </button>
             </div>}
-            { context.phase.kind == "locked" &&
-                <button
-                    disabled={!customFieldsAvailable}
-                    className="btn tooltip tooltip-bottom"
-                    data-tip="Custom fields"
-                    onClick={toggleCustomFields}
-                >
-                    <VscInsert size={size} />
-                </button>}
+            {/*{ context.phase.kind == "locked" &&*/}
+            {/*    <button*/}
+            {/*        disabled={!customFieldsAvailable}*/}
+            {/*        className="btn tooltip tooltip-bottom"*/}
+            {/*        data-tip="Run Custom Entity"*/}
+            {/*        onClick={toggleCustomFields}*/}
+            {/*    >*/}
+            {/*        <VscInsert size={size} />*/}
+            {/*    </button>}*/}
             { context.phase.kind == "locked" &&<button
                 className="btn tooltip tooltip-bottom"
                 data-tip="Hide Top Menu"

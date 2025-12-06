@@ -21,7 +21,7 @@ import {DeltaDrain, Deltas, IdeDeltaTransfer} from "./domains/forms/domains/delt
 import {INode, Meta} from "./domains/folders/node";
 import {Ide} from "../../../state";
 import {LockedDisplay, UI, UIFramework} from "./domains/forms/state";
-import {CustomFields} from "../custom-fields/state";
+import {CustomEntity} from "../custom-fields/state";
 
 export type LockedStep =
     | { kind: 'design' }
@@ -35,7 +35,7 @@ export type LockedPhase = {
     step: LockedStep,
     validatedSpec: Option<KnownSections>,
     errors: List<string>,
-    customFields: CustomFields,
+    customFields: CustomEntity,
     automated: boolean // validate, run forms (for current launcher) on every keystroke / seconds elapsed
 };
 
@@ -47,7 +47,7 @@ export const LockedPhase = {
             validatedSpec: Option.Default.none(),
             automated: false,
             settings: 'fully-invisible',
-            customFields: CustomFields.Default(),
+            customFields: CustomEntity.Default(),
             errors: List<string>()
         }),
     Updaters: {

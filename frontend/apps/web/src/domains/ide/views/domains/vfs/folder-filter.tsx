@@ -11,7 +11,7 @@
 import React from "react";
 import {LockedPhase} from "playground-core/ide/domains/phases/locked/state.ts";
 import {VscAdd, VscCopilot, VscMove} from "react-icons/vsc";
-import {BasicFun, Unit} from "ballerina-core";
+import {BasicFun, Maybe, Unit} from "ballerina-core";
 
 type FolderFilterProps = {
     workspace: WorkspaceState
@@ -42,10 +42,10 @@ export const FolderFilter = ({
     
     if (workspace.kind !== "selected" ) return null;
     
-    const folder = FlatNode.Operations.findFolderByPath(workspace.nodes, workspace.file.metadata.path)
+    const folder: Maybe<INode<Meta>> = FlatNode.Operations.findFolderByPath(workspace.nodes, workspace.file.metadata.path)
 
-    if(folder.kind !== "r") return <p>Cant find folder for a file</p>
-    const files = (folder.value.children || [])?.filter(x => x.metadata.kind === "file");
+    if(!folder) return <p>Cant find folder for a file</p>
+    const files = (folder.children || [])?.filter(x => x.metadata.kind === "file");
     const specialFilesMissing = 
         variant.kind == 'explore'
         && !workspace.file.name.endsWith("_schema.json")
@@ -54,7 +54,7 @@ export const FolderFilter = ({
     
     const parentFileNotYetExtracted =
         variant.kind == 'explore'
-        && folder.value.name != removeExtension(workspace.file.name)
+        && folder.name != removeExtension(workspace.file.name)
     return (
         <>
         <div className="w-full">

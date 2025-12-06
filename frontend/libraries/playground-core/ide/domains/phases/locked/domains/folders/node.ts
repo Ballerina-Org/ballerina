@@ -110,16 +110,13 @@ export const FlatNode = {
         parentPath(path: string): string {
             return path.replace(/\/[^\/]+$/, "");
         },
-        findFolderByPath: (root: Node, path: string): Option<Node> => {
-            const some = Option.Default.some<Node>;
-            const none = Option.Default.none<Node>;
-
+        findFolderByPath: (root: Node, path: string): Maybe<Node> => {
             const parts = path.split("/").filter(s => s.length > 0);
-            if (parts.length === 0) return root.metadata.kind === "dir" ? some(root) : none();
+            if (parts.length === 0) return root.metadata.kind === "dir" ? root : undefined;
 
             const rec = (node: Node, segs: string[]): Option<Node> => {
                 const [head, ...tail] = segs;
-                if (head === undefined) return node.metadata.kind === "dir" ? some(node) : none();
+                if (head === undefined) return node.metadata.kind === "dir" ? node : undefined;
                 if (node.metadata.kind !== "dir") return none();
                 if (head === node.name) return rec(node, tail);
 
@@ -127,9 +124,9 @@ export const FlatNode = {
                 const child = children.find(c => c.name === head);
                 if (child === undefined) return none();
                 if (tail.length === 0) {
-                    return child.metadata.kind === "file" ? some(node)
-                        : child.metadata.kind === "dir"  ? some(child)
-                            : none();
+                    return child.metadata.kind === "file" ? node
+                        : child.metadata.kind === "dir"  ? child
+                            : undefined;
                 }
                 return rec(child, tail);
             };

@@ -5,7 +5,6 @@ import {BasicUpdater, ValueOrErrors} from "ballerina-core";
 import { LockedPhase, WorkspaceState,  Ide} from "playground-core";
 import {configureBallerina, registerBallerina, setMonarchForBallerina} from "./language.ts";
 import {List} from "immutable";
-import {cleanString, unquote} from "playground-core/ide/domains/phases/custom-fields/domains/data-provider/state.ts";
 
 export type SupportedLanguage = 'json' | 'ballerina' | 'fsharp'
 
@@ -145,20 +144,64 @@ export default function MonacoEditor(props: {
                 inherit: false,
                 colors: {},
 
+                // rules: [
+                //     { token: "keyword.control", foreground: "#228B22", fontStyle: "bold" },
+                //     { token: "keyword.function", foreground: "#A45CFF", fontStyle: "bold" },
+                //     { token: "keyword.letIn", foreground: "#FFCC33", fontStyle: "bold" },
+                //     { token: "keyword.matchValue", foreground: "#228B22", fontStyle: "bold" },
+                //     { token: "keyword.matchNone", foreground: "#2C003E", fontStyle: "bold" },
+                //     { token: "delimiter.paren", foreground: "B5B5B5" },   // light grey for ()
+                //     { token: "delimiter.bracket", foreground: "A45CFF" }, // bright violet for []
+                //     { token: "type.hkt", foreground: "#C37CFF", fontStyle: "italic" },
+                //
+                //
+                //     { token: "meta.hkt.bracket",   foreground: "#C37CFF" },
+                //     { token: "meta.hkt.var",       foreground: "#1BC9C3" },
+                //     { token: "meta.hkt.colon",     foreground: "#B5B5B5" },
+                //     { token: "meta.hkt.universe",  foreground: "#FFDA47" },
+                //     { token: "meta.hkt.arrow",     foreground: "#FFCC33" },
+                //    
+                //     { token: "keyword", foreground: "0000cc" },
+                //    
+                //     { token: "operator", foreground: "c72e2e" },
+                //    
+                //     { token: "type", foreground: "a31515" },
+                //
+                //     // other optional rules
+                //     { token: "comment", foreground: "B0B0B0" },
+                //     { token: "string", foreground: "a31515" },
+                //     { token: "number", foreground: "098658" }
+                // ],
                 rules: [
-                    { token: "keyword.control", foreground: "FFD700", fontStyle: "bold" },
-                    { token: "keyword", foreground: "0000cc" },
+                    // --- Keywords ---
+                    { token: "keyword.control", foreground: "#000000", fontStyle: "bold" },
+                    { token: "keyword.function", foreground: "#202020", fontStyle: "bold" },
+                    { token: "keyword.letIn", foreground: "#404040", fontStyle: "bold" },
+                    { token: "keyword.matchValue", foreground: "#000000", fontStyle: "bold" },
+                    { token: "keyword.matchNone", foreground: "#202020", fontStyle: "bold" },
+                    { token: "keyword", foreground: "#303030" },
 
-                    // 🔴 Operators (if you want pipes/arrows red)
-                    { token: "operator", foreground: "c72e2e" },
+                    // --- Delimiters ---
+                    { token: "delimiter.paren", foreground: "#A0A0A0" },    // light grey
+                    { token: "delimiter.bracket", foreground: "#707070" },  // medium grey
 
-                    // 🟤 DU cases (Some, None, Value)
-                    { token: "type", foreground: "a31515" },
+                    // --- HKT ---
+                    { token: "type.hkt", foreground: "#505050", fontStyle: "italic" },
 
-                    // other optional rules
-                    { token: "comment", foreground: "008000" },
-                    { token: "string", foreground: "a31515" },
-                    { token: "number", foreground: "098658" }
+                    { token: "meta.hkt.bracket",   foreground: "#707070" },
+                    { token: "meta.hkt.var",       foreground: "#404040" },
+                    { token: "meta.hkt.colon",     foreground: "#A0A0A0" },
+                    { token: "meta.hkt.universe",  foreground: "#606060" },
+                    { token: "meta.hkt.arrow",     foreground: "#505050" },
+
+                    // --- Operators + Types ---
+                    { token: "operator", foreground: "#000000" },
+                    { token: "type", foreground: "#404040" },
+
+                    // --- Comments + Literals ---
+                    { token: "comment", foreground: "#A0A0A0" },
+                    { token: "string", foreground: "#505050" },
+                    { token: "number", foreground: "#303030" }
                 ],
 
                 // Monaco supports this at runtime; TS does not

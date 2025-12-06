@@ -19,6 +19,7 @@ export * from "./ide/domains/phases/locked/state";
 export * from "./ide/domains/phases/locked/domains/folders/state"
 export * from "./ide/domains/phases/bootstrap/state";
 export * from "./ide/domains/phases/custom-fields/state";
+export * from "./ide/domains/phases/custom-fields/domains/job/state";
 export * from "./ide/domains/phases/locked/domains/forms/state";
 export * from "./ide/domains/phases/locked/domains/forms/domains/delta/state";
 export * from "./ide/domains/phases/locked/domains/folders/node";

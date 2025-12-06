@@ -4,7 +4,7 @@
     validateCompose, validateExplore, getSpec, seedPath, getKeys, validateBridge, WorkspaceVariant,
     Ide, WorkspaceState, LockedDisplay,
     IdeView, HeroPhase, BootstrapPhase,
-    Deltas, Delta, CustomFields, CustomFieldsTemplate, FlatNode
+    Deltas, Delta, CustomEntity, CustomFieldsTemplate, FlatNode
 } from "playground-core";
 import "react-grid-layout/css/styles.css";
 import React, {useState} from "react";
@@ -26,14 +26,14 @@ import {FormSkeleton} from "../forms/skeleton.tsx";
 import {SettingsPanel} from "./settings.tsx";
 import {List} from "immutable";
 import {LaunchersDock} from "../forms/launchers-dock.tsx";
-import {Maybe, ValueOrErrors, replaceWith, unit} from "ballerina-core";
+import {Maybe, ValueOrErrors, Option, replaceWith, unit} from "ballerina-core";
 import {ErrorsPanel} from "./errors.tsx";
 import {Hero} from "../hero/hero.tsx";
 import {languages} from "monaco-editor";
 import json = languages.json;
 import {CustomFieldsTracker} from "../custom-fields/layout.tsx";
 import {
-    makeTypeCheckingProvider
+    makeTypeCheckingProviderFromWorkspace
 } from "playground-core/ide/domains/phases/custom-fields/domains/data-provider/state.ts";
 
 declare const __ENV__: Record<string, string>;
@@ -94,7 +94,7 @@ export const IdeLayout: IdeView = (props) => {
                                     customFieldsAvailable={
                                     props.context.phase.kind == 'locked' 
                                         && props.context.phase.locked.workspace.kind == 'selected'
-                                        && CustomFields.Operations.isAvailable(props.context.phase.locked.workspace.file)}
+                                        && CustomEntity.Operations.isAvailable(props.context.phase.locked.workspace.file)}
                                     onNew={()=> {
                                         if (props.context.phase.kind == 'locked')
                                             props.setState(Ide.Updaters.Core.phase.toBootstrap(props.context.phase.locked.workspace.variant))
@@ -206,10 +206,10 @@ export const IdeLayout: IdeView = (props) => {
                                         forceRerender();
                                     }}
                                     onErrorPanel={() => setHideErrors(!hideErrors)}
-                                    toggleCustomFields={() => 
-                                        props.setState(
-                                            Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.customFields(CustomFields.Updaters.Template.toggle()))
-                                        )}
+                                    // toggleCustomFields={() => 
+                                    //     props.setState(
+                                    //         Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.customFields(CustomEntity.Updaters.Template.toggle()))
+                                    //     )}
                                     onSeed={
                                         async () => {
                                             if(props.context.phase.kind != "locked") {
@@ -257,25 +257,8 @@ export const IdeLayout: IdeView = (props) => {
                                     <aside className="flex-1">
                                         { props.context.phase.kind == "locked"
                                             && props.context.phase.locked.workspace.kind == 'selected'
-                                            && <CustomFieldsTemplate
-                                            context={{
-                                                ...props.context.phase.locked.customFields, 
-                                                provider: 
-                                                    makeTypeCheckingProvider(
-                                                        FlatNode.Operations.findFolderByPath(
-                                                            props.context.phase.locked.workspace.nodes, 
-                                                            props.context.phase.locked.workspace.file.metadata.path) 
-                                                    ) }}
-                                            setState={(s) =>
-                                                props.setState(
-                                                    Ide.Updaters.Core.phase.locked(
-                                                        LockedPhase.Updaters.Core.customFields(s)
-                                                    )
-                                                )}
-                                            foreignMutations={unit}
-                                            view={CustomFieldsTracker}
-                                        />}
-                                        {/*<FormSkeleton {...props.context} setState={props.setState} />*/}
+                                        }
+                                        {<FormSkeleton {...props.context} setState={props.setState} />}
                      
                                         { props.context.phase.kind == "locked" 
                                             &&  props.context.phase.locked.step.kind == 'display'
@@ -321,6 +304,13 @@ export const IdeLayout: IdeView = (props) => {
                                                         specName={props.context.phase.locked.name}
                                                         path={props.context.phase.locked.workspace.file.metadata.path.split("/")}
                                                         launcher={props.context.phase.locked.step.display.launchers.selected.value}
+                                                        customEntity={
+                                                         Option.Default.some({
+                                                             value: props.context.phase.locked.customFields,
+                                                             nodes: props.context.phase.locked.workspace.nodes,
+                                                             selected: props.context.phase.locked.workspace.file
+                                                         })   
+                                                        }
                                                         setState={props.setState}
                                                         //typeName={"Person"}
                                                         spec={props.context.phase.locked.validatedSpec.value}/></>

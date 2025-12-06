@@ -15,7 +15,7 @@ import {
 import {Node} from "./domains/phases/locked/domains/folders/node"
 import {WorkspaceVariant} from "./domains/phases/locked/domains/folders/state";
 import {HeroPhase, HeroPhaseForeignMutationsExpected, HeroPhaseView} from "./domains/phases/hero/state";
-import {CustomFields} from "./domains/phases/custom-fields/state";
+import {CustomEntity} from "./domains/phases/custom-fields/state";
 
 export type IdePhase =
     |  { kind: 'hero',              hero:      HeroPhase }

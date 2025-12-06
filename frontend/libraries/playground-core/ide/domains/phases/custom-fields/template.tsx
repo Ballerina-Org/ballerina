@@ -1,11 +1,11 @@
-﻿import {Option, Template} from "ballerina-core";
-import {CustomFieldsCtx, CustomFields, CustomFieldsForeignMutationsExpected, CustomFieldsView} from "./state";
-import {CustomFieldsRunner } from "../../../coroutines/custom-fields/runner";
+﻿import {Template} from "ballerina-core";
+import {CustomEntity, CustomEntityForeignMutationsExpected, CustomFieldsView} from "./state";
+import {CustomFieldsRunner } from "./coroutines/custom-fields/runner"
 
 export const CustomFieldsTemplate = Template.Default<
-    CustomFieldsCtx,
-    CustomFields,
-    CustomFieldsForeignMutationsExpected,
+    CustomEntity,
+    CustomEntity,
+    CustomEntityForeignMutationsExpected,
     CustomFieldsView
 >((props) =>
     <props.view

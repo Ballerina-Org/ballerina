@@ -1,224 +1,147 @@
 ﻿import {List} from "immutable";
 import {
+    caseUpdater,
     Coroutine,
     ForeignMutationsInput,
-    Maybe, Option,
+    Guid,
+    Maybe,
+    Option,
     replaceWith,
-    simpleUpdater, Sum, Unit,
+    simpleUpdater,
+    Sum,
+    Unit,
     Updater,
     ValueOrErrors,
     View,
-    Visibility
 } from "ballerina-core";
 import {INode, Meta} from "../locked/domains/folders/node";
-import {JobFlow, JobTrace} from "./domains/job/state";
-import {CustomFieldsEvent, DomainEvent, JobLifecycleEvent, transitionUpdater} from "./domains/event/state";
-import {TypeCheckingProvider} from "./domains/data-provider/state";
-import {Guid} from "../../types/Guid";
-import {Co} from "../../../coroutines/custom-fields/builder";
-import {TypeCheckingPayload} from "./domains/type-checking/state";
+import {
+    JobProcessing, JobStatus,
+} from "./domains/job/state";
+import {TypeCheckingDataProvider} from "./domains/data-provider/state";
+import {ConstructionJobResponse, RequestValueJobResponse, TypeCheckingJobResponse} from "./domains/job/response/state";
+import {TypeCheckingPayload} from "./domains/job/request/state";
+import {Co} from "./coroutines/custom-fields/builder";
 
-export type CustomFieldsProcess =
+export type Job =
+    (| { kind: "typechecking", payload: TypeCheckingPayload, value: Maybe<TypeCheckingJobResponse>  }
+     | { kind: "construction", from: Job, value: Maybe<ConstructionJobResponse> }
+     | { kind: "value", from: Job, value: Maybe<RequestValueJobResponse> }
+    ) & { status: JobStatus }
+
+export const Job = {
+    Updaters: {
+        incrementProcessingCount: (): Updater<Job> =>
+            Updater<Job>( job => job.status.kind !== 'processing' ? job : ({
+                ...job,
+                status: { kind: 'processing', processing: 
+                        JobProcessing.Updaters.Core.checkCount(replaceWith(job.status.processing.checkCount + 1))
+                            .then(JobProcessing.Updaters.Core.checkInterval(replaceWith(job.status.processing.checkInterval * 2)))(job.status.processing)
+               }
+            } satisfies Job))    
+    }
+}
+
+export type CustomEntityStatus =
     | { kind: "idle" }
-    | { kind: "type-checking" }
-    | { kind: "construction" }
-    | { kind: "updater" } // optional
-    | { kind: "value" }
-    | { kind: "result"; value: ValueOrErrors<any, any> };
+    | { kind: "job", job: Job} 
+    | { kind: "result", value: ValueOrErrors<string, string> }
 
-export type CustomFieldsContext = {
-    state: CustomFieldsProcess;
-    flow: JobFlow;
-};
-
-export type SimDocument = {
-    content: string,
-    enabled: boolean,
+export type CustomEntity = {
+    status: CustomEntityStatus,
+    trace: Job [],
 }
 
-export type CustomFields = { 
-    errors: List<string>,
-    status: CustomFieldsProcess,
-    visibility: Visibility,
-    jobFlow: JobFlow,
-    document: SimDocument,
-    
-    value: Option<Guid>,
-    delta: Option<string>
-}
-
-export const CustomFields = {
-    Default: (): CustomFields => ({
-        errors: List<string>(),
-        visibility: "fully-invisible",
-        document: { content: "", enabled : false },
+export const CustomEntity = {
+    Default: (): CustomEntity => ({
         status: { kind: 'idle' },
-        jobFlow: {
-            traces: [],
-            kind: "in-progress"
-        },
-        value: Option.Default.none(),
-        delta: Option.Default.none()
+        trace: [],
     }),
     Updaters: {
         Core: {
-            ...simpleUpdater<CustomFields>()("errors"),
-            ...simpleUpdater<CustomFields>()("status"),
-            ...simpleUpdater<CustomFields>()("jobFlow"),
-            ...simpleUpdater<CustomFields>()("visibility"),
-            ...simpleUpdater<CustomFields>()("value"),
-            ...simpleUpdater<CustomFields>()("delta"),
-            ...simpleUpdater<CustomFields>()("document"),
+            ...simpleUpdater<CustomEntity>()("status"),
+            ...simpleUpdater<CustomEntity>()("trace"),
+            ...caseUpdater<CustomEntity>()("status")("job"),
+            ...caseUpdater<CustomEntity>()("status")("result"),
         },
         Coroutine: {
-            errorAndFail: (msg: string) =>
-                CustomFields.Updaters.Core.errors(
-                    replaceWith(
-                        List([msg])
-                    )
-                ).then(
-                    CustomFields.Updaters.Core.jobFlow(
-                        (flow: JobFlow) => ({
-                            ...flow,
-                            kind: "finished",
-                            result: ValueOrErrors.Default.throw(List([msg]))
-                        })
-                    )
-                ),
-            transition: (event: CustomFieldsEvent): Updater<CustomFields> =>
-                Updater(fields => {
-                    //console.log("event:" + JSON.stringify(event, null, 2));
-                    const {state, flow} = transitionUpdater(event)({flow: fields.jobFlow, state: fields.status});
-                    const u =
-                        CustomFields.Updaters.Core.status(replaceWith(state))
-                            .then(CustomFields.Updaters.Core.jobFlow(replaceWith(flow)))
-                    return u(fields)
-                }),
-            isTypeCheckingRequested(
-                fields: CustomFields
-            ): Option<TypeCheckingPayload> {
-                if (fields.status.kind === "type-checking") {
-                    const currentTrace = CustomFields.Operations.currentJobTrace(fields.jobFlow);
-                    if(currentTrace !== undefined && currentTrace.kind === "requested") return Option.Default.some(currentTrace.job.payload as TypeCheckingPayload)
-                }
-
-                return Option.Default.none();
+            fail: (msg: string | List<string>) => {
+                const messages =
+                    typeof msg === "string"? List([msg]) : msg;
+                const failed = {
+                        kind: 'result',
+                        value: ValueOrErrors.Default.throw(messages)
+                    } as CustomEntityStatus
+                
+                return CustomEntity.Updaters.Core.status(replaceWith(failed))
             },
-            isTypeCheckingDispatched(
-                fields: CustomFields
-            ): Option<Guid> {
-                if (fields.status.kind === "type-checking") {
-                    const currentTrace = CustomFields.Operations.currentJobTrace(fields.jobFlow);
-                    if(currentTrace !== undefined && currentTrace.kind === "dispatched" && currentTrace.initial.kind == "r") 
-                        return Option.Default.some( currentTrace.initial.value.jobId)
-                }
+            checkIfMaxTries: (count: number) =>
+                Updater<CustomEntity>(entity => {
+                    if (entity.status.kind !== 'job' || entity.status.job.status.kind !== 'processing' || entity.status.job.status.processing.checkCount <= count) return entity;
 
-                return Option.Default.none();
-            },
-            isTypeCheckingCompleted(
-                fields: CustomFields
-            ): Option<Guid> {
-                if (fields.status.kind === "type-checking") {
-                    const currentTrace = CustomFields.Operations.currentJobTrace(fields.jobFlow);
-                    if(currentTrace !== undefined && currentTrace.kind === "completed" && currentTrace.result.kind == 'type-checking')
-                        return Option.Default.some( currentTrace.result.result.result.valueDescriptorId)
-                }
-
-                return Option.Default.none();
-            },
-            isConstructionCompleted(
-                fields: CustomFields
-            ): Option<Guid> {
-                if (fields.status.kind === "construction") {
-                    const currentTrace = CustomFields.Operations.currentJobTrace(fields.jobFlow);
-                    if(currentTrace !== undefined && currentTrace.kind === "completed" && currentTrace.result.kind == 'construction')
-                        return Option.Default.some( currentTrace.result.result.result.valueId)
-                }
-
-                return Option.Default.none();
-            },
-            isConstructionDispatched(
-                fields: CustomFields
-            ): Option<Guid> {
-                if (fields.status.kind === "construction") {
-                    const currentTrace = CustomFields.Operations.currentJobTrace(fields.jobFlow);
-                    if(currentTrace !== undefined && currentTrace.kind === "dispatched" && currentTrace.initial.kind == "r")
-                        return Option.Default.some( currentTrace.initial.value.jobId)
-                }
-    
-                return Option.Default.none();
-            }
-            
+                    return CustomEntity.Updaters.Coroutine.fail("Job processing has been canceled due to too many retries")(entity)
+                })
         },
         Template: {
-            toggle: (): Updater<CustomFields> => 
-                Updater(cf =>
-                    CustomFields.Updaters.Core.visibility(
-                        replaceWith(cf.visibility == 'fully-invisible' ? 'fully-visible' : 'fully-invisible' as Visibility))(cf)
-                ),
-            start: (provider: TypeCheckingProvider): Updater<CustomFields> =>
-                Updater(fields => {
+            start: (provider: TypeCheckingDataProvider): Updater<CustomEntity> =>
+                {
                     const payload = provider.collect()
-                    if(payload.kind == "errors") return ({...fields, errors: payload.errors});
-                    
-                    const u =
-                        CustomFields.Updaters.Coroutine.transition({kind: "begin-type-checking"} satisfies DomainEvent)
-                            .then(CustomFields.Updaters.Coroutine.transition(
-                                {
-                                    kind: "start-job",
-                                    job: {kind: 'type-checking', payload: payload.value}
-                                } satisfies JobLifecycleEvent))
-                    return u(fields)
-                }),
-            update: (provider: TypeCheckingProvider): Updater<CustomFields> =>
-                Updater(fields => {
-                    const delta = provider.delta()
-                    debugger
-                    if(delta.kind == "errors") return ({...fields, errors: delta.errors});
-                    const u =
-                        CustomFields.Updaters.Core.delta(replaceWith(Option.Default.some(delta.value))).then(
-                        CustomFields.Updaters.Coroutine.transition({kind: "begin-updater"} satisfies DomainEvent))
-                  
-                    return u(fields)
-                })
+                    if(payload.kind == "errors") return CustomEntity.Updaters.Coroutine.fail(payload.errors)
+
+                    return Updater<CustomEntity>(entity => ({
+                        ...entity,
+                        status: {
+                            kind: 'job',
+                            job: {
+                                kind: 'typechecking',
+                                payload: payload.value,
+                                value: undefined,
+                                status: {kind: 'starting'}
+
+                            } satisfies Job
+                        },
+                        trace: [{
+                            kind: 'typechecking',
+                            payload: payload.value,
+                            value: undefined,
+                            status: {kind: 'starting'}
+
+                        }]
+                    } satisfies CustomEntity))
+                },
         }
     },
     Operations: {
-        idle: (): CustomFieldsProcess => ({ kind: 'idle' }),
+        idle: (): CustomEntityStatus => ({ kind: 'idle' }),
         isAvailable: (node: INode<Meta>): boolean => {
+            // custom entity runner should be enabled when we have all necessary files
+            // in the current workspace
             return true
         },
-        currentJobTrace: (flow: JobFlow): Maybe<JobTrace> => {
-            const traces = flow.traces;
-            return traces.length === 0 ? undefined : traces[traces.length - 1];
-        },
+        /** Handy for processing the Await coroutine for both the Sum and ValueOrError error at once  */
         checkResponseForErrors:
-            <response>(res: Sum<ValueOrErrors<response, any>, any>, name: string): Option<Coroutine<CustomFields & {
-                provider: TypeCheckingProvider
-            }, CustomFields, Unit>> => {
+            (res: Sum<ValueOrErrors<any, any>, any>, name: string): Option<Coroutine<CustomEntity, CustomEntity, Unit>> => {
                 if (res.kind == "r") {
-                    return Option.Default.some(Co.SetState(CustomFields.Updaters.Coroutine.errorAndFail(`Unknown error on ${name}  status, sum: ${JSON.stringify(res)}`)))
+                    return Option.Default.some(Co.SetState(CustomEntity.Updaters.Coroutine.fail(`Unknown error on ${name}  status, sum: ${JSON.stringify(res)}`)))
                 } else if (res.value.kind == "errors")
 
-                    return Option.Default.some(Co.SetState(CustomFields.Updaters.Coroutine.errorAndFail(`Unknown error on ${name}  status, voe: ${JSON.stringify(res)}`)))
+                    return Option.Default.some(Co.SetState(CustomEntity.Updaters.Coroutine.fail(`Unknown error on ${name}  status, voe: ${JSON.stringify(res)}`)))
 
                 return Option.Default.none()
             },
     },
     ForeignMutations: (
-        _: ForeignMutationsInput<Unit, CustomFields>,
+        _: ForeignMutationsInput<Unit, CustomEntity>,
     ) => ({
     }),
 };
 
-export type CustomFieldsForeignMutationsExpected = {}
-
-export type CustomFieldsCtx = CustomFields & { provider: TypeCheckingProvider }
+export type CustomEntityForeignMutationsExpected = {}
 
 export type CustomFieldsView = View<
-    CustomFieldsCtx,
-    CustomFields,
-    CustomFieldsForeignMutationsExpected,
+    CustomEntity,
+    CustomEntity,
+    CustomEntityForeignMutationsExpected,
     {
     }
 >;
