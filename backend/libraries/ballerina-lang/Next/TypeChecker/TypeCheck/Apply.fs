@@ -286,7 +286,7 @@ module Apply =
                 let! (f_input, f_output) =
                   TypeValue.AsArrow t_f
                   |> ofSum
-                  |> state.Map WithTypeExprSourceMapping.Getters.Value
+                  |> state.Map WithSourceMapping.Getters.Value
                   |> state.MapError(Errors.SetPriority ErrorPriority.Medium)
 
                 return!

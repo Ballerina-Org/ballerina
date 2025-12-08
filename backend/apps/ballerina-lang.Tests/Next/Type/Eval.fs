@@ -240,7 +240,8 @@ let ``LangNext-TypeEval Keyof extracts record keys`` () =
             [ A, TypeValue.CreateUnit()
               B, TypeValue.CreateUnit()
               C, TypeValue.CreateUnit() ]
-        source = TypeExprSourceMapping.OriginTypeExpr t1 }
+        typeExprSource = TypeExprSourceMapping.OriginTypeExpr t1
+        typeCheckScopeSource = TypeCheckScope.Empty }
 
   match actual with
   | Sum.Left((actual, _), _) -> Assert.That(actual, Is.EqualTo expected)
@@ -341,7 +342,8 @@ let ``LangNext-TypeEval Exclude of Keyofs`` () =
   let expected =
     TypeValue.Union
       { value = OrderedMap.ofList [ B, TypeValue.CreateUnit(); C, TypeValue.CreateUnit() ]
-        source = TypeExprSourceMapping.OriginTypeExpr(TypeExpr.Exclude(t1, t2)) }
+        typeExprSource = TypeExprSourceMapping.OriginTypeExpr(TypeExpr.Exclude(t1, t2))
+        typeCheckScopeSource = TypeCheckScope.Empty }
 
   match actual with
   | Sum.Left((actual, _), _) -> Assert.That(actual, Is.EqualTo expected)
@@ -388,7 +390,8 @@ let ``LangNext-TypeEval Exclude of Records`` () =
           OrderedMap.ofList
             [ B, ((TypeValue.PrimitiveWithTrivialSource PrimitiveType.String), Kind.Star)
               C, ((TypeValue.PrimitiveWithTrivialSource PrimitiveType.Decimal), Kind.Star) ]
-        source = TypeExprSourceMapping.OriginTypeExpr t3 }
+        typeExprSource = TypeExprSourceMapping.OriginTypeExpr t3
+        typeCheckScopeSource = TypeCheckScope.Empty }
 
   match actual with
   | Sum.Left((actual, _), _) -> Assert.That(actual, Is.EqualTo expected)
@@ -450,7 +453,8 @@ n =
           OrderedMap.ofList
             [ B, TypeValue.PrimitiveWithTrivialSource PrimitiveType.String
               C, TypeValue.PrimitiveWithTrivialSource PrimitiveType.Decimal ]
-        source = TypeExprSourceMapping.OriginTypeExpr t3 }
+        typeExprSource = TypeExprSourceMapping.OriginTypeExpr t3
+        typeCheckScopeSource = TypeCheckScope.Empty }
 
   match actual with
   | Sum.Left((actual, _), _) -> Assert.That(actual, Is.EqualTo expected)
@@ -528,7 +532,8 @@ let ``LangNext-TypeEval Rotate from union to record`` () =
             [ A, ((TypeValue.PrimitiveWithTrivialSource PrimitiveType.Int32), Kind.Star)
               B, ((TypeValue.PrimitiveWithTrivialSource PrimitiveType.String), Kind.Star)
               C, ((TypeValue.PrimitiveWithTrivialSource PrimitiveType.Decimal), Kind.Star) ]
-        source = TypeExprSourceMapping.OriginTypeExpr t }
+        typeExprSource = TypeExprSourceMapping.OriginTypeExpr t
+        typeCheckScopeSource = TypeCheckScope.Empty }
 
   match actual with
   | Sum.Left((actual, _), _) -> Assert.That(actual, Is.EqualTo expected)
@@ -567,7 +572,8 @@ let ``LangNext-TypeEval Rotate from record to union`` () =
             [ A, TypeValue.PrimitiveWithTrivialSource PrimitiveType.Int32
               B, TypeValue.PrimitiveWithTrivialSource PrimitiveType.String
               C, TypeValue.PrimitiveWithTrivialSource PrimitiveType.Decimal ]
-        source = TypeExprSourceMapping.OriginTypeExpr t }
+        typeExprSource = TypeExprSourceMapping.OriginTypeExpr t
+        typeCheckScopeSource = TypeCheckScope.Empty }
 
   match actual with
   | Sum.Left((actual, _), _) -> Assert.That(actual, Is.EqualTo expected)
@@ -597,7 +603,7 @@ let ``LangNext-TypeEval (generic) Apply`` () =
       { value =
           [ TypeValue.PrimitiveWithTrivialSource PrimitiveType.Int32
             TypeValue.PrimitiveWithTrivialSource PrimitiveType.String ]
-        source =
+        typeExprSource =
           TypeExprSourceMapping.OriginTypeExpr(
             TypeExpr.Apply(
               TypeExpr.Lambda(
@@ -608,7 +614,8 @@ let ``LangNext-TypeEval (generic) Apply`` () =
               ),
               TypeExpr.Primitive PrimitiveType.String
             )
-          ) }
+          )
+        typeCheckScopeSource = TypeCheckScope.Empty }
 
   match actual with
   | Sum.Left((actual, _), _) -> Assert.That(actual, Is.EqualTo expected)
