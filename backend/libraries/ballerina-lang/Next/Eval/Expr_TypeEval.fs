@@ -41,9 +41,9 @@ module TypeEval =
             let! funcType = !func
             let! argType = !arg
             return Expr.Apply(funcType, argType, expr.Location, ctx.Scope)
-          | ExprRec.ApplyValue({ F = func; Arg = arg; ArgT = argT }) ->
-            let! funcType = !func
-            return Expr.ApplyValue(funcType, arg, argT, expr.Location, ctx.Scope)
+          | ExprRec.FromValue({ Value = v
+                                ValueType = v_t
+                                ValueKind = v_k }) -> return Expr.FromValue(v, v_t, v_k, expr.Location, ctx.Scope)
           | ExprRec.Let({ Var = var
                           Type = var_type
                           Val = value

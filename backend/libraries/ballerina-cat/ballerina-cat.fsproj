@@ -14,6 +14,8 @@
         <Compile Include="Collections/Option/Model.fs" />
         <Compile Include="Collections/Map/Model.fs" />
         <Compile Include="Collections/OrderedMap/Model.fs" />
+        <Compile Include="Collections\NonEmptySet\Model.fs" />
+        <Compile Include="Collections\TaskSum\ComputationExpression.fs" />
         <Compile Include="Lenses/Model.fs" />
         <Compile Include="Reader/WithError/Model.fs" />
         <Compile Include="State/Model.fs" />

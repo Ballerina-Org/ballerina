@@ -14,11 +14,11 @@
         <Compile Include="TypeEval.fs" />
         <Compile Include="TypeCheck/LiftOtherSteps.fs" />
         <Compile Include="TypeCheck/AdHocPolymorphicOperators.fs" />
+        <Compile Include="TypeCheck/InstantiateSyntheticVars.fs" />
         <Compile Include="TypeCheck/Primitive.fs" />
         <Compile Include="TypeCheck/Lookup.fs" />
         <Compile Include="TypeCheck/Lambda.fs" />
         <Compile Include="TypeCheck/Apply.fs" />
-        <Compile Include="TypeCheck/ApplyValue.fs" />
         <Compile Include="TypeCheck/If.fs" />
         <Compile Include="TypeCheck/TypeLambda.fs" />
         <Compile Include="TypeCheck/Let.fs" />

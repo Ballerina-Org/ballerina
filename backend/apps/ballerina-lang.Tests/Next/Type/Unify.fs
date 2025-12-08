@@ -145,13 +145,13 @@ let ``LangNext-Unify unifies types without variables`` () =
       TypeValue.CreateTuple([ TypeValue.CreateInt32(); TypeValue.CreateString() ])
       TypeValue.CreateSum([ TypeValue.CreateInt32(); TypeValue.CreateString() ])
       TypeValue.CreateRecord(
-        [ "a" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateInt32()
-          "b" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateString() ]
+        [ "a" |> Identifier.LocalScope |> TypeSymbol.Create, (TypeValue.CreateInt32(), Kind.Star)
+          "b" |> Identifier.LocalScope |> TypeSymbol.Create, (TypeValue.CreateString(), Kind.Star) ]
         |> OrderedMap.ofList
       )
       TypeValue.CreateUnion(
-        [ "a" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateInt32()
-          "b" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateString() ]
+        [ "a" |> Identifier.LocalScope |> TypeSymbol.Create, (TypeValue.CreateInt32())
+          "b" |> Identifier.LocalScope |> TypeSymbol.Create, (TypeValue.CreateString()) ]
         |> OrderedMap.ofList
       ) ]
 
@@ -342,11 +342,13 @@ let ``LangNext-Unify unifies structurally and symbolically identical records and
     Location.Unknown,
 
     TypeValue.CreateRecord(
-      [ s1, TypeValue.CreateString(); s2, TypeValue.CreateInt32() ]
+      [ s1, (TypeValue.CreateString(), Kind.Star)
+        s2, (TypeValue.CreateInt32(), Kind.Star) ]
       |> OrderedMap.ofList
     ),
     TypeValue.CreateRecord(
-      [ s1, TypeValue.CreateString(); s2, TypeValue.CreateInt32() ]
+      [ s1, (TypeValue.CreateString(), Kind.Star)
+        s2, (TypeValue.CreateInt32(), Kind.Star) ]
       |> OrderedMap.ofList
     )
 
@@ -381,11 +383,13 @@ let ``LangNext-Unify does not unify structurally different records and unions`` 
   let inputs1 =
     Location.Unknown,
     TypeValue.CreateRecord(
-      [ s1, TypeValue.CreateInt32(); s2, TypeValue.CreateInt32() ]
+      [ s1, (TypeValue.CreateInt32(), Kind.Star)
+        s2, (TypeValue.CreateInt32(), Kind.Star) ]
       |> OrderedMap.ofList
     ),
     TypeValue.CreateRecord(
-      [ s1, TypeValue.CreateString(); s2, TypeValue.CreateInt32() ]
+      [ s1, (TypeValue.CreateString(), Kind.Star)
+        s2, (TypeValue.CreateInt32(), Kind.Star) ]
       |> OrderedMap.ofList
     )
 
@@ -416,13 +420,13 @@ let ``LangNext-Unify does not unify structurally identical but symbolically diff
   let inputs1 =
     Location.Unknown,
     TypeValue.CreateRecord(
-      [ "s1" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateString()
-        "s2" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateInt32() ]
+      [ "s1" |> Identifier.LocalScope |> TypeSymbol.Create, (TypeValue.CreateString(), Kind.Star)
+        "s2" |> Identifier.LocalScope |> TypeSymbol.Create, (TypeValue.CreateInt32(), Kind.Star) ]
       |> OrderedMap.ofList
     ),
     TypeValue.CreateRecord(
-      [ "s1" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateString()
-        "s2" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateInt32() ]
+      [ "s1" |> Identifier.LocalScope |> TypeSymbol.Create, (TypeValue.CreateString(), Kind.Star)
+        "s2" |> Identifier.LocalScope |> TypeSymbol.Create, (TypeValue.CreateInt32(), Kind.Star) ]
       |> OrderedMap.ofList
     )
 

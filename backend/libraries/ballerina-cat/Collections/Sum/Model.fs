@@ -2,9 +2,6 @@
 
 [<AutoOpen>]
 module Model =
-  open Ballerina.Fun
-  open System
-  open System.Threading.Tasks
   open Ballerina.Collections.NonEmptyList
 
   type Sum<'a, 'b> =
@@ -145,7 +142,7 @@ module Model =
       | Right e, _
       | _, Right e -> Right e
 
-    member sum.Delay p = sum.Bind((sum.Return()), p)
+    member sum.Delay p = sum.Bind(sum.Return(), p)
 
     member sum.Lift2 (f: 'a -> 'b -> 'c) (p1: Sum<_, 's>) (p2: Sum<_, 's>) =
       sum {
@@ -175,6 +172,11 @@ module Model =
           return Some res
         | None -> return None
       }
+
+    member inline this.MergeSources<'a1, 'a2, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
+      (p1: Sum<'a1, 'b>, p2: Sum<'a2, 'b>)
+      =
+      this.All2 p1 p2
 
   let sum = SumBuilder()
 

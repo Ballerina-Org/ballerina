@@ -82,6 +82,11 @@ module Model =
   and ExprSumDes<'T, 'Id, 'valueExt when 'Id: comparison> =
     { Handlers: Map<SumConsSelector, CaseHandler<'T, 'Id, 'valueExt>> }
 
+  and ExprFromValue<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Value: Value<TypeValue, 'valueExt>
+      ValueType: TypeValue
+      ValueKind: Kind }
+
   and ExprRec<'T, 'Id, 'valueExt when 'Id: comparison> =
     | Primitive of PrimitiveValue
     | Lookup of ExprLookup<'T, 'Id, 'valueExt>
@@ -89,8 +94,8 @@ module Model =
     | TypeApply of ExprTypeApply<'T, 'Id, 'valueExt>
     | TypeLet of ExprTypeLet<'T, 'Id, 'valueExt>
     | Lambda of ExprLambda<'T, 'Id, 'valueExt>
+    | FromValue of ExprFromValue<'T, 'Id, 'valueExt>
     | Apply of ExprApply<'T, 'Id, 'valueExt>
-    | ApplyValue of ExprApplyValue<'T, 'Id, 'valueExt>
     | Let of ExprLet<'T, 'Id, 'valueExt>
     | If of ExprIf<'T, 'Id, 'valueExt>
     | RecordCons of ExprRecordCons<'T, 'Id, 'valueExt>
@@ -114,7 +119,9 @@ module Model =
         | Some t -> $"(fun ({v.Name}: {t.ToString()}) -> {body.ToString()})"
         | None -> $"(fun {v.Name} -> {body.ToString()})"
       | Apply({ F = e1; Arg = e2 }) -> $"({e1.ToString()} {e2.ToString()})"
-      | ApplyValue({ F = e1; Arg = e2 }) -> $"({e1.ToString()} {e2.ToString()})"
+      | FromValue({ Value = v
+                    ValueType = t
+                    ValueKind = k }) -> $"({v.ToString()} : {t.ToString()} :: {k.ToString()}])"
       | Let({ Var = v
               Type = topt
               Val = e1

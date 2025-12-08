@@ -66,6 +66,7 @@ module SumDes =
 
               let fresh_var =
                 { TypeVar.Name = "_sum_des_result_" + guid.ToString()
+                  Synthetic = true
                   Guid = guid }
 
               fresh_var |> TypeValue.Var
@@ -82,6 +83,7 @@ module SumDes =
 
                       let fresh_var =
                         { TypeVar.Name = var.Name + $"_{_k.Case}Of{_k.Count}_" + guid.ToString()
+                          Synthetic = true
                           Guid = guid }
 
                       do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists fresh_var))
@@ -95,7 +97,7 @@ module SumDes =
                         |> state.OfSum
                   }
 
-                let! body, body_t, body_k =
+                let! body, body_t, body_k, _ =
                   !body
                   |> state.MapContext(
                     TypeCheckContext.Updaters.Values(
@@ -142,5 +144,5 @@ module SumDes =
           //       |> TypeValue.EquivalenceClassesOp
           //       |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
-          return Expr.SumDes(handlerExprs, loc0, ctx.Scope), arrowValue, Kind.Star
+          return Expr.SumDes(handlerExprs, loc0, ctx.Scope), arrowValue, Kind.Star, ctx
         }

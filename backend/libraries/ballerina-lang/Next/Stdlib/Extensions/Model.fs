@@ -28,7 +28,11 @@ module Model =
       Kind: Kind // *
       Operation: 'extOperations
       OperationsLens: PartialLens<'ext, 'extOperations> // lens to access the value inside the extension value
-      Apply: Location -> 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, Value<TypeValue, 'ext>> }
+      Apply:
+        Location
+          -> List<Expr<TypeValue, ResolvedIdentifier, 'ext>>
+          -> 'extOperations * Value<TypeValue, 'ext>
+          -> ExprEvaluator<'ext, Value<TypeValue, 'ext>> }
 
   and TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations> =
     { TypeName: ResolvedIdentifier * TypeSymbol // example: "Option"
@@ -50,7 +54,11 @@ module Model =
       Kind: Kind // * => * => *
       Operation: 'extOperations
       OperationsLens: PartialLens<'ext, 'extOperations> // lens to access the value inside the extension value
-      Apply: Location -> 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, Value<TypeValue, 'ext>> }
+      Apply:
+        Location
+          -> List<Expr<TypeValue, ResolvedIdentifier, 'ext>>
+          -> 'extOperations * Value<TypeValue, 'ext>
+          -> ExprEvaluator<'ext, Value<TypeValue, 'ext>> }
 
   and TypeCaseExtension<'ext, 'extConstructors, 'extValues> =
     { CaseType: TypeExpr // "a"
@@ -58,7 +66,11 @@ module Model =
       Constructor: 'extConstructors
       ValueLens: PartialLens<'ext, 'extValues> // lens to access the value inside the extension value
       ConsLens: PartialLens<'ext, 'extConstructors> // lens to access the constructor inside the extension value
-      Apply: Location -> 'extConstructors * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, Value<TypeValue, 'ext>> }
+      Apply:
+        Location
+          -> List<Expr<TypeValue, ResolvedIdentifier, 'ext>>
+          -> 'extConstructors * Value<TypeValue, 'ext>
+          -> ExprEvaluator<'ext, Value<TypeValue, 'ext>> }
 
   and TypeLambdaExtension<'ext, 'extTypeLambda> =
     { ExtensionType: ResolvedIdentifier * TypeValue * Kind

@@ -158,12 +158,12 @@ module Traverser =
             |> Reader.Run ctx.TypeContext
             |> state.OfSum
 
-          return! (!!id.ToFSharpString) tv
+          return! (!!id.AsFSharpString) tv
         | TypeValue.Record(CollectionReference fields) ->
           let! fields =
             fields
             |> OrderedMap.toList
-            |> List.map (fun (ts, tv) ->
+            |> List.map (fun (ts, (tv, _kind)) ->
               state {
                 let! v = !! entity.EntityName tv
                 return ts.Name |> TypeCheckScope.Empty.Resolve, v
@@ -175,7 +175,7 @@ module Traverser =
           let! fields =
             fields.value
             |> OrderedMap.toList
-            |> List.map (fun (ts, tv) ->
+            |> List.map (fun (ts, (tv, _kind)) ->
               state {
                 let! v = !! ts.Name.LocalName tv
                 return ts.Name |> TypeCheckScope.Empty.Resolve, v

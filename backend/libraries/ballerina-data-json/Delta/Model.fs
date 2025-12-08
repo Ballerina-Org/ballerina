@@ -26,7 +26,7 @@ module Model =
                 Delta.FromJsonTuple Delta.FromJson json
                 Delta.FromJsonSum Delta.FromJson json
                 extParser json |> sum.Map Delta.Ext |> reader.OfSum
-                $"Unknown TypeValue JSON: {json.ToFSharpString.ReasonablyClamped}"
+                $"Unknown TypeValue JSON: {json.AsFSharpString.ReasonablyClamped}"
                 |> Errors.Singleton
                 |> Errors.WithPriority ErrorPriority.High
                 |> reader.Throw ]

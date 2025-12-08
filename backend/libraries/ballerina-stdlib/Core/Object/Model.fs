@@ -6,4 +6,4 @@ module Object =
   open System.Text.RegularExpressions
 
   type Object with
-    member self.ToFSharpString = sprintf "%A" self
+    member self.AsFSharpString = sprintf "%A" self

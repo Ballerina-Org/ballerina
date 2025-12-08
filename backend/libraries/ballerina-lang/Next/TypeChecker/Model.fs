@@ -18,8 +18,11 @@ module Model =
 
 
   type TypeBindings = Map<ResolvedIdentifier, TypeValue * Kind>
-  type UnionCaseConstructorBindings = Map<ResolvedIdentifier, TypeValue * OrderedMap<TypeSymbol, TypeValue>>
-  type RecordFieldBindings = Map<ResolvedIdentifier, OrderedMap<TypeSymbol, TypeValue> * TypeValue>
+
+  type UnionCaseConstructorBindings =
+    Map<ResolvedIdentifier, TypeValue * List<TypeParameter> * OrderedMap<TypeSymbol, TypeValue>>
+
+  type RecordFieldBindings = Map<ResolvedIdentifier, OrderedMap<TypeSymbol, TypeValue * Kind> * TypeValue>
 
   type TypeSymbols = Map<ResolvedIdentifier, TypeSymbol>
 
@@ -47,9 +50,6 @@ module Model =
       Symbols: TypeExprEvalSymbols
       Vars: UnificationState }
 
-  [<Obsolete("Use TypeCheckState instead")>]
-  type TypeExprEvalState = TypeCheckState
-
   type TypeValueKindEval =
     Option<ExprTypeLetBindingName> -> Location -> TypeValue -> State<Kind, KindEvalContext, TypeCheckState, Errors>
 
@@ -58,12 +58,15 @@ module Model =
 
   type UnificationContext =
     { EvalState: TypeCheckState
+      TypeParameters: TypeParametersScope
       Scope: TypeCheckScope }
 
   type TypeCheckerResult<'r> = State<'r, TypeCheckContext, TypeCheckState, Errors>
 
   type TypeChecker<'res, 'valueExt> =
-    Option<TypeValue> -> 'res -> TypeCheckerResult<Expr<TypeValue, ResolvedIdentifier, 'valueExt> * TypeValue * Kind>
+    Option<TypeValue>
+      -> 'res
+      -> TypeCheckerResult<Expr<TypeValue, ResolvedIdentifier, 'valueExt> * TypeValue * Kind * TypeCheckContext>
 
   type ExprTypeChecker<'valueExt> = TypeChecker<Expr<TypeExpr, Identifier, 'valueExt>, 'valueExt>
 

@@ -139,6 +139,7 @@ module Model =
 
   and TypeVar =
     { Name: string
+      Synthetic: bool // this is the case for type vars created as placeholders - they should all be instantiated away during type checking
       Guid: Guid }
 
     override v.ToString() = v.Name
@@ -240,7 +241,7 @@ module Model =
     | Lambda of WithTypeExprSourceMapping<TypeParameter * TypeExpr>
     | Application of WithTypeExprSourceMapping<SymbolicTypeApplication>
     | Arrow of WithTypeExprSourceMapping<TypeValue * TypeValue>
-    | Record of WithTypeExprSourceMapping<OrderedMap<TypeSymbol, TypeValue>>
+    | Record of WithTypeExprSourceMapping<OrderedMap<TypeSymbol, TypeValue * Kind>>
     | Tuple of WithTypeExprSourceMapping<List<TypeValue>>
     | Union of WithTypeExprSourceMapping<OrderedMap<TypeSymbol, TypeValue>>
     | Sum of WithTypeExprSourceMapping<List<TypeValue>>

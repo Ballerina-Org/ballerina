@@ -13,7 +13,6 @@ module Mock =
           RequiredImport = None
           SupportedRenderers =
             Set.ofList
-
               [ RendererName "number"
                 RendererName "defaultNumber"
                 RendererName "numberCell"

@@ -33,7 +33,7 @@ module ExprJson =
             Expr.FromJsonIf Expr.FromJson json
             Expr.FromJsonPrimitive(json)
             Expr.FromJsonLookup(json)
-            $"Unknown Expr JSON: {json.ToFSharpString.ReasonablyClamped}"
+            $"Unknown Expr JSON: {json.AsFSharpString.ReasonablyClamped}"
             |> Errors.Singleton
             |> Errors.WithPriority ErrorPriority.Medium
             |> reader.Throw ]
@@ -50,9 +50,9 @@ module ExprJson =
         | ExprRec.TypeLambda({ Param = name; Body = body }) -> Expr.ToJsonTypeLambda Expr.ToJson name body
         | ExprRec.TypeApply({ TypeArg = t; Func = e }) -> Expr.ToJsonTypeApply Expr.ToJson e t
         | ExprRec.Apply({ F = e1; Arg = e2 }) -> Expr.ToJsonApply Expr.ToJson e1 e2
-        | ExprRec.ApplyValue({ F = _e1; Arg = _e2 }) ->
-          // Expr.ToJsonApply Expr.ToJson e1 e2
-          failwith "Not implemented"
+        | ExprRec.FromValue({ Value = _
+                              ValueType = _
+                              ValueKind = _ }) -> failwith "Not implemented"
         | ExprRec.Let({ Var = v
                         Type = _
                         Val = e1

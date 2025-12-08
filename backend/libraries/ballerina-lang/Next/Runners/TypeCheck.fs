@@ -64,7 +64,7 @@ module TypeCheck =
 
           match typeCheckResult with
           | Right(e, _) -> Right e
-          | Left((program, programType, _), typeCheckFinalState) ->
+          | Left((program, programType, _, _), typeCheckFinalState) ->
 
             let typeCheckState =
               Option.defaultValue languageContext.TypeCheckState typeCheckFinalState

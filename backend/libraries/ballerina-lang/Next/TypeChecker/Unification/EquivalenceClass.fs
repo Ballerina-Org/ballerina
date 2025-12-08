@@ -179,7 +179,7 @@ module EquivalenceClasses =
           | Some representative ->
             return!
               (loc0,
-               $"Error: cannot remove variable {var.ToString()} because it is not free - it has a representative {representative.ToFSharpString}")
+               $"Error: cannot remove variable {var.ToString()} because it is not free - it has a representative {representative.AsFSharpString}")
               |> Errors.Singleton
               |> state.Throw
           | None ->
@@ -188,7 +188,7 @@ module EquivalenceClasses =
             else
               return!
                 (loc0,
-                 $"Error: cannot remove variable {var.ToString()} because it is bound to other variables {var_class.Variables.ToFSharpString}")
+                 $"Error: cannot remove variable {var.ToString()} because it is bound to other variables {var_class.Variables.AsFSharpString}")
                 |> Errors.Singleton
                 |> state.Throw
       }

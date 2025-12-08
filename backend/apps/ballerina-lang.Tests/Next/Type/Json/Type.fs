@@ -121,6 +121,7 @@ let ``Dsl:Type.Var json round-trip`` () =
 
   let expected =
     { TypeVar.Name = "MyTypeVar"
+      Synthetic = false
       TypeVar.Guid = guid }
 
   (expected, JsonValue.Parse json) ||> ``Assert Var -> ToJson -> FromJson -> Var``

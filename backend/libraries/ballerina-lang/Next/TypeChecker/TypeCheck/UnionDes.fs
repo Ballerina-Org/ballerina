@@ -49,6 +49,7 @@ module UnionDes =
 
           let result_var =
             { TypeVar.Name = $"res" + guid.ToString()
+              Synthetic = true
               Guid = guid }
 
           do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists result_var))
@@ -71,7 +72,7 @@ module UnionDes =
                     state {
                       let! sym, cons =
                         context_cases_by_id
-                        |> OrderedMap.tryFindWithError id "cases" id.ToFSharpString
+                        |> OrderedMap.tryFindWithError id "cases" id.AsFSharpString
                         |> ofSum
 
                       let! id =
@@ -90,7 +91,7 @@ module UnionDes =
                     state {
                       // let id = id |> TypeCheckScope.Empty.Resolve
                       let! id = TypeCheckState.TryResolveIdentifier(id, loc0)
-                      let! cons = TypeCheckState.TryFindUnionCaseConstructor(id, loc0)
+                      let! (cons_t, _, cons_cases) = TypeCheckState.TryFindUnionCaseConstructor(id, loc0)
                       let! sym = TypeCheckState.TryFindUnionCaseSymbol(id, loc0)
 
                       let! id =
@@ -98,7 +99,7 @@ module UnionDes =
                         |> state.OfStateReader
                         |> Expr.liftTypeEval
 
-                      return cons, (id, sym, case_handler)
+                      return (cons_t, cons_cases), (id, sym, case_handler)
                     })
                   |> Seq.toList
 
@@ -148,7 +149,7 @@ module UnionDes =
                       state {
                         //let! var_t = union_t |> OrderedMap.tryFindWithError k_s "cases" k_s.ToFSharpString |> ofSum
 
-                        let! body, body_t, body_k =
+                        let! body, body_t, body_k, _ =
                           None => body // either None, or the instantiation of result_t
                           |> state.MapContext(
                             TypeCheckContext.Updaters.Values(
@@ -176,7 +177,7 @@ module UnionDes =
                     state {
                       match fallback with
                       | None -> return None
-                      | Some(fallback, fallbackT, fallbackK) ->
+                      | Some(fallback, fallbackT, fallbackK, _) ->
                         do! fallbackK |> Kind.AsStar |> ofSum |> state.Ignore
                         do! TypeValue.Unify(loc0, fallbackT, result_t) |> Expr.liftUnification
                         return fallback |> Some
@@ -211,7 +212,7 @@ module UnionDes =
                     |> Seq.map (fun (k, v) -> k, v)
                     |> Seq.fold (fun state (k, v) -> Map.add k v state) handlerExprs
 
-                  return Expr.UnionDes(handlerExprs, fallback, loc0, ctx.Scope), arrowValue, Kind.Star
+                  return Expr.UnionDes(handlerExprs, fallback, loc0, ctx.Scope), arrowValue, Kind.Star, ctx
                 }
                 |> state.MapError(Errors.SetPriority ErrorPriority.High)
             }

@@ -54,6 +54,7 @@ module Lambda =
 
           let freshVar =
             { TypeVar.Name = x.Name + "_lambda_" + guid.ToString()
+              Synthetic = true
               Guid = guid }
 
           let freshVarType =
@@ -61,7 +62,7 @@ module Lambda =
 
           do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists freshVar))
 
-          let! body, t_body, body_k =
+          let! body, t_body, body_k, _ =
             !body
             |> state.MapContext(
               TypeCheckContext.Updaters.Values(
@@ -88,6 +89,6 @@ module Lambda =
             |> TypeValue.Instantiate TypeExpr.Eval loc0
             |> Expr.liftInstantiation
 
-          return Expr.Lambda(x, Some t_x, body, loc0, ctx.Scope), t_res, Kind.Star
+          return Expr.Lambda(x, Some t_x, body, loc0, ctx.Scope), t_res, Kind.Star, ctx
         }
 // |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `fun {x.Name} -> ...`"))

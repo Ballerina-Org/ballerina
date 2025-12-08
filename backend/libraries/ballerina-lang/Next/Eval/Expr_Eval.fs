@@ -60,7 +60,10 @@ module Eval =
         -> ExprEvaluator<'valueExtension, Value<TypeValue, 'valueExtension>>)
 
   and ExtensionEvaluator<'valueExtension> =
-    Location -> 'valueExtension -> ExprEvaluator<'valueExtension, ExtEvalResult<'valueExtension>>
+    Location
+      -> List<Expr<TypeValue, ResolvedIdentifier, 'valueExtension>>
+      -> 'valueExtension
+      -> ExprEvaluator<'valueExtension, ExtEvalResult<'valueExtension>>
 
   and ValueExtensionOps<'valueExtension> =
     { Eval: ExtensionEvaluator<'valueExtension> }
@@ -72,7 +75,7 @@ module Eval =
       { Values = Map.empty
         ExtensionOps =
           { Eval =
-              fun loc0 _ ->
+              fun loc0 _ _ ->
                 (loc0, $"Error: cannot evaluate empty extension")
                 |> Errors.Singleton
                 |> reader.Throw }
@@ -92,7 +95,7 @@ module Eval =
          Symbols = fun u (c: ExprEvalContext<'valueExtension>) -> { c with Symbols = u (c.Symbols) } |}
 
   type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
-    static member EvalApply (loc0: Location) (fV, argV) =
+    static member EvalApply (loc0: Location) (rest: List<_>) (fV, argV) =
       reader {
         let! fVVar, fvBody, closure, _scope =
           fV |> Value.AsLambda |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
@@ -105,7 +108,7 @@ module Eval =
 
             let! res =
               fvBody
-              |> Expr.Eval
+              |> Expr.Eval rest
               |> reader.MapContext(ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) closure))
               |> reader.Catch
 
@@ -122,35 +125,42 @@ module Eval =
       }
 
     static member Eval<'valueExtension>
+      (rest: List<Expr<TypeValue, ResolvedIdentifier, 'valueExtension>>)
       (e: Expr<TypeValue, ResolvedIdentifier, 'valueExtension>)
       : ExprEvaluator<'valueExtension, Value<TypeValue, 'valueExtension>> =
-      let (!) = Expr.Eval<'valueExtension>
+      let (!) = Expr.Eval<'valueExtension> []
+      let (!!) = Expr.Eval<'valueExtension> rest
       let loc0 = e.Location
 
       reader {
         match e.Expr with
+        | ExprRec.Primitive PrimitiveValue.Unit ->
+
+          match rest with
+          | [] -> return Value.Primitive PrimitiveValue.Unit
+          | p :: rest -> return! Expr.Eval rest p
         | ExprRec.Primitive v -> return Value.Primitive v
-        | ExprRec.If({ Cond = cond
+        | ExprRec.If { Cond = cond
                        Then = thenBody
-                       Else = elseBody }) ->
-          let! condV = cond |> Expr.Eval
+                       Else = elseBody } ->
+          let! condV = !cond
 
           match condV with
-          | Value.Primitive(PrimitiveValue.Bool true) -> return! thenBody |> Expr.Eval
-          | Value.Primitive(PrimitiveValue.Bool false) -> return! elseBody |> Expr.Eval
+          | Value.Primitive(PrimitiveValue.Bool true) -> return! !!thenBody
+          | Value.Primitive(PrimitiveValue.Bool false) -> return! !!elseBody
           | v ->
             return!
               (loc0, $"expected boolean in if condition, got {v}")
               |> Errors.Singleton
               |> reader.Throw
-        | ExprRec.Let({ Var = var
+        | ExprRec.Let { Var = var
                         Type = _varType
                         Val = valueExpr
-                        Rest = body }) ->
-          let! value = valueExpr |> Expr.Eval
+                        Rest = body } ->
+          let! value = !valueExpr
 
           return!
-            !body
+            !!body
             |> reader.MapContext(
               ExprEvalContext.Updaters.Values(Map.add (var.Name |> Identifier.LocalScope |> e.Scope.Resolve) value)
             )
@@ -159,18 +169,13 @@ module Eval =
 
           let! res =
             ctx.Values
-            |> Map.tryFindWithError id "variables" (id.ToFSharpString) loc0
+            |> Map.tryFindWithError id "variables" (id.AsFSharpString) loc0
             |> reader.OfSum
             |> reader.Catch
 
           match res with
           | Left v -> return v
-          | Right err ->
-            do Console.WriteLine($"Warning: variable {id} not found in context.")
-            do Console.ReadLine() |> ignore
-            do ctx.Values |> Map.iter (fun k v -> Console.WriteLine($"  {k} = {v}"))
-            do Console.ReadLine() |> ignore
-            return! err |> reader.Throw
+          | Right err -> return! err |> reader.Throw
         | ExprRec.RecordCons { Fields = fields } ->
           // let! ctx = reader.GetContext()
 
@@ -229,15 +234,15 @@ module Eval =
 
           return!
             recordV
-            |> Map.tryFindWithError fieldId "record field" (fieldId.ToFSharpString) loc0
+            |> Map.tryFindWithError fieldId "record field" (fieldId.AsFSharpString) loc0
             |> reader.OfSum
 
         | ExprRec.TupleCons { Items = fields } ->
           let! fields = fields |> List.map (!) |> reader.All
 
           return Value.Tuple(fields)
-        | ExprRec.TupleDes({ ExprTupleDes.Tuple = recordExpr
-                             Item = fieldId }) ->
+        | ExprRec.TupleDes { ExprTupleDes.Tuple = recordExpr
+                             Item = fieldId } ->
           let! recordV = !recordExpr
           let! recordV = recordV |> Value.AsTuple |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
@@ -277,7 +282,7 @@ module Eval =
 
                     let! caseHandler =
                       cases
-                      |> Map.tryFindWithError unionVCase "union case" (unionVCase.ToFSharpString) loc0
+                      |> Map.tryFindWithError unionVCase "union case" (unionVCase.AsFSharpString) loc0
                       |> reader.OfSum
                       |> reader.Catch
                       |> reader.Map(Sum.toOption)
@@ -287,7 +292,7 @@ module Eval =
                       let caseVar, caseBody = caseHandler
 
                       return!
-                        !caseBody
+                        !!caseBody
                         |> reader.MapContext(
                           ExprEvalContext.Updaters.Values(
                             Map.add (caseVar.Name |> Identifier.LocalScope |> e.Scope.Resolve) unionV
@@ -299,7 +304,7 @@ module Eval =
                       | None ->
                         return!
                           (loc0,
-                           $"Error: cannot find case handler for union case. Cases = {cases.Keys.ToFSharpString}. Case = {unionVCase.ToFSharpString}.")
+                           $"Error: cannot find case handler for union case. Cases = {cases.Keys.AsFSharpString}. Case = {unionVCase.AsFSharpString}.")
                           |> Errors.Singleton
                           |> reader.Throw
                   }
@@ -311,7 +316,7 @@ module Eval =
                 return!
                   reader {
                     let! ctx = reader.GetContext()
-                    let unionV = ctx.ExtensionOps.Eval loc0 unionV
+                    let unionV = ctx.ExtensionOps.Eval loc0 rest unionV
 
                     match! unionV with
                     | Matchable f -> return! f cases
@@ -332,87 +337,20 @@ module Eval =
 
           let! caseHandler =
             cases.Handlers
-            |> Map.tryFindWithError sumVCase "sum case" (sumVCase.ToFSharpString) loc0
+            |> Map.tryFindWithError sumVCase "sum case" (sumVCase.AsFSharpString) loc0
             |> reader.OfSum
 
           let caseVar, caseBody = caseHandler
 
           return!
-            !caseBody
+            !!caseBody
             |> reader.MapContext(
               ExprEvalContext.Updaters.Values(Map.add (caseVar.Name |> Identifier.LocalScope |> e.Scope.Resolve) sumV)
             )
 
-        | ExprRec.ApplyValue({ F = f; Arg = argV }) ->
-          let! fV = !f
-
-          return!
-            reader.Any(
-              reader { return! Expr.EvalApply loc0 (fV, argV) },
-              [ (reader {
-                  let! fUnionCons = fV |> Value.AsUnionCons |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
-                  return Value.UnionCase(fUnionCons, argV)
-                })
-                (reader {
-                  let! fRecord = fV |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
-
-                  return!
-                    reader {
-                      let! fRecordCons =
-                        fRecord
-                        |> Map.tryFindWithError
-                          ("cons" |> Identifier.LocalScope |> e.Scope.Resolve)
-                          "record field"
-                          "cons"
-                          loc0
-                        |> reader.OfSum
-
-                      let! fUnionCons =
-                        fRecordCons
-                        |> Value.AsUnionCons
-                        |> sum.MapError(Errors.FromErrors loc0)
-                        |> reader.OfSum
-
-                      return Value.UnionCase(fUnionCons, argV)
-                    }
-                    |> reader.MapError(Errors.SetPriority ErrorPriority.High)
-                })
-                (reader {
-                  let! fieldId = fV |> Value.AsRecordDes |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
-
-                  return!
-                    reader {
-                      // let fieldId = fieldId.Name
-                      let! recordV = argV |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
-
-                      return!
-                        recordV
-                        |> Map.tryFindWithError fieldId "record field" (fieldId.ToString()) loc0
-                        |> reader.OfSum
-                        |> reader.MapError(Errors.Map(String.append $" in record {argV}"))
-                    }
-                    |> reader.MapError(Errors.SetPriority ErrorPriority.High)
-                })
-                (reader {
-                  let! fExt = fV |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
-
-                  return!
-                    reader {
-                      let! ctx = reader.GetContext()
-                      let! fExt = ctx.ExtensionOps.Eval loc0 fExt
-
-                      match fExt with
-                      | Applicable f -> return! f argV
-                      | _ ->
-                        return!
-                          (loc0, "Expected an applicable or matchable extension function")
-                          |> Errors.Singleton
-                          |> reader.Throw
-                    }
-                    |> reader.MapError(Errors.SetPriority ErrorPriority.High)
-                }) ]
-            )
-            |> reader.MapError(Errors.FilterHighestPriorityOnly)
+        | ExprRec.FromValue({ Value = v
+                              ValueType = _
+                              ValueKind = _ }) -> return v
 
         | ExprRec.Apply({ F = f; Arg = argE }) ->
           let! fV = !f
@@ -420,12 +358,12 @@ module Eval =
 
           return!
             reader.Any(
-              reader { return! Expr.EvalApply loc0 (fV, argV) },
-              [ (reader {
+              reader { return! Expr.EvalApply loc0 rest (fV, argV) },
+              [ reader {
                   let! fUnionCons = fV |> Value.AsUnionCons |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
                   return Value.UnionCase(fUnionCons, argV)
-                })
-                (reader {
+                }
+                reader {
                   let! fRecord = fV |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
                   return!
@@ -448,8 +386,8 @@ module Eval =
                       return Value.UnionCase(fUnionCons, argV)
                     }
                     |> reader.MapError(Errors.SetPriority ErrorPriority.High)
-                })
-                (reader {
+                }
+                reader {
                   let! fieldId = fV |> Value.AsRecordDes |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
                   return!
@@ -464,14 +402,14 @@ module Eval =
                         |> reader.MapError(Errors.Map(String.append $" in record {argV}"))
                     }
                     |> reader.MapError(Errors.SetPriority ErrorPriority.High)
-                })
-                (reader {
+                }
+                reader {
                   let! fExt = fV |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
                   return!
                     reader {
                       let! ctx = reader.GetContext()
-                      let! fExt = ctx.ExtensionOps.Eval loc0 fExt
+                      let! fExt = ctx.ExtensionOps.Eval loc0 rest fExt
 
                       match fExt with
                       | Applicable f -> return! f argV
@@ -482,14 +420,13 @@ module Eval =
                           |> reader.Throw
                     }
                     |> reader.MapError(Errors.SetPriority ErrorPriority.High)
-                }) ]
+                } ]
             )
             |> reader.MapError(Errors.FilterHighestPriorityOnly)
 
-
-        | ExprRec.Lambda({ Param = var
+        | ExprRec.Lambda { Param = var
                            ParamType = _
-                           Body = body }) ->
+                           Body = body } ->
           let! context = reader.GetContext()
           return Value.Lambda(var, body, context.Values, e.Scope)
         | ExprRec.TypeLambda({ Param = _tp; Body = body }) -> return! !body
@@ -501,71 +438,27 @@ module Eval =
 
           let bind_component (n, v) : Updater<Map<ResolvedIdentifier, Value<TypeValue, 'valueExtension>>> = Map.add n v
 
-          let! definition_cases =
+          let! definition_as_union =
             typeDefinition
             |> TypeValue.AsUnion
             |> sum.MapError(Errors.FromErrors loc0)
             |> reader.OfSum
             |> reader.Catch
             |> reader.Map(Sum.toOption)
-            |> reader.Map(Option.map WithTypeExprSourceMapping.Getters.Value)
+          // |> reader.Map(Option.map WithTypeExprSourceMapping.Getters.Value)
 
           let! bind_definition_cases =
-            definition_cases
-            |> Option.map (fun definition_cases ->
+            definition_as_union
+            |> Option.map (fun (_, definition_cases) ->
               definition_cases
               |> OrderedMap.toSeq
               |> Seq.map (fun (k, _) ->
                 reader {
-                  let lens =
-                    Value.Record(
-                      [ "cons" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve,
-                        Value.UnionCons(k.Name |> scope.Resolve)
-                        "map" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve,
-                        Value.Lambda(
-                          Var.Create "f",
-                          Expr.Lambda(
-                            Var.Create "x",
-                            None,
-                            Expr.Apply(
-                              Expr.UnionDes(
-                                (k.Name |> scope.Resolve,
-                                 (Var.Create "_",
-                                  Expr.Apply(
-                                    Expr.Lookup(k.Name |> scope.Resolve),
-                                    Expr.Apply(
-                                      Expr.Lookup("f" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve),
-                                      Expr.Lookup("_" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
-                                    )
-                                  )))
-                                :: [ for caseId, _ in definition_cases |> OrderedMap.toSeq do
-                                       if caseId <> k then
-                                         yield
-                                           caseId.Name |> scope.Resolve,
-                                           (Var.Create "_",
-                                            Expr.Apply(
-                                              Expr.Lookup(caseId.Name |> e.Scope.Resolve),
-                                              Expr.Lookup(
-                                                "_" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve
-                                              )
-                                            )) ]
-                                |> Map.ofList,
-                                None
-                              ),
-                              Expr.Lookup("x" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
-                            )
-                          ),
-                          Map.empty,
-                          TypeCheckScope.Empty
-                        ) ]
-                      |> Map.ofList
-                    )
-
                   return
-                    bind_component (k.Name |> scope.Resolve, lens)
+                    bind_component (k.Name |> scope.Resolve, Value.UnionCons(k.Name |> scope.Resolve))
                     >> bind_component (
                       k.Name.LocalName |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve,
-                      lens
+                      Value.UnionCons(k.Name |> scope.Resolve)
                     )
                 })
               |> reader.All)
@@ -579,7 +472,6 @@ module Eval =
             |> reader.OfSum
             |> reader.Catch
             |> reader.Map(Sum.toOption)
-            |> reader.Map(Option.map WithTypeExprSourceMapping.Getters.Value)
 
           let! bind_definition_fields =
             definition_fields
@@ -588,39 +480,11 @@ module Eval =
               |> OrderedMap.toSeq
               |> Seq.map (fun (k, _) ->
                 reader {
-                  let lens =
-                    Value.Record(
-                      [ "get" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve,
-                        Value.RecordDes(k.Name |> scope.Resolve)
-                        "map" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve,
-                        Value.Lambda(
-                          Var.Create "f",
-                          Expr.Lambda(
-                            Var.Create "x",
-                            None,
-                            Expr.RecordWith(
-                              Expr.Lookup("x" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve),
-                              [ k.Name |> scope.Resolve,
-                                Expr.Apply(
-                                  Expr.Lookup("f" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve),
-                                  Expr.RecordDes(
-                                    Expr.Lookup("x" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve),
-                                    k.Name |> scope.Resolve
-                                  )
-                                ) ]
-                            )
-                          ),
-                          Map.empty,
-                          TypeCheckScope.Empty
-                        ) ]
-                      |> Map.ofList
-                    )
-
                   return
-                    bind_component (k.Name |> scope.Resolve, lens)
+                    bind_component (k.Name |> scope.Resolve, Value.RecordDes(k.Name |> scope.Resolve))
                     >> bind_component (
                       k.Name.LocalName |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve,
-                      lens
+                      Value.RecordDes(k.Name |> scope.Resolve)
                     )
                 })
               |> reader.All)
@@ -628,7 +492,7 @@ module Eval =
             |> reader.Map(Option.map (List.fold (>>) id) >> Option.defaultValue id)
 
           return!
-            !body
+            !!body
             |> reader.MapContext(ExprEvalContext.Updaters.Values(bind_definition_cases >> bind_definition_fields))
         | ExprRec.TypeApply({ ExprTypeApply.Func = typeLambda
                               TypeArg = typeArg }) ->
@@ -645,7 +509,7 @@ module Eval =
                   |> reader.OfSum
 
                 let! ctx = reader.GetContext()
-                let! ext = ctx.ExtensionOps.Eval loc0 ext
+                let! ext = ctx.ExtensionOps.Eval loc0 rest ext
 
                 match ext with
                 | TypeApplicable f -> return! f typeArg
@@ -656,7 +520,7 @@ module Eval =
                     |> reader.Throw
               },
               // this says we do not care about the type info
-              [ !typeLambda ]
+              [ !!typeLambda ]
             )
         | _ -> return! (loc0, $"Cannot eval expression {e}") |> Errors.Singleton |> reader.Throw
       }

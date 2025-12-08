@@ -21,7 +21,11 @@ module TypeVar =
         let! guid = fields |> (Map.tryFindWithError "guid" "TypeVar" "guid" >>= JsonValue.AsString)
 
         match Guid.TryParse(guid) with
-        | true, parsedGuid -> return { Name = name; Guid = parsedGuid }
+        | true, parsedGuid ->
+          return
+            { Name = name
+              Guid = parsedGuid
+              Synthetic = false }
         | false, _ ->
           return!
             $"Error: Invalid GUID format '{guid}' in 'TypeVar'."

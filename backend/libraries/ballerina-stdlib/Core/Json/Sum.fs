@@ -25,7 +25,7 @@ module Sum =
 
           if jsonDiscriminatorValue = discriminatorValue && fields |> Map.isEmpty |> not then
             return!
-              $"Error: Expected no additional fields, but found {fields |> Map.count} ({(fields |> Map.keys).ToFSharpString.ReasonablyClamped})."
+              $"Error: Expected no additional fields, but found {fields |> Map.count} ({(fields |> Map.keys).AsFSharpString.ReasonablyClamped})."
               |> Errors.Singleton
               |> Errors.WithPriority ErrorPriority.High
               |> sum.Throw
@@ -38,7 +38,7 @@ module Sum =
               |> sum.Throw
         | None ->
           return!
-            $"Error: Expected field '{discriminatorKey}' in JSON object '{json.ToFSharpString}', but it was not found."
+            $"Error: Expected field '{discriminatorKey}' in JSON object '{json.AsFSharpString}', but it was not found."
             |> Errors.Singleton
             |> sum.Throw
       }
@@ -60,7 +60,7 @@ module Sum =
 
           if jsonDiscriminatorValue = discriminatorValue && fields |> Map.count <> 1 then
             return!
-              $"Error: Expected exactly one field, but found {fields |> Map.count} ({(fields |> Map.keys).ToFSharpString.ReasonablyClamped})."
+              $"Error: Expected exactly one field, but found {fields |> Map.count} ({(fields |> Map.keys).AsFSharpString.ReasonablyClamped})."
               |> Errors.Singleton
               |> Errors.WithPriority ErrorPriority.High
               |> sum.Throw
@@ -74,7 +74,7 @@ module Sum =
               |> sum.Throw
         | None ->
           return!
-            $"Error: Expected field '{discriminatorKey}' in JSON object '{json.ToFSharpString}', but it was not found."
+            $"Error: Expected field '{discriminatorKey}' in JSON object '{json.AsFSharpString}', but it was not found."
             |> Errors.Singleton
             |> sum.Throw
       }

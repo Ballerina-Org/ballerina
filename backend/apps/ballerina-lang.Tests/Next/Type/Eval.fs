@@ -135,10 +135,18 @@ let ``LangNext-TypeEval Flatten of named records`` () =
   let D = TypeSymbol.Create("D" |> Identifier.LocalScope)
 
   let t1 =
-    TypeValue.CreateRecord(OrderedMap.ofList [ A, TypeValue.CreateInt32(); B, TypeValue.CreateString() ])
+    TypeValue.CreateRecord(
+      OrderedMap.ofList
+        [ A, (TypeValue.CreateInt32(), Kind.Star)
+          B, (TypeValue.CreateString(), Kind.Star) ]
+    )
 
   let t2 =
-    TypeValue.CreateRecord(OrderedMap.ofList [ C, TypeValue.CreateDecimal(); D, TypeValue.CreateBool() ])
+    TypeValue.CreateRecord(
+      OrderedMap.ofList
+        [ C, (TypeValue.CreateDecimal(), Kind.Star)
+          D, (TypeValue.CreateBool(), Kind.Star) ]
+    )
 
   let actual =
     TypeExpr.Flatten(TypeExpr.Lookup(Identifier.LocalScope "T1"), TypeExpr.Lookup(Identifier.LocalScope "T2"))
@@ -162,7 +170,7 @@ let ``LangNext-TypeEval Flatten of named records`` () =
   | Sum.Left((actual, _), _) ->
     match actual with
     | TypeValue.Record(fields) ->
-      match fields.value |> OrderedMap.toList |> List.map (fun (k, v) -> k.Name, v) with
+      match fields.value |> OrderedMap.toList |> List.map (fun (k, v) -> k.Name, v |> fst) with
       | [ (Identifier.LocalScope "C", TypeValue.Primitive { value = PrimitiveType.Decimal })
           (Identifier.LocalScope "D", TypeValue.Primitive { value = PrimitiveType.Bool })
           (Identifier.LocalScope "A", TypeValue.Primitive { value = PrimitiveType.Int32 })
@@ -378,8 +386,8 @@ let ``LangNext-TypeEval Exclude of Records`` () =
     TypeValue.Record
       { value =
           OrderedMap.ofList
-            [ B, TypeValue.PrimitiveWithTrivialSource PrimitiveType.String
-              C, TypeValue.PrimitiveWithTrivialSource PrimitiveType.Decimal ]
+            [ B, ((TypeValue.PrimitiveWithTrivialSource PrimitiveType.String), Kind.Star)
+              C, ((TypeValue.PrimitiveWithTrivialSource PrimitiveType.Decimal), Kind.Star) ]
         source = TypeExprSourceMapping.OriginTypeExpr t3 }
 
   match actual with
@@ -517,9 +525,9 @@ let ``LangNext-TypeEval Rotate from union to record`` () =
     TypeValue.Record
       { value =
           OrderedMap.ofList
-            [ A, TypeValue.PrimitiveWithTrivialSource PrimitiveType.Int32
-              B, TypeValue.PrimitiveWithTrivialSource PrimitiveType.String
-              C, TypeValue.PrimitiveWithTrivialSource PrimitiveType.Decimal ]
+            [ A, ((TypeValue.PrimitiveWithTrivialSource PrimitiveType.Int32), Kind.Star)
+              B, ((TypeValue.PrimitiveWithTrivialSource PrimitiveType.String), Kind.Star)
+              C, ((TypeValue.PrimitiveWithTrivialSource PrimitiveType.Decimal), Kind.Star) ]
         source = TypeExprSourceMapping.OriginTypeExpr t }
 
   match actual with

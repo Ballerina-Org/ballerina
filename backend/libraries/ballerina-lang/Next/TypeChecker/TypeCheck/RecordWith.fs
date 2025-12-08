@@ -42,25 +42,22 @@ module RecordWith =
 
         state {
           let! ctx = state.GetContext()
-          let! record, t_record, k_record = !record
+          let! record, t_record, k_record, _ = !record
           do! k_record |> Kind.AsStar |> ofSum |> state.Ignore
 
-          let! t_record =
-            t_record
-            |> TypeValue.AsRecord
-            |> ofSum
-            |> state.Map WithTypeExprSourceMapping.Getters.Value
+          let! t_record = t_record |> TypeValue.AsRecord |> ofSum
 
           let! fields =
             fields
             |> List.map (fun (k, v) ->
               state {
                 let! id = TypeCheckState.TryResolveIdentifier(k, loc0)
-                let! v, t_v, v_k = !v
-                do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
+                let! v, t_v, _v_k, _ = !v
+                // do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
                 let! k_s = TypeCheckState.TryFindRecordFieldSymbol(id, loc0)
 
-                let! t_v_record = t_record |> OrderedMap.tryFindWithError k_s "fields" k.ToFSharpString |> ofSum
+                let! t_v_record, _ = t_record |> OrderedMap.tryFindWithError k_s "fields" k.AsFSharpString |> ofSum
+
                 do! TypeValue.Unify(loc0, t_v, t_v_record) |> Expr.liftUnification
 
                 return (id, v), (k_s, t_v)
@@ -75,5 +72,5 @@ module RecordWith =
             |> TypeValue.Instantiate TypeExpr.Eval loc0
             |> Expr.liftInstantiation
 
-          return Expr.RecordWith(record, fieldsExpr, loc0, ctx.Scope), t_record, Kind.Star
+          return Expr.RecordWith(record, fieldsExpr, loc0, ctx.Scope), t_record, Kind.Star, ctx
         }
