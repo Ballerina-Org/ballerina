@@ -1,6 +1,4 @@
 ﻿import {CoTypedFactory} from "ballerina-core";
-import {
-    CustomEntity
-} from "../../domains/phases/custom-fields/state"
+import {CustomEntity} from "../../state";
 
 export const Co = CoTypedFactory<CustomEntity, CustomEntity>();

@@ -1,4 +1,4 @@
-﻿/** Real AI prediction response that can be used until the current issues are solved */
+﻿/** prediction response that can be used until the current issues are solved */
 export const AI_Value_Mock =
     {
         "discriminator": "record",

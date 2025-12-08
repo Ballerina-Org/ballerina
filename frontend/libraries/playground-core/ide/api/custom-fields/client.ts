@@ -1,28 +1,14 @@
-﻿
-import {axiosVOE} from "../api";
-
-// import {Guid} from "../../domains/types/Guid";
+﻿import {axiosVOE} from "../api";
 import {
-    ConstructionJob,
-    ConstructionJobResponse, RequestValueJobResponse, ResponseWithStatus,
-    TypeCheckingJobResponse
-} from "../../domains/phases/custom-fields/domains/job/state";
-import {TypeCheckingPayload} from "../../domains/phases/custom-fields/domains/type-checking/state";
-import {Co} from "../../coroutines/custom-fields/builder";
-import {
-    apiResultStatuses, BasicFun,
-    Debounce,
     Guid,
-    Synchronize,
-    Synchronized,
-    ValidationResult,
-    Value,
-    ValueOrErrors
 } from "ballerina-core";
-import {ParentApi} from "../../../parent/apis/mocks";
-import {Parent} from "../../../parent/state";
-import {CustomEntity} from "../../domains/phases/custom-fields/state";
 import {FormsSeedEntity} from "../../domains/types/seeds";
+import {ConstructionJob, TypeCheckingPayload} from "../../domains/phases/custom-fields/domains/job/request/state";
+import {
+    RequestValueJobResponse,
+    ResponseWithStatus
+} from "../../domains/phases/custom-fields/domains/job/response/state";
+
 export const fromCustomEntity = async (raw: any, specName: string, entityName: string, guid: Guid) =>
 
     await axiosVOE<FormsSeedEntity, any>({
@@ -32,7 +18,6 @@ export const fromCustomEntity = async (raw: any, specName: string, entityName: s
     });
 
 export const typeCheckingJob = async (payload: TypeCheckingPayload) => {
-    console.log(JSON.stringify(payload, null, 2));
     return await axiosVOE<Guid, any>({
         baseURL: '/jobs',
         method: "POST",
@@ -42,7 +27,6 @@ export const typeCheckingJob = async (payload: TypeCheckingPayload) => {
 }
 
 export const constructionJob = async (request: ConstructionJob) => {
-
     return await axiosVOE<Guid, any>({
         baseURL: '/jobs',
         method: "Post",
@@ -50,16 +34,6 @@ export const constructionJob = async (request: ConstructionJob) => {
         data: request
     });
 }
-
-// export const updaterJob = async (request: UpdaterJob) =>
-//
-//     await axiosVOE<Guid, any>({
-//         baseURL: '/jobs',
-//         method: "Post",
-//         url: `/values/updates`,
-//         data: request
-//     });
-
 
 export const getJobStatus= async <result> (kind: 'typechecking' | 'construction', id: Guid) => {
     return await axiosVOE<ResponseWithStatus<result>, any>({
@@ -69,22 +43,6 @@ export const getJobStatus= async <result> (kind: 'typechecking' | 'construction'
     });
 }
 
-// export const getTypeCheckingJobStatus = async (id: Guid) => {
-//     return await axiosVOE<TypeCheckingJobResponse, any>({
-//         baseURL: '/jobs',
-//         method: "GET",
-//         url: `/values/typechecks/${id}`
-//     });
-// }
-// export const getConstructionJobStatus = async (id: Guid) =>
-//
-//     await axiosVOE<ConstructionJobResponse, any>({
-//         baseURL: '/jobs',
-//         method: "GET",
-//         url: `/values/constructions/${id}`
-//     });
-
-
 export const getValue = async (id: Guid) =>
 
     await axiosVOE<RequestValueJobResponse, any>({
@@ -92,15 +50,3 @@ export const getValue = async (id: Guid) =>
         method: "GET",
         url: `/values/${id}`
     });
-
-// export const statusSynchronizer = <result>(call: BasicFun<any, Promise<ValueOrErrors<ResponseWithStatusAndResult<result>, string>>>) => {
-//     const s = 
-//         Synchronize<CustomEntity, ValueOrErrors<ResponseWithStatusAndResult<result>, string>>(
-//             call,
-//             (_: ValueOrErrors<ResponseWithStatusAndResult<result>, string>) =>  
-//                 _.kind != "errors" && (_.value.status == 3 || _.value.status == 1) ? "transient failure" : "permanent failure",
-//             3,
-//             5000,
-//         );
-//     return s;
-// }

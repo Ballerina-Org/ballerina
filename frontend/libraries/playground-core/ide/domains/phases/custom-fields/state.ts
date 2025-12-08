@@ -3,7 +3,6 @@ import {
     caseUpdater,
     Coroutine,
     ForeignMutationsInput,
-    Guid,
     Maybe,
     Option,
     replaceWith,

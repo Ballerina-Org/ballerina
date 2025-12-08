@@ -10,7 +10,6 @@ import {RequestValueJobResponse, ResponseWithStatus} from "../../domains/job/res
 import {constructionJob, getJobStatus, getValue, typeCheckingJob} from "../../../../../api/custom-fields/client";
 import {AI_Value_Mock} from "../../domains/mock";
 
-
 const awaitProcessingJob = <result>(complete: BasicFun<ResponseWithStatus<result>,Job>) => {
 
     return Co.While(
@@ -43,7 +42,6 @@ const awaitProcessingJob = <result>(complete: BasicFun<ResponseWithStatus<result
                     )
                     return Co.SetState(u)
                 })
-
             ])
         })
     )
@@ -64,7 +62,6 @@ export const customFields =
                 Co.Await<ValueOrErrors<Guid, any>, any>(() =>
                     typeCheckingJob(payload), (_err: any) => {}).then(res => {
                     const response = CustomEntity.Operations.checkResponseForErrors(res, 'typechecking')
-                    
                     if(response.kind == "r") return response.value
 
                     const job = {

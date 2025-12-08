@@ -6,11 +6,9 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development rspack serve",
     "build": "cross-env NODE_ENV=production rspack build",
-    "build:ide": "cross-env NODE_ENV=ide rspack build",
-    "artifactregistry-login": "npx google-artifactregistry-auth --repo-config .npmrc"
+    "build:ide": "cross-env NODE_ENV=ide rspack build"
   },
   "dependencies": {
-    "@blp-private-npm/ui": "^1.0.404-4d167e7a897b9ad89f28f61686667d1980658ba0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@faker-js/faker": "^8.4.1",
@@ -22,7 +20,6 @@
     "dotenv-expand": "^12.0.3",
     "i18next": "^23.11.5",
     "immutable": "^5.0.0-beta.5",
-    "json-edit-react": "^1.28.2",
     "jszip": "^3.10.1",
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.542.0",
@@ -35,7 +32,6 @@
     "react-icons": "^5.5.0",
     "react-resizable-panels": "^3.0.6",
     "sonner": "^2.0.7",
-    "sucrase": "^3.35.0",
     "theme-change": "^2.5.0",
     "uuid": "^9.0.1"
   },

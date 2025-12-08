@@ -1,7 +1,7 @@
-﻿import {TypeCheckingPayload} from "../type-checking/state";
-import {ValueOrErrors, Maybe} from "ballerina-core";
+﻿import {ValueOrErrors, Maybe} from "ballerina-core";
 import {FlatNode, INode, Meta} from "../../../locked/domains/folders/node";
 import {List} from "immutable";
+import { TypeCheckingPayload } from "../job/request/state";
 
 export type TypeCheckingDataProvider = {
     collect: () => ValueOrErrors<TypeCheckingPayload, string>;
@@ -111,67 +111,3 @@ function extractFilePayload(name: string, node: Maybe<INode<Meta>>)
         );
     return ValueOrErrors.Default.return(document.metadata.content);
 }
-
-// function extractDeltaPayload(node: INode<Meta>)
-//     : ValueOrErrors<string, string>{
-//
-//     const f = FlatNode.Operations.findFolderByPath(
-//         node,
-//         node.metadata.path
-//     );
-//
-//     if (f.kind === "l") {
-//         return ValueOrErrors.Default.throw(
-//             List(["Can't find 'delta.json' file"])
-//         );
-//     }
-//
-//     const children = f.value.children ?? [];
-//     const files    = children.filter(x => x.metadata.kind === "file");
-//
-//     const delta         = files.find(x => x.name === "delta.json");
-//     if (!delta)
-//         return ValueOrErrors.Default.throw(
-//             List(["Missing required delta file"])
-//         );
-//     return ValueOrErrors.Default.return(cleanString(delta.metadata.content));
-// }
-
-// function unescapeEscapedQuotes(s: string): string {
-//     return s.replace(/\\\\\\"/g, '"')   // \\\"
-//         .replace(/\\\\"/g, '"')    // \\"
-//         .replace(/\\"/g, '"');     // \"
-// }
-// export function stripBOM(text: string): string {
-//     if (text.charCodeAt(0) === 0xFEFF) {
-//         return text.slice(1);
-//     }
-//     return text;
-// }
-
-// export function unquote(input: string): string {
-//     if (!input) return input;
-//
-//     let s = input.trim();
-//
-//     // 1) Try JSON.parse safely (only unwrap if it returns a string)
-//     try {
-//         const parsed = JSON.parse(s);
-//         if (typeof parsed === "string") {
-//             s = parsed;
-//         }
-//     } catch {
-//         // ignore JSON failures
-//     }
-//
-//     // 2) Remove *matching outer quotes* repeatedly
-//     while (
-//         s.length >= 2 &&
-//         ((s.startsWith('"') && s.endsWith('"')) ||
-//             (s.startsWith("'") && s.endsWith("'")))
-//         ) {
-//         s = s.slice(1, -1);
-//     }
-//
-//     return  cleanString(s)
-// }
