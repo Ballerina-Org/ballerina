@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <Compile Include="Collections/Sum.fs" />
+    <Compile Include="Collections\TaskSum.fs" />
     <Compile Include="State/WithError.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
@@ -17,6 +18,7 @@
     <!--
     https://fsharp.github.io/fsharp-compiler-docs/fsharp-core-notes.html#How-to-explicitly-reference-FSharp-Core -->
     <PackageReference Update="FSharp.Core" Version="9.0.303" />
+    <PackageReference Include="AutoFixture.NUnit4" Version="5.0.0-preview0012" />
     <PackageReference Include="coverlet.collector" Version="6.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

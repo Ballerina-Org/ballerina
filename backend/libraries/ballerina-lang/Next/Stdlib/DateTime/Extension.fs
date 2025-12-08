@@ -48,7 +48,7 @@ module Extension =
             | DateTimeOperations.Diff v -> Some(DateTimeOperations.Diff v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -87,7 +87,7 @@ module Extension =
             | DateTimeOperations.Equal v -> Some(DateTimeOperations.Equal v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -127,7 +127,7 @@ module Extension =
             | DateTimeOperations.NotEqual v -> Some(DateTimeOperations.NotEqual v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -167,7 +167,7 @@ module Extension =
             | DateTimeOperations.GreaterThan v -> Some(DateTimeOperations.GreaterThan v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -207,7 +207,7 @@ module Extension =
             | DateTimeOperations.GreaterThanOrEqual v -> Some(DateTimeOperations.GreaterThanOrEqual v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -250,7 +250,7 @@ module Extension =
             | DateTimeOperations.LessThan v -> Some(DateTimeOperations.LessThan v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -289,7 +289,7 @@ module Extension =
             | DateTimeOperations.LessThanOrEqual v -> Some(DateTimeOperations.LessThanOrEqual v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -333,7 +333,7 @@ module Extension =
             | DateTimeOperations.ToDateOnly -> Some(DateTimeOperations.ToDateOnly)
             | _ -> None)
         Apply =
-          fun loc0 (_, v) ->
+          fun loc0 _rest (_, v) ->
             reader {
               let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
@@ -363,7 +363,7 @@ module Extension =
             | DateTimeOperations.Year -> Some(DateTimeOperations.Year)
             | _ -> None)
         Apply =
-          fun loc0 (_, v) ->
+          fun loc0 _rest (_, v) ->
             reader {
               let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
@@ -393,7 +393,7 @@ module Extension =
             | DateTimeOperations.Month -> Some(DateTimeOperations.Month)
             | _ -> None)
         Apply =
-          fun loc0 (_, v) ->
+          fun loc0 _rest (_, v) ->
             reader {
               let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
@@ -423,7 +423,7 @@ module Extension =
             | DateTimeOperations.Day -> Some(DateTimeOperations.Day)
             | _ -> None)
         Apply =
-          fun loc0 (_, v) ->
+          fun loc0 _rest (_, v) ->
             reader {
               let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
@@ -453,7 +453,7 @@ module Extension =
             | DateTimeOperations.DayOfWeek -> Some(DateTimeOperations.DayOfWeek)
             | _ -> None)
         Apply =
-          fun loc0 (_, v) ->
+          fun loc0 _rest (_, v) ->
             reader {
               let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
@@ -483,7 +483,7 @@ module Extension =
             | DateTimeOperations.DayOfYear -> Some(DateTimeOperations.DayOfYear)
             | _ -> None)
         Apply =
-          fun loc0 (_, v) ->
+          fun loc0 _rest (_, v) ->
             reader {
               let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 

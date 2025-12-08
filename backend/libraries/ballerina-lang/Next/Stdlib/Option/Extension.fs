@@ -48,7 +48,7 @@ module Extension =
             )
           )
         Constructor = Option_Some
-        Apply = fun _loc0 (_, v) -> reader { return OptionValues.Option(Some v) |> valueLens.Set |> Ext }
+        Apply = fun _loc0 _rest (_, v) -> reader { return OptionValues.Option(Some v) |> valueLens.Set |> Ext }
         ValueLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -75,7 +75,7 @@ module Extension =
             )
           )
         Constructor = Option_None
-        Apply = fun _loc0 (_, _) -> reader { return OptionValues.Option None |> valueLens.Set |> Ext }
+        Apply = fun _loc0 _rest (_, _) -> reader { return OptionValues.Option None |> valueLens.Set |> Ext }
         ValueLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -118,7 +118,7 @@ module Extension =
           |> PartialLens.BindGet (function
             | Option_Map v -> Some(Option_Map v))
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 rest (op, v) ->
             reader {
               let! op =
                 op
@@ -145,7 +145,7 @@ module Extension =
 
                 let! v' =
                   v
-                  |> FSharp.Core.Option.map (fun v -> Expr.EvalApply loc0 (f, v))
+                  |> FSharp.Core.Option.map (fun v -> Expr.EvalApply loc0 rest (f, v))
                   |> reader.RunOption
 
                 return OptionValues.Option v' |> valueLens.Set |> Ext

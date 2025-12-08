@@ -66,7 +66,7 @@ module Patterns =
 
         return!
           s.TypeVariables
-          |> Map.tryFindWithError v "type variables" v.ToFSharpString loc
+          |> Map.tryFindWithError v "type variables" v.AsFSharpString loc
           |> reader.OfSum
       }
 
@@ -76,7 +76,7 @@ module Patterns =
 
         return!
           s.TypeParameters
-          |> Map.tryFindWithError v "type parameters" v.ToFSharpString loc
+          |> Map.tryFindWithError v "type parameters" v.AsFSharpString loc
           |> reader.OfSum
       }
 
@@ -113,31 +113,31 @@ module Patterns =
 
         return!
           s.Bindings
-          |> Map.tryFindWithError v "bindings" v.ToFSharpString loc
+          |> Map.tryFindWithError v "bindings" v.AsFSharpString loc
           |> reader.OfSum
       }
 
     static member tryFindUnionCaseConstructor
       (v: ResolvedIdentifier, loc: Location)
-      : Reader<TypeValue * OrderedMap<TypeSymbol, TypeValue>, TypeCheckState, Errors> =
+      : Reader<TypeValue * List<TypeParameter> * OrderedMap<TypeSymbol, TypeValue>, TypeCheckState, Errors> =
       reader {
         let! s = reader.GetContext()
 
         return!
           s.UnionCases
-          |> Map.tryFindWithError v "union cases" v.ToFSharpString loc
+          |> Map.tryFindWithError v "union cases" v.AsFSharpString loc
           |> reader.OfSum
       }
 
     static member tryFindRecordField
       (v: ResolvedIdentifier, loc: Location)
-      : Reader<OrderedMap<TypeSymbol, TypeValue> * TypeValue, TypeCheckState, Errors> =
+      : Reader<OrderedMap<TypeSymbol, TypeValue * Kind> * TypeValue, TypeCheckState, Errors> =
       reader {
         let! s = reader.GetContext()
 
         return!
           s.RecordFields
-          |> Map.tryFindWithError v "record fields" v.ToFSharpString loc
+          |> Map.tryFindWithError v "record fields" v.AsFSharpString loc
           |> reader.OfSum
       }
 
@@ -147,7 +147,7 @@ module Patterns =
 
         return!
           s.Symbols.Types
-          |> Map.tryFindWithError v "type symbols" v.ToFSharpString loc
+          |> Map.tryFindWithError v "type symbols" v.AsFSharpString loc
           |> reader.OfSum
       }
 
@@ -159,7 +159,7 @@ module Patterns =
 
         return!
           s.Symbols.RecordFields
-          |> Map.tryFindWithError v "record field symbols" v.ToFSharpString loc
+          |> Map.tryFindWithError v "record field symbols" v.AsFSharpString loc
           |> reader.OfSum
       }
 
@@ -171,7 +171,7 @@ module Patterns =
 
         return!
           s.Symbols.UnionCases
-          |> Map.tryFindWithError v "union case symbols" v.ToFSharpString loc
+          |> Map.tryFindWithError v "union case symbols" v.AsFSharpString loc
           |> reader.OfSum
       }
 
@@ -183,7 +183,7 @@ module Patterns =
 
         return!
           ctx.Symbols.ResolvedIdentifiers
-          |> Map.tryFindWithError v "resolved identifiers" v.ToFSharpString loc
+          |> Map.tryFindWithError v "resolved identifiers" v.AsFSharpString loc
           |> reader.OfSum
       }
 
@@ -275,11 +275,13 @@ module Patterns =
 
     static member Empty: UnificationContext =
       { EvalState = TypeCheckState.Empty
-        Scope = TypeCheckScope.Empty }
+        Scope = TypeCheckScope.Empty
+        TypeParameters = Map.empty }
 
     static member Create(x) : UnificationContext =
       { EvalState = TypeCheckState.Create x
-        Scope = TypeCheckScope.Empty }
+        Scope = TypeCheckScope.Empty
+        TypeParameters = Map.empty }
 
     static member Updaters =
       {| EvalState =
@@ -298,7 +300,7 @@ module Patterns =
 
         return!
           ctx.Values
-          |> Map.tryFindWithError id "variables" id.ToFSharpString loc
+          |> Map.tryFindWithError id "variables" id.AsFSharpString loc
           |> state.OfSum
       }
 
@@ -352,7 +354,7 @@ module Patterns =
 
         return!
           s.Symbols.Types
-          |> Map.tryFindWithError (id |> ctx.Scope.Resolve) "symbols" id.ToFSharpString loc
+          |> Map.tryFindWithError (id |> ctx.Scope.Resolve) "symbols" id.AsFSharpString loc
           |> state.OfSum
       }
 
@@ -362,7 +364,7 @@ module Patterns =
 
         return!
           s.Symbols.ResolvedIdentifiers
-          |> Map.tryFindWithError id "resolved identifier" id.ToFSharpString loc
+          |> Map.tryFindWithError id "resolved identifier" id.AsFSharpString loc
           |> state.OfSum
       }
 
@@ -372,7 +374,7 @@ module Patterns =
 
         return!
           s.Symbols.IdentifiersResolver
-          |> Map.tryFindWithError id "identifier resolver" id.ToFSharpString loc
+          |> Map.tryFindWithError id "identifier resolver" id.AsFSharpString loc
           |> state.OfSum
       }
 
@@ -382,7 +384,7 @@ module Patterns =
 
         return!
           s.Symbols.RecordFields
-          |> Map.tryFindWithError id "record fields" id.ToFSharpString loc
+          |> Map.tryFindWithError id "record fields" id.AsFSharpString loc
           |> state.OfSum
       }
 
@@ -392,7 +394,7 @@ module Patterns =
 
         return!
           s.Symbols.UnionCases
-          |> Map.tryFindWithError id "union cases" id.ToFSharpString loc
+          |> Map.tryFindWithError id "union cases" id.AsFSharpString loc
           |> state.OfSum
       }
 
@@ -402,30 +404,30 @@ module Patterns =
 
         return!
           s.Bindings
-          |> Map.tryFindWithError id "type bindings" id.ToFSharpString loc
+          |> Map.tryFindWithError id "type bindings" id.AsFSharpString loc
           |> state.OfSum
       }
 
     static member TryFindUnionCaseConstructor
       (id: ResolvedIdentifier, loc: Location)
-      : TypeCheckerResult<TypeValue * OrderedMap<TypeSymbol, TypeValue>> =
+      : TypeCheckerResult<TypeValue * List<TypeParameter> * OrderedMap<TypeSymbol, TypeValue>> =
       state {
         let! s = state.GetState()
 
         return!
           s.UnionCases
-          |> Map.tryFindWithError id "union cases" id.ToFSharpString loc
+          |> Map.tryFindWithError id "union cases" id.AsFSharpString loc
           |> state.OfSum
       }
 
     static member TryFindRecordField
       (id: ResolvedIdentifier, loc: Location)
-      : TypeCheckerResult<OrderedMap<TypeSymbol, TypeValue> * TypeValue> =
+      : TypeCheckerResult<OrderedMap<TypeSymbol, TypeValue * Kind> * TypeValue> =
       state {
         let! s = state.GetState()
 
         return!
           s.RecordFields
-          |> Map.tryFindWithError id "record fields" id.ToFSharpString loc
+          |> Map.tryFindWithError id "record fields" id.AsFSharpString loc
           |> state.OfSum
       }

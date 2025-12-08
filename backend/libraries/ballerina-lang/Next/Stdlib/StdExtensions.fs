@@ -17,6 +17,7 @@ type ValueExt =
     | ValueExt(Choice4Of4 ext) -> ext.ToString()
 
   static member Getters = {| ValueExt = fun (ValueExt e) -> e |}
+
   static member Updaters = {| ValueExt = fun u (ValueExt e) -> ValueExt(u e) |}
 
 and CompositeTypeExt =

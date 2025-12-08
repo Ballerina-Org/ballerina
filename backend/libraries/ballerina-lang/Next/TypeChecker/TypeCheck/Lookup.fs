@@ -35,6 +35,10 @@ module Lookup =
 
           let error e = Errors.Singleton(loc0, e)
 
+          // do Console.WriteLine($"TypeCheckLookup: resolving identifier '{id}'")
+          // do Console.WriteLine($"Current Scope: {ctx.Values.AsFSharpString}")
+          // do Console.ReadLine() |> ignore
+
           let! t_id, id_k =
             state.Either3
               (TypeCheckContext.TryFindVar(id, loc0))
@@ -45,5 +49,5 @@ module Lookup =
                |> state.Throw)
             |> state.MapError(Errors.FilterHighestPriorityOnly)
 
-          return Expr.Lookup(id, loc0, ctx.Scope), t_id, id_k
+          return Expr.Lookup(id, loc0, ctx.Scope), t_id, id_k, ctx
         }

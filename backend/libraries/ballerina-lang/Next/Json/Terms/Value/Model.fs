@@ -27,7 +27,7 @@ module Value =
           Value.FromJsonVar json
           Value.FromJsonLambda json
           Value.FromJsonTypeLambda json
-          $"Unknown Value JSON: {json.ToFSharpString.ReasonablyClamped}"
+          $"Unknown Value JSON: {json.AsFSharpString.ReasonablyClamped}"
           |> Errors.Singleton
           |> Errors.WithPriority ErrorPriority.Medium
           |> reader.Throw ]

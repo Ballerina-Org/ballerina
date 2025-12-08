@@ -38,15 +38,12 @@ module RecordDes =
 
         state {
           let! ctx = state.GetContext()
-          let! record_v, record_t, record_k = !record_expr
+          let! record_v, record_t, record_k, _ = !record_expr
           do! record_k |> Kind.AsStar |> ofSum |> state.Ignore
 
           let! fields_t =
             state.Either
-              (record_t
-               |> TypeValue.AsRecord
-               |> ofSum
-               |> state.Map WithTypeExprSourceMapping.Getters.Value)
+              (record_t |> TypeValue.AsRecord |> ofSum)
               (state {
                 let! id = TypeCheckState.TryResolveIdentifier(fieldName, loc0)
                 let! fields_t = TypeCheckState.TryFindRecordField(id, loc0) |> state.Map fst
@@ -63,7 +60,7 @@ module RecordDes =
 
           return!
             state {
-              let! field_k, field_t =
+              let! field_n, (field_t, field_k) =
                 fields_t
                 |> OrderedMap.toSeq
                 |> Seq.map (fun (k, v) -> (k, v))
@@ -78,7 +75,7 @@ module RecordDes =
 
               let! fieldName =
                 state.Either
-                  (TypeCheckState.TryResolveIdentifier(field_k, loc0))
+                  (TypeCheckState.TryResolveIdentifier(field_n, loc0))
                   (state { return fieldName |> ctx.Scope.Resolve })
 
               // do Console.WriteLine($"---- TypeChecked RecordDes {fieldName} ----")
@@ -94,7 +91,7 @@ module RecordDes =
               //   |> OrderedMap.tryFindWithError fieldName "fields" fieldName.ToFSharpString
               //   |> ofSum
 
-              return Expr.RecordDes(record_v, fieldName, loc0, ctx.Scope), field_t, Kind.Star
+              return Expr.RecordDes(record_v, fieldName, loc0, ctx.Scope), field_t, field_k, ctx
             }
             |> state.MapError(Errors.SetPriority ErrorPriority.High)
         }

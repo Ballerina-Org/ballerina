@@ -46,7 +46,7 @@ module Precedence =
           return Operand e1 :: Operator op :: rest1
         | _ ->
           return!
-            (loc, $"Error: cannot collapse operators sequence {l.ToFSharpString}")
+            (loc, $"Error: cannot collapse operators sequence {l.AsFSharpString}")
             |> Errors.Singleton
             |> sum.Throw
       }

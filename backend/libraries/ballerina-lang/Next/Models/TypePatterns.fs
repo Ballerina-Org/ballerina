@@ -1,6 +1,7 @@
 namespace Ballerina.DSL.Next.Types
 
 module Patterns =
+  open Ballerina.StdLib.Object
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
   open Ballerina.Errors
@@ -12,7 +13,15 @@ module Patterns =
   type TypeVar with
     static member Create(name: string) : TypeVar =
       { Name = name
+        Synthetic = false
         Guid = Guid.CreateVersion7() }
+
+    static member CreateSynthetic(name: string) : TypeVar =
+      let guid = Guid.CreateVersion7()
+
+      { Name = $"{name}_{guid}"
+        Synthetic = true
+        Guid = guid }
 
   type TypeSymbol with
     static member Create(name: Identifier) : TypeSymbol =
@@ -141,7 +150,7 @@ module Patterns =
         { value = v
           source = NoSourceMapping "Arrow" }
 
-    static member CreateRecord(v: OrderedMap<TypeSymbol, TypeValue>) : TypeValue =
+    static member CreateRecord(v: OrderedMap<TypeSymbol, TypeValue * Kind>) : TypeValue =
       TypeValue.Record
         { value = v
           source = NoSourceMapping "Record" }
@@ -194,14 +203,17 @@ module Patterns =
     static member AsUnion(t: TypeValue) =
       sum {
         match t with
-        | TypeValue.Union(cases) -> return cases
+        | TypeValue.Union { value = cases } -> return ([], cases)
+        | TypeValue.Lambda { value = type_par, TypeExpr.FromTypeValue body } ->
+          let! type_pars, cases = TypeValue.AsUnion body
+          return type_par :: type_pars, cases
         | _ -> return! $"Error: expected union type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
     static member AsRecord(t: TypeValue) =
       sum {
         match t with
-        | TypeValue.Record(fields) -> return fields
+        | TypeValue.Record(fields) -> return fields.value
         | _ -> return! $"Error: expected record type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
@@ -369,11 +381,12 @@ module Patterns =
 
                 let! k = tryFindSymbol k
                 let! v = !v
-                return (k, v)
+                return k, v
               })
             |> sum.All
-            |> sum.Map(OrderedMap.ofSeq)
+            |> sum.Map OrderedMap.ofSeq
 
+          let fields = fields |> OrderedMap.map (fun _ v -> v, Kind.Star)
           return TypeValue.CreateRecord fields
         | TypeExpr.Tuple(fields) ->
           let! items = fields |> List.map (!) |> sum.All
@@ -405,6 +418,7 @@ module Patterns =
         | TypeExpr.Set(element) ->
           let! element = !element
           return TypeValue.CreateSet element
+        | TypeExpr.FromTypeValue tv -> return tv
         | _ ->
           return!
             (loc0, $"Error: expected type value, got {t}")

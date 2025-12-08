@@ -51,7 +51,7 @@ module Let =
             |> Option.map (TypeExpr.Eval None loc0 >> Expr<'T, 'Id, 'valueExt>.liftTypeEval)
             |> state.RunOption
 
-          let! e1, t1, k1 = (x_type |> Option.map fst) => e1
+          let! e1, t1, k1, _ = (x_type |> Option.map fst) => e1
 
           match x_type with
           | Some(x_type, x_type_kind) ->
@@ -59,11 +59,11 @@ module Let =
             do! TypeValue.Unify(loc0, t1, x_type) |> Expr<'T, 'Id, 'valueExt>.liftUnification
           | _ -> ()
 
-          let! e2, t2, k2 =
+          let! e2, t2, k2, ctx_e2 =
             !e2
             |> state.MapContext(
               TypeCheckContext.Updaters.Values(Map.add (x.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) (t1, k1))
             )
 
-          return Expr.Let(x, None, e1, e2, loc0, ctx.Scope), t2, k2
+          return Expr.Let(x, None, e1, e2, loc0, ctx.Scope), t2, k2, ctx_e2
         }

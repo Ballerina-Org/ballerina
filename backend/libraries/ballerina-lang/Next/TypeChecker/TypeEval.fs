@@ -154,7 +154,7 @@ module Eval =
                       let! c = state.GetContext()
 
                       return!
-                        $"Error: cannot find type for {v} with context ({c.TypeVariables.ToFSharpString})"
+                        $"Error: cannot find type for {v} with context ({c.TypeVariables.AsFSharpString})"
                         |> error
                         |> state.Throw
                         |> state.MapError(Errors.SetPriority(ErrorPriority.High))
@@ -374,8 +374,8 @@ module Eval =
                 state {
                   let! k = !!k
                   let! v, v_k = !v
-                  do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
-                  return (k, v)
+                  // do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
+                  return (k, (v, v_k))
                 })
               |> state.All
               |> state.Map(OrderedMap.ofSeq)
@@ -426,11 +426,7 @@ module Eval =
             let! arg, arg_k = !arg
             do! arg_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-            let! cases =
-              arg
-              |> TypeValue.AsRecord
-              |> ofSum
-              |> state.Map WithTypeExprSourceMapping.Getters.Value
+            let! cases = arg |> TypeValue.AsRecord |> ofSum
 
             let mappedCasesFixThis =
               cases
@@ -462,17 +458,9 @@ module Eval =
             return!
               state.Either3
                 (state {
-                  let! cases1 =
-                    type1
-                    |> TypeValue.AsUnion
-                    |> ofSum
-                    |> state.Map WithTypeExprSourceMapping.Getters.Value
+                  let! cases1 = type1 |> TypeValue.AsUnion |> sum.Map snd |> ofSum
 
-                  let! cases2 =
-                    type2
-                    |> TypeValue.AsUnion
-                    |> ofSum
-                    |> state.Map WithTypeExprSourceMapping.Getters.Value
+                  let! cases2 = type2 |> TypeValue.AsUnion |> sum.Map snd |> ofSum
 
                   let cases1 = cases1 |> OrderedMap.toSeq
                   let keys1 = cases1 |> Seq.map fst |> Set.ofSeq
@@ -490,17 +478,9 @@ module Eval =
                       |> state.Throw
                 })
                 (state {
-                  let! fields1 =
-                    type1
-                    |> TypeValue.AsRecord
-                    |> ofSum
-                    |> state.Map WithTypeExprSourceMapping.Getters.Value
+                  let! fields1 = type1 |> TypeValue.AsRecord |> ofSum
 
-                  let! fields2 =
-                    type2
-                    |> TypeValue.AsRecord
-                    |> ofSum
-                    |> state.Map WithTypeExprSourceMapping.Getters.Value
+                  let! fields2 = type2 |> TypeValue.AsRecord |> ofSum
 
                   let fields1 = fields1 |> OrderedMap.toSeq
                   let keys1 = fields1 |> Seq.map fst |> Set.ofSeq
@@ -528,34 +508,18 @@ module Eval =
             return!
               state.Either3
                 (state {
-                  let! cases1 =
-                    type1
-                    |> TypeValue.AsUnion
-                    |> ofSum
-                    |> state.Map WithTypeExprSourceMapping.Getters.Value
+                  let! cases1 = type1 |> TypeValue.AsUnion |> sum.Map snd |> ofSum
 
-                  let! cases2 =
-                    type2
-                    |> TypeValue.AsUnion
-                    |> ofSum
-                    |> state.Map WithTypeExprSourceMapping.Getters.Value
+                  let! cases2 = type2 |> TypeValue.AsUnion |> sum.Map snd |> ofSum
 
                   let keys2 = cases2 |> OrderedMap.keys |> Set.ofSeq
                   let cases = cases1 |> OrderedMap.filter (fun k _ -> keys2 |> Set.contains k |> not)
                   return TypeValue.Union { value = cases; source = source }, Kind.Star
                 })
                 (state {
-                  let! fields1 =
-                    type1
-                    |> TypeValue.AsRecord
-                    |> ofSum
-                    |> state.Map WithTypeExprSourceMapping.Getters.Value
+                  let! fields1 = type1 |> TypeValue.AsRecord |> ofSum
 
-                  let! fields2 =
-                    type2
-                    |> TypeValue.AsRecord
-                    |> ofSum
-                    |> state.Map WithTypeExprSourceMapping.Getters.Value
+                  let! fields2 = type2 |> TypeValue.AsRecord |> ofSum
 
                   let keys2 = fields2 |> OrderedMap.keys |> Set.ofSeq
 
@@ -573,16 +537,24 @@ module Eval =
             return!
               state.Either3
                 (state {
-                  let! cases = t |> TypeValue.AsUnion |> ofSum
+                  let! cases = t |> TypeValue.AsUnion |> sum.Map snd |> ofSum
+                  let cases = cases |> OrderedMap.map (fun _ v -> v, Kind.Star)
 
-                  return TypeValue.Record { value = cases.value; source = source }, Kind.Star
+                  return TypeValue.Record { value = cases; source = source }, Kind.Star
                 })
                 (state {
                   let! fields = t |> TypeValue.AsRecord |> ofSum
 
+                  let! _ =
+                    fields
+                    |> OrderedMap.map (fun _ (_, k) -> k |> Kind.AsStar |> ofSum |> state.Ignore)
+                    |> OrderedMap.toList
+                    |> List.map snd
+                    |> state.All
+
                   return
                     TypeValue.Union
-                      { value = fields.value
+                      { value = fields |> OrderedMap.map (fun _ (v, _) -> v)
                         source = source },
                     Kind.Star
                 })

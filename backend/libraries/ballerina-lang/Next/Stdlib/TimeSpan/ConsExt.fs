@@ -32,7 +32,7 @@ module ConsExt =
           )
         Constructor = TimeSpan_New
         Apply =
-          fun loc0 (_, v) ->
+          fun loc0 _rest (_, v) ->
             reader {
               match v with
               | Value.Primitive(PrimitiveValue.String v) ->
@@ -69,7 +69,7 @@ module ConsExt =
           )
         Constructor = TimeSpan_Zero
         Apply =
-          fun loc0 (_, v) ->
+          fun loc0 _rest (_, v) ->
             reader {
               match v with
               | Value.Primitive(PrimitiveValue.Unit) ->
