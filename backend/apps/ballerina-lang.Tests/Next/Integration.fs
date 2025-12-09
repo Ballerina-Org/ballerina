@@ -14,6 +14,7 @@ open Ballerina.DSL.Next.StdLib
 open Ballerina.DSL.Next.Runners
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.StdLib.List.Model
+open Ballerina.Cat.Collections.OrderedMap
 
 let context = Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval.context
 
@@ -1225,4 +1226,60 @@ in f x, getCount x, getCount y
                     Value.Primitive(PrimitiveValue.Int32 10)
                     Value.Primitive(PrimitiveValue.Int32 11) ] -> Assert.Pass $"Correctly evaluated to (110, 10, 11)"
     | _ -> Assert.Fail $"Expected a record, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
+
+[<Test>]
+let ``LangNextIntegrationTypeValueIsAugmentedWithSourceScopeInfo`` () =
+  let program =
+    """
+type OCREvidence = {
+  firstCellIndex: int32;
+  lastCellIndex: int32;
+}
+
+in type SomethingWithEvidence = {
+  evidence: OCREvidence;
+  value: int32;
+}
+
+in let id = fun [a:*] (x:a) -> x
+in id [SomethingWithEvidence]
+      """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, typeValue: TypeValue) ->
+    match value with
+    | Value.Lambda _ ->
+      match typeValue with
+      | TypeValue.Arrow({ value = (_, outputType) }) ->
+        match outputType with
+        | TypeValue.Record { value = fields: OrderedMap<TypeSymbol, (TypeValue * Kind)>
+                             typeCheckScopeSource = scope: TypeCheckScope } ->
+          match scope.Type with
+          | Some "SomethingWithEvidence" ->
+            // keep only the name of the type symbol, so we can look it up without guid issues
+            let fields =
+              fields
+              |> OrderedMap.toList
+              |> List.map (fun (sym, v) -> sym.Name.ToString(), v)
+              |> Map.ofList
+
+            // the scope of the evidence type value should be its own (so should take precedence over the outer scope)
+            match fields.TryFind "evidence" with
+            | Some(evidenceTypeValue, _) ->
+              match evidenceTypeValue with
+              | TypeValue.Record { typeCheckScopeSource = evidenceScope: TypeCheckScope } ->
+                match evidenceScope.Type with
+                | Some "OCREvidence" -> Assert.Pass $"Correctly evaluated"
+                | _ -> Assert.Fail $"Expected OCREvidence, got {evidenceScope.Type}"
+              | _ -> Assert.Fail $"Expected a record, got {evidenceTypeValue}"
+            | _ -> Assert.Fail $"Expected evidence field to be there, got {fields}"
+          | _ -> Assert.Fail $"Expected SomethingWithEvidence, got {scope.Type}"
+        | _ -> Assert.Fail $"Expected a record, got {outputType}"
+      | _ -> Assert.Fail $"Expected an arrow, got {typeValue}"
+
+      Assert.Pass $"Correctly evaluated"
+    | _ -> Assert.Fail $"Expected a lambda, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
