@@ -200,21 +200,26 @@ export const DispatcherFormsApp = (props: Forms) => {
         IdeEntityApis
             .get("GlobalConfiguration")!("")
             .then((raw) => {
-                if (
-                    specificationDeserializer.deserializedSpecification.sync.kind ==
-                    "loaded" &&
-                    specificationDeserializer.deserializedSpecification.sync.value.kind ==
-                    "value"
-                ) {
-                    const parsed =
-                        specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
-                            .get(props.launcher)!
-                            .parseEntityFromApi(raw.value.value);
-                    if (parsed.kind == "errors") {
-                        console.error("parsed person config errors", parsed.errors);
-                    } else {
-                        setConfig(Sum.Default.left(parsed));
+                if (raw.kind == "value") {
+                    if (
+                        specificationDeserializer.deserializedSpecification.sync.kind ==
+                        "loaded" &&
+                        specificationDeserializer.deserializedSpecification.sync.value.kind ==
+                        "value"
+                    ) {
+                        const parsed =
+                            specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
+                                .get(props.launcher)!
+                                .parseEntityFromApi(raw.value.value);
+                        if (parsed.kind == "errors") {
+                            console.error("parsed person config errors", parsed.errors);
+                        } else {
+                            setConfig(Sum.Default.left(parsed));
+                        }
                     }
+                }
+                else {
+                    props.setState(Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.errors(replaceWith(raw.errors))));
                 }
             });
     }, [specificationDeserializer.deserializedSpecification.sync.kind, props.spec]);
@@ -237,7 +242,121 @@ export const DispatcherFormsApp = (props: Forms) => {
             </ol>
         );
     }
+    const next =             <div className="p-6 max-w-3xl mx-auto space-y-8">
 
+        {/* WATER */}
+        <div className="card bg-base-100 shadow-md">
+            <div className="card-body space-y-4">
+                <h2 className="card-title">Water Consumption (L)</h2>
+
+                <div className="flex items-center gap-4">
+                    <input
+                        type="number"
+                        placeholder="Enter water value"
+                        className="input input-bordered w-full"
+                    />
+
+                    {/* Approved toggle */}
+                    <label className="label cursor-pointer flex items-center gap-2">
+                        <span className="label-text">Approved</span>
+                        <input type="checkbox" className="toggle toggle-success" />
+                    </label>
+                </div>
+
+                {/* Evidence */}
+                <div className="border-t pt-4 space-y-3">
+                    <h3 className="font-semibold">Evidence</h3>
+
+                    <div className="flex items-center gap-4">
+                        <input
+                            type="number"
+                            placeholder="Page"
+                            className="input input-bordered w-32"
+                        />
+                        <input
+                            type="text"
+                            placeholder="Cell numbers (e.g. 12, 14, 18)"
+                            className="input input-bordered w-full"
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {/* ENERGY */}
+        <div className="card bg-base-100 shadow-md">
+            <div className="card-body space-y-4">
+                <h2 className="card-title">Energy Consumption (kWh)</h2>
+
+                <div className="flex items-center gap-4">
+                    <input
+                        type="number"
+                        placeholder="Enter energy value"
+                        className="input input-bordered w-full"
+                    />
+
+                    {/* Approved toggle */}
+                    <label className="label cursor-pointer flex items-center gap-2">
+                        <span className="label-text">Approved</span>
+                        <input type="checkbox" className="toggle toggle-success" />
+                    </label>
+                </div>
+
+                {/* Evidence */}
+                <div className="border-t pt-4 space-y-3">
+                    <h3 className="font-semibold">Evidence</h3>
+
+                    <div className="flex items-center gap-4">
+                        <input
+                            type="number"
+                            placeholder="Page"
+                            className="input input-bordered w-32"
+                        />
+                        <input
+                            type="text"
+                            placeholder="Cell numbers (e.g. 3, 7, 11)"
+                            className="input input-bordered w-full"
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {/* POSITIVE SECTION */}
+        <div className="card bg-base-100 shadow-md">
+            <div className="card-body space-y-4">
+
+                <div className="flex items-center justify-between">
+                    <h2 className="card-title">Positive Assessment</h2>
+
+                    <label className="label cursor-pointer flex items-center gap-2">
+                        <span className="label-text">Positive</span>
+                        <input type="checkbox" className="checkbox checkbox-primary" />
+                    </label>
+                </div>
+
+                {/* Failing messages list */}
+                <div className="space-y-2">
+                    <h3 className="font-semibold">Issues</h3>
+
+                    {/* Repeatable list item */}
+                    <div className="alert alert-warning py-2">
+                        <span className="font-medium">Water:</span> Value exceeds limit.
+                    </div>
+
+                    <div className="alert alert-warning py-2">
+                        <span className="font-medium">Energy:</span> Evidence page missing.
+                    </div>
+
+                    <div className="alert alert-warning py-2">
+                        <span className="font-medium">General:</span> Inconsistent units detected.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
     return (
         <div className="App h-full pb-12">
                         {props.deltas.kind == 'r' && props.showDeltas &&
@@ -346,121 +465,7 @@ export const DispatcherFormsApp = (props: Forms) => {
                                 </>
                                 }
                             </div>
-            <div className="p-6 max-w-3xl mx-auto space-y-8">
-
-                {/* WATER */}
-                <div className="card bg-base-100 shadow-md">
-                    <div className="card-body space-y-4">
-                        <h2 className="card-title">Water Consumption (L)</h2>
-
-                        <div className="flex items-center gap-4">
-                            <input
-                                type="number"
-                                placeholder="Enter water value"
-                                className="input input-bordered w-full"
-                            />
-
-                            {/* Approved toggle */}
-                            <label className="label cursor-pointer flex items-center gap-2">
-                                <span className="label-text">Approved</span>
-                                <input type="checkbox" className="toggle toggle-success" />
-                            </label>
-                        </div>
-
-                        {/* Evidence */}
-                        <div className="border-t pt-4 space-y-3">
-                            <h3 className="font-semibold">Evidence</h3>
-
-                            <div className="flex items-center gap-4">
-                                <input
-                                    type="number"
-                                    placeholder="Page"
-                                    className="input input-bordered w-32"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Cell numbers (e.g. 12, 14, 18)"
-                                    className="input input-bordered w-full"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* ENERGY */}
-                <div className="card bg-base-100 shadow-md">
-                    <div className="card-body space-y-4">
-                        <h2 className="card-title">Energy Consumption (kWh)</h2>
-
-                        <div className="flex items-center gap-4">
-                            <input
-                                type="number"
-                                placeholder="Enter energy value"
-                                className="input input-bordered w-full"
-                            />
-
-                            {/* Approved toggle */}
-                            <label className="label cursor-pointer flex items-center gap-2">
-                                <span className="label-text">Approved</span>
-                                <input type="checkbox" className="toggle toggle-success" />
-                            </label>
-                        </div>
-
-                        {/* Evidence */}
-                        <div className="border-t pt-4 space-y-3">
-                            <h3 className="font-semibold">Evidence</h3>
-
-                            <div className="flex items-center gap-4">
-                                <input
-                                    type="number"
-                                    placeholder="Page"
-                                    className="input input-bordered w-32"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Cell numbers (e.g. 3, 7, 11)"
-                                    className="input input-bordered w-full"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* POSITIVE SECTION */}
-                <div className="card bg-base-100 shadow-md">
-                    <div className="card-body space-y-4">
-
-                        <div className="flex items-center justify-between">
-                            <h2 className="card-title">Positive Assessment</h2>
-
-                            <label className="label cursor-pointer flex items-center gap-2">
-                                <span className="label-text">Positive</span>
-                                <input type="checkbox" className="checkbox checkbox-primary" />
-                            </label>
-                        </div>
-
-                        {/* Failing messages list */}
-                        <div className="space-y-2">
-                            <h3 className="font-semibold">Issues</h3>
-
-                            {/* Repeatable list item */}
-                            <div className="alert alert-warning py-2">
-                                <span className="font-medium">Water:</span> Value exceeds limit.
-                            </div>
-
-                            <div className="alert alert-warning py-2">
-                                <span className="font-medium">Energy:</span> Evidence page missing.
-                            </div>
-
-                            <div className="alert alert-warning py-2">
-                                <span className="font-medium">General:</span> Inconsistent units detected.
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-            </div>
+            {/*{next}*/}
 
             <InstantiatedFormsParserTemplate
                                 context={{

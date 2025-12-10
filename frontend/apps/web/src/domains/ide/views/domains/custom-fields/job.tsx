@@ -9,34 +9,42 @@ export type JobProps = {
     entity: CustomEntity
 }
 
-export const JobElement= (props: JobProps): React.ReactElement => {
-    const [counter, setCounter] = React.useState(5);
-    useEffect(() => {
-        const id = setInterval(() => {
-            setCounter(v => counter > 0 ? v - 1 : 0);
-        }, 1000);
+    export const Counter = (props: Job): React.ReactElement => {   
+    
+        const [counter, setCounter] = React.useState(props.status.kind == 'processing' ? props.status.processing.checkInterval/1000 : 5 );
+        useEffect(() => {
+            const id = setInterval(() => {
+                setCounter(v => counter > 0 ? v - 1 : 0);
+            }, 1000);
+    
+            return () => clearTimeout(id);
+        }, [counter, ]);
+        
+        if(!(props.status.kind == 'processing')) return <></>
+        
+        if(props.status.processing.checkCount > 0) {
+            window.alert("daas")
+            return <div className="indicator">
+                <span
+                    className="indicator-item badge badge-secondary">retry: {props.status.processing.checkCount - 1}</span>
+                <button className="btn">                <span className="countdown font-mono text-xl">
+                        <span style={{"--value": counter, "--digits": 1}} aria-live="polite"
+                              aria-label={counter}>counter</span>
+                    </span></button>
+            </div>
+        }
+        return <span className="countdown font-mono text-xl">
+                        <span style={{"--value": counter, "--digits": 1}} aria-live="polite"
+                              aria-label={counter}>counter</span>
+                    </span>
+        
+    }
+    export const JobElement= (props: JobProps): React.ReactElement => {
 
-        return () => clearTimeout(id);
-    }, [counter]);
-    
-    let countdown =    
-        counter < 0 || props.entity.status.kind != 'job' || props.entity.status.job.status.kind != 'processing' 
-            ? <></> 
-            :
-                <span className="countdown font-mono text-xl">
-                    <span style={{"--value":counter, "--digits":1}} aria-live="polite" aria-label={counter}>counter</span>
-                </span>
-    
     return <li className="w-48">   
         {props.item != 0 ? <hr className="bg-primary"/>: <></>}  
         <div className="timeline-start  flex flex-col items-center justify-center">
-            {props.trace.status.kind === 'processing' 
-                ? props.trace.status.processing.checkCount > 1 
-                    ?<div className="indicator">
-                        <span className="indicator-item badge badge-secondary">retry: {props.trace.status.processing.checkCount - 1}</span>
-                        <button className="btn">{countdown}</button>
-                    </div>
-                    :<div>{countdown}</div>: <></>}
+            {props.entity.status.kind == 'job' && props.entity.status.job.status.kind == 'processing' && <Counter {...props.trace} />}
             <div>{props.trace.kind}</div>
 
         </div>

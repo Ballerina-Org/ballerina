@@ -37,8 +37,8 @@ export const makeTypeCheckingProviderFromWorkspace = (
 
 const extractTypeCheckingPayload = (node: INode<Meta>)
     : ValueOrErrors<TypeCheckingPayload, string> => {
-
-const f: Maybe<INode<Meta>> = FlatNode.Operations.findFolderByPath(
+    debugger
+    const f: Maybe<INode<Meta>> = FlatNode.Operations.findFolderByPath(
         node,
         node.metadata.path
     );

@@ -29,6 +29,32 @@ export type DispatchPassthroughFormFlags = {
   test: boolean;
 };
 
+const inner = (props:any) => props.context.layout.valueSeq().map((tab) =>
+    tab.columns.valueSeq().map((column) =>
+
+        column.groups.valueSeq().map((group) =>
+            group
+                .filter((fieldName) =>
+                    props.VisibleFieldKeys.has(fieldName),
+                )
+                .map((fieldName) =>
+
+                    props.EmbeddedFields.get(fieldName)!(undefined)({
+                            ...props,
+                            context: {
+                                ...props.context,
+                                disabled:
+                                    props.DisabledFieldKeys.has(fieldName),
+                            },
+                            view: unit,
+                        }
+
+                    )),
+
+
+        )),
+)
+
 export type ListElementCustomPresentationContext = {
   isLastListElement: boolean;
 };
@@ -1167,6 +1193,17 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </>
       );
     },
+      union: () => (props) => {
+          return (
+              <>
+                  {props.context.label && <h3>{props.context.label}</h3>}
+                  {props.embeddedCaseTemplate(props.context.value.caseName)(undefined)({
+                      ...props,
+                      view: unit,
+                  })}
+              </>
+          );
+      },
     job: () => (props) => {
       return (
         <>
@@ -1180,6 +1217,160 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   record: {
+      consumptionItems: () => (props:any) => {
+     
+          return <div>{inner(props)}</div>
+      },
+      consumptionItem: () => (props:any) => {
+          debugger
+
+          if(props.context.value.kind !== 'record') return <p>expected record for consumption value</p>
+          const data = props.context.value.fields;
+
+          const result = data.toArray()[1][1] as boolean
+          const value = data.toArray()[0][1]; //.values.toArray().map( d => d.fields.toArray()[1][1])
+
+          if(value.caseName !== 'Value') return <></>
+          
+          const value2 = value.fields.fields.toArray();
+          const n = value2[0][1]
+          const e = value2[1][1].fields.fields.toArray()
+          const page = e[0][1].values.toArray()
+          const pages = page.map(p => ({
+              page:  p.fields.toArray()[0][1],
+              cells: p.fields.toArray()[1][1].values.toArray()
+              
+          }))
+          debugger
+          return         <div className="card bg-base-100 shadow-md">
+              <div className="card-body space-y-4">
+                  <h2 className="card-title">{props.context.label}</h2>
+
+                  <div className="flex items-center gap-4">
+                      <input
+                          type="number"
+                          value={n}
+                          placeholder="Enter energy value"
+                          className="input input-bordered w-full"
+                      />
+
+                      {/* Approved toggle */}
+                      <label className="label cursor-pointer flex items-center gap-2">
+                          <span className="label-text">Approved</span>
+                          <input type="checkbox" defaultValue={result}  className="toggle toggle-warning" />
+                      </label>
+                  </div>
+
+                  {/* Evidence */}
+                  <div className="border-t pt-4 space-y-3">
+                      <h3 className="font-semibold">Evidence</h3>
+                      {pages.map(p =>(<div className="flex items-center gap-4">
+                          <input
+                              type="number"
+                              placeholder="Page"
+                              onChange={() => {}}
+                              value={p.page}
+                              className="input input-bordered w-32"
+                          />
+                          <input
+                              type="text"
+                              placeholder="Cell numbers (e.g. 3, 7, 11)"
+                              className="input input-bordered w-full"
+                              value={JSON.stringify(p.cells)}
+                          />
+                      </div>))}  
+           
+                  </div>
+              </div>
+          </div>
+      },
+      assessment: () => (props: any) => {
+
+          if(props.context.value.kind !== 'record') return <p>expected record for esg failing </p> 
+          const data = props.context.value.fields;
+          
+          const result = data.toArray()[1][1] as boolean
+          const messages = data.toArray()[0][1].values.toArray()
+              const msg = (messages || []).map( d =>
+                  (d.fields.toArray()[1][1]))
+          
+     
+          return (        <div className="card bg-base-100 shadow-md">
+              <div className="card-body space-y-4">
+
+                  <div className="flex items-center justify-between">
+                      <h2 className="card-title">ESG Assessment</h2>
+
+                      <label className="label cursor-pointer flex items-center gap-2">
+                          <span className="label-text">Positive</span>
+                          <input type="checkbox" checked={result} className="checkbox checkbox-primary" />
+                      </label>
+                  </div>
+
+                  {/* Failing messages list */}
+                  <div className="space-y-2">
+                      <h3 className="font-semibold">Issues</h3>
+
+                      {/* Repeatable list item */}
+                      {msg.map(msg => (<div className="alert alert-warning py-2">
+                          <span className="font-medium">Failing check: </span> {msg}
+                      </div>))}
+                  </div>
+
+              </div>
+          </div>)
+      },  
+      intWithEvidence: () => (props:any) => {
+          return (                <div className="border-t pt-4 space-y-3">
+              <h3 className="font-semibold">Evidence</h3>
+
+              <div className="flex items-center gap-4">
+                  <input
+                      type="number"
+                      placeholder="Page"
+                      className="input input-bordered w-32"
+                  />
+                  <input
+                      type="text"
+                      placeholder="Cell numbers (e.g. 12, 14, 18)"
+                      className="input input-bordered w-full"
+                  />
+              </div>
+          </div>)
+      },
+      evidenceOnPage: () => (props:any) => {
+          return (                <div className="border-t pt-4 space-y-3">
+              <h3 className="font-semibold">Evidence</h3>
+
+              <div className="flex items-center gap-4">
+                  <input
+                      type="number"
+                      placeholder="Page"
+                      className="input input-bordered w-32"
+                  />
+                  <input
+                      type="text"
+                      placeholder="Cell numbers (e.g. 12, 14, 18)"
+                      className="input input-bordered w-full"
+                  />
+              </div>
+          </div>)
+      },
+      consumption: () => (props: any) => {
+       
+          return  <div className="card bg-base-100 shadow-md w-full">
+              <div className="card-body space-y-4 w-full">
+                  <h2 className="card-title">{props.context.label}</h2>
+                  {inner(props)}
+              </div>
+          </div>
+      },
+
+      cards: () => (props:any ) => {
+
+          return <div className="p-6 w-full mx-auto space-y-8">{inner(props)}
+          </div>      
+      },
       timelineEntry: () => (props) =>{
           
           return (           <li>
@@ -2151,11 +2342,17 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       );
     },
   },
-    unit: () => (_props) => {
-        return <></>;
-    },
-  boolean: {
-    defaultBoolean: () => (props) => (
+
+  boolean: {    
+      booleanWithLabel: () => (props) => (
+          <div className="flex items-center gap-4">
+              <label className="label cursor-pointer flex items-center gap-2">
+                  <span className="label-text">{props.context.label}</span>
+                  <input type="checkbox" className="toggle toggle-success" />
+              </label>
+          </div>
+      ),
+      defaultBoolean: () => (props) => (
       <>
         {props.context.label && <h3>{props.context.label}</h3>}
         {props.context.details && (
@@ -2252,8 +2449,35 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         />
       </>
     ),
+      numberWithLabel: () => (props) => (
+    <>
+        {props.context.label && <h3>{props.context.label}</h3>}
+        {props.context.details && (
+            <p>
+                <em>{props.context.details}</em>
+            </p>
+        )}
+        <input
+            disabled={props.context.disabled}
+            type="number"
+            value={props.context.value}
+            onChange={(e) =>
+                props.foreignMutations.setNewValue(
+                    ~~parseInt(e.currentTarget.value),
+                    undefined,
+                )
+            }
+        />
+    </>
+),
   },
   string: {
+      uncertainty: () => (props: any) => {
+          debugger
+          return                      <div className="alert alert-warning py-2">
+              {props.context.value}
+          </div>
+      },
       defaultString: () => (props) => {
           return (
               <div className="tooltip" data-tip={props.context.tooltip}>
@@ -2934,6 +3158,42 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
     },
   list: {
+      uncertainties: () => (props) => {
+          const value = props.context.value;
+          if (PredicateValue.Operations.IsUnit(value)) {
+              console.error(`Non partial list renderer called with unit value`);
+              return <></>;
+          }
+          return <div className="card bg-base-100 shadow-md">
+              <div className="card-body space-y-4">
+
+                  <div className="flex items-center justify-between">
+                      <h2 className="card-title">Positive Assessment</h2>
+
+                      <label className="label cursor-pointer flex items-center gap-2">
+                          <span className="label-text">Positive</span>
+                          <input type="checkbox" className="checkbox checkbox-primary" />
+                      </label>
+                  </div>
+
+                  {/* Failing messages list */}
+                  <div className="space-y-2">
+                      <h3 className="font-semibold">Issues</h3>
+
+                      {value.values.map((_, elementIndex) =>{
+                          if (PredicateValue.Operations.IsRecord(_)) {
+                              console.error(`uncertainty does not have message`);
+                              return <></>;
+                          }
+                          return(                      
+                          <div className="alert alert-warning py-2">
+                          <span className="font-medium">Water:</span> Value exceeds limit.
+                      </div>)})}
+                  </div>
+
+              </div>
+          </div>
+      },
       listAsTableWithHeaders: () => (props) => {
           return (
               <div style={{ border: "1px solid darkblue" }}>listAsTableWithHeaders dummy renderer</div>)
@@ -3803,7 +4063,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
     },
   },
   unit: {
-    defaultUnit: () => (props) => {
+    unit: () => (props) => {
       return (
         <>
           {props.context.label && <h3>{props.context.label}</h3>}

@@ -8,6 +8,7 @@ import {
 } from "playground-core";
 import {BasicFun, replaceWith, Updater, Value} from "ballerina-core";
 import {SelectionPhase, Spec} from "playground-core/ide/domains/phases/selection/state.ts";
+import {LocalStorage_SpecName} from "playground-core/ide/domains/storage/local.ts";
 
 type SelectSpecProps = Ide & { setState: BasicFun<Updater<Ide>, void> };
 
@@ -42,7 +43,8 @@ export const SelectSpec = (props: SelectSpecProps): React.ReactElement => {
                                     workspace: WorkspaceState.Updater.defaultForSingleFolder()(ide.phase.locked.workspace) }
                             })
                         }))
-                props.setState(u)
+                props.setState(u);
+                LocalStorage_SpecName.set(name.name);
     
             }}
             options={props.phase.selection.specs}/>

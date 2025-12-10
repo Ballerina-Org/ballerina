@@ -10,13 +10,17 @@ import {RequestValueJobResponse, ResponseWithStatus} from "../../domains/job/res
 import {constructionJob, getJobStatus, getValue, typeCheckingJob} from "../../../../../api/custom-fields/client";
 import {AI_Value_Mock} from "../../domains/mock";
 
+/* The goal of this coroutine, along the actual orchestration of the job request/responses,
+is to be visualization friendly, 
+hence we have more data that needed for the actual processing on each step */
+
 const awaitProcessingJob = <result>(complete: BasicFun<ResponseWithStatus<result>,Job>) => {
 
     return Co.While(
         ([entity]: CustomEntity[]) => entity.status.kind === 'job' && entity.status.job.status.kind === 'processing',
         Co.GetState().then(entity => {
             if(!(entity.status.kind === 'job' && entity.status.job.status.kind === 'processing'))
-                return Co.Do(()=>{})
+                return Co.Do(()=> {})
             
             const id = entity.status.job.status.processing.jobId;
             const kind = entity.status.job.kind as 'typechecking' | 'construction'
@@ -168,11 +172,12 @@ export const customFields =
                                         value: res.value.value,
                                         status: { kind: 'completed', how: JobProcessing.Default(res.value.value.id), took: 0 }
                                     } satisfies Job;
+                                    console.log(res.value.value)
                                     return Co.SetState(Updater<CustomEntity>(entity => {
                                         return ({
                                         ...entity,
                                         trace: [...entity.trace.slice(0, -1), completed],
-                                        status: { kind: 'result', value: ValueOrErrors.Default.return(JSON.stringify(AI_Value_Mock))},
+                                        status: { kind: 'result', value: ValueOrErrors.Default.return(res.value.value.value)},//JSON.stringify(AI_Value_Mock))},
                                     })}))
                                 }),
                             ]) }),
