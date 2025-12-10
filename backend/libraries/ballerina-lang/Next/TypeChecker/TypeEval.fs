@@ -51,11 +51,7 @@ module Eval =
             do! Kind.AsArrow f_k |> ofSum |> state.Ignore
             let! a, a_k = !!a
 
-            let! param, body =
-              f
-              |> TypeValue.AsLambda
-              |> ofSum
-              |> state.Map WithTypeExprSourceMapping.Getters.Value
+            let! param, body = f |> TypeValue.AsLambda |> ofSum |> state.Map WithSourceMapping.Getters.Value
 
             let! ctx = state.GetContext()
             let closure = ctx.TypeVariables |> Map.add (param.Name) (a, a_k)
@@ -138,7 +134,13 @@ module Eval =
                     Arguments = parameters @ args },
               Kind.Star
           | TypeExpr.NewSymbol _ -> return! $"Errors cannot evaluate {t} as a type" |> error |> state.Throw
-          | TypeExpr.Primitive p -> return TypeValue.Primitive { value = p; source = source }, Kind.Star
+          | TypeExpr.Primitive p ->
+            return
+              TypeValue.Primitive
+                { value = p
+                  typeExprSource = source
+                  typeCheckScopeSource = ctx.Scope },
+              Kind.Star
           | TypeExpr.Lookup v ->
             let! res =
               state.Any(
@@ -237,11 +239,7 @@ module Eval =
             return!
               state.Either5
                 (state {
-                  let! param, body =
-                    f
-                    |> TypeValue.AsLambda
-                    |> ofSum
-                    |> state.Map WithTypeExprSourceMapping.Getters.Value
+                  let! param, body = f |> TypeValue.AsLambda |> ofSum |> state.Map WithSourceMapping.Getters.Value
 
                   match param.Kind with
                   | Kind.Symbol ->
@@ -354,7 +352,8 @@ module Eval =
             return
               TypeValue.Lambda
                 { value = param, body_t.AsExpr
-                  source = source },
+                  typeExprSource = source
+                  typeCheckScopeSource = ctx.Scope },
               Kind.Arrow(param.Kind, body_k)
           | TypeExpr.Arrow(input, output) ->
             let! input, input_k = !input
@@ -365,7 +364,8 @@ module Eval =
             return
               TypeValue.Arrow
                 { value = (input, output)
-                  source = source },
+                  typeExprSource = source
+                  typeCheckScopeSource = ctx.Scope },
               Kind.Star
           | TypeExpr.Record(fields) ->
             let! fields =
@@ -380,7 +380,12 @@ module Eval =
               |> state.All
               |> state.Map(OrderedMap.ofSeq)
 
-            return TypeValue.Record { value = fields; source = source }, Kind.Star
+            return
+              TypeValue.Record
+                { value = fields
+                  typeExprSource = source
+                  typeCheckScopeSource = ctx.Scope },
+              Kind.Star
           | TypeExpr.Tuple(items) ->
             let! items =
               items
@@ -392,7 +397,12 @@ module Eval =
                 })
               |> state.All
 
-            return TypeValue.Tuple { value = items; source = source }, Kind.Star
+            return
+              TypeValue.Tuple
+                { value = items
+                  typeExprSource = source
+                  typeCheckScopeSource = ctx.Scope },
+              Kind.Star
           | TypeExpr.Union(cases) ->
             let! cases =
               cases
@@ -406,11 +416,22 @@ module Eval =
               |> state.All
               |> state.Map(OrderedMap.ofSeq)
 
-            return TypeValue.Union { value = cases; source = source }, Kind.Star
+            return
+              TypeValue.Union
+                { value = cases
+                  typeExprSource = source
+                  typeCheckScopeSource = ctx.Scope },
+              Kind.Star
           | TypeExpr.Set(element) ->
             let! element, element_k = !element
             do! element_k |> Kind.AsStar |> ofSum |> state.Ignore
-            return TypeValue.Set { value = element; source = source }, Kind.Star
+
+            return
+              TypeValue.Set
+                { value = element
+                  typeExprSource = source
+                  typeCheckScopeSource = ctx.Scope },
+              Kind.Star
           | TypeExpr.Map(key, value) ->
             let! key, key_k = !key
             let! value, value_k = !value
@@ -420,7 +441,8 @@ module Eval =
             return
               TypeValue.Map
                 { value = (key, value)
-                  source = source },
+                  typeExprSource = source
+                  typeCheckScopeSource = ctx.Scope },
               Kind.Star
           | TypeExpr.KeyOf(arg) ->
             let! arg, arg_k = !arg
@@ -435,7 +457,8 @@ module Eval =
             return
               TypeValue.Union
                 { value = mappedCasesFixThis
-                  source = source },
+                  typeExprSource = source
+                  typeCheckScopeSource = ctx.Scope },
               Kind.Star
           | TypeExpr.Sum(variants) ->
             let! variants =
@@ -448,7 +471,12 @@ module Eval =
                 })
               |> state.All
 
-            return TypeValue.Sum { value = variants; source = source }, Kind.Star
+            return
+              TypeValue.Sum
+                { value = variants
+                  typeExprSource = source
+                  typeCheckScopeSource = ctx.Scope },
+              Kind.Star
           | TypeExpr.Flatten(type1, type2) ->
             let! type1, type1_k = !type1
             let! type2, type2_k = !type2
@@ -470,7 +498,13 @@ module Eval =
 
                   if keys1 |> Set.intersect keys2 |> Set.isEmpty then
                     let cases = cases1 |> Seq.append cases2 |> OrderedMap.ofSeq
-                    return TypeValue.Union { value = cases; source = source }, Kind.Star
+
+                    return
+                      TypeValue.Union
+                        { value = cases
+                          typeExprSource = source
+                          typeCheckScopeSource = ctx.Scope },
+                      Kind.Star
                   else
                     return!
                       $"Error: cannot flatten types with overlapping keys: {keys1} and {keys2}"
@@ -490,7 +524,13 @@ module Eval =
 
                   if keys1 |> Set.intersect keys2 |> Set.isEmpty then
                     let fields = fields1 |> Seq.append fields2 |> OrderedMap.ofSeq
-                    return TypeValue.Record { value = fields; source = source }, Kind.Star
+
+                    return
+                      TypeValue.Record
+                        { value = fields
+                          typeExprSource = source
+                          typeCheckScopeSource = ctx.Scope },
+                      Kind.Star
                   else
                     return!
                       $"Error: cannot flatten types with overlapping keys: {keys1} and {keys2}"
@@ -514,7 +554,13 @@ module Eval =
 
                   let keys2 = cases2 |> OrderedMap.keys |> Set.ofSeq
                   let cases = cases1 |> OrderedMap.filter (fun k _ -> keys2 |> Set.contains k |> not)
-                  return TypeValue.Union { value = cases; source = source }, Kind.Star
+
+                  return
+                    TypeValue.Union
+                      { value = cases
+                        typeExprSource = source
+                        typeCheckScopeSource = ctx.Scope },
+                    Kind.Star
                 })
                 (state {
                   let! fields1 = type1 |> TypeValue.AsRecord |> ofSum
@@ -526,7 +572,12 @@ module Eval =
                   let fields =
                     fields1 |> OrderedMap.filter (fun k _ -> keys2 |> Set.contains k |> not)
 
-                  return TypeValue.Record { value = fields; source = source }, Kind.Star
+                  return
+                    TypeValue.Record
+                      { value = fields
+                        typeExprSource = source
+                        typeCheckScopeSource = ctx.Scope },
+                    Kind.Star
                 })
                 (state { return! $"Error: cannot evaluate exclude " |> error |> state.Throw }
                  |> state.MapError(Errors.SetPriority ErrorPriority.High))
@@ -540,7 +591,12 @@ module Eval =
                   let! cases = t |> TypeValue.AsUnion |> sum.Map snd |> ofSum
                   let cases = cases |> OrderedMap.map (fun _ v -> v, Kind.Star)
 
-                  return TypeValue.Record { value = cases; source = source }, Kind.Star
+                  return
+                    TypeValue.Record
+                      { value = cases
+                        typeExprSource = source
+                        typeCheckScopeSource = ctx.Scope },
+                    Kind.Star
                 })
                 (state {
                   let! fields = t |> TypeValue.AsRecord |> ofSum
@@ -555,7 +611,8 @@ module Eval =
                   return
                     TypeValue.Union
                       { value = fields |> OrderedMap.map (fun _ (v, _) -> v)
-                        source = source },
+                        typeExprSource = source
+                        typeCheckScopeSource = ctx.Scope },
                     Kind.Star
                 })
                 (state { return! $"Error: cannot evaluate rotation" |> error |> state.Throw }
