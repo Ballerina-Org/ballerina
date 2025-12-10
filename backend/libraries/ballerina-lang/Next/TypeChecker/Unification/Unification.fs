@@ -569,40 +569,87 @@ module Unification =
 
               return TypeValue.CreateLambda(par, TypeExpr.FromTypeValue bodyTv')
             | _ -> return TypeValue.CreateLambda(par, body)
-          | TypeValue.Arrow { value = l, r; source = n } ->
+          | TypeValue.Arrow { value = l, r
+                              typeExprSource = n
+                              typeCheckScopeSource = scope } ->
             let! l' = TypeValue.Instantiate typeEval loc0 l
             let! r' = TypeValue.Instantiate typeEval loc0 r
-            return TypeValue.Arrow { value = l', r'; source = n }
+
+            return
+              TypeValue.Arrow
+                { value = l', r'
+                  typeExprSource = n
+                  typeCheckScopeSource = scope }
           // | TypeValue.Apply { value = var, arg; source = n } ->
           //   let! arg' = TypeValue.Instantiate TypeExpr.Eval loc0 arg
           //   return TypeValue.Apply { value = var, arg'; source = n }
-          | TypeValue.Map { value = l, r; source = n } ->
+          | TypeValue.Map { value = l, r
+                            typeExprSource = n
+                            typeCheckScopeSource = scope } ->
             let! l' = TypeValue.Instantiate typeEval loc0 l
             let! r' = TypeValue.Instantiate typeEval loc0 r
-            return TypeValue.Map { value = l', r'; source = n }
-          | TypeValue.Set { value = v; source = n } ->
+
+            return
+              TypeValue.Map
+                { value = l', r'
+                  typeExprSource = n
+                  typeCheckScopeSource = scope }
+          | TypeValue.Set { value = v
+                            typeExprSource = n
+                            typeCheckScopeSource = scope } ->
             let! v' = TypeValue.Instantiate typeEval loc0 v
-            return TypeValue.Set { value = v'; source = n }
-          | TypeValue.Tuple { value = es; source = n } ->
+
+            return
+              TypeValue.Set
+                { value = v'
+                  typeExprSource = n
+                  typeCheckScopeSource = scope }
+          | TypeValue.Tuple { value = es
+                              typeExprSource = n
+                              typeCheckScopeSource = scope } ->
             let! es' = es |> Seq.map (TypeValue.Instantiate typeEval loc0) |> state.All
-            return TypeValue.Tuple { value = es'; source = n }
-          | TypeValue.Sum { value = es; source = n } ->
+
+            return
+              TypeValue.Tuple
+                { value = es'
+                  typeExprSource = n
+                  typeCheckScopeSource = scope }
+          | TypeValue.Sum { value = es
+                            typeExprSource = n
+                            typeCheckScopeSource = scope } ->
             let! es' = es |> Seq.map (TypeValue.Instantiate typeEval loc0) |> state.All
-            return TypeValue.Sum { value = es'; source = n }
-          | TypeValue.Record { value = es; source = n } ->
+
+            return
+              TypeValue.Sum
+                { value = es'
+                  typeExprSource = n
+                  typeCheckScopeSource = scope }
+          | TypeValue.Record { value = es
+                               typeExprSource = n
+                               typeCheckScopeSource = scope } ->
             let! es' =
               es
               |> OrderedMap.map (fun _ (tv, k) ->
                 tv |> TypeValue.Instantiate typeEval loc0 |> state.Map(fun res -> res, k))
               |> state.AllMapOrdered
 
-            return TypeValue.Record { value = es'; source = n }
-          | TypeValue.Union { value = es; source = n } ->
+            return
+              TypeValue.Record
+                { value = es'
+                  typeExprSource = n
+                  typeCheckScopeSource = scope }
+          | TypeValue.Union { value = es
+                              typeExprSource = n
+                              typeCheckScopeSource = scope } ->
             let! es' =
               es
               |> OrderedMap.map (fun _ -> TypeValue.Instantiate typeEval loc0)
               |> state.AllMapOrdered
 
-            return TypeValue.Union { value = es'; source = n }
+            return
+              TypeValue.Union
+                { value = es'
+                  typeExprSource = n
+                  typeCheckScopeSource = scope }
           | TypeValue.Primitive _ -> return t
         }
