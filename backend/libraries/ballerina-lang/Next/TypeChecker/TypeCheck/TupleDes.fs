@@ -47,7 +47,7 @@ module TupleDes =
             t_fields
             |> TypeValue.AsTuple
             |> ofSum
-            |> state.Map WithTypeExprSourceMapping.Getters.Value
+            |> state.Map WithSourceMapping.Getters.Value
 
           let! t_field =
             t_fields
