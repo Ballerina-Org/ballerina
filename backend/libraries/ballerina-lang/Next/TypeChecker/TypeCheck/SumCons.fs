@@ -44,6 +44,7 @@ module SumCons =
               let guid = Guid.CreateVersion7()
 
               ({ TypeVar.Name = $"a_{i}_of_{cons.Count} " + guid.ToString()
+                 Synthetic = true
                  Guid = guid }))
 
           for c in cases do
@@ -56,5 +57,5 @@ module SumCons =
             |> TypeValue.Instantiate TypeExpr.Eval loc0
             |> Expr.liftInstantiation
 
-          return Expr.SumCons(cons, loc0, ctx.Scope), return_t, Kind.Star
+          return Expr.SumCons(cons, loc0, ctx.Scope), return_t, Kind.Star, ctx
         }

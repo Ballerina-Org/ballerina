@@ -134,7 +134,14 @@ module Unification =
         | TypeValue.Sum { value = es } ->
           let! vars = es |> Seq.map TypeValue.FreeVariables |> reader.All
           return vars |> Set.unionMany
-        | TypeValue.Record { value = es }
+        | TypeValue.Record { value = es } ->
+          let! vars =
+            es
+            |> OrderedMap.toSeq
+            |> Seq.map (fun (_, (v, _)) -> TypeValue.FreeVariables v)
+            |> reader.All
+
+          return vars |> Set.unionMany
         | TypeValue.Union { value = es } ->
           let! vars =
             es
@@ -160,10 +167,9 @@ module Unification =
       reader {
         let error e = Errors.Singleton(loc0, e)
         let (==) a b = TypeValue.MostSpecific(loc0, a, b)
-        let ofSum = Sum.mapRight (Errors.FromErrors loc0) >> reader.OfSum
 
         match t1, t2 with
-        | TypeValue.Primitive p1, TypeValue.Primitive p2 when p1 = p2 -> return t1
+        | TypeValue.Primitive p1, TypeValue.Primitive p2 when p1.value = p2.value -> return t1
         | Lookup l1, Lookup l2 when l1 = l2 -> return t1
         | Lookup l1, Lookup l2 when l1 <> l2 ->
           return!
@@ -204,11 +210,13 @@ module Unification =
         | TypeValue.Record e1, TypeValue.Record e2 when e1.value.Count = e2.value.Count ->
           let! items =
             e1.value
-            |> OrderedMap.map (fun k v1 ->
+            |> OrderedMap.map (fun k (v1, k1) ->
               reader {
-                let! v2 = e2.value |> OrderedMap.tryFindWithError k "record" k.Name.LocalName |> ofSum
+                let ofSum = Sum.mapRight (Errors.FromErrors loc0) >> reader.OfSum
+                let! v2, _ = e2.value |> OrderedMap.tryFindWithError k "record" k.Name.LocalName |> ofSum
 
-                return! v1 == v2
+                let! res = v1 == v2
+                return res, k1
               })
             |> reader.AllMapOrdered
 
@@ -218,6 +226,7 @@ module Unification =
             e1.value
             |> OrderedMap.map (fun k v1 ->
               reader {
+                let ofSum = Sum.mapRight (Errors.FromErrors loc0) >> reader.OfSum
                 let! v2 = e2.value |> OrderedMap.tryFindWithError k "union" k.Name.LocalName |> ofSum
 
                 return! v1 == v2
@@ -290,10 +299,10 @@ module Unification =
         let! ctx = state.GetContext()
 
         match left, right with
-        | TypeValue.Primitive p1, TypeValue.Primitive p2 when p1 = p2 -> return ()
+        | TypeValue.Primitive p1, TypeValue.Primitive p2 when p1.value = p2.value -> return ()
         | Lookup l1, Lookup l2 when l1 = l2 -> return ()
         | Lookup l, t2
-        | t2, Lookup l ->
+        | t2, Lookup l when ctx.TypeParameters |> Map.containsKey l.LocalName |> not ->
           let! t1, _ =
             TypeCheckState.tryFindType (l |> ctx.Scope.Resolve, loc0)
             |> reader.MapContext(fun ctx -> ctx.EvalState)
@@ -395,11 +404,12 @@ module Unification =
           for (v1, v2) in List.zip e1 e2 do
             do! v1 == v2
         | TypeValue.Record { value = e1 }, TypeValue.Record { value = e2 } when e1.Count = e2.Count ->
-          for (k1, v1) in e1 |> OrderedMap.toSeq do
-            let! v2 = e2 |> OrderedMap.tryFindWithError k1 "record field" k1.Name.LocalName |> ofSum
+          for (k1, (v1, _)) in e1 |> OrderedMap.toSeq do
+            let! v2, _ = e2 |> OrderedMap.tryFindWithError k1 "record field" k1.Name.LocalName |> ofSum
             do! v1 == v2
         | TypeValue.Union { value = e1 }, TypeValue.Union { value = e2 } when e1.Count = e2.Count ->
           for (k1, v1) in e1 |> OrderedMap.toSeq do
+            let ofSum = Sum.mapRight (Errors.FromErrors loc0) >> state.OfSum
             let! v2 = e2 |> OrderedMap.tryFindWithError k1 "union field" k1.Name.LocalName |> ofSum
             do! v1 == v2
         | _ -> return! $"Cannot unify types: {left} and {right}" |> error |> state.Throw
@@ -476,7 +486,10 @@ module Unification =
               // return! Errors.Singleton $"Infinite type instantiation for variable {v}" |> state.Throw
               return t
             else
-              let localCtx = { EvalState = s; Scope = ctx.Scope }
+              let localCtx =
+                { EvalState = s
+                  Scope = ctx.Scope
+                  TypeParameters = ctx.TypeParameters }
 
               let localState = s.Vars
 
@@ -526,7 +539,7 @@ module Unification =
 
             let! t =
               s.Bindings
-              |> TypeBindings.tryFindWithError (l |> ctx.Scope.Resolve) "lookup" l.ToFSharpString loc0
+              |> TypeBindings.tryFindWithError (l |> ctx.Scope.Resolve) "lookup" l.AsFSharpString loc0
               |> state.OfSum
               |> state.Catch
 
@@ -536,11 +549,11 @@ module Unification =
               return!
                 state.Either
                   (ctx.TypeVariables
-                   |> TypeVariablesScope.tryFindWithError l.LocalName "type variable" l.ToFSharpString loc0
+                   |> TypeVariablesScope.tryFindWithError l.LocalName "type variable" l.AsFSharpString loc0
                    |> sum.Map fst
                    |> state.OfSum)
                   (ctx.TypeParameters
-                   |> TypeParametersScope.tryFindWithError l.LocalName "type parameter" l.ToFSharpString loc0
+                   |> TypeParametersScope.tryFindWithError l.LocalName "type parameter" l.AsFSharpString loc0
                    |> sum.Map(fun _ -> TypeValue.Lookup l)
                    |> state.OfSum)
           | TypeValue.Lambda { value = par, body } ->
@@ -556,39 +569,87 @@ module Unification =
 
               return TypeValue.CreateLambda(par, TypeExpr.FromTypeValue bodyTv')
             | _ -> return TypeValue.CreateLambda(par, body)
-          | TypeValue.Arrow { value = l, r; source = n } ->
+          | TypeValue.Arrow { value = l, r
+                              typeExprSource = n
+                              typeCheckScopeSource = scope } ->
             let! l' = TypeValue.Instantiate typeEval loc0 l
             let! r' = TypeValue.Instantiate typeEval loc0 r
-            return TypeValue.Arrow { value = l', r'; source = n }
+
+            return
+              TypeValue.Arrow
+                { value = l', r'
+                  typeExprSource = n
+                  typeCheckScopeSource = scope }
           // | TypeValue.Apply { value = var, arg; source = n } ->
           //   let! arg' = TypeValue.Instantiate TypeExpr.Eval loc0 arg
           //   return TypeValue.Apply { value = var, arg'; source = n }
-          | TypeValue.Map { value = l, r; source = n } ->
+          | TypeValue.Map { value = l, r
+                            typeExprSource = n
+                            typeCheckScopeSource = scope } ->
             let! l' = TypeValue.Instantiate typeEval loc0 l
             let! r' = TypeValue.Instantiate typeEval loc0 r
-            return TypeValue.Map { value = l', r'; source = n }
-          | TypeValue.Set { value = v; source = n } ->
+
+            return
+              TypeValue.Map
+                { value = l', r'
+                  typeExprSource = n
+                  typeCheckScopeSource = scope }
+          | TypeValue.Set { value = v
+                            typeExprSource = n
+                            typeCheckScopeSource = scope } ->
             let! v' = TypeValue.Instantiate typeEval loc0 v
-            return TypeValue.Set { value = v'; source = n }
-          | TypeValue.Tuple { value = es; source = n } ->
+
+            return
+              TypeValue.Set
+                { value = v'
+                  typeExprSource = n
+                  typeCheckScopeSource = scope }
+          | TypeValue.Tuple { value = es
+                              typeExprSource = n
+                              typeCheckScopeSource = scope } ->
             let! es' = es |> Seq.map (TypeValue.Instantiate typeEval loc0) |> state.All
-            return TypeValue.Tuple { value = es'; source = n }
-          | TypeValue.Sum { value = es; source = n } ->
+
+            return
+              TypeValue.Tuple
+                { value = es'
+                  typeExprSource = n
+                  typeCheckScopeSource = scope }
+          | TypeValue.Sum { value = es
+                            typeExprSource = n
+                            typeCheckScopeSource = scope } ->
             let! es' = es |> Seq.map (TypeValue.Instantiate typeEval loc0) |> state.All
-            return TypeValue.Sum { value = es'; source = n }
-          | TypeValue.Record { value = es; source = n } ->
+
+            return
+              TypeValue.Sum
+                { value = es'
+                  typeExprSource = n
+                  typeCheckScopeSource = scope }
+          | TypeValue.Record { value = es
+                               typeExprSource = n
+                               typeCheckScopeSource = scope } ->
+            let! es' =
+              es
+              |> OrderedMap.map (fun _ (tv, k) ->
+                tv |> TypeValue.Instantiate typeEval loc0 |> state.Map(fun res -> res, k))
+              |> state.AllMapOrdered
+
+            return
+              TypeValue.Record
+                { value = es'
+                  typeExprSource = n
+                  typeCheckScopeSource = scope }
+          | TypeValue.Union { value = es
+                              typeExprSource = n
+                              typeCheckScopeSource = scope } ->
             let! es' =
               es
               |> OrderedMap.map (fun _ -> TypeValue.Instantiate typeEval loc0)
               |> state.AllMapOrdered
 
-            return TypeValue.Record { value = es'; source = n }
-          | TypeValue.Union { value = es; source = n } ->
-            let! es' =
-              es
-              |> OrderedMap.map (fun _ -> TypeValue.Instantiate typeEval loc0)
-              |> state.AllMapOrdered
-
-            return TypeValue.Union { value = es'; source = n }
+            return
+              TypeValue.Union
+                { value = es'
+                  typeExprSource = n
+                  typeCheckScopeSource = scope }
           | TypeValue.Primitive _ -> return t
         }

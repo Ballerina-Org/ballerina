@@ -35,7 +35,7 @@ export const StringAbstractRenderer = <
     StringAbstractRendererForeignMutationsExpected<Flags>,
     StringAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const domNodeId = props.context.domNodeAncestorPath + "[string]";
+    const domNodeId = props.context.domNodeAncestorPath;
 
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(

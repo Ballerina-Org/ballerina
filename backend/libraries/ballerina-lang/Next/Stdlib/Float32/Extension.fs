@@ -35,7 +35,7 @@ module Extension =
             | Float32Operations.Plus v -> Some(Float32Operations.Plus v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -73,7 +73,7 @@ module Extension =
             | Float32Operations.Minus v -> Some(Float32Operations.Minus v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -111,7 +111,7 @@ module Extension =
             | Float32Operations.Divide v -> Some(Float32Operations.Divide v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -150,7 +150,7 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -193,7 +193,7 @@ module Extension =
             | Float32Operations.Mod v -> Some(Float32Operations.Mod v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -231,7 +231,7 @@ module Extension =
             | Float32Operations.Equal v -> Some(Float32Operations.Equal v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -269,7 +269,7 @@ module Extension =
             | Float32Operations.NotEqual v -> Some(Float32Operations.NotEqual v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -307,7 +307,7 @@ module Extension =
             | Float32Operations.GreaterThan v -> Some(Float32Operations.GreaterThan v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -345,7 +345,7 @@ module Extension =
             | Float32Operations.GreaterThanOrEqual v -> Some(Float32Operations.GreaterThanOrEqual v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -386,7 +386,7 @@ module Extension =
             | Float32Operations.LessThan v -> Some(Float32Operations.LessThan v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -424,7 +424,7 @@ module Extension =
             | Float32Operations.LessThanOrEqual v -> Some(Float32Operations.LessThanOrEqual v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op

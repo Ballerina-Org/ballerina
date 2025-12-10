@@ -40,14 +40,14 @@ module TupleDes =
 
         state {
           let! ctx = state.GetContext()
-          let! fields, t_fields, fields_k = !fields
+          let! fields, t_fields, fields_k, _ = !fields
           do! fields_k |> Kind.AsStar |> ofSum |> state.Ignore
 
           let! t_fields =
             t_fields
             |> TypeValue.AsTuple
             |> ofSum
-            |> state.Map WithTypeExprSourceMapping.Getters.Value
+            |> state.Map WithSourceMapping.Getters.Value
 
           let! t_field =
             t_fields
@@ -55,5 +55,5 @@ module TupleDes =
             |> sum.OfOption($"Error: cannot find item {fieldName.Index} in tuple {fields}" |> error)
             |> state.OfSum
 
-          return Expr.TupleDes(fields, fieldName, loc0, ctx.Scope), t_field, Kind.Star
+          return Expr.TupleDes(fields, fieldName, loc0, ctx.Scope), t_field, Kind.Star, ctx
         }

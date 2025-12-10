@@ -37,7 +37,7 @@ export const Base64FileAbstractRenderer = <
       ExtraContext
     >
   >((props) => {
-    const domNodeId = props.context.domNodeAncestorPath + "[base64File]";
+    const domNodeId = props.context.domNodeAncestorPath;
 
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(

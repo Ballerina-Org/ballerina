@@ -175,15 +175,20 @@ module Patterns =
     static member Apply(f: Expr<'T, 'Id, 'valueExt>, a: Expr<'T, 'Id, 'valueExt>) =
       Expr<'T, 'Id, 'valueExt>.Apply(f, a, Location.Unknown, TypeCheckScope.Empty)
 
-    static member ApplyValue
-      (f: Expr<'T, 'Id, 'valueExt>, a: Value<TypeValue, 'valueExt>, aT: TypeValue, loc: Location, scope: TypeCheckScope)
+    static member FromValue
+      (v: Value<TypeValue, 'valueExt>, t: TypeValue, k: Kind, loc: Location, scope: TypeCheckScope)
       =
-      { Expr = ApplyValue({ F = f; Arg = a; ArgT = aT })
+      { Expr =
+          FromValue(
+            { Value = v
+              ValueType = t
+              ValueKind = k }
+          )
         Location = loc
         Scope = scope }
 
-    static member ApplyValue(f: Expr<'T, 'Id, 'valueExt>, a: Value<TypeValue, 'valueExt>, aT: TypeValue) =
-      Expr<'T, 'Id, 'valueExt>.ApplyValue(f, a, aT, Location.Unknown, TypeCheckScope.Empty)
+    static member FromValue(v: Value<TypeValue, 'valueExt>, t: TypeValue, k: Kind) =
+      Expr<'T, 'Id, 'valueExt>.FromValue(v, t, k, Location.Unknown, TypeCheckScope.Empty)
 
     static member Let
       (
@@ -406,7 +411,9 @@ module Patterns =
       | Apply apply -> sum.Return apply
       | other -> sum.Throw(Errors.Singleton $"Expected an apply expression but got {other}")
 
-    static member AsApplyValue(e: Expr<'T, 'Id, 'valueExt>) : Sum<ExprApplyValue<'T, 'Id, 'valueExt>, Errors> =
+    static member AsTerminatedByConstantUnit(e: Expr<'T, 'Id, 'valueExt>) : Sum<Unit, Errors> =
       match e.Expr with
-      | ApplyValue apply -> sum.Return apply
-      | other -> sum.Throw(Errors.Singleton $"Expected an apply value but got {other}")
+      | ExprRec.Primitive PrimitiveValue.Unit -> sum.Return()
+      | ExprRec.TypeLet({ Body = rest }) -> Expr<'T, 'Id, 'valueExt>.AsTerminatedByConstantUnit rest
+      | ExprRec.Let({ Rest = rest }) -> Expr<'T, 'Id, 'valueExt>.AsTerminatedByConstantUnit rest
+      | other -> sum.Throw(Errors.Singleton $"Expected a termination by constant unit but got {other}")

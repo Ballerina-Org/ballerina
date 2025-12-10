@@ -139,6 +139,7 @@ module Model =
 
   and TypeVar =
     { Name: string
+      Synthetic: bool // this is the case for type vars created as placeholders - they should all be instantiated away during type checking
       Guid: Guid }
 
     override v.ToString() = v.Name
@@ -234,31 +235,31 @@ module Model =
       | Application(f, a) -> $"({f})[{a}]"
 
   and TypeValue =
-    | Primitive of WithTypeExprSourceMapping<PrimitiveType>
+    | Primitive of WithSourceMapping<PrimitiveType>
     | Var of TypeVar
     | Lookup of Identifier // TODO: Figure out what to do with this (orig name wise) after recursion in type checking is implement correctly
-    | Lambda of WithTypeExprSourceMapping<TypeParameter * TypeExpr>
-    | Application of WithTypeExprSourceMapping<SymbolicTypeApplication>
-    | Arrow of WithTypeExprSourceMapping<TypeValue * TypeValue>
-    | Record of WithTypeExprSourceMapping<OrderedMap<TypeSymbol, TypeValue>>
-    | Tuple of WithTypeExprSourceMapping<List<TypeValue>>
-    | Union of WithTypeExprSourceMapping<OrderedMap<TypeSymbol, TypeValue>>
-    | Sum of WithTypeExprSourceMapping<List<TypeValue>>
-    | Set of WithTypeExprSourceMapping<TypeValue>
-    | Map of WithTypeExprSourceMapping<TypeValue * TypeValue>
+    | Lambda of WithSourceMapping<TypeParameter * TypeExpr>
+    | Application of WithSourceMapping<SymbolicTypeApplication>
+    | Arrow of WithSourceMapping<TypeValue * TypeValue>
+    | Record of WithSourceMapping<OrderedMap<TypeSymbol, TypeValue * Kind>>
+    | Tuple of WithSourceMapping<List<TypeValue>>
+    | Union of WithSourceMapping<OrderedMap<TypeSymbol, TypeValue>>
+    | Sum of WithSourceMapping<List<TypeValue>>
+    | Set of WithSourceMapping<TypeValue>
+    | Map of WithSourceMapping<TypeValue * TypeValue>
     | Imported of ImportedTypeValue // FIXME: This should also have an orig name, implement once the extension is implemented completely
 
     override self.ToString() =
       match self with
-      | Union({ source = OriginExprTypeLet(id, _) })
-      | Record({ source = OriginExprTypeLet(id, _) }) -> id.ToString()
-      | Record({ source = OriginTypeExpr(TypeExpr.Lookup id) })
-      | Primitive({ source = OriginTypeExpr(TypeExpr.Lookup id) })
-      | Lambda({ source = OriginTypeExpr(TypeExpr.Lookup id) })
-      | Arrow({ source = OriginTypeExpr(TypeExpr.Lookup id) })
-      | Tuple({ source = OriginTypeExpr(TypeExpr.Lookup id) })
-      | Union({ source = OriginTypeExpr(TypeExpr.Lookup id) })
-      | Sum({ source = OriginTypeExpr(TypeExpr.Lookup id) }) -> id.ToString()
+      | Union({ typeExprSource = OriginExprTypeLet(id, _) })
+      | Record({ typeExprSource = OriginExprTypeLet(id, _) }) -> id.ToString()
+      | Record({ typeExprSource = OriginTypeExpr(TypeExpr.Lookup id) })
+      | Primitive({ typeExprSource = OriginTypeExpr(TypeExpr.Lookup id) })
+      | Lambda({ typeExprSource = OriginTypeExpr(TypeExpr.Lookup id) })
+      | Arrow({ typeExprSource = OriginTypeExpr(TypeExpr.Lookup id) })
+      | Tuple({ typeExprSource = OriginTypeExpr(TypeExpr.Lookup id) })
+      | Union({ typeExprSource = OriginTypeExpr(TypeExpr.Lookup id) })
+      | Sum({ typeExprSource = OriginTypeExpr(TypeExpr.Lookup id) }) -> id.ToString()
       | Application { value = a } -> a.ToString()
       | Imported i -> i.ToString()
       | Primitive p -> p.value.ToString()
@@ -302,9 +303,10 @@ module Model =
     | OriginTypeExpr of TypeExpr
     | NoSourceMapping of string
 
-  and WithTypeExprSourceMapping<'v> =
+  and WithSourceMapping<'v> =
     { value: 'v
-      source: TypeExprSourceMapping }
+      typeExprSource: TypeExprSourceMapping
+      typeCheckScopeSource: TypeCheckScope }
 
     override self.ToString() = self.value.ToString()
 

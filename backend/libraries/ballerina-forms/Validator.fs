@@ -291,9 +291,9 @@ module Validator =
             let missingFormCases = formCaseNames - typeCaseNames
 
             if missingTypeCases |> Set.isEmpty |> not then
-              return! sum.Throw(Errors.Singleton $"Error: missing type cases {missingTypeCases.ToFSharpString}")
+              return! sum.Throw(Errors.Singleton $"Error: missing type cases {missingTypeCases.AsFSharpString}")
             elif missingFormCases |> Set.isEmpty |> not then
-              return! sum.Throw(Errors.Singleton $"Error: missing form cases {missingFormCases.ToFSharpString}")
+              return! sum.Throw(Errors.Singleton $"Error: missing form cases {missingFormCases.AsFSharpString}")
             elif unallowedCases |> Map.isEmpty |> not then
               return!
                 sum.Throw(
@@ -481,7 +481,7 @@ module Validator =
                 return!
                   sum.Throw(
                     Errors.Singleton
-                      $"Error: api {renderer.OneApiId.ToFSharpString} is used in a preview but has no {CrudMethod.GetManyUnlinked.ToFSharpString} method."
+                      $"Error: api {renderer.OneApiId.AsFSharpString} is used in a preview but has no {CrudMethod.GetManyUnlinked.AsFSharpString} method."
                   )
               else
                 return ()

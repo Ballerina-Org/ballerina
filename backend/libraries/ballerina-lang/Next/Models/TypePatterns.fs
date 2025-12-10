@@ -1,6 +1,7 @@
 namespace Ballerina.DSL.Next.Types
 
 module Patterns =
+  open Ballerina.StdLib.Object
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
   open Ballerina.Errors
@@ -12,7 +13,15 @@ module Patterns =
   type TypeVar with
     static member Create(name: string) : TypeVar =
       { Name = name
+        Synthetic = false
         Guid = Guid.CreateVersion7() }
+
+    static member CreateSynthetic(name: string) : TypeVar =
+      let guid = Guid.CreateVersion7()
+
+      { Name = $"{name}_{guid}"
+        Synthetic = true
+        Guid = guid }
 
   type TypeSymbol with
     static member Create(name: Identifier) : TypeSymbol =
@@ -47,74 +56,86 @@ module Patterns =
       | Kind.Symbol -> sum.Return()
       | _ -> sum.Throw(Errors.Singleton $"Expected symbol kind, got {kind}")
 
-  type WithTypeExprSourceMapping<'v> with
-    static member Getters = {| Value = fun (v: WithTypeExprSourceMapping<'v>) -> v.value |}
+  type WithSourceMapping<'v> with
+    static member Getters = {| Value = fun (v: WithSourceMapping<'v>) -> v.value |}
 
     static member Setters =
-      {| Value = fun (v: WithTypeExprSourceMapping<'v>, value: 'v) -> { v with value = value }
-         Source = fun (v: WithTypeExprSourceMapping<'v>, source: TypeExprSourceMapping) -> { v with source = source } |}
+      {| Value = fun (v: WithSourceMapping<'v>, value: 'v) -> { v with value = value }
+         Source = fun (v: WithSourceMapping<'v>, source: TypeExprSourceMapping) -> { v with typeExprSource = source } |}
 
   type TypeValue with
 
     static member CreateUnit() : TypeValue =
       TypeValue.Primitive
         { value = PrimitiveType.Unit
-          source = NoSourceMapping "Unit" }
+          typeExprSource = NoSourceMapping "Unit"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateGuid() : TypeValue =
       TypeValue.Primitive
         { value = PrimitiveType.Guid
-          source = NoSourceMapping "Guid" }
+          typeExprSource = NoSourceMapping "Guid"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateInt32() : TypeValue =
       TypeValue.Primitive
         { value = PrimitiveType.Int32
-          source = NoSourceMapping "Int32" }
+          typeExprSource = NoSourceMapping "Int32"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateInt64() : TypeValue =
       TypeValue.Primitive
         { value = PrimitiveType.Int64
-          source = NoSourceMapping "Int64" }
+          typeExprSource = NoSourceMapping "Int64"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateFloat32() : TypeValue =
       TypeValue.Primitive
         { value = PrimitiveType.Float32
-          source = NoSourceMapping "Float32" }
+          typeExprSource = NoSourceMapping "Float32"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateFloat64() : TypeValue =
       TypeValue.Primitive
         { value = PrimitiveType.Float64
-          source = NoSourceMapping "Float64" }
+          typeExprSource = NoSourceMapping "Float64"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateDecimal() : TypeValue =
       TypeValue.Primitive
         { value = PrimitiveType.Decimal
-          source = NoSourceMapping "Decimal" }
+          typeExprSource = NoSourceMapping "Decimal"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateBool() : TypeValue =
       TypeValue.Primitive
         { value = PrimitiveType.Bool
-          source = NoSourceMapping "Bool" }
+          typeExprSource = NoSourceMapping "Bool"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateString() : TypeValue =
       TypeValue.Primitive
         { value = PrimitiveType.String
-          source = NoSourceMapping "String" }
+          typeExprSource = NoSourceMapping "String"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateDateTime() : TypeValue =
       TypeValue.Primitive
         { value = PrimitiveType.DateTime
-          source = NoSourceMapping "DateTime" }
+          typeExprSource = NoSourceMapping "DateTime"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateDateOnly() : TypeValue =
       TypeValue.Primitive
         { value = PrimitiveType.DateOnly
-          source = NoSourceMapping "DateOnly" }
+          typeExprSource = NoSourceMapping "DateOnly"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateTimeSpan() : TypeValue =
       TypeValue.Primitive
         { value = PrimitiveType.TimeSpan
-          source = NoSourceMapping "TimeSpan" }
+          typeExprSource = NoSourceMapping "TimeSpan"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreatePrimitive(v: PrimitiveType) : TypeValue =
       match v with
@@ -134,49 +155,58 @@ module Patterns =
     static member CreateLambda(v: TypeParameter, t: TypeExpr) : TypeValue =
       TypeValue.Lambda
         { value = v, t
-          source = NoSourceMapping "Lambda" }
+          typeExprSource = NoSourceMapping "Lambda"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateArrow(v: TypeValue * TypeValue) : TypeValue =
       TypeValue.Arrow
         { value = v
-          source = NoSourceMapping "Arrow" }
+          typeExprSource = NoSourceMapping "Arrow"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
-    static member CreateRecord(v: OrderedMap<TypeSymbol, TypeValue>) : TypeValue =
+    static member CreateRecord(v: OrderedMap<TypeSymbol, TypeValue * Kind>) : TypeValue =
       TypeValue.Record
         { value = v
-          source = NoSourceMapping "Record" }
+          typeExprSource = NoSourceMapping "Record"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateTuple(v: List<TypeValue>) : TypeValue =
       TypeValue.Tuple
         { value = v
-          source = NoSourceMapping "Tuple" }
+          typeExprSource = NoSourceMapping "Tuple"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateUnion(v: OrderedMap<TypeSymbol, TypeValue>) : TypeValue =
       TypeValue.Union
         { value = v
-          source = NoSourceMapping "Union" }
+          typeExprSource = NoSourceMapping "Union"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateSum(v: List<TypeValue>) : TypeValue =
       TypeValue.Sum
         { value = v
-          source = NoSourceMapping "Sum" }
+          typeExprSource = NoSourceMapping "Sum"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateSet(v: TypeValue) : TypeValue =
       TypeValue.Set
         { value = v
-          source = NoSourceMapping "Set" }
+          typeExprSource = NoSourceMapping "Set"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateMap(v: TypeValue * TypeValue) : TypeValue =
       TypeValue.Map
         { value = v
-          source = NoSourceMapping "Map" }
+          typeExprSource = NoSourceMapping "Map"
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateVar(v: TypeVar) : TypeValue = TypeValue.Var v
 
     static member CreateApplication(v: SymbolicTypeApplication) : TypeValue =
       TypeValue.Application
-        { source = NoSourceMapping "Application"
-          value = v }
+        { typeExprSource = NoSourceMapping "Application"
+          value = v
+          typeCheckScopeSource = TypeCheckScope.Empty }
 
     static member CreateImported(v: ImportedTypeValue) : TypeValue = TypeValue.Imported v
 
@@ -194,14 +224,17 @@ module Patterns =
     static member AsUnion(t: TypeValue) =
       sum {
         match t with
-        | TypeValue.Union(cases) -> return cases
+        | TypeValue.Union { value = cases } -> return ([], cases)
+        | TypeValue.Lambda { value = type_par, TypeExpr.FromTypeValue body } ->
+          let! type_pars, cases = TypeValue.AsUnion body
+          return type_par :: type_pars, cases
         | _ -> return! $"Error: expected union type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
     static member AsRecord(t: TypeValue) =
       sum {
         match t with
-        | TypeValue.Record(fields) -> return fields
+        | TypeValue.Record(fields) -> return fields.value
         | _ -> return! $"Error: expected record type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
@@ -317,17 +350,17 @@ module Patterns =
       | TypeValue.Var _ -> t
       | TypeValue.Lookup _ -> t
       | TypeValue.Imported _ -> t
-      | TypeValue.Primitive(p: WithTypeExprSourceMapping<PrimitiveType>) ->
-        WithTypeExprSourceMapping.Setters.Source(p, source) |> TypeValue.Primitive
-      | TypeValue.Application v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Application
-      | TypeValue.Lambda v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Lambda
-      | TypeValue.Arrow v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Arrow
-      | TypeValue.Record v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Record
-      | TypeValue.Tuple v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Tuple
-      | TypeValue.Union v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Union
-      | TypeValue.Sum v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Sum
-      | TypeValue.Set v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Set
-      | TypeValue.Map v -> WithTypeExprSourceMapping.Setters.Source(v, source) |> TypeValue.Map
+      | TypeValue.Primitive(p: WithSourceMapping<PrimitiveType>) ->
+        WithSourceMapping.Setters.Source(p, source) |> TypeValue.Primitive
+      | TypeValue.Application v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Application
+      | TypeValue.Lambda v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Lambda
+      | TypeValue.Arrow v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Arrow
+      | TypeValue.Record v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Record
+      | TypeValue.Tuple v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Tuple
+      | TypeValue.Union v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Union
+      | TypeValue.Sum v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Sum
+      | TypeValue.Set v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Set
+      | TypeValue.Map v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Map
 
   type TypeValue with
     member t.AsExpr: TypeExpr = TypeExpr.FromTypeValue t
@@ -369,11 +402,12 @@ module Patterns =
 
                 let! k = tryFindSymbol k
                 let! v = !v
-                return (k, v)
+                return k, v
               })
             |> sum.All
-            |> sum.Map(OrderedMap.ofSeq)
+            |> sum.Map OrderedMap.ofSeq
 
+          let fields = fields |> OrderedMap.map (fun _ v -> v, Kind.Star)
           return TypeValue.CreateRecord fields
         | TypeExpr.Tuple(fields) ->
           let! items = fields |> List.map (!) |> sum.All
@@ -405,6 +439,7 @@ module Patterns =
         | TypeExpr.Set(element) ->
           let! element = !element
           return TypeValue.CreateSet element
+        | TypeExpr.FromTypeValue tv -> return tv
         | _ ->
           return!
             (loc0, $"Error: expected type value, got {t}")

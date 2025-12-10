@@ -32,7 +32,7 @@ export const SecretAbstractRenderer = <
     SecretAbstractRendererForeignMutationsExpected<Flags>,
     SecretAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const domNodeId = props.context.domNodeAncestorPath + "[secret]";
+    const domNodeId = props.context.domNodeAncestorPath;
 
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(

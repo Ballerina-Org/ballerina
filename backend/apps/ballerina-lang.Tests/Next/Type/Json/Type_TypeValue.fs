@@ -33,7 +33,11 @@ let ``Assert TypeValue -> ToJson -> FromJson -> TypeValue`` (expression: TypeVal
 let testCases guid : TypeValueTestCase list =
   [ { Name = "Var"
       Json = $"""{{"discriminator":"var","value":{{"name":"MyTypeVar","guid":"{guid}"}}}}"""
-      Expected = TypeValue.Var { Name = "MyTypeVar"; Guid = guid } }
+      Expected =
+        TypeValue.Var
+          { Name = "MyTypeVar"
+            Guid = guid
+            Synthetic = false } }
     { Name = "Lookup"
       Json = """{"discriminator":"lookup","value":"SomeType"}"""
       Expected = TypeValue.Lookup !"SomeType" }
@@ -111,8 +115,8 @@ let testCases guid : TypeValueTestCase list =
         """{
               "discriminator":"record",
               "value":[
-                [{"name":"bar","guid":"00000000-0000-0000-0000-000000000002"}, {"discriminator":"string"}],
-                [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"discriminator":"int32"}]
+                [{"name":"bar","guid":"00000000-0000-0000-0000-000000000002"}, [{"discriminator":"string"}, {"discriminator":"star"}]],
+                [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, [{"discriminator":"int32"}, {"discriminator":"star"}]]
               ]
           }"""
       Expected =
@@ -120,10 +124,10 @@ let testCases guid : TypeValueTestCase list =
           OrderedMap.ofList
             [ { TypeSymbol.Name = "bar" |> Identifier.LocalScope
                 TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") },
-              TypeValue.CreateString()
+              (TypeValue.CreateString(), Kind.Star)
               { TypeSymbol.Name = "foo" |> Identifier.LocalScope
                 TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000001") },
-              TypeValue.CreateInt32() ]
+              (TypeValue.CreateInt32(), Kind.Star) ]
         ) }
     { Name = "Application (Lookup)"
       Json =

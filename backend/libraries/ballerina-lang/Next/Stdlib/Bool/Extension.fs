@@ -33,7 +33,7 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun loc (op, v) ->
+          fun loc _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -72,7 +72,7 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -111,7 +111,7 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun loc0 (_, v) ->
+          fun loc0 _rest (_, v) ->
             reader {
               let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 

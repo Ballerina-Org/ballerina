@@ -32,7 +32,7 @@ module ConsExt =
           )
         Constructor = DateOnly_New
         Apply =
-          fun loc0 (_, v) ->
+          fun loc0 _rest (_, v) ->
             reader {
               match v with
               | Value.Primitive(PrimitiveValue.String v) ->
@@ -65,7 +65,7 @@ module ConsExt =
           )
         Constructor = DateOnly_Now
         Apply =
-          fun loc0 (_, v) ->
+          fun loc0 _rest (_, v) ->
             reader {
               match v with
               | Value.Primitive(PrimitiveValue.Unit) ->
@@ -97,7 +97,7 @@ module ConsExt =
           )
         Constructor = DateOnly_UTCNow
         Apply =
-          fun loc0 (_, v) ->
+          fun loc0 _rest (_, v) ->
             reader {
               match v with
               | Value.Primitive(PrimitiveValue.Unit) ->

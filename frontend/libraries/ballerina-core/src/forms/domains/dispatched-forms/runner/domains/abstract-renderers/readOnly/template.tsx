@@ -77,11 +77,14 @@ export const ReadOnlyAbstractRenderer = <
           type: _.type.arg,
           customPresentationContext: _.customPresentationContext,
           remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-          domNodeAncestorPath: _.domNodeAncestorPath + `[readOnly]`,
+          domNodeAncestorPath: _.domNodeAncestorPath + `[ReadOnly]`,
+          predictionAncestorPath: _.predictionAncestorPath + "[ReadOnly]",
+          layoutAncestorPath: _.layoutAncestorPath + "[readOnly]",
           typeAncestors: [_.type as DispatchParsedType<any>].concat(
             _.typeAncestors,
           ),
           lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+          preprocessedSpecContext: _.preprocessedSpecContext,
           labelContext,
         };
       },
@@ -138,7 +141,7 @@ export const ReadOnlyAbstractRenderer = <
     CommonAbstractRendererForeignMutationsExpected<Flags>,
     ReadOnlyAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const domNodeId = props.context.domNodeAncestorPath + "[readOnly]";
+    const domNodeId = props.context.domNodeAncestorPath;
     if (!PredicateValue.Operations.IsReadOnly(props.context.value)) {
       console.error(
         `ReadOnly value expected but got: ${JSON.stringify(

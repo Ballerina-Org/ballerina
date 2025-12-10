@@ -19,3 +19,14 @@ module Patterns =
       match this with
       | Left _ -> None
       | Right b -> Some b
+
+    static member All(sums: seq<Sum<'a, 'b>>) : Sum<list<'a>, 'b> =
+      Seq.foldBack
+        (fun curr acc ->
+          sum {
+            let! x = curr
+            let! xs = acc
+            return x :: xs
+          })
+        sums
+        (Left [])

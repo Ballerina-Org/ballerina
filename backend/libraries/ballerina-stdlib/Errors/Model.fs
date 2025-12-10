@@ -70,6 +70,8 @@ module Errors =
 
       do Console.ResetColor()
 
+    static member FromExn(ex: exn) = Errors.Singleton <| ex.ToString()
+
   let private withError (e: string) (o: Option<'res>) : Sum<'res, Errors> =
     o |> Sum.fromOption<'res, Errors> (fun () -> Errors.Singleton e)
 

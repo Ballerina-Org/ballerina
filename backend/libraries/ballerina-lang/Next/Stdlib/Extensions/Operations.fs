@@ -40,8 +40,8 @@ module Operations =
           opsExt.Operations
           |> Map.values
           |> Seq.fold
-            (fun (acc: Location -> 'ext -> ExprEvaluator<'ext, ExtEvalResult<'ext>>) caseExt ->
-              fun loc0 v ->
+            (fun (acc: Location -> List<_> -> 'ext -> ExprEvaluator<'ext, ExtEvalResult<'ext>>) caseExt ->
+              fun loc0 rest v ->
                 reader.Any(
                   reader {
                     let! v =
@@ -49,9 +49,9 @@ module Operations =
                       |> sum.OfOption((loc0, $"Error: cannot extra constructor from extension") |> Errors.Singleton)
                       |> reader.OfSum
 
-                    return Applicable(fun arg -> caseExt.Apply loc0 (v, arg))
+                    return Applicable(fun arg -> caseExt.Apply loc0 rest (v, arg))
                   },
-                  [ acc loc0 v ]
+                  [ acc loc0 rest v ]
                 ))
             ops
 

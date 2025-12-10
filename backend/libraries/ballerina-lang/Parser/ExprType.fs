@@ -505,7 +505,7 @@ module ExprType =
                       }
                       state.Throw(
                         Errors.Singleton
-                          $"...unexpected json shape for a type body {typeJson.ToFSharpString.ReasonablyClamped}"
+                          $"...unexpected json shape for a type body {typeJson.AsFSharpString.ReasonablyClamped}"
                         |> Errors.WithPriority ErrorPriority.High
                       ) ]
                   )

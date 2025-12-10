@@ -26,7 +26,7 @@ module TypeValue =
           TypeValue.FromJsonSet TypeValue.FromJson json
           TypeValue.FromJsonMap TypeValue.FromJson json
           TypeValue.FromJsonImported TypeValue.FromJson json
-          $"Unknown TypeValue JSON: {json.ToFSharpString.ReasonablyClamped}"
+          $"Unknown TypeValue JSON: {json.AsFSharpString.ReasonablyClamped}"
           |> Errors.Singleton
           |> Errors.WithPriority ErrorPriority.Medium
           |> sum.Throw ]

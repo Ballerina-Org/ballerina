@@ -416,7 +416,7 @@ module Expr =
             Expr.ParseItemLookup (Expr.Parse parseExtension) json
             Expr.ParsePrepend (Expr.Parse parseExtension) json
             parseExtension (Expr.Parse parseExtension) json
-            sum.Throw(Errors.Singleton $"Error: cannot parse expression {json.ToFSharpString.ReasonablyClamped}.") ]
+            sum.Throw(Errors.Singleton $"Error: cannot parse expression {json.AsFSharpString.ReasonablyClamped}.") ]
         )
       )
       |> sum.MapError Errors.HighestPriority

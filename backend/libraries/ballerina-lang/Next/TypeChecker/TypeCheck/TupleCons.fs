@@ -54,7 +54,7 @@ module TupleCons =
             fields
             |> List.map (fun (v) ->
               state {
-                let! v, t_v, v_k = !v
+                let! v, t_v, v_k, _ = !v
                 do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
                 return v, t_v
               })
@@ -68,5 +68,5 @@ module TupleCons =
             |> TypeValue.Instantiate TypeExpr.Eval loc0
             |> Expr.liftInstantiation
 
-          return Expr.TupleCons(fieldsExpr, loc0, ctx.Scope), return_t, Kind.Star
+          return Expr.TupleCons(fieldsExpr, loc0, ctx.Scope), return_t, Kind.Star, ctx
         }
