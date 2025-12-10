@@ -30,7 +30,13 @@ module LiftOtherSteps =
         let! ctx = state.GetContext()
 
         let newUnificationState =
-          p |> State.Run({ EvalState = s; Scope = ctx.Scope }, s.Vars)
+          p
+          |> State.Run(
+            { EvalState = s
+              Scope = ctx.Scope
+              TypeParameters = ctx.TypeParameters },
+            s.Vars
+          )
 
         match newUnificationState with
         | Left(res, newUnificationState) ->

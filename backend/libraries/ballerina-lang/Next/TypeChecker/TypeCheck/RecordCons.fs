@@ -52,19 +52,19 @@ module RecordCons =
                   fields
                   |> List.map (fun (k, v) ->
                     state {
-                      let! v, t_v, v_k = !v
-                      do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
+                      let! v, t_v, v_k, _ = !v
+                      // do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
                       let! id = TypeCheckState.TryResolveIdentifier(k, loc0)
                       let! k_s = TypeCheckState.TryFindRecordFieldSymbol(id, loc0)
 
-                      return (id, v), (k_s, t_v)
+                      return (id, v), (k_s, (t_v, v_k))
                     })
                   |> state.All
               | Some context_t ->
                 let! context_fields = context_t |> TypeValue.AsRecord |> ofSum
 
                 let context_fields =
-                  context_fields.value
+                  context_fields
                   |> OrderedMap.toSeq
                   |> Seq.map (fun (k, v) -> (k.Name, (k, v)))
                   |> OrderedMap.ofSeq
@@ -73,19 +73,19 @@ module RecordCons =
                   fields
                   |> List.map (fun (k, v) ->
                     state {
-                      let! k_s, k_t =
+                      let! k_s, (k_t_v, _) =
                         context_fields
-                        |> OrderedMap.tryFindWithError k "fields" k.ToFSharpString
+                        |> OrderedMap.tryFindWithError k "fields" k.AsFSharpString
                         |> ofSum
 
-                      let! v, t_v, v_k = (Some k_t) => v
-                      do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
+                      let! v, t_v, v_k, _ = (Some k_t_v) => v
+                      // do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                      do! TypeValue.Unify(loc0, t_v, k_t) |> Expr.liftUnification
+                      do! TypeValue.Unify(loc0, t_v, k_t_v) |> Expr.liftUnification
 
                       let! id = TypeCheckState.TryResolveIdentifier(k_s, loc0)
 
-                      return (id, v), (k_s, t_v)
+                      return (id, v), (k_s, (t_v, v_k))
                     })
                   |> state.All
             }
@@ -98,5 +98,5 @@ module RecordCons =
             |> TypeValue.Instantiate TypeExpr.Eval loc0
             |> Expr.liftInstantiation
 
-          return Expr.RecordCons(fieldsExpr, loc0, ctx.Scope), return_t, Kind.Star
+          return Expr.RecordCons(fieldsExpr, loc0, ctx.Scope), return_t, Kind.Star, ctx
         }

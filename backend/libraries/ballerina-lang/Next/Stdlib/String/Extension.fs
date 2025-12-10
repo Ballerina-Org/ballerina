@@ -37,7 +37,7 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               do!
                 op
@@ -72,7 +72,7 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -111,7 +111,7 @@ module Extension =
             | StringOperations.Equal v -> Some(StringOperations.Equal v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -149,7 +149,7 @@ module Extension =
             | StringOperations.NotEqual v -> Some(StringOperations.NotEqual v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -187,7 +187,7 @@ module Extension =
             | StringOperations.GreaterThan v -> Some(StringOperations.GreaterThan v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -225,7 +225,7 @@ module Extension =
             | StringOperations.GreaterThanOrEqual v -> Some(StringOperations.GreaterThanOrEqual v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -266,7 +266,7 @@ module Extension =
             | StringOperations.LessThan v -> Some(StringOperations.LessThan v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -304,7 +304,7 @@ module Extension =
             | StringOperations.LessThanOrEqual v -> Some(StringOperations.LessThanOrEqual v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op

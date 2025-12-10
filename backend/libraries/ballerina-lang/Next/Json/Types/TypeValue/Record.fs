@@ -29,10 +29,12 @@ module Record =
             fields
             |> Array.map (fun field ->
               sum {
-                let! (fieldKey, fieldValue) = field |> JsonValue.AsPair
+                let! fieldKey, fieldValueAndKind = field |> JsonValue.AsPair
+                let! fieldValue, fieldKind = fieldValueAndKind |> JsonValue.AsPair
                 let! fieldType = fromRootJson fieldValue
+                let! fieldKind = fieldKind |> Kind.FromJson
                 let! fieldKey = fieldKey |> TypeSymbol.FromJson
-                return (fieldKey, fieldType)
+                return fieldKey, (fieldType, fieldKind)
               })
             |> sum.All
             |> sum.Map OrderedMap.ofSeq
@@ -40,11 +42,14 @@ module Record =
           return TypeValue.CreateRecord(fieldTypes) // FIXME: origin should be serialized and parsed
         })
 
-    static member ToJsonRecord(rootToJson: TypeValue -> JsonValue) : OrderedMap<TypeSymbol, TypeValue> -> JsonValue =
+    static member ToJsonRecord
+      (rootToJson: TypeValue -> JsonValue)
+      : OrderedMap<TypeSymbol, TypeValue * Kind> -> JsonValue =
       OrderedMap.toArray
-      >> Array.map (fun (fieldKey, fieldValue) ->
-        let fieldKey = fieldKey |> TypeSymbol.ToJson
-        let fieldValue = rootToJson fieldValue
-        JsonValue.Array [| fieldKey; fieldValue |])
+      >> Array.map (fun (fieldKey, (fieldValue, fieldKind)) ->
+        let fieldKeyJson = fieldKey |> TypeSymbol.ToJson
+        let fieldValueJson = fieldValue |> rootToJson
+        let fieldKindJson = fieldKind |> Kind.ToJson
+        JsonValue.Array [| fieldKeyJson; JsonValue.Array [| fieldValueJson; fieldKindJson |] |])
       >> JsonValue.Array
       >> Json.discriminator discriminator

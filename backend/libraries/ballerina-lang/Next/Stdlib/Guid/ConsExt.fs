@@ -31,7 +31,7 @@ module ConsExt =
           )
         Constructor = Guid_New
         Apply =
-          fun loc0 (_, v) ->
+          fun loc0 _rest (_, v) ->
             reader {
               match v with
               | Value.Primitive(PrimitiveValue.String v) ->
@@ -65,7 +65,7 @@ module ConsExt =
           )
         Constructor = Guid_V4
         Apply =
-          fun loc0 (_, v) ->
+          fun loc0 _rest (_, v) ->
             reader {
               match v with
               | Value.Primitive PrimitiveValue.Unit ->

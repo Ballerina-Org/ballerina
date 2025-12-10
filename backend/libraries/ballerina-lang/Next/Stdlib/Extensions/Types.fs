@@ -89,8 +89,14 @@ module Types =
           typeExt.Cases
           |> Map.toSeq
           |> Seq.fold
-            (fun (acc: Location -> 'ext -> ExprEvaluator<'ext, ExtEvalResult<'ext>>) ((caseId, _), caseExt) ->
-              fun loc0 v ->
+            (fun
+                 (acc:
+                   Location
+                     -> List<Expr<TypeValue, ResolvedIdentifier, 'ext>>
+                     -> 'ext
+                     -> ExprEvaluator<'ext, ExtEvalResult<'ext>>)
+                 ((caseId, _), caseExt) ->
+              fun loc0 rest v ->
                 reader.Any(
                   reader {
                     let! v =
@@ -111,7 +117,7 @@ module Types =
 
                           return!
                             handlerBody
-                            |> Expr.Eval
+                            |> Expr.Eval []
                             |> reader.MapContext(
                               ExprEvalContext.Updaters.Values(
                                 Map.add (handlerVar.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) v
@@ -128,11 +134,11 @@ module Types =
                       return
                         Applicable(fun arg ->
                           reader {
-                            let! constructed = caseExt.Apply loc0 (v, arg)
+                            let! constructed = caseExt.Apply loc0 rest (v, arg)
                             return constructed
                           })
                     })
-                    acc loc0 v ]
+                    acc loc0 rest v ]
                 ))
             evalContext.ExtensionOps.Eval
 
@@ -140,8 +146,14 @@ module Types =
           typeExt.Operations
           |> Map.values
           |> Seq.fold
-            (fun (acc: Location -> 'ext -> ExprEvaluator<'ext, ExtEvalResult<'ext>>) caseExt ->
-              fun loc0 v ->
+            (fun
+                 (acc:
+                   Location
+                     -> List<Expr<TypeValue, ResolvedIdentifier, 'ext>>
+                     -> 'ext
+                     -> ExprEvaluator<'ext, ExtEvalResult<'ext>>)
+                 caseExt ->
+              fun loc0 rest v ->
                 reader.Any(
                   reader {
                     let! v =
@@ -152,11 +164,11 @@ module Types =
                     return
                       Applicable(fun arg ->
                         reader {
-                          let! constructed = caseExt.Apply loc0 (v, arg)
+                          let! constructed = caseExt.Apply loc0 rest (v, arg)
                           return constructed
                         })
                   },
-                  [ acc loc0 v ]
+                  [ acc loc0 rest v ]
                 ))
             ops
 

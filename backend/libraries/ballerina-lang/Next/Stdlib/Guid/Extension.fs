@@ -45,7 +45,7 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -85,7 +85,7 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op

@@ -43,12 +43,12 @@ let ``SpecNext-Schema evaluates`` () =
 
   let SomeType =
     TypeValue.CreateRecord(
-      OrderedMap.ofList [ ("Foo" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateInt32()) ]
+      OrderedMap.ofList [ ("Foo" |> Identifier.LocalScope |> TypeSymbol.Create, (TypeValue.CreateInt32(), Kind.Star)) ]
     )
 
   let AnotherType =
     TypeValue.CreateRecord(
-      OrderedMap.ofList [ ("Bar" |> Identifier.LocalScope |> TypeSymbol.Create, TypeValue.CreateString()) ]
+      OrderedMap.ofList [ ("Bar" |> Identifier.LocalScope |> TypeSymbol.Create, (TypeValue.CreateString(), Kind.Star)) ]
     )
 
   let expected: Schema<TypeValue, ResolvedIdentifier, Unit> =

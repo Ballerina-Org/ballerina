@@ -38,7 +38,7 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -77,7 +77,7 @@ module Extension =
             | DecimalOperations.Minus v -> Some(DecimalOperations.Minus v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -115,7 +115,7 @@ module Extension =
             | DecimalOperations.Divide v -> Some(DecimalOperations.Divide v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -154,7 +154,7 @@ module Extension =
             | _ -> None)
 
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -197,7 +197,7 @@ module Extension =
             | DecimalOperations.Mod v -> Some(DecimalOperations.Mod v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -235,7 +235,7 @@ module Extension =
             | DecimalOperations.Equal v -> Some(DecimalOperations.Equal v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -273,7 +273,7 @@ module Extension =
             | DecimalOperations.NotEqual v -> Some(DecimalOperations.NotEqual v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -311,7 +311,7 @@ module Extension =
             | DecimalOperations.GreaterThan v -> Some(DecimalOperations.GreaterThan v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -349,7 +349,7 @@ module Extension =
             | DecimalOperations.GreaterThanOrEqual v -> Some(DecimalOperations.GreaterThanOrEqual v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -390,7 +390,7 @@ module Extension =
             | DecimalOperations.LessThan v -> Some(DecimalOperations.LessThan v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -428,7 +428,7 @@ module Extension =
             | DecimalOperations.LessThanOrEqual v -> Some(DecimalOperations.LessThanOrEqual v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op

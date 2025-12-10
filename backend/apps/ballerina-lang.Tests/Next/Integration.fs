@@ -14,6 +14,7 @@ open Ballerina.DSL.Next.StdLib
 open Ballerina.DSL.Next.Runners
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.StdLib.List.Model
+open Ballerina.Cat.Collections.OrderedMap
 
 let context = Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval.context
 
@@ -40,12 +41,12 @@ let private run (program: string) =
       //   |> Map.ofList
       }
 
-    let evalResult = Expr.Eval program |> Reader.Run evalContext
+    let evalResult = Expr.Eval [] program |> Reader.Run evalContext
 
     match evalResult with
     | Left value -> Sum.Left(value, typeValue)
-    | Right e -> Sum.Right $"Evaluation failed: {e.ToFSharpString}"
-  | Right e -> Sum.Right $"Type checking failed: {e.ToFSharpString}"
+    | Right e -> Sum.Right $"Evaluation failed: {e.AsFSharpString}"
+  | Right e -> Sum.Right $"Type checking failed: {e.AsFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration let over int succeeds`` () =
@@ -62,9 +63,9 @@ let ``LangNext-Integration let over int succeeds`` () =
 
     match typeValue with
     | TypeValue.Primitive({ value = PrimitiveType.Int32 }) -> ()
-    | _ -> Assert.Fail($"Expected Int32 type, got {typeValue.ToFSharpString}")
+    | _ -> Assert.Fail($"Expected Int32 type, got {typeValue.AsFSharpString}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 
@@ -83,9 +84,9 @@ let ``LangNext-Integration let over decimal succeeds`` () =
 
     match typeValue with
     | TypeValue.Primitive({ value = PrimitiveType.Decimal }) -> ()
-    | _ -> Assert.Fail($"Expected Decimal type, got {typeValue.ToFSharpString}")
+    | _ -> Assert.Fail($"Expected Decimal type, got {typeValue.AsFSharpString}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 
@@ -104,9 +105,9 @@ let ``LangNext-Integration let over bool succeeds`` () =
 
     match typeValue with
     | TypeValue.Primitive({ value = PrimitiveType.Bool }) -> ()
-    | _ -> Assert.Fail($"Expected Bool type, got {typeValue.ToFSharpString}")
+    | _ -> Assert.Fail($"Expected Bool type, got {typeValue.AsFSharpString}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 
@@ -125,9 +126,9 @@ let ``LangNext-Integration let over string succeeds`` () =
 
     match typeValue with
     | TypeValue.Primitive({ value = PrimitiveType.String }) -> ()
-    | _ -> Assert.Fail($"Expected String type, got {typeValue.ToFSharpString}")
+    | _ -> Assert.Fail($"Expected String type, got {typeValue.AsFSharpString}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 [<Test>]
@@ -145,9 +146,9 @@ let ``LangNext-Integration let over boolean expression succeeds`` () =
 
     match typeValue with
     | TypeValue.Primitive({ value = PrimitiveType.Bool }) -> ()
-    | _ -> Assert.Fail($"Expected Bool type, got {typeValue.ToFSharpString}")
+    | _ -> Assert.Fail($"Expected Bool type, got {typeValue.AsFSharpString}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 [<Test>]
@@ -165,9 +166,9 @@ let ``LangNext-Integration let over integer expression succeeds`` () =
 
     match typeValue with
     | TypeValue.Primitive({ value = PrimitiveType.Int32 }) -> ()
-    | _ -> Assert.Fail($"Expected Int32 type, got {typeValue.ToFSharpString}")
+    | _ -> Assert.Fail($"Expected Int32 type, got {typeValue.AsFSharpString}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 [<Test>]
@@ -185,9 +186,9 @@ let ``LangNext-Integration let over conditional expression succeeds`` () =
 
     match typeValue with
     | TypeValue.Primitive({ value = PrimitiveType.Bool }) -> ()
-    | _ -> Assert.Fail($"Expected Bool type, got {typeValue.ToFSharpString}")
+    | _ -> Assert.Fail($"Expected Bool type, got {typeValue.AsFSharpString}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 [<Test>]
@@ -209,9 +210,9 @@ in x"""
 
     match typeValue with
     | TypeValue.Primitive({ value = PrimitiveType.Bool }) -> ()
-    | _ -> Assert.Fail($"Expected Bool type, got {typeValue.ToFSharpString}")
+    | _ -> Assert.Fail($"Expected Bool type, got {typeValue.AsFSharpString}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 [<Test>]
@@ -294,7 +295,7 @@ in f false
     | Left(value, typeValue) ->
 
       Assert.Fail(
-        $"Type checking and evaluation succeeded with {(value, typeValue).ToFSharpString}, even though failure was expected"
+        $"Type checking and evaluation succeeded with {(value, typeValue).AsFSharpString}, even though failure was expected"
       )
 
     | Right _e -> ()
@@ -324,9 +325,9 @@ in v.1, v.2, v.3
     | TypeValue.Tuple({ value = [ TypeValue.Primitive({ value = PrimitiveType.Int32 })
                                   TypeValue.Primitive({ value = PrimitiveType.String })
                                   TypeValue.Primitive({ value = PrimitiveType.Bool }) ] }) -> ()
-    | _ -> Assert.Fail($"Expected Tuple type, got {typeValue.ToFSharpString}")
+    | _ -> Assert.Fail($"Expected Tuple type, got {typeValue.AsFSharpString}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 [<Test>]
 let ``LangNext-Integration tuple construction and destruction fails`` () =
@@ -348,9 +349,9 @@ in t.1
 
     match typeValue with
     | TypeValue.Primitive({ value = PrimitiveType.Int32 }) -> ()
-    | _ -> Assert.Fail($"Expected Int32 type, got {typeValue.ToFSharpString}")
+    | _ -> Assert.Fail($"Expected Int32 type, got {typeValue.AsFSharpString}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 [<Test>]
@@ -376,9 +377,9 @@ in match t with
 
     match typeValue with
     | TypeValue.Primitive({ value = PrimitiveType.Int32 }) -> ()
-    | _ -> Assert.Fail($"Expected Int32 type, got {typeValue.ToFSharpString}")
+    | _ -> Assert.Fail($"Expected Int32 type, got {typeValue.AsFSharpString}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 
@@ -406,9 +407,9 @@ in match t with
 
     match typeValue with
     | TypeValue.Primitive({ value = PrimitiveType.Int32 }) -> ()
-    | _ -> Assert.Fail($"Expected Int32 type, got {typeValue.ToFSharpString}")
+    | _ -> Assert.Fail($"Expected Int32 type, got {typeValue.AsFSharpString}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 [<Test>]
@@ -435,7 +436,7 @@ in res1
 
     Assert.That(value, Is.EqualTo(expectedValue))
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 [<Test>]
@@ -454,9 +455,9 @@ in f true, f false
   | Left(value, _typeValue) ->
     match value with
     | Tuple [ Ext(ValueExt(Choice1Of4(_v1))); Ext(ValueExt(Choice1Of4(_v2))) ] -> Assert.Pass()
-    | _ -> Assert.Fail($"Expected a tuple of two list values, got {value.ToFSharpString}")
+    | _ -> Assert.Fail($"Expected a tuple of two list values, got {value.AsFSharpString}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 [<Test>]
@@ -488,7 +489,7 @@ in l,l1,l2,l3,l4
               Value.Primitive(Bool false) ] -> Assert.Pass()
     | _ -> Assert.Fail($"Expected a tuple of two list values, got {value}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 
@@ -510,7 +511,7 @@ let ``LangNext-Integration scoped function with closures succeeds`` () =
     | Value.Primitive(Int32 18) -> Assert.Pass()
     | _ -> Assert.Fail($"Expected a tuple of two list values, got {value}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 
@@ -539,7 +540,7 @@ in match t with
     | Value.Primitive(Int32 0) -> Assert.Pass()
     | _ -> Assert.Fail($"Expected 18, got {value}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 
@@ -570,7 +571,7 @@ in List::append [string] l1 l2
       Assert.Pass()
     | _ -> Assert.Fail($"Expected a list with the appended values, got {value}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 
@@ -609,7 +610,7 @@ in x
     | Value.Primitive(Int32 18) -> Assert.Pass()
     | _ -> Assert.Fail($"Expected 18, got {value}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 
@@ -629,7 +630,7 @@ in f (1Of2 "hello"), f (2Of2 10)
     | Value.Tuple [ Value.Primitive(Int32 8); Value.Primitive(Int32 10) ] -> Assert.Pass()
     | _ -> Assert.Fail($"Expected (8, 10), got {value}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 
 [<Test>]
@@ -648,7 +649,7 @@ in f (1, "hello")
     | Value.Primitive(Int32 1) -> Assert.Pass()
     | _ -> Assert.Fail($"Expected 1, got {value}")
 
-  | Right e -> Assert.Fail($"Run failed: {e.ToFSharpString}")
+  | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
 let PrimitiveOpTest (program: string, expectedValue: PrimitiveValue, errMsg: Value<TypeValue, ValueExt> -> string) =
   let actual = program |> run
@@ -658,7 +659,7 @@ let PrimitiveOpTest (program: string, expectedValue: PrimitiveValue, errMsg: Val
     match value with
     | Value.Primitive res when res = expectedValue -> Assert.Pass $"Correctly evaluated to {expectedValue.ToString()}"
     | _ -> Assert.Fail(errMsg value)
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration int32 literals work`` () =
@@ -777,7 +778,7 @@ let ``LangNext-Integration DateOnly constructor builds a DateOnly value`` () =
     | Value.Sum({ Case = 0; Count = 1 }, Value.Primitive(PrimitiveValue.Date(d))) when d = System.DateOnly(2021, 2, 1) ->
       Assert.Pass $"Correctly evaluated to 2021-02-01"
     | _ -> Assert.Fail $"Expected 2021-02-01, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration DateOnly (now) constructor builds a DateOnly value`` () =
@@ -790,7 +791,7 @@ let ``LangNext-Integration DateOnly (now) constructor builds a DateOnly value`` 
     match value with
     | Value.Primitive(PrimitiveValue.Date _) -> Assert.Pass $"Correctly evaluated to the current date"
     | _ -> Assert.Fail $"Expected the current date, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration DateOnly (utcNow) constructor builds a DateOnly value`` () =
@@ -803,7 +804,7 @@ let ``LangNext-Integration DateOnly (utcNow) constructor builds a DateOnly value
     match value with
     | Value.Primitive(PrimitiveValue.Date _) -> Assert.Pass $"Correctly evaluated to the current utc date"
     | _ -> Assert.Fail $"Expected the current utc date, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 
 [<Test>]
@@ -817,7 +818,7 @@ let ``LangNext-Integration DateOnly constructor fails with an error if the strin
     match value with
     | Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
     | _ -> Assert.Fail $"Expected an error, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration DateTime constructor builds a DateTime value`` () =
@@ -833,7 +834,7 @@ let ``LangNext-Integration DateTime constructor builds a DateTime value`` () =
       ->
       Assert.Pass $"Correctly evaluated to 2021-02-01"
     | _ -> Assert.Fail $"Expected 2021-02-01, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration DateTime (now) constructor builds a DateTime value`` () =
@@ -846,7 +847,7 @@ let ``LangNext-Integration DateTime (now) constructor builds a DateTime value`` 
     match value with
     | Value.Primitive(PrimitiveValue.DateTime _) -> Assert.Pass $"Correctly evaluated to the current date"
     | _ -> Assert.Fail $"Expected the current date, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration DateTime (utcNow) constructor builds a DateTime value`` () =
@@ -859,7 +860,7 @@ let ``LangNext-Integration DateTime (utcNow) constructor builds a DateTime value
     match value with
     | Value.Primitive(PrimitiveValue.DateTime _) -> Assert.Pass $"Correctly evaluated to the current utc date"
     | _ -> Assert.Fail $"Expected the current utc date, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 
 [<Test>]
@@ -873,7 +874,7 @@ let ``LangNext-Integration DateTime constructor fails with an error if the strin
     match value with
     | Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
     | _ -> Assert.Fail $"Expected an error, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration Guid constructor builds a Guid value`` () =
@@ -889,7 +890,7 @@ let ``LangNext-Integration Guid constructor builds a Guid value`` () =
       ->
       Assert.Pass $"Correctly evaluated to 123e4567-e89b-12d3-a456-426614174000"
     | _ -> Assert.Fail $"Expected 123e4567-e89b-12d3-a456-426614174000, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration Guid (v4) constructor builds a Guid value`` () =
@@ -903,7 +904,7 @@ let ``LangNext-Integration Guid (v4) constructor builds a Guid value`` () =
     | Value.Primitive(PrimitiveValue.Guid(g)) when g <> System.Guid.Empty ->
       Assert.Pass $"Correctly evaluated to a new Guid"
     | _ -> Assert.Fail $"Expected a new Guid, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration Guid constructor fails with an error if the string is not a valid guid`` () =
@@ -916,7 +917,7 @@ let ``LangNext-Integration Guid constructor fails with an error if the string is
     match value with
     | Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
     | _ -> Assert.Fail $"Expected an error, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration TimeSpan constructor builds a TimeSpan value from "02:00:00"`` () =
@@ -932,7 +933,7 @@ let ``LangNext-Integration TimeSpan constructor builds a TimeSpan value from "02
       ->
       Assert.Pass $"Correctly evaluated to 02:00:00"
     | _ -> Assert.Fail $"Expected 02:00:00, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration TimeSpan constructor builds a TimeSpan value from "6"`` () =
@@ -948,7 +949,7 @@ let ``LangNext-Integration TimeSpan constructor builds a TimeSpan value from "6"
       ->
       Assert.Pass $"Correctly evaluated to 6.00:00:00"
     | _ -> Assert.Fail $"Expected 6.00:00:00, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration TimeSpan constructor builds TimeSpan zero value`` () =
@@ -962,7 +963,7 @@ let ``LangNext-Integration TimeSpan constructor builds TimeSpan zero value`` () 
     | Value.Primitive(PrimitiveValue.TimeSpan(t)) when t = System.TimeSpan.Zero ->
       Assert.Pass $"Correctly evaluated to TimeSpan.Zero"
     | _ -> Assert.Fail $"Expected TimeSpan.Zero, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration TimeSpan constructor fails with an error if the string is not a valid time span`` () =
@@ -975,7 +976,7 @@ let ``LangNext-Integration TimeSpan constructor fails with an error if the strin
     match value with
     | Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
     | _ -> Assert.Fail $"Expected an error, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration TimeSpan constructor fails with an error if the parsed value overflows`` () =
@@ -988,7 +989,7 @@ let ``LangNext-Integration TimeSpan constructor fails with an error if the parse
     match value with
     | Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
     | _ -> Assert.Fail $"Expected an error, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration TimeSpan constructor fails with an error if value has a wrong format`` () =
@@ -1001,7 +1002,7 @@ let ``LangNext-Integration TimeSpan constructor fails with an error if value has
     match value with
     | Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
     | _ -> Assert.Fail $"Expected an error, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 
 [<Test>]
@@ -1029,7 +1030,7 @@ in match _ with
     | Value.Ext(ValueExt.ValueExt(Choice1Of4(ListExt.ListValues(ListValues.List([ Value.Record _ ]))))) ->
       Assert.Pass $"Correctly evaluated to a record"
     | _ -> Assert.Fail $"Expected a record, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 
 [<Test>]
@@ -1058,7 +1059,7 @@ in match _ with
     | Value.Ext(ValueExt.ValueExt(Choice1Of4(ListExt.ListValues(ListValues.List([ Value.Record _ ]))))) ->
       Assert.Pass $"Correctly evaluated to a record"
     | _ -> Assert.Fail $"Expected a record, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 
 [<Test>]
@@ -1078,7 +1079,7 @@ in f { A=10; B=20; C=30; }
     match value with
     | Value.Primitive(PrimitiveValue.Int32 60) -> Assert.Pass $"Correctly evaluated to 60"
     | _ -> Assert.Fail $"Expected 60, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 
 [<Test>]
@@ -1116,7 +1117,7 @@ in (f (A 10)) + (f (B 20)) + (f (C 30))
     match value with
     | Value.Primitive(PrimitiveValue.Int32 60) -> Assert.Pass $"Correctly evaluated to 60"
     | _ -> Assert.Fail $"Expected 60, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 
 [<Test>]
@@ -1155,7 +1156,7 @@ in singleton [int32] 10, singleton [bool] true
                     Value.Ext(ValueExt.ValueExt(Choice1Of4(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ]))))) ] ->
       Assert.Pass $"Correctly evaluated to (10, true)"
     | _ -> Assert.Fail $"Expected a record, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 [<Test>]
 let ``LangNext-Integration type lambda and application over lists with implicit type parameter application succeds``
@@ -1177,7 +1178,7 @@ in singleton 10, singleton true
                     Value.Ext(ValueExt.ValueExt(Choice1Of4(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ]))))) ] ->
       Assert.Pass $"Correctly evaluated to (10, true)"
     | _ -> Assert.Fail $"Expected a record, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 
 
@@ -1200,7 +1201,7 @@ in pair [int32] [bool] 10 true
     | Value.Tuple [ Value.Primitive(PrimitiveValue.Int32 10); Value.Primitive(PrimitiveValue.Bool true) ] ->
       Assert.Pass $"Correctly evaluated to (10, true)"
     | _ -> Assert.Fail $"Expected a record, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 
 [<Test>]
@@ -1225,4 +1226,60 @@ in f x, getCount x, getCount y
                     Value.Primitive(PrimitiveValue.Int32 10)
                     Value.Primitive(PrimitiveValue.Int32 11) ] -> Assert.Pass $"Correctly evaluated to (110, 10, 11)"
     | _ -> Assert.Fail $"Expected a record, got {value}"
-  | Right e -> Assert.Fail $"Run failed: {e.ToFSharpString}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
+
+[<Test>]
+let ``LangNextIntegrationTypeValueIsAugmentedWithSourceScopeInfo`` () =
+  let program =
+    """
+type OCREvidence = {
+  firstCellIndex: int32;
+  lastCellIndex: int32;
+}
+
+in type SomethingWithEvidence = {
+  evidence: OCREvidence;
+  value: int32;
+}
+
+in let id = fun [a:*] (x:a) -> x
+in id [SomethingWithEvidence]
+      """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, typeValue: TypeValue) ->
+    match value with
+    | Value.Lambda _ ->
+      match typeValue with
+      | TypeValue.Arrow({ value = (_, outputType) }) ->
+        match outputType with
+        | TypeValue.Record { value = fields: OrderedMap<TypeSymbol, (TypeValue * Kind)>
+                             typeCheckScopeSource = scope: TypeCheckScope } ->
+          match scope.Type with
+          | Some "SomethingWithEvidence" ->
+            // keep only the name of the type symbol, so we can look it up without guid issues
+            let fields =
+              fields
+              |> OrderedMap.toList
+              |> List.map (fun (sym, v) -> sym.Name.ToString(), v)
+              |> Map.ofList
+
+            // the scope of the evidence type value should be its own (so should take precedence over the outer scope)
+            match fields.TryFind "evidence" with
+            | Some(evidenceTypeValue, _) ->
+              match evidenceTypeValue with
+              | TypeValue.Record { typeCheckScopeSource = evidenceScope: TypeCheckScope } ->
+                match evidenceScope.Type with
+                | Some "OCREvidence" -> Assert.Pass $"Correctly evaluated"
+                | _ -> Assert.Fail $"Expected OCREvidence, got {evidenceScope.Type}"
+              | _ -> Assert.Fail $"Expected a record, got {evidenceTypeValue}"
+            | _ -> Assert.Fail $"Expected evidence field to be there, got {fields}"
+          | _ -> Assert.Fail $"Expected SomethingWithEvidence, got {scope.Type}"
+        | _ -> Assert.Fail $"Expected a record, got {outputType}"
+      | _ -> Assert.Fail $"Expected an arrow, got {typeValue}"
+
+      Assert.Pass $"Correctly evaluated"
+    | _ -> Assert.Fail $"Expected a lambda, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"

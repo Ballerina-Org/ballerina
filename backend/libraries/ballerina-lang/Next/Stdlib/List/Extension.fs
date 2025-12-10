@@ -89,7 +89,7 @@ module Extension =
             | List_Length -> Some(List_Length)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               do!
                 op
@@ -146,7 +146,7 @@ module Extension =
             | List_Fold v -> Some(List_Fold v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! f, acc =
                 op
@@ -183,8 +183,8 @@ module Extension =
                       (fun acc v ->
                         reader {
                           let! acc = acc
-                          let! f1 = Expr.EvalApply loc0 (f, acc)
-                          return! Expr.EvalApply loc0 (f1, v)
+                          let! f1 = Expr.EvalApply loc0 [] (f, acc)
+                          return! Expr.EvalApply loc0 [] (f1, v)
                         })
                       (reader { return acc })
 
@@ -219,7 +219,7 @@ module Extension =
             | List_Filter v -> Some(List_Filter v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -244,7 +244,7 @@ module Extension =
                   v
                   |> List.map (fun v ->
                     reader {
-                      let! res = Expr.EvalApply loc0 (predicate, v)
+                      let! res = Expr.EvalApply loc0 [] (predicate, v)
                       let! res = res |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
                       let! res =
@@ -282,7 +282,7 @@ module Extension =
             | List_Map v -> Some(List_Map v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -296,7 +296,7 @@ module Extension =
               | Some f -> // the closure has the function - second step in the application
                 let! v = getValueAsList v |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
-                let! v' = v |> List.map (fun v -> Expr.EvalApply loc0 (f, v)) |> reader.All
+                let! v' = v |> List.map (fun v -> Expr.EvalApply loc0 [] (f, v)) |> reader.All
 
                 return ListValues.List v' |> valueLens.Set |> Ext
             } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
@@ -329,7 +329,7 @@ module Extension =
             | List_Append v -> Some(List_Append v)
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
@@ -365,7 +365,7 @@ module Extension =
             | List_Cons -> Some List_Cons
             | _ -> None)
         Apply =
-          fun loc0 (op, v) ->
+          fun loc0 _rest (op, v) ->
             reader {
               do!
                 op
@@ -411,7 +411,7 @@ module Extension =
             | List_Nil -> Some List_Nil
             | _ -> None)
         Apply =
-          fun loc0 (op, _) ->
+          fun loc0 _rest (op, _) ->
             reader {
               do!
                 op

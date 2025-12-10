@@ -85,38 +85,42 @@ module TypeLet =
             |> ofSum
             |> state.Catch
             |> state.Map(Sum.toOption)
-            |> state.Map(Option.map WithTypeExprSourceMapping.Getters.Value)
+
+          // do Console.WriteLine $"Definition cases: {definition_cases}"
+          // do Console.ReadLine() |> ignore
 
           let! bind_definition_cases =
             definition_cases
-            |> Option.map (fun definition_cases ->
+            |> Option.map (fun (type_parameters, definition_cases) ->
               definition_cases
               |> OrderedMap.toSeq
-              |> Seq.map (fun (k, argT) ->
+              |> Seq.map (fun (k, arg_t) ->
                 state {
+                  let wrap_type_params arg_t =
+                    arg_t
+                    |> List.foldBack
+                      (fun tp acc -> TypeValue.CreateLambda(tp, acc |> TypeExpr.FromTypeValue))
+                      type_parameters
+
+                  let wrap_type_params_kind arg_t =
+                    arg_t |> List.foldBack (fun tp acc -> Kind.Arrow(tp.Kind, acc)) type_parameters
+
                   do!
-                    TypeCheckState.bindUnionCaseConstructor (k.Name |> scope.Resolve) (argT, definition_cases)
+                    TypeCheckState.bindUnionCaseConstructor
+                      (k.Name |> scope.Resolve)
+                      (arg_t |> wrap_type_params, type_parameters, definition_cases)
                     |> Expr.liftTypeEval
 
+                  let constructor_t =
+                    TypeValue.CreateArrow(arg_t, TypeValue.CreateUnion(definition_cases))
+                    |> wrap_type_params
+
+                  let constructor_k = Kind.Star |> wrap_type_params_kind
+
                   return
-                    bind_component (
-                      k.Name |> scope.Resolve,
-                      TypeValue.CreateRecord(
-                        OrderedMap.ofList
-                          [ TypeSymbol.Create(Identifier.LocalScope "cons"),
-                            TypeValue.CreateArrow(argT, TypeValue.CreateUnion(definition_cases))
-                            TypeSymbol.Create(Identifier.LocalScope "map"),
-                            TypeValue.CreateArrow(
-                              TypeValue.CreateArrow(argT, argT),
-                              TypeValue.CreateArrow(
-                                TypeValue.CreateUnion(definition_cases),
-                                TypeValue.CreateUnion(definition_cases)
-                              )
-                            ) ]
-                      ),
-                      //
-                      Kind.Star
-                    )
+                    bind_component (k.Name |> scope.Resolve, constructor_t, constructor_k)
+                    >> bind_component (k.Name |> TypeCheckScope.Empty.Resolve, constructor_t, constructor_k)
+
                 })
               |> state.All)
             |> state.RunOption
@@ -129,35 +133,22 @@ module TypeLet =
             |> ofSum
             |> state.Catch
             |> state.Map(Sum.toOption)
-            |> state.Map(Option.map WithTypeExprSourceMapping.Getters.Value)
 
           let! bind_definition_fields =
             definition_fields
             |> Option.map (fun definition_fields ->
               definition_fields
               |> OrderedMap.toSeq
-              |> Seq.map (fun (k, argT) ->
+              |> Seq.map (fun (k, (arg_t, _arg_k)) ->
                 state {
                   do!
-                    TypeCheckState.bindRecordField (k.Name |> scope.Resolve) (definition_fields, argT)
+                    TypeCheckState.bindRecordField (k.Name |> scope.Resolve) (definition_fields, arg_t)
                     |> Expr.liftTypeEval
 
                   return
                     bind_component (
                       k.Name |> scope.Resolve,
-                      TypeValue.CreateRecord(
-                        OrderedMap.ofList
-                          [ TypeSymbol.Create(Identifier.LocalScope "get"),
-                            TypeValue.CreateArrow(TypeValue.CreateRecord(definition_fields), argT)
-                            TypeSymbol.Create(Identifier.LocalScope "map"),
-                            TypeValue.CreateArrow(
-                              TypeValue.CreateArrow(argT, argT),
-                              TypeValue.CreateArrow(
-                                TypeValue.CreateRecord(definition_fields),
-                                TypeValue.CreateRecord(definition_fields)
-                              )
-                            ) ]
-                      ),
+                      TypeValue.CreateArrow(TypeValue.CreateRecord(definition_fields), arg_t),
                       Kind.Star
                     )
                 })
@@ -165,7 +156,7 @@ module TypeLet =
             |> state.RunOption
             |> state.Map(Option.map (List.fold (>>) id) >> Option.defaultValue id)
 
-          let! rest, rest_t, rest_k =
+          let! rest, rest_t, rest_k, ctx_rest =
             !rest
             |> state.MapContext(TypeCheckContext.Updaters.Values(bind_definition_cases >> bind_definition_fields))
 
@@ -178,5 +169,6 @@ module TypeLet =
               ctx.Scope |> TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier))
             ),
             rest_t,
-            rest_k
+            rest_k,
+            ctx_rest
         }

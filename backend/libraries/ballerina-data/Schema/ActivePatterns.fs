@@ -6,7 +6,7 @@ open Ballerina.DSL.Next.Terms
 open Ballerina.DSL.Next.Types.Patterns
 
 module ActivePatterns =
-  let (|CollectionReference|_|) (m: WithTypeExprSourceMapping<OrderedMap<TypeSymbol, TypeValue>>) =
+  let (|CollectionReference|_|) (m: WithSourceMapping<OrderedMap<TypeSymbol, TypeValue * Kind>>) =
     match OrderedMap.toList m.value with
     | [ (k, _); (k2, _) ] when k.Name.LocalName = "DisplayValue" && k2.Name.LocalName = "Id" ->
       Some(CollectionReference m.value)
