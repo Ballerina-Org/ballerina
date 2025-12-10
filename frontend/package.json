@@ -14,7 +14,7 @@
     "compile-all": "yarn compile-web && yarn compile-mobile && yarn compile-test && yarn compile-ballerina-core && yarn compile-create-domain && yarn compile-playground-core"
   },
   "devDependencies": {
-    "prettier": "^3.2.5"
+    "prettier": "^3.7.4"
   },
   "workspaces": {
     "packages": [
