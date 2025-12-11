@@ -1,13 +1,10 @@
 namespace Ballerina.DSL.Next.Types
 
 module Patterns =
-  open Ballerina.StdLib.Object
   open Ballerina.Collections.Sum
-  open Ballerina.Reader.WithError
   open Ballerina.Errors
   open System
   open Ballerina.DSL.Next.Types.Model
-  open Ballerina.StdLib.OrderPreservingMap
   open Ballerina.Cat.Collections.OrderedMap
 
   type TypeVar with
