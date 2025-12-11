@@ -35,6 +35,7 @@
         <Compile Include="Types\TypeExpr\Apply.fs" />
         <Compile Include="Types\TypeExpr\Model.fs" />
         <Compile Include="Types\TypeValue\Var.fs" />
+        <Compile Include="Types\TypeValue\WithSourceMapping.fs" />
         <Compile Include="Types\TypeValue\Union.fs" />
         <Compile Include="Types\TypeValue\Tuple.fs" />
         <Compile Include="Types\TypeValue\Sum.fs" />

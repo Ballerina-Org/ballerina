@@ -7,7 +7,6 @@ open Ballerina.DSL.Next.Types.Model
 open System
 open Ballerina.DSL.Next.Types.Json.TypeValue
 open Ballerina.DSL.Next.Types.Patterns
-open Ballerina.StdLib.OrderPreservingMap
 open Ballerina.Cat.Collections.OrderedMap
 
 type TypeValueTestCase =
@@ -16,6 +15,20 @@ type TypeValueTestCase =
     Expected: TypeValue }
 
 let private (!) = Identifier.LocalScope
+
+let toScopedJson name (str: string) =
+  $"""{{
+  "discriminator":"withSourceMapping","value":{{
+  "typeCheckScopeSource": {{
+    "assembly": "",
+    "module": "",
+    "type": null
+  }},
+  "typeExprSource": {{
+    "type": "noSourceMapping",
+    "value": "{name}"
+  }},
+  "value":{str}  }} }}"""
 
 let ``Assert TypeValue -> ToJson -> FromJson -> TypeValue`` (expression: TypeValue) (expectedJson: JsonValue) =
   let toStr (j: JsonValue) =
@@ -50,6 +63,7 @@ let testCases guid : TypeValueTestCase list =
             "body":{"discriminator":"int32"}
               }
           }"""
+        |> toScopedJson "Lambda"
       Expected = TypeValue.CreateLambda({ Name = "T"; Kind = Kind.Star }, TypeExpr.Primitive PrimitiveType.Int32) }
     { Name = "Arrow"
       Json =
@@ -60,6 +74,7 @@ let testCases guid : TypeValueTestCase list =
             "returnType":{"discriminator":"string"}
               }
           }"""
+        |> toScopedJson "Arrow"
       Expected = TypeValue.CreateArrow(TypeValue.CreateInt32(), TypeValue.CreateString()) }
     { Name = "Union"
       Json =
@@ -69,8 +84,8 @@ let testCases guid : TypeValueTestCase list =
             [{"name":"bar","guid":"00000000-0000-0000-0000-000000000002"}, {"discriminator":"string"}],
             [{"name":"baz","guid":"00000000-0000-0000-0000-000000000003"}, {"discriminator":"bool"}],
             [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, {"discriminator":"int32"}]
-          ]
-          }"""
+          ]}"""
+        |> toScopedJson "Union"
       Expected =
         [ { TypeSymbol.Name = "bar" |> Identifier.LocalScope
             TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") },
@@ -92,6 +107,7 @@ let testCases guid : TypeValueTestCase list =
                 {"discriminator":"string"}
             ]
           }"""
+        |> toScopedJson "Tuple"
       Expected = TypeValue.CreateTuple [ TypeValue.CreateInt32(); TypeValue.CreateString() ] }
     { Name = "Sum"
       Json =
@@ -103,12 +119,17 @@ let testCases guid : TypeValueTestCase list =
             {"discriminator":"bool"}
             ]
           }"""
+        |> toScopedJson "Sum"
       Expected = TypeValue.CreateSum [ TypeValue.CreateInt32(); TypeValue.CreateString(); TypeValue.CreateBool() ] }
     { Name = "Set"
-      Json = """{"discriminator":"set","value":{"discriminator":"string"}}"""
+      Json =
+        """{"discriminator":"set","value":{"discriminator":"string"}}"""
+        |> toScopedJson "Set"
       Expected = TypeValue.CreateSet(TypeValue.CreateString()) }
     { Name = "Map"
-      Json = """{"discriminator":"map","value":[{"discriminator":"bool"}, {"discriminator":"int32"}]}"""
+      Json =
+        """{"discriminator":"map","value":[{"discriminator":"bool"}, {"discriminator":"int32"}]}"""
+        |> toScopedJson "Map"
       Expected = TypeValue.CreateMap(TypeValue.CreateBool(), TypeValue.CreateInt32()) }
     { Name = "Record"
       Json =
@@ -119,6 +140,7 @@ let testCases guid : TypeValueTestCase list =
                 [{"name":"foo","guid":"00000000-0000-0000-0000-000000000001"}, [{"discriminator":"int32"}, {"discriminator":"star"}]]
               ]
           }"""
+        |> toScopedJson "Record"
       Expected =
         TypeValue.CreateRecord(
           OrderedMap.ofList
@@ -138,6 +160,7 @@ let testCases guid : TypeValueTestCase list =
             {"discriminator":"int32"}
           ]
         }"""
+        |> toScopedJson "Application"
       Expected = TypeValue.CreateApplication(SymbolicTypeApplication.Lookup(!"List", TypeValue.CreateInt32())) }
     { Name = "Application (Nested Application)"
       Json =
@@ -151,6 +174,7 @@ let testCases guid : TypeValueTestCase list =
             {"discriminator":"int32"}
           ]
         }"""
+        |> toScopedJson "Application"
       Expected =
         TypeValue.CreateApplication(
           SymbolicTypeApplication.Application(

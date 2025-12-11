@@ -19,7 +19,7 @@ module Arrow =
   type TypeValue with
     static member FromJsonArrow
       (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
-      : JsonValue -> Sum<TypeValue, Errors> =
+      : JsonValue -> Sum<TypeValue * TypeValue, Errors> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun arrowFields ->
         sum {
           let! arrowFields = arrowFields |> JsonValue.AsRecordMap
@@ -30,7 +30,7 @@ module Arrow =
             arrowFields
             |> (Map.tryFindWithError "returnType" "arrow" "returnType" >>= fromRootJson)
 
-          return TypeValue.CreateArrow(param, returnType) // FIXME: origin should be serialized and parsed
+          return param, returnType
         })
 
     static member ToJsonArrow(rootToJson: TypeValue -> JsonValue) : TypeValue * TypeValue -> JsonValue =

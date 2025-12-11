@@ -15,12 +15,14 @@ module Sum =
   let private discriminator = "sum"
 
   type TypeValue with
-    static member FromJsonSum(fromRootJson: JsonValue -> Sum<TypeValue, Errors>) : JsonValue -> Sum<TypeValue, Errors> =
+    static member FromJsonSum
+      (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
+      : JsonValue -> Sum<List<TypeValue>, Errors> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun sumFields ->
         sum {
           let! cases = sumFields |> JsonValue.AsArray
           let! caseTypes = cases |> Array.map (fun case -> case |> fromRootJson) |> sum.All
-          return TypeValue.CreateSum(caseTypes) // FIXME: origin should be serialized and parsed
+          return caseTypes
         })
 
     static member ToJsonSum(rootToJson: TypeValue -> JsonValue) : List<TypeValue> -> JsonValue =

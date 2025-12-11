@@ -21,7 +21,7 @@ module Union =
   type TypeValue with
     static member FromJsonUnion
       (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
-      : JsonValue -> Sum<TypeValue, Errors> =
+      : JsonValue -> Sum<OrderedMap<TypeSymbol, TypeValue>, Errors> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun unionFields ->
         sum {
           let! cases = unionFields |> JsonValue.AsArray
@@ -38,7 +38,7 @@ module Union =
             |> sum.All
             |> sum.Map OrderedMap.ofSeq
 
-          return TypeValue.CreateUnion(caseTypes) // FIXME: origin should be serialized and parsed
+          return caseTypes
         })
 
     static member ToJsonUnion(rootToJson: TypeValue -> JsonValue) : OrderedMap<TypeSymbol, TypeValue> -> JsonValue =
