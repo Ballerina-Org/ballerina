@@ -8,7 +8,7 @@ export const CustomFieldsTracker: CustomFieldsView = (props): React.ReactElement
         <div className="card-body">
             <h2 className="card-title">Custom Entity</h2>
             <p>Evaluate custom fields with the code</p>
-            <ul className="timeline mb-7 ">
+            <ul className="timeline h-64">
                 {jobs.map( (j,i)=> (<JobElement 
                     entity={props.context} 
                     trace={j} 

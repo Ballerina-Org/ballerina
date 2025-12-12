@@ -25,8 +25,6 @@ const awaitProcessingJob = <result>(complete: BasicFun<ResponseWithStatus<result
             const id = entity.status.job.status.processing.jobId;
             const kind = entity.status.job.kind as 'typechecking' | 'construction'
             return Co.Seq([
-                Co.SetState(CustomEntity.Updaters.Core.job(Job.Updaters.incrementProcessingCount())),
-                Co.SetState(CustomEntity.Updaters.Coroutine.checkIfMaxTries(3)),
                 Co.Wait(entity.status.job.status.processing.checkInterval),
                 Co.Await<ValueOrErrors<ResponseWithStatus<result>, any>, any>(() =>
                     getJobStatus<result>(kind, id), (_err: any) => {
@@ -49,7 +47,9 @@ const awaitProcessingJob = <result>(complete: BasicFun<ResponseWithStatus<result
                         })
                     )
                     return Co.SetState(u)
-                })
+                }),
+                Co.SetState(Job.Updaters.incrementProcessingCount()),
+                Co.SetState(CustomEntity.Updaters.Coroutine.checkIfMaxTries(3)),
             ])
         })
     )
@@ -78,6 +78,7 @@ export const customFields =
                         value: undefined,
                         status: { kind: 'processing', processing: JobProcessing.Default(res.value.value) }
                     } satisfies Job
+                    
                     const u = Updater<CustomEntity>(entity =>
                         ({
                             ...entity,
@@ -169,7 +170,7 @@ export const customFields =
                                     getValue(currentJobResult.result.valueId), (_err: any) => {}).then(res => {
                                     const response = CustomEntity.Operations.checkResponseForErrors(res, 'request value')
                                     if(response.kind == "r") return response.value
-                                    debugger
+
                                     const completed = {
                                         kind: 'value',
                                         from: currentJob,

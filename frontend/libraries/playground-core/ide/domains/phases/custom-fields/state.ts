@@ -28,18 +28,37 @@ export type Job =
      | { kind: "value", from: Job, value: Maybe<RequestValueJobResponse> }
     ) & { status: JobStatus }
 
+
+const incrementProcessingCountForJob = (): Updater<Job> => {
+
+    return Updater<Job>(job => job.status.kind !== 'processing' ? job : ({
+        ...job,
+        status: {
+            kind: 'processing', processing:
+                JobProcessing.Updaters.Core.checkCount(replaceWith(job.status.processing.checkCount + 1))
+                    .then(JobProcessing.Updaters.Core.checkInterval(replaceWith(job.status.processing.checkInterval + 1000)))(job.status.processing)
+        } satisfies JobStatus
+    } satisfies Job))
+}
+
 export const Job = {
     Updaters: {
-        incrementProcessingCount: (): Updater<Job> => {
-            debugger
-            return Updater<Job>(job => job.status.kind !== 'processing' ? job : ({
-                ...job,
+        incrementProcessingCount: (): Updater<CustomEntity> => {
+
+            return Updater<CustomEntity>(ce => { 
+                if(ce.status.kind !== 'job' || ce.status.job.status.kind !== 'processing') return ce;
+                
+                const job = incrementProcessingCountForJob()(ce.status.job);
+                
+                return ({
+                ...ce,
                 status: {
-                    kind: 'processing', processing:
-                        JobProcessing.Updaters.Core.checkCount(replaceWith(job.status.processing.checkCount + 1))
-                            .then(JobProcessing.Updaters.Core.checkInterval(replaceWith(job.status.processing.checkInterval - 1000)))(job.status.processing)
-                } satisfies JobStatus
-            } satisfies Job))
+                    kind: 'job',
+                    job: job,
+                    
+                } satisfies CustomEntityStatus,
+                trace: [...ce.trace.slice(0, -1), job]
+            } satisfies CustomEntity)})
         }
     }
 }
