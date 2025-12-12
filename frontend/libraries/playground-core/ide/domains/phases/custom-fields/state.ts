@@ -30,14 +30,17 @@ export type Job =
 
 export const Job = {
     Updaters: {
-        incrementProcessingCount: (): Updater<Job> =>
-            Updater<Job>( job => job.status.kind !== 'processing' ? job : ({
+        incrementProcessingCount: (): Updater<Job> => {
+            debugger
+            return Updater<Job>(job => job.status.kind !== 'processing' ? job : ({
                 ...job,
-                status: { kind: 'processing', processing: 
+                status: {
+                    kind: 'processing', processing:
                         JobProcessing.Updaters.Core.checkCount(replaceWith(job.status.processing.checkCount + 1))
-                            .then(JobProcessing.Updaters.Core.checkInterval(replaceWith(job.status.processing.checkInterval * 2)))(job.status.processing)
-               }
-            } satisfies Job))    
+                            .then(JobProcessing.Updaters.Core.checkInterval(replaceWith(job.status.processing.checkInterval - 1000)))(job.status.processing)
+                } satisfies JobStatus
+            } satisfies Job))
+        }
     }
 }
 
@@ -66,7 +69,7 @@ export const CustomEntity = {
         Coroutine: {
             fail: (msg: string | List<string>) => {
                 const messages =
-                    typeof msg === "string"? List([msg]) : msg;
+                    typeof msg === "string" ? List([msg]) : msg;
                 const failed = {
                         kind: 'result',
                         value: ValueOrErrors.Default.throw(messages)

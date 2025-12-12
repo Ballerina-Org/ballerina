@@ -25,6 +25,7 @@ const awaitProcessingJob = <result>(complete: BasicFun<ResponseWithStatus<result
             const id = entity.status.job.status.processing.jobId;
             const kind = entity.status.job.kind as 'typechecking' | 'construction'
             return Co.Seq([
+                Co.SetState(CustomEntity.Updaters.Core.job(Job.Updaters.incrementProcessingCount())),
                 Co.SetState(CustomEntity.Updaters.Coroutine.checkIfMaxTries(3)),
                 Co.Wait(entity.status.job.status.processing.checkInterval),
                 Co.Await<ValueOrErrors<ResponseWithStatus<result>, any>, any>(() =>
@@ -33,7 +34,10 @@ const awaitProcessingJob = <result>(complete: BasicFun<ResponseWithStatus<result
                     const response = CustomEntity.Operations.checkResponseForErrors(res, `${entity.status.kind} status`)
                     if (response.kind == "r") return response.value
                     if (res.value.value.status == 3) return Co.SetState(CustomEntity.Updaters.Coroutine.fail(res.value.value.error.message));
-                    if (res.value.value.status == 1) return Co.SetState(CustomEntity.Updaters.Core.job(Job.Updaters.incrementProcessingCount()));
+                    if (res.value.value.status == 1) {
+                        return Co.Do(() => {
+                        })
+                    }
 
                     const completed = complete(res.value.value);
 

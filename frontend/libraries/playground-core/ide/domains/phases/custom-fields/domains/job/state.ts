@@ -8,7 +8,7 @@ export type JobProcessing = {
 
 export const JobProcessing = {
     Default: (id: Guid, overrides?: Partial<JobProcessing>): JobProcessing => ({
-        checkInterval: 8000,
+        checkInterval: 3000,
         checkCount: 0,
         jobId: id,
         ...overrides,

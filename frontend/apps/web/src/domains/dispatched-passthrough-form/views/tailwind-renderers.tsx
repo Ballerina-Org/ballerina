@@ -1222,7 +1222,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
           return <div>{inner(props)}</div>
       },
       consumptionItem: () => (props:any) => {
-          debugger
 
           if(props.context.value.kind !== 'record') return <p>expected record for consumption value</p>
           const data = props.context.value.fields;
@@ -1241,8 +1240,8 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               cells: p.fields.toArray()[1][1].values.toArray()
               
           }))
-          debugger
-          return         <div className="card bg-base-100 shadow-md">
+
+          return <div className="card bg-base-100 shadow-md mt-7">
               <div className="card-body space-y-4">
                   <h2 className="card-title">{props.context.label}</h2>
 

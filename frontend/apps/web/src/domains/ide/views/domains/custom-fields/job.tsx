@@ -18,12 +18,11 @@ export type JobProps = {
             }, 1000);
     
             return () => clearTimeout(id);
-        }, [counter, ]);
+        }, [counter, props.status.kind == 'processing' && props.status.processing.checkInterval]);
         
         if(!(props.status.kind == 'processing')) return <></>
         
         if(props.status.processing.checkCount > 0) {
-            window.alert("daas")
             return <div className="indicator">
                 <span
                     className="indicator-item badge badge-secondary">retry: {props.status.processing.checkCount - 1}</span>
@@ -46,7 +45,7 @@ export type JobProps = {
         <div className="timeline-start  flex flex-col items-center justify-center">
             {props.entity.status.kind == 'job' && props.entity.status.job.status.kind == 'processing' && <Counter {...props.trace} />}
             <div>{props.trace.kind}</div>
-
+            
         </div>
        
         <div className="timeline-middle">
@@ -57,7 +56,7 @@ export type JobProps = {
                     props.trace.status.kind != 'completed' 
                     ? <VscCircleFilled color="orange" size={25} /> 
                     : props.entity.status.kind == 'result' && props.entity.status.value.kind == 'errors' && (props.item == props.from - 1)
-                        ?<VscCircleFilled color='red' size={25} /> :
+                        ? <VscCircleFilled color='red' size={25} /> :
                         <VscCircleFilled color='green' size={25} /> }
         </div>
         <div className="timeline-end timeline-box  flex flex-col items-center justify-center mt-3">            
