@@ -20,7 +20,7 @@ module Set =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun elementType ->
         sum {
           let! elementType = elementType |> fromRootJson
-          return TypeValue.CreateSet(elementType) // FIXME: origin should be serialized and parsed
+          return elementType
         })
 
     static member ToJsonSet(toRootJson: TypeValue -> JsonValue) : TypeValue -> JsonValue =

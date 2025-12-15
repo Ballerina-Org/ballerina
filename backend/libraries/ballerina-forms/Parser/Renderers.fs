@@ -6,6 +6,7 @@ module Renderers =
 
   open Ballerina.DSL.FormEngine.Model
   open Ballerina.DSL.Expr.Model
+  open Ballerina.DSL.Expr.Types.Patterns
   open Ballerina.DSL.Expr.Types.Model
   open FormsPatterns
   open System
@@ -964,14 +965,7 @@ module Renderers =
                 |> state.Map Sum.toOption
                 |> state.Map(Option.defaultWith (fun () -> JsonValue.Array [||]))
 
-              let! dataContextColumns =
-                FormBody.ParseGroup
-                  primitivesExt
-                  exprParser
-                  "dataContextColumns"
-                  (columns |> Map.map (fun _ c -> c.FieldConfig))
-                  dataContextColumnsJson
-
+              let! dataContextColumns = FormBody.ParseFieldList ExprType.UnitType dataContextColumnsJson
 
               return
                 {| Columns = columns
@@ -1195,8 +1189,6 @@ module Renderers =
               return Renderer.InlineFormRenderer formBody
             }
             |> state.MapError(Errors.WithPriority ErrorPriority.High)
-
-
         })
       |> state.MapError(Errors.HighestPriority)
   // |> state.WithErrorContext $"...when parsing renderer {json.ToString().ReasonablyClamped}"
@@ -1375,8 +1367,8 @@ module Renderers =
               |> state.Map Sum.toOption
               |> state.Map(Option.defaultWith (fun () -> JsonValue.Array [||]))
 
-            let! dataContextFields =
-              FormBody.ParseGroup primitivesExt exprParser "dataContextFields" fieldConfigs dataContextFieldsJson
+            // TODO: use correct type
+            let! dataContextFields = FormBody.ParseFieldList ExprType.UnitType dataContextFieldsJson
 
             let! tabs =
               FormBody<'ExprExtension, 'ValueExtension>.ParseTabs primitivesExt exprParser fieldConfigs tabsJson
@@ -1421,6 +1413,53 @@ module Renderers =
         return { FormTabs = tabs }
       }
       |> state.WithErrorContext $"...when parsing tabs"
+
+    static member ParseFieldList
+      (_: ExprType)
+      (json: JsonValue)
+      : State<
+          FormGroup<'ExprExtension, 'ValueExtension>,
+          CodeGenConfig,
+          ParsedFormsContext<'ExprExtension, 'ValueExtension>,
+          Errors
+         >
+      =
+      state {
+        let! fields = json |> JsonValue.AsArray |> state.OfSum
+
+
+        return!
+          fields
+          |> Seq.map (
+            JsonValue.AsString
+            >> state.OfSum
+            >> state.Map(fun fieldName ->
+              { FieldName = fieldName
+                FieldId = Guid.CreateVersion7() })
+          )
+          |> state.All
+          |> state.Map FormGroup.Inlined
+
+      // TODO: implement type-checking
+      // match t with
+      // | ExprType.RecordType typeFields ->
+      //   return!
+      //     seq {
+      //       for fieldNameJson in fields do
+      //         yield
+      //           state {
+      //             let! fieldName = fieldNameJson |> JsonValue.AsString |> state.OfSum
+
+      //             return!
+      //               typeFields
+      //               |> Map.tryFindWithError fieldName "field name" fieldName
+      //               |> Sum.map (fun _ -> fieldName)
+      //               |> state.OfSum
+      //           }
+      //     }
+      //     |> state.All
+      // | _ -> return! state.Throw(Errors.Singleton $"Expected record type, got {t}")
+      }
 
     static member ParseGroup
       (_primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)

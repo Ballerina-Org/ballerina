@@ -1,6 +1,5 @@
 module Ballerina.Data.Tests.Delta.Multiple
 
-
 open Ballerina.DSL.Next.Terms
 open NUnit.Framework
 open Ballerina.DSL.Next.Types.Model
@@ -13,9 +12,9 @@ let deltaExt (_ext: unit) : Value<TypeValue, Unit> -> Sum<Value<TypeValue, Unit>
 
 [<Test>]
 let ``Delta.Multiple: applies multiple replace deltas sequentially`` () =
-  let v0 = Value<Unit>.Primitive(PrimitiveValue.Int32 1)
-  let v1 = Value<Unit>.Primitive(PrimitiveValue.Int32 2)
-  let v2 = Value<Unit>.Primitive(PrimitiveValue.Int32 3)
+  let v0 = Value<TypeValue, Unit>.Primitive(PrimitiveValue.Int32 1)
+  let v1 = Value<TypeValue, Unit>.Primitive(PrimitiveValue.Int32 2)
+  let v2 = Value<TypeValue, Unit>.Primitive(PrimitiveValue.Int32 3)
 
   let delta = Delta<Unit, Unit>.Multiple([ Delta.Replace(v1); Delta.Replace(v2) ])
 
@@ -28,7 +27,7 @@ let ``Delta.Multiple: applies multiple replace deltas sequentially`` () =
 
 [<Test>]
 let ``Delta.Multiple Identity: empty delta list returns original value`` () =
-  let v = Value<Unit>.Primitive(PrimitiveValue.String "keep me")
+  let v = Value<TypeValue, Unit>.Primitive(PrimitiveValue.String "keep me")
 
   let delta = Delta.Multiple([])
 

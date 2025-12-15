@@ -55,6 +55,7 @@ module Traverser =
     | TypeValue.Application _ -> false
     | _ -> true
 
+
   let rec seed
     (entity: EntityName)
     : TypeValue -> State<Value<TypeValue, ValueExt>, SeedingContext, SeedingState, Errors> =

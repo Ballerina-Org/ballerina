@@ -20,7 +20,6 @@ module Lookup =
           let! name = lookupFields |> JsonValue.AsString
 
           return TypeValue.Lookup(Identifier.LocalScope name)
-
         })
 
     static member ToJsonLookup(id: Identifier) : JsonValue =
