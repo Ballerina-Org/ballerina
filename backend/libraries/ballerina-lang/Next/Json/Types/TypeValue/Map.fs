@@ -16,13 +16,15 @@ module Map =
   let private discriminator = "map"
 
   type TypeValue with
-    static member FromJsonMap(fromRootJson: JsonValue -> Sum<TypeValue, Errors>) : JsonValue -> Sum<TypeValue, Errors> =
+    static member FromJsonMap
+      (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
+      : JsonValue -> Sum<TypeValue * TypeValue, Errors> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun mapFields ->
         sum {
           let! (key, value) = mapFields |> JsonValue.AsPair
           let! keyType = key |> fromRootJson
           let! valueType = value |> fromRootJson
-          return TypeValue.CreateMap(keyType, valueType) // FIXME: origin should be serialized and parsed
+          return keyType, valueType
         })
 
     static member ToJsonMap(toRootJson: TypeValue -> JsonValue) : TypeValue * TypeValue -> JsonValue =

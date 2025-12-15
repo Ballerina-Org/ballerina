@@ -1,13 +1,10 @@
 namespace Ballerina.DSL.Next.Types
 
 module Patterns =
-  open Ballerina.StdLib.Object
   open Ballerina.Collections.Sum
-  open Ballerina.Reader.WithError
   open Ballerina.Errors
   open System
   open Ballerina.DSL.Next.Types.Model
-  open Ballerina.StdLib.OrderPreservingMap
   open Ballerina.Cat.Collections.OrderedMap
 
   type TypeVar with
@@ -169,6 +166,14 @@ module Patterns =
         { value = v
           typeExprSource = NoSourceMapping "Record"
           typeCheckScopeSource = TypeCheckScope.Empty }
+
+    static member CreateRecordWithScope
+      (v: OrderedMap<TypeSymbol, TypeValue * Kind>, scope: TypeCheckScope)
+      : TypeValue =
+      TypeValue.Record
+        { value = v
+          typeExprSource = NoSourceMapping "Record"
+          typeCheckScopeSource = scope }
 
     static member CreateTuple(v: List<TypeValue>) : TypeValue =
       TypeValue.Tuple

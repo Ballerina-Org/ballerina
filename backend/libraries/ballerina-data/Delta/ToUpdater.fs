@@ -5,17 +5,19 @@ module ToUpdater =
   open Ballerina.Collections.Sum
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Terms.Patterns
+  open Ballerina.DSL.Next.Terms.Model
   open Ballerina.Data.Delta.Model
   open Ballerina.Errors
   open Ballerina.Fun
 
-  type Value<'valueExtension> = Ballerina.DSL.Next.Terms.Model.Value<TypeValue, 'valueExtension>
+  //type Value<'valueExtension> = Ballerina.DSL.Next.Terms.Model.Value<TypeValue, 'valueExtension>
 
   type Delta<'valueExtension, 'deltaExtension> with
     static member ToUpdater
-      (deltaExtensionHandler: 'deltaExtension -> Value<'valueExtension> -> Sum<Value<'valueExtension>, Errors>)
+      (deltaExtensionHandler:
+        'deltaExtension -> Value<TypeValue, 'valueExtension> -> Sum<Value<TypeValue, 'valueExtension>, Errors>)
       (delta: Delta<'valueExtension, 'deltaExtension>)
-      : Sum<Value<'valueExtension> -> Sum<Value<'valueExtension>, Errors>, Errors> =
+      : Sum<Value<TypeValue, 'valueExtension> -> Sum<Value<TypeValue, 'valueExtension>, Errors>, Errors> =
       sum {
         match delta with
         | Multiple deltas ->
@@ -28,7 +30,7 @@ module ToUpdater =
           let! fieldUpdater = Delta.ToUpdater deltaExtensionHandler fieldDelta
 
           return
-            fun (v: Value<'valueExtension>) ->
+            fun (v: Value<TypeValue, 'valueExtension>) ->
               sum {
                 let! fieldValues = Value.AsRecord v
 

@@ -47,11 +47,11 @@ module TypeValueApply =
   type TypeValue with
     static member FromJsonApplication
       (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
-      : JsonValue -> Sum<TypeValue, Errors> =
+      : JsonValue -> Sum<SymbolicTypeApplication, Errors> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun applyFields ->
         sum {
           let! symbolicApp = applyFields |> fromJsonSymbolicTypeApplication fromRootJson
-          return TypeValue.CreateApplication symbolicApp // FIXME: origin should be serialized and parsed
+          return symbolicApp
         })
 
     static member ToJsonApplication(rootToJson: TypeValue -> JsonValue) : SymbolicTypeApplication -> JsonValue =
