@@ -2,6 +2,7 @@ module Ballerina.Data.Tests.Delta.Extensions
 
 open NUnit.Framework
 open Ballerina.DSL.Next.Terms.Model
+open Ballerina.DSL.Next.Types.Model
 open Ballerina.Data.Delta.Model
 open Ballerina.Data.Delta.Extensions
 open Ballerina.Data.Delta
@@ -13,11 +14,11 @@ open Ballerina.DSL.Next.StdLib.List.Model
 let ``Delta extensions, list update string element at`` () =
 
   let str v =
-    Value<ValueExt>.Primitive(PrimitiveValue.String v)
+    Value<TypeValue, ValueExt>.Primitive(PrimitiveValue.String v)
 
   let list =
     ValueExt(Choice1Of4(ListExt.ListValues(List [ str "a"; str "b"; str "c" ])))
-    |> Value<ValueExt>.Ext
+    |> Value<TypeValue, ValueExt>.Ext
 
   let delta =
     Delta.Ext(DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.UpdateElement(1, str "-"))))
@@ -31,7 +32,7 @@ let ``Delta extensions, list update string element at`` () =
         result,
         Is.EqualTo(
           ValueExt(Choice1Of4(ListExt.ListValues(List [ str "a"; str "-"; str "c" ])))
-          |> Value<ValueExt>.Ext
+          |> Value<TypeValue, ValueExt>.Ext
         )
       )
     | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"
@@ -40,14 +41,14 @@ let ``Delta extensions, list update string element at`` () =
 [<Test>]
 let ``Delta extensions, list update complex value at`` () =
   let str v =
-    Value<ValueExt>.Primitive(PrimitiveValue.String v)
+    Value<TypeValue, ValueExt>.Primitive(PrimitiveValue.String v)
 
   let sum i length =
-    Value<ValueExt>.Sum({ Case = i; Count = length }, str $"{i}/{length}")
+    Value<TypeValue, ValueExt>.Sum({ Case = i; Count = length }, str $"{i}/{length}")
 
   let list =
     ValueExt(Choice1Of4(ListExt.ListValues(List [ sum 0 3; sum 1 3; sum 2 3 ])))
-    |> Value<ValueExt>.Ext
+    |> Value<TypeValue, ValueExt>.Ext
 
   let delta =
     Delta.Ext(DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.UpdateElement(1, sum 4 4))))
@@ -61,7 +62,7 @@ let ``Delta extensions, list update complex value at`` () =
         result,
         Is.EqualTo(
           ValueExt(Choice1Of4(ListExt.ListValues(List [ sum 0 3; sum 4 4; sum 2 3 ])))
-          |> Value<ValueExt>.Ext
+          |> Value<TypeValue, ValueExt>.Ext
         )
       )
     | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"
@@ -71,11 +72,11 @@ let ``Delta extensions, list update complex value at`` () =
 let ``Delta extensions, list append element`` () =
 
   let str v =
-    Value<ValueExt>.Primitive(PrimitiveValue.String v)
+    Value<TypeValue, ValueExt>.Primitive(PrimitiveValue.String v)
 
   let list =
     ValueExt(Choice1Of4(ListExt.ListValues(List [ str "a"; str "b"; str "c" ])))
-    |> Value<ValueExt>.Ext
+    |> Value<TypeValue, ValueExt>.Ext
 
   let delta =
     Delta.Ext(DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.AppendElement(str "d"))))
@@ -89,7 +90,7 @@ let ``Delta extensions, list append element`` () =
         result,
         Is.EqualTo(
           ValueExt(Choice1Of4(ListExt.ListValues(List [ str "a"; str "b"; str "c"; str "d" ])))
-          |> Value<ValueExt>.Ext
+          |> Value<TypeValue, ValueExt>.Ext
         )
       )
     | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"
@@ -99,11 +100,11 @@ let ``Delta extensions, list append element`` () =
 let ``Delta extensions, list remove element`` () =
 
   let str v =
-    Value<ValueExt>.Primitive(PrimitiveValue.String v)
+    Value<TypeValue, ValueExt>.Primitive(PrimitiveValue.String v)
 
   let list =
     ValueExt(Choice1Of4(ListExt.ListValues(List [ str "a"; str "b"; str "c" ])))
-    |> Value<ValueExt>.Ext
+    |> Value<TypeValue, ValueExt>.Ext
 
   let delta = Delta.Ext(DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.RemoveElement(1))))
 
@@ -116,7 +117,7 @@ let ``Delta extensions, list remove element`` () =
         result,
         Is.EqualTo(
           ValueExt(Choice1Of4(ListExt.ListValues(List [ str "a"; str "c" ])))
-          |> Value<ValueExt>.Ext
+          |> Value<TypeValue, ValueExt>.Ext
         )
       )
     | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"

@@ -22,6 +22,7 @@ open Ballerina.Data.Store.Updaters
 open Ballerina.Data.TypeEval
 open Ballerina.VirtualFolders.Interactions
 open Ballerina.VirtualFolders.Model
+open Ballerina.DSL.Next.Terms.Model
 
 type ConcurrentStore =
   { Tenants: ConcurrentDictionary<TenantId, ConcurrentDictionary<SpecName, Spec<TypeValue, ValueExt>>> }
@@ -42,7 +43,7 @@ module ConcurrentStore =
     (store: ConcurrentDictionary<SpecName, Spec<TypeValue, ValueExt>>)
     (specName: SpecName)
     (path: VirtualPath option)
-    (onDeltaExt: DeltaExt -> Value<ValueExt> -> Sum<Value<ValueExt>, Errors.Errors>)
+    (onDeltaExt: DeltaExt -> Value<TypeValue, ValueExt> -> Sum<Value<TypeValue, ValueExt>, Errors.Errors>)
     : SpecDataApi<ValueExt, DeltaExt> =
 
     let storeUpdater (u: U<SpecData<TypeValue, ValueExt>>) =

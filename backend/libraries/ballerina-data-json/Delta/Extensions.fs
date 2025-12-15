@@ -1,20 +1,20 @@
 ﻿namespace Ballerina.DSL.Next.Delta.Json
 
-open Ballerina.Data.Delta.Extensions
-
 [<AutoOpen>]
 module DeltaExt =
   open Ballerina.Errors
   open Ballerina.DSL.Next.Json.Keys
   open FSharp.Data
   open Ballerina.Collections.Sum
-  open Ballerina.Data.Delta
   open Ballerina.DSL.Next.StdLib.Extensions
+  open Ballerina.DSL.Next.Terms.Model
+  open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Json
   open Ballerina.StdLib.Json.Patterns
+  open Ballerina.Data.Delta.Extensions
 
   type DeltaExt with
-    static member FromJson(valueParser: JsonValue -> Sum<Value<ValueExt>, Errors>) : JsonParser<DeltaExt> =
+    static member FromJson(valueParser: JsonValue -> Sum<Value<TypeValue, ValueExt>, Errors>) : JsonParser<DeltaExt> =
       fun json ->
         Sum.assertDiscriminatorAndContinueWithValue
           "deltaExt"
@@ -99,7 +99,7 @@ module DeltaExt =
           json
 
     static member ToJson
-      (valueEncoder: JsonEncoderWithError<Value<ValueExt>>)
+      (valueEncoder: JsonEncoderWithError<Value<TypeValue, ValueExt>>)
       (deltaExt: DeltaExt)
       : Sum<JsonValue, Errors> =
       sum {

@@ -7,9 +7,6 @@ open Ballerina.DSL.Next.Terms.Model
 open Ballerina.Data.Delta.ToUpdater
 open Ballerina.Data.Delta.Model
 open Ballerina.Collections.Sum
-open Ballerina.DSL.Next.Types.Patterns
-open Ballerina.StdLib.OrderPreservingMap
-open Ballerina.Cat.Collections.OrderedMap
 
 let deltaExt (_ext: unit) : Value<TypeValue, Unit> -> Sum<Value<TypeValue, Unit>, 'a> =
   fun (v: Value<TypeValue, Unit>) -> sum.Return v
@@ -24,18 +21,21 @@ let ``Delta.Union: Updates matching union case correctly`` () =
   let caseSymbol = symbol caseName
 
   let unionValue =
-    Value<Unit>
-      .UnionCase(caseSymbol.Name |> TypeCheckScope.Empty.Resolve, PrimitiveValue.Int32 10 |> Value<Unit>.Primitive)
+    Value<TypeValue, Unit>
+      .UnionCase(
+        caseSymbol.Name |> TypeCheckScope.Empty.Resolve,
+        PrimitiveValue.Int32 10 |> Value<TypeValue, Unit>.Primitive
+      )
 
   let delta =
-    Delta<Unit, Unit>.Union(caseName, Delta.Replace(PrimitiveValue.Int32 99 |> Value<Unit>.Primitive))
+    Delta<Unit, Unit>.Union(caseName, Delta.Replace(PrimitiveValue.Int32 99 |> Value<TypeValue, Unit>.Primitive))
 
   match Delta.ToUpdater deltaExt delta with
   | Sum.Left updater ->
     match updater unionValue with
     | Sum.Left(Value.UnionCase(updatedSymbol, updatedValue)) ->
       Assert.That(updatedSymbol, Is.EqualTo(caseSymbol.Name |> TypeCheckScope.Empty.Resolve))
-      Assert.That(updatedValue, Is.EqualTo(PrimitiveValue.Int32 99 |> Value<Unit>.Primitive))
+      Assert.That(updatedValue, Is.EqualTo(PrimitiveValue.Int32 99 |> Value<TypeValue, Unit>.Primitive))
     | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"
     | _ -> Assert.Fail "Unexpected value shape"
   | Sum.Right err -> Assert.Fail $"Delta.ToUpdater failed: {err}"
@@ -45,11 +45,14 @@ let ``Delta.Union: Returns original value when case does not match`` () =
   let actualSymbol = symbol "actual"
 
   let unionValue =
-    Value<Unit>
-      .UnionCase(actualSymbol.Name |> TypeCheckScope.Empty.Resolve, PrimitiveValue.Int32 42 |> Value<Unit>.Primitive)
+    Value<TypeValue, Unit>
+      .UnionCase(
+        actualSymbol.Name |> TypeCheckScope.Empty.Resolve,
+        PrimitiveValue.Int32 42 |> Value<TypeValue, Unit>.Primitive
+      )
 
   let delta =
-    Delta.Union("unmatched", Delta.Replace(PrimitiveValue.Int32 999 |> Value<Unit>.Primitive))
+    Delta.Union("unmatched", Delta.Replace(PrimitiveValue.Int32 999 |> Value<TypeValue, Unit>.Primitive))
 
   match Delta.ToUpdater deltaExt delta with
   | Sum.Left updater ->

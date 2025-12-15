@@ -2,16 +2,17 @@ namespace Ballerina.Data.Store.InMemory
 
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.StdLib.Extensions
-open Ballerina.Data.Delta
 open Ballerina.Data.Delta.Extensions
 open Ballerina.Data.Store.InMemory.Backend
 open Ballerina.Data.Store.Model
 open Ballerina.LocalizedErrors
+open Ballerina.DSL.Next.Terms.Model
+open Ballerina.DSL.Next.Types.Model
 
 module Store =
   let create
     (initialTenantIds: TenantId list)
-    (onDeltaExt: DeltaExt -> Value<ValueExt> -> Sum<Value<ValueExt>, Ballerina.Errors.Errors>)
+    (onDeltaExt: DeltaExt -> Value<TypeValue, ValueExt> -> Sum<Value<TypeValue, ValueExt>, Ballerina.Errors.Errors>)
     : Store =
 
     let store = ConcurrentStore.initStore initialTenantIds
