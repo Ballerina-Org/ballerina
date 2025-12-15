@@ -24,17 +24,17 @@ let ``Delta.Record: Updates field in a record correctly`` () =
   let typeSymbol = symbol fieldName
 
   let recordValue =
-    Value<Unit>
+    Value<TypeValue, Unit>
       .Record(
         Map.ofList
           [ typeSymbol.Name.LocalName
             |> Identifier.LocalScope
             |> TypeCheckScope.Empty.Resolve,
-            Value<Unit>.Primitive(PrimitiveValue.Int32 99) ]
+            Value<TypeValue, Unit>.Primitive(PrimitiveValue.Int32 99) ]
       )
 
   let delta =
-    Delta.Record(fieldName, Delta.Replace(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive))
+    Delta.Record(fieldName, Delta.Replace(PrimitiveValue.Int32 100 |> Value<TypeValue, Unit>.Primitive))
 
   match Delta.ToUpdater deltaExt delta with
   | Sum.Left updater ->
@@ -45,7 +45,7 @@ let ``Delta.Record: Updates field in a record correctly`` () =
                  |> Identifier.LocalScope
                  |> TypeCheckScope.Empty.Resolve]
 
-      Assert.That(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive, Is.EqualTo updatedValue)
+      Assert.That(PrimitiveValue.Int32 100 |> Value<TypeValue, Unit>.Primitive, Is.EqualTo updatedValue)
     | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"
     | _ -> Assert.Fail "Unexpected value shape"
   | Sum.Right err -> Assert.Fail $"Delta.ToUpdater failed: {err}"
@@ -54,10 +54,10 @@ let ``Delta.Record: Updates field in a record correctly`` () =
 let ``Delta.Record: Fails when field not found in value`` () =
   let fieldName = "age"
 
-  let recordValue = Value<Unit>.Record(Map.empty)
+  let recordValue = Value<TypeValue, Unit>.Record(Map.empty)
 
   let delta =
-    Delta.Record(fieldName, Delta.Replace(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive))
+    Delta.Record(fieldName, Delta.Replace(PrimitiveValue.Int32 100 |> Value<TypeValue, Unit>.Primitive))
 
   match Delta.ToUpdater deltaExt delta with
   | Sum.Left updater ->

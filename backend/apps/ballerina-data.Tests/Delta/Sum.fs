@@ -13,27 +13,28 @@ let deltaExt (_ext: unit) : Value<TypeValue, Unit> -> Sum<Value<TypeValue, Unit>
 [<Test>]
 let ``Delta.Sum: Updates correct case index in sum value`` () =
   let sumValue =
-    Value<Unit>.Sum({ Case = 1; Count = 1 }, PrimitiveValue.Int32 42 |> Value<Unit>.Primitive)
+    Value<TypeValue, Unit>.Sum({ Case = 1; Count = 1 }, PrimitiveValue.Int32 42 |> Value<TypeValue, Unit>.Primitive)
 
   let delta =
-    Delta.Sum(1, Delta.Replace(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive))
+    Delta.Sum(1, Delta.Replace(PrimitiveValue.Int32 100 |> Value<TypeValue, Unit>.Primitive))
 
   match Delta.ToUpdater deltaExt delta with
   | Sum.Left updater ->
     match updater sumValue with
     | Sum.Left(Value.Sum(updatedIndex, updatedValue)) ->
       Assert.That(updatedIndex, Is.EqualTo { Case = 1; Count = 1 })
-      Assert.That(updatedValue, Is.EqualTo(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive))
+      Assert.That(updatedValue, Is.EqualTo(PrimitiveValue.Int32 100 |> Value<TypeValue, Unit>.Primitive))
     | _ -> Assert.Fail "Unexpected result shape"
   | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"
 
 [<Test>]
 let ``Delta.Sum: Returns original value when index does not match`` () =
   let sumValue =
-    Value<Unit>.Sum({ Case = 2; Count = 1 }, PrimitiveValue.String "untouched" |> Value<Unit>.Primitive)
+    Value<TypeValue, Unit>
+      .Sum({ Case = 2; Count = 1 }, PrimitiveValue.String "untouched" |> Value<TypeValue, Unit>.Primitive)
 
   let delta =
-    Delta.Sum(1, Delta.Replace(PrimitiveValue.Int32 100 |> Value<Unit>.Primitive))
+    Delta.Sum(1, Delta.Replace(PrimitiveValue.Int32 100 |> Value<TypeValue, Unit>.Primitive))
 
   match Delta.ToUpdater deltaExt delta with
   | Sum.Left updater ->
@@ -46,10 +47,10 @@ let ``Delta.Sum: Returns original value when index does not match`` () =
 [<Test>]
 let ``Delta.Sum: Fails when delta type does not match case type TODO:decide`` () =
   let sumValue =
-    Value<Unit>.Sum({ Case = 1; Count = 1 }, PrimitiveValue.Int32 42 |> Value<Unit>.Primitive)
+    Value<TypeValue, Unit>.Sum({ Case = 1; Count = 1 }, PrimitiveValue.Int32 42 |> Value<TypeValue, Unit>.Primitive)
 
   let delta =
-    Delta.Sum(1, Delta.Replace(PrimitiveValue.String "wrong type" |> Value<Unit>.Primitive))
+    Delta.Sum(1, Delta.Replace(PrimitiveValue.String "wrong type" |> Value<TypeValue, Unit>.Primitive))
 
   match Delta.ToUpdater deltaExt delta with
   | Sum.Left updater ->
