@@ -2,7 +2,7 @@
   "name": "ballerina-core",
   "author": "Dr. Giuseppe Maggiore",
   "private": false,
-  "version": "1.0.266",
+  "version": "1.0.267",
   "main": "main.ts",
   "scripts": {
     "prettier": "prettier --write ."

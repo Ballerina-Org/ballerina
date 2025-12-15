@@ -36,7 +36,10 @@ const isLookupRenderer = (renderer: unknown): boolean => {
     !("elementRenderer" in renderer) &&
     !("itemRenderers" in renderer) &&
     !("keyRenderer" in renderer) &&
-    !("valueRenderer" in renderer)
+    !("valueRenderer" in renderer) &&
+    !("childRenderer" in renderer) &&
+    !("tabs" in renderer) &&
+    !("columns" in renderer)
   );
 };
 
