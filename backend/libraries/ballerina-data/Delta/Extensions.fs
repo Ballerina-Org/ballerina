@@ -3,22 +3,24 @@
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.StdLib.List.Model
+open Ballerina.DSL.Next.Terms.Model
+open Ballerina.DSL.Next.Types.Model
 open Ballerina.Errors
 
 module Extensions =
 
-  type Value = Value<ValueExt>
+  type Value = Value<TypeValue, ValueExt>
 
   type DeltaExt = DeltaExt of Choice<ListDeltaExt, TupleDeltaExt, OptionDeltaExt>
 
   and ListDeltaExt =
-    | UpdateElement of index: int * value: Value<ValueExt>
-    | AppendElement of value: Value<ValueExt>
+    | UpdateElement of index: int * value: Value
+    | AppendElement of value: Value
     | RemoveElement of index: int
 
   and TupleDeltaExt =
     | RemoveElement of index: int
-    | AppendElement of value: Value<ValueExt>
+    | AppendElement of value: Value
 
   and OptionDeltaExt = OptionDeltaExt
 

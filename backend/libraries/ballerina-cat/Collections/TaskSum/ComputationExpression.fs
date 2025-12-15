@@ -43,6 +43,12 @@ type TaskSumBuilder() =
       return Left result
     }
 
+  member inline _.MapRight f ts =
+    task {
+      let! sum = ts
+      return sum |> Sum.mapRight f
+    }
+
 [<AutoOpen>]
 module ComputationExpression =
   let taskSum = TaskSumBuilder()

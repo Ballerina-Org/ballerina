@@ -189,8 +189,6 @@ module Project =
 
               let typeCheckerStopwatch = System.Diagnostics.Stopwatch.StartNew()
 
-              // let languageContext = LanguageContext<ValueExt>.Empty
-
               let! (typeCheckedExpr, typeValue, _, ctx'), st' =
                 Expr.TypeCheck None program
                 |> State.Run(ctx, st)
