@@ -86,8 +86,10 @@ export const ListAbstractRenderer = <
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               domNodeAncestorPath: _.domNodeAncestorPath + `[${elementIndex}]`,
               predictionAncestorPath: _.predictionAncestorPath + `[element]`,
+              // the layout path does not need to be specific to the element index
+              // since the same renderer is used for all elements
               layoutAncestorPath:
-                _.layoutAncestorPath + `[list][${elementIndex}]`,
+                _.layoutAncestorPath + `[list]`,
               typeAncestors: [_.type as DispatchParsedType<T>].concat(
                 _.typeAncestors,
               ),
@@ -194,7 +196,7 @@ export const ListAbstractRenderer = <
               domNodeAncestorPath: _.domNodeAncestorPath + `[${elementIndex}]`,
               predictionAncestorPath: _.predictionAncestorPath + `[element]`,
               layoutAncestorPath:
-                _.layoutAncestorPath + `[list][${elementIndex}]`,
+                _.layoutAncestorPath + `[list]`,
               typeAncestors: [_.type as DispatchParsedType<T>].concat(
                 _.typeAncestors,
               ),
