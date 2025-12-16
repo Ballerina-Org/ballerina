@@ -214,7 +214,8 @@ export const TableAbstractRenderer = <
             typeAncestors: [_.type as DispatchParsedType<any>].concat(
               _.typeAncestors,
             ),
-            domNodeAncestorPath: _.domNodeAncestorPath + `[${idx}][${column}]`,
+            domNodeAncestorPath:
+              _.domNodeAncestorPath + `[Values][${idx}][${column}]`,
             predictionAncestorPath:
               _.predictionAncestorPath + `[Values][element][${column}]`,
             layoutAncestorPath:
@@ -640,32 +641,30 @@ export const TableAbstractRenderer = <
     const embeddedTableData =
       props.context.customFormState.loadingState != "loaded"
         ? OrderedMap<string, OrderedMap<string, any>>()
-        : props.context.value.data.map((rowData, rowId) =>
+        : props.context.value.data.mapEntries(([rowId, rowData], idx) => [
+            rowId,
             rowData.fields
               .filter((_, column) => validVisibleColumns.includes(column))
-              .mapEntries(([column, _], idx) => [
-                column,
+              .map((_, column) =>
                 EmbeddedCellTemplates.get(column)!(rowId)(idx)(
                   rowData.fields.get(column)!,
                 )(disabledColumnKeysSet.has(column)),
-              ]),
-          );
+              ),
+          ]);
 
     const embeddedUnfilteredTableData =
       props.context.customFormState.loadingState != "loaded"
         ? OrderedMap<string, OrderedMap<string, any>>()
-        : props.context.value.data.map((rowData, rowId) =>
+        : props.context.value.data.mapEntries(([rowId, rowData], idx) => [
+            rowId,
             rowData.fields
               .filter((_, column) => validColumns.includes(column))
-              .mapEntries(([column, _], idx) => {
-                return [
-                  column,
-                  EmbeddedCellTemplates.get(column)!(rowId)(idx)(
-                    rowData.fields.get(column)!,
-                  )(disabledColumnKeysSet.has(column)),
-                ];
+              .map((_, column) => {
+                return EmbeddedCellTemplates.get(column)!(rowId)(idx)(
+                  rowData.fields.get(column)!,
+                )(disabledColumnKeysSet.has(column));
               }),
-          );
+          ]);
 
     if (props.context.customFormState.isFilteringInitialized == false) {
       return <></>;

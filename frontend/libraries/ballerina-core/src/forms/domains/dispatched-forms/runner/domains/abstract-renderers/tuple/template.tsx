@@ -180,7 +180,7 @@ export const DispatchTupleAbstractRenderer = <
     TupleAbstractRendererForeignMutationsExpected<Flags>,
     TupleAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
-    const domNodeId = props.context.predictionAncestorPath;
+    const domNodeId = props.context.domNodeAncestorPath;
 
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(
