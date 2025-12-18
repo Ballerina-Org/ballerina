@@ -345,7 +345,11 @@ export const MapAbstractRenderer = <
 
     return (
       <>
-        <IdProvider domNodeId={props.context.usePreprocessor ? domNodeId : legacy_domNodeId}>
+        <IdProvider
+          domNodeId={
+            props.context.usePreprocessor ? domNodeId : legacy_domNodeId
+          }
+        >
           <props.view
             {...props}
             context={{

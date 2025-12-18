@@ -317,7 +317,11 @@ export const RecordAbstractRenderer = <
 
     return (
       <>
-        <IdProvider domNodeId={props.context.usePreprocessor ? domNodeId : legacy_domNodeId}>
+        <IdProvider
+          domNodeId={
+            props.context.usePreprocessor ? domNodeId : legacy_domNodeId
+          }
+        >
           <props.view
             context={{
               ...props.context,
