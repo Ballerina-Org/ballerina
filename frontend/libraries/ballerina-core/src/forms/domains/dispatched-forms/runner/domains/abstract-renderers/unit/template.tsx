@@ -35,7 +35,8 @@ export const UnitAbstractRenderer = <
     UnitAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
-
+    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[unit]";
+    
     if (!PredicateValue.Operations.IsUnit(props.context.value)) {
       console.error(
         `Unit expected but got: ${JSON.stringify(
@@ -59,6 +60,7 @@ export const UnitAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              legacy_domNodeId,
             }}
             foreignMutations={{
               ...props.foreignMutations,

@@ -36,7 +36,8 @@ export const StringAbstractRenderer = <
     StringAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
-
+    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[string]";
+    
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(
         `String expected but got: ${JSON.stringify(
@@ -60,6 +61,7 @@ export const StringAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              legacy_domNodeId,
             }}
             foreignMutations={{
               ...props.foreignMutations,

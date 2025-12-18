@@ -116,6 +116,7 @@ export const RecordAbstractRenderer = <
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               domNodeAncestorPath: _.domNodeAncestorPath + `[${fieldName}]`,
+              legacy_domNodeAncestorPath: _.legacy_domNodeAncestorPath + `[record][${fieldName}]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[${fieldName}]`,
               layoutAncestorPath:
@@ -218,7 +219,7 @@ export const RecordAbstractRenderer = <
     RecordAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
-
+    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[record]";
     if (
       !PredicateValue.Operations.IsRecord(props.context.value) &&
       !PredicateValue.Operations.IsUnit(props.context.value)
@@ -318,6 +319,7 @@ export const RecordAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              legacy_domNodeId,
               layout: calculatedLayout.value,
             }}
             foreignMutations={{

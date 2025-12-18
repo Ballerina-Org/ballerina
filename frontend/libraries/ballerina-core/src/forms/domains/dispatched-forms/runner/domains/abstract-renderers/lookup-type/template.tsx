@@ -59,6 +59,7 @@ export const LookupTypeAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId: props.context.domNodeAncestorPath,
+              legacy_domNodeId: props.context.legacy_domNodeAncestorPath,
               lookupTypeAncestorNames: [
                 ...props.context.lookupTypeAncestorNames,
                 LookupType.SerializeToString(lookupType.name),

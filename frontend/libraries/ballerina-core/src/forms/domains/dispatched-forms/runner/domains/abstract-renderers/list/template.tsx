@@ -86,6 +86,7 @@ export const ListAbstractRenderer = <
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               domNodeAncestorPath: _.domNodeAncestorPath + `[${elementIndex}]`,
               predictionAncestorPath: _.predictionAncestorPath + `[element]`,
+              legacy_domNodeAncestorPath: _.legacy_domNodeAncestorPath + `[list][${elementIndex}]`,
               // the layout path does not need to be specific to the element index
               // since the same renderer is used for all elements
               layoutAncestorPath: _.layoutAncestorPath + `[list]`,
@@ -194,6 +195,7 @@ export const ListAbstractRenderer = <
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               domNodeAncestorPath: _.domNodeAncestorPath + `[${elementIndex}]`,
               predictionAncestorPath: _.predictionAncestorPath + `[element]`,
+              legacy_domNodeAncestorPath: _.legacy_domNodeAncestorPath + `[list][${elementIndex}]`,
               layoutAncestorPath: _.layoutAncestorPath + `[list]`,
               typeAncestors: [_.type as DispatchParsedType<T>].concat(
                 _.typeAncestors,
@@ -284,6 +286,7 @@ export const ListAbstractRenderer = <
     ListAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
+    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[list]";
 
     if (
       !PredicateValue.Operations.IsTuple(props.context.value) &&
@@ -311,6 +314,7 @@ export const ListAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              legacy_domNodeId,
             }}
             foreignMutations={{
               ...props.foreignMutations,

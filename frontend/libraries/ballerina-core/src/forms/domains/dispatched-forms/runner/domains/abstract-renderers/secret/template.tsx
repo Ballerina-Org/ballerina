@@ -33,6 +33,7 @@ export const SecretAbstractRenderer = <
     SecretAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
+    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[secret]";
 
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(
@@ -57,6 +58,7 @@ export const SecretAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              legacy_domNodeId,
             }}
             foreignMutations={{
               ...props.foreignMutations,

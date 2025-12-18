@@ -38,6 +38,7 @@ export const Base64FileAbstractRenderer = <
     >
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
+    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[base64File]";
 
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(
@@ -62,6 +63,7 @@ export const Base64FileAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              legacy_domNodeId,
             }}
             foreignMutations={{
               ...props.foreignMutations,

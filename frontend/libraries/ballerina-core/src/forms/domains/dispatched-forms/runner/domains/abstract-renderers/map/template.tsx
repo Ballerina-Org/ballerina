@@ -102,6 +102,7 @@ export const MapAbstractRenderer = <
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               domNodeAncestorPath:
                 _.domNodeAncestorPath + `[${elementIndex}][Key]`,
+              legacy_domNodeAncestorPath: _.legacy_domNodeAncestorPath + `[map][${elementIndex}][key]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[element][Key]`,
               layoutAncestorPath: _.layoutAncestorPath + `[map][key]`,
@@ -221,6 +222,7 @@ export const MapAbstractRenderer = <
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               domNodeAncestorPath:
                 _.domNodeAncestorPath + `[${elementIndex}][Value]`,
+              legacy_domNodeAncestorPath: _.legacy_domNodeAncestorPath + `[map][${elementIndex}][value]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[element][Value]`,
               layoutAncestorPath: _.layoutAncestorPath + `[map][value]`,
@@ -320,7 +322,8 @@ export const MapAbstractRenderer = <
     MapAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
-
+    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[map]";
+    
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(
         `Tuple expected but got: ${JSON.stringify(
@@ -344,6 +347,7 @@ export const MapAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              legacy_domNodeId,
             }}
             foreignMutations={{
               ...props.foreignMutations,

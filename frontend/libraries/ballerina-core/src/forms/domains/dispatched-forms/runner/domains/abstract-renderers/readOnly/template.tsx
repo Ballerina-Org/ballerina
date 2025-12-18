@@ -78,6 +78,7 @@ export const ReadOnlyAbstractRenderer = <
           customPresentationContext: _.customPresentationContext,
           remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
           domNodeAncestorPath: _.domNodeAncestorPath + `[ReadOnly]`,
+          legacy_domNodeAncestorPath: _.legacy_domNodeAncestorPath + "[readOnly]",
           predictionAncestorPath: _.predictionAncestorPath + "[ReadOnly]",
           layoutAncestorPath: _.layoutAncestorPath + "[readOnly]",
           typeAncestors: [_.type as DispatchParsedType<any>].concat(
@@ -142,6 +143,8 @@ export const ReadOnlyAbstractRenderer = <
     ReadOnlyAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
+    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[readOnly]";
+    
     if (!PredicateValue.Operations.IsReadOnly(props.context.value)) {
       console.error(
         `ReadOnly value expected but got: ${JSON.stringify(
@@ -164,6 +167,7 @@ export const ReadOnlyAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              legacy_domNodeId,
             }}
             embeddedTemplate={configuredChildTemplate}
           />

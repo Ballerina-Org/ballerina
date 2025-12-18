@@ -35,6 +35,7 @@ export const BoolAbstractRenderer = <
     BoolAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
+    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[boolean]";
 
     if (
       !PredicateValue.Operations.IsBoolean(props.context.value) &&
@@ -62,6 +63,7 @@ export const BoolAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              legacy_domNodeId,
             }}
             foreignMutations={{
               ...props.foreignMutations,

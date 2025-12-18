@@ -89,6 +89,7 @@ export const UnionAbstractRenderer = <
                 _.typeAncestors,
               ),
               domNodeAncestorPath: _.domNodeAncestorPath + `[${caseName}]`,
+              legacy_domNodeAncestorPath: _.legacy_domNodeAncestorPath + `[union][${caseName}]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[${caseName}]`,
               layoutAncestorPath:
@@ -148,7 +149,8 @@ export const UnionAbstractRenderer = <
     UnionAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
-
+    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[union]";
+    
     if (!PredicateValue.Operations.IsUnionCase(props.context.value)) {
       console.error(
         `UnionCase expected but got: ${JSON.stringify(
@@ -172,6 +174,7 @@ export const UnionAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              legacy_domNodeId,
               defaultCaseValues,
             }}
             foreignMutations={{
