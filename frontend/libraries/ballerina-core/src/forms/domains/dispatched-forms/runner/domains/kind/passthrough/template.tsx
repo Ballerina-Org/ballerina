@@ -110,6 +110,7 @@ export const DispatchPassthroughFormLauncherTemplate = <
           remoteEntityVersionIdentifier:
             props.context.remoteEntityVersionIdentifier,
           domNodeAncestorPath: "",
+          legacy_domNodeAncestorPath: "",
           predictionAncestorPath: "",
           layoutAncestorPath: `[${props.context.formName}]`,
           labelContext: props.context.formName,
