@@ -88,6 +88,8 @@ export const DispatchTupleAbstractRenderer = <
               type: _.type.args[itemIndex],
               domNodeAncestorPath:
                 _.domNodeAncestorPath + `[Item${itemIndex + 1}]`,
+              legacy_domNodeAncestorPath:
+                _.legacy_domNodeAncestorPath + `[tuple][${itemIndex + 1}]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[Item${itemIndex + 1}]`,
               layoutAncestorPath:
@@ -98,6 +100,7 @@ export const DispatchTupleAbstractRenderer = <
               labelContext: labelContext,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               preprocessedSpecContext: _.preprocessedSpecContext,
+              usePreprocessor: _.usePreprocessor,
             };
           },
         )
@@ -181,6 +184,8 @@ export const DispatchTupleAbstractRenderer = <
     TupleAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
+    const legacy_domNodeId =
+      props.context.legacy_domNodeAncestorPath + "[tuple]";
 
     if (!PredicateValue.Operations.IsTuple(props.context.value)) {
       console.error(
@@ -199,12 +204,17 @@ export const DispatchTupleAbstractRenderer = <
 
     return (
       <>
-        <IdProvider domNodeId={domNodeId}>
+        <IdProvider
+          domNodeId={
+            props.context.usePreprocessor ? domNodeId : legacy_domNodeId
+          }
+        >
           <props.view
             {...props}
             context={{
               ...props.context,
               domNodeId,
+              legacy_domNodeId,
             }}
             foreignMutations={{
               ...props.foreignMutations,

@@ -112,6 +112,9 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
     >
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
+    const legacy_domNodeId =
+      props.context.legacy_domNodeAncestorPath +
+      "[searchableInfiniteStreamMultiselect]";
 
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(
@@ -132,12 +135,17 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
 
     return (
       <>
-        <IdProvider domNodeId={domNodeId}>
+        <IdProvider
+          domNodeId={
+            props.context.usePreprocessor ? domNodeId : legacy_domNodeId
+          }
+        >
           <props.view
             {...props}
             context={{
               ...props.context,
               domNodeId,
+              legacy_domNodeId,
               hasMoreValues: !(
                 props.context.customFormState.stream.loadedElements.last()
                   ?.hasMoreValues == false

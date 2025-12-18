@@ -163,11 +163,14 @@ export const OneAbstractRenderer = <
           _.typeAncestors,
         ),
         domNodeAncestorPath: _.domNodeAncestorPath + "[Value]",
+        legacy_domNodeAncestorPath:
+          _.legacy_domNodeAncestorPath + "[one][details]",
         predictionAncestorPath: _.predictionAncestorPath + "[Value]",
         layoutAncestorPath: _.layoutAncestorPath + "[one][details]",
         lookupTypeAncestorNames: _.lookupTypeAncestorNames,
         preprocessedSpecContext: _.preprocessedSpecContext,
         labelContext,
+        usePreprocessor: _.usePreprocessor,
       };
     })
       .mapState(
@@ -261,11 +264,14 @@ export const OneAbstractRenderer = <
                 _.typeAncestors,
               ),
               domNodeAncestorPath: _.domNodeAncestorPath + "[Value]",
+              legacy_domNodeAncestorPath:
+                _.legacy_domNodeAncestorPath + "[one][preview]",
               predictionAncestorPath: _.predictionAncestorPath + "[Value]",
               layoutAncestorPath: _.layoutAncestorPath + "[one][preview]",
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               preprocessedSpecContext: _.preprocessedSpecContext,
               labelContext,
+              usePreprocessor: _.usePreprocessor,
             };
           })
             .mapState(
@@ -339,6 +345,7 @@ export const OneAbstractRenderer = <
     OneAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
+    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[one]";
     const value = props.context.value;
 
     if (
@@ -368,12 +375,17 @@ export const OneAbstractRenderer = <
 
     return (
       <>
-        <IdProvider domNodeId={domNodeId}>
+        <IdProvider
+          domNodeId={
+            props.context.usePreprocessor ? domNodeId : legacy_domNodeId
+          }
+        >
           <props.view
             {...props}
             context={{
               ...props.context,
               domNodeId,
+              legacy_domNodeId,
               value,
               hasMoreValues:
                 props.context.customFormState.stream.kind === "r"

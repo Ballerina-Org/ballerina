@@ -49,6 +49,8 @@ export const EnumAbstractRenderer = <
     EnumAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
+    const legacy_domNodeId =
+      props.context.legacy_domNodeAncestorPath + "[enum]";
 
     if (
       !PredicateValue.Operations.IsOption(props.context.value) &&
@@ -76,6 +78,7 @@ export const EnumAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              legacy_domNodeId,
               activeOptions: !AsyncState.Operations.hasValue(
                 props.context.customFormState.options.sync,
               )

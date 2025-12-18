@@ -216,6 +216,9 @@ export const TableAbstractRenderer = <
             ),
             domNodeAncestorPath:
               _.domNodeAncestorPath + `[Values][${idx}][${column}]`,
+            legacy_domNodeAncestorPath:
+              _.legacy_domNodeAncestorPath +
+              `[table][cell][${rowId}][record][${column}]`,
             predictionAncestorPath:
               _.predictionAncestorPath + `[Values][element][${column}]`,
             layoutAncestorPath:
@@ -223,6 +226,7 @@ export const TableAbstractRenderer = <
             lookupTypeAncestorNames: _.lookupTypeAncestorNames,
             preprocessedSpecContext: _.preprocessedSpecContext,
             labelContext,
+            usePreprocessor: _.usePreprocessor,
           };
         })
 
@@ -395,12 +399,16 @@ export const TableAbstractRenderer = <
               ),
               domNodeAncestorPath:
                 _.domNodeAncestorPath + `[table][cell][${selectedDetailRow}]`,
+              legacy_domNodeAncestorPath:
+                _.legacy_domNodeAncestorPath +
+                `[table][cell][${selectedDetailRow}]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[Values][element]`,
               layoutAncestorPath: _.layoutAncestorPath + `[table][details]`,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               preprocessedSpecContext: _.preprocessedSpecContext,
               labelContext,
+              usePreprocessor: _.usePreprocessor,
             };
           })
             .mapStateFromProps<TableAbstractRendererState>(
@@ -550,6 +558,8 @@ export const TableAbstractRenderer = <
     TableAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
+    const legacy_domNodeId =
+      props.context.legacy_domNodeAncestorPath + "[table]";
 
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
       console.error(
@@ -683,7 +693,11 @@ export const TableAbstractRenderer = <
 
     return (
       <>
-        <IdProvider domNodeId={domNodeId}>
+        <IdProvider
+          domNodeId={
+            props.context.usePreprocessor ? domNodeId : legacy_domNodeId
+          }
+        >
           <props.view
             {...props}
             context={{
@@ -695,6 +709,7 @@ export const TableAbstractRenderer = <
                   : undefined,
               },
               domNodeId,
+              legacy_domNodeId,
               tableHeaders: validVisibleColumns,
               columnLabels: ColumnLabels,
               hasMoreValues: !!hasMoreValues,

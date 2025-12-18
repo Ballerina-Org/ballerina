@@ -57,6 +57,8 @@ export const EnumMultiselectAbstractRenderer = <
     >
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
+    const legacy_domNodeId =
+      props.context.legacy_domNodeAncestorPath + "[enumMultiselect]";
 
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(
@@ -75,12 +77,17 @@ export const EnumMultiselectAbstractRenderer = <
 
     return (
       <>
-        <IdProvider domNodeId={domNodeId}>
+        <IdProvider
+          domNodeId={
+            props.context.usePreprocessor ? domNodeId : legacy_domNodeId
+          }
+        >
           <props.view
             {...props}
             context={{
               ...props.context,
               domNodeId,
+              legacy_domNodeId,
               selectedIds: props.context.value.fields.keySeq().toArray(),
               activeOptions: !AsyncState.Operations.hasValue(
                 props.context.customFormState.options.sync,

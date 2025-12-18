@@ -36,15 +36,18 @@ export type CommonAbstractRendererReadonlyContext<
   customPresentationContext: C | undefined;
   remoteEntityVersionIdentifier: string;
   domNodeAncestorPath: string;
+  legacy_domNodeAncestorPath: string;
   predictionAncestorPath: string;
   layoutAncestorPath: string;
   typeAncestors: DispatchParsedType<any>[];
   lookupTypeAncestorNames: string[];
   preprocessedSpecContext?: PreprocessedSpecContext;
+  usePreprocessor: boolean;
 };
 
 export type CommonAbstractRendererViewOnlyReadonlyContext = {
   domNodeId: string;
+  legacy_domNodeId: string;
 };
 
 export type PreprocessedSpecContext = {

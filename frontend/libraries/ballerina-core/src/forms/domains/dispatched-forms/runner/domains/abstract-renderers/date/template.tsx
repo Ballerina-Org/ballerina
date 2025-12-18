@@ -35,6 +35,8 @@ export const DateAbstractRenderer = <
     DateAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
+    const legacy_domNodeId =
+      props.context.legacy_domNodeAncestorPath + "[date]";
 
     if (!PredicateValue.Operations.IsDate(props.context.value)) {
       console.error(
@@ -53,12 +55,17 @@ export const DateAbstractRenderer = <
 
     return (
       <>
-        <IdProvider domNodeId={domNodeId}>
+        <IdProvider
+          domNodeId={
+            props.context.usePreprocessor ? domNodeId : legacy_domNodeId
+          }
+        >
           <props.view
             {...props}
             context={{
               ...props.context,
               domNodeId,
+              legacy_domNodeId,
             }}
             foreignMutations={{
               ...props.foreignMutations,

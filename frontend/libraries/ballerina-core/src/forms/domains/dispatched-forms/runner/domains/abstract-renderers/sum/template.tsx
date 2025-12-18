@@ -89,6 +89,8 @@ export const SumAbstractRenderer = <
                   remoteEntityVersionIdentifier:
                     _.remoteEntityVersionIdentifier,
                   domNodeAncestorPath: _.domNodeAncestorPath + "[Value]",
+                  legacy_domNodeAncestorPath:
+                    _.legacy_domNodeAncestorPath + "[sum][left]",
                   predictionAncestorPath: _.predictionAncestorPath + "[Value]",
                   layoutAncestorPath: _.layoutAncestorPath + "[sum][left]",
                   typeAncestors: [_.type as DispatchParsedType<any>].concat(
@@ -97,6 +99,7 @@ export const SumAbstractRenderer = <
                   lookupTypeAncestorNames: _.lookupTypeAncestorNames,
                   preprocessedSpecContext: _.preprocessedSpecContext,
                   labelContext,
+                  usePreprocessor: _.usePreprocessor,
                 };
               },
             )
@@ -188,6 +191,8 @@ export const SumAbstractRenderer = <
                   remoteEntityVersionIdentifier:
                     _.remoteEntityVersionIdentifier,
                   domNodeAncestorPath: _.domNodeAncestorPath + "[Value]",
+                  legacy_domNodeAncestorPath:
+                    _.legacy_domNodeAncestorPath + "[sum][right]",
                   predictionAncestorPath: _.predictionAncestorPath + "[Value]",
                   layoutAncestorPath: _.layoutAncestorPath + "[sum][right]",
                   typeAncestors: [_.type as DispatchParsedType<any>].concat(
@@ -196,6 +201,7 @@ export const SumAbstractRenderer = <
                   lookupTypeAncestorNames: _.lookupTypeAncestorNames,
                   preprocessedSpecContext: _.preprocessedSpecContext,
                   labelContext,
+                  usePreprocessor: _.usePreprocessor,
                 };
               },
             )
@@ -258,6 +264,7 @@ export const SumAbstractRenderer = <
     SumAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
+    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[sum]";
 
     if (
       !PredicateValue.Operations.IsSum(props.context.value) &&
@@ -279,12 +286,17 @@ export const SumAbstractRenderer = <
 
     return (
       <>
-        <IdProvider domNodeId={domNodeId}>
+        <IdProvider
+          domNodeId={
+            props.context.usePreprocessor ? domNodeId : legacy_domNodeId
+          }
+        >
           <props.view
             {...props}
             context={{
               ...props.context,
               domNodeId,
+              legacy_domNodeId,
             }}
             foreignMutations={{
               ...props.foreignMutations,

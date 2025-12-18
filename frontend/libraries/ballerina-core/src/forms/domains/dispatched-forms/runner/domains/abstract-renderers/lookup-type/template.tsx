@@ -53,12 +53,19 @@ export const LookupTypeAbstractRenderer = <
   >((props) => {
     return (
       <>
-        <IdProvider domNodeId={props.context.domNodeAncestorPath}>
+        <IdProvider
+          domNodeId={
+            props.context.usePreprocessor
+              ? props.context.domNodeAncestorPath
+              : props.context.legacy_domNodeAncestorPath
+          }
+        >
           <props.view
             {...props}
             context={{
               ...props.context,
               domNodeId: props.context.domNodeAncestorPath,
+              legacy_domNodeId: props.context.legacy_domNodeAncestorPath,
               lookupTypeAncestorNames: [
                 ...props.context.lookupTypeAncestorNames,
                 LookupType.SerializeToString(lookupType.name),
