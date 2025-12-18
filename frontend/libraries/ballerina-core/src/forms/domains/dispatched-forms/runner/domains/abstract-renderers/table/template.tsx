@@ -216,7 +216,9 @@ export const TableAbstractRenderer = <
             ),
             domNodeAncestorPath:
               _.domNodeAncestorPath + `[Values][${idx}][${column}]`,
-            legacy_domNodeAncestorPath: _.legacy_domNodeAncestorPath + `[table][cell][${rowId}][record][${column}]`,
+            legacy_domNodeAncestorPath:
+              _.legacy_domNodeAncestorPath +
+              `[table][cell][${rowId}][record][${column}]`,
             predictionAncestorPath:
               _.predictionAncestorPath + `[Values][element][${column}]`,
             layoutAncestorPath:
@@ -397,7 +399,8 @@ export const TableAbstractRenderer = <
               domNodeAncestorPath:
                 _.domNodeAncestorPath + `[table][cell][${selectedDetailRow}]`,
               legacy_domNodeAncestorPath:
-                _.legacy_domNodeAncestorPath + `[table][cell][${selectedDetailRow}]`,
+                _.legacy_domNodeAncestorPath +
+                `[table][cell][${selectedDetailRow}]`,
               predictionAncestorPath:
                 _.predictionAncestorPath + `[Values][element]`,
               layoutAncestorPath: _.layoutAncestorPath + `[table][details]`,
@@ -553,8 +556,9 @@ export const TableAbstractRenderer = <
     TableAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
-    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[table]";
-    
+    const legacy_domNodeId =
+      props.context.legacy_domNodeAncestorPath + "[table]";
+
     if (!PredicateValue.Operations.IsTable(props.context.value)) {
       console.error(
         `TableValue expected but got: ${JSON.stringify(

@@ -36,8 +36,9 @@ export const StringAbstractRenderer = <
     StringAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
-    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[string]";
-    
+    const legacy_domNodeId =
+      props.context.legacy_domNodeAncestorPath + "[string]";
+
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(
         `String expected but got: ${JSON.stringify(

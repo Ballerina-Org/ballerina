@@ -49,7 +49,8 @@ export const EnumAbstractRenderer = <
     EnumAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
-    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[enum]";
+    const legacy_domNodeId =
+      props.context.legacy_domNodeAncestorPath + "[enum]";
 
     if (
       !PredicateValue.Operations.IsOption(props.context.value) &&

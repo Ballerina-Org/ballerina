@@ -35,7 +35,8 @@ export const DateAbstractRenderer = <
     DateAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
-    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[date]";
+    const legacy_domNodeId =
+      props.context.legacy_domNodeAncestorPath + "[date]";
 
     if (!PredicateValue.Operations.IsDate(props.context.value)) {
       console.error(

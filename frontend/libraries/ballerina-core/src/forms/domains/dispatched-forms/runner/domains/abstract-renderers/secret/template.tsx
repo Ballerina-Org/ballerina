@@ -33,7 +33,8 @@ export const SecretAbstractRenderer = <
     SecretAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
-    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[secret]";
+    const legacy_domNodeId =
+      props.context.legacy_domNodeAncestorPath + "[secret]";
 
     if (!PredicateValue.Operations.IsString(props.context.value)) {
       console.error(

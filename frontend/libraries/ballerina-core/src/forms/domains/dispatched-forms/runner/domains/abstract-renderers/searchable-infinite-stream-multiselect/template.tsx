@@ -112,7 +112,9 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
     >
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
-    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[searchableInfiniteStreamMultiselect]";
+    const legacy_domNodeId =
+      props.context.legacy_domNodeAncestorPath +
+      "[searchableInfiniteStreamMultiselect]";
 
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(

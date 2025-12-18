@@ -163,7 +163,8 @@ export const OneAbstractRenderer = <
           _.typeAncestors,
         ),
         domNodeAncestorPath: _.domNodeAncestorPath + "[Value]",
-        legacy_domNodeAncestorPath: _.legacy_domNodeAncestorPath + "[one][details]",
+        legacy_domNodeAncestorPath:
+          _.legacy_domNodeAncestorPath + "[one][details]",
         predictionAncestorPath: _.predictionAncestorPath + "[Value]",
         layoutAncestorPath: _.layoutAncestorPath + "[one][details]",
         lookupTypeAncestorNames: _.lookupTypeAncestorNames,
@@ -262,7 +263,8 @@ export const OneAbstractRenderer = <
                 _.typeAncestors,
               ),
               domNodeAncestorPath: _.domNodeAncestorPath + "[Value]",
-              legacy_domNodeAncestorPath: _.legacy_domNodeAncestorPath + "[one][preview]",
+              legacy_domNodeAncestorPath:
+                _.legacy_domNodeAncestorPath + "[one][preview]",
               predictionAncestorPath: _.predictionAncestorPath + "[Value]",
               layoutAncestorPath: _.layoutAncestorPath + "[one][preview]",
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,

@@ -57,8 +57,9 @@ export const EnumMultiselectAbstractRenderer = <
     >
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
-    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[enumMultiselect]";
-    
+    const legacy_domNodeId =
+      props.context.legacy_domNodeAncestorPath + "[enumMultiselect]";
+
     if (!PredicateValue.Operations.IsRecord(props.context.value)) {
       console.error(
         `Record expected but got: ${JSON.stringify(

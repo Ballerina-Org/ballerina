@@ -35,7 +35,8 @@ export const NumberAbstractRenderer = <
     NumberAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
-    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[number]";
+    const legacy_domNodeId =
+      props.context.legacy_domNodeAncestorPath + "[number]";
 
     if (!PredicateValue.Operations.IsNumber(props.context.value)) {
       console.error(
