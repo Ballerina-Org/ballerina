@@ -98,6 +98,7 @@ export const DispatchEditFormLauncherTemplate = <
           lookupTypeAncestorNames: [],
           customPresentationContext: undefined,
           typeAncestors: [],
+          usePreprocessor: props.context.usePreprocessor,
         }}
         setState={(stateUpdater) =>
           props.setState(

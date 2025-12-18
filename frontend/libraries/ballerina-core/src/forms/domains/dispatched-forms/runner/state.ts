@@ -151,6 +151,7 @@ export type DispatchFormRunnerContext<
   loadingComponent?: JSX.Element;
   errorComponent?: JSX.Element;
   preprocessedSpecContext?: PreprocessedSpecContext;
+  usePreprocessor: boolean;
 } & DispatchFormsParserState<T, Flags, CustomPresentationContext, ExtraContext>;
 
 export type DispatchFormRunnerState<

@@ -128,6 +128,7 @@ export const RecordAbstractRenderer = <
               ),
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               preprocessedSpecContext: _.preprocessedSpecContext,
+              usePreprocessor: _.usePreprocessor,
             };
           },
         )
@@ -316,7 +317,7 @@ export const RecordAbstractRenderer = <
 
     return (
       <>
-        <IdProvider domNodeId={domNodeId}>
+        <IdProvider domNodeId={props.context.usePreprocessor ? domNodeId : legacy_domNodeId}>
           <props.view
             context={{
               ...props.context,

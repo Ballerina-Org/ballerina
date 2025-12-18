@@ -42,6 +42,7 @@ export type CommonAbstractRendererReadonlyContext<
   typeAncestors: DispatchParsedType<any>[];
   lookupTypeAncestorNames: string[];
   preprocessedSpecContext?: PreprocessedSpecContext;
+  usePreprocessor: boolean;
 };
 
 export type CommonAbstractRendererViewOnlyReadonlyContext = {

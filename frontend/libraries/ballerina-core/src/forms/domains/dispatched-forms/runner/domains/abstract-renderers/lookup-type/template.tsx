@@ -53,7 +53,7 @@ export const LookupTypeAbstractRenderer = <
   >((props) => {
     return (
       <>
-        <IdProvider domNodeId={props.context.domNodeAncestorPath}>
+        <IdProvider domNodeId={props.context.usePreprocessor ? props.context.domNodeAncestorPath : props.context.legacy_domNodeAncestorPath}>
           <props.view
             {...props}
             context={{

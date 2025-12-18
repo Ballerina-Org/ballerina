@@ -226,6 +226,7 @@ export const TableAbstractRenderer = <
             lookupTypeAncestorNames: _.lookupTypeAncestorNames,
             preprocessedSpecContext: _.preprocessedSpecContext,
             labelContext,
+            usePreprocessor: _.usePreprocessor,
           };
         })
 
@@ -407,6 +408,7 @@ export const TableAbstractRenderer = <
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               preprocessedSpecContext: _.preprocessedSpecContext,
               labelContext,
+              usePreprocessor: _.usePreprocessor,
             };
           })
             .mapStateFromProps<TableAbstractRendererState>(
@@ -691,7 +693,7 @@ export const TableAbstractRenderer = <
 
     return (
       <>
-        <IdProvider domNodeId={domNodeId}>
+        <IdProvider domNodeId={props.context.usePreprocessor ? domNodeId : legacy_domNodeId}>
           <props.view
             {...props}
             context={{

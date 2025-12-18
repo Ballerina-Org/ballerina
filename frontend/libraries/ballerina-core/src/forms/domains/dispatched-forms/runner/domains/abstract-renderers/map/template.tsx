@@ -113,6 +113,7 @@ export const MapAbstractRenderer = <
               labelContext,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               preprocessedSpecContext: _.preprocessedSpecContext,
+              usePreprocessor: _.usePreprocessor,
             };
           },
         )
@@ -233,6 +234,7 @@ export const MapAbstractRenderer = <
               ),
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               preprocessedSpecContext: _.preprocessedSpecContext,
+              usePreprocessor: _.usePreprocessor,
             };
           },
         )
@@ -343,7 +345,7 @@ export const MapAbstractRenderer = <
 
     return (
       <>
-        <IdProvider domNodeId={domNodeId}>
+        <IdProvider domNodeId={props.context.usePreprocessor ? domNodeId : legacy_domNodeId}>
           <props.view
             {...props}
             context={{

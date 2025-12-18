@@ -97,6 +97,7 @@ export const ListAbstractRenderer = <
               labelContext,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               preprocessedSpecContext: _.preprocessedSpecContext,
+              usePreprocessor: _.usePreprocessor,
             };
           },
         )
@@ -205,6 +206,7 @@ export const ListAbstractRenderer = <
               labelContext,
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               preprocessedSpecContext: _.preprocessedSpecContext,
+              usePreprocessor: _.usePreprocessor,
             };
           },
         )
@@ -311,7 +313,7 @@ export const ListAbstractRenderer = <
 
     return (
       <>
-        <IdProvider domNodeId={domNodeId}>
+        <IdProvider domNodeId={props.context.usePreprocessor ? domNodeId : legacy_domNodeId}>
           <props.view
             {...props}
             context={{

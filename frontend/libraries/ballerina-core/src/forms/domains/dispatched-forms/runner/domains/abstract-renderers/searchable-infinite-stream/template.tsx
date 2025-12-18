@@ -130,7 +130,7 @@ export const SearchableInfiniteStreamAbstractRenderer = <
 
     return (
       <>
-        <IdProvider domNodeId={domNodeId}>
+        <IdProvider domNodeId={props.context.usePreprocessor ? domNodeId : legacy_domNodeId}>
           <props.view
             {...props}
             context={{
