@@ -634,8 +634,8 @@ export const TableAbstractRenderer = <
 
     const validColumns = CellTemplates.keySeq().toArray();
 
-    const validVisibleColumns = validColumns.filter((column) =>
-      visibleColumns.value.columns.includes(column),
+    const validVisibleColumns = visibleColumns.value.columns.filter((column) =>
+      validColumns.includes(column),
     );
 
     const embeddedTableData =
