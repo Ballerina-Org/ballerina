@@ -889,11 +889,11 @@ export const TableAbstractRenderer = <
                       ),
                     );
                   },
-              duplicateAll: !props.context.apiMethods.includes("duplicateAll")
+              actionOnAll: !props.context.apiMethods.includes("actionOnAll")
                 ? undefined
                 : (flags: Flags | undefined) => {
                     const delta: DispatchDelta<Flags> = {
-                      kind: "TableDuplicateAll",
+                      kind: "TableActionOnAll",
                       filtersAndSorting:
                         props.context.customFormState.filterAndSortParam,
                       flags,
