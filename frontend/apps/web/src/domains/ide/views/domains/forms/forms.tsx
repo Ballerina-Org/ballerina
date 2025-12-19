@@ -18,7 +18,7 @@ import {
     DispatchInjectedPrimitive,
     DispatchOnChange,
     AggregatedFlags, LookupApiOne, DispatchDeltaTransferComparand, DispatchDeltaTransferV2, ConcreteRenderers,
-    dispatchToAPIRawValue, dispatchToAPIRawValueV2, IdeTypeConverters,
+    dispatchToAPIRawValue, dispatchToAPIRawValueV2, IdeTypeConverters, Maybe,
 } from "ballerina-core";
 import {List, Set } from "immutable";
 import {FormsSeedEntity} from "playground-core/ide/domains/types/seeds";
@@ -49,7 +49,7 @@ import {
     IdePhase,
     IdeEntityApis, LockedPhase, sendDelta,
     UnmockingApisEnums,
-    UnmockingApisLookups, Ide, Forms, CustomFieldsTemplate, FlatNode, CustomEntity
+    UnmockingApisLookups, Ide, Forms, CustomFieldsTemplate, FlatNode, CustomEntity, Job, serializeDelta
 } from "playground-core";
 import { UnmockingApisStreams, getSeed} from "playground-core";
 import {IdeRenderers} from "./domains/loader.tsx";
@@ -405,15 +405,38 @@ export const DispatcherFormsApp = (props: Forms) => {
                                             className="btn btn-primary"
                                             disabled={props.customEntity.value.value.status.kind === 'job'}
                                             onClick={() => {
+                                            
+                                                if(props.customEntity.kind == "l") return;
+                                                const path = FlatNode.Operations.upAndAppend(props.customEntity.value.selected.metadata.path, "code")
+                
+                                                const node = FlatNode.Operations.findFolderByPath(
+                                                    props.customEntity.value.nodes, path)
+                                                
                                                 props.customEntity.kind == "r" && props.setState(Ide.Updaters.Core.phase.locked(
                                                     LockedPhase.Updaters.Core.customFields(CustomEntity.Updaters.Template.start(
-                                                        makeTypeCheckingProviderFromWorkspace(
-                                                            FlatNode.Operations.findFolderByPath(
-                                                                props.customEntity.value.nodes,
-                                                                props.customEntity.value.selected.metadata.path)
-                                                        ))
+                                                        makeTypeCheckingProviderFromWorkspace(node ))
                                                 )))}}
                                         >Start</button>
+                                        <button
+                                            className="btn btn-danger"
+                                            disabled={
+                                            (props.customEntity.value.value.status.kind !== 'result'  || props.deltas.kind == "l"
+                                                //|| props.customEntity.value.value.status.job.kind !== 'value' 
+                                               // || Maybe.Operations.map((job: Job) => job.status.kind != 'completed')(props.customEntity.value.value.trace.at(-1))
+                                            )
+                                        }
+                                            onClick={async () => {
+                                                if(props.deltas.kind == "l" || props.deltas.value.left.size == 0) return
+                                                const delta = await serializeDelta(props.specName, entityName.value, props.deltas.value)
+                                         
+                                            
+                                                if(delta.kind == 'errors') return props.setState(Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.errors(replaceWith(delta.errors))));
+                                                const raw = JSON.stringify(delta.value);
+                                                
+                                                props.customEntity.kind == "r" && props.setState(Ide.Updaters.Core.phase.locked(
+                                                    LockedPhase.Updaters.Core.customFields(CustomEntity.Updaters.Template.update(raw)
+                                                    )))}}
+                                        >Update</button>
                                         <button
                                             className="btn btn-warning"
                                             disabled={!(props.customEntity.value.value.status.kind === 'result' && props.customEntity.value.value.status.value.kind === 'value')}

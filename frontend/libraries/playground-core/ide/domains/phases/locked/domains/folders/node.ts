@@ -1,4 +1,4 @@
-﻿import {Option, Updater} from "ballerina-core";
+﻿import {Maybe, Option, Updater} from "ballerina-core";
 
 export type Meta = {
     kind: 'dir' | 'file',
@@ -110,19 +110,25 @@ export const FlatNode = {
         parentPath(path: string): string {
             return path.replace(/\/[^\/]+$/, "");
         },
+        upAndAppend (path: string, segment: string): string {
+            const parts = path.split("/").filter(Boolean);
+            parts.pop();
+            parts.pop();
+            return "/" + [...parts, segment].join("/");
+        },
         findFolderByPath: (root: Node, path: string): Maybe<Node> => {
             const parts = path.split("/").filter(s => s.length > 0);
             if (parts.length === 0) return root.metadata.kind === "dir" ? root : undefined;
 
-            const rec = (node: Node, segs: string[]): Option<Node> => {
+            const rec = (node: Node, segs: string[]): Maybe<Node> => {
                 const [head, ...tail] = segs;
                 if (head === undefined) return node.metadata.kind === "dir" ? node : undefined;
-                if (node.metadata.kind !== "dir") return none();
+                if (node.metadata.kind !== "dir") return undefined;
                 if (head === node.name) return rec(node, tail);
 
                 const children = node.children ?? [];
                 const child = children.find(c => c.name === head);
-                if (child === undefined) return none();
+                if (child === undefined) return undefined
                 if (tail.length === 0) {
                     return child.metadata.kind === "file" ? node
                         : child.metadata.kind === "dir"  ? child

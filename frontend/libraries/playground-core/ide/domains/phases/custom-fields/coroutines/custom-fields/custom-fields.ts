@@ -7,8 +7,15 @@ import {
 import {CustomEntity, CustomEntityStatus, Job} from "../../state"
 import { JobProcessing } from "../../domains/job/state"
 import {RequestValueJobResponse, ResponseWithStatus} from "../../domains/job/response/state";
-import {constructionJob, getJobStatus, getValue, typeCheckingJob} from "../../../../../api/custom-fields/client";
+import {
+    constructionJob,
+    getJobStatus,
+    getValue,
+    typeCheckingJob,
+    updaterJob
+} from "../../../../../api/custom-fields/client";
 import {AI_Value_Mock} from "../../domains/mock";
+import {UpdaterJob} from "../../domains/job/request/state";
 
 /* The goal of this coroutine, along the actual orchestration of the job request/responses,
 is to be visualization friendly, 
@@ -23,7 +30,7 @@ const awaitProcessingJob = <result>(complete: BasicFun<ResponseWithStatus<result
                 return Co.Do(()=> {})
             
             const id = entity.status.job.status.processing.jobId;
-            const kind = entity.status.job.kind as 'typechecking' | 'construction'
+            const kind = entity.status.job.kind as 'typechecking' | 'construction' | 'updater'
             return Co.Seq([
                 Co.Wait(entity.status.job.status.processing.checkInterval),
                 Co.Await<ValueOrErrors<ResponseWithStatus<result>, any>, any>(() =>
@@ -31,7 +38,8 @@ const awaitProcessingJob = <result>(complete: BasicFun<ResponseWithStatus<result
                 }).then(res => {
                     const response = CustomEntity.Operations.checkResponseForErrors(res, `${entity.status.kind} status`)
                     if (response.kind == "r") return response.value
-                    if (res.value.value.status == 3) return Co.SetState(CustomEntity.Updaters.Coroutine.fail(res.value.value.error.message));
+                    if(res.value.kind == 'errors') return Co.SetState(CustomEntity.Updaters.Core.fail(res.value.errors));
+                    if (res.value.value.status == 3) return Co.SetState(CustomEntity.Updaters.Core.fail(res.value.value.error.message));
                     if (res.value.value.status == 1) {
                         return Co.Do(() => {
                         })
@@ -57,135 +65,234 @@ const awaitProcessingJob = <result>(complete: BasicFun<ResponseWithStatus<result
 
 export const customFields =
     Co.Repeat(
-        Co.GetState().then((entity: CustomEntity) => {
-            if(!(
-                entity.status.kind === 'job'
-                && entity.status.job.kind === 'typechecking'
-                && entity.status.job.status.kind === 'starting'
-            )) return Co.SetState(_ => entity);
-            
-            const payload = entity.status.job.payload;
-            
-            return Co.Seq([
-                Co.Await<ValueOrErrors<Guid, any>, any>(() =>
-                    typeCheckingJob(payload), (_err: any) => {}).then(res => {
-                    const response = CustomEntity.Operations.checkResponseForErrors(res, 'typechecking')
-                    if(response.kind == "r") return response.value
+        Co.Seq([
+            Co.GetState().then((entity: CustomEntity) => {
+                if(!(
+                    entity.status.kind === 'job'
+                    && entity.status.job.kind === 'typechecking'
+                    && entity.status.job.status.kind === 'starting'
+                )) return Co.SetState(_ => entity);
 
-                    const job = {
-                        kind: 'typechecking',
-                        payload: payload,
-                        value: undefined,
-                        status: { kind: 'processing', processing: JobProcessing.Default(res.value.value) }
-                    } satisfies Job
-                    
-                    const u = Updater<CustomEntity>(entity =>
-                        ({
-                            ...entity,
-                            status: { kind: 'job', job: job },
-                            trace: [...entity.trace.slice(0, -1), job]
-                        })
-                    )
-                    return Co.SetState(u)
-                }),
-                awaitProcessingJob<{ valueDescriptorId: Guid}>((res: ResponseWithStatus<{
-                        valueDescriptorId: Guid
-                }>): Job =>
-                        ({
-                        kind: 'typechecking',
-                        payload: payload,
-                        value: res,
-                        status: { kind: 'completed', how: JobProcessing.Default(res.id), took: 1234 }
-                    } satisfies Job)
-                ),
-                Co.GetState().then((entity: CustomEntity) => {
-                    if(!( entity.status.kind === "job"
-                        && entity.status.job.kind == "typechecking"
-                        && entity.status.job.status.kind == "completed"
-                        && entity.status.job.value != undefined)) return Co.SetState(_ => entity);
-                    const typeCheckingJobResponse = entity.status.job.value
-                    const construction = {
-                        kind: 'construction',
-                        from: entity.status.job,
-                        value: undefined,
-                        status: { kind: 'starting' }
-                    } satisfies Job
-                    return Co.Seq([
-                        Co.SetState(CustomEntity.Updaters.Core.job(replaceWith<Job>(construction)).then(CustomEntity.Updaters.Core.trace(
-                            replaceWith([
-                                ...entity.trace,
-                                construction,
-                            ])))),
-                        Co.Await<ValueOrErrors<Guid, any>, any>(() =>
-                            constructionJob({ValueDescriptorId: typeCheckingJobResponse.result.valueDescriptorId }), (_err: any) => {}).then(res => {
-                            const response = CustomEntity.Operations.checkResponseForErrors(res, 'construction job')
-                            if(response.kind == "r") return response.value
-                            const job = {
-                                ...construction,
-                                status: {kind: 'processing', processing: JobProcessing.Default(res.value.value)}
-                            } satisfies Job 
-                            const next: Updater<CustomEntityStatus> = Updater<CustomEntityStatus> (curr => ({
-                                kind: 'job',
-                                job: job
-                            } satisfies CustomEntityStatus))
-                            const u = Updater<CustomEntity>(entity =>
-                                ({
-                                    ...entity,
-                                    status: next(entity.status),
-                                    trace: [...entity.trace.slice(0, -1), job]
-                                })
-                            )
-                            return Co.SetState(u)
-                        }),
-                        awaitProcessingJob<{ valueId: Guid }>((res) =>
+                const payload = entity.status.job.payload;
+
+                return Co.Seq([
+                    Co.Await<ValueOrErrors<Guid, any>, any>(() =>
+                        typeCheckingJob(payload), (_err: any) => {}).then(res => {
+                        const response = CustomEntity.Operations.checkResponseForErrors(res, 'typechecking')
+                        if(response.kind == "r") return response.value
+
+                        const job = {
+                            kind: 'typechecking',
+                            payload: payload,
+                            value: undefined,
+                            status: { kind: 'processing', processing: JobProcessing.Default(res.value.value) }
+                        } satisfies Job
+
+                        const u = Updater<CustomEntity>(entity =>
                             ({
-                                ...construction,
+                                ...entity,
+                                status: { kind: 'job', job: job },
+                                trace: [...entity.trace.slice(0, -1), job]
+                            })
+                        )
+                        return Co.SetState(u)
+                    }),
+                    awaitProcessingJob<{ valueDescriptorId: Guid}>((res: ResponseWithStatus<{
+                            valueDescriptorId: Guid
+                        }>): Job =>
+                            ({
+                                kind: 'typechecking',
+                                payload: payload,
                                 value: res,
                                 status: { kind: 'completed', how: JobProcessing.Default(res.id), took: 1234 }
                             } satisfies Job)
-                        ),
-                        Co.GetState().then((entity: CustomEntity) => {
-                            if(!( entity.status.kind === "job"
-                                && entity.status.job.kind == "construction"
-                                && entity.status.job.status.kind == "completed"
-                                && entity.status.job.value != undefined)) return Co.SetState(_ => entity);
-                            const currentJob = entity.status.job
-                            const currentJobResult = entity.status.job.value
-                            return Co.Seq([
-                                Co.SetState(Updater<CustomEntity>(entity => {
-                                    const job = {
-                                        kind: 'value',
-                                        from: currentJob,
-                                        value: undefined,
-                                        status: { kind: 'starting' }
-                                    } satisfies Job
-                                    return ({
+                    ),
+                    Co.GetState().then((entity: CustomEntity) => {
+                        if(!( entity.status.kind === "job"
+                            && entity.status.job.kind == "typechecking"
+                            && entity.status.job.status.kind == "completed"
+                            && entity.status.job.value != undefined)) return Co.SetState(_ => entity);
+                        const typeCheckingJobResponse = entity.status.job.value
+                        const construction = {
+                            kind: 'construction',
+                            from: entity.status.job,
+                            value: undefined,
+                            status: { kind: 'starting' }
+                        } satisfies Job
+                        return Co.Seq([
+                            Co.SetState(CustomEntity.Updaters.Core.job(replaceWith<Job>(construction)).then(CustomEntity.Updaters.Core.trace(
+                                replaceWith([
+                                    ...entity.trace,
+                                    construction,
+                                ])))),
+                            Co.Await<ValueOrErrors<Guid, any>, any>(() =>
+                                constructionJob({ValueDescriptorId: typeCheckingJobResponse.result.valueDescriptorId }), (_err: any) => {}).then(res => {
+                                const response = CustomEntity.Operations.checkResponseForErrors(res, 'construction job')
+                                if(response.kind == "r") return response.value
+                                const job = {
+                                    ...construction,
+                                    status: {kind: 'processing', processing: JobProcessing.Default(res.value.value)}
+                                } satisfies Job
+                                const next: Updater<CustomEntityStatus> = Updater<CustomEntityStatus> (curr => ({
+                                    kind: 'job',
+                                    job: job
+                                } satisfies CustomEntityStatus))
+                                const u = Updater<CustomEntity>(entity =>
+                                    ({
+                                        ...entity,
+                                        status: next(entity.status),
+                                        trace: [...entity.trace.slice(0, -1), job]
+                                    })
+                                )
+                                return Co.SetState(u)
+                            }),
+                            awaitProcessingJob<{ valueId: Guid }>((res) =>
+                                ({
+                                    ...construction,
+                                    value: res,
+                                    status: { kind: 'completed', how: JobProcessing.Default(res.id), took: 1234 }
+                                } satisfies Job)
+                            ),
+                            Co.GetState().then((entity: CustomEntity) => {
+                                if(!( entity.status.kind === "job"
+                                    && entity.status.job.kind == "construction"
+                                    && entity.status.job.status.kind == "completed"
+                                    && entity.status.job.value != undefined)) return Co.SetState(_ => entity);
+                                const currentJob = entity.status.job
+                                const currentJobResult = entity.status.job.value
+                                return Co.Seq([
+                                    Co.SetState(Updater<CustomEntity>(entity => {
+                                        const job = {
+                                            kind: 'value',
+                                            from: currentJob,
+                                            value: undefined,
+                                            valueId: currentJobResult.result.valueId,
+                                            status: { kind: 'starting' }
+                                        } satisfies Job
+                                        return ({
+                                            ...entity,
+                                            status: { kind: 'job', job: job },
+                                            trace: [
+                                                ...entity.trace,
+                                                job,
+                                            ]} satisfies CustomEntity)
+                                    })),
+                                    Co.Await<ValueOrErrors<RequestValueJobResponse, any>, any>(() =>
+                                        getValue(currentJobResult.result.valueId), (_err: any) => {}).then(res => {
+                                        const response = CustomEntity.Operations.checkResponseForErrors(res, 'request value')
+                                        if(response.kind == "r") return response.value
+
+                                        const completed = {
+                                            kind: 'value',
+                                            from: currentJob,
+                                            value: res.value.value,
+                                            valueId: currentJobResult.result.valueId,
+                                            status: { kind: 'completed', how: JobProcessing.Default(res.value.value.id), took: 0 }
+                                        } satisfies Job;
+                                        console.log(res.value.value)
+                                        return Co.SetState(Updater<CustomEntity>(entity => {
+                                            return ({
+                                                ...entity,
+                                                trace: [...entity.trace.slice(0, -1), completed],
+                                                status: { kind: 'result', value: ValueOrErrors.Default.return(res.value.value.value)},//JSON.stringify(AI_Value_Mock))},
+                                            })}))
+                                    }),
+                                ]) }),
+                        ]) }),
+                ])}),
+            Co.GetState().then((entity: CustomEntity) => {
+                if(!(
+                    entity.status.kind === 'job'
+                    && entity.status.job.kind === 'updater'
+                    && entity.status.job.status.kind === 'starting'
+                )) return Co.SetState(_ => entity);
+                debugger
+                const lastJob = entity.trace.at(-2)
+                if(!(lastJob && lastJob.kind == 'value' && lastJob.status.kind === 'completed')) return Co.SetState(_ => entity);
+        
+                const valueId = lastJob.valueId;
+                const delta = entity.status.job.delta;
+                debugger
+                const req = { ValueId: valueId, Parameter: { Delta: delta} } satisfies UpdaterJob;
+                return Co.Seq([
+                    Co.Await<ValueOrErrors<Guid, any>, any>(() =>
+                        updaterJob(req), (_err: any) => {}).then(res => {
+                        const response = CustomEntity.Operations.checkResponseForErrors(res, 'updater')
+                        if(response.kind == "r") return response.value
+
+                        const job = {
+                            kind: 'updater',
+                            delta: delta,
+                            value: undefined,
+                            status: { kind: 'processing', processing: JobProcessing.Default(res.value.value) }
+                        } satisfies Job
+
+                        const u = Updater<CustomEntity>(entity =>
+                            ({
+                                ...entity,
+                                status: { kind: 'job', job: job },
+                                trace: [...entity.trace.slice(0, -1), job]
+                            })
+                        )
+                        return Co.SetState(u)
+                    }),
+                    awaitProcessingJob<{ valueId: Guid}>((res: ResponseWithStatus<{
+                            valueId: Guid
+                        }>): Job =>
+                            ({
+                                kind: 'updater',
+                                delta: delta,
+                                value: res,
+                                status: { kind: 'completed', how: JobProcessing.Default(res.id), took: 1234 }
+                            } satisfies Job)
+                    ),
+                    Co.GetState().then((entity: CustomEntity) => {
+                        if(!( entity.status.kind === "job"
+                            && entity.status.job.kind == "updater"
+                            && entity.status.job.status.kind == "completed"
+                            && entity.status.job.value != undefined)) return Co.SetState(_ => entity);
+                        const currentJob = entity.status.job
+                        const currentJobResult = entity.status.job.value
+                        return Co.Seq([
+                            Co.SetState(Updater<CustomEntity>(entity => {
+                                const job = {
+                                    kind: 'value',
+                                    from: currentJob,
+                                    value: undefined,
+                                    valueId: currentJobResult.result.valueId,
+                                    status: { kind: 'starting' }
+                                } satisfies Job
+                                return ({
+                                    ...entity,
                                     status: { kind: 'job', job: job },
                                     trace: [
                                         ...entity.trace,
                                         job,
                                     ]} satisfies CustomEntity)
-                                })),
-                                Co.Await<ValueOrErrors<RequestValueJobResponse, any>, any>(() =>
-                                    getValue(currentJobResult.result.valueId), (_err: any) => {}).then(res => {
-                                    const response = CustomEntity.Operations.checkResponseForErrors(res, 'request value')
-                                    if(response.kind == "r") return response.value
+                            })),
+                            Co.Await<ValueOrErrors<RequestValueJobResponse, any>, any>(() =>
+                                getValue(currentJobResult.result.valueId), (_err: any) => {}).then(res => {
+                                const response = CustomEntity.Operations.checkResponseForErrors(res, 'request value')
+                                if(response.kind == "r") return response.value
 
-                                    const completed = {
-                                        kind: 'value',
-                                        from: currentJob,
-                                        value: res.value.value,
-                                        status: { kind: 'completed', how: JobProcessing.Default(res.value.value.id), took: 0 }
-                                    } satisfies Job;
-                                    console.log(res.value.value)
-                                    return Co.SetState(Updater<CustomEntity>(entity => {
-                                        return ({
+                                const completed = {
+                                    kind: 'value',
+                                    from: currentJob,
+                                    value: res.value.value,
+                                    valueId: currentJobResult.result.valueId,
+                                    status: { kind: 'completed', how: JobProcessing.Default(res.value.value.id), took: 0 }
+                                } satisfies Job;
+                                console.log(res.value.value)
+                                return Co.SetState(Updater<CustomEntity>(entity => {
+                                    return ({
                                         ...entity,
                                         trace: [...entity.trace.slice(0, -1), completed],
                                         status: { kind: 'result', value: ValueOrErrors.Default.return(res.value.value.value)},//JSON.stringify(AI_Value_Mock))},
                                     })}))
-                                }),
-                            ]) }),
-                    ]) }),
-            ])})
+                            }),
+                        ]) }),
+                ])
+                
+            })
+        ])
     );

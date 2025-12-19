@@ -4,7 +4,7 @@ import {List} from "immutable";
 import { TypeCheckingPayload } from "../job/request/state";
 
 export type TypeCheckingDataProvider = {
-    collect: () => ValueOrErrors<TypeCheckingPayload, string>;
+    collect: (curatedContext: string) => ValueOrErrors<TypeCheckingPayload, string>;
     prompt: () => ValueOrErrors<string, string>;
 };
 
@@ -17,16 +17,16 @@ export const makeTypeCheckingProviderFromWorkspace = (
      */
     node: Maybe<INode<Meta>>
 ): TypeCheckingDataProvider => {
-    const collect: () => ValueOrErrors<TypeCheckingPayload, string> = () => {
+    const collect: (curatedContext: string) => ValueOrErrors<TypeCheckingPayload, string> = (curatedContext: string) => {
         if(node == undefined) {
             return ValueOrErrors.Default.throw(List(["TypeCheckingDataProvider hasn't got a valid node"]))
         }
-        const payload = extractTypeCheckingPayload(node);
+        const payload = extractTypeCheckingPayload(node, curatedContext);
 
-        const pt = prompt ()
-        if(pt.kind == "errors") return ValueOrErrors.Default.throw(pt.errors)
-        if(payload.kind == "errors") return ValueOrErrors.Default.throw(payload.errors)
-        payload.value.Constructor =  `${pt.value}\nin ${payload.value.Constructor}`;
+        // const pt = prompt ()
+        // if(pt.kind == "errors") return ValueOrErrors.Default.throw(pt.errors)
+        // if(payload.kind == "errors") return ValueOrErrors.Default.throw(payload.errors)
+        // payload.value.Constructor =  `${pt.value}\nin ${payload.value.Constructor}`;
         return payload
     }
 
@@ -35,9 +35,9 @@ export const makeTypeCheckingProviderFromWorkspace = (
     return { collect, prompt };
 };
 
-const extractTypeCheckingPayload = (node: INode<Meta>)
+const extractTypeCheckingPayload = (node: INode<Meta>, curatedContext: string)
     : ValueOrErrors<TypeCheckingPayload, string> => {
-    debugger
+
     const f: Maybe<INode<Meta>> = FlatNode.Operations.findFolderByPath(
         node,
         node.metadata.path
@@ -48,7 +48,7 @@ const extractTypeCheckingPayload = (node: INode<Meta>)
             List(["Can't locate custom entity files"])
         );
     }
-
+    
     const children = f.children ?? [];
     const files    = children.filter(x => x.metadata.kind === "file");
 
@@ -81,7 +81,8 @@ const extractTypeCheckingPayload = (node: INode<Meta>)
         Types:         types.metadata.content,
         Uncertainties: uncertainties.metadata.content,
         Evidence:      evidence.metadata.content,
-        Accessors:     accessors
+        Accessors:     accessors,
+        CuratedContext: curatedContext,
     } as TypeCheckingPayload);
 }
 

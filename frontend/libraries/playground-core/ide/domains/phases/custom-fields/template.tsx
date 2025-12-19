@@ -1,6 +1,6 @@
 ﻿import {Template} from "ballerina-core";
 import {CustomEntity, CustomEntityForeignMutationsExpected, CustomFieldsView} from "./state";
-import {CustomFieldsRunner } from "./coroutines/custom-fields/runner"
+import {CustomFieldsRunner, DocumentsRunner} from "./coroutines/custom-fields/runner"
 
 export const CustomFieldsTemplate = Template.Default<
     CustomEntity,
@@ -11,4 +11,4 @@ export const CustomFieldsTemplate = Template.Default<
     <props.view
         {...props}
     />
-).any([CustomFieldsRunner]);
+).any([CustomFieldsRunner, DocumentsRunner]);

@@ -25,4 +25,4 @@ export const JobProcessing = {
 export type JobStatus =
     | { kind: 'starting' }
     | { kind: 'processing', processing: JobProcessing }
-    | { kind: 'completed', how: JobProcessing, took: number }
+    | { kind: 'completed', how: JobProcessing, took: number}

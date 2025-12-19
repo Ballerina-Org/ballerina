@@ -18,4 +18,17 @@ export const sendDelta =
     });
 }
 
+export const serializeDelta =
+    async (
+        name: string,
+        entityName: string,
+        delta: DeltaDrain): Promise<ValueOrErrors<any, any>> => {
+
+        return await axiosVOE<any, any>({
+            method: "POST",
+            url: `/entities/${name}/${entityName}/delta/serialize`,
+            data: { deltas: delta.left}
+        });
+    }
+
 

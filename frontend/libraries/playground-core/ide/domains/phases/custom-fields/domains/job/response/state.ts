@@ -16,8 +16,14 @@ export type ConstructionDescriptor = {
     valueId: Guid
 }
 
+export type UpdateDescriptor = {
+    valueId: Guid
+}
+
 export type TypeCheckingJobResponse = ResponseWithStatus<TypeCheckingDescriptor>
 export type ConstructionJobResponse = ResponseWithStatus<ConstructionDescriptor>
+export type UpdateJobResponse = ResponseWithStatus<UpdateDescriptor>
+
 
 export type RequestValueJobResponse = {
     id: Guid,

@@ -30,12 +30,6 @@ import {Maybe, ValueOrErrors, Option, replaceWith, unit} from "ballerina-core";
 import {ErrorsPanel} from "./errors.tsx";
 import {Hero} from "../hero/hero.tsx";
 import {languages} from "monaco-editor";
-import json = languages.json;
-import {CustomFieldsTracker} from "../custom-fields/layout.tsx";
-import {
-    makeTypeCheckingProviderFromWorkspace
-} from "playground-core/ide/domains/phases/custom-fields/domains/data-provider/state.ts";
-
 declare const __ENV__: Record<string, string>;
 console.table(__ENV__);
 

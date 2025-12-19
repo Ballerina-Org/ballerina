@@ -2,7 +2,7 @@
 import {
     caseUpdater,
     Coroutine,
-    ForeignMutationsInput,
+    ForeignMutationsInput, Guid,
     Maybe,
     Option,
     replaceWith,
@@ -18,14 +18,36 @@ import {
     JobProcessing, JobStatus,
 } from "./domains/job/state";
 import {TypeCheckingDataProvider} from "./domains/data-provider/state";
-import {ConstructionJobResponse, RequestValueJobResponse, TypeCheckingJobResponse} from "./domains/job/response/state";
+import {
+    ConstructionJobResponse,
+    RequestValueJobResponse,
+    TypeCheckingJobResponse,
+    UpdateJobResponse
+} from "./domains/job/response/state";
 import {TypeCheckingPayload} from "./domains/job/request/state";
 import {Co} from "./coroutines/custom-fields/builder";
+import {getDocument} from "../../../api/documents";
+
+
+export type Document = {
+    id: Guid,
+    name: string
+}
+type DocumentsBase = {
+    available: Document[];
+};
+export type Documents =
+    (| { kind: 'selected', document: Document }
+     | { kind: 'loaded', document: Document, content: string } 
+     | { kind: 'not-selected' }) & DocumentsBase
+
+const noDocuments: Document[] = [];
 
 export type Job =
     (| { kind: "typechecking", payload: TypeCheckingPayload, value: Maybe<TypeCheckingJobResponse>  }
      | { kind: "construction", from: Job, value: Maybe<ConstructionJobResponse> }
-     | { kind: "value", from: Job, value: Maybe<RequestValueJobResponse> }
+     | { kind: "value", from: Job, value: Maybe<RequestValueJobResponse>, valueId: Guid } 
+     | { kind: 'updater', delta: string,  value: Maybe<UpdateJobResponse> }
     ) & { status: JobStatus }
 
 
@@ -69,12 +91,14 @@ export type CustomEntityStatus =
     | { kind: "result", value: ValueOrErrors<string, string> }
 
 export type CustomEntity = {
+    documents: Documents,
     status: CustomEntityStatus,
     trace: Job [],
 }
 
 export const CustomEntity = {
     Default: (): CustomEntity => ({
+        documents: { kind: 'not-selected', available: noDocuments} ,
         status: { kind: 'idle' },
         trace: [],
     }),
@@ -82,54 +106,82 @@ export const CustomEntity = {
         Core: {
             ...simpleUpdater<CustomEntity>()("status"),
             ...simpleUpdater<CustomEntity>()("trace"),
+            ...simpleUpdater<CustomEntity>()("documents"),
             ...caseUpdater<CustomEntity>()("status")("job"),
             ...caseUpdater<CustomEntity>()("status")("result"),
-        },
-        Coroutine: {
             fail: (msg: string | List<string>) => {
                 const messages =
                     typeof msg === "string" ? List([msg]) : msg;
                 const failed = {
-                        kind: 'result',
-                        value: ValueOrErrors.Default.throw(messages)
-                    } as CustomEntityStatus
-                
+                    kind: 'result',
+                    value: ValueOrErrors.Default.throw(messages)
+                } as CustomEntityStatus
+
                 return CustomEntity.Updaters.Core.status(replaceWith(failed))
             },
+        },
+        Coroutine: {
             checkIfMaxTries: (count: number) =>
                 Updater<CustomEntity>(entity => {
                     if (entity.status.kind !== 'job' || entity.status.job.status.kind !== 'processing' || entity.status.job.status.processing.checkCount <= count) return entity;
 
-                    return CustomEntity.Updaters.Coroutine.fail("Job processing has been canceled due to too many retries")(entity)
+                    return CustomEntity.Updaters.Core.fail("Job processing has been canceled due to too many retries")(entity)
                 })
         },
         Template: {
-            start: (provider: TypeCheckingDataProvider): Updater<CustomEntity> =>
-                {
-                    const payload = provider.collect()
-                    if(payload.kind == "errors") return CustomEntity.Updaters.Coroutine.fail(payload.errors)
+            selectDocument: (doc: string, id: string) => {
 
-                    return Updater<CustomEntity>(entity => ({
+                return Updater<CustomEntity>(e => {
+                    const document = e.documents.available.find(x => x.id == id)!
+                    return CustomEntity.Updaters.Core.documents(d=>({...d, kind: 'selected', document: document }))
+                        .then(CustomEntity.Updaters.Core.documents(d=>({...d, kind: 'loaded', document: document, content: doc })))(e)
+                })
+
+            }, 
+            start: (provider: TypeCheckingDataProvider): Updater<CustomEntity> =>
+                Updater<CustomEntity>(entity =>
+                {
+                    if(entity.documents.kind !== 'loaded') 
+                        return CustomEntity.Updaters.Core.fail(List(["Can't start CE workflow without loaded document"]))(entity);
+                    
+                    const payload = provider.collect(entity.documents.content)
+                    debugger
+                    if(payload.kind == "errors") return CustomEntity.Updaters.Core.fail(payload.errors)(entity);
+
+                    const job = {
+                        kind: 'typechecking',
+                        payload: payload.value,
+                        value: undefined,
+                        status: {kind: 'starting'}
+
+                    } satisfies Job
+                    return ({
                         ...entity,
                         status: {
                             kind: 'job',
-                            job: {
-                                kind: 'typechecking',
-                                payload: payload.value,
-                                value: undefined,
-                                status: {kind: 'starting'}
-
-                            } satisfies Job
+                            job: job
                         },
-                        trace: [{
-                            kind: 'typechecking',
-                            payload: payload.value,
-                            value: undefined,
-                            status: {kind: 'starting'}
+                        trace: [job]
+                    } satisfies CustomEntity)
+                }),
+            update: (delta: string): Updater<CustomEntity> =>
+            {
+                const job = {
+                    kind: 'updater',
+                    value: undefined,
+                    status: {kind: 'starting'},
+                    delta: delta
 
-                        }]
-                    } satisfies CustomEntity))
-                },
+                } satisfies Job;
+                return Updater<CustomEntity>(entity => ({
+                    ...entity,
+                    status: {
+                        kind: 'job',
+                        job: job
+                    },
+                    trace: [...entity.trace, job]
+                } satisfies CustomEntity))
+            },
         }
     },
     Operations: {
@@ -143,10 +195,10 @@ export const CustomEntity = {
         checkResponseForErrors:
             (res: Sum<ValueOrErrors<any, any>, any>, name: string): Option<Coroutine<CustomEntity, CustomEntity, Unit>> => {
                 if (res.kind == "r") {
-                    return Option.Default.some(Co.SetState(CustomEntity.Updaters.Coroutine.fail(`Unknown error on ${name}  status, sum: ${JSON.stringify(res)}`)))
+                    return Option.Default.some(Co.SetState(CustomEntity.Updaters.Core.fail(`Unknown error on ${name}  status, sum: ${JSON.stringify(res)}`)))
                 } else if (res.value.kind == "errors")
 
-                    return Option.Default.some(Co.SetState(CustomEntity.Updaters.Coroutine.fail(`Unknown error on ${name}  status, voe: ${JSON.stringify(res)}`)))
+                    return Option.Default.some(Co.SetState(CustomEntity.Updaters.Core.fail(`Unknown error on ${name}  status, voe: ${JSON.stringify(res)}`)))
 
                 return Option.Default.none()
             },
