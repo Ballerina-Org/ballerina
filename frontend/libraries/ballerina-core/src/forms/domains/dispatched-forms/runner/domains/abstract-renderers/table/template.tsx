@@ -889,6 +889,29 @@ export const TableAbstractRenderer = <
                       ),
                     );
                   },
+              duplicateAll: !props.context.apiMethods.includes("duplicateAll")
+                ? undefined
+                : (flags: Flags | undefined) => {
+                    const delta: DispatchDelta<Flags> = {
+                      kind: "TableDuplicateAll",
+                      filtersAndSorting:
+                        props.context.customFormState.filterAndSortParam,
+                      flags,
+                      sourceAncestorLookupTypeNames:
+                        props.context.lookupTypeAncestorNames,
+                    };
+                    props.foreignMutations.onChange(
+                      Option.Default.none(),
+                      delta,
+                    );
+                    props.setState(
+                      TableAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ),
+                    );
+                  },
               updateFilters: (
                 filters: Map<string, List<ValueFilter>>,
                 shouldReload: boolean,

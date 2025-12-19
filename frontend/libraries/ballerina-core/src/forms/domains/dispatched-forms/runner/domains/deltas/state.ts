@@ -339,6 +339,12 @@ export type DispatchDeltaTable<T = Unit> =
       id: string;
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
+    }
+  | {
+      kind: "TableDuplicateAll";
+      filtersAndSorting: string;
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
     };
 export type DispatchDeltaOne<T = Unit> =
   | {
@@ -485,6 +491,7 @@ export type DispatchDeltaTransferTable<DispatchDeltaTransferCustom> =
   | { Discriminator: "TableRemoveAt"; RemoveAt: string }
   | { Discriminator: "TableRemoveAll"; RemoveAll: Unit }
   | { Discriminator: "TableDuplicateAt"; DuplicateAt: string }
+  | { Discriminator: "TableDuplicateAll"; DuplicateAll: string }
   | {
       Discriminator: "TableMoveFromTo";
       MoveFromTo: [string, string];
@@ -1499,6 +1506,23 @@ export const DispatchDeltaTransfer = {
               delta.flags
                 ? [[delta.flags, `[TableDuplicateAt][${delta.id}]`]]
                 : [],
+            ]);
+          }
+          if (delta.kind == "TableDuplicateAll") {
+            return ValueOrErrors.Default.return<
+              [
+                DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>,
+              ],
+              string
+            >([
+              {
+                Discriminator: "TableDuplicateAll",
+                DuplicateAll: delta.filtersAndSorting,
+              },
+              `[TableDuplicateAll]`,
+              delta.flags ? [[delta.flags, `[TableDuplicateAll]`]] : [],
             ]);
           }
           if (delta.kind == "TableMoveTo") {
