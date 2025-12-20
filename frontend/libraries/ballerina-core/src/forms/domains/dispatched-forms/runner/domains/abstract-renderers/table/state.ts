@@ -460,6 +460,7 @@ export type TableAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
     | ((key: string, to: string, flags: Flags | undefined) => void)
     | undefined;
   duplicate: ValueCallbackWithOptionalFlags<string, Flags> | undefined;
+  actionOnAll: VoidCallbackWithOptionalFlags<Flags> | undefined;
   updateFilters: (
     filters: Map<string, List<ValueFilter>>,
     shouldReload: boolean,

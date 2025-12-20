@@ -126,6 +126,7 @@ type SerializedTableApi = {
 const TableMethods = {
   add: "add",
   duplicate: "duplicate",
+  actionOnAll: "actionOnAll",
   remove: "remove",
   removeAll: "removeAll",
   move: "move",
