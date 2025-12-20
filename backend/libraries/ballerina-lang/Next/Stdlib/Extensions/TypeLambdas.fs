@@ -32,9 +32,12 @@ module TypeLambdas =
           |> NonEmptyList.ToSeq
           |> Seq.fold (fun acc (id, typeValue, kind) -> acc |> Map.add id (typeValue, kind)) bindings
 
+        let symbols =
+          ext.ReferencedSymbols |> TypeExprEvalSymbols.Combine typeCheckState.Symbols
+
         { typeCheckState with
             Bindings = bindings
-            Symbols = typeCheckState.Symbols }
+            Symbols = symbols }
 
     static member RegisterExprEvalContext
       (ext: TypeLambdaExtension<'ext, 'extTypeLambda>)

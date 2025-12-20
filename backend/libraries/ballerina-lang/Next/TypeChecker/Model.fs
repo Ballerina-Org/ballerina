@@ -15,6 +15,7 @@ module Model =
   open Ballerina.Collections.NonEmptyList
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.EquivalenceClasses
+  open Ballerina.StdLib.Map
 
 
   type TypeBindings = Map<ResolvedIdentifier, TypeValue * Kind>
@@ -32,6 +33,13 @@ module Model =
       IdentifiersResolver: Map<Identifier, ResolvedIdentifier>
       UnionCases: TypeSymbols
       RecordFields: TypeSymbols }
+
+    static member Combine (s1: TypeExprEvalSymbols) (s2: TypeExprEvalSymbols) =
+      { Types = s1.Types |> Map.merge s2.Types
+        ResolvedIdentifiers = s1.ResolvedIdentifiers |> Map.merge s2.ResolvedIdentifiers
+        IdentifiersResolver = s1.IdentifiersResolver |> Map.merge s2.IdentifiersResolver
+        UnionCases = s1.UnionCases |> Map.merge s2.UnionCases
+        RecordFields = s1.RecordFields |> Map.merge s2.RecordFields }
 
   type KindEvalContext = Map<string, Kind>
 

@@ -75,6 +75,7 @@ module Model =
   and TypeLambdaExtension<'ext, 'extTypeLambda> =
     { ExtensionType: ResolvedIdentifier * TypeValue * Kind
       ReferencedTypes: NonEmptyList<ResolvedIdentifier * TypeValue * Kind>
+      ReferencedSymbols: TypeExprEvalSymbols
       Value: 'extTypeLambda // eval value bindings will contain an entry from the extension identifier to this value (modulo DU packaging)
       ValueLens: PartialLens<'ext, 'extTypeLambda> // lens to handle wrapping and upwrapping between the extension value and the core value
       EvalToTypeApplicable: ExtensionEvaluator<'ext> // implementation of what happens at runtime when the extension is type applied (instantiation)
