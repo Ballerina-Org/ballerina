@@ -234,6 +234,7 @@ module Runner =
           [ tableCase "remove" TableMethod.Remove
             tableCase "removeAll" TableMethod.RemoveAll
             tableCase "duplicate" TableMethod.Duplicate
+            tableCase "actionOnAll" TableMethod.ActionOnAll
             tableCase "move" TableMethod.Move ]
         )
       )

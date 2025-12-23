@@ -223,8 +223,8 @@ module Model =
     | Remove
     | RemoveAll
     | Duplicate
+    | ActionOnAll
     | Move
-
 
   type CrudMethod =
     | Get
