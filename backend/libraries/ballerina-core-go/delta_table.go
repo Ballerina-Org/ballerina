@@ -19,6 +19,7 @@ const (
 	tableDuplicateAt deltaTableEffectsEnum = "TableDuplicateAt"
 	tableAdd         deltaTableEffectsEnum = "TableAdd"
 	tableAddEmpty    deltaTableEffectsEnum = "TableAddEmpty"
+	tableActionOnAll deltaTableEffectsEnum = "TableActionOnAll"
 )
 
 type DeltaTable[a any, deltaA any] struct {
@@ -32,6 +33,7 @@ type DeltaTable[a any, deltaA any] struct {
 	moveFromTo    *Tuple2[uuid.UUID, uuid.UUID]
 	duplicateAt   *uuid.UUID
 	add           *a
+	actionOnAll   *string
 }
 
 var _ json.Unmarshaler = &DeltaTable[Unit, Unit]{}
@@ -49,6 +51,7 @@ func (d DeltaTable[a, deltaA]) MarshalJSON() ([]byte, error) {
 		MoveFromTo    *Tuple2[uuid.UUID, uuid.UUID]
 		DuplicateAt   *uuid.UUID
 		Add           *a
+		ActionOnAll   *string
 	}{
 		DeltaBase:     d.DeltaBase,
 		Discriminator: d.discriminator,
@@ -60,6 +63,7 @@ func (d DeltaTable[a, deltaA]) MarshalJSON() ([]byte, error) {
 		MoveFromTo:    d.moveFromTo,
 		DuplicateAt:   d.duplicateAt,
 		Add:           d.add,
+		ActionOnAll:   d.actionOnAll,
 	})
 }
 
@@ -75,6 +79,7 @@ func (d *DeltaTable[a, deltaA]) UnmarshalJSON(data []byte) error {
 		MoveFromTo    *Tuple2[uuid.UUID, uuid.UUID]
 		DuplicateAt   *uuid.UUID
 		Add           *a
+		ActionOnAll   *string
 	}
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
@@ -91,6 +96,7 @@ func (d *DeltaTable[a, deltaA]) UnmarshalJSON(data []byte) error {
 	d.moveFromTo = aux.MoveFromTo
 	d.duplicateAt = aux.DuplicateAt
 	d.add = aux.Add
+	d.actionOnAll = aux.ActionOnAll
 	return nil
 }
 
@@ -150,6 +156,12 @@ func NewDeltaTableAddEmpty[a any, deltaA any]() DeltaTable[a, deltaA] {
 		discriminator: tableAddEmpty,
 	}
 }
+func NewDeltaTableActionOnAll[a any, deltaA any](actionOnAll string) DeltaTable[a, deltaA] {
+	return DeltaTable[a, deltaA]{
+		discriminator: tableActionOnAll,
+		actionOnAll:   &actionOnAll,
+	}
+}
 
 func MatchDeltaTable[a any, deltaA any, Result any](
 	onValue func(Tuple2[uuid.UUID, deltaA]) func(ReaderWithError[Unit, a]) (Result, error),
@@ -161,6 +173,7 @@ func MatchDeltaTable[a any, deltaA any, Result any](
 	onDuplicateAt func(uuid.UUID) (Result, error),
 	onAdd func(a) (Result, error),
 	onAddEmpty func() (Result, error),
+	onActionOnAll func(string) (Result, error),
 ) func(DeltaTable[a, deltaA]) func(ReaderWithError[Unit, Table[a]]) (Result, error) {
 	return func(delta DeltaTable[a, deltaA]) func(ReaderWithError[Unit, Table[a]]) (Result, error) {
 		return func(table ReaderWithError[Unit, Table[a]]) (Result, error) {
@@ -189,6 +202,8 @@ func MatchDeltaTable[a any, deltaA any, Result any](
 				return onAdd(*delta.add)
 			case tableAddEmpty:
 				return onAddEmpty()
+			case tableActionOnAll:
+				return onActionOnAll(*delta.actionOnAll)
 			}
 			return result, NewInvalidDiscriminatorError(string(delta.discriminator), "DeltaTable")
 		}
