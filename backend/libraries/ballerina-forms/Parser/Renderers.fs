@@ -1035,6 +1035,7 @@ module Renderers =
                               "remove", TableMethod.Remove
                               "removeAll", TableMethod.RemoveAll
                               "duplicate", TableMethod.Duplicate
+                              "actionOnAll", TableMethod.ActionOnAll
                               "move", TableMethod.Move ]
                           |> Map.tryFindWithError k "TableMethod" k
                           |> sum.MapError(Errors.Map(String.appendNewline $"...when parsing actionLabels"))
