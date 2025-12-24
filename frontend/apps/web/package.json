@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@rspack/cli": "0.5.5",
-    "@rspack/core": "0.5.5",
+    "@rspack/core": "1.6.7",
     "@rspack/plugin-react-refresh": "1.0.1",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
