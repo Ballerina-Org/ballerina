@@ -491,7 +491,7 @@ export type DispatchDeltaTransferTable<DispatchDeltaTransferCustom> =
   | { Discriminator: "TableRemoveAt"; RemoveAt: string }
   | { Discriminator: "TableRemoveAll"; RemoveAll: Unit }
   | { Discriminator: "TableDuplicateAt"; DuplicateAt: string }
-  | { Discriminator: "TableActionOnAll"; FiltersAndSorting: string }
+  | { Discriminator: "TableActionOnAll"; ActionOnAll: string }
   | {
       Discriminator: "TableMoveFromTo";
       MoveFromTo: [string, string];
@@ -1519,7 +1519,7 @@ export const DispatchDeltaTransfer = {
             >([
               {
                 Discriminator: "TableActionOnAll",
-                FiltersAndSorting: delta.filtersAndSorting,
+                ActionOnAll: delta.filtersAndSorting,
               },
               `[TableActionOnAll]`,
               delta.flags ? [[delta.flags, `[TableActionOnAll]`]] : [],
