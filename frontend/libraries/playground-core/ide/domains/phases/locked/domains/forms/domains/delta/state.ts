@@ -12,5 +12,12 @@ export type IdeDeltaTransfer = [
     DispatchDeltaTransferComparand,
     AggregatedFlags<any>,
 ]
-export type Deltas = List<IdeDeltaTransfer> 
-export type DeltaDrain = Product<Deltas, Deltas>
+
+/**
+ * `DeltaDrain` contains two independent streams of `IdeDeltaTransfer`:
+ *
+ * - **Left**  — current, unprocessed deltas
+ * - **Right** — all previously processed deltas
+ *
+ */
+export type DeltaDrain = Product<List<IdeDeltaTransfer>, List<IdeDeltaTransfer>>

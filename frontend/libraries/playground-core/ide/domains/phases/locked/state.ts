@@ -17,7 +17,7 @@ import {
 } from "./domains/folders/state"
 import {KnownSections} from "../../types/Json"
 import { List} from "immutable";
-import {DeltaDrain, Deltas, IdeDeltaTransfer} from "./domains/forms/domains/delta/state"
+import {DeltaDrain, IdeDeltaTransfer} from "./domains/forms/domains/delta/state"
 import {INode, Meta} from "./domains/folders/node";
 import {Ide} from "../../../state";
 import {LockedDisplay, UI, UIFramework} from "./domains/forms/state";
@@ -34,9 +34,7 @@ export type LockedPhase = {
     settings: Visibility;
     step: LockedStep,
     validatedSpec: Option<KnownSections>,
-    errors: List<string>,
-    customFields: CustomEntity,
-    automated: boolean // validate, run forms (for current launcher) on every keystroke / seconds elapsed
+    errors: List<string>
 };
 
 export const LockedPhase = {
@@ -45,9 +43,7 @@ export const LockedPhase = {
             name: name,
             workspace: WorkspaceState.Default(variant, node),
             validatedSpec: Option.Default.none(),
-            automated: false,
             settings: 'fully-invisible',
-            customFields: CustomEntity.Default(),
             errors: List<string>()
         }),
     Updaters: {
@@ -57,31 +53,42 @@ export const LockedPhase = {
             ...caseUpdater<LockedPhase>()("workspace")("selected"),
             ...caseUpdater<LockedPhase>()("workspace")("view"),
             ...simpleUpdater<LockedPhase>()("errors"),
-            ...simpleUpdater<LockedPhase>()("automated"),
-            ...simpleUpdater<LockedPhase>()("customFields"),
             toggleSettings: (): Updater<LockedPhase> => 
-                 Updater(ls => ({ 
-                     ...ls, 
-                     settings: ls.settings == 'fully-invisible' ? 'fully-visible':'fully-invisible'}) satisfies LockedPhase),
-            toDisplay: (launchers: string[]): Updater<LockedPhase> => 
-               
-                    Updater(ld => ({ 
-                        ...ld,
+                 Updater(current => ({ 
+                     ...current, 
+                     settings: current.settings == 'fully-invisible' ? 'fully-visible' : 'fully-invisible'}) satisfies LockedPhase),
+            toDisplay: (launchers: string[], spec: KnownSections, name: string, workspace: Extract<WorkspaceState, { kind: 'selected' }>): Updater<LockedPhase> =>
+                    Updater(current => ({ 
+                        ...current,
                         step: { 
                             kind: 'display', 
                             display: {
-                            ui: {
-                                kind: 'ui-kit',
-                                theme: 'blp'
-                            },
-                            launchers: { 
-                                names: launchers, 
-                                selected: Option.Default.none()
-                            },
-                            deltas: { visibility: 'fully-invisible', drain: Option.Default.none()}
-
-                        
-                        }}})),
+                                ui: {
+                                    kind: 'ui-kit',
+                                    theme: 'blp'
+                                },
+                                workspace: {
+                                  nodes: workspace.nodes,
+                                  selected: workspace.file  
+                                },
+                                launchers: { 
+                                    names: launchers, 
+                                    selected: Option.Default.none()
+                                },
+                                show: {
+                                    deltas: "fully-invisible",
+                                    customEntities: 'fully-invisible',
+                                },
+                                deltas: Option.Default.none(),
+                                customEntity: Option.Default.none(),
+                                spec: {
+                                    specName: name,
+                                    specDefinition: spec,
+                                    specPath: current.workspace.nodes.metadata.path.split('/')
+                                }
+                            }
+                        }
+                    })),
             startDeltas: (): Updater<LockedPhase> => 
                 LockedPhase.Updaters.Core.display(
                     LockedDisplay.Updaters.Core.deltas(d => ({...d, drain: Option.Default.some(
@@ -95,10 +102,10 @@ export const LockedPhase = {
                         ...d.deltas, 
                         drain: 
                             Option.Updaters.some(
-                                Product.Updaters.left<Deltas, Deltas>(current =>
+                                Product.Updaters.left<List<IdeDeltaTransfer>, List<IdeDeltaTransfer>>(current =>
                                     current.push(delta)
                                 )
-                            )(d.deltas.drain)
+                            )(d.deltas)
                     }
                 }
                 )),
@@ -108,17 +115,17 @@ export const LockedPhase = {
                             ...d, 
                             drain:
                                 Option.Updaters.some(
-                                    Product.Updaters.right<Deltas, Deltas>(right =>
-                                        right.concat(d.drain.kind == "l" ? List([]) : d.drain.value.left)
+                                    Product.Updaters.right<List<IdeDeltaTransfer>, List<IdeDeltaTransfer>>(right =>
+                                        right.concat(d.kind == "l" ? List([]) : d.value.left)
                                     )
                                     .then(
-                                        Product.Updaters.left<Deltas, Deltas>(
+                                        Product.Updaters.left<List<IdeDeltaTransfer>, List<IdeDeltaTransfer>>(
                                             replaceWith(
                                                 List()
                                             )
                                         )
                                     )
-                                )(d.drain)
+                                )(d)
                     }))
                 ),
             selectLauncher: (launcher: string): Updater<LockedPhase> =>

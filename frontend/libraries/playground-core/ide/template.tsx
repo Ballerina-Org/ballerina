@@ -16,11 +16,14 @@ import { SelectionPhase, SelectionPhaseForeignMutationsExpected, SelectionPhaseV
 import {SelectionPhaseTemplate} from "./domains/phases/selection/template";
 import {BootstrapPhaseTemplate} from "./domains/phases/bootstrap/template";
 
-
 /*
 
 Important: Hero/Bootstrap/Selecting/Locked embeddings are currently not used 
-in favour of phases tags processed with caseUpdaters
+in favour of phases tags processed with caseUpdaters.
+
+Ide processing as tags is promising to keep the data flow consistent but at the end it may not scale well 
+(ideally it should and we are moving into that direction)
+this is still to decide what is better, phases tags of plain template components
 
 */
 

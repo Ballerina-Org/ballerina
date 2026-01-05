@@ -14,11 +14,11 @@ export const BootstrapPhase = {
     Updaters: {
         Core: {
             ...simpleUpdater<BootstrapPhase>()("errors"),
-            ready: (): Updater<BootstrapPhase> => Updater(b => ({...b, kind: 'ready'}))
+            ready: (): Updater<BootstrapPhase> => Updater(current => ({...current, kind: 'ready'}))
         },
         Coroutine: {
             init: (msg: string): Updater<BootstrapPhase> =>
-                Updater(b => ({...b, kind: 'initializing', message: msg})),
+                Updater(current => ({...current, kind: 'initializing', message: msg})),
         }
     }
 }

@@ -4,7 +4,7 @@
     validateCompose, validateExplore, getSpec, seedPath, getKeys, validateBridge, WorkspaceVariant,
     Ide, WorkspaceState, LockedDisplay,
     IdeView, HeroPhase, BootstrapPhase,
-    Deltas, Delta, CustomEntity, CustomFieldsTemplate, FlatNode
+     CustomEntity, CustomFieldsTemplate, FlatNode
 } from "playground-core";
 import "react-grid-layout/css/styles.css";
 import React, {useState} from "react";
@@ -100,9 +100,10 @@ export const IdeLayout: IdeView = (props) => {
                                         props.setState(
                                             Ide.Updaters.Core.phase.locked(
                                                 LockedPhase.Updaters.Core.display(
-                                                    LockedDisplay.Updaters.Core.deltas(d => ({
-                                                        ...d, 
-                                                        visibility: d.visibility == 'fully-visible' ? 'fully-invisible' : 'fully-visible'} satisfies Delta)))))
+                                                    LockedDisplay.Updaters.Core.show(show => ({
+                                                        ...show,
+                                                        delta: show.deltas !== 'fully-visible' ? 'fully-invisible' : 'fully-visible'
+                                                    })))))
                                     }
                                     hideRight={hideForms}
                                     context={props.context}
@@ -195,7 +196,7 @@ export const IdeLayout: IdeView = (props) => {
                                         }
                             
                                         props.setState(
-                                            Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.toDisplay(launchers.value))
+                                            Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.toDisplay(launchers.value, props.context.phase.locked.validatedSpec.value, props.context.phase.locked.name))
                                             );
                                         forceRerender();
                                     }}
@@ -269,7 +270,7 @@ export const IdeLayout: IdeView = (props) => {
                                                                     props.setState(
                                                                         Ide.Updaters.Core.phase.locked(
                                                                             LockedPhase.Updaters.Core.display(
-                                                                                LockedDisplay.Updaters.Core.change ('ui-kit', 'blp')
+                                                                                LockedDisplay.Updaters.Core.changeUIFramework ('ui-kit', 'blp')
                                                                             )
                                                                         )
                                                                     )
@@ -281,7 +282,7 @@ export const IdeLayout: IdeView = (props) => {
                                                                    props.setState(
                                                                        Ide.Updaters.Core.phase.locked(
                                                                            LockedPhase.Updaters.Core.display(
-                                                                               LockedDisplay.Updaters.Core.change ('tailwind', 'lofi')
+                                                                               LockedDisplay.Updaters.Core.changeUIFramework ('tailwind', 'lofi')
                                                                            )
                                                                        )
                                                                    )
@@ -291,23 +292,30 @@ export const IdeLayout: IdeView = (props) => {
                                             
                                                         </div>
                                                         <DispatcherFormsApp
-                                                        key={version}
-                                                        ui={props.context.phase.locked.step.display.ui}
-                                                        showDeltas={props.context.phase.locked.step.display.deltas.visibility == 'fully-visible'}
-                                                        deltas={props.context.phase.locked.step.display.deltas.drain}
-                                                        specName={props.context.phase.locked.name}
-                                                        path={props.context.phase.locked.workspace.file.metadata.path.split("/")}
-                                                        launcher={props.context.phase.locked.step.display.launchers.selected.value}
-                                                        customEntity={
-                                                         Option.Default.some({
-                                                             value: props.context.phase.locked.customFields,
-                                                             nodes: props.context.phase.locked.workspace.nodes,
-                                                             selected: props.context.phase.locked.workspace.file
-                                                         })   
-                                                        }
-                                                        setState={props.setState}
-                                                        //typeName={"Person"}
-                                                        spec={props.context.phase.locked.validatedSpec.value}/></>
+                                                            key={version}
+                                                            {
+                                                                ...{
+                                                                    ...props.context.phase.locked.step.display,
+
+                                                                    CustomEntity: {
+                                                                        Option: Option.Default.some({
+                                                                            value: CustomEntity.Default(),
+                                                                            nodes: props.context.phase.locked.workspace.nodes,
+                                                                            selected: props.context.phase.locked.workspace.file,
+                                                                        }),
+                                                                    },
+
+                                                                    spec: {
+                                                                        specDefinition: props.context.phase.locked.validatedSpec.value,
+                                                                        specName: props.context.phase.locked.name,
+                                                                        specPath: props.context.phase.locked.workspace.file.metadata.path.split("/"),
+                                                                    },
+                                                                    setState: props.setState
+                                                                }
+                                                            }
+                                                        />
+                                                    </>
+                                                              
                                                 }
                                             </div>
                                             }

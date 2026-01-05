@@ -4,6 +4,14 @@ import JSZip, { JSZipObject } from "jszip";
 import {WorkspaceVariant} from "../locked/domains/folders/state";
 import {BootstrapPhase} from "../bootstrap/state";
 
+const defaultSpecName = "Spec Name"
+
+const countStartingWith = (arr: string[], prefix: string): number =>
+    arr.reduce(
+        (count, x) => count + (x.startsWith(prefix) ? 1 : 0),
+        0
+    );
+
 export type SelectionStep = 
     | 'idle'
     | 'upload-started' 
@@ -20,13 +28,21 @@ export type SelectionPhase = {
 }
 
 export const SelectionPhase = {
-    Default: (specs: Spec [], variant: WorkspaceVariant) : SelectionPhase => ({ 
-        specs: specs, 
-        kind: 'idle', 
-        variant: variant,
-        errors: List<string>(),
-        name: Value.Default("Spec Name") 
-    }),
+    Default: (specs: Spec [], variant: WorkspaceVariant) : SelectionPhase => {
+
+        const defaultNameUsed = countStartingWith(specs.map(x => x.name), defaultSpecName);
+        
+        return ({
+            kind: 'idle',
+            specs: specs,
+            variant: variant,
+            errors: List<string>(),
+            name: Value.Default( 
+                defaultNameUsed >= 1
+                ? `${defaultSpecName} ${defaultNameUsed + 1}`
+                : defaultSpecName)
+        })
+    },
     Updaters: {
         Core: {
             ...simpleUpdater<SelectionPhase>()("name"),
@@ -34,20 +50,20 @@ export const SelectionPhase = {
         }
     },
     Operations: {
-        tryParseJsonObject: (str: string): Record<string, unknown> | null => {
-            try {
-                if (str.charCodeAt(0) === 0xFEFF) {
-                    str = str.slice(1);
-                }
-                const parsed = JSON.parse(str);
-                if (parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)) {
-                    return parsed as Record<string, unknown>;
-                }
-            } catch(e: any) {
-                return null;
-            }
-            return null;
-        },
+        // tryParseJsonObject: (str: string): Record<string, unknown> | null => {
+        //     try {
+        //         if (str.charCodeAt(0) === 0xFEFF) {
+        //             str = str.slice(1);
+        //         }
+        //         const parsed = JSON.parse(str);
+        //         if (parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)) {
+        //             return parsed as Record<string, unknown>;
+        //         }
+        //     } catch(e: any) {
+        //         return null;
+        //     }
+        //     return null;
+        // },
         handleZip: async (source: File | null): Promise<ValueOrErrors<{ path: string[]; content: string}[], string>> => {
             if(!source) 
                 return ValueOrErrors.Default.throwOne("UploadZip source must be defined");

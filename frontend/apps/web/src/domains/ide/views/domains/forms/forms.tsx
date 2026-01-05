@@ -18,7 +18,7 @@ import {
     DispatchInjectedPrimitive,
     DispatchOnChange,
     AggregatedFlags, LookupApiOne, DispatchDeltaTransferComparand, DispatchDeltaTransferV2, ConcreteRenderers,
-    dispatchToAPIRawValue, dispatchToAPIRawValueV2, IdeTypeConverters, Maybe,
+    dispatchToAPIRawValue, dispatchToAPIRawValueV2, IdeTypeConverters, Maybe, Option
 } from "ballerina-core";
 import {List, Set } from "immutable";
 import {FormsSeedEntity} from "playground-core/ide/domains/types/seeds";
@@ -45,11 +45,23 @@ import {
 } from "../../../../dispatched-passthrough-form/views/concrete-renderers.tsx";
 import { v4 } from "uuid";
 import {
-    DispatchFromConfigApis, expand,
+    DispatchFromConfigApis,
+    expand,
     IdePhase,
-    IdeEntityApis, LockedPhase, sendDelta,
+    IdeEntityApis,
+    LockedPhase,
+    sendDelta,
     UnmockingApisEnums,
-    UnmockingApisLookups, Ide, Forms, CustomFieldsTemplate, FlatNode, CustomEntity, Job, serializeDelta
+    UnmockingApisLookups,
+    Ide,
+    FormsSpec,
+    CustomFieldsTemplate,
+    FlatNode,
+    CustomEntity,
+    Job,
+    serializeDelta,
+    LockedDisplay,
+    IdeWritableState
 } from "playground-core";
 import { UnmockingApisStreams, getSeed} from "playground-core";
 import {IdeRenderers} from "./domains/loader.tsx";
@@ -67,14 +79,17 @@ import {
 } from "playground-core/ide/domains/phases/custom-fields/domains/data-provider/state.ts";
 import {CustomFieldsTracker} from "../custom-fields/layout.tsx";
 import {fromCustomEntity} from "playground-core/ide/api/custom-fields/client.ts";
+import {LocalizationState} from "./domains/common/localization-state.ts";
+import i18n from "i18next";
 
 export type IT = DispatchPassthroughFormInjectedTypes
 export type FL = IdeFlags
 export type PC = DispatchPassthroughFormCustomPresentationContext
 export type EC = FieldExtraContext
 
-export const DispatcherFormsApp = (props: Forms) => {
-    const theme = getTheme(true,"mocked");
+export const DispatcherFormsApp = (props: LockedDisplay & { setState: (_: (_: IdeWritableState) => IdeWritableState) => void}) => {
+    const theme = getTheme(false,"blp");
+    
     const [specificationDeserializer, setSpecificationDeserializer] = useState(
         DispatchFormsParserState<IT,FL, PC, EC>().Default(),
     );
@@ -100,11 +115,13 @@ export const DispatcherFormsApp = (props: Forms) => {
         setRemoteConfigEntityVersionIdentifier,
     ] = useState(v4());
 
-    const onEntityChange: DispatchOnChange<PredicateValue, FL
-    > = async (updater, delta) => {
+    const onEntityChange: DispatchOnChange<PredicateValue, FL> = 
+        async (updater, delta) => {
 
-        if (entity.kind == "r" || entity.value.kind == "errors") return;
-
+        if (entity.kind == "r" || entity.value.kind == "errors" || props.launchers.selected.kind == "l") return;
+        
+        
+        const launcher = props.launchers.selected.value;
         const newEntity =
             updater.kind == "r"
                 ? updater.value(entity.value.value)
@@ -124,7 +141,7 @@ export const DispatcherFormsApp = (props: Forms) => {
             
             const toApiRawParser =
                 specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough.get(
-                    props.launcher,
+                    launcher,
                 )!.parseValueToApi;
             
             const path: ValueOrErrors<
@@ -164,17 +181,18 @@ export const DispatcherFormsApp = (props: Forms) => {
             specificationDeserializer.deserializedSpecification.sync.kind ==
             "loaded" &&
             specificationDeserializer.deserializedSpecification.sync.value.kind ==
-            "value" 
+            "value" &&
+            props.launchers.selected.kind == "r"
         ) {
             const spec = specificationDeserializer.deserializedSpecification.sync.value.value
-
-            expand(props.specName, props.launcher, props.path)
+            const launcher = props.launchers.selected.value;
+            expand(props.spec.specName, launcher, props.spec.specPath)
                 .then(async (raw) => {
                     if (raw.kind == "value") {
                         const res: FormsSeedEntity = raw.value;
                         const parsed =
                             spec.launchers.passthrough
-                                .get(props.launcher)!
+                                .get(launcher)!
                                 .parseEntityFromApi(raw.value.value);
                  
                         if (parsed.kind == "errors") {
@@ -197,6 +215,9 @@ export const DispatcherFormsApp = (props: Forms) => {
                     }
                 });
         }
+        
+        if(props.launchers.selected.kind == 'l') return;
+        const launcher = props.launchers.selected.value;
         IdeEntityApis
             .get("GlobalConfiguration")!("")
             .then((raw) => {
@@ -209,7 +230,7 @@ export const DispatcherFormsApp = (props: Forms) => {
                     ) {
                         const parsed =
                             specificationDeserializer.deserializedSpecification.sync.value.value.launchers.passthrough
-                                .get(props.launcher)!
+                                .get(launcher)!
                                 .parseEntityFromApi(raw.value.value);
                         if (parsed.kind == "errors") {
                             console.error("parsed person config errors", parsed.errors);
@@ -222,7 +243,7 @@ export const DispatcherFormsApp = (props: Forms) => {
                     props.setState(Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.errors(replaceWith(raw.errors))));
                 }
             });
-    }, [specificationDeserializer.deserializedSpecification.sync.kind, props.spec]);
+    }, [specificationDeserializer.deserializedSpecification.sync.kind, props.spec.specDefinition]);
     
 
     if (
@@ -359,7 +380,10 @@ export const DispatcherFormsApp = (props: Forms) => {
     </div>
     return (
         <div className="App h-full pb-12">
-                        {props.deltas.kind == 'r' && props.showDeltas &&
+                        {props.deltas.kind == 'r' 
+                            && props.show.deltas === 'fully-visible' 
+                            && props.launchers.selected.kind == "r"
+                            && 
 
                             <div className="stats bg-base-100 border-base-300 border w-full">
                                 <div className="stat">
@@ -369,8 +393,8 @@ export const DispatcherFormsApp = (props: Forms) => {
                                     <div className="stat-actions">
                                         <button className="btn btn-xs btn-success"
                                                 onClick={async() =>{
-                                                    if(props.deltas.kind == "r") {
-                                                        const result = await sendDelta(props.specName, entityName.value, entityId.value, props.deltas.value, props.path, props.launcher);
+                                                    if(props.deltas.kind == "r" && props.launchers.selected.kind == "r") {
+                                                        const result = await sendDelta(props.spec.specName, entityName.value, entityId.value, props.deltas.value, props.spec.specPath, props.launchers.selected.value);
                                                         if(result.kind == "value")
                                                             props.setState(Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.drainDeltas()));
                                                         else props.setState(Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.errors(replaceWith(result.errors))));
@@ -389,12 +413,14 @@ export const DispatcherFormsApp = (props: Forms) => {
                             <div className="w-full">
                                 {props.customEntity.kind == "r" && <><CustomFieldsTemplate
                                     context={{
-                                        ...props.customEntity.value.value,
+                                        ...props.customEntity.value,
                                     }}
                                     setState={(s) =>
                                         props.setState(
                                             Ide.Updaters.Core.phase.locked(
-                                                LockedPhase.Updaters.Core.customFields(s)
+                                                LockedPhase.Updaters.Core.display(LockedDisplay.Updaters.Core.customEntity(
+                                                    Option.Updaters.some(s)
+                                                ))
                                             )
                                         )}
                                     foreignMutations={unit}
@@ -403,50 +429,63 @@ export const DispatcherFormsApp = (props: Forms) => {
                                     <div className="card-actions justify-end mb-12 mt-5">
                                         <button
                                             className="btn btn-primary"
-                                            disabled={props.customEntity.value.value.status.kind === 'job'}
+                                            disabled={props.customEntity.value.status.kind === 'job'}
                                             onClick={() => {
                                             
                                                 if(props.customEntity.kind == "l") return;
-                                                const path = FlatNode.Operations.upAndAppend(props.customEntity.value.selected.metadata.path, "code")
+                                                const path = FlatNode.Operations.upAndAppend(props.workspace.selected.metadata.path, "code")
                 
                                                 const node = FlatNode.Operations.findFolderByPath(
-                                                    props.customEntity.value.nodes, path)
+                                                    props.workspace.nodes, path)
                                                 
-                                                props.customEntity.kind == "r" && props.setState(Ide.Updaters.Core.phase.locked(
-                                                    LockedPhase.Updaters.Core.customFields(CustomEntity.Updaters.Template.start(
-                                                        makeTypeCheckingProviderFromWorkspace(node ))
+                                                props.customEntity.kind == "r" && 
+                                                
+                                                props.setState(Ide.Updaters.Core.phase.locked(
+                                                    LockedPhase.Updaters.Core.display(LockedDisplay.Updaters.Core.customEntity(
+                                                        Option.Updaters.some(CustomEntity.Updaters.Template.start(
+                                                            makeTypeCheckingProviderFromWorkspace(node )))
+                                                    )
                                                 )))}}
                                         >Start</button>
                                         <button
                                             className="btn btn-danger"
                                             disabled={
-                                            (props.customEntity.value.value.status.kind !== 'result'  || props.deltas.kind == "l"
+                                            (props.customEntity.value.status.kind !== 'result'  || props.deltas.kind == "l"
                                                 //|| props.customEntity.value.value.status.job.kind !== 'value' 
                                                // || Maybe.Operations.map((job: Job) => job.status.kind != 'completed')(props.customEntity.value.value.trace.at(-1))
                                             )
                                         }
                                             onClick={async () => {
                                                 if(props.deltas.kind == "l" || props.deltas.value.left.size == 0) return
-                                                const delta = await serializeDelta(props.specName, entityName.value, props.deltas.value)
+                                                const delta = await serializeDelta(props.spec.specName, entityName.value, props.deltas.value)
                                          
                                             
                                                 if(delta.kind == 'errors') return props.setState(Ide.Updaters.Core.phase.locked(LockedPhase.Updaters.Core.errors(replaceWith(delta.errors))));
                                                 const raw = JSON.stringify(delta.value);
                                                 
-                                                props.customEntity.kind == "r" && props.setState(Ide.Updaters.Core.phase.locked(
-                                                    LockedPhase.Updaters.Core.customFields(CustomEntity.Updaters.Template.update(raw)
-                                                    )))}}
+                                                props.customEntity.kind == "r" && props.setState(
+                                                    Ide.Updaters.Core.phase.locked(
+                                                        LockedPhase.Updaters.Core.display(
+                                                            LockedDisplay.Updaters.Core.customEntity(
+                                                                Option.Updaters.some(
+                                                                  CustomEntity.Updaters.Template.update(raw)
+                                                                )
+                                                            )
+                                                        )
+                                                    ))
+                                            }}
                                         >Update</button>
                                         <button
                                             className="btn btn-warning"
-                                            disabled={!(props.customEntity.value.value.status.kind === 'result' && props.customEntity.value.value.status.value.kind === 'value')}
+                                            disabled={!(props.customEntity.value.status.kind === 'result' && props.customEntity.value.status.value.kind === 'value')}
                                             onClick={() => {
                                                 if(
                                                     props.customEntity.kind == "l" 
-                                                    || props.customEntity.value.value.status.kind != 'result' 
-                                                    || props.customEntity.value.value.status.value.kind == 'errors'
+                                                    || props.customEntity.value.status.kind != 'result' 
+                                                    || props.customEntity.value.status.value.kind == 'errors'
                                                     || entityName.kind == "r"
                                                     || entityId.kind == "r"
+                                                    || props.launchers.selected.kind == "l" 
                                                 ) return;
                                                 if (!
                                                     (specificationDeserializer.deserializedSpecification.sync.kind ==
@@ -455,14 +494,15 @@ export const DispatcherFormsApp = (props: Forms) => {
                                                     "value")
                                                 )  return ;
                                                 const spec = specificationDeserializer.deserializedSpecification.sync.value.value
+                                                const launcher = props.launchers.selected.value
                                                 
-                                                fromCustomEntity(JSON.parse(props.customEntity.value.value.status.value.value), props.specName,  entityName.value, entityId.value)
+                                                fromCustomEntity(JSON.parse(props.customEntity.value.status.value.value), props.spec.specName,  entityName.value, entityId.value)
                                                     .then(async (raw) => {
                                                         if (raw.kind == "value") {
                                                             const res: FormsSeedEntity = raw.value;
                                                             const parsed =
                                                                  spec.launchers.passthrough
-                                                                    .get(props.launcher)!
+                                                                    .get(launcher)!
                                                                     .parseEntityFromApi(raw.value.value);
 
                                                             if (parsed.kind == "errors") {
@@ -499,7 +539,7 @@ export const DispatcherFormsApp = (props: Forms) => {
                                     defaultNestedRecordConcreteRenderer:DispatchEntityNestedContainerFormView,
                                     concreteRenderers: 
                                         props.ui.kind == 'ui-kit' ? IdeRenderers : TailwindRenderers,
-                                    getFormsConfig: () => PromiseRepo.Default.mock(() => props.spec),
+                                    getFormsConfig: () => PromiseRepo.Default.mock(() => props.spec.specDefinition),
                                     IdWrapper:IdeIdWrapper,
                                     ErrorRenderer: IdeErrorRenderer,
                                     injectedPrimitives: [
@@ -526,14 +566,14 @@ export const DispatcherFormsApp = (props: Forms) => {
                     DeltaErrors: {JSON.stringify(entityPath.errors, null, 2)}
                   </pre>
                             )}
-                            <ThemeProvider theme={theme}>
+            { props.launchers.selected.kind == "r" && <ThemeProvider theme={theme}>
                        
                             <InstantiatedDispatchFormRunnerTemplate
                                 context={{
                                     ...specificationDeserializer,
                                     ...passthroughFormState,
                                     launcherRef: {
-                                        name: props.launcher,
+                                        name: props.launchers.selected.value ,
                                         kind: "passthrough",
                                         entity: entity,
                                         config,
@@ -550,7 +590,7 @@ export const DispatcherFormsApp = (props: Forms) => {
                                     showFormParsingErrors: IdeShowFormsParsingErrors,
                                     extraContext: {
                                         isSuperAdmin: false, 
-                                        locale: ""!, // LocalizationState.Default(null, t, i18n),
+                                        locale: ""!, //LocalizationState.Default(null, t, i18n),
                                         namespace: Namespace.TranslationNamespaceSetupGuide,
                                         headers: {},
                                         docId: "",
@@ -565,8 +605,7 @@ export const DispatcherFormsApp = (props: Forms) => {
                                 view={unit}
                                 foreignMutations={unit}
                             />
-                            </ThemeProvider>
-
+                            </ThemeProvider> }
         </div>
     );
 };

@@ -17,11 +17,11 @@ export const makeTypeCheckingProviderFromWorkspace = (
      */
     node: Maybe<INode<Meta>>
 ): TypeCheckingDataProvider => {
-    const collect: (curatedContext: string) => ValueOrErrors<TypeCheckingPayload, string> = (curatedContext: string) => {
+    const collect: (documentContent: string) => ValueOrErrors<TypeCheckingPayload, string> = (documentContent: string) => {
         if(node == undefined) {
             return ValueOrErrors.Default.throw(List(["TypeCheckingDataProvider hasn't got a valid node"]))
         }
-        const payload = extractTypeCheckingPayload(node, curatedContext);
+        const payload = extractTypeCheckingPayload(node, documentContent);
 
         // const pt = prompt ()
         // if(pt.kind == "errors") return ValueOrErrors.Default.throw(pt.errors)
@@ -35,7 +35,7 @@ export const makeTypeCheckingProviderFromWorkspace = (
     return { collect, prompt };
 };
 
-const extractTypeCheckingPayload = (node: INode<Meta>, curatedContext: string)
+const extractTypeCheckingPayload = (node: INode<Meta>, documentContent: string)
     : ValueOrErrors<TypeCheckingPayload, string> => {
 
     const f: Maybe<INode<Meta>> = FlatNode.Operations.findFolderByPath(
@@ -57,8 +57,8 @@ const extractTypeCheckingPayload = (node: INode<Meta>, curatedContext: string)
     const evidence: Maybe<INode<Meta>>      = files.find(x => x.name === "evidence.bl");
     const uncertainties: Maybe<INode<Meta>> = files.find(x => x.name === "uncertainties.bl");
     const updater: Maybe<INode<Meta>>       = files.find(x => x.name === "update.bl");
-
-    if (!types || !constructor || !evidence || !uncertainties || !updater)
+    const context: Maybe<INode<Meta>>       = files.find(x => x.name === "context.bl");
+    if (!types || !constructor || !evidence || !uncertainties || !updater || !context)
         return ValueOrErrors.Default.throw(
             List(["Missing required *.bl files"])
         );
@@ -75,6 +75,13 @@ const extractTypeCheckingPayload = (node: INode<Meta>, curatedContext: string)
                 ])
         );
 
+    const corpus =
+        Object.fromEntries([
+            [
+                "OCR", documentContent   
+            ]]
+        );    
+    
     return ValueOrErrors.Default.return({
         Constructor:   constructor.metadata.content,
         Updater:       updater.metadata.content,
@@ -82,7 +89,8 @@ const extractTypeCheckingPayload = (node: INode<Meta>, curatedContext: string)
         Uncertainties: uncertainties.metadata.content,
         Evidence:      evidence.metadata.content,
         Accessors:     accessors,
-        CuratedContext: curatedContext,
+        CuratedContext: context.metadata.content,
+        Corpus: corpus
     } as TypeCheckingPayload);
 }
 

@@ -1,3 +1,3 @@
-﻿export function narrowed(msg: string): never {
-    throw new Error(msg);
-}
+﻿// export function narrowed(msg: string): never {
+//     throw new Error(msg);
+// }

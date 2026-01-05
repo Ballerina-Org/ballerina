@@ -1,51 +1,23 @@
 ﻿import {DeltaDrain} from "./domains/delta/state"
 import {
-    AggregatedFlags,
-    ConcreteRenderers,
-    DispatchDeltaTransfer,
-    DispatchDeltaTransferComparand,
     Option, simpleUpdater,
     Updater,
     Visibility
 } from "ballerina-core";
-import {WorkspaceState, WorkspaceVariant} from "../folders/state";
-import {KnownSections} from "../../../../types/Json";
-import {List} from "immutable";
+
 import {INode, Meta} from "../folders/node";
 import {CustomEntity} from "../../../custom-fields/state";
+import {KnownSections} from "../../../../types/Json";
 
-type TD = [
-    DispatchDeltaTransfer<any>,
-    DispatchDeltaTransferComparand,
-    AggregatedFlags<any>,
-]
+export type UIFramework = 'ui-kit' | 'tailwind';
 
+export type UI = { kind: UIFramework, theme: string }
 
-export type UIFramework = 'tailwind' | 'ui-kit';
-
-export type UI =
-    (| { kind: 'tailwind' }
-     | { kind: 'ui-kit'  }) & { theme: string }
-
-export type Forms = {
-    spec:any, 
-    ui: UI,
+export type FormsSpec = {
+    specDefinition: KnownSections,
     specName: string,
-    setState: (state: any) => void,
-    launcher: string,
-    deltas: Option<DeltaDrain>,
-    showDeltas: boolean,
-    path: string [],
-    customEntity: Option<{
-        nodes: INode<Meta>,
-        selected: INode<Meta>,
-        value: CustomEntity,
-    }>
+    specPath: string [],
 }
-
-export type Delta = {
-    visibility: Visibility,
-    drain: Option<DeltaDrain> }
 
 export type LockedDisplay =
     {
@@ -54,8 +26,18 @@ export type LockedDisplay =
                 names: string [],
                 selected: Option<string>
             },
-        deltas: Delta,
-        ui: UI
+        workspace: {
+            nodes: INode<Meta>,
+            selected: INode<Meta>,
+        },
+        customEntity: Option<CustomEntity>,
+        deltas: Option<DeltaDrain>,
+        ui: UI,
+        show: {
+            deltas: Visibility,
+            customEntities: Visibility,
+        },
+        spec: FormsSpec
     }
 
 export const LockedDisplay = {
@@ -63,14 +45,18 @@ export const LockedDisplay = {
         Core: {
             ...simpleUpdater<LockedDisplay>()("deltas"),
             ...simpleUpdater<LockedDisplay>()("launchers"),
-            change:(framework: UIFramework, theme?: string): Updater<LockedDisplay> =>
-                Updater(ld => ({
-                    ...ld,
+            ...simpleUpdater<LockedDisplay>()("show"),
+            ...simpleUpdater<LockedDisplay>()("customEntity"),
+            ...simpleUpdater<LockedDisplay>()("spec"),
+            
+            changeUIFramework:(framework: UIFramework, theme: string): Updater<LockedDisplay> =>
+                Updater(current => ({
+                    ...current,
                     ui: {
                         kind: framework,
-                        theme: theme || "",
+                        theme: theme,
                     }
-                }))
+                } satisfies LockedDisplay))
         }
     }
 }  

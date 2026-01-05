@@ -18,10 +18,10 @@ import {HeroPhase, HeroPhaseForeignMutationsExpected, HeroPhaseView} from "./dom
 import {CustomEntity} from "./domains/phases/custom-fields/state";
 
 export type IdePhase =
-    |  { kind: 'hero',              hero:      HeroPhase }
-    |  { kind: 'bootstrap',         bootstrap: BootstrapPhase }
-    |  { kind: 'selection',         selection: SelectionPhase }
-    |  { kind: 'locked',            locked:    LockedPhase }
+    |  { kind: 'hero',       hero:      HeroPhase }
+    |  { kind: 'bootstrap',  bootstrap: BootstrapPhase }
+    |  { kind: 'selection',  selection: SelectionPhase }
+    |  { kind: 'locked',     locked:    LockedPhase }
 
 export type Ide = {
     phase: IdePhase;
@@ -39,6 +39,19 @@ export const Ide = {
                 ...caseUpdater<Ide>()("phase")("locked"),
                 ...caseUpdater<Ide>()("phase")("hero"),
                 ...caseUpdater<Ide>()("phase")("selection"),
+
+                toBootstrap: (variant: WorkspaceVariant): Updater<Ide> => 
+                    replaceWith<Ide>
+                    ({ phase: { kind: 'bootstrap', bootstrap: BootstrapPhase.Default(variant) },} satisfies Ide),
+                toChoosePhase: (variant: WorkspaceVariant, specs: Spec []): Updater<Ide> =>
+                    replaceWith<Ide>
+                    ({ phase: { kind: 'selection', selection: SelectionPhase.Default(specs, variant) }}),
+                toLocked: (name: string, variant: WorkspaceVariant, node: Node): Updater<Ide> =>
+                    replaceWith<Ide>
+                    ({
+                        phase: { kind: 'locked', locked: LockedPhase.Default(name, variant, node) }
+                    } as Ide),
+                //below is not used in tagged phases approach
                 maybeLocked: (u:BasicUpdater<Maybe<LockedPhase>>): Updater<Ide> =>
                     Updater(ide => {
                         if(ide.phase.kind != 'locked') return ide;
@@ -55,21 +68,6 @@ export const Ide = {
                     Updater(ide => {
                         if(ide.phase.kind != 'selection') return ide;
                         return ({...ide, phase: {...ide.phase,  selection: u(Maybe.Default(ide.phase.selection))!}} satisfies Ide)}),
-                toBootstrap: (variant: WorkspaceVariant): Updater<Ide> => 
-                    Updater(ide =>
-                    ({
-                        phase: { kind: 'bootstrap', bootstrap: BootstrapPhase.Default(variant) },
-                    } satisfies Ide)),
-                toChoosePhase: (variant: WorkspaceVariant, specs: Spec []): Updater<Ide> => Updater(ide =>
-                    ({
-                        phase: { kind: 'selection', selection: SelectionPhase.Default(specs, variant) }})),
-                toLocked: (name: string, variant: WorkspaceVariant, node: Node): Updater<Ide> => Updater(ide => 
-                    ({
-                        phase:  { 
-                            kind: 'locked',
-                            locked: LockedPhase.Default(name, variant, node)
-                        }
-                    } as Ide)),
             },
         }
     },
@@ -90,6 +88,7 @@ export type IdeView = View<
     IdeReadonlyContext & IdeWritableState,
     IdeWritableState,
     IdeForeignMutationsExpected,
+    //below is not used in tagged phases approach
     {
         LockedPhase: Template<
             Ide,

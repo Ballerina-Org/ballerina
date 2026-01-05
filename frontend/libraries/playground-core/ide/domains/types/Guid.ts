@@ -1,1 +1,1 @@
-﻿export type Guid = string & { readonly __brand: unique symbol };
+﻿// export type Guid = string & { readonly __brand: unique symbol };

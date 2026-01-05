@@ -3,8 +3,6 @@ import {WorkspaceForeignMutationsExpected, WorkspaceState, WorkspaceView} from "
 import {JsonEditorTemplate} from "./editor/template";
 import {JsonEditor, JsonEditorForeignMutationsExpected, JsonEditorView} from "./editor/state";
 
-
-
 const JsonEditorEmbedded: Template<WorkspaceState, WorkspaceState, JsonEditorForeignMutationsExpected, JsonEditorView> = 
     JsonEditorTemplate
         .mapContext<WorkspaceState>((p: WorkspaceState) => {

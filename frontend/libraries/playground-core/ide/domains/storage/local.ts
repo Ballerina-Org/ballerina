@@ -1,9 +1,9 @@
 ﻿export type IdeStorage = {
     ide: {
         specName?: string;
-        
     }
 };
+
 const STORAGE_KEY = "ballerina" as const;
 
 function read(): IdeStorage {
