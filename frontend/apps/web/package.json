@@ -11,7 +11,7 @@
     "@faker-js/faker": "^8.4.1",
     "ballerina-core": "*",
     "i18next": "^25.7.3",
-    "immutable": "^5.0.0-beta.5",
+    "immutable": "^5.1.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-grid-layout": "^1.4.4",
