@@ -325,7 +325,7 @@ export const TableAbstractRenderer = <
 
   const embedDetailsRenderer =
     DetailsRenderer && DetailsRendererRaw
-      ? (flags: Flags | undefined) =>
+      ? (tableData: OrderedMap<string, any>) => (flags: Flags | undefined) =>
           DetailsRenderer.mapContext<
             TableAbstractRendererReadonlyContext<
               CustomPresentationContext,
@@ -381,6 +381,12 @@ export const TableAbstractRenderer = <
                 RecordAbstractRendererState.Default.fieldState(Map()))
               : RecordAbstractRendererState.Default.fieldState(Map());
 
+            const rowIndex = PredicateValue.Operations.IsString(
+              selectedDetailRow,
+            )
+              ? tableData.keySeq().indexOf(selectedDetailRow)
+              : 0;
+
             return {
               value,
               ...rowState,
@@ -398,7 +404,8 @@ export const TableAbstractRenderer = <
                 _.typeAncestors,
               ),
               domNodeAncestorPath:
-                _.domNodeAncestorPath + `[table][cell][${selectedDetailRow}]`,
+                _.domNodeAncestorPath +
+                `[Values][${rowIndex == -1 ? 0 : rowIndex}]`,
               legacy_domNodeAncestorPath:
                 _.legacy_domNodeAncestorPath +
                 `[table][cell][${selectedDetailRow}]`,
@@ -961,7 +968,7 @@ export const TableAbstractRenderer = <
                 );
               },
             }}
-            DetailsRenderer={embedDetailsRenderer}
+            DetailsRenderer={embedDetailsRenderer?.(embeddedTableData)}
             TableData={embeddedTableData}
             UnfilteredTableData_Dangerous={embeddedUnfilteredTableData}
             AllowedFilters={EmbeddedAllowedFilters}
