@@ -13,17 +13,25 @@ module TypeEval =
   open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.DSL.Next.Types.TypeChecker.Patterns
 
-  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
-    static member TypeEval
-      : Location
-          -> Expr<TypeExpr, Identifier, 'valueExt>
-          -> State<Expr<TypeValue, ResolvedIdentifier, 'valueExt>, TypeCheckContext, TypeCheckState, Errors> =
-      fun loc0 expr ->
-        let (!) = Expr.TypeEval loc0
+  type Expr<'T, 'Id, 've when 'Id: comparison> with
+    static member TypeEval<'valueExt when 'valueExt: comparison>
+      ()
+      : TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt>
+          -> Location
+          -> Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>
+          -> State<
+            Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>,
+            TypeCheckContext<'valueExt>,
+            TypeCheckState<'valueExt>,
+            Errors
+           >
+      =
+      fun typeCheckExpr loc0 expr ->
+        let (!) = Expr.TypeEval () typeCheckExpr loc0
 
         let (!!) t =
           state {
-            let! t, _ = t |> TypeExpr.Eval None loc0
+            let! t, _ = t |> TypeExpr.Eval () typeCheckExpr None loc0
             return t
           }
 
@@ -129,15 +137,22 @@ module TypeEval =
           | ExprRec.TypeApply({ ExprTypeApply.Func = typeExpr
                                 TypeArg = typeArg }) ->
             let! typeExprType = !typeExpr
-            let! typeArg, _ = typeArg |> TypeExpr.Eval None loc0
+            let! typeArg, _ = typeArg |> TypeExpr.Eval () typeCheckExpr None loc0
             return Expr.TypeApply(typeExprType, typeArg, expr.Location, ctx.Scope)
           | ExprRec.TypeLet({ ExprTypeLet.Name = var
                               TypeDef = value
                               Body = body }) ->
-            let! valueType = value |> TypeExpr.Eval None loc0
+            let! valueType = value |> TypeExpr.Eval () typeCheckExpr None loc0
             do! TypeCheckState.bindType (var |> Identifier.LocalScope |> ctx.Scope.Resolve) valueType
 
             let! bodyType = !body
 
             return Expr.TypeLet(var, valueType |> fst, bodyType, expr.Location, ctx.Scope)
+          | ExprRec.EntitiesDes({ Expr = entities_expr }) ->
+            let! entitiesType = !entities_expr
+            return Expr.EntitiesDes(entitiesType, expr.Location, ctx.Scope)
+          | ExprRec.EntityDes({ Expr = entity_expr
+                                EntityName = entity_name }) ->
+            let! entityType = !entity_expr
+            return Expr.EntityDes(entityType, entity_name, expr.Location, ctx.Scope)
         }

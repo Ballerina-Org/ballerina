@@ -9,7 +9,7 @@ module Model =
 
   type Delta<'valueExtension, 'deltaExtension> =
     | Multiple of List<Delta<'valueExtension, 'deltaExtension>>
-    | Replace of Value<TypeValue, 'valueExtension>
+    | Replace of Value<TypeValue<'valueExtension>, 'valueExtension>
     | Record of string * Delta<'valueExtension, 'deltaExtension>
     | Union of string * Delta<'valueExtension, 'deltaExtension>
     | Tuple of int * Delta<'valueExtension, 'deltaExtension>

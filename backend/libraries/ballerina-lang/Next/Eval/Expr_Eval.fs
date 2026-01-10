@@ -45,23 +45,25 @@ module Eval =
         UnionCases = Map.fold (fun acc k v -> Map.add k v acc) s1.UnionCases s2.UnionCases }
 
   type ExprEvalContext<'valueExtension> =
-    { Values: Map<ResolvedIdentifier, Value<TypeValue, 'valueExtension>>
+    { Values: Map<ResolvedIdentifier, Value<TypeValue<'valueExtension>, 'valueExtension>>
       ExtensionOps: ValueExtensionOps<'valueExtension>
       Symbols: ExprEvalContextSymbols }
 
   and ExtEvalResult<'valueExtension> =
-    | Result of Value<TypeValue, 'valueExtension>
+    | Result of Value<TypeValue<'valueExtension>, 'valueExtension>
     | Async of Coroutine<ExtEvalResult<'valueExtension>, Unit, Unit, Unit, Errors>
     | Applicable of
-      (Value<TypeValue, 'valueExtension> -> ExprEvaluator<'valueExtension, Value<TypeValue, 'valueExtension>>)
-    | TypeApplicable of (TypeValue -> ExprEvaluator<'valueExtension, Value<TypeValue, 'valueExtension>>)
+      (Value<TypeValue<'valueExtension>, 'valueExtension>
+        -> ExprEvaluator<'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
+    | TypeApplicable of
+      (TypeValue<'valueExtension> -> ExprEvaluator<'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
     | Matchable of
-      (Map<ResolvedIdentifier, CaseHandler<TypeValue, ResolvedIdentifier, 'valueExtension>>
-        -> ExprEvaluator<'valueExtension, Value<TypeValue, 'valueExtension>>)
+      (Map<ResolvedIdentifier, CaseHandler<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>>
+        -> ExprEvaluator<'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
 
   and ExtensionEvaluator<'valueExtension> =
     Location
-      -> List<Expr<TypeValue, ResolvedIdentifier, 'valueExtension>>
+      -> List<Expr<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>>
       -> 'valueExtension
       -> ExprEvaluator<'valueExtension, ExtEvalResult<'valueExtension>>
 
@@ -125,9 +127,9 @@ module Eval =
       }
 
     static member Eval<'valueExtension>
-      (rest: List<Expr<TypeValue, ResolvedIdentifier, 'valueExtension>>)
-      (e: Expr<TypeValue, ResolvedIdentifier, 'valueExtension>)
-      : ExprEvaluator<'valueExtension, Value<TypeValue, 'valueExtension>> =
+      (rest: List<Expr<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>>)
+      (e: Expr<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>)
+      : ExprEvaluator<'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>> =
       let (!) = Expr.Eval<'valueExtension> []
       let (!!) = Expr.Eval<'valueExtension> rest
       let loc0 = e.Location
@@ -436,7 +438,10 @@ module Eval =
 
           let scope = e.Scope |> TypeCheckScope.Updaters.Type(replaceWith (Some typeName))
 
-          let bind_component (n, v) : Updater<Map<ResolvedIdentifier, Value<TypeValue, 'valueExtension>>> = Map.add n v
+          let bind_component
+            (n, v)
+            : Updater<Map<ResolvedIdentifier, Value<TypeValue<'valueExtension>, 'valueExtension>>> =
+            Map.add n v
 
           let! definition_as_union =
             typeDefinition
@@ -522,5 +527,34 @@ module Eval =
               // this says we do not care about the type info
               [ !!typeLambda ]
             )
+
+        | ExprRec.EntitiesDes({ Expr = s }) ->
+          let! s_v = !s
+          let! s_v = s_v |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+          let! entities_v =
+            s_v
+            |> Map.tryFindWithError
+              ("Entities" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
+              "entities schema field"
+              "Entities"
+              loc0
+            |> reader.OfSum
+
+          return entities_v
+        | ExprRec.EntityDes({ Expr = s; EntityName = entityName }) ->
+          let! s_v = !s
+          let! s_v = s_v |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+          let! entity_v =
+            s_v
+            |> Map.tryFindWithError
+              (entityName.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
+              "entity schema field"
+              entityName.Name
+              loc0
+            |> reader.OfSum
+
+          return entity_v
         | _ -> return! (loc0, $"Cannot eval expression {e}") |> Errors.Singleton |> reader.Throw
       }

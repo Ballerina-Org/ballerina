@@ -28,6 +28,12 @@ module Kind =
     static member private ToJsonStar: JsonValue =
       JsonValue.Record([| discriminatorKey, JsonValue.String "star" |])
 
+    static member private FromJsonSchema: JsonValue -> Sum<Kind, Errors> =
+      Sum.assertDiscriminatorAndContinue "schema" (fun _ -> sum { return Kind.Schema })
+
+    static member private ToJsonSchema: JsonValue =
+      JsonValue.Record([| discriminatorKey, JsonValue.String "schema" |])
+
     static member private FromJsonArrow =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun arrowFields ->
         sum {
@@ -47,7 +53,12 @@ module Kind =
            valueKey, JsonValue.Record [| "param", Kind.ToJson param; "returnType", Kind.ToJson returnType |] |]
 
     static member FromJson(json: JsonValue) : Sum<Kind, Errors> =
-      sum.Any(Kind.FromJsonStar(json), [ Kind.FromJsonSymbol(json); Kind.FromJsonArrow(json) ])
+      sum.Any(
+        Kind.FromJsonStar(json),
+        [ Kind.FromJsonSymbol(json)
+          Kind.FromJsonSchema(json)
+          Kind.FromJsonArrow(json) ]
+      )
       |> sum.MapError(Errors.HighestPriority)
 
     static member ToJson: Kind -> JsonValue =
@@ -55,4 +66,5 @@ module Kind =
         match kind with
         | Kind.Symbol -> Kind.ToJsonSymbol
         | Kind.Star -> Kind.ToJsonStar
+        | Kind.Schema -> Kind.ToJsonSchema
         | Kind.Arrow(param, returnType) -> Kind.ToJsonArrow param returnType

@@ -149,7 +149,7 @@ module Extension =
                   |> reader.RunOption
 
                 return OptionValues.Option v' |> valueLens.Set |> Ext
-            } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
+            } //: 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
     { TypeName = optionId, optionSymbolId
@@ -160,4 +160,4 @@ module Extension =
         fun (v: OptionValues<'ext>) ->
           match v with
           | OptionValues.Option(Some v) -> v
-          | _ -> Value<TypeValue, 'ext>.Primitive PrimitiveValue.Unit }
+          | _ -> Value<TypeValue<'ext>, 'ext>.Primitive PrimitiveValue.Unit }

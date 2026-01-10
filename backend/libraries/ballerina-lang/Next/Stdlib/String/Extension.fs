@@ -13,13 +13,14 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.Option
 
-  let private int32TypeValue = TypeValue.CreateInt32()
-  let private boolTypeValue = TypeValue.CreateBool()
-  let private stringTypeValue = TypeValue.CreateString()
-
   let StringExtension<'ext>
     (operationLens: PartialLens<'ext, StringOperations<'ext>>)
     : OperationsExtension<'ext, StringOperations<'ext>> =
+
+    let int32TypeValue = TypeValue.CreateInt32()
+    let boolTypeValue = TypeValue.CreateBool()
+    let stringTypeValue = TypeValue.CreateString()
+
 
     let stringLengthId =
       Identifier.FullyQualified([ "string" ], "length")
@@ -54,7 +55,7 @@ module Extension =
                 |> reader.OfSum
 
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Length))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.Length))
             } }
 
     let stringPlusId =
@@ -93,7 +94,7 @@ module Extension =
                 return StringOperations.Concat({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.String(vClosure + v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.String(vClosure + v))
             } }
 
 
@@ -132,7 +133,7 @@ module Extension =
                 return StringOperations.Equal({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
     let stringNotEqualId =
@@ -170,7 +171,7 @@ module Extension =
                 return StringOperations.NotEqual({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
     let stringGreaterThanId =
@@ -208,7 +209,7 @@ module Extension =
                 return StringOperations.GreaterThan({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
     let stringGreaterThanOrEqualId =
@@ -249,7 +250,7 @@ module Extension =
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
     let stringLessThanId =
@@ -287,7 +288,7 @@ module Extension =
                 return StringOperations.LessThan({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
     let stringLessThanOrEqualId =
@@ -325,7 +326,7 @@ module Extension =
                 return StringOperations.LessThanOrEqual({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))
             } }
 
     { TypeVars = []

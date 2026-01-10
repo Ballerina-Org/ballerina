@@ -1,6 +1,7 @@
 ﻿namespace Ballerina.DSL.Next.Terms.Json
 
 open Ballerina.DSL.Next.Json
+open Ballerina.DSL.Next.Types
 
 [<AutoOpen>]
 module Apply =

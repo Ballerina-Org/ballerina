@@ -17,8 +17,8 @@ module Runner =
   let _extensions, languageContext = stdExtensions
 
   let seed
-    (schema: Schema<TypeValue, ResolvedIdentifier, ValueExt>)
-    : Reader<SpecData<TypeValue, ValueExt>, SeedingContext, Errors> =
+    (schema: Schema<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt>)
+    : Reader<SpecData<TypeValue<ValueExt>, ValueExt>, SeedingContext, Errors> =
     reader {
       let! ctx = reader.GetContext()
 

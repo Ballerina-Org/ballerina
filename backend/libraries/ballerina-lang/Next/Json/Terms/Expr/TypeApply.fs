@@ -1,5 +1,7 @@
 ﻿namespace Ballerina.DSL.Next.Terms.Json
 
+open Ballerina.DSL.Next.Types
+
 [<AutoOpen>]
 module TypeApply =
   open FSharp.Data

@@ -60,8 +60,8 @@ module Arity =
 module EntityDescriptor =
   let seed
     (en: EntityName)
-    (e: EntityDescriptor<TypeValue, ResolvedIdentifier, ValueExt>)
-    : State<Map<Guid, Value<TypeValue, ValueExt>>, SeedingContext, SeedingState, Errors> =
+    (e: EntityDescriptor<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt>)
+    : State<Map<Guid, Value<TypeValue<ValueExt>, ValueExt>>, SeedingContext, SeedingState, Errors> =
     state {
       let! ctx = state.GetContext()
       let itemsToSeed = ctx.WantedCount |> Option.defaultValue (Random().Next() % 50 + 50)
@@ -83,7 +83,7 @@ module EntityDescriptor =
 
 module LookupDescriptor =
   let seed
-    (entities: Map<EntityName, Map<Guid, Value<TypeValue, ValueExt>>>)
+    (entities: Map<EntityName, Map<Guid, Value<TypeValue<ValueExt>, ValueExt>>>)
     (descriptor: LookupDescriptor)
     : Sum<Map<Guid, Set<Guid>>, Errors> =
 

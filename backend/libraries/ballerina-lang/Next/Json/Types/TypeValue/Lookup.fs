@@ -13,8 +13,8 @@ module Lookup =
 
   let private discriminator = "lookup"
 
-  type TypeValue with
-    static member FromJsonLookup: JsonValue -> Sum<TypeValue, Errors> =
+  type TypeValue<'valueExt> with
+    static member FromJsonLookup: JsonValue -> Sum<TypeValue<'valueExt>, Errors> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun lookupFields ->
         sum {
           let! name = lookupFields |> JsonValue.AsString
