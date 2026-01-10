@@ -12,8 +12,8 @@ module RecordTypeExpr =
 
   let private discriminator = "record"
 
-  type TypeExpr with
-    static member FromJsonRecord(fromJsonRoot: TypeExprParser) : TypeExprParser =
+  type TypeExpr<'valueExt> with
+    static member FromJsonRecord(fromJsonRoot: TypeExprParser<'valueExt>) : TypeExprParser<'valueExt> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun recordFields ->
         sum {
           let! fields = recordFields |> JsonValue.AsArray
@@ -37,7 +37,9 @@ module RecordTypeExpr =
           return wrappedRecord
         })
 
-    static member ToJsonRecord(rootToJson: TypeExpr -> JsonValue) : List<TypeExpr * TypeExpr> -> JsonValue =
+    static member ToJsonRecord
+      (rootToJson: TypeExpr<'valueExt> -> JsonValue)
+      : List<TypeExpr<'valueExt> * TypeExpr<'valueExt>> -> JsonValue =
       fun fields ->
         let fieldPairs =
           fields

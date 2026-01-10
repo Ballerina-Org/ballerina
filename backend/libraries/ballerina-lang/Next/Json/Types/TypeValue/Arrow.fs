@@ -16,10 +16,10 @@ module Arrow =
 
   let private discriminator = "arrow"
 
-  type TypeValue with
-    static member FromJsonArrow
-      (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
-      : JsonValue -> Sum<TypeValue * TypeValue, Errors> =
+  type TypeValue<'valueExt> with
+    static member FromJsonArrow<'valueExt>
+      (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors>)
+      : JsonValue -> Sum<TypeValue<'valueExt> * TypeValue<'valueExt>, Errors> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun arrowFields ->
         sum {
           let! arrowFields = arrowFields |> JsonValue.AsRecordMap
@@ -33,7 +33,9 @@ module Arrow =
           return param, returnType
         })
 
-    static member ToJsonArrow(rootToJson: TypeValue -> JsonValue) : TypeValue * TypeValue -> JsonValue =
+    static member ToJsonArrow
+      (rootToJson: TypeValue<'valueExt> -> JsonValue)
+      : TypeValue<'valueExt> * TypeValue<'valueExt> -> JsonValue =
       fun (param, jsonType) ->
         let param = param |> rootToJson
         let jsonType = jsonType |> rootToJson

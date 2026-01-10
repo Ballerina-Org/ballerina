@@ -44,10 +44,10 @@ module WithSourceMapping =
 
         JsonValue.Record [| "assembly", assembly; "module", md; "type", ty |]
 
-  type TypeExprSourceMapping with
+  type TypeExprSourceMapping<'valueExt> with
     static member FromJson
-      (typeExprFromJson: JsonValue -> Sum<TypeExpr, Errors>)
-      : JsonValue -> Sum<TypeExprSourceMapping, Errors> =
+      (typeExprFromJson: JsonValue -> Sum<TypeExpr<'valueExt>, Errors>)
+      : JsonValue -> Sum<TypeExprSourceMapping<'valueExt>, Errors> =
       fun mapping ->
         sum {
           let! mapping = JsonValue.AsRecord mapping |> sum.Map Map.ofArray
@@ -79,7 +79,9 @@ module WithSourceMapping =
           | other -> return! sum.Throw(Errors.Singleton $"Unexpected TypeExprSourceMapping type: {other}")
         }
 
-    static member ToJson(typeExprToJson: TypeExpr -> JsonValue) : TypeExprSourceMapping -> JsonValue =
+    static member ToJson
+      (typeExprToJson: TypeExpr<'valueExt> -> JsonValue)
+      : TypeExprSourceMapping<'valueExt> -> JsonValue =
       function
       | NoSourceMapping s ->
         JsonValue.Record [| "type", JsonValue.String "noSourceMapping"; "value", JsonValue.String s |]
@@ -98,11 +100,11 @@ module WithSourceMapping =
 
   let private discriminator = "withSourceMapping"
 
-  type WithSourceMapping<'v> with
+  type WithSourceMapping<'v, 'valueExt> with
     static member FromJson
       (valueFromJson: JsonValue -> Sum<'v, Errors>)
-      (typeExprFromJson: JsonValue -> Sum<TypeExpr, Errors>)
-      : JsonValue -> Sum<WithSourceMapping<'v>, Errors> =
+      (typeExprFromJson: JsonValue -> Sum<TypeExpr<'valueExt>, Errors>)
+      : JsonValue -> Sum<WithSourceMapping<'v, 'valueExt>, Errors> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun withSourceMapping ->
         sum {
           let! withSourceMapping = withSourceMapping |> JsonValue.AsRecord |> sum.Map Map.ofArray
@@ -129,8 +131,8 @@ module WithSourceMapping =
 
     static member ToJson
       (valueToJson: 'v -> JsonValue)
-      (typeExprToJson: TypeExpr -> JsonValue)
-      (mapping: WithSourceMapping<'v>)
+      (typeExprToJson: TypeExpr<'valueExt> -> JsonValue)
+      (mapping: WithSourceMapping<'v, 'valueExt>)
 
       : JsonValue =
       let typeCheckScopeSource = TypeCheckScope.ToJson mapping.typeCheckScopeSource

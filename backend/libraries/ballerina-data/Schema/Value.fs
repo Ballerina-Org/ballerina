@@ -28,7 +28,7 @@ module Value =
           | Some _ -> value.Value ]
     )
 
-  let enwrapArity (value: Value<_, 'valueExt>) (typeValue: TypeValue) (arity: LookupArity) =
+  let enwrapArity (value: Value<_, 'valueExt>) (typeValue: TypeValue<'valueExt>) (arity: LookupArity) =
 
     match Cardinality.FromArity arity, value, typeValue with
     | One, Value.UnionCase _, _
@@ -38,10 +38,10 @@ module Value =
     | _ -> value
 
   let rec insert
-    (value: Value<TypeValue, 'valueExt>)
-    (into: Value<TypeValue, 'valueExt>)
+    (value: Value<TypeValue<'valueExt>, 'valueExt>)
+    (into: Value<TypeValue<'valueExt>, 'valueExt>)
     (path: List<UpdaterPathStep>)
-    : Sum<Value<TypeValue, 'valueExt>, Errors> =
+    : Sum<Value<TypeValue<'valueExt>, 'valueExt>, Errors> =
 
     sum {
       match path with

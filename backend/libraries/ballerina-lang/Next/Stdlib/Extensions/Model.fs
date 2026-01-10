@@ -9,9 +9,9 @@ module Model =
   open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Types.TypeChecker.Model
 
-  type LanguageContext<'ext> =
-    { TypeCheckContext: TypeCheckContext
-      TypeCheckState: TypeCheckState
+  type LanguageContext<'ext when 'ext: comparison> =
+    { TypeCheckContext: TypeCheckContext<'ext>
+      TypeCheckState: TypeCheckState<'ext>
       ExprEvalContext: ExprEvalContext<'ext> }
 
   type OperationsExtension<'ext, 'extOperations> =
@@ -24,20 +24,20 @@ module Model =
          > }
 
   and OperationExtension<'ext, 'extOperations> =
-    { Type: TypeValue // "Int -> Int -> Int"
+    { Type: TypeValue<'ext> // "Int -> Int -> Int"
       Kind: Kind // *
       Operation: 'extOperations
       OperationsLens: PartialLens<'ext, 'extOperations> // lens to access the value inside the extension value
       Apply:
         Location
-          -> List<Expr<TypeValue, ResolvedIdentifier, 'ext>>
-          -> 'extOperations * Value<TypeValue, 'ext>
-          -> ExprEvaluator<'ext, Value<TypeValue, 'ext>> }
+          -> List<Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext>>
+          -> 'extOperations * Value<TypeValue<'ext>, 'ext>
+          -> ExprEvaluator<'ext, Value<TypeValue<'ext>, 'ext>> }
 
   and TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations> =
     { TypeName: ResolvedIdentifier * TypeSymbol // example: "Option"
       TypeVars: List<TypeVar * Kind> // example: [ ("a", Star) ]
-      Deconstruct: 'extValues -> Value<TypeValue, 'ext> // function to extract the underlying value from a value
+      Deconstruct: 'extValues -> Value<TypeValue<'ext>, 'ext> // function to extract the underlying value from a value
       Cases:
         Map<
           ResolvedIdentifier * TypeSymbol,  // example: ("Option.Some", "OptionSome")
@@ -50,33 +50,34 @@ module Model =
          > }
 
   and TypeOperationExtension<'ext, 'extConstructors, 'extValues, 'extOperations> =
-    { Type: TypeValue // "a => b => (a -> b) -> Option a -> Option b"
+    { Type: TypeValue<'ext> // "a => b => (a -> b) -> Option a -> Option b"
       Kind: Kind // * => * => *
       Operation: 'extOperations
       OperationsLens: PartialLens<'ext, 'extOperations> // lens to access the value inside the extension value
       Apply:
         Location
-          -> List<Expr<TypeValue, ResolvedIdentifier, 'ext>>
-          -> 'extOperations * Value<TypeValue, 'ext>
-          -> ExprEvaluator<'ext, Value<TypeValue, 'ext>> }
+          -> List<Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext>>
+          -> 'extOperations * Value<TypeValue<'ext>, 'ext>
+          -> ExprEvaluator<'ext, Value<TypeValue<'ext>, 'ext>> }
 
   and TypeCaseExtension<'ext, 'extConstructors, 'extValues> =
-    { CaseType: TypeExpr // "a"
-      ConstructorType: TypeValue // "a => Option a"
+    { CaseType: TypeExpr<'ext> // "a"
+      ConstructorType: TypeValue<'ext> // "a => Option a"
       Constructor: 'extConstructors
       ValueLens: PartialLens<'ext, 'extValues> // lens to access the value inside the extension value
       ConsLens: PartialLens<'ext, 'extConstructors> // lens to access the constructor inside the extension value
       Apply:
         Location
-          -> List<Expr<TypeValue, ResolvedIdentifier, 'ext>>
-          -> 'extConstructors * Value<TypeValue, 'ext>
-          -> ExprEvaluator<'ext, Value<TypeValue, 'ext>> }
+          -> List<Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext>>
+          -> 'extConstructors * Value<TypeValue<'ext>, 'ext>
+          -> ExprEvaluator<'ext, Value<TypeValue<'ext>, 'ext>> }
 
   and TypeLambdaExtension<'ext, 'extTypeLambda> =
-    { ExtensionType: ResolvedIdentifier * TypeValue * Kind
-      ReferencedTypes: NonEmptyList<ResolvedIdentifier * TypeValue * Kind>
-      ReferencedSymbols: TypeExprEvalSymbols
+    { ExtensionType: ResolvedIdentifier * TypeValue<'ext> * Kind
+      ReferencedTypes: List<ResolvedIdentifier * TypeValue<'ext> * Kind>
       Value: 'extTypeLambda // eval value bindings will contain an entry from the extension identifier to this value (modulo DU packaging)
       ValueLens: PartialLens<'ext, 'extTypeLambda> // lens to handle wrapping and upwrapping between the extension value and the core value
       EvalToTypeApplicable: ExtensionEvaluator<'ext> // implementation of what happens at runtime when the extension is type applied (instantiation)
       EvalToApplicable: ExtensionEvaluator<'ext> } // implementation of what happens at runtime when the extension is applied
+
+  type PreludeTypes<'ext> = List<string * TypeExpr<'ext>>

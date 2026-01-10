@@ -45,21 +45,25 @@ module TypeCheck =
   open Ballerina.Parser
   open Ballerina.DSL.Next.Syntax
 
-  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
-    static member TypeCheckString (languageContext: LanguageContext<'ValueExt>) (program: string) =
+  type Expr<'T, 'Id, 've when 'Id: comparison> with
+    static member TypeCheckString<'valueExt when 'valueExt: comparison>
+      (languageContext: LanguageContext<'valueExt>)
+      (program: string)
+      =
       let initialLocation = Location.Initial "input"
       let actual = tokens |> Parser.Run(program |> Seq.toList, initialLocation)
 
       match actual with
       | Right(e, _) -> Right e
       | Left(ParserResult(actual, _)) ->
-        let parsed = Parser.Expr.program () |> Parser.Run(actual, initialLocation)
+        let parsed =
+          Parser.Expr.program<'valueExt> () |> Parser.Run(actual, initialLocation)
 
         match parsed with
         | Right(e, _) -> Right e
         | Left(ParserResult(program, _)) ->
           let typeCheckResult =
-            Expr.TypeCheck None program
+            Expr.TypeCheck<'valueExt> () None program
             |> State.Run(languageContext.TypeCheckContext, languageContext.TypeCheckState)
 
           match typeCheckResult with

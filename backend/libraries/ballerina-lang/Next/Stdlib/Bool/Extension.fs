@@ -12,11 +12,12 @@ module Extension =
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
 
-  let private boolTypeValue = TypeValue.CreateBool()
 
   let BoolExtension<'ext>
     (operationLens: PartialLens<'ext, BoolOperations<'ext>>)
     : OperationsExtension<'ext, BoolOperations<'ext>> =
+
+    let boolTypeValue = TypeValue.CreateBool()
 
     let boolAndId =
       Identifier.FullyQualified([ "bool" ], "&&") |> TypeCheckScope.Empty.Resolve
@@ -54,7 +55,7 @@ module Extension =
                 return BoolOperations.And({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure && v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure && v))
             } }
 
     let boolOrId =
@@ -93,7 +94,7 @@ module Extension =
                 return BoolOperations.Or({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure || v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure || v))
             } }
 
     let boolNotId =
@@ -121,7 +122,7 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(not v))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(not v))
             } }
 
     { TypeVars = []

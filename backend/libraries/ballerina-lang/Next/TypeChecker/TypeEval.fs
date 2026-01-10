@@ -5,6 +5,7 @@ module Eval =
   open Ballerina.Fun
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Object
+  open Ballerina.StdLib.String
   open Ballerina.State.WithError
   open Ballerina.Reader.WithError
   open Ballerina.LocalizedErrors
@@ -18,14 +19,16 @@ module Eval =
   open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.DSL.Next.Types.TypeChecker.Patterns
   open Ballerina.DSL.Next.Types.TypeChecker.KindEval
+  open Ballerina.DSL.Next.Types.TypeChecker.LiftOtherSteps
   open Ballerina.DSL.Next.Unification
+  open Ballerina.DSL.Next.Terms.Patterns
 
-  type TypeExpr with
-    static member EvalAsSymbol: TypeExprSymbolEval =
-      fun loc0 t ->
+  type TypeExpr<'valueExt> with
+    static member EvalAsSymbol<'ve when 've: comparison>() : TypeExprSymbolEval<'ve> =
+      fun exprTypeCheck loc0 t ->
         state {
-          let (!) = TypeExpr.EvalAsSymbol loc0
-          let (!!) = TypeExpr.Eval None loc0
+          let (!) = TypeExpr.EvalAsSymbol () exprTypeCheck loc0
+          let (!!) = TypeExpr.Eval () exprTypeCheck None loc0
           let! ctx = state.GetContext()
 
           let error e = Errors.Singleton(loc0, e)
@@ -66,11 +69,11 @@ module Eval =
               |> state.Throw
         }
 
-    static member Eval: TypeExprEval =
-      fun n loc0 t ->
+    static member Eval<'ve when 've: comparison>() : TypeExprEval<'ve> =
+      fun typeCheckExpr n loc0 t ->
         state {
-          let (!) = TypeExpr.Eval None loc0
-          let (!!) = TypeExpr.EvalAsSymbol loc0
+          let (!) = TypeExpr.Eval<'ve> () typeCheckExpr None loc0
+          let (!!) = TypeExpr.EvalAsSymbol<'ve> () typeCheckExpr loc0
           let! ctx = state.GetContext()
 
           let error e = Errors.Singleton(loc0, e)
@@ -84,24 +87,505 @@ module Eval =
             | None -> TypeExprSourceMapping.OriginTypeExpr t
 
           match t with
+          | TypeExpr.Schema schema ->
+            let repeatedEntityNames =
+              schema.Entities
+              |> List.map (fun e -> e.Name)
+              |> List.groupBy id
+              |> List.filter (fun (_, l) -> List.length l > 1)
+              |> List.map (fst >> fun n -> n.Name)
+
+            if not (List.isEmpty repeatedEntityNames) then
+              return!
+                let sep = ", " in
+
+                $"Error: schema has repeated entity names: {String.join sep repeatedEntityNames}"
+                |> error
+                |> state.Throw
+            else
+              let! entities =
+                schema.Entities
+                |> List.map (fun e ->
+                  e.Name,
+                  state {
+                    let! id, id_k = !e.Id
+                    do! id_k |> Kind.AsStar |> ofSum |> state.Ignore
+                    let! t, t_k = !e.Type
+                    do! t_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                    let! properties =
+                      e.Properties
+                      |> Seq.map (fun p ->
+                        state {
+                          let! p_decl_t, p_decl_k = !p.Type
+                          do! p_decl_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                          let path_segments = p.Path |> Option.defaultValue []
+
+                          let! _, path_scope, resolved_scope =
+                            path_segments
+                            |> List.fold
+                              (fun acc segment ->
+                                state {
+                                  let! t, segments_acc, resolved_scope = acc
+
+                                  match segment with
+                                  | (maybe_var_name, SchemaPathTypeDecompositionExpr.Field f) ->
+                                    let! t_record = t |> TypeValue.AsRecord |> ofSum
+
+                                    let! (_, (f_t, f_k)) =
+                                      t_record
+                                      |> OrderedMap.toSeq
+                                      |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.LocalName)
+                                      |> Sum.fromOption (fun () ->
+                                        (loc0, $"Error: cannot find field {f} in record type {t}")
+                                        |> Errors.Singleton)
+                                      |> state.OfSum
+
+                                    do! f_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                                    let next_t = f_t
+
+                                    let next_segments =
+                                      match maybe_var_name with
+                                      | Some var_name ->
+                                        (Identifier.LocalScope var_name.Name |> ctx.Scope.Resolve, (next_t, f_k))
+                                        :: segments_acc
+                                      | None -> segments_acc
+
+                                    return
+                                      next_t, next_segments, (SchemaPathTypeDecomposition.Field f) :: resolved_scope
+                                  | (maybe_var_name, SchemaPathTypeDecompositionExpr.UnionCase f) ->
+                                    let! _, t_union = t |> TypeValue.AsUnion |> ofSum
+
+                                    let! (_, case_t) =
+                                      t_union
+                                      |> OrderedMap.toSeq
+                                      |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.LocalName)
+                                      |> Sum.fromOption (fun () ->
+                                        (loc0, $"Error: cannot find case {f} in union type {t}") |> Errors.Singleton)
+                                      |> state.OfSum
+
+                                    let next_t = case_t
+
+                                    let next_segments =
+                                      match maybe_var_name with
+                                      | Some var_name ->
+                                        (Identifier.LocalScope var_name.Name |> ctx.Scope.Resolve,
+                                         (next_t, Kind.Star))
+                                        :: segments_acc
+                                      | None -> segments_acc
+
+                                    return
+                                      next_t,
+                                      next_segments,
+                                      (SchemaPathTypeDecomposition.UnionCase f) :: resolved_scope
+                                  | (maybe_var_name, SchemaPathTypeDecompositionExpr.SumCase f) ->
+                                    let! t_sum = t |> TypeValue.AsSum |> ofSum
+
+                                    if f.Case < 1 || f.Case > t_sum.Length || f.Count <> t_sum.Length then
+                                      return!
+                                        (loc0, $"Error: sum case {f} is out of bounds for sum type {t}")
+                                        |> Errors.Singleton
+                                        |> state.Throw
+                                    else
+                                      let! case_t =
+                                        t_sum
+                                        |> Seq.tryItem (f.Case - 1)
+                                        |> Sum.fromOption (fun () ->
+                                          (loc0, $"Error: cannot find sum case {f} in sum type {t}")
+                                          |> Errors.Singleton)
+                                        |> state.OfSum
+
+                                      let next_t = case_t
+
+                                      let next_segments =
+                                        match maybe_var_name with
+                                        | Some var_name ->
+                                          (Identifier.LocalScope var_name.Name |> ctx.Scope.Resolve,
+                                           (next_t, Kind.Star))
+                                          :: segments_acc
+                                        | None -> segments_acc
+
+                                      return
+                                        next_t,
+                                        next_segments,
+                                        (SchemaPathTypeDecomposition.SumCase f) :: resolved_scope
+                                  | (maybe_var_name, SchemaPathTypeDecompositionExpr.Item f) ->
+                                    let! t_tuple = t |> TypeValue.AsTuple |> ofSum
+
+                                    if f.Index < 1 || f.Index > t_tuple.Length then
+                                      return!
+                                        (loc0, $"Error: tuple index {f} is out of bounds for tuple type {t}")
+                                        |> Errors.Singleton
+                                        |> state.Throw
+                                    else
+                                      let! item_t =
+                                        t_tuple
+                                        |> Seq.tryItem (f.Index - 1)
+                                        |> Sum.fromOption (fun () ->
+                                          (loc0, $"Error: cannot find tuple index {f} in tuple type {t}")
+                                          |> Errors.Singleton)
+                                        |> state.OfSum
+
+                                      let next_t = item_t
+
+                                      let next_segments =
+                                        match maybe_var_name with
+                                        | Some var_name ->
+                                          (Identifier.LocalScope var_name.Name |> ctx.Scope.Resolve,
+                                           (next_t, Kind.Star))
+                                          :: segments_acc
+                                        | None -> segments_acc
+
+                                      return
+                                        next_t, next_segments, (SchemaPathTypeDecomposition.Item f) :: resolved_scope
+                                  | (maybe_var_name, SchemaPathTypeDecompositionExpr.Iterator it) ->
+                                    let! container, _ = it.Container |> TypeExpr.Lookup |> (!)
+                                    let! t_arg, _ = it.TypeDef |> TypeExpr.Lookup |> (!)
+                                    let! mapper, _, _, _ = typeCheckExpr None (it.Mapper |> Expr.Lookup)
+
+                                    let next_t = t_arg
+
+                                    let next_segments =
+                                      match maybe_var_name with
+                                      | Some var_name ->
+                                        (Identifier.LocalScope var_name.Name |> ctx.Scope.Resolve,
+                                         (next_t, Kind.Star))
+                                        :: segments_acc
+                                      | None -> segments_acc
+
+                                    return
+                                      next_t,
+                                      next_segments,
+                                      (SchemaPathTypeDecomposition.Iterator
+                                        {| Container = container
+                                           TypeDef = t_arg
+                                           Mapper = mapper |})
+                                      :: resolved_scope
+                                })
+                              (state { return t, [], [] })
+
+                          let resolved_scope = resolved_scope |> List.rev
+
+                          let path_scope =
+                            path_scope
+                            |> List.map (fun (id, (t, k)) -> Map.add id (t, k))
+                            |> List.fold (>>) (fun x -> x)
+
+                          let! body_e, body_t, body_k, _ =
+                            typeCheckExpr (Some p_decl_t) p.Body
+                            |> state.MapContext(
+                              TypeCheckContext.Updaters.Values(
+                                Map.add (Identifier.LocalScope "self" |> ctx.Scope.Resolve) (t, t_k)
+                                >> path_scope
+                              )
+                            )
+
+                          do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                          do! TypeValue.Unify(loc0, body_t, p_decl_t) |> Expr.liftUnification
+
+                          return
+                            { SchemaEntityProperty.Path = resolved_scope
+                              PropertyName = p.Name
+                              ReturnType = p_decl_t
+                              ReturnKind = p_decl_k
+                              Body = body_e }
+                        })
+                      |> state.All
+                      |> state.Map(List.ofSeq)
+
+                    let rec (+)
+                      (t: TypeValue<'ve>)
+                      (path: List<SchemaPathSegment<'ve>>, name: LocalIdentifier, result_t: TypeValue<'ve>)
+                      =
+                      state {
+                        match path with
+                        | [] ->
+                          let! fields = t |> TypeValue.AsRecord |> ofSum
+
+                          let fields =
+                            fields
+                            |> OrderedMap.add
+                              (name.Name |> Identifier.LocalScope |> TypeSymbol.Create)
+                              (result_t, Kind.Star)
+
+                          return TypeValue.CreateRecord fields
+                        | (SchemaPathTypeDecomposition.Field f) :: path ->
+                          let! fields = t |> TypeValue.AsRecord |> ofSum
+
+                          let! f_s, (f_t, f_k) =
+                            fields
+                            |> OrderedMap.toSeq
+                            |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.LocalName)
+                            |> Sum.fromOption (fun () ->
+                              (loc0, $"Error: cannot find field {f} in record type {t}") |> Errors.Singleton)
+                            |> state.OfSum
+
+                          let! f_t = f_t + (path, name, result_t)
+
+                          let fields = fields |> OrderedMap.add f_s (f_t, f_k)
+
+                          return TypeValue.CreateRecord fields
+                        | (SchemaPathTypeDecomposition.UnionCase f) :: path ->
+                          let! _, fields = t |> TypeValue.AsUnion |> ofSum
+
+                          let! f_s, f_t =
+                            fields
+                            |> OrderedMap.toSeq
+                            |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.LocalName)
+                            |> Sum.fromOption (fun () ->
+                              (loc0, $"Error: cannot find field {f} in record type {t}") |> Errors.Singleton)
+                            |> state.OfSum
+
+                          let! f_t = f_t + (path, name, result_t)
+
+                          let fields = fields |> OrderedMap.add f_s f_t
+
+                          return TypeValue.CreateUnion fields
+                        | (SchemaPathTypeDecomposition.SumCase f) :: path ->
+                          let! fields = t |> TypeValue.AsSum |> ofSum
+
+                          let! f_t =
+                            fields
+                            |> Seq.tryItem (f.Case - 1)
+                            |> Sum.fromOption (fun () ->
+                              (loc0, $"Error: cannot find field {f} in record type {t}") |> Errors.Singleton)
+                            |> state.OfSum
+
+                          let! f_t = f_t + (path, name, result_t)
+
+                          let fields = fields |> List.mapi (fun i ft -> if i = f.Case - 1 then f_t else ft)
+
+                          return TypeValue.CreateSum fields
+                        | (SchemaPathTypeDecomposition.Item f) :: path ->
+                          let! fields = t |> TypeValue.AsTuple |> ofSum
+
+                          let! f_t =
+                            fields
+                            |> Seq.tryItem (f.Index - 1)
+                            |> Sum.fromOption (fun () ->
+                              (loc0, $"Error: cannot find field {f} in record type {t}") |> Errors.Singleton)
+                            |> state.OfSum
+
+                          let! f_t = f_t + (path, name, result_t)
+
+                          let fields = fields |> List.mapi (fun i ft -> if i = f.Index - 1 then f_t else ft)
+
+                          return TypeValue.CreateTuple fields
+                        | (SchemaPathTypeDecomposition.Iterator f) :: path ->
+                          let f_t = f.TypeDef
+                          let! f_t = f_t + (path, name, result_t)
+
+                          let! t_res, _ =
+                            !TypeExpr.Apply(TypeExpr.FromTypeValue f.Container, TypeExpr.FromTypeValue f_t)
+
+                          return t_res
+                      }
+
+                    let! t_with_props =
+                      properties
+                      |> Seq.fold
+                        (fun acc (p: SchemaEntityProperty<'ve>) ->
+                          state {
+                            let! t = acc
+                            return! t + (p.Path, p.PropertyName, p.ReturnType)
+                          })
+                        (state { return t })
+
+                    return
+                      { Name = e.Name
+                        Id = id
+                        TypeOriginal = t
+                        TypeWithProps = t_with_props
+                        SearchBy = e.SearchBy
+                        Properties = properties }
+                  })
+                |> OrderedMap.ofList
+                |> state.AllMapOrdered
+
+              let repeatedRelationNames =
+                schema.Relations
+                |> List.map (fun r -> r.Name)
+                |> List.groupBy id
+                |> List.filter (fun (_, l) -> List.length l > 1)
+                |> List.map (fst >> fun n -> n.Name)
+
+              if not (List.isEmpty repeatedRelationNames) then
+                return!
+                  let sep = ", " in
+
+                  $"Error: schema has repeated relation names: {String.join sep repeatedRelationNames}"
+                  |> error
+                  |> state.Throw
+              else
+                let! context = state.GetContext()
+
+                let rec validatePath
+                  (source: TypeValue<'ve>)
+                  (target: TypeValue<'ve>)
+                  (path: SchemaPathSegmentExpr list)
+                  =
+                  state {
+                    match path with
+                    | [] -> do! TypeValue.Unify(loc0, source, target) |> Expr.liftUnification
+                    | (_, segment) :: rest ->
+                      match segment with
+                      | SchemaPathTypeDecompositionExpr.Field fieldName ->
+                        let! sourceRecord = source |> TypeValue.AsRecord |> ofSum
+
+                        let! (_, (fieldType, _)) =
+                          sourceRecord
+                          |> OrderedMap.toSeq
+                          |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = fieldName.LocalName)
+                          |> Sum.fromOption (fun () ->
+                            (loc0, $"Error: cannot find field {fieldName} in record type {source}")
+                            |> Errors.Singleton)
+                          |> state.OfSum
+
+                        return! validatePath fieldType target rest
+                      | SchemaPathTypeDecompositionExpr.UnionCase caseName ->
+                        let! _, sourceCase = source |> TypeValue.AsUnion |> ofSum
+
+                        let! (_, caseType) =
+                          sourceCase
+                          |> OrderedMap.toSeq
+                          |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = caseName.LocalName)
+                          |> Sum.fromOption (fun () ->
+                            (loc0, $"Error: cannot find case {caseName} in union type {source}")
+                            |> Errors.Singleton)
+                          |> state.OfSum
+
+                        return! validatePath caseType target rest
+                      | SchemaPathTypeDecompositionExpr.SumCase caseName ->
+                        let! sourceCase = source |> TypeValue.AsSum |> ofSum
+
+                        if
+                          caseName.Case < 1
+                          || caseName.Case > sourceCase.Length
+                          || caseName.Count <> sourceCase.Length
+                        then
+                          return!
+                            (loc0, $"Error: sum case {caseName} is out of bounds for sum type {source}")
+                            |> Errors.Singleton
+                            |> state.Throw
+                        else
+                          let! caseType =
+                            sourceCase
+                            |> Seq.tryItem (caseName.Case - 1)
+                            |> Sum.fromOption (fun () ->
+                              (loc0, $"Error: cannot find sum case {caseName} in sum type {source}")
+                              |> Errors.Singleton)
+                            |> state.OfSum
+
+                          return! validatePath caseType target rest
+                      | SchemaPathTypeDecompositionExpr.Item item ->
+                        let! sourceCase = source |> TypeValue.AsTuple |> ofSum
+
+                        if item.Index < 1 || item.Index > sourceCase.Length then
+                          return!
+                            (loc0, $"Error: tuple index {item} is out of bounds for tuple type {source}")
+                            |> Errors.Singleton
+                            |> state.Throw
+                        else
+                          let! caseType =
+                            sourceCase
+                            |> Seq.tryItem (item.Index - 1)
+                            |> Sum.fromOption (fun () ->
+                              (loc0, $"Error: cannot find tuple index {item} in tuple type {source}")
+                              |> Errors.Singleton)
+                            |> state.OfSum
+
+                          return! validatePath caseType target rest
+                      | SchemaPathTypeDecompositionExpr.Iterator it ->
+                        let! container, _ = it.Container |> TypeExpr.Lookup |> (!)
+                        let! t_arg, _ = it.TypeDef |> TypeExpr.Lookup |> (!)
+
+                        let! t_map, _ =
+                          context.Values
+                          |> Map.tryFindWithError
+                            (it.Mapper |> context.Scope.Resolve)
+                            "mapper function"
+                            it.Mapper.LocalName
+                            loc0
+                          |> state.OfSum
+
+                        let! t_map, _ =
+                          !TypeExpr.Apply(TypeExpr.Apply(TypeExpr.FromTypeValue t_map, TypeExpr.FromTypeValue t_arg),
+                                          TypeExpr.FromTypeValue t_arg)
+
+                        let! expected, _ =
+                          !(TypeExpr.Apply(TypeExpr.FromTypeValue container, TypeExpr.FromTypeValue t_arg))
+
+                        let! expected, _ =
+                          !(TypeExpr.Arrow(
+                            TypeExpr.Arrow(TypeExpr.FromTypeValue t_arg, TypeExpr.FromTypeValue t_arg),
+                            TypeExpr.Arrow(TypeExpr.FromTypeValue source, TypeExpr.FromTypeValue expected)
+                          ))
+
+                        do! TypeValue.Unify(loc0, t_map, expected) |> Expr.liftUnification
+
+                        return! validatePath t_arg target rest
+                  }
+
+                let! relations =
+                  schema.Relations
+                  |> List.map (fun r ->
+                    r.Name,
+                    state {
+                      let fromPath = r.From |> snd
+                      let toPath = r.To |> snd
+
+                      let! fromEntity =
+                        entities
+                        |> OrderedMap.tryFind ((r.From |> fst).LocalName |> SchemaEntityName.Create)
+                        |> Sum.fromOption (fun () ->
+                          (loc0, $"Error: cannot find entity {r.From} for relation {r.Name}")
+                          |> Errors.Singleton)
+                        |> state.OfSum
+
+                      let! toEntity =
+                        entities
+                        |> OrderedMap.tryFind ((r.To |> fst).LocalName |> SchemaEntityName.Create)
+                        |> Sum.fromOption (fun () ->
+                          (loc0, $"Error: cannot find entity {r.To} for relation {r.Name}")
+                          |> Errors.Singleton)
+                        |> state.OfSum
+
+                      match fromPath with
+                      | Some fromPath -> do! validatePath fromEntity.TypeOriginal toEntity.Id fromPath
+                      | None -> ()
+
+                      match toPath with
+                      | Some toPath -> do! validatePath toEntity.TypeOriginal fromEntity.Id toPath
+                      | None -> ()
+
+                      return
+                        { Name = r.Name
+                          From = r.From |> fst
+                          To = r.To |> fst }
+                    })
+                  |> OrderedMap.ofList
+                  |> state.AllMapOrdered
+
+                let schema =
+                  { DeclaredAtForNominalEquality = loc0
+                    Entities = entities
+                    Relations = relations }
+
+                return TypeValue.Schema schema, Kind.Schema
           | TypeExpr.FromTypeValue tv ->
             // do Console.WriteLine($"Instantiating type value {tv}")
             let! ctx = state.GetContext()
             let! s = state.GetState()
             let scope = ctx.TypeVariables |> Map.map (fun _ (_, k) -> k)
             let scope = Map.merge (fun _ -> id) scope ctx.TypeParameters
-            let! k = TypeValue.KindEval n loc0 tv |> state.MapContext(fun _ -> scope)
-
-            // do Console.WriteLine($"Instantiating type value {tv} with kind {k}")
-
-            // do
-            //   Console.WriteLine(
-            //     $"Eval context is {ctx.TypeVariables.ToFSharpString}, {ctx.TypeParameters.ToFSharpString}"
-            //   )
+            let! k = TypeValue.KindEval () n loc0 tv |> state.MapContext(fun _ -> scope)
 
             let! tv =
               tv
-              |> TypeValue.Instantiate TypeExpr.Eval loc0
+              |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
               |> State.Run(TypeInstantiateContext.FromEvalContext(ctx), s)
               |> sum.Map fst
               |> sum.MapError fst
@@ -111,15 +595,6 @@ module Eval =
 
             return TypeValue.SetSourceMapping(tv, source), k
           | TypeExpr.Imported i ->
-            // let! ctx = state.GetContext()
-
-            // do
-            //   Console.WriteLine(
-            //     $"Importing type {i} with context {ctx.TypeVariables.ToFSharpString} and {ctx.TypeParameters.ToFSharpString}"
-            //   )
-
-            // do Console.ReadLine() |> ignore
-
             let! parameters =
               i.Parameters
               |> List.map (fun p -> !(TypeExpr.Lookup(Identifier.LocalScope p.Name)) |> state.Map fst)
@@ -153,13 +628,24 @@ module Eval =
                     |> state.OfStateReader
 
                     state {
-                      let! c = state.GetContext()
+                      match v with
+                      | Identifier.LocalScope "SchemaEntities" ->
+                        return TypeValue.Lookup v, Kind.Arrow(Kind.Schema, Kind.Star)
+                      | Identifier.LocalScope "SchemaEntity" ->
+                        return
+                          TypeValue.Lookup v,
+                          Kind.Arrow(
+                            Kind.Schema,
+                            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
+                          )
+                      | _ ->
+                        let! c = state.GetContext()
 
-                      return!
-                        $"Error: cannot find type for {v} with context ({c.TypeVariables.AsFSharpString})"
-                        |> error
-                        |> state.Throw
-                        |> state.MapError(Errors.SetPriority(ErrorPriority.High))
+                        return!
+                          $"Error: cannot find type for {v} with context ({c.TypeVariables.AsFSharpString})"
+                          |> error
+                          |> state.Throw
+                          |> state.MapError(Errors.SetPriority(ErrorPriority.High))
                     } ]
                 )
               )
@@ -229,10 +715,8 @@ module Eval =
 
           | TypeExpr.Apply(f, a) ->
             // do Console.WriteLine($"Evaluating type application of {f} to {a}")
-            // do Console.WriteLine($"Evaluating type application of {f.ToFSharpString}")
-            // do Console.ReadLine() |> ignore
             let! f, f_k = !f
-            // do Console.WriteLine($"Evaluated function part to {f.ToFSharpString}\n{f_k}")
+            // do Console.WriteLine($"Evaluated function part to {f}\n{f_k}")
             // do Console.ReadLine() |> ignore
             let! f_k_i, f_k_o = f_k |> Kind.AsArrow |> ofSum
 
@@ -255,9 +739,15 @@ module Eval =
                   | _ ->
                     let! a = !a
 
+                    // do Console.WriteLine($"Applying type lambda param {param} to argument {a |> fst} in {body}")
+                    // do Console.ReadLine() |> ignore
+
                     let! resultValue, resultKind =
                       !body
                       |> state.MapContext(TypeCheckContext.Updaters.TypeVariables(Map.add param.Name a))
+
+                    // do Console.WriteLine($"Result of type application is {resultValue.AsFSharpString}")
+                    // do Console.ReadLine() |> ignore
 
                     return TypeValue.SetSourceMapping(resultValue, source), resultKind
                 })
@@ -303,7 +793,33 @@ module Eval =
                       |> error
                       |> state.Throw
                   else
-                    return TypeValue.CreateApplication(SymbolicTypeApplication.Lookup(f_l, a)), f_k_o
+                    match f_l with
+                    | Identifier.LocalScope "SchemaEntities" ->
+                      let! a_schema = a |> TypeValue.AsSchema |> ofSum
+                      return TypeValue.CreateEntities a_schema, Kind.Star
+                    | Identifier.LocalScope "SchemaEntity" ->
+                      let! a_schema = a |> TypeValue.AsSchema |> ofSum
+
+                      return
+                        TypeValue.CreateLambda(
+                          TypeParameter.Create("e", Kind.Star),
+                          TypeExpr.Lambda(
+                            TypeParameter.Create("e_with_props", Kind.Star),
+                            TypeExpr.Lambda(
+                              TypeParameter.Create("id", Kind.Star),
+                              TypeExpr.FromTypeValue(
+                                TypeValue.CreateEntity(
+                                  a_schema,
+                                  TypeValue.Lookup(Identifier.LocalScope "e"),
+                                  TypeValue.Lookup(Identifier.LocalScope "e_with_props"),
+                                  TypeValue.Lookup(Identifier.LocalScope "id")
+                                )
+                              )
+                            )
+                          )
+                        ),
+                        Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
+                    | _ -> return TypeValue.CreateApplication(SymbolicTypeApplication.Lookup(f_l, a)), f_k_o
                 })
                 (state {
                   let! { value = f_app } = f |> TypeValue.AsApplication |> ofSum
@@ -358,7 +874,12 @@ module Eval =
           | TypeExpr.Arrow(input, output) ->
             let! input, input_k = !input
             let! output, output_k = !output
-            do! input_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+            do!
+              sum.Any2 (input_k |> Kind.AsStar) (input_k |> Kind.AsSchema)
+              |> ofSum
+              |> state.Ignore
+
             do! output_k |> Kind.AsStar |> ofSum |> state.Ignore
 
             return
@@ -477,6 +998,106 @@ module Eval =
                   typeExprSource = source
                   typeCheckScopeSource = ctx.Scope },
               Kind.Star
+          | TypeExpr.RecordDes(t, comp) ->
+            let! tv, tk = !t
+            do! tk |> Kind.AsStar |> ofSum |> state.Ignore
+
+            let failure =
+              $"Error: cannot evaluate record destructuring {tv}.{comp}"
+              |> error
+              |> state.Throw
+              |> state.MapError(Errors.SetPriority ErrorPriority.High)
+
+            match comp with
+            | Left field ->
+              return!
+                state.Any(
+                  state {
+                    let! fields = tv |> TypeValue.AsRecord |> ofSum
+
+                    let! (_, (field_t, field_k)) =
+                      fields
+                      |> OrderedMap.toSeq
+                      |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = field.Name)
+                      |> Sum.fromOption (fun () ->
+                        (loc0, $"Error: cannot find field {field} in record type {tv}")
+                        |> Errors.Singleton)
+                      |> state.OfSum
+
+                    return TypeValue.SetSourceMapping(field_t, source), field_k
+                  },
+                  [ state {
+                      let! _, cases = tv |> TypeValue.AsUnion |> ofSum
+
+                      let! (_, case_t) =
+                        cases
+                        |> OrderedMap.toSeq
+                        |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = field.Name)
+                        |> Sum.fromOption (fun () ->
+                          (loc0, $"Error: cannot find case {field} in union type {tv}")
+                          |> Errors.Singleton)
+                        |> state.OfSum
+
+                      return TypeValue.SetSourceMapping(case_t, source), Kind.Star
+                    }
+                    failure ]
+                )
+            | Right item ->
+              return!
+                state.Any(
+                  state {
+                    let! items = tv |> TypeValue.AsTuple |> ofSum
+
+                    if item < 1 || item > items.Length then
+                      return!
+                        (loc0, $"Error: tuple index {item} is out of bounds for tuple type {tv}")
+                        |> Errors.Singleton
+                        |> state.Throw
+                    else
+                      let! item_t =
+                        items
+                        |> Seq.tryItem (item - 1)
+                        |> Sum.fromOption (fun () ->
+                          (loc0, $"Error: cannot find tuple index {item} in tuple type {tv}")
+                          |> Errors.Singleton)
+                        |> state.OfSum
+
+                      return TypeValue.SetSourceMapping(item_t, source), Kind.Star
+                  },
+                  [ state {
+                      let! items = tv |> TypeValue.AsSum |> ofSum
+
+                      if item < 1 || item > items.Length then
+                        return!
+                          (loc0, $"Error: sum case {item} is out of bounds for sum type {tv}")
+                          |> Errors.Singleton
+                          |> state.Throw
+                      else
+                        let! item_t =
+                          items
+                          |> Seq.tryItem (item - 1)
+                          |> Sum.fromOption (fun () ->
+                            (loc0, $"Error: cannot find sum case {item} in sum type {tv}")
+                            |> Errors.Singleton)
+                          |> state.OfSum
+
+                        return TypeValue.SetSourceMapping(item_t, source), Kind.Star
+                    }
+                    state {
+                      let! imported = tv |> TypeValue.AsImported |> ofSum
+
+                      let! item_t =
+                        imported.Arguments
+                        |> List.tryItem (item - 1)
+                        |> Sum.fromOption (fun () ->
+                          (loc0, $"Error: cannot find argument {item} in imported type {tv}")
+                          |> Errors.Singleton)
+                        |> state.OfSum
+
+                      return TypeValue.SetSourceMapping(item_t, source), Kind.Star
+                    }
+                    failure ]
+                )
           | TypeExpr.Flatten(type1, type2) ->
             let! type1, type1_k = !type1
             let! type2, type2_k = !type2

@@ -44,6 +44,9 @@
         <Compile Include="Guid/Patterns.fs" />
         <Compile Include="Guid/ConsExt.fs" />
         <Compile Include="Guid/Extension.fs" />
+        <Compile Include="MemoryDB/Model.fs" />
+        <Compile Include="MemoryDB/Patterns.fs" />
+        <Compile Include="MemoryDB/Extension.fs" />
         <Compile Include="DateTime/Model.fs" />
         <Compile Include="DateTime/Patterns.fs" />
         <Compile Include="DateTime/ConsExt.fs" />

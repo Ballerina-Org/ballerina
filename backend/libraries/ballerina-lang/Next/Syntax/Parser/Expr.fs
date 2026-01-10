@@ -12,6 +12,7 @@ module Expr =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.LocalizedErrors
+  open Ballerina.DSL.Next.Types
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Terms.Patterns
   open Model
@@ -30,9 +31,9 @@ module Expr =
   type ComplexExpression<'valueExt> =
     | ScopedIdentifier of NonEmptyList<string>
     | RecordOrTupleDesChain of NonEmptyList<Sum<string, int>>
-    | TupleCons of NonEmptyList<Expr<TypeExpr, Identifier, 'valueExt>>
-    | ApplicationArguments of NonEmptyList<Sum<Expr<TypeExpr, Identifier, 'valueExt>, TypeExpr>>
-    | BinaryExpressionChain of NonEmptyList<BinaryExprOperator * Expr<TypeExpr, Identifier, 'valueExt>>
+    | TupleCons of NonEmptyList<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
+    | ApplicationArguments of NonEmptyList<Sum<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, TypeExpr<'valueExt>>>
+    | BinaryExpressionChain of NonEmptyList<BinaryExprOperator * Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
 
   let private parseAllComplexShapes: Set<ComplexExpressionKind> =
     [ ComplexExpressionKind.ApplicationArguments
@@ -44,9 +45,14 @@ module Expr =
 
   let private parseNoComplexShapes: Set<ComplexExpressionKind> = Set.empty
 
-  let rec expr (depth: int) (parseComplexShapes: Set<ComplexExpressionKind>) =
+  let rec expr
+    (depth: int)
+    (parseComplexShapes: Set<ComplexExpressionKind>)
+    : Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors> =
 
     let expr = expr (depth + 1)
+
+    let typeDecl v = typeDecl (expr parseAllComplexShapes) v
     // let indent = "--"
 
     let stringLiteral () =
@@ -55,18 +61,6 @@ module Expr =
         | Token.StringLiteral s ->
           Expr.Primitive(PrimitiveValue.String s, t.Location, TypeCheckScope.Empty)
           |> Some
-        | _ -> None)
-
-    let caseLiteral () =
-      parser.Exactly(fun t ->
-        match t.Token with
-        | Token.CaseLiteral(i, n) -> { Case = i; Count = n } |> Some
-        | _ -> None)
-
-    let actualInt () =
-      parser.Exactly(fun t ->
-        match t.Token with
-        | Token.IntLiteral s -> s |> Some
         | _ -> None)
 
     let intLiteral () =
@@ -140,7 +134,7 @@ module Expr =
                         caseLiteral () |> parser.Map Right ]
 
                   do! openRoundBracketOperator
-                  let! paramName = identifierMatch
+                  let! paramName = singleIdentifier
 
                   do! parseOperator Operator.SingleArrow
                   let! body = expr parseAllComplexShapes
@@ -207,14 +201,14 @@ module Expr =
       parser.Any
         [ parser {
             do! openRoundBracketOperator
-            let! paramName = identifierMatch
+            let! paramName = singleIdentifier
             do! colonOperator
             let! typeDecl = typeDecl parseAllComplexTypeShapes
             do! closeRoundBracketOperator
             return paramName, typeDecl |> Some
           }
           parser {
-            let! paramName = identifierMatch
+            let! paramName = singleIdentifier
             return paramName, None
           } ]
 
@@ -237,7 +231,7 @@ module Expr =
               |> Seq.foldBack
                 (fun p acc ->
                   match p with
-                  | Right(paramName, paramType: Option<TypeExpr>) ->
+                  | Right(paramName, paramType: Option<TypeExpr<'valueExt>>) ->
                     Expr.Lambda(Var.Create paramName, paramType, acc, loc, TypeCheckScope.Empty)
                   | Left(paramName: string, paramKind: Kind) ->
                     let p = (paramName, paramKind) |> TypeParameter.Create
@@ -260,7 +254,7 @@ module Expr =
               parser.Any
                 [ parser {
                     do! openRoundBracketOperator
-                    let! paramName = identifierMatch
+                    let! paramName = singleIdentifier
                     do! colonOperator
 
                     return!
@@ -272,7 +266,7 @@ module Expr =
                       |> parser.MapError(Errors.SetPriority ErrorPriority.High)
                   }
                   parser {
-                    let! paramName = identifierMatch
+                    let! paramName = singleIdentifier
 
                     let! paramType =
                       parser.Any
@@ -401,7 +395,7 @@ module Expr =
               parser.AtLeastOne(
                 parser {
                   do! dotOperator
-                  return! parser.Any [ identifierMatch |> parser.Map Left; actualInt () |> parser.Map Right ]
+                  return! parser.Any [ singleIdentifier |> parser.Map Left; intLiteralToken () |> parser.Map Right ]
                 }
               )
 
@@ -417,7 +411,7 @@ module Expr =
 
         return!
           parser {
-            let! id = identifierMatch
+            let! id = singleIdentifier
             do! equalsOperator
             let! typeDecl = typeDecl parseAllComplexTypeShapes
             do! inKeyword
@@ -467,7 +461,7 @@ module Expr =
 
     let identifierLookup () =
       parser {
-        let! id = identifierMatch
+        let! id = singleIdentifier
         let! loc = parser.Location
         // do Console.WriteLine($"{String.replicate (depth * 2) indent}> Parsed identifier: {id.ToFSharpString}")
         return Expr.Lookup(Identifier.LocalScope id, loc, TypeCheckScope.Empty)
@@ -483,7 +477,7 @@ module Expr =
               parser.AtLeastOne(
                 parser {
                   do! doubleColonOperator
-                  return! identifierMatch
+                  return! singleIdentifier
                 }
               )
 
@@ -751,7 +745,7 @@ module Expr =
         | Sum.Left res -> return res
     }
 
-  let program<'valueExt> () : Parser<Expr<TypeExpr, Identifier, 'valueExt>, _, _, _> =
+  let program<'valueExt> () : Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, _, _, _> =
     parser {
       let! e = expr 0 parseAllComplexShapes
       do! parser.EndOfStream()

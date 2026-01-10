@@ -2,6 +2,7 @@ namespace Ballerina.DSL.Next.Terms.Json
 
 open System.Globalization
 open Ballerina.DSL.Next.Terms.Model
+open Ballerina.DSL.Next.Types
 
 module Primitive =
   open FSharp.Data

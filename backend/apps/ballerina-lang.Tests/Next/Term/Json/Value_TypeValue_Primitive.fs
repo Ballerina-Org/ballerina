@@ -2,6 +2,7 @@
 
 open System
 open Ballerina.Collections.Sum
+open Ballerina.DSL.Next.Types
 open NUnit.Framework
 open FSharp.Data
 open Ballerina.DSL.Next.Terms.Model

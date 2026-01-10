@@ -219,7 +219,12 @@ module Model =
       | AllTranslationOverrides _ -> $"AllTranslationOverrides"
 
   and UnionCase = { CaseName: string; Fields: ExprType }
-  and CaseName = { CaseName: string }
+
+  and CaseName =
+    { CaseName: string }
+
+    static member Create caseName = { CaseName = caseName }
+
   and VarTypes = Map<VarName, ExprType>
 
   type TranslationOverride with

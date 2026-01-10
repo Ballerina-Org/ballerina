@@ -15,13 +15,15 @@ module Set =
 
   let private discriminator = "set"
 
-  type TypeValue with
-    static member FromJsonSet(fromRootJson: JsonValue -> Sum<TypeValue, Errors>) : JsonValue -> Sum<TypeValue, Errors> =
+  type TypeValue<'valueExt> with
+    static member FromJsonSet
+      (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors>)
+      : JsonValue -> Sum<TypeValue<'valueExt>, Errors> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun elementType ->
         sum {
           let! elementType = elementType |> fromRootJson
           return elementType
         })
 
-    static member ToJsonSet(toRootJson: TypeValue -> JsonValue) : TypeValue -> JsonValue =
+    static member ToJsonSet(toRootJson: TypeValue<'valueExt> -> JsonValue) : TypeValue<'valueExt> -> JsonValue =
       toRootJson >> Json.discriminator discriminator
