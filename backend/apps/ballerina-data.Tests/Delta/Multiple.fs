@@ -7,14 +7,14 @@ open Ballerina.Data.Delta.Model
 open Ballerina.Data.Delta.ToUpdater
 open Ballerina.Collections.Sum
 
-let deltaExt (_ext: unit) : Value<TypeValue, Unit> -> Sum<Value<TypeValue, Unit>, 'a> =
-  fun (v: Value<TypeValue, Unit>) -> sum.Return v
+let deltaExt (_ext: unit) : Value<TypeValue<Unit>, Unit> -> Sum<Value<TypeValue<Unit>, Unit>, 'a> =
+  fun (v: Value<TypeValue<Unit>, Unit>) -> sum.Return v
 
 [<Test>]
 let ``Delta.Multiple: applies multiple replace deltas sequentially`` () =
-  let v0 = Value<TypeValue, Unit>.Primitive(PrimitiveValue.Int32 1)
-  let v1 = Value<TypeValue, Unit>.Primitive(PrimitiveValue.Int32 2)
-  let v2 = Value<TypeValue, Unit>.Primitive(PrimitiveValue.Int32 3)
+  let v0 = Value<TypeValue<Unit>, Unit>.Primitive(PrimitiveValue.Int32 1)
+  let v1 = Value<TypeValue<Unit>, Unit>.Primitive(PrimitiveValue.Int32 2)
+  let v2 = Value<TypeValue<Unit>, Unit>.Primitive(PrimitiveValue.Int32 3)
 
   let delta = Delta<Unit, Unit>.Multiple([ Delta.Replace(v1); Delta.Replace(v2) ])
 
@@ -27,7 +27,7 @@ let ``Delta.Multiple: applies multiple replace deltas sequentially`` () =
 
 [<Test>]
 let ``Delta.Multiple Identity: empty delta list returns original value`` () =
-  let v = Value<TypeValue, Unit>.Primitive(PrimitiveValue.String "keep me")
+  let v = Value<TypeValue<Unit>, Unit>.Primitive(PrimitiveValue.String "keep me")
 
   let delta = Delta.Multiple([])
 

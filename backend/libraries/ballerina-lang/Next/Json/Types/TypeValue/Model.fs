@@ -10,10 +10,14 @@ module TypeValue =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Json
 
-  type TypeValue with
-    static member FromJson(json: JsonValue) : Sum<TypeValue, Errors> =
+  type TypeValue<'valueExt> with
+    static member FromJson(json: JsonValue) : Sum<TypeValue<'valueExt>, Errors> =
 
-      let inline parse fromJson ctor json =
+      let inline parse
+        (fromJson: (JsonValue -> Sum<TypeValue<'valueExt>, Errors>) -> JsonValue -> Sum<'v, Errors>)
+        (ctor: WithSourceMapping<'v, 'valueExt> -> TypeValue<'valueExt>)
+        json
+        =
         WithSourceMapping.FromJson (fromJson TypeValue.FromJson) TypeExpr.FromJson json
         |> sum.Map ctor
 
@@ -39,9 +43,9 @@ module TypeValue =
       )
       |> sum.MapError(Errors.HighestPriority)
 
-    static member ToJson(v: TypeValue) : JsonValue =
+    static member ToJson(v: TypeValue<'valueExt>) : JsonValue =
       let inline serialize makeJson mapping =
-        WithSourceMapping<_>.ToJson (makeJson TypeValue.ToJson) TypeExpr.ToJson mapping
+        WithSourceMapping<_, _>.ToJson (makeJson TypeValue.ToJson) TypeExpr.ToJson mapping
 
       match v with
       | TypeValue.Primitive primitive -> TypeValue.ToJsonPrimitive primitive.value
@@ -49,7 +53,7 @@ module TypeValue =
       | TypeValue.Lookup lookup -> TypeValue.ToJsonLookup lookup
       | TypeValue.Arrow mapping -> serialize TypeValue.ToJsonArrow mapping
       | TypeValue.Lambda mapping ->
-        WithSourceMapping<TypeParameter * TypeExpr>.ToJson
+        WithSourceMapping<TypeParameter * TypeExpr<'valueExt>, 'valueExt>.ToJson
           (TypeValue.ToJsonLambda TypeExpr.ToJson)
           TypeExpr.ToJson
           mapping
@@ -61,3 +65,7 @@ module TypeValue =
       | TypeValue.Set mapping -> serialize TypeValue.ToJsonSet mapping
       | TypeValue.Map mapping -> serialize TypeValue.ToJsonMap mapping
       | TypeValue.Imported i -> TypeValue.ToJsonImported TypeValue.ToJson i
+      | TypeValue.Schema _ -> failwith "Schema ToJson not implemented"
+      | TypeValue.Entity _ -> failwith "Schema Entity ToJson not implemented"
+      | TypeValue.Entities _ -> failwith "Schema Entities ToJson not implemented"
+      | TypeValue.Relation _ -> failwith "Schema Relation ToJson not implemented"

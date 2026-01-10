@@ -9,10 +9,13 @@ module TypeLambdas =
   open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.Terms
+  open Ballerina.DSL.Next.Types
   open Ballerina.Collections.NonEmptyList
 
-  type TypeLambdaExtension<'ext, 'extTypeLambda> with
-    static member RegisterTypeCheckContext(ext: TypeLambdaExtension<'ext, 'extTypeLambda>) : Updater<TypeCheckContext> =
+  type TypeLambdaExtension<'e, 'extTypeLambda> with
+    static member RegisterTypeCheckContext<'ext when 'ext: comparison>
+      (ext: TypeLambdaExtension<'ext, 'extTypeLambda>)
+      : Updater<TypeCheckContext<'ext>> =
       fun typeCheckContext ->
         let values = typeCheckContext.Values
 
@@ -22,24 +25,21 @@ module TypeLambdas =
         { typeCheckContext with
             Values = values }
 
-    static member RegisterTypeCheckState(ext: TypeLambdaExtension<'ext, 'extTypeLambda>) : Updater<TypeCheckState> =
+    static member RegisterTypeCheckState<'ext when 'ext: comparison>
+      (ext: TypeLambdaExtension<'ext, 'extTypeLambda>)
+      : Updater<TypeCheckState<'ext>> =
       fun typeCheckState ->
 
         let bindings = typeCheckState.Bindings
 
         let bindings =
           ext.ReferencedTypes
-          |> NonEmptyList.ToSeq
           |> Seq.fold (fun acc (id, typeValue, kind) -> acc |> Map.add id (typeValue, kind)) bindings
 
-        let symbols =
-          ext.ReferencedSymbols |> TypeExprEvalSymbols.Combine typeCheckState.Symbols
-
         { typeCheckState with
-            Bindings = bindings
-            Symbols = symbols }
+            Bindings = bindings }
 
-    static member RegisterExprEvalContext
+    static member RegisterExprEvalContext<'ext when 'ext: comparison>
       (ext: TypeLambdaExtension<'ext, 'extTypeLambda>)
       : Updater<ExprEvalContext<'ext>> =
       fun evalContext ->
@@ -56,7 +56,7 @@ module TypeLambdas =
             Values = Map.add id (ext.Value |> ext.ValueLens.Set |> Ext) evalContext.Values
             ExtensionOps = { Eval = ops } }
 
-    static member RegisterLanguageContext
+    static member RegisterLanguageContext<'ext when 'ext: comparison>
       (ext: TypeLambdaExtension<'ext, 'extTypeLambda>)
       : Updater<LanguageContext<'ext>> =
       fun langCtx ->

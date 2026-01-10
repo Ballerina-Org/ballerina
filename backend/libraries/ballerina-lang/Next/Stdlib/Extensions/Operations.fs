@@ -10,12 +10,13 @@ module Operations =
   open Ballerina.DSL.Next.Types.TypeChecker.Expr
   open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.DSL.Next.Extensions
+  open Ballerina.DSL.Next.Types
   open Ballerina.DSL.Next.Terms
 
-  type OperationsExtension<'ext, 'extOperations> with
-    static member RegisterTypeCheckContext
+  type OperationsExtension<'e, 'extOperations> with
+    static member RegisterTypeCheckContext<'ext when 'ext: comparison>
       (opsExt: OperationsExtension<'ext, 'extOperations>)
-      : Updater<TypeCheckContext> =
+      : Updater<TypeCheckContext<'ext>> =
       fun typeCheckContext ->
         let values = typeCheckContext.Values
 
@@ -27,10 +28,12 @@ module Operations =
         { typeCheckContext with
             Values = values }
 
-    static member RegisterTypeCheckState(_opsExt: OperationsExtension<'ext, 'extOperations>) : Updater<TypeCheckState> =
+    static member RegisterTypeCheckState<'ext when 'ext: comparison>
+      (_opsExt: OperationsExtension<'ext, 'extOperations>)
+      : Updater<TypeCheckState<'ext>> =
       id // leave it here, it will be needed later
 
-    static member RegisterExprEvalContext
+    static member RegisterExprEvalContext<'ext when 'ext: comparison>
       (opsExt: OperationsExtension<'ext, 'extOperations>)
       : Updater<ExprEvalContext<'ext>> =
       fun evalContext ->
@@ -62,7 +65,8 @@ module Operations =
           |> Map.toSeq
           |> Seq.fold
             (fun acc (caseId, caseExt) ->
-              acc |> Map.add caseId (caseExt.Operation |> caseExt.OperationsLens.Set |> Ext))
+              acc
+              |> Map.add caseId (caseExt.Operation |> caseExt.OperationsLens.Set |> Value.Ext))
             values
 
         { evalContext with

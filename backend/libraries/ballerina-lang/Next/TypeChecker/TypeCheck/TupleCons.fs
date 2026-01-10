@@ -37,10 +37,10 @@ module TupleCons =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
-    static member internal TypeCheckTupleCons
+  type Expr<'T, 'Id, 've when 'Id: comparison> with
+    static member internal TypeCheckTupleCons<'valueExt when 'valueExt: comparison>
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
-      : TypeChecker<ExprTupleCons<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
+      : TypeChecker<ExprTupleCons<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Items = fields }) ->
         let (!) = typeCheckExpr context_t
 
@@ -65,7 +65,7 @@ module TupleCons =
 
           let! return_t =
             TypeValue.CreateTuple fieldsTypes
-            |> TypeValue.Instantiate TypeExpr.Eval loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
           return Expr.TupleCons(fieldsExpr, loc0, ctx.Scope), return_t, Kind.Star, ctx

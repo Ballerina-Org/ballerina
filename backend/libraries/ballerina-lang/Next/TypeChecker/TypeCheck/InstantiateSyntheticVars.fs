@@ -24,14 +24,14 @@ module InstantiateSyntheticVars =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
-    static member InstantiateSyntheticVars
-      (expr: Expr<TypeValue, ResolvedIdentifier, 'valueExt>)
-      : TypeCheckerResult<Expr<TypeValue, ResolvedIdentifier, 'valueExt>> =
+  type Expr<'T, 'Id, 've when 'Id: comparison> with
+    static member InstantiateSyntheticVars<'valueExt when 'valueExt: comparison>
+      (typeCheckExpr)
+      (expr: Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>)
+      : TypeCheckerResult<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>, 'valueExt> =
       state {
         let loc0 = expr.Location
-        let (!) = Expr.InstantiateSyntheticVars
-
+        let (!) = Expr.InstantiateSyntheticVars typeCheckExpr
 
         match expr.Expr with
         | ExprRec.RecordDes({ Expr = r; Field = field }) ->
@@ -89,7 +89,12 @@ module InstantiateSyntheticVars =
         | ExprRec.TypeApply({ Func = f
                               TypeArg = TypeValue.Var(t_var) as t_arg }) when t_var.Synthetic ->
           let! e = !f
-          let! t_arg = t_arg |> TypeValue.Instantiate TypeExpr.Eval loc0 |> Expr.liftInstantiation
+
+          let! t_arg =
+            t_arg
+            |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+            |> Expr.liftInstantiation
+
           let res = Expr.TypeApply(e, t_arg)
 
           return res
@@ -107,4 +112,10 @@ module InstantiateSyntheticVars =
         | ExprRec.FromValue({ Value = v
                               ValueType = t
                               ValueKind = k }) -> return Expr.FromValue(v, t, k, loc0, expr.Scope)
+        | ExprRec.EntitiesDes({ Expr = e }) ->
+          let! e = !e
+          return Expr.EntitiesDes(e, loc0, expr.Scope)
+        | ExprRec.EntityDes({ Expr = e; EntityName = entityName }) ->
+          let! e = !e
+          return Expr.EntityDes(e, entityName, loc0, expr.Scope)
       }

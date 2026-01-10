@@ -1,6 +1,8 @@
 module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Type.Unify
 
+open System
 open Ballerina.Collections.Sum
+open Ballerina.DSL.Next.StdLib.Extensions
 open NUnit.Framework
 open Ballerina.LocalizedErrors
 open Ballerina.DSL.Next.Types.Model
@@ -8,7 +10,6 @@ open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.DSL.Next.EquivalenceClasses
 open Ballerina.DSL.Next.Unification
 open Ballerina.State.WithError
-open Ballerina.StdLib.OrderPreservingMap
 open Ballerina.Cat.Collections.OrderedMap
 open Ballerina.DSL.Next.Types.TypeChecker.Model
 open Ballerina.DSL.Next.Types.TypeChecker.Patterns
@@ -158,9 +159,9 @@ let ``LangNext-Unify unifies types without variables`` () =
   let actual =
     inputs
     |> List.map (fun input ->
-      TypeValue.Unify(Location.Unknown, input, input).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+      TypeValue.Unify(Location.Unknown, input, input).run (UnificationContext.Empty, UnificationState.Empty))
 
-  let expected: EquivalenceClasses<TypeVar, TypeValue> =
+  let expected: EquivalenceClasses<TypeVar, TypeValue<ValueExt>> =
     { Classes = Map.empty
       Variables = Map.empty }
 
@@ -181,9 +182,9 @@ let ``LangNext-Unify unifies arrows`` () =
     TypeValue.CreateArrow(TypeValue.CreateString(), TypeValue.Var(b))
 
   let actual =
-    (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+    (TypeValue.Unify(inputs).run (UnificationContext.Empty, UnificationState.Empty))
 
-  let expected: EquivalenceClasses<TypeVar, TypeValue> =
+  let expected: EquivalenceClasses<TypeVar, TypeValue<IComparable>> =
     { Classes =
         [ "a", EquivalenceClass.Create(a |> Set.singleton, TypeValue.CreateString() |> Some)
           "b", EquivalenceClass.Create(b |> Set.singleton, TypeValue.CreateString() |> Some) ]
@@ -191,7 +192,7 @@ let ``LangNext-Unify unifies arrows`` () =
       Variables = Map.ofList [ a, "a"; b, "b" ] }
 
   match actual with
-  | Sum.Left((), Some(actual)) -> Assert.That(actual, Is.EqualTo expected)
+  | Sum.Left((), Some(actual)) -> Assert.That(actual.Classes, Is.EqualTo expected)
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
   | _ -> ()
 
@@ -206,14 +207,14 @@ let ``LangNext-Unify unifies lists of tuples`` () =
     TypeValue.CreateSet(TypeValue.CreateTuple([ TypeValue.Var(b); TypeValue.CreateString() ]))
 
   let actual =
-    (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+    (TypeValue.Unify(inputs).run (UnificationContext.Empty, UnificationState.Empty))
 
-  let expected: EquivalenceClasses<TypeVar, TypeValue> =
+  let expected: EquivalenceClasses<TypeVar, TypeValue<IComparable>> =
     { Classes = [ "a", EquivalenceClass.Create([ a; b ] |> Set.ofList, None) ] |> Map.ofList
       Variables = Map.ofList [ a, "a"; b, "a" ] }
 
   match actual with
-  | Sum.Left((), Some(actual)) -> Assert.That(actual, Is.EqualTo expected)
+  | Sum.Left((), Some(actual)) -> Assert.That(actual.Classes, Is.EqualTo expected)
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
   | _ -> ()
 
@@ -228,14 +229,14 @@ let ``LangNext-Unify unifies type values inside type lambdas`` () =
     TypeValue.CreateLambda(b1, TypeExpr.Arrow(TypeExpr.Lookup !b1.Name, TypeExpr.Primitive PrimitiveType.String))
 
   let actual =
-    (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+    (TypeValue.Unify(inputs).run (UnificationContext.Empty, UnificationState.Empty))
 
-  let expected: EquivalenceClasses<TypeVar, TypeValue> =
+  let expected: EquivalenceClasses<TypeVar, TypeValue<IComparable>> =
     { Classes = Map.empty
       Variables = Map.empty }
 
   match actual with
-  | Sum.Left((), Some(actual)) -> Assert.That(actual, Is.EqualTo expected)
+  | Sum.Left((), Some(actual)) -> Assert.That(actual.Classes, Is.EqualTo expected)
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
   | _ -> ()
 
@@ -270,14 +271,14 @@ let ``LangNext-Unify unifies type values inside curried type lambdas`` () =
     )
 
   let actual =
-    TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty)
+    TypeValue.Unify(inputs).run (UnificationContext.Empty, UnificationState.Empty)
 
-  let expected: EquivalenceClasses<TypeVar, TypeValue> =
+  let expected: EquivalenceClasses<TypeVar, TypeValue<IComparable>> =
     { Classes = Map.empty
       Variables = Map.empty }
 
   match actual with
-  | Sum.Left((), Some(actual)) -> Assert.That(actual, Is.EqualTo expected)
+  | Sum.Left((), Some(actual)) -> Assert.That(actual.Classes, Is.EqualTo expected)
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
   | _ -> ()
 
@@ -292,7 +293,7 @@ let ``LangNext-Unify fails to unify incompatible type values inside type lambdas
     TypeValue.CreateLambda(b, TypeExpr.Arrow(TypeExpr.Lookup !b.Name, TypeExpr.Primitive PrimitiveType.Int32))
 
   let actual =
-    (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+    (TypeValue.Unify(inputs).run (UnificationContext.Empty, UnificationState.Empty))
 
   match actual with
   | Sum.Right _ -> Assert.Pass()
@@ -310,7 +311,7 @@ let ``LangNext-Unify fails to unify incompatible params of type lambdas`` () =
     TypeValue.CreateLambda(b, TypeExpr.Arrow(TypeExpr.Lookup !b.Name, TypeExpr.Primitive PrimitiveType.String))
 
   let actual =
-    (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+    (TypeValue.Unify(inputs).run (UnificationContext.Empty, UnificationState.Empty))
 
   match actual with
   | Sum.Right _ -> Assert.Pass()
@@ -327,7 +328,7 @@ let ``LangNext-Unify fails to unify type expressions inside type lambdas`` () =
     TypeValue.CreateLambda(b, TypeExpr.Exclude(TypeExpr.Lookup !b.Name, TypeExpr.Primitive PrimitiveType.Int32))
 
   let actual =
-    (TypeValue.Unify(inputs).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+    (TypeValue.Unify(inputs).run (UnificationContext.Empty, UnificationState.Empty))
 
   match actual with
   | Sum.Right _ -> Assert.Pass()
@@ -353,7 +354,7 @@ let ``LangNext-Unify unifies structurally and symbolically identical records and
     )
 
   let actual1 =
-    (TypeValue.Unify(inputs1).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+    (TypeValue.Unify(inputs1).run (UnificationContext.Empty, UnificationState.Empty))
 
   let inputs2 =
     Location.Unknown,
@@ -367,7 +368,7 @@ let ``LangNext-Unify unifies structurally and symbolically identical records and
     )
 
   let actual2 =
-    (TypeValue.Unify(inputs2).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+    (TypeValue.Unify(inputs2).run (UnificationContext.Empty, UnificationState.Empty))
 
   match actual1, actual2 with
   | Sum.Left((), None), Sum.Left((), None) -> Assert.Pass()
@@ -394,7 +395,7 @@ let ``LangNext-Unify does not unify structurally different records and unions`` 
     )
 
   let actual1 =
-    (TypeValue.Unify(inputs1).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+    (TypeValue.Unify(inputs1).run (UnificationContext.Empty, UnificationState.Empty))
 
   let inputs2 =
     Location.Unknown,
@@ -408,7 +409,7 @@ let ``LangNext-Unify does not unify structurally different records and unions`` 
     )
 
   let actual2 =
-    (TypeValue.Unify(inputs2).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+    (TypeValue.Unify(inputs2).run (UnificationContext.Empty, UnificationState.Empty))
 
   match actual1, actual2 with
   | Sum.Right _, Sum.Right _ -> Assert.Pass()
@@ -431,7 +432,7 @@ let ``LangNext-Unify does not unify structurally identical but symbolically diff
     )
 
   let actual1 =
-    (TypeValue.Unify(inputs1).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+    (TypeValue.Unify(inputs1).run (UnificationContext.Empty, UnificationState.Empty))
 
   let inputs2 =
     Location.Unknown,
@@ -447,7 +448,7 @@ let ``LangNext-Unify does not unify structurally identical but symbolically diff
     )
 
   let actual2 =
-    (TypeValue.Unify(inputs2).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+    (TypeValue.Unify(inputs2).run (UnificationContext.Empty, UnificationState.Empty))
 
   match actual1, actual2 with
   | Sum.Right _, Sum.Right _ -> Assert.Pass()
@@ -461,7 +462,7 @@ let ``LangNext-Unify unifies structurally and symbolically identical tuples and 
     TypeValue.CreateTuple([ TypeValue.CreateString(); TypeValue.CreateInt32() ])
 
   let actual1 =
-    (TypeValue.Unify(inputs1).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+    (TypeValue.Unify(inputs1).run (UnificationContext.Empty, UnificationState.Empty))
 
   let inputs2 =
     Location.Unknown,
@@ -469,7 +470,7 @@ let ``LangNext-Unify unifies structurally and symbolically identical tuples and 
     TypeValue.CreateSum([ TypeValue.CreateString(); TypeValue.CreateInt32() ])
 
   let actual2 =
-    (TypeValue.Unify(inputs2).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+    (TypeValue.Unify(inputs2).run (UnificationContext.Empty, UnificationState.Empty))
 
   match actual1, actual2 with
   | Sum.Left((), None), Sum.Left((), None) -> Assert.Pass()
@@ -485,7 +486,7 @@ let ``LangNext-Unify does not unify structurally different tuples and sums`` () 
     TypeValue.CreateTuple([ TypeValue.CreateString(); TypeValue.CreateInt32() ])
 
   let actual1 =
-    (TypeValue.Unify(inputs1).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+    (TypeValue.Unify(inputs1).run (UnificationContext.Empty, UnificationState.Empty))
 
   let inputs2 =
     Location.Unknown,
@@ -493,7 +494,7 @@ let ``LangNext-Unify does not unify structurally different tuples and sums`` () 
     TypeValue.CreateSum([ TypeValue.CreateString(); TypeValue.CreateInt32() ])
 
   let actual2 =
-    (TypeValue.Unify(inputs2).run (UnificationContext.Empty, EquivalenceClasses.Empty))
+    (TypeValue.Unify(inputs2).run (UnificationContext.Empty, UnificationState.Empty))
 
   match actual1, actual2 with
   | Sum.Right _, Sum.Right _ -> Assert.Pass()
@@ -512,7 +513,7 @@ let ``LangNext-Unify unifies can look lookups up`` () =
           [ !"T1" |> TypeCheckScope.Empty.Resolve, (input1, Kind.Star) ] |> Map.ofList,
           Ballerina.DSL.Next.Types.TypeChecker.Model.TypeExprEvalSymbols.Empty
         ),
-        EquivalenceClasses.Empty
+        UnificationState.Empty
       ))
 
   match actual with
@@ -535,7 +536,7 @@ let ``LangNext-Unify unifies can look lookups up and fail on structure`` () =
           |> Map.ofList,
           Ballerina.DSL.Next.Types.TypeChecker.Model.TypeExprEvalSymbols.Empty
         ),
-        EquivalenceClasses.Empty
+        UnificationState.Empty
       ))
 
   match actual with
@@ -555,7 +556,7 @@ let ``LangNext-Unify unifies can look lookups up and fail on missing identifier`
           [ !"T2" |> TypeCheckScope.Empty.Resolve, (input1, Kind.Star) ] |> Map.ofList,
           Ballerina.DSL.Next.Types.TypeChecker.Model.TypeExprEvalSymbols.Empty
         ),
-        EquivalenceClasses.Empty
+        UnificationState.Empty
       ))
 
   match actual with
@@ -569,16 +570,17 @@ let ``LangNext-Unify unifies fails on different transitively unified generic arg
   let b = TypeVar.Create("b")
   let c = TypeVar.Create("c")
 
-  let program: State<unit, UnificationContext, EquivalenceClasses<TypeVar, TypeValue>, Errors> =
+  let program: State<unit, UnificationContext<ValueExt>, UnificationState<ValueExt>, Errors> =
     state {
       do! EquivalenceClasses.Bind(b, PrimitiveType.Int32 |> TypeValue.CreatePrimitive |> Right, Location.Unknown)
       do! EquivalenceClasses.Bind(c, PrimitiveType.String |> TypeValue.CreatePrimitive |> Right, Location.Unknown)
       do! EquivalenceClasses.Bind(a, b |> TypeValue.Var |> TypeValue.CreateSet |> Right, Location.Unknown)
       do! EquivalenceClasses.Bind(a, c |> TypeValue.Var |> TypeValue.CreateSet |> Right, Location.Unknown)
     }
+    |> State.mapState (fun (s, _) -> s.Classes) (fun (s, _) _ -> UnificationState.Create s)
     |> TypeValue.EquivalenceClassesOp Location.Unknown
 
-  let actual = program.run (UnificationContext.Empty, EquivalenceClasses.Empty)
+  let actual = program.run (UnificationContext.Empty, UnificationState.Empty)
 
   match actual with
   | Sum.Left res -> Assert.Fail $"Expected failure but got error: {res}"
@@ -594,16 +596,17 @@ let ``LangNext-Unify unifies fails on different transitively unified generic arg
   let b = TypeVar.Create("b")
   let c = TypeVar.Create("c")
 
-  let program: State<unit, UnificationContext, EquivalenceClasses<TypeVar, TypeValue>, Errors> =
+  let program: State<unit, UnificationContext<ValueExt>, UnificationState<ValueExt>, Errors> =
     state {
       do! EquivalenceClasses.Bind(c, PrimitiveType.Int32 |> TypeValue.CreatePrimitive |> Right, Location.Unknown)
       do! EquivalenceClasses.Bind(b, c |> Left, Location.Unknown)
       do! EquivalenceClasses.Bind(a, b |> TypeValue.Var |> TypeValue.CreateSet |> Right, Location.Unknown)
       do! EquivalenceClasses.Bind(a, c |> Left, Location.Unknown)
     }
+    |> State.mapState (fun (s, _) -> s.Classes) (fun (s, _) _ -> UnificationState.Create s)
     |> TypeValue.EquivalenceClassesOp Location.Unknown
 
-  let actual = program.run (UnificationContext.Empty, EquivalenceClasses.Empty)
+  let actual = program.run (UnificationContext.Empty, UnificationState.Empty)
 
   match actual with
   | Sum.Left res -> Assert.Fail $"Expected failure but got error: {res}"

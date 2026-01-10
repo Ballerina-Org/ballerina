@@ -12,8 +12,10 @@ module TupleTypeExpr =
 
   let private discriminator = "tuple"
 
-  type TypeExpr with
-    static member FromJsonTuple(fromJsonRoot: TypeExprParser) : TypeExprParser =
+  type TypeExpr<'valueExt> with
+    static member FromJsonTuple<'ve when 've: comparison>
+      (fromJsonRoot: TypeExprParser<'valueExt>)
+      : TypeExprParser<'valueExt> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun tupleFields ->
         sum {
           let! elements = tupleFields |> JsonValue.AsArray
@@ -21,7 +23,9 @@ module TupleTypeExpr =
           return TypeExpr.Tuple(elementTypes)
         })
 
-    static member ToJsonTuple(rootToJson: TypeExpr -> JsonValue) : List<TypeExpr> -> JsonValue =
+    static member ToJsonTuple<'ve when 've: comparison>
+      (rootToJson: TypeExpr<'valueExt> -> JsonValue)
+      : List<TypeExpr<'valueExt>> -> JsonValue =
       List.map rootToJson
       >> List.toArray
       >> JsonValue.Array

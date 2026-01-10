@@ -13,15 +13,13 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open FSharp.Data
 
-  let private boolTypeValue = TypeValue.CreatePrimitive PrimitiveType.Bool
-  let private guidTypeValue = TypeValue.CreatePrimitive PrimitiveType.Guid
-  let private stringTypeValue = TypeValue.CreatePrimitive PrimitiveType.String
-  let private unitTypeValue = TypeValue.CreatePrimitive PrimitiveType.Unit
-
   let GuidExtension<'ext>
     (consLens: PartialLens<'ext, GuidConstructors>)
     (operationLens: PartialLens<'ext, GuidOperations<'ext>>)
     : TypeExtension<'ext, GuidConstructors, PrimitiveValue, GuidOperations<'ext>> =
+
+    let boolTypeValue = TypeValue.CreatePrimitive PrimitiveType.Bool
+    let guidTypeValue = TypeValue.CreatePrimitive PrimitiveType.Guid
 
     let guidId = Identifier.LocalScope "guid"
     let guidSymbolId = guidId |> TypeSymbol.Create
@@ -66,7 +64,7 @@ module Extension =
                 return GuidOperations.Equal({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
     let guidNotEqualId =
@@ -106,7 +104,7 @@ module Extension =
                 return GuidOperations.NotEqual({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
     { TypeVars = []

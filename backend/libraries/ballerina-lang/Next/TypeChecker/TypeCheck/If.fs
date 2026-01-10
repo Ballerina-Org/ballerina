@@ -27,10 +27,10 @@ module If =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
-    static member internal TypeCheckIf
+  type Expr<'T, 'Id, 'v when 'Id: comparison> with
+    static member internal TypeCheckIf<'valueExt when 'valueExt: comparison>
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
-      : TypeChecker<ExprIf<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
+      : TypeChecker<ExprIf<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
           ({ Cond = cond
@@ -61,7 +61,7 @@ module If =
 
           let! t_then =
             t_then
-            |> TypeValue.Instantiate TypeExpr.Eval loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
             |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
           return Expr.If(cond, thenBranch, elseBranch, loc0, ctx.Scope), t_then, Kind.Star, ctx

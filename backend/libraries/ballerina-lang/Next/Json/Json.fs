@@ -23,7 +23,7 @@ type ValueParser<'T, 'Id, 'valueExt when 'Id: comparison> = JsonValue -> ValuePa
 
 type ExprParser<'T, 'Id, 'valueExt when 'Id: comparison> = JsonValue -> ExprParserReader<'T, 'Id, 'valueExt>
 
-type TypeExprParser = JsonParser<TypeExpr>
+type TypeExprParser<'valueExt> = JsonParser<TypeExpr<'valueExt>>
 
 type ValueParserLayer<'T, 'Id, 'valueExt when 'Id: comparison> =
   ValueParser<'T, 'Id, 'valueExt> -> ValueParser<'T, 'Id, 'valueExt>

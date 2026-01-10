@@ -12,8 +12,8 @@ module Var =
 
   let private discriminator = "var"
 
-  type TypeValue with
-    static member FromJsonVar: JsonValue -> Sum<TypeValue, Errors> =
+  type TypeValue<'valueExt> with
+    static member FromJsonVar: JsonValue -> Sum<TypeValue<'valueExt>, Errors> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (TypeVar.FromJson >> sum.Map TypeValue.Var)
 
     static member ToJsonVar: TypeVar -> JsonValue =

@@ -15,10 +15,10 @@ module Tuple =
 
   let private discriminator = "tuple"
 
-  type TypeValue with
+  type TypeValue<'valueExt> with
     static member FromJsonTuple
-      (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
-      : JsonValue -> Sum<List<TypeValue>, Errors> =
+      (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors>)
+      : JsonValue -> Sum<List<TypeValue<'valueExt>>, Errors> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun tupleFields ->
         sum {
           let! elements = tupleFields |> JsonValue.AsArray
@@ -26,7 +26,7 @@ module Tuple =
           return elementTypes
         })
 
-    static member ToJsonTuple(rootToJson: TypeValue -> JsonValue) : List<TypeValue> -> JsonValue =
+    static member ToJsonTuple(rootToJson: TypeValue<'valueExt> -> JsonValue) : List<TypeValue<'valueExt>> -> JsonValue =
       List.toArray
       >> Array.map rootToJson
       >> JsonValue.Array

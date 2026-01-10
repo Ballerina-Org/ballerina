@@ -25,28 +25,29 @@ open Ballerina.VirtualFolders.Model
 open Ballerina.DSL.Next.Terms.Model
 
 type ConcurrentStore =
-  { Tenants: ConcurrentDictionary<TenantId, ConcurrentDictionary<SpecName, Spec<TypeValue, ValueExt>>> }
+  { Tenants: ConcurrentDictionary<TenantId, ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>> }
 
 module ConcurrentStore =
   let emptyStore =
-    { Tenants = ConcurrentDictionary<TenantId, ConcurrentDictionary<SpecName, Spec<TypeValue, ValueExt>>>() }
+    { Tenants = ConcurrentDictionary<TenantId, ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>>() }
 
   let initStore (tenantIds: TenantId list) : ConcurrentStore =
     let tenants = emptyStore.Tenants
 
     for tid in tenantIds do
-      tenants[tid] <- ConcurrentDictionary<SpecName, Spec<TypeValue, ValueExt>>()
+      tenants[tid] <- ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>()
 
     { Tenants = tenants }
 
   let makeSpecApi
-    (store: ConcurrentDictionary<SpecName, Spec<TypeValue, ValueExt>>)
+    (store: ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>)
     (specName: SpecName)
     (path: VirtualPath option)
-    (onDeltaExt: DeltaExt -> Value<TypeValue, ValueExt> -> Sum<Value<TypeValue, ValueExt>, Errors.Errors>)
+    (onDeltaExt:
+      DeltaExt -> Value<TypeValue<ValueExt>, ValueExt> -> Sum<Value<TypeValue<ValueExt>, ValueExt>, Errors.Errors>)
     : SpecDataApi<ValueExt, DeltaExt> =
 
-    let storeUpdater (u: U<SpecData<TypeValue, ValueExt>>) =
+    let storeUpdater (u: U<SpecData<TypeValue<ValueExt>, ValueExt>>) =
       sum {
         match store.TryGetValue specName with
         | true, current ->
@@ -193,7 +194,7 @@ module ConcurrentStore =
 
             let! v2 =
               (WorkspaceVariant.WithPath path spec.WorkspaceVariant, spec.Folders)
-              ||> Schema.FromJsonVirtualFolder
+              ||> Ballerina.Data.Schema.Model.Schema.FromJsonVirtualFolder
               |> sum.MapError(Errors.FromErrors Location.Unknown)
 
 
@@ -251,7 +252,7 @@ module ConcurrentStore =
           | true, spec ->
             let! v2 =
               (WorkspaceVariant.WithPath path spec.WorkspaceVariant, spec.Folders)
-              ||> Schema.FromJsonVirtualFolder
+              ||> Ballerina.Data.Schema.Model.Schema.FromJsonVirtualFolder
               |> sum.MapError(Errors.FromErrors Location.Unknown)
 
             let seeds = spec.Seeds
@@ -315,7 +316,7 @@ module ConcurrentStore =
 
             let! v2 =
               (WorkspaceVariant.WithPath path spec.WorkspaceVariant, spec.Folders)
-              ||> Schema.FromJsonVirtualFolder
+              ||> Ballerina.Data.Schema.Model.Schema.FromJsonVirtualFolder
               |> sum.MapError(Errors.FromErrors Location.Unknown)
 
             let seeds = spec.Seeds
@@ -424,7 +425,7 @@ module ConcurrentStore =
 
               let! v2 =
                 (WorkspaceVariant.WithPath path specState.WorkspaceVariant, specState.Folders)
-                ||> Schema.FromJsonVirtualFolder
+                ||> Ballerina.Data.Schema.Model.Schema.FromJsonVirtualFolder
                 |> sum.MapError(Errors.FromErrors Location.Unknown)
 
 
@@ -463,7 +464,7 @@ module ConcurrentStore =
 
               let! v2 =
                 (WorkspaceVariant.WithPath path specState.WorkspaceVariant, specState.Folders)
-                ||> Schema.FromJsonVirtualFolder
+                ||> Ballerina.Data.Schema.Model.Schema.FromJsonVirtualFolder
                 |> sum.MapError(Errors.FromErrors Location.Unknown)
 
               let seeds = specState.Seeds
@@ -512,7 +513,9 @@ module ConcurrentStore =
   let private error (msg: string) =
     Errors.Singleton(Location.Unknown, msg) |> sum.Throw
 
-  let makeSpecsApi (store: ConcurrentDictionary<SpecName, Spec<TypeValue, ValueExt>>) : SpecApi<TypeValue, ValueExt> =
+  let makeSpecsApi
+    (store: ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>)
+    : SpecApi<TypeValue<ValueExt>, ValueExt> =
     { Get =
         fun specName ->
           sum {
@@ -554,7 +557,7 @@ module ConcurrentStore =
             | false, _ -> return! error $"SpecApi Delete: '{specName.SpecName}' does not exist in store"
           }
       Update =
-        fun (name: SpecName) (spec: Spec<TypeValue, ValueExt>) ->
+        fun (name: SpecName) (spec: Spec<TypeValue<ValueExt>, ValueExt>) ->
           sum {
             match store.TryGetValue name with
             | true, current ->
@@ -569,11 +572,12 @@ module ConcurrentStore =
       List = fun () -> sum { return store.Keys |> Seq.toList } }
 
   let seed
-    (store: ConcurrentDictionary<SpecName, Spec<TypeValue, ValueExt>>)
-    (seeder: Schema<TypeValue, ResolvedIdentifier, ValueExt> -> Sum<SpecData<TypeValue, ValueExt>, Errors>)
+    (store: ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>)
+    (seeder:
+      Schema<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt> -> Sum<SpecData<TypeValue<ValueExt>, ValueExt>, Errors>)
     (name: SpecName)
     (path: VirtualPath option)
-    : State<SpecData<TypeValue, ValueExt>, TypeCheckContext, TypeCheckState, Errors> =
+    : State<SpecData<TypeValue<ValueExt>, ValueExt>, TypeCheckContext<ValueExt>, TypeCheckState<ValueExt>, Errors> =
 
     state {
       match store.ContainsKey name with
@@ -586,11 +590,11 @@ module ConcurrentStore =
 
         let! v2 =
           (specStateWithVariant.WorkspaceVariant, specStateWithVariant.Folders)
-          ||> Schema.FromJsonVirtualFolder
+          ||> Ballerina.Data.Schema.Model.Schema.FromJsonVirtualFolder
           |> sum.MapError(Errors.FromErrors Location.Unknown)
           |> state.OfSum
 
-        let! schemaValues = v2 |> Schema.SchemaEval
+        let! schemaValues = v2 |> Ballerina.Data.Schema.Model.Schema.SchemaEval()
 
         let! seeds = seeder schemaValues |> state.OfSum
         let updated = { specState with Seeds = seeds }
@@ -604,9 +608,9 @@ module ConcurrentStore =
     }
 
   let seedWith
-    (store: ConcurrentDictionary<SpecName, Spec<TypeValue, ValueExt>>)
+    (store: ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>)
     (name: SpecName)
-    (seeds: SpecData<TypeValue, ValueExt>)
+    (seeds: SpecData<TypeValue<ValueExt>, ValueExt>)
     : Sum<unit, Errors> =
 
     sum {
@@ -627,7 +631,7 @@ module ConcurrentStore =
         return! sum.Throw(Errors.Singleton(Location.Unknown, $"SeedsWith failed. Spec {name} not present in the store"))
     }
 
-  let getSeeds (store: ConcurrentDictionary<SpecName, Spec<TypeValue, ValueExt>>) (specName: SpecName) =
+  let getSeeds (store: ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>) (specName: SpecName) =
     sum {
       match store.TryGetValue specName with
       | false, _ -> return! error $"SpecApi GetSeeds: '{specName.SpecName}' does not exist in store"

@@ -56,7 +56,9 @@ module Extension =
     let listNilId =
       Identifier.FullyQualified([ "List" ], "Nil") |> TypeCheckScope.Empty.Resolve
 
-    let getValueAsList (v: Value<TypeValue, 'ext>) : Sum<List<Value<TypeValue, 'ext>>, Ballerina.Errors.Errors> =
+    let getValueAsList
+      (v: Value<TypeValue<'ext>, 'ext>)
+      : Sum<List<Value<TypeValue<'ext>, 'ext>>, Ballerina.Errors.Errors> =
       sum {
         let! v = v |> Value.AsExt
 
@@ -68,7 +70,7 @@ module Extension =
         v
       }
 
-    let _toValueFromList (v: List<Value<TypeValue, 'ext>>) : Value<TypeValue, 'ext> =
+    let _toValueFromList (v: List<Value<TypeValue<'ext>, 'ext>>) : Value<TypeValue<'ext>, 'ext> =
       ListValues.List v |> valueLens.Set |> Ext
 
     let lengthOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
@@ -107,7 +109,7 @@ module Extension =
               let! v = v |> ListValues.AsList |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
 
               return Value.Primitive(PrimitiveValue.Int32(v.Length))
-            } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
+            } //: 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
     let foldOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
@@ -189,7 +191,7 @@ module Extension =
                       (reader { return acc })
 
                   return l
-            } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
+            } //: 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
     let filterOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
@@ -258,7 +260,7 @@ module Extension =
                   |> reader.All
 
                 return v' |> List.filter snd |> List.map fst |> ListValues.List |> valueLens.Set |> Ext
-            } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
+            } //: 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
     let mapOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
@@ -299,7 +301,7 @@ module Extension =
                 let! v' = v |> List.map (fun v -> Expr.EvalApply loc0 [] (f, v)) |> reader.All
 
                 return ListValues.List v' |> valueLens.Set |> Ext
-            } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
+            } //: 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
     let appendOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
@@ -347,7 +349,7 @@ module Extension =
                 let v' = List.append l v
 
                 return ListValues.List v' |> valueLens.Set |> Ext
-            } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
+            } //: 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
     let consOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
@@ -393,7 +395,7 @@ module Extension =
 
                 return ListValues.List(head :: tail) |> valueLens.Set |> Ext
               | _ -> return! (loc0, "Error: expected pair") |> Errors.Singleton |> reader.Throw
-            } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
+            } //: 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
     let nilOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
@@ -420,7 +422,7 @@ module Extension =
                 |> reader.OfSum
 
               return ListValues.List [] |> valueLens.Set |> Ext
-            } //: 'extOperations * Value<TypeValue, 'ext> -> ExprEvaluator<'ext, 'extValues> }
+            } //: 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
     { TypeName = listId, listSymbolId
@@ -439,5 +441,5 @@ module Extension =
         fun (v: ListValues<'ext>) ->
           match v with
           | ListValues.List(v :: vs) ->
-            Value<TypeValue, 'ext>.Tuple([ v; vs |> ListValues.List |> valueLens.Set |> Ext ])
-          | _ -> Value<TypeValue, 'ext>.Primitive PrimitiveValue.Unit }
+            Value<TypeValue<'ext>, 'ext>.Tuple([ v; vs |> ListValues.List |> valueLens.Set |> Ext ])
+          | _ -> Value<TypeValue<'ext>, 'ext>.Primitive PrimitiveValue.Unit }
