@@ -1,8 +1,11 @@
 ﻿namespace Ballerina.Data.Schema
 
+open System
 open Ballerina.Collections.Sum
+open Ballerina.DSL.Next.Extensions
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Json
+open Ballerina.DSL.Next.Types.TypeChecker
 open Ballerina.Data.Schema.Model
 open Ballerina.Data.Schema.Json
 open Ballerina.Errors
@@ -17,7 +20,7 @@ open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.FormEngine.Model
 
 module Extract =
-  let _stdExtensions, langContext = stdExtensions
+  let _stdExtensions, (langContext: LanguageContext<ValueExt>) = stdExtensions
 
   let private entityNameFromLauncher (launcherName: LauncherName) (context: ParsedFormsContext<_, _>) =
     let launcher = context.Launchers |> Map.find launcherName
@@ -40,33 +43,33 @@ module Extract =
       context.Apis.Entities[key.Value] |> fst |> _.EntityName
     | PassthroughTable pt -> pt.TableApi.TableName
 
-  let rendererAndEntity<'ExprExt, 'ValExt>
-    (launcherName: LauncherName)
-    (formsContext: ParsedFormsContext<'ExprExt, 'ValExt>)
-    (schema: Schema<TypeExpr, Identifier, ValueExt>)
-    : Sum<Renderer<'ExprExt, 'ValExt> * EntityName * Schema<TypeValue, ResolvedIdentifier, ValueExt>, Errors> =
-    sum {
-
-      let entityName: EntityName =
-        { EntityName = entityNameFromLauncher launcherName formsContext }
-
-      let launcher = formsContext.Launchers |> Map.find launcherName
-      let form = formsContext.Forms |> Map.find launcher.Form.FormName
-
-      let! schema, _stateOpt =
-        schema
-        |> Schema.SchemaEval
-        |> State.Run(langContext.TypeCheckContext, langContext.TypeCheckState)
-        |> sum.MapError(fst >> _.Errors.Head.Message >> Errors.Singleton)
-
-      let renderer =
-        match form.Body with
-        | Annotated annotation -> Some annotation.Renderer
-        | Table table -> table.Details |> Option.map _.Renderer
-
-      let! renderer = renderer |> sum.OfOption(Errors.Singleton("Table renderer is None"))
-      return renderer, entityName, schema
-    }
+  // let rendererAndEntity<'ExprExt, 'ValExt when 'ValExt: comparison>
+  //   (launcherName: LauncherName)
+  //   (formsContext: ParsedFormsContext<'ExprExt, 'ValExt>)
+  //   (schema: Schema<TypeExpr<'ValExt>, Identifier, 'ValExt>)
+  //   : Sum<Renderer<'ExprExt, 'ValExt> * EntityName * Schema<TypeValue<'ValExt>, ResolvedIdentifier, 'ValExt>, Errors> =
+  //   sum {
+  //
+  //     let entityName: EntityName =
+  //       { EntityName = entityNameFromLauncher launcherName formsContext }
+  //
+  //     let launcher = formsContext.Launchers |> Map.find launcherName
+  //     let form = formsContext.Forms |> Map.find launcher.Form.FormName
+  //
+  //     let! schema, _stateOpt =
+  //       schema
+  //       |> Ballerina.Data.Schema.Model.Schema.SchemaEval ()
+  //       |> State.Run(langContext.TypeCheckContext, langContext.TypeCheckState)
+  //       |> sum.MapError(fst >> _.Errors.Head.Message >> Errors.Singleton)
+  //
+  //     let renderer =
+  //       match form.Body with
+  //       | Annotated annotation -> Some annotation.Renderer
+  //       | Table table -> table.Details |> Option.map _.Renderer
+  //
+  //     let! renderer = renderer |> sum.OfOption(Errors.Singleton("Table renderer is None"))
+  //     return renderer, entityName, schema
+  //   }
 
   let fromVirtualFolders (variant: WorkspaceVariant) (path: VirtualPath option) (node: VfsNode) =
     match variant with
@@ -88,8 +91,12 @@ module Extract =
         let! typesJson = VfsNode.AsFile typesJson
         let! schemaJson = FileContent.AsJson schemaJson.Content
         let! typesJson = FileContent.AsJson typesJson.Content
-        let! schemaJson = Schema.InsertTypesToSchema(schemaJson, typesJson)
-        let! schema = Schema.FromJson schemaJson |> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
+        let! schemaJson = Ballerina.Data.Schema.Model.Schema.InsertTypesToSchema(schemaJson, typesJson)
+
+        let! schema =
+          Ballerina.Data.Schema.Model.Schema.FromJson schemaJson
+          |> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
+
         return schema
       }
     | Compose -> sum.Throw(Errors.Singleton("Not implemented v2 files retrieval for compose spec"))

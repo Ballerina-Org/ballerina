@@ -6,12 +6,12 @@ module AutomaticSymbolCreation =
   open Ballerina.Errors
 
   let wrapWithLet
-    (typeExpr: TypeExpr, lookupsRepresentingSymbols: List<TypeExpr>, symbolsKind: SymbolsKind)
-    : Sum<TypeExpr, Errors> =
+    (typeExpr: TypeExpr<'valueExt>, lookupsRepresentingSymbols: List<TypeExpr<'valueExt>>, symbolsKind: SymbolsKind)
+    : Sum<TypeExpr<'valueExt>, Errors> =
     sum {
       let! symbolNames =
         lookupsRepresentingSymbols
-        |> List.map (fun (symbol: TypeExpr) ->
+        |> List.map (fun (symbol: TypeExpr<'valueExt>) ->
           sum {
             match symbol with
             | TypeExpr.Lookup(Identifier.LocalScope name) -> name

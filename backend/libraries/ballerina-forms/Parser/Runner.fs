@@ -8,7 +8,6 @@ module Runner =
   open Ballerina.DSL.Parser.ExprType
   open Renderers
 
-  open Ballerina.DSL.FormEngine.Model
   open Ballerina.DSL.Expr.Types.Model
   open Ballerina.DSL.Expr.Types.Patterns
   open Ballerina.DSL.FormEngine.Parser.FormsPatterns
@@ -18,10 +17,9 @@ module Runner =
   open Ballerina.Errors
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.StdLib.String
-  open Ballerina.StdLib.Object
   open FSharp.Data
   open Ballerina.Collections.NonEmptyList
-  open Ballerina.DSL.Expr.Extensions
+  open Ballerina.DSL.FormEngine.Model
 
   type FormLauncher with
     static member Parse<'ExprExtension, 'ValueExtension>
@@ -149,34 +147,15 @@ module Runner =
       (enumName: string)
       (enumTypeJson: JsonValue)
       : State<Unit, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
-
       state {
-        let! enumType = ExprType.Parse enumTypeJson |> state.OfSum
-        let! enumTypeId = enumType |> ExprType.AsLookupId |> state.OfSum
-        let! (ctx: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
-        let! enumType = ExprType.ResolveLookup ctx.Types enumType |> state.OfSum
-        let! fields = ExprType.GetFields enumType |> state.OfSum
+        let! (context: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
+        let plain = EnumApi.ParsePlain valueFieldName context.Types enumName enumTypeJson
 
-        match fields with
-        | [ (value, ExprType.LookupType underlyingUnion) ] when value = valueFieldName ->
-          do!
-            state.SetState(
-              ParsedFormsContext.Updaters.Apis(
-                FormApis.Updaters.Enums(
-                  Map.add
-                    enumName
-                    { EnumApi.TypeId = enumTypeId
-                      EnumName = enumName
-                      UnderlyingEnum = underlyingUnion }
-                )
-              )
-            )
-        | _ ->
-          return!
-            state.Throw(
-              $$"""Error: invalid enum reference type passed to enum '{{enumName}}'. Expected { {{valueFieldName}}:ENUM }, found {{fields}}."""
-              |> Errors.Singleton
-            )
+        let filters =
+          EnumApi.ParseWithFilters valueFieldName context.Types enumName enumTypeJson
+
+        let! enumApi = NonEmptyList.OfList(plain, [ filters ]) |> sum.Any |> state.OfSum
+        do! state.SetState(ParsedFormsContext.Updaters.Apis(FormApis.Updaters.Enums <| Map.add enumName enumApi))
       }
 
   type StreamApi with
@@ -664,7 +643,7 @@ module Runner =
       state {
         for launcherName, launcherJson in launchersJson do
           let launcherName = LauncherName launcherName
-          let! (mode, formId) = FormLauncher.Parse launcherName launcherJson
+          let! mode, formId = FormLauncher.Parse launcherName launcherJson
 
           do!
             state.SetState(
@@ -678,7 +657,7 @@ module Runner =
               )
             )
       }
-      |> state.WithErrorContext $"...when parsing launchers"
+      |> state.WithErrorContext "...when parsing launchers"
 
     static member ExtractTopLevel json =
       state {
@@ -691,7 +670,7 @@ module Runner =
             (state.Either (properties |> state.TryFindField "forms") (state.Return(JsonValue.Record [||])))
             (state.Either (properties |> state.TryFindField "launchers") (state.Return(JsonValue.Record [||])))
 
-        let! typesJson, apisJson, formsJson, launchersJson =
+        let! types, apis, forms, launchers =
           state.All4
             (typesJson |> JsonValue.AsRecord |> state.OfSum)
             (apisJson |> JsonValue.AsRecord |> state.OfSum)
@@ -700,11 +679,11 @@ module Runner =
 
         let! enumsJson, searchableStreamsJson, entitiesJson, tablesJson, lookupsJson =
           state.All5
-            (state.Either (apisJson |> state.TryFindField "enumOptions") (state.Return(JsonValue.Record [||])))
-            (state.Either (apisJson |> state.TryFindField "searchableStreams") (state.Return(JsonValue.Record [||])))
-            (state.Either (apisJson |> state.TryFindField "entities") (state.Return(JsonValue.Record [||])))
-            (state.Either (apisJson |> state.TryFindField "tables") (state.Return(JsonValue.Record [||])))
-            (state.Either (apisJson |> state.TryFindField "lookups") (state.Return(JsonValue.Record [||])))
+            (state.Either (apis |> state.TryFindField "enumOptions") (state.Return(JsonValue.Record [||])))
+            (state.Either (apis |> state.TryFindField "searchableStreams") (state.Return(JsonValue.Record [||])))
+            (state.Either (apis |> state.TryFindField "entities") (state.Return(JsonValue.Record [||])))
+            (state.Either (apis |> state.TryFindField "tables") (state.Return(JsonValue.Record [||])))
+            (state.Either (apis |> state.TryFindField "lookups") (state.Return(JsonValue.Record [||])))
 
         let! enums, streams, entities, tables, lookups =
           state.All5
@@ -715,9 +694,9 @@ module Runner =
             (lookupsJson |> JsonValue.AsRecord |> state.OfSum)
 
         return
-          { Types = typesJson
-            Forms = formsJson
-            Launchers = launchersJson
+          { Types = types
+            Forms = forms
+            Launchers = launchers
             Enums = enums
             Streams = streams
             Entities = entities

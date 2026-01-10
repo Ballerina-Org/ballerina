@@ -17,10 +17,10 @@ module Types =
   open Ballerina.StdLib.OrderPreservingMap
   open Ballerina.Cat.Collections.OrderedMap
 
-  type TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations> with
-    static member RegisterTypeCheckContext
+  type TypeExtension<'e, 'extConstructors, 'extValues, 'extOperations> with
+    static member RegisterTypeCheckContext<'ext when 'ext: comparison>
       (typeExt: TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations>)
-      : Updater<TypeCheckContext> =
+      : Updater<TypeCheckContext<'ext>> =
       fun typeCheckContext ->
         let kind =
           typeExt.TypeVars
@@ -42,9 +42,9 @@ module Types =
         { typeCheckContext with
             Values = values }
 
-    static member RegisterTypeCheckState
+    static member RegisterTypeCheckState<'ext when 'ext: comparison>
       (typeExt: TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations>)
-      : Updater<TypeCheckState> =
+      : Updater<TypeCheckState<'ext>> =
       fun typeCheckState ->
         let kind =
           typeExt.TypeVars
@@ -81,7 +81,7 @@ module Types =
                     |> Map.keys
                     |> Seq.fold (fun acc (id, sym) -> acc |> Map.add id sym) typeCheckState.Symbols.UnionCases } }
 
-    static member RegisterExprEvalContext
+    static member RegisterExprEvalContext<'ext when 'ext: comparison>
       (typeExt: TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations>)
       : Updater<ExprEvalContext<'ext>> =
       fun evalContext ->
@@ -92,7 +92,7 @@ module Types =
             (fun
                  (acc:
                    Location
-                     -> List<Expr<TypeValue, ResolvedIdentifier, 'ext>>
+                     -> List<Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext>>
                      -> 'ext
                      -> ExprEvaluator<'ext, ExtEvalResult<'ext>>)
                  ((caseId, _), caseExt) ->
@@ -149,7 +149,7 @@ module Types =
             (fun
                  (acc:
                    Location
-                     -> List<Expr<TypeValue, ResolvedIdentifier, 'ext>>
+                     -> List<Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext>>
                      -> 'ext
                      -> ExprEvaluator<'ext, ExtEvalResult<'ext>>)
                  caseExt ->

@@ -17,10 +17,10 @@ module Record =
 
   let private discriminator = "record"
 
-  type TypeValue with
+  type TypeValue<'valueExt> with
     static member FromJsonRecord
-      (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
-      : JsonValue -> Sum<OrderedMap<TypeSymbol, TypeValue * Kind>, Errors> =
+      (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors>)
+      : JsonValue -> Sum<OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>, Errors> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun recordFields ->
         sum {
           let! fields = recordFields |> JsonValue.AsArray
@@ -43,8 +43,8 @@ module Record =
         })
 
     static member ToJsonRecord
-      (rootToJson: TypeValue -> JsonValue)
-      : OrderedMap<TypeSymbol, TypeValue * Kind> -> JsonValue =
+      (rootToJson: TypeValue<'valueExt> -> JsonValue)
+      : OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind> -> JsonValue =
 
 
       (OrderedMap.toArray

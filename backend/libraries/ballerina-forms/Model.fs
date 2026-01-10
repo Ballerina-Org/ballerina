@@ -1,6 +1,9 @@
 namespace Ballerina.DSL.FormEngine
 
 module Model =
+  open Ballerina.DSL.Next.StdLib.Extensions
+  open Ballerina.DSL.Next.Types
+  open Ballerina.DSL.Next.Types.TypeChecker
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
   open System
@@ -258,20 +261,25 @@ module Model =
       {| ConfigType: ExprTypeId
          TableApi: TableApiId |}
 
+  and EnumCaseFilterExpr =
+    | Filter of Expr<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt> list * TypeCheckState<ValueExt>
+    | PassAll
 
   and EnumApiId = { EnumName: string }
 
   and EnumApi =
     { EnumName: string
       TypeId: ExprTypeId
-      UnderlyingEnum: ExprTypeId }
+      UnderlyingEnum: ExprTypeId
+      Filter: EnumCaseFilterExpr }
 
     static member Id(e: EnumApi) = { EnumName = e.EnumName }
 
     static member Create(n, t, c) : EnumApi =
       { EnumName = n
         TypeId = t
-        UnderlyingEnum = c }
+        UnderlyingEnum = c
+        Filter = EnumCaseFilterExpr.PassAll }
 
     static member Type(a: EnumApi) : ExprTypeId = a.TypeId
 

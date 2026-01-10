@@ -19,16 +19,16 @@ module Model =
       List: unit -> Sum<SpecName list, Errors> }
 
   type EntitiesApi<'valueExtension, 'deltaExtension> =
-    { Get: EntityName -> Guid -> Sum<Value<TypeValue, 'valueExtension>, Errors>
+    { Get: EntityName -> Guid -> Sum<Value<TypeValue<'valueExtension>, 'valueExtension>, Errors>
       GetMany:
         EntityName
           -> int * int
           -> Sum<
-            {| Values: List<Guid * Value<TypeValue, 'valueExtension>>
+            {| Values: List<Guid * Value<TypeValue<'valueExtension>, 'valueExtension>>
                HasMore: bool |},
             Errors
            >
-      Create: EntityName -> Value<TypeValue, 'valueExtension> -> Sum<Guid, Errors>
+      Create: EntityName -> Value<TypeValue<'valueExtension>, 'valueExtension> -> Sum<Guid, Errors>
       Update: EntityName -> Guid * Delta<'valueExtension, 'deltaExtension> -> Sum<Unit, Errors>
       Delete: EntityName -> Guid -> Sum<Unit, Errors> }
 
@@ -37,11 +37,11 @@ module Model =
         LookupName
           -> Guid * (int * int)
           -> Sum<
-            {| Values: List<Value<TypeValue, 'valueExtension>>
+            {| Values: List<Value<TypeValue<'valueExtension>, 'valueExtension>>
                HasMore: bool |},
             Errors
            >
-      Create: LookupName -> Guid * Value<TypeValue, 'valueExtension> -> Sum<Guid, Errors>
+      Create: LookupName -> Guid * Value<TypeValue<'valueExtension>, 'valueExtension> -> Sum<Guid, Errors>
       Delete: LookupName -> Guid * Guid -> Sum<Unit, Errors>
       Link: LookupName -> Guid * Guid -> Sum<Unit, Errors>
       Unlink: LookupName -> Guid * Guid -> Sum<Unit, Errors>

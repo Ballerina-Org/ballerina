@@ -27,6 +27,7 @@ module Lexer =
     | If
     | Then
     | Else
+    | Property
 
     override this.ToString() =
       match this with
@@ -35,6 +36,7 @@ module Lexer =
       | Function -> "function"
       | Fun -> "fun"
       | Let -> "let"
+      | Property -> "property"
       | In -> "in"
       | Match -> "match"
       | With -> "with"
@@ -64,6 +66,7 @@ module Lexer =
     | GreaterThan
     | LessThanOrEqual
     | LessThan
+    | DoubleDot
     | Dot
     | Comma
     | At
@@ -95,6 +98,7 @@ module Lexer =
       | Minus -> "-"
       | GreaterThan -> ">"
       | LessThan -> "<"
+      | DoubleDot -> ".."
       | Dot -> "."
       | Comma -> ","
       | At -> "@"
@@ -252,6 +256,8 @@ module Lexer =
             |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.Then)
             word (Keyword.Else.ToString())
             |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.Else)
+            word (Keyword.Property.ToString())
+            |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.Property)
             word "true" |> tokenizer.Map(LocalizedToken.FromBoolLiteral true)
             word "false" |> tokenizer.Map(LocalizedToken.FromBoolLiteral false) ]
 
@@ -268,6 +274,7 @@ module Lexer =
     tokenizer.Any
       [ word "->" |> tokenizer.Map(LocalizedToken.FromOperator Operator.SingleArrow)
         word "=>" |> tokenizer.Map(LocalizedToken.FromOperator Operator.DoubleArrow)
+        word ".." |> tokenizer.Map(LocalizedToken.FromOperator Operator.DoubleDot)
         word "." |> tokenizer.Map(LocalizedToken.FromOperator Operator.Dot)
         word "," |> tokenizer.Map(LocalizedToken.FromOperator Operator.Comma)
         word "@" |> tokenizer.Map(LocalizedToken.FromOperator Operator.At)

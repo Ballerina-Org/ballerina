@@ -12,9 +12,9 @@ module SetTypeExpr =
 
   let private discriminator = "set"
 
-  type TypeExpr with
-    static member FromJsonSet(fromJsonRoot: TypeExprParser) : TypeExprParser =
+  type TypeExpr<'valueExt> with
+    static member FromJsonSet(fromJsonRoot: TypeExprParser<'valueExt>) : TypeExprParser<'valueExt> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fromJsonRoot >>= (TypeExpr.Set >> sum.Return))
 
-    static member ToJsonSet(rootToJson: TypeExpr -> JsonValue) : TypeExpr -> JsonValue =
+    static member ToJsonSet(rootToJson: TypeExpr<'valueExt> -> JsonValue) : TypeExpr<'valueExt> -> JsonValue =
       rootToJson >> Json.discriminator discriminator

@@ -304,10 +304,10 @@ module Json =
            "forward", forwardJson
            "backward", backwardJson |]
 
-  type Schema<'T, 'Id, 'ValueExt when 'Id: comparison> with
+  type Schema<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member FromJson
       (jsonValue: JsonValue)
-      : Reader<Schema<'T, 'Id, 'ValueExt>, JsonParser<'T> * JsonParser<'Id>, Errors> =
+      : Reader<Schema<'T, 'Id, 'valueExt>, JsonParser<'T> * JsonParser<'Id>, Errors> =
       reader {
         let! jsonValue = jsonValue |> JsonValue.AsRecordMap |> reader.OfSum
 
@@ -333,7 +333,7 @@ module Json =
           entities
           |> Map.map (fun _ entityJson ->
             reader {
-              let! entityDescriptor = EntityDescriptor<'T, 'Id, 'ValueExt>.FromJson entityJson
+              let! entityDescriptor = EntityDescriptor<'T, 'Id, 'valueExt>.FromJson entityJson
               return entityDescriptor
             })
           |> reader.AllMap
@@ -368,13 +368,13 @@ module Json =
       }
 
     static member ToJson
-      (schema: Schema<'T, 'Id, 'ValueExt>)
+      (schema: Schema<'T, 'Id, 'valueExt>)
       : Reader<JsonValue, JsonEncoder<'T> * JsonEncoder<'Id>, Errors> =
 
       reader {
         let! entitiesJson =
           schema.Entities
-          |> Map.map (fun _ -> EntityDescriptor<'T, 'Id, 'ValueExt>.ToJson)
+          |> Map.map (fun _ -> EntityDescriptor<'T, 'Id, 'valueExt>.ToJson)
           |> reader.AllMap
 
         let lookupsJson =
@@ -406,7 +406,7 @@ module Json =
     static member FromJsonVirtualFolder
       (variant: WorkspaceVariant)
       (root: FolderNode)
-      : Sum<Schema<TypeExpr, Identifier, 'ValueExpr>, Errors> =
+      : Sum<Schema<TypeExpr<'valueExtension>, Identifier, 'valueExtension>, Errors> =
       sum {
         let! merged =
           getWellKnownFile (Folder root) Merged
@@ -446,7 +446,10 @@ module Json =
             }
           | Explore(_, _path) -> sum.Throw(Errors.Singleton $"Missing path in exploring vfs")
 
-        let! schema = Schema.FromJson schemaJson |> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
+        let! schema =
+          Ballerina.Data.Schema.Model.Schema.FromJson schemaJson
+          |> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
+
         return schema
       }
 

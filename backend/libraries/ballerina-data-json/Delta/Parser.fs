@@ -13,7 +13,7 @@ open FSharp.Data
 type DeltaParserReader<'valueExtension, 'deltaExtension> =
   Reader<
     Delta<'valueExtension, 'deltaExtension>,
-    JsonParser<Value<TypeValue, 'valueExtension>> * JsonParser<'deltaExtension>,
+    JsonParser<Value<TypeValue<'valueExtension>, 'valueExtension>> * JsonParser<'deltaExtension>,
     Errors
    >
 
@@ -22,7 +22,7 @@ type DeltaParser<'valueExtension, 'deltaExtension> = JsonValue -> DeltaParserRea
 type DeltaEncoderReader<'valueExtension, 'deltaExtension> =
   Reader<
     JsonValue,
-    JsonEncoderWithError<Value<TypeValue, 'valueExtension>> * JsonEncoderWithError<'deltaExtension>,
+    JsonEncoderWithError<Value<TypeValue<'valueExtension>, 'valueExtension>> * JsonEncoderWithError<'deltaExtension>,
     Errors
    >
 

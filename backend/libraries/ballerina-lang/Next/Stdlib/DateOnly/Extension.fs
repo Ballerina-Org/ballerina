@@ -14,18 +14,16 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open System
 
-  let private dateTimeTypeValue = TypeValue.CreateDateTime()
-  let private dateOnlyTypeValue = TypeValue.CreateDateOnly()
-  let private timeSpanTypeValue = TypeValue.CreateTimeSpan()
-  let private boolTypeValue = TypeValue.CreateBool()
-  let private int32TypeValue = TypeValue.CreateInt32()
-  let private stringTypeValue = TypeValue.CreateString()
-  let private unitTypeValue = TypeValue.CreateUnit()
-
   let DateOnlyExtension<'ext>
     (consLens: PartialLens<'ext, DateOnlyConstructors>)
     (operationLens: PartialLens<'ext, DateOnlyOperations<'ext>>)
     : TypeExtension<'ext, DateOnlyConstructors, PrimitiveValue, DateOnlyOperations<'ext>> =
+
+    let dateTimeTypeValue = TypeValue.CreateDateTime()
+    let dateOnlyTypeValue = TypeValue.CreateDateOnly()
+    let timeSpanTypeValue = TypeValue.CreateTimeSpan()
+    let boolTypeValue = TypeValue.CreateBool()
+    let int32TypeValue = TypeValue.CreateInt32()
 
     let dateOnlyId = Identifier.LocalScope "dateOnly"
     let dateOnlySymbolId = dateOnlyId |> TypeSymbol.Create
@@ -72,7 +70,7 @@ module Extension =
                 let dateTime1 = DateTime(vClosure.Year, vClosure.Month, vClosure.Day)
                 let dateTime2 = DateTime(v.Year, v.Month, v.Day)
                 let difference = dateTime1 - dateTime2
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.TimeSpan(difference))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.TimeSpan(difference))
             } }
 
     let dateOnlyEqualId =
@@ -112,7 +110,7 @@ module Extension =
                 return DateOnlyOperations.Equal({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
     let dateOnlyNotEqualId =
@@ -152,7 +150,7 @@ module Extension =
                 return DateOnlyOperations.NotEqual({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
     let dateOnlyGreaterThanId =
@@ -192,7 +190,7 @@ module Extension =
                 return DateOnlyOperations.GreaterThan({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
     let dateOnlyGreaterThanOrEqualId =
@@ -235,7 +233,7 @@ module Extension =
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
     let dateOnlyLessThanId =
@@ -275,7 +273,7 @@ module Extension =
                 return DateOnlyOperations.LessThan({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
     let dateOnlyLessThanOrEqualId =
@@ -318,7 +316,7 @@ module Extension =
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))
             } }
 
 
@@ -377,7 +375,7 @@ module Extension =
                   let dateTime =
                     DateTime(vClosure.Year, vClosure.Month, vClosure.Day, v1, v2, v3, DateTimeKind.Utc)
 
-                  return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.DateTime(dateTime))
+                  return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.DateTime(dateTime))
                 | _ ->
                   return!
                     sum.Throw(Errors.Singleton(loc0, "Expected a tuple of 3 int32s"))
@@ -412,7 +410,7 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Year))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.Year))
             } }
 
     let dateOnlyMonthId =
@@ -442,7 +440,7 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Month))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.Month))
             } }
 
     let dateOnlyDayId =
@@ -472,7 +470,7 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Day))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.Day))
             } }
 
     let dateOnlyDayOfWeekId =
@@ -502,7 +500,7 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.DayOfWeek |> int))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.DayOfWeek |> int))
             } }
 
     let dateOnlyDayOfYearId =
@@ -532,7 +530,7 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.DayOfYear))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.DayOfYear))
             } }
 
     { TypeName = dateOnlyId, dateOnlySymbolId

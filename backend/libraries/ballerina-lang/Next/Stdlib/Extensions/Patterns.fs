@@ -7,7 +7,7 @@ module Patterns =
   open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.DSL.Next.Types.TypeChecker.Patterns
 
-  type LanguageContext<'ext> with
+  type LanguageContext<'ext when 'ext: comparison> with
     static member Empty: LanguageContext<'ext> =
       { TypeCheckContext = TypeCheckContext.Empty("", "")
         TypeCheckState = TypeCheckState.Empty

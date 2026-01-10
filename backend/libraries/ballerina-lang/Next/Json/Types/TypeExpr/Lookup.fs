@@ -12,8 +12,8 @@ module LookupTypeExpr =
 
   let private discriminator = "lookup"
 
-  type TypeExpr with
-    static member FromJsonLookup: TypeExprParser =
+  type TypeExpr<'valueExt> with
+    static member FromJsonLookup: TypeExprParser<'valueExt> =
       Sum.assertDiscriminatorAndContinueWithValue
         discriminator
         (JsonValue.AsString >>= (Identifier.LocalScope >> TypeExpr.Lookup >> sum.Return))

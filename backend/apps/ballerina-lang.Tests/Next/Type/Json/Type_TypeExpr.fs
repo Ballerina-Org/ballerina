@@ -2,6 +2,7 @@
 
 open System
 open Ballerina.Collections.Sum
+open Ballerina.DSL.Next.StdLib.Extensions
 open NUnit.Framework
 open FSharp.Data
 open Ballerina.Errors
@@ -20,9 +21,9 @@ open Ballerina.State.WithError
 type TypeValueTestCase =
   { Name: string
     Json: string
-    Expected: TypeValue }
+    Expected: TypeValue<Object> }
 
-let ``Assert TypeExpr -> ToJson -> FromJson -> TypeExpr`` (expression: TypeExpr) (expectedJson: JsonValue) =
+let ``Assert TypeExpr -> ToJson -> FromJson -> TypeExpr`` (expression: TypeExpr<Object>) (expectedJson: JsonValue) =
   let normalize (json: JsonValue) =
     json.ToString JsonSaveOptions.DisableFormatting
 
