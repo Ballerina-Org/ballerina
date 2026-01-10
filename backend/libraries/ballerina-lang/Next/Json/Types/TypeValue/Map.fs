@@ -15,10 +15,10 @@ module Map =
 
   let private discriminator = "map"
 
-  type TypeValue with
+  type TypeValue<'valueExt> with
     static member FromJsonMap
-      (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
-      : JsonValue -> Sum<TypeValue * TypeValue, Errors> =
+      (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors>)
+      : JsonValue -> Sum<TypeValue<'valueExt> * TypeValue<'valueExt>, Errors> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun mapFields ->
         sum {
           let! (key, value) = mapFields |> JsonValue.AsPair
@@ -27,7 +27,9 @@ module Map =
           return keyType, valueType
         })
 
-    static member ToJsonMap(toRootJson: TypeValue -> JsonValue) : TypeValue * TypeValue -> JsonValue =
+    static member ToJsonMap
+      (toRootJson: TypeValue<'valueExt> -> JsonValue)
+      : TypeValue<'valueExt> * TypeValue<'valueExt> -> JsonValue =
       fun (keyType, valueType) ->
         let keyJson = keyType |> toRootJson
         let valueJson = valueType |> toRootJson

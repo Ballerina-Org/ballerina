@@ -15,9 +15,16 @@ module ToUpdater =
   type Delta<'valueExtension, 'deltaExtension> with
     static member ToUpdater
       (deltaExtensionHandler:
-        'deltaExtension -> Value<TypeValue, 'valueExtension> -> Sum<Value<TypeValue, 'valueExtension>, Errors>)
+        'deltaExtension
+          -> Value<TypeValue<'valueExtension>, 'valueExtension>
+          -> Sum<Value<TypeValue<'valueExtension>, 'valueExtension>, Errors>)
       (delta: Delta<'valueExtension, 'deltaExtension>)
-      : Sum<Value<TypeValue, 'valueExtension> -> Sum<Value<TypeValue, 'valueExtension>, Errors>, Errors> =
+      : Sum<
+          Value<TypeValue<'valueExtension>, 'valueExtension>
+            -> Sum<Value<TypeValue<'valueExtension>, 'valueExtension>, Errors>,
+          Errors
+         >
+      =
       sum {
         match delta with
         | Multiple deltas ->
@@ -30,7 +37,7 @@ module ToUpdater =
           let! fieldUpdater = Delta.ToUpdater deltaExtensionHandler fieldDelta
 
           return
-            fun (v: Value<TypeValue, 'valueExtension>) ->
+            fun (v: Value<TypeValue<'valueExtension>, 'valueExtension>) ->
               sum {
                 let! fieldValues = Value.AsRecord v
 

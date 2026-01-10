@@ -2,9 +2,9 @@ module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Type.Patterns
 
 open Ballerina.DSL.Next.Types.Model
 
-type TypeValue with
+type TypeValue<'valueExt> with
 
-  static member PrimitiveWithTrivialSource(v: PrimitiveType) : TypeValue =
+  static member PrimitiveWithTrivialSource(v: PrimitiveType) : TypeValue<'valueExt> =
     match v with
     | PrimitiveType.Unit ->
       TypeValue.Primitive

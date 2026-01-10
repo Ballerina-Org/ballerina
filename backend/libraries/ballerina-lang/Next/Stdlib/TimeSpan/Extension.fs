@@ -12,17 +12,15 @@ module Extension =
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
 
-  let private timeSpanTypeValue = TypeValue.CreateTimeSpan()
-  let private boolTypeValue = TypeValue.CreateBool()
-  let private int32TypeValue = TypeValue.CreateInt32()
-  let private float64TypeValue = TypeValue.CreateFloat64()
-  let private stringTypeValue = TypeValue.CreateString()
-  let private unitTypeValue = TypeValue.CreateUnit()
-
   let TimeSpanExtension<'ext>
     (consLens: PartialLens<'ext, TimeSpanConstructors>)
     (operationLens: PartialLens<'ext, TimeSpanOperations<'ext>>)
     : TypeExtension<'ext, TimeSpanConstructors, PrimitiveValue, TimeSpanOperations<'ext>> =
+
+    let timeSpanTypeValue = TypeValue.CreateTimeSpan()
+    let boolTypeValue = TypeValue.CreateBool()
+    let int32TypeValue = TypeValue.CreateInt32()
+    let float64TypeValue = TypeValue.CreateFloat64()
 
     let timeSpanId = Identifier.LocalScope "timeSpan"
     let timeSpanSymbolId = timeSpanId |> TypeSymbol.Create
@@ -67,7 +65,7 @@ module Extension =
                 return TimeSpanOperations.Plus({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.TimeSpan(vClosure + v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.TimeSpan(vClosure + v))
             } }
 
     let TimeSpanMinusId =
@@ -96,7 +94,7 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.TimeSpan(-v))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.TimeSpan(-v))
             } }
 
     let TimeSpanEqualId =
@@ -136,7 +134,7 @@ module Extension =
                 return TimeSpanOperations.Equal({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
     let TimeSpanNotEqualId =
@@ -176,7 +174,7 @@ module Extension =
                 return TimeSpanOperations.NotEqual({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
     let TimeSpanGreaterThanId =
@@ -216,7 +214,7 @@ module Extension =
                 return TimeSpanOperations.GreaterThan({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
     let TimeSpanGreaterThanOrEqualId =
@@ -259,7 +257,7 @@ module Extension =
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
     let TimeSpanLessThanId =
@@ -306,7 +304,7 @@ module Extension =
                 return TimeSpanOperations.LessThan({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
     let TimeSpanLessThanOrEqualId =
@@ -356,7 +354,7 @@ module Extension =
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))
             } }
 
     let timeSpanGetDaysId =
@@ -386,7 +384,7 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Days))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.Days))
             } }
 
     let timeSpanGetHoursId =
@@ -416,7 +414,7 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Hours))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.Hours))
             } }
 
     let timeSpanGetMinutesId =
@@ -446,7 +444,7 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Minutes))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.Minutes))
             } }
 
     let timeSpanGetSecondsId =
@@ -476,7 +474,7 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Seconds))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.Seconds))
             } }
 
     let timeSpanGetMillisecondsId =
@@ -506,7 +504,7 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int32(v.Milliseconds))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.Milliseconds))
             } }
 
     let timeSpanGetTotalDaysId =
@@ -536,7 +534,7 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(v.TotalDays))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float64(v.TotalDays))
             } }
 
     let timeSpanGetTotalHoursId =
@@ -566,7 +564,7 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(v.TotalHours))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float64(v.TotalHours))
             } }
 
     let timeSpanGetTotalMinutesId =
@@ -596,7 +594,7 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(v.TotalMinutes))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float64(v.TotalMinutes))
             } }
 
     let timeSpanGetTotalSecondsId =
@@ -626,7 +624,7 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(v.TotalSeconds))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float64(v.TotalSeconds))
             } }
 
     let timeSpanGetTotalMillisecondsId =
@@ -656,7 +654,7 @@ module Extension =
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
-              return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float64(v.TotalMilliseconds))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float64(v.TotalMilliseconds))
             } }
 
     { TypeName = timeSpanId, timeSpanSymbolId

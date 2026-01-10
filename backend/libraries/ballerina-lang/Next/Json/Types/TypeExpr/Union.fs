@@ -12,8 +12,8 @@ module UnionTypeExpr =
 
   let private discriminator = "union"
 
-  type TypeExpr with
-    static member FromJsonUnion(fromJsonRoot: TypeExprParser) : TypeExprParser =
+  type TypeExpr<'valueExt> with
+    static member FromJsonUnion(fromJsonRoot: TypeExprParser<'valueExt>) : TypeExprParser<'valueExt> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun unionFields ->
         sum {
           let! cases = unionFields |> JsonValue.AsArray
@@ -37,7 +37,9 @@ module UnionTypeExpr =
           return wrappedUnion
         })
 
-    static member ToJsonUnion(rootToJson: TypeExpr -> JsonValue) : List<TypeExpr * TypeExpr> -> JsonValue =
+    static member ToJsonUnion
+      (rootToJson: TypeExpr<'valueExt> -> JsonValue)
+      : List<TypeExpr<'valueExt> * TypeExpr<'valueExt>> -> JsonValue =
       fun cases ->
         let caseTypes =
           cases

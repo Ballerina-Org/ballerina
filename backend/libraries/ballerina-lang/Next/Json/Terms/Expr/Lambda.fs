@@ -1,5 +1,7 @@
 ﻿namespace Ballerina.DSL.Next.Terms.Json.Expr
 
+open Ballerina.DSL.Next.Types
+
 [<AutoOpen>]
 module Lambda =
   open FSharp.Data

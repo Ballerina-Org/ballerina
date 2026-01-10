@@ -1,7 +1,7 @@
 ﻿namespace Ballerina.Data.Spec
 
 open System
-open Ballerina.DSL.Next.Terms.Model
+open Ballerina.DSL.Next.Types
 open Ballerina.Data.Schema.Model
 open Ballerina.VirtualFolders.Interactions
 open Ballerina.VirtualFolders.Model

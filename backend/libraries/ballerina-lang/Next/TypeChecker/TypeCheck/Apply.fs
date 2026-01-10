@@ -26,10 +26,10 @@ module Apply =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
-    static member internal TypeCheckApply
+  type Expr<'T, 'Id, 've when 'Id: comparison> with
+    static member internal TypeCheckApply<'valueExt when 'valueExt: comparison>
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
-      : TypeChecker<ExprApply<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
+      : TypeChecker<ExprApply<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ F = f_expr; Arg = a_expr }) ->
         let (!) = typeCheckExpr context_t
         let (=>) c e = typeCheckExpr c e
@@ -56,7 +56,8 @@ module Apply =
                 return!
                   state.Either
                     (state {
-                      let! union_cons_t =
+                      let! (union_cons_t:
+                        TypeValue<'valueExt> * TypeParameter list * OrderedMap<TypeSymbol, TypeValue<'valueExt>>) =
                         state {
                           match context_t with
                           | None ->
@@ -126,10 +127,15 @@ module Apply =
                               (fun acc tp -> TypeExpr.Apply(acc, tp.Name |> Identifier.LocalScope |> TypeExpr.Lookup))
                               (f_i |> TypeExpr.FromTypeValue)
 
-                          let! f_i, _ = f_i |> TypeExpr.Eval None loc0 |> Expr.liftTypeEval
+                          let! f_i, _ = f_i |> TypeExpr.Eval () typeCheckExpr None loc0 |> Expr.liftTypeEval
                           do! TypeValue.Unify(loc0, f_i, t_a) |> Expr<'T, 'Id, 'valueExt>.liftUnification
-                          let! f_o, _ = f_o |> TypeExpr.Eval None loc0 |> Expr.liftTypeEval
-                          let! f_o = f_o |> TypeValue.Instantiate TypeExpr.Eval loc0 |> Expr.liftInstantiation
+                          let! f_o, _ = f_o |> TypeExpr.Eval () typeCheckExpr None loc0 |> Expr.liftTypeEval
+
+                          let! f_o =
+                            f_o
+                            |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+                            |> Expr.liftInstantiation
+
                           return Expr.Apply(Expr.Lookup f_lookup, a, loc0, ctx.Scope), f_o, f_k, ctx
                         }
                         |> state.MapError(Errors.SetPriority ErrorPriority.High)
@@ -185,7 +191,7 @@ module Apply =
                                 TypeValue.CreatePrimitive adHocResolution.OtherInput,
                                 TypeValue.CreatePrimitive adHocResolution.Output
                               )
-                              |> TypeValue.Instantiate TypeExpr.Eval loc0
+                              |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
                               |> Expr.liftInstantiation
 
                             let k_res = Kind.Star
@@ -255,7 +261,7 @@ module Apply =
 
                     Some(TypeValue.CreateArrow(t_a, freshVar))
 
-                let rec pad (f_expr: Expr<TypeExpr, Identifier, 'valueExt>) =
+                let rec pad (f_expr: Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>) =
                   state {
                     let! f, t_f, f_k, _ = f_constraint => f_expr
 
@@ -299,7 +305,8 @@ module Apply =
                           let! aCasesT =
                             aCasesT
                             |> OrderedMap.map (fun _ ->
-                              TypeExpr.Eval None loc0 >> Expr<'T, 'Id, 'valueExt>.liftTypeEval)
+                              TypeExpr.Eval () typeCheckExpr None loc0
+                              >> Expr<'T, 'Id, 'valueExt>.liftTypeEval)
                             |> state.AllMapOrdered
 
                           let aCasesT = aCasesT |> OrderedMap.map (fun _ -> fst)
@@ -310,7 +317,7 @@ module Apply =
 
                           let! f_output =
                             f_output
-                            |> TypeValue.Instantiate TypeExpr.Eval loc0
+                            |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
                             |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
                           return Expr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx
@@ -322,7 +329,7 @@ module Apply =
 
                         let! f_output =
                           f_output
-                          |> TypeValue.Instantiate TypeExpr.Eval loc0
+                          |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
                           |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
                         return Expr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx

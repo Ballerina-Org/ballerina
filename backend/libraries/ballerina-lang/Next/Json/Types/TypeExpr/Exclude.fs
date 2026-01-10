@@ -12,8 +12,8 @@ module Exclude =
 
   let private discriminator = "exclude"
 
-  type TypeExpr with
-    static member FromJsonExclude(fromJsonRoot: TypeExprParser) : TypeExprParser =
+  type TypeExpr<'valueExt> with
+    static member FromJsonExclude(fromJsonRoot: TypeExprParser<'valueExt>) : TypeExprParser<'valueExt> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun excludeFields ->
         sum {
           let! (type1, type2) = excludeFields |> JsonValue.AsPair
@@ -22,7 +22,9 @@ module Exclude =
           return TypeExpr.Exclude(type1, type2)
         })
 
-    static member ToJsonExclude(rootToJson: TypeExpr -> JsonValue) : TypeExpr * TypeExpr -> JsonValue =
+    static member ToJsonExclude
+      (rootToJson: TypeExpr<'valueExt> -> JsonValue)
+      : TypeExpr<'valueExt> * TypeExpr<'valueExt> -> JsonValue =
       fun (type1, type2) ->
         let type1 = rootToJson type1
         let type2 = rootToJson type2

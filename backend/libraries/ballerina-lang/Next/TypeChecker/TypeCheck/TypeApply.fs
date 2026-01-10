@@ -38,10 +38,10 @@ module TypeApply =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
-    static member internal TypeCheckTypeApply
+  type Expr<'T, 'Id, 've when 'Id: comparison> with
+    static member internal TypeCheckTypeApply<'valueExt when 'valueExt: comparison>
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
-      : TypeChecker<ExprTypeApply<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
+      : TypeChecker<ExprTypeApply<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Func = fExpr; TypeArg = tExpr }) ->
         let (!) = typeCheckExpr context_t
 
@@ -59,7 +59,7 @@ module TypeApply =
 
           // do Console.WriteLine($"TypeApply: f = {f}, f_t = {f_t}, f_k = {f_k}, f_k_i = {f_k_i}, f_k_o = {f_k_o}")
 
-          let! t_val, t_k = tExpr |> TypeExpr.Eval None loc0 |> Expr.liftTypeEval
+          let! t_val, t_k = tExpr |> TypeExpr.Eval () typeCheckExpr None loc0 |> Expr.liftTypeEval
           // do Console.WriteLine($"TypeApply: tExpr = {tExpr}, t_val = {t_val}, t_k = {t_k}")
 
           if f_k_i <> t_k then
@@ -72,10 +72,10 @@ module TypeApply =
 
             let! f_res, _ =
               TypeExpr.Apply(f_t.AsExpr, tExpr)
-              |> TypeExpr.Eval None loc0
+              |> TypeExpr.Eval () typeCheckExpr None loc0
               |> Expr.liftTypeEval
 
-            // let! f_res = f_res |> TypeValue.Instantiate TypeExpr.Eval loc0 |> Expr.liftInstantiation
+            // let! f_res = f_res |> TypeValue.Instantiate () (TypeExpr.Eval ()) loc0 |> Expr.liftInstantiation
 
             // do Console.WriteLine($"TypeApply: f_res = {f_res}")
 

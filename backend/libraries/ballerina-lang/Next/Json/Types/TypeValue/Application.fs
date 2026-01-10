@@ -16,9 +16,9 @@ module TypeValueApply =
   let private discriminator = "application"
 
   let rec private fromJsonSymbolicTypeApplication
-    (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
+    (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors>)
     (json: JsonValue)
-    : Sum<SymbolicTypeApplication, Errors> =
+    : Sum<SymbolicTypeApplication<'valueExt>, Errors> =
     sum {
       let! f, a = json |> JsonValue.AsPair
       let! a = a |> fromRootJson
@@ -36,23 +36,25 @@ module TypeValueApply =
     }
 
   let rec private toJsonSymbolicTypeApplication
-    (rootToJson: TypeValue -> JsonValue)
-    (app: SymbolicTypeApplication)
+    (rootToJson: TypeValue<'valueExt> -> JsonValue)
+    (app: SymbolicTypeApplication<'valueExt>)
     : JsonValue =
     match app with
     | SymbolicTypeApplication.Lookup(f, a) -> JsonValue.Array [| Identifier.ToJson f; rootToJson a |]
     | SymbolicTypeApplication.Application(f, a) ->
       JsonValue.Array [| toJsonSymbolicTypeApplication rootToJson f; rootToJson a |]
 
-  type TypeValue with
+  type TypeValue<'valueExt> with
     static member FromJsonApplication
-      (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
-      : JsonValue -> Sum<SymbolicTypeApplication, Errors> =
+      (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors>)
+      : JsonValue -> Sum<SymbolicTypeApplication<'valueExt>, Errors> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun applyFields ->
         sum {
           let! symbolicApp = applyFields |> fromJsonSymbolicTypeApplication fromRootJson
           return symbolicApp
         })
 
-    static member ToJsonApplication(rootToJson: TypeValue -> JsonValue) : SymbolicTypeApplication -> JsonValue =
+    static member ToJsonApplication
+      (rootToJson: TypeValue<'valueExt> -> JsonValue)
+      : SymbolicTypeApplication<'valueExt> -> JsonValue =
       toJsonSymbolicTypeApplication rootToJson >> Json.discriminator discriminator
