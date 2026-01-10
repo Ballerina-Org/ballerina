@@ -14,8 +14,8 @@ module SumTypeExpr =
 
   let private discriminator = "sum"
 
-  type TypeExpr with
-    static member FromJsonSum(fromJsonRoot: TypeExprParser) : TypeExprParser =
+  type TypeExpr<'valueExt> with
+    static member FromJsonSum(fromJsonRoot: TypeExprParser<'valueExt>) : TypeExprParser<'valueExt> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun sumFields ->
         sum {
           let! sumFields = sumFields |> JsonValue.AsArray
@@ -23,7 +23,7 @@ module SumTypeExpr =
           return TypeExpr.Sum(caseTypes)
         })
 
-    static member ToJsonSum(rootToJson: TypeExpr -> JsonValue) : List<TypeExpr> -> JsonValue =
+    static member ToJsonSum(rootToJson: TypeExpr<'valueExt> -> JsonValue) : List<TypeExpr<'valueExt>> -> JsonValue =
       List.map rootToJson
       >> List.toArray
       >> JsonValue.Array

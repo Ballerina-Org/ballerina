@@ -10,8 +10,8 @@ module TypeExpr =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Json
 
-  type TypeExpr with
-    static member FromJson(json: JsonValue) : Sum<TypeExpr, Errors> =
+  type TypeExpr<'valueExt> with
+    static member FromJson(json: JsonValue) : Sum<TypeExpr<'valueExt>, Errors> =
       sum.Any(
         TypeExpr.FromJsonPrimitive json,
         [ TypeExpr.FromJsonApply TypeExpr.FromJson json
@@ -35,7 +35,7 @@ module TypeExpr =
       )
       |> sum.MapError(Errors.HighestPriority)
 
-    static member ToJson: TypeExpr -> JsonValue =
+    static member ToJson: TypeExpr<'valueExt> -> JsonValue =
       fun typeExpr ->
         match typeExpr with
         | TypeExpr.Primitive p -> TypeExpr.ToJsonPrimitive p
@@ -57,4 +57,6 @@ module TypeExpr =
         | TypeExpr.Let(_, _, rest) -> TypeExpr.ToJson rest
         | TypeExpr.LetSymbols(_, _, rest) -> TypeExpr.ToJson rest
         | TypeExpr.FromTypeValue _ -> failwith "Not implemented"
-        | TypeExpr.Imported _ -> failwith "Not implemented"
+        | TypeExpr.Imported _ -> failwith "Imported ToJson not implemented"
+        | TypeExpr.Schema _ -> failwith "Schema ToJson not implemented"
+        | TypeExpr.RecordDes(_, _) -> failwith "RecordDes ToJson not implemented"

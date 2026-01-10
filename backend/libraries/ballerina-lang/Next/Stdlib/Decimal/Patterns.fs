@@ -8,6 +8,11 @@ module Patterns =
   open Ballerina.DSL.Next.Types
 
   type DecimalOperations<'ext> with
+    static member AsString(op: DecimalOperations<'ext>) : Sum<Unit, Errors> =
+      match op with
+      | DecimalOperations.String -> () |> sum.Return
+      | _ -> failwith "Expected ToString operation"
+
     static member AsPlus(op: DecimalOperations<'ext>) : Sum<Option<decimal>, Errors> =
       match op with
       | DecimalOperations.Plus v -> v.v1 |> sum.Return
@@ -22,6 +27,11 @@ module Patterns =
       match op with
       | DecimalOperations.Divide v -> v.v1 |> sum.Return
       | _ -> failwith "Expected Divide operation"
+
+    static member AsTimes(op: DecimalOperations<'ext>) : Sum<Option<decimal>, Errors> =
+      match op with
+      | DecimalOperations.Times v -> v.v1 |> sum.Return
+      | _ -> failwith "Expected Times operation"
 
     static member AsPower(op: DecimalOperations<'ext>) : Sum<Option<decimal>, Errors> =
       match op with

@@ -24,7 +24,7 @@ module Replace =
         })
 
     static member ToJsonReplace
-      (value: Value<TypeValue, 'valueExtension>)
+      (value: Value<TypeValue<'valueExtension>, 'valueExtension>)
       : DeltaEncoderReader<'valueExtension, 'deltaExtension> =
       reader {
         let! rootToJson, _ = reader.GetContext()

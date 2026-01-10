@@ -12,7 +12,7 @@ open Ballerina.Cat.Collections.OrderedMap
 type TypeValueTestCase =
   { Name: string
     Json: string
-    Expected: TypeValue }
+    Expected: TypeValue<Object> }
 
 let private (!) = Identifier.LocalScope
 
@@ -30,14 +30,14 @@ let toScopedJson name (str: string) =
   }},
   "value":{str}  }} }}"""
 
-let ``Assert TypeValue -> ToJson -> FromJson -> TypeValue`` (expression: TypeValue) (expectedJson: JsonValue) =
+let ``Assert TypeValue -> ToJson -> FromJson -> TypeValue`` (expression: TypeValue<Object>) (expectedJson: JsonValue) =
   let toStr (j: JsonValue) =
     j.ToString(JsonSaveOptions.DisableFormatting)
 
-  let toJson = TypeValue.ToJson expression
+  let toJson = TypeValue<Object>.ToJson expression
   Assert.That(toStr toJson, Is.EqualTo(toStr expectedJson))
 
-  let parsed = TypeValue.FromJson expectedJson
+  let parsed = TypeValue<Object>.FromJson expectedJson
 
   match parsed with
   | Right err -> Assert.Fail $"Parse failed: {err}"
@@ -47,13 +47,13 @@ let testCases guid : TypeValueTestCase list =
   [ { Name = "Var"
       Json = $"""{{"discriminator":"var","value":{{"name":"MyTypeVar","guid":"{guid}"}}}}"""
       Expected =
-        TypeValue.Var
+        TypeValue<Object>.Var
           { Name = "MyTypeVar"
             Guid = guid
             Synthetic = false } }
     { Name = "Lookup"
       Json = """{"discriminator":"lookup","value":"SomeType"}"""
-      Expected = TypeValue.Lookup !"SomeType" }
+      Expected = TypeValue<Object>.Lookup !"SomeType" }
     { Name = "Lambda"
       Json =
         """{
@@ -64,7 +64,7 @@ let testCases guid : TypeValueTestCase list =
               }
           }"""
         |> toScopedJson "Lambda"
-      Expected = TypeValue.CreateLambda({ Name = "T"; Kind = Kind.Star }, TypeExpr.Primitive PrimitiveType.Int32) }
+      Expected = TypeValue<Unit>.CreateLambda({ Name = "T"; Kind = Kind.Star }, TypeExpr.Primitive PrimitiveType.Int32) }
     { Name = "Arrow"
       Json =
         """{
@@ -75,7 +75,7 @@ let testCases guid : TypeValueTestCase list =
               }
           }"""
         |> toScopedJson "Arrow"
-      Expected = TypeValue.CreateArrow(TypeValue.CreateInt32(), TypeValue.CreateString()) }
+      Expected = TypeValue<Unit>.CreateArrow(TypeValue<Unit>.CreateInt32(), TypeValue<Unit>.CreateString()) }
     { Name = "Union"
       Json =
         """{
@@ -89,15 +89,15 @@ let testCases guid : TypeValueTestCase list =
       Expected =
         [ { TypeSymbol.Name = "bar" |> Identifier.LocalScope
             TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") },
-          TypeValue.CreateString()
+          TypeValue<Unit>.CreateString()
           { TypeSymbol.Name = "baz" |> Identifier.LocalScope
             TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000003") },
-          TypeValue.CreateBool()
+          TypeValue<Unit>.CreateBool()
           { TypeSymbol.Name = "foo" |> Identifier.LocalScope
             TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000001") },
-          TypeValue.CreateInt32() ]
+          TypeValue<Unit>.CreateInt32() ]
         |> OrderedMap.ofList
-        |> TypeValue.CreateUnion }
+        |> TypeValue<Unit>.CreateUnion }
     { Name = "Tuple"
       Json =
         """{
@@ -108,7 +108,7 @@ let testCases guid : TypeValueTestCase list =
             ]
           }"""
         |> toScopedJson "Tuple"
-      Expected = TypeValue.CreateTuple [ TypeValue.CreateInt32(); TypeValue.CreateString() ] }
+      Expected = TypeValue<Unit>.CreateTuple [ TypeValue<Unit>.CreateInt32(); TypeValue<Unit>.CreateString() ] }
     { Name = "Sum"
       Json =
         """{
@@ -120,17 +120,21 @@ let testCases guid : TypeValueTestCase list =
             ]
           }"""
         |> toScopedJson "Sum"
-      Expected = TypeValue.CreateSum [ TypeValue.CreateInt32(); TypeValue.CreateString(); TypeValue.CreateBool() ] }
+      Expected =
+        TypeValue<Unit>.CreateSum
+          [ TypeValue<Unit>.CreateInt32()
+            TypeValue<Unit>.CreateString()
+            TypeValue<Unit>.CreateBool() ] }
     { Name = "Set"
       Json =
         """{"discriminator":"set","value":{"discriminator":"string"}}"""
         |> toScopedJson "Set"
-      Expected = TypeValue.CreateSet(TypeValue.CreateString()) }
+      Expected = TypeValue<Unit>.CreateSet(TypeValue<Unit>.CreateString()) }
     { Name = "Map"
       Json =
         """{"discriminator":"map","value":[{"discriminator":"bool"}, {"discriminator":"int32"}]}"""
         |> toScopedJson "Map"
-      Expected = TypeValue.CreateMap(TypeValue.CreateBool(), TypeValue.CreateInt32()) }
+      Expected = TypeValue<Unit>.CreateMap(TypeValue<Unit>.CreateBool(), TypeValue<Unit>.CreateInt32()) }
     { Name = "Record"
       Json =
         """{
@@ -142,15 +146,16 @@ let testCases guid : TypeValueTestCase list =
           }"""
         |> toScopedJson "Record"
       Expected =
-        TypeValue.CreateRecord(
-          OrderedMap.ofList
-            [ { TypeSymbol.Name = "bar" |> Identifier.LocalScope
-                TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") },
-              (TypeValue.CreateString(), Kind.Star)
-              { TypeSymbol.Name = "foo" |> Identifier.LocalScope
-                TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000001") },
-              (TypeValue.CreateInt32(), Kind.Star) ]
-        ) }
+        TypeValue<Unit>
+          .CreateRecord(
+            OrderedMap.ofList
+              [ { TypeSymbol.Name = "bar" |> Identifier.LocalScope
+                  TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") },
+                (TypeValue<Unit>.CreateString(), Kind.Star)
+                { TypeSymbol.Name = "foo" |> Identifier.LocalScope
+                  TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000001") },
+                (TypeValue<Unit>.CreateInt32(), Kind.Star) ]
+          ) }
     { Name = "Application (Lookup)"
       Json =
         """{
@@ -161,7 +166,8 @@ let testCases guid : TypeValueTestCase list =
           ]
         }"""
         |> toScopedJson "Application"
-      Expected = TypeValue.CreateApplication(SymbolicTypeApplication.Lookup(!"List", TypeValue.CreateInt32())) }
+      Expected =
+        TypeValue<Unit>.CreateApplication(SymbolicTypeApplication.Lookup(!"List", TypeValue<Unit>.CreateInt32())) }
     { Name = "Application (Nested Application)"
       Json =
         """{
@@ -176,15 +182,16 @@ let testCases guid : TypeValueTestCase list =
         }"""
         |> toScopedJson "Application"
       Expected =
-        TypeValue.CreateApplication(
-          SymbolicTypeApplication.Application(
-            SymbolicTypeApplication.Lookup(!"Map", TypeValue.CreateString()),
-            TypeValue.CreateInt32()
-          )
-        ) } ]
+        TypeValue<Unit>
+          .CreateApplication(
+            SymbolicTypeApplication.Application(
+              SymbolicTypeApplication.Lookup(!"Map", TypeValue<Unit>.CreateString()),
+              TypeValue<Unit>.CreateInt32()
+            )
+          ) } ]
 
 [<Test>]
-let ``Dsl:Type:TypeValue json round-trip`` () =
+let ``Dsl:Type:TypeValue<Unit> json round-trip`` () =
 
   let testCases = Guid.NewGuid() |> testCases
 

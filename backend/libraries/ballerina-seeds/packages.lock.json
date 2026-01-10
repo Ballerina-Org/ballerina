@@ -244,6 +244,8 @@
           "FSharp.SystemTextJson": "[1.4.36, )",
           "Microsoft.EntityFrameworkCore": "[9.0.7, )",
           "ballerina-cat": "[1.0.0, )",
+          "ballerina-lang": "[1.0.0, )",
+          "ballerina-lang-stdlib": "[1.0.0, )",
           "ballerina-lang-v1": "[1.0.0, )"
         }
       },
@@ -251,6 +253,7 @@
         "type": "Project",
         "dependencies": {
           "FSharp.Core": "[9.0.303, )",
+          "FSharp.SystemTextJson": "[1.4.36, )",
           "ballerina-cat": "[1.0.0, )",
           "ballerina-lang-eval": "[1.0.0, )",
           "ballerina-lang-models": "[1.0.0, )",

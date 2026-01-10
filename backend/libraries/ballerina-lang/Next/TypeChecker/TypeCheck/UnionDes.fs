@@ -27,10 +27,10 @@ module UnionDes =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
-    static member internal TypeCheckUnionDes
+  type Expr<'T, 'Id, 've when 'Id: comparison> with
+    static member internal TypeCheckUnionDes<'valueExt when 'valueExt: comparison>
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
-      : TypeChecker<ExprUnionDes<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
+      : TypeChecker<ExprUnionDes<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
           ({ Handlers = handlers
@@ -161,7 +161,9 @@ module UnionDes =
 
                         do! TypeValue.Unify(loc0, body_t, result_t) |> Expr.liftUnification
 
-                        let! var_t = TypeValue.Instantiate TypeExpr.Eval loc0 cons_t |> Expr.liftInstantiation
+                        let! var_t =
+                          TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0 cons_t
+                          |> Expr.liftInstantiation
 
                         return (var, body), (k_s, var_t)
                       })
@@ -192,7 +194,9 @@ module UnionDes =
                     if handlers.Count <> union_cases.Count then
                       return! $"Error: incomplete pattern matching" |> error |> state.Throw
 
-                  let! result_t = TypeValue.Instantiate TypeExpr.Eval loc0 result_t |> Expr.liftInstantiation
+                  let! result_t =
+                    TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0 result_t
+                    |> Expr.liftInstantiation
 
                   // do!
                   //     UnificationState.DeleteVariable result_var
@@ -203,7 +207,7 @@ module UnionDes =
 
                   let! arrowValue =
                     TypeValue.CreateArrow(unionValue, result_t)
-                    |> TypeValue.Instantiate TypeExpr.Eval loc0
+                    |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
                     |> Expr.liftInstantiation
 
                   let handlerExprs =

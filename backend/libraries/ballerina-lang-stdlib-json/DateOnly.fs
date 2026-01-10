@@ -11,13 +11,13 @@ module Extension =
   open FSharp.Data
 
   let parser
-    (_rootValueParser: ValueParser<TypeValue, ResolvedIdentifier, 'ext>)
+    (_rootValueParser: ValueParser<TypeValue<'ext>, ResolvedIdentifier, 'ext>)
     (_v: JsonValue)
-    : ValueParserReader<TypeValue, ResolvedIdentifier, 'ext> =
+    : ValueParserReader<TypeValue<'ext>, ResolvedIdentifier, 'ext> =
     reader.Throw(Ballerina.Errors.Errors.Singleton("DateOnly value parser not implemented"))
 
   let encoder
-    (_rootValueEncoder: ValueEncoder<TypeValue, 'ext>)
-    (_v: Value<TypeValue, 'ext>)
-    : ValueEncoderReader<TypeValue, 'ext> =
+    (_rootValueEncoder: ValueEncoder<TypeValue<'ext>, 'ext>)
+    (_v: Value<TypeValue<'ext>, 'ext>)
+    : ValueEncoderReader<TypeValue<'ext>, 'ext> =
     reader.Throw(Ballerina.Errors.Errors.Singleton("DateOnly value encoder not implemented"))

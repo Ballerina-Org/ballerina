@@ -1,5 +1,6 @@
 namespace Ballerina.DSL.Next.Types.TypeChecker
 
+[<AutoOpen>]
 module Model =
   open Ballerina.Fun
   open Ballerina.Collections.Sum
@@ -18,12 +19,13 @@ module Model =
   open Ballerina.StdLib.Map
 
 
-  type TypeBindings = Map<ResolvedIdentifier, TypeValue * Kind>
+  type TypeBindings<'valueExt> = Map<ResolvedIdentifier, TypeValue<'valueExt> * Kind>
 
-  type UnionCaseConstructorBindings =
-    Map<ResolvedIdentifier, TypeValue * List<TypeParameter> * OrderedMap<TypeSymbol, TypeValue>>
+  type UnionCaseConstructorBindings<'valueExt> =
+    Map<ResolvedIdentifier, TypeValue<'valueExt> * List<TypeParameter> * OrderedMap<TypeSymbol, TypeValue<'valueExt>>>
 
-  type RecordFieldBindings = Map<ResolvedIdentifier, OrderedMap<TypeSymbol, TypeValue * Kind> * TypeValue>
+  type RecordFieldBindings<'valueExt> =
+    Map<ResolvedIdentifier, OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind> * TypeValue<'valueExt>>
 
   type TypeSymbols = Map<ResolvedIdentifier, TypeSymbol>
 
@@ -43,49 +45,81 @@ module Model =
 
   type KindEvalContext = Map<string, Kind>
 
-  type TypeCheckContext =
+  type TypeCheckContext<'valueExt> =
     { Scope: TypeCheckScope
-      TypeVariables: TypeVariablesScope
+      TypeVariables: TypeVariablesScope<'valueExt>
       TypeParameters: TypeParametersScope
-      Values: Map<ResolvedIdentifier, TypeValue * Kind> }
+      Values: Map<ResolvedIdentifier, TypeValue<'valueExt> * Kind> }
 
-  type UnificationState = EquivalenceClasses<TypeVar, TypeValue>
+  type UnificationState<'valueExt when 'valueExt: comparison> =
+    { Classes: EquivalenceClasses<TypeVar, TypeValue<'valueExt>> }
 
-  type TypeCheckState =
-    { Bindings: TypeBindings
-      UnionCases: UnionCaseConstructorBindings
-      RecordFields: RecordFieldBindings
+  type TypeCheckState<'valueExt when 'valueExt: comparison> =
+    { Bindings: TypeBindings<'valueExt>
+      UnionCases: UnionCaseConstructorBindings<'valueExt>
+      RecordFields: RecordFieldBindings<'valueExt>
       Symbols: TypeExprEvalSymbols
-      Vars: UnificationState }
+      Vars: UnificationState<'valueExt> }
 
-  type TypeValueKindEval =
-    Option<ExprTypeLetBindingName> -> Location -> TypeValue -> State<Kind, KindEvalContext, TypeCheckState, Errors>
+  type TypeValueKindEval<'valueExt when 'valueExt: comparison> =
+    Option<ExprTypeLetBindingName>
+      -> Location
+      -> TypeValue<'valueExt>
+      -> State<Kind, KindEvalContext, TypeCheckState<'valueExt>, Errors>
 
-  type TypeExprKindEval =
-    Option<ExprTypeLetBindingName> -> Location -> TypeExpr -> State<Kind, KindEvalContext, TypeCheckState, Errors>
+  type TypeExprKindEval<'valueExt when 'valueExt: comparison> =
+    Option<ExprTypeLetBindingName>
+      -> Location
+      -> TypeExpr<'valueExt>
+      -> State<Kind, KindEvalContext, TypeCheckState<'valueExt>, Errors>
 
-  type UnificationContext =
-    { EvalState: TypeCheckState
+  type UnificationContext<'valueExt when 'valueExt: comparison> =
+    { EvalState: TypeCheckState<'valueExt>
       TypeParameters: TypeParametersScope
       Scope: TypeCheckScope }
 
-  type TypeCheckerResult<'r> = State<'r, TypeCheckContext, TypeCheckState, Errors>
+  type TypeCheckerResult<'r, 'valueExt when 'valueExt: comparison> =
+    State<'r, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors>
 
-  type TypeChecker<'res, 'valueExt> =
-    Option<TypeValue>
-      -> 'res
-      -> TypeCheckerResult<Expr<TypeValue, ResolvedIdentifier, 'valueExt> * TypeValue * Kind * TypeCheckContext>
+  type TypeChecker<'input, 'valueExt when 'valueExt: comparison> =
+    Option<TypeValue<'valueExt>>
+      -> 'input
+      -> TypeCheckerResult<
+        Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
+        TypeValue<'valueExt> *
+        Kind *
+        TypeCheckContext<'valueExt>,
+        'valueExt
+       >
 
-  type ExprTypeChecker<'valueExt> = TypeChecker<Expr<TypeExpr, Identifier, 'valueExt>, 'valueExt>
+  type ExprTypeChecker<'valueExt when 'valueExt: comparison> =
+    TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt>
 
-  type TypeInstantiateContext =
+  type TypeInstantiateContext<'valueExt when 'valueExt: comparison> =
     { VisitedVars: Set<TypeVar>
       Scope: TypeCheckScope
-      TypeVariables: TypeVariablesScope
+      TypeVariables: TypeVariablesScope<'valueExt>
       TypeParameters: TypeParametersScope
-      Values: Map<ResolvedIdentifier, TypeValue * Kind> }
+      Values: Map<ResolvedIdentifier, TypeValue<'valueExt> * Kind> }
 
-  type TypeExprEvalResult = State<TypeValue * Kind, TypeCheckContext, TypeCheckState, Errors>
-  type TypeExprEval = Option<ExprTypeLetBindingName> -> Location -> TypeExpr -> TypeExprEvalResult
-  type TypeExprSymbolEvalResult = State<TypeSymbol, TypeCheckContext, TypeCheckState, Errors>
-  type TypeExprSymbolEval = Location -> TypeExpr -> TypeExprSymbolEvalResult
+  type TypeExprEvalResult<'valueExt when 'valueExt: comparison> =
+    State<TypeValue<'valueExt> * Kind, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors>
+
+  type TypeExprEvalPlain<'valueExt when 'valueExt: comparison> =
+    Option<ExprTypeLetBindingName> -> Location -> TypeExpr<'valueExt> -> TypeExprEvalResult<'valueExt>
+
+  type TypeExprEval<'valueExt when 'valueExt: comparison> =
+    TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt>
+      -> Option<ExprTypeLetBindingName>
+      -> Location
+      -> TypeExpr<'valueExt>
+      -> TypeExprEvalResult<'valueExt>
+
+  type TypeExprSymbolEvalResult<'valueExt when 'valueExt: comparison> =
+    State<TypeSymbol, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors>
+
+  type TypeExprSymbolEval<'valueExt when 'valueExt: comparison> =
+    TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt>
+      -> Location
+      -> TypeExpr<'valueExt>
+      -> TypeExprSymbolEvalResult<'valueExt>

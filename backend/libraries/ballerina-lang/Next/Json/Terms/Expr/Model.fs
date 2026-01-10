@@ -6,6 +6,7 @@ open Ballerina.DSL.Next.Json
 module ExprJson =
   open FSharp.Data
   open Ballerina.Reader.WithError
+  open Ballerina.DSL.Next.Types
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Json.Expr
   open Ballerina.DSL.Next.Terms.Json
@@ -74,3 +75,5 @@ module ExprJson =
                        Else = elseExpr }) -> Expr.ToJsonIf Expr.ToJson cond thenExpr elseExpr
         | ExprRec.Primitive p -> Expr.ToJsonPrimitive p
         | ExprRec.Lookup s -> Expr.ToJsonLookup s
+        | ExprRec.EntitiesDes _ -> failwith "Not implemented"
+        | ExprRec.EntityDes _ -> failwith "Not implemented"

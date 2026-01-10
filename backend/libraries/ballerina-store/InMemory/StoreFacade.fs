@@ -12,7 +12,10 @@ open Ballerina.DSL.Next.Types.Model
 module Store =
   let create
     (initialTenantIds: TenantId list)
-    (onDeltaExt: DeltaExt -> Value<TypeValue, ValueExt> -> Sum<Value<TypeValue, ValueExt>, Ballerina.Errors.Errors>)
+    (onDeltaExt:
+      DeltaExt
+        -> Value<TypeValue<ValueExt>, ValueExt>
+        -> Sum<Value<TypeValue<ValueExt>, ValueExt>, Ballerina.Errors.Errors>)
     : Store =
 
     let store = ConcurrentStore.initStore initialTenantIds

@@ -13,16 +13,15 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.Option
 
-  let private int32TypeValue = TypeValue.CreateInt32()
-  let private float32TypeValue = TypeValue.CreateFloat32()
-
-  let private boolTypeValue = TypeValue.CreateBool()
-
   let Float32Extension<'ext>
     (operationLens: PartialLens<'ext, Float32Operations<'ext>>)
     : OperationsExtension<'ext, Float32Operations<'ext>> =
     let float32PlusId =
       Identifier.FullyQualified([ "float32" ], "+") |> TypeCheckScope.Empty.Resolve
+
+    let int32TypeValue = TypeValue.CreateInt32()
+    let float32TypeValue = TypeValue.CreateFloat32()
+    let boolTypeValue = TypeValue.CreateBool()
 
     let plusOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32PlusId,
@@ -56,7 +55,7 @@ module Extension =
                 return Float32Operations.Plus({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float32(vClosure + v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float32(vClosure + v))
             } }
 
     let float32MinusId =
@@ -94,7 +93,7 @@ module Extension =
                 return Float32Operations.Minus({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float32(vClosure - v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float32(vClosure - v))
             } }
 
     let float32DivideId =
@@ -132,7 +131,7 @@ module Extension =
                 return Float32Operations.Divide({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float32(vClosure / v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float32(vClosure / v))
             } }
 
     let float32PowerId =
@@ -176,7 +175,7 @@ module Extension =
                   |> sum.MapError(Errors.FromErrors loc0)
                   |> reader.OfSum
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float32(pown vClosure v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float32(pown vClosure v))
             } }
 
     let float32ModId =
@@ -214,7 +213,7 @@ module Extension =
                 return Float32Operations.Mod({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Float32(vClosure % v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float32(vClosure % v))
             } }
 
     let float32EqualId =
@@ -252,7 +251,7 @@ module Extension =
                 return Float32Operations.Equal({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
     let float32NotEqualId =
@@ -290,7 +289,7 @@ module Extension =
                 return Float32Operations.NotEqual({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
     let float32GreaterThanId =
@@ -328,7 +327,7 @@ module Extension =
                 return Float32Operations.GreaterThan({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
     let float32GreaterThanOrEqualId =
@@ -369,7 +368,7 @@ module Extension =
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
     let float32LessThanId =
@@ -407,7 +406,7 @@ module Extension =
                 return Float32Operations.LessThan({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
     let float32LessThanOrEqualId =
@@ -445,7 +444,7 @@ module Extension =
                 return Float32Operations.LessThanOrEqual({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))
             } }
 
     { TypeVars = []

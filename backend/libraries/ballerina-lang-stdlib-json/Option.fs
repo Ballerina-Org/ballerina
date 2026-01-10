@@ -17,9 +17,9 @@ module Extension =
 
   let parser<'ext>
     (lens: PartialLens<'ext, OptionValues<'ext>>)
-    (rootValueParser: ValueParser<TypeValue, ResolvedIdentifier, 'ext>)
+    (rootValueParser: ValueParser<TypeValue<'ext>, ResolvedIdentifier, 'ext>)
     (v: JsonValue)
-    : ValueParserReader<TypeValue, ResolvedIdentifier, 'ext> =
+    : ValueParserReader<TypeValue<'ext>, ResolvedIdentifier, 'ext> =
     Reader.assertDiscriminatorAndContinueWithValue "option" v (fun elementJson ->
       reader {
         let opt =
@@ -33,9 +33,9 @@ module Extension =
 
   let encoder
     (lens: PartialLens<'ext, OptionValues<'ext>>)
-    (rootValueEncoder: ValueEncoder<TypeValue, 'ext>)
-    (v: Value<TypeValue, 'ext>)
-    : ValueEncoderReader<TypeValue, 'ext> =
+    (rootValueEncoder: ValueEncoder<TypeValue<'ext>, 'ext>)
+    (v: Value<TypeValue<'ext>, 'ext>)
+    : ValueEncoderReader<TypeValue<'ext>, 'ext> =
     reader {
       let! v = Value.AsExt v |> reader.OfSum
 

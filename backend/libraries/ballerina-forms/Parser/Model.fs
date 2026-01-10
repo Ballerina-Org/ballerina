@@ -2,21 +2,9 @@ namespace Ballerina.DSL.FormEngine.Parser
 
 module Model =
 
-  open Ballerina.DSL.FormEngine.Model
-  open Ballerina.DSL.Expr.Model
-  open Ballerina.DSL.Expr.Patterns
-  open Ballerina.DSL.Expr.Types.Model
-  open Ballerina.DSL.Expr.Types.Patterns
-  open System
   open Ballerina.Collections.Sum
-  open Ballerina.Collections.Map
-  open Ballerina.State.WithError
   open Ballerina.Errors
-  open Ballerina.StdLib.Json.Patterns
-  open Ballerina.StdLib.String
-  open Ballerina.StdLib.Object
   open FSharp.Data
-  open Ballerina.Collections.NonEmptyList
 
   type TopLevel =
     { Types: (string * JsonValue)[]

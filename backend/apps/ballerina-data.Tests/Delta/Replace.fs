@@ -8,13 +8,13 @@ open Ballerina.Data.Delta.ToUpdater
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.Types.Patterns
 
-let deltaExt (_ext: unit) : Value<TypeValue, Unit> -> Sum<Value<TypeValue, Unit>, 'a> =
-  fun (v: Value<TypeValue, Unit>) -> sum.Return v
+let deltaExt (_ext: unit) : Value<TypeValue<Unit>, Unit> -> Sum<Value<TypeValue<Unit>, Unit>, 'a> =
+  fun (v: Value<TypeValue<Unit>, Unit>) -> sum.Return v
 
 [<Test>]
 let ``Delta.Replace: replaces primitive int value`` () =
-  let original = Value<TypeValue, Unit>.Primitive(PrimitiveValue.Int32 10)
-  let replacement = Value<TypeValue, Unit>.Primitive(PrimitiveValue.Int32 99)
+  let original = Value<TypeValue<Unit>, Unit>.Primitive(PrimitiveValue.Int32 10)
+  let replacement = Value<TypeValue<Unit>, Unit>.Primitive(PrimitiveValue.Int32 99)
   let delta = Delta.Replace(replacement)
 
   match Delta.ToUpdater deltaExt delta with
@@ -26,8 +26,8 @@ let ``Delta.Replace: replaces primitive int value`` () =
 
 [<Test>]
 let ``Delta.Replace: replaces string with anything (no validation)`` () =
-  let original = Value<TypeValue, Unit>.Primitive(PrimitiveValue.String "abc")
-  let replacement = Value<TypeValue, Unit>.Primitive(PrimitiveValue.Bool true)
+  let original = Value<TypeValue<Unit>, Unit>.Primitive(PrimitiveValue.String "abc")
+  let replacement = Value<TypeValue<Unit>, Unit>.Primitive(PrimitiveValue.Bool true)
   let delta = Delta.Replace(replacement)
 
   match Delta.ToUpdater deltaExt delta with

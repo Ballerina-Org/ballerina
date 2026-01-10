@@ -57,7 +57,7 @@ let ``LangNext-Integration let over int succeeds`` () =
   match actual with
   | Left(value, typeValue) ->
 
-    let expectedValue: Value<TypeValue, ValueExt> = Primitive(Int32 10)
+    let expectedValue: Value<TypeValue<ValueExt>, ValueExt> = Primitive(Int32 10)
 
     Assert.That(value, Is.EqualTo(expectedValue))
 
@@ -78,7 +78,7 @@ let ``LangNext-Integration let over decimal succeeds`` () =
   match actual with
   | Left(value, typeValue) ->
 
-    let expectedValue: Value<TypeValue, ValueExt> = Primitive(Decimal 10.5M)
+    let expectedValue: Value<TypeValue<ValueExt>, ValueExt> = Primitive(Decimal 10.5M)
 
     Assert.That(value, Is.EqualTo(expectedValue))
 
@@ -99,7 +99,7 @@ let ``LangNext-Integration let over bool succeeds`` () =
   match actual with
   | Left(value, typeValue) ->
 
-    let expectedValue: Value<TypeValue, ValueExt> = Primitive(Bool true)
+    let expectedValue: Value<TypeValue<ValueExt>, ValueExt> = Primitive(Bool true)
 
     Assert.That(value, Is.EqualTo(expectedValue))
 
@@ -120,7 +120,8 @@ let ``LangNext-Integration let over string succeeds`` () =
   match actual with
   | Left(value, typeValue) ->
 
-    let expectedValue: Value<TypeValue, ValueExt> = Primitive(String "Hello world!")
+    let expectedValue: Value<TypeValue<ValueExt>, ValueExt> =
+      Primitive(String "Hello world!")
 
     Assert.That(value, Is.EqualTo(expectedValue))
 
@@ -140,7 +141,7 @@ let ``LangNext-Integration let over boolean expression succeeds`` () =
   match actual with
   | Left(value, typeValue) ->
 
-    let expectedValue: Value<TypeValue, ValueExt> = Primitive(Bool false)
+    let expectedValue: Value<TypeValue<ValueExt>, ValueExt> = Primitive(Bool false)
 
     Assert.That(value, Is.EqualTo(expectedValue))
 
@@ -160,7 +161,7 @@ let ``LangNext-Integration let over integer expression succeeds`` () =
   match actual with
   | Left(value, typeValue) ->
 
-    let expectedValue: Value<TypeValue, ValueExt> = Primitive(Int32 48)
+    let expectedValue: Value<TypeValue<ValueExt>, ValueExt> = Primitive(Int32 48)
 
     Assert.That(value, Is.EqualTo(expectedValue))
 
@@ -180,7 +181,7 @@ let ``LangNext-Integration let over conditional expression succeeds`` () =
   match actual with
   | Left(value, typeValue) ->
 
-    let expectedValue: Value<TypeValue, ValueExt> = Primitive(Bool true)
+    let expectedValue: Value<TypeValue<ValueExt>, ValueExt> = Primitive(Bool true)
 
     Assert.That(value, Is.EqualTo(expectedValue))
 
@@ -204,7 +205,7 @@ in x"""
   match actual with
   | Left(value, typeValue) ->
 
-    let expectedValue: Value<TypeValue, ValueExt> = Primitive(Bool true)
+    let expectedValue: Value<TypeValue<ValueExt>, ValueExt> = Primitive(Bool true)
 
     Assert.That(value, Is.EqualTo(expectedValue))
 
@@ -316,7 +317,7 @@ in v.1, v.2, v.3
   match actual with
   | Left(value, typeValue) ->
 
-    let expectedValue: Value<TypeValue, ValueExt> =
+    let expectedValue: Value<TypeValue<ValueExt>, ValueExt> =
       Tuple [ Primitive(Int32 1); Primitive(String "hello"); Primitive(Bool true) ]
 
     Assert.That(value, Is.EqualTo(expectedValue))
@@ -343,7 +344,7 @@ in t.1
   match actual with
   | Left(value, typeValue) ->
 
-    let expectedValue: Value<TypeValue, ValueExt> = Primitive(Int32 123)
+    let expectedValue: Value<TypeValue<ValueExt>, ValueExt> = Primitive(Int32 123)
 
     Assert.That(value, Is.EqualTo(expectedValue))
 
@@ -371,7 +372,7 @@ in match t with
   match actual with
   | Left(value, typeValue) ->
 
-    let expectedValue: Value<TypeValue, ValueExt> = Primitive(Int32 -1)
+    let expectedValue: Value<TypeValue<ValueExt>, ValueExt> = Primitive(Int32 -1)
 
     Assert.That(value, Is.EqualTo(expectedValue))
 
@@ -401,7 +402,7 @@ in match t with
   match actual with
   | Left(value, typeValue) ->
 
-    let expectedValue: Value<TypeValue, ValueExt> = Primitive(Int32 42)
+    let expectedValue: Value<TypeValue<ValueExt>, ValueExt> = Primitive(Int32 42)
 
     Assert.That(value, Is.EqualTo(expectedValue))
 
@@ -432,7 +433,7 @@ in res1
   match actual with
   | Left(value, _typeValue) ->
 
-    let expectedValue: Value<TypeValue, ValueExt> = Primitive(Int32 -1)
+    let expectedValue: Value<TypeValue<ValueExt>, ValueExt> = Primitive(Int32 -1)
 
     Assert.That(value, Is.EqualTo(expectedValue))
 
@@ -454,7 +455,7 @@ in f true, f false
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Tuple [ Ext(ValueExt(Choice1Of4(_v1))); Ext(ValueExt(Choice1Of4(_v2))) ] -> Assert.Pass()
+    | Tuple [ Ext(ValueExt(Choice1Of5(_v1))); Ext(ValueExt(Choice1Of5(_v2))) ] -> Assert.Pass()
     | _ -> Assert.Fail($"Expected a tuple of two list values, got {value.AsFSharpString}")
 
   | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
@@ -477,13 +478,13 @@ in l,l1,l2,l3,l4
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Tuple [ Ext(ValueExt(Choice1Of4(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
+    | Tuple [ Ext(ValueExt(Choice1Of5(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
                                                                                              Value.Primitive(Int32 -2)
                                                                                              Value.Primitive(Int32 3) ]))))
-              Ext(ValueExt(Choice1Of4(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Bool true)
+              Ext(ValueExt(Choice1Of5(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Bool true)
                                                                                              Value.Primitive(Bool false)
                                                                                              Value.Primitive(Bool true) ]))))
-              Ext(ValueExt(Choice1Of4(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
+              Ext(ValueExt(Choice1Of5(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
                                                                                              Value.Primitive(Int32 3) ]))))
               Value.Primitive(Int32 2)
               Value.Primitive(Bool false) ] -> Assert.Pass()
@@ -562,7 +563,7 @@ in List::append [string] l1 l2
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Ext(ValueExt(Choice1Of4(ListExt.ListValues(List.Model.ListValues.List [ Value.Primitive(String "hello")
+    | Ext(ValueExt(Choice1Of5(ListExt.ListValues(List.Model.ListValues.List [ Value.Primitive(String "hello")
                                                                               Value.Primitive(String " ")
                                                                               Value.Primitive(String "world")
                                                                               Value.Primitive(String "bonjour")
@@ -651,7 +652,9 @@ in f (1, "hello")
 
   | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
 
-let PrimitiveOpTest (program: string, expectedValue: PrimitiveValue, errMsg: Value<TypeValue, ValueExt> -> string) =
+let PrimitiveOpTest
+  (program: string, expectedValue: PrimitiveValue, errMsg: Value<TypeValue<ValueExt>, ValueExt> -> string)
+  =
   let actual = program |> run
 
   match actual with
@@ -1027,7 +1030,7 @@ in match _ with
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Ext(ValueExt.ValueExt(Choice1Of4(ListExt.ListValues(ListValues.List([ Value.Record _ ]))))) ->
+    | Value.Ext(ValueExt.ValueExt(Choice1Of5(ListExt.ListValues(ListValues.List([ Value.Record _ ]))))) ->
       Assert.Pass $"Correctly evaluated to a record"
     | _ -> Assert.Fail $"Expected a record, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
@@ -1056,7 +1059,7 @@ in match _ with
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Ext(ValueExt.ValueExt(Choice1Of4(ListExt.ListValues(ListValues.List([ Value.Record _ ]))))) ->
+    | Value.Ext(ValueExt.ValueExt(Choice1Of5(ListExt.ListValues(ListValues.List([ Value.Record _ ]))))) ->
       Assert.Pass $"Correctly evaluated to a record"
     | _ -> Assert.Fail $"Expected a record, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
@@ -1152,8 +1155,8 @@ in singleton [int32] 10, singleton [bool] true
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Tuple [ Value.Ext(ValueExt.ValueExt(Choice1Of4(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Int32 10) ])))))
-                    Value.Ext(ValueExt.ValueExt(Choice1Of4(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ]))))) ] ->
+    | Value.Tuple [ Value.Ext(ValueExt.ValueExt(Choice1Of5(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Int32 10) ])))))
+                    Value.Ext(ValueExt.ValueExt(Choice1Of5(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ]))))) ] ->
       Assert.Pass $"Correctly evaluated to (10, true)"
     | _ -> Assert.Fail $"Expected a record, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
@@ -1174,8 +1177,8 @@ in singleton 10, singleton true
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Tuple [ Value.Ext(ValueExt.ValueExt(Choice1Of4(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Int32 10) ])))))
-                    Value.Ext(ValueExt.ValueExt(Choice1Of4(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ]))))) ] ->
+    | Value.Tuple [ Value.Ext(ValueExt.ValueExt(Choice1Of5(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Int32 10) ])))))
+                    Value.Ext(ValueExt.ValueExt(Choice1Of5(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ]))))) ] ->
       Assert.Pass $"Correctly evaluated to (10, true)"
     | _ -> Assert.Fail $"Expected a record, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
@@ -1249,13 +1252,13 @@ in id [SomethingWithEvidence]
   let actual = program |> run
 
   match actual with
-  | Left(value, typeValue: TypeValue) ->
+  | Left(value, typeValue: TypeValue<ValueExt>) ->
     match value with
     | Value.Lambda _ ->
       match typeValue with
       | TypeValue.Arrow({ value = (_, outputType) }) ->
         match outputType with
-        | TypeValue.Record { value = fields: OrderedMap<TypeSymbol, (TypeValue * Kind)>
+        | TypeValue.Record { value = fields: OrderedMap<TypeSymbol, (TypeValue<ValueExt> * Kind)>
                              typeCheckScopeSource = scope: TypeCheckScope } ->
           match scope.Type with
           | Some "SomethingWithEvidence" ->

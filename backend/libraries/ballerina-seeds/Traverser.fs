@@ -40,7 +40,7 @@ type SeedingContext =
     Generator: BogusDataGenerator }
 
 type SeedingState =
-  { TypeContext: TypeCheckState
+  { TypeContext: TypeCheckState<ValueExt>
     Label: SeedingClue
     InfinitiveVarNamesIndex: int
     InfinitiveNamesIndex: Map<string, int> }
@@ -58,7 +58,7 @@ module Traverser =
 
   let rec seed
     (entity: EntityName)
-    : TypeValue -> State<Value<TypeValue, ValueExt>, SeedingContext, SeedingState, Errors> =
+    : TypeValue<ValueExt> -> State<Value<TypeValue<ValueExt>, ValueExt>, SeedingContext, SeedingState, Errors> =
     fun typeValue ->
 
       let (!) = seed entity
@@ -66,19 +66,19 @@ module Traverser =
       let setLabel label =
         state.SetState(fun s -> { s with Label = FromContext label })
 
-      let (!!) label (t: TypeValue) = setLabel label >>= fun () -> !t
+      let (!!) label (t: TypeValue<ValueExt>) = setLabel label >>= fun () -> !t
 
       state {
 
         match typeValue with
         | TypeValue.Imported x when x.Id.Name = "List" && List.length x.Arguments = 1 ->
           let! values = [ 0..2 ] |> List.map (fun _ -> (!) x.Arguments.Head) |> state.All
-          let listExtValue = ListValues >> Choice1Of4 >> ValueExt.ValueExt
+          let listExtValue = ListValues >> Choice1Of5 >> ValueExt.ValueExt
           let lv = List.Model.ListValues.List values |> listExtValue
           return Value.Ext lv
         | TypeValue.Imported x when x.Id.Name = "Option" && List.length x.Arguments = 1 ->
           let! value = (!) x.Arguments.Head
-          let ext = OptionValues >> Choice2Of4 >> ValueExt.ValueExt
+          let ext = OptionValues >> Choice2Of5 >> ValueExt.ValueExt
           let valueExt = Option.Model.OptionValues.Option(Some value) |> ext
           return Value.Ext valueExt
         | TypeValue.Imported _ ->
@@ -99,7 +99,7 @@ module Traverser =
           let! s = state.GetState()
 
           return
-            [ "Guid" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve,
+            [ "guid" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve,
               ctx.Generator.Guid() |> PrimitiveValue.Guid |> Value.Primitive
               "Name" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve,
               s.InfinitiveVarNamesIndex
@@ -212,6 +212,14 @@ module Traverser =
         | TypeValue.Set element ->
           let! element = !element.value
           return Value.Tuple [ element ]
+        | TypeValue.Schema _schema ->
+          return! state.Throw(Errors.Singleton(Location.Unknown, "Schema seeds not implemented yet"))
+        | TypeValue.Entity _ ->
+          return! state.Throw(Errors.Singleton(Location.Unknown, "Schema Entity seeds not implemented yet"))
+        | TypeValue.Entities _ ->
+          return! state.Throw(Errors.Singleton(Location.Unknown, "Schema Entities seeds not implemented yet"))
+        | TypeValue.Relation _relation ->
+          return! state.Throw(Errors.Singleton(Location.Unknown, "Schema Relation seeds not implemented yet"))
       }
 
 type SeedingContext with
@@ -222,7 +230,7 @@ type SeedingContext with
       Options = FullStructure }
 
 type SeedingState with
-  static member Default(typeContext: TypeCheckState) =
+  static member Default(typeContext: TypeCheckState<ValueExt>) =
     { TypeContext = typeContext
       Label = Absent
       InfinitiveVarNamesIndex = 0

@@ -15,16 +15,16 @@ module LiftOtherSteps =
   open Ballerina.DSL.Next.Unification
   open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.DSL.Next.Types.TypeChecker.Patterns
-  open Ballerina.DSL.Next.Types.TypeChecker.Eval
+  // open Ballerina.DSL.Next.Types.TypeChecker.Eval
   open Ballerina.Fun
   open Ballerina.StdLib.OrderPreservingMap
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
-    static member liftUnification
-      (p: State<'a, UnificationContext, UnificationState, Errors>)
-      : State<'a, TypeCheckContext, TypeCheckState, Errors> =
+  type Expr<'T, 'Id, 've when 'Id: comparison> with
+    static member liftUnification<'a, 'valueExt when 'valueExt: comparison>
+      (p: State<'a, UnificationContext<'valueExt>, UnificationState<'valueExt>, Errors>)
+      : State<'a, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors> =
       state {
         let! s = state.GetState()
         let! ctx = state.GetContext()
@@ -42,7 +42,7 @@ module LiftOtherSteps =
         | Left(res, newUnificationState) ->
           do!
             newUnificationState
-            |> Option.map (fun (newUnificationState: UnificationState) ->
+            |> Option.map (fun (newUnificationState: UnificationState<'valueExt>) ->
               state.SetState(TypeCheckState.Updaters.Vars(replaceWith newUnificationState)))
             |> state.RunOption
             |> state.Map ignore
@@ -51,9 +51,9 @@ module LiftOtherSteps =
         | Right(err, _) -> return! state.Throw err
       }
 
-    static member liftTypeEval
-      (p: State<'a, TypeCheckContext, TypeCheckState, Errors>)
-      : State<'a, TypeCheckContext, TypeCheckState, Errors> =
+    static member liftTypeEval<'a, 'valueExt when 'valueExt: comparison>
+      (p: State<'a, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors>)
+      : State<'a, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors> =
       state {
         let! s = state.GetState()
         let! ctx = state.GetContext()
@@ -64,7 +64,7 @@ module LiftOtherSteps =
         | Left(res, newTypesState) ->
           do!
             newTypesState
-            |> Option.map (fun (newTypesState: TypeCheckState) -> state.SetState(replaceWith newTypesState))
+            |> Option.map (fun (newTypesState: TypeCheckState<'valueExt>) -> state.SetState(replaceWith newTypesState))
             |> state.RunOption
             |> state.Map ignore
 
@@ -72,9 +72,9 @@ module LiftOtherSteps =
         | Right(err, _) -> return! state.Throw err
       }
 
-    static member liftInstantiation
-      (p: State<'a, TypeInstantiateContext, TypeCheckState, Errors>)
-      : State<'a, TypeCheckContext, TypeCheckState, Errors> =
+    static member liftInstantiation<'a, 'valueExt when 'valueExt: comparison>
+      (p: State<'a, TypeInstantiateContext<'valueExt>, TypeCheckState<'valueExt>, Errors>)
+      : State<'a, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors> =
       state {
         let! s = state.GetState()
         let! ctx = state.GetContext()

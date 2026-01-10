@@ -12,8 +12,8 @@ module MapTypeExpr =
 
   let private discriminator = "map"
 
-  type TypeExpr with
-    static member FromJsonMap(fromJsonRoot: TypeExprParser) : TypeExprParser =
+  type TypeExpr<'valueExt> with
+    static member FromJsonMap(fromJsonRoot: TypeExprParser<'valueExt>) : TypeExprParser<'valueExt> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun mapFields ->
         sum {
           let! (key, value) = mapFields |> JsonValue.AsPair
@@ -22,7 +22,9 @@ module MapTypeExpr =
           return TypeExpr.Map(keyType, valueType)
         })
 
-    static member ToJsonMap(rootToJson: TypeExpr -> JsonValue) : TypeExpr * TypeExpr -> JsonValue =
+    static member ToJsonMap
+      (rootToJson: TypeExpr<'valueExt> -> JsonValue)
+      : TypeExpr<'valueExt> * TypeExpr<'valueExt> -> JsonValue =
       fun (keyType, valueType) ->
         let keyJson = keyType |> rootToJson
         let valueJson = valueType |> rootToJson

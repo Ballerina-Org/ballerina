@@ -29,14 +29,16 @@ open Ballerina.Data.Spec.Model
 open Ballerina.Data.Schema.Model
 open Ballerina.Data.TypeEval
 open Ballerina.Data.Schema
+open Ballerina.DSL.Next.Types.TypeChecker
 
 let extensions, languageContext = stdExtensions
+let private typeCheck = Expr.TypeCheck()
 
 let private rootExprEncoder =
   Expr.ToJson >> Reader.Run(TypeValue.ToJson, ResolvedIdentifier.ToJson)
 
 let valueEncoderRoot =
-  Json.buildRootEncoder<TypeValue, ValueExt> (
+  Json.buildRootEncoder<TypeValue<ValueExt>, ValueExt> (
     NonEmptyList.OfList(
       Value.ToJson,
       [ List.Json.Extension.encoder ListExt.ValueLens
@@ -76,7 +78,7 @@ let private evalJsonAndSeed (e: EntityName) (str: string) =
           types
           |> List.map (fun (name, expr) ->
             state {
-              let! tv = TypeExpr.Eval None Location.Unknown expr
+              let! tv = TypeExpr.Eval () typeCheck None Location.Unknown expr
               do! TypeCheckState.bindType (name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) tv
               return ()
             })
@@ -220,7 +222,7 @@ let ``Seeds: List extension`` () =
 
         let! listValues =
           match choice with
-          | Choice1Of4(ListExt.ListValues v) -> sum.Return v
+          | Choice1Of5(ListExt.ListValues v) -> sum.Return v
           | _ -> sum.Throw(Ballerina.Errors.Errors.Singleton "Expected List, got other ext")
 
         let (List.Model.ListValues.List values) = listValues
@@ -247,12 +249,16 @@ let analyze (data: Map<Guid, Set<Guid>>) =
 
 let insert
   (ctx: SeedingContext)
-  : Sum<Value<TypeValue, ValueExt> * Option<TypeCheckState>, Errors * Option<TypeCheckState>> =
+  : Sum<
+      Value<TypeValue<ValueExt>, ValueExt> * Option<TypeCheckState<ValueExt>>,
+      Errors * Option<TypeCheckState<ValueExt>>
+     >
+  =
   let json = SampleData.Specs.PersonGenders |> JsonValue.Parse
 
   state {
     let! spec =
-      Schema.FromJson json
+      Ballerina.Data.Schema.Model.Schema.FromJson json
       |> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
       |> state.OfSum
       |> state.MapError(Errors.FromErrors Location.Unknown)
@@ -263,7 +269,7 @@ let insert
       |> Seq.head
       |> (fun (_name, data) -> data.Forward.Path)
 
-    let! schema = spec |> Schema.SchemaEval
+    let! schema = spec |> Ballerina.Data.Schema.Model.Schema.SchemaEval()
 
     let! seeds = Runner.seed schema |> Reader.Run ctx |> state.OfSum
     let lookups = seeds.Lookups |> Map.find { LookupName = "PeopleGenders" }
@@ -291,8 +297,8 @@ let insert
   |> State.Run(languageContext.TypeCheckContext, languageContext.TypeCheckState)
 
 let private tryExtractGender
-  (value: Value<TypeValue, ValueExt>)
-  : Sum<option<ResolvedIdentifier> * Map<ResolvedIdentifier, Value<TypeValue, ValueExt>>, Errors> =
+  (value: Value<TypeValue<ValueExt>, ValueExt>)
+  : Sum<option<ResolvedIdentifier> * Map<ResolvedIdentifier, Value<TypeValue<ValueExt>, ValueExt>>, Errors> =
   sum {
     let! record = Value.AsRecord value |> Sum.mapRight (Errors.FromErrors Location.Unknown)
 

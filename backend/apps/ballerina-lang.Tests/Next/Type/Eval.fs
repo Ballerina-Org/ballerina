@@ -1,5 +1,6 @@
 module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Type.Eval
 
+open System
 open Ballerina.Collections.Sum
 open NUnit.Framework
 open Ballerina.DSL.Next.Types.Model
@@ -9,11 +10,15 @@ open Ballerina.DSL.Next.Types.TypeChecker.Model
 open Ballerina.DSL.Next.Types.TypeChecker.Patterns
 open Ballerina.DSL.Next.Types.TypeChecker
 open Ballerina.State.WithError
-open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.Cat.Tests.BusinessRuleEngine.Next.Type.Patterns
-open Ballerina.StdLib.OrderPreservingMap
 open Ballerina.Cat.Collections.OrderedMap
 open Ballerina.LocalizedErrors
+
+let private typeCheck: ExprTypeChecker<IComparable> = Expr.TypeCheck()
+let private evalFull: TypeExprEval<IComparable> = TypeExpr.Eval()
+
+let private eval: TypeExpr<IComparable> -> TypeExprEvalResult<IComparable> =
+  evalFull typeCheck None Location.Unknown
 
 [<Test>]
 let ``LangNext-TypeEval lookup looks up existing types`` () =
@@ -21,7 +26,7 @@ let ``LangNext-TypeEval lookup looks up existing types`` () =
 
   let actual =
     TypeExpr.Lookup(Identifier.LocalScope "T1")
-    |> TypeExpr.Eval None Location.Unknown
+    |> eval
     |> State.Run(
       TypeCheckContext.Empty("", ""),
       TypeCheckState.Create(
@@ -59,7 +64,7 @@ let ``LangNext-TypeEval Flatten of anonymous unions`` () =
 
   let actual =
     TypeExpr.Flatten(t1, t2)
-    |> TypeExpr.Eval None Location.Unknown
+    |> eval
     |> State.Run(
       TypeCheckContext.Empty("", ""),
       [ A.Name |> TypeCheckScope.Empty.Resolve, A
@@ -98,7 +103,7 @@ let ``LangNext-TypeEval Flatten of named unions`` () =
 
   let actual =
     TypeExpr.Flatten(TypeExpr.Lookup(Identifier.LocalScope "T1"), TypeExpr.Lookup(Identifier.LocalScope "T2"))
-    |> TypeExpr.Eval None Location.Unknown
+    |> eval
     |> State.Run(
       TypeCheckContext.Empty("", ""),
       TypeCheckState.Create(
@@ -150,7 +155,7 @@ let ``LangNext-TypeEval Flatten of named records`` () =
 
   let actual =
     TypeExpr.Flatten(TypeExpr.Lookup(Identifier.LocalScope "T1"), TypeExpr.Lookup(Identifier.LocalScope "T2"))
-    |> TypeExpr.Eval None Location.Unknown
+    |> eval
     |> State.Run(
       TypeCheckContext.Empty("", ""),
       TypeCheckState.Create(
@@ -194,7 +199,7 @@ let ``LangNext-TypeEval Flatten of incompatible types fails`` () =
 
   let actual =
     TypeExpr.Flatten(t1, t2)
-    |> TypeExpr.Eval None Location.Unknown
+    |> eval
     |> State.Run(
       TypeCheckContext.Empty("", ""),
       [ A.Name |> TypeCheckScope.Empty.Resolve, A
@@ -223,7 +228,7 @@ let ``LangNext-TypeEval Keyof extracts record keys`` () =
 
   let actual =
     t1
-    |> TypeExpr.Eval None Location.Unknown
+    |> eval
     |> State.Run(
       TypeCheckContext.Empty("", ""),
       [ A.Name |> TypeCheckScope.Empty.Resolve, A
@@ -274,7 +279,7 @@ let ``LangNext-TypeEval flatten of Keyofs`` () =
 
   let actual =
     t3
-    |> TypeExpr.Eval None Location.Unknown
+    |> eval
     |> State.Run(
       TypeCheckContext.Empty("", ""),
       [ A.Name |> TypeCheckScope.Empty.Resolve, A
@@ -328,7 +333,7 @@ let ``LangNext-TypeEval Exclude of Keyofs`` () =
 
   let actual =
     t3
-    |> TypeExpr.Eval None Location.Unknown
+    |> eval
     |> State.Run(
       TypeCheckContext.Empty("", ""),
       [ A.Name |> TypeCheckScope.Empty.Resolve, A
@@ -373,7 +378,7 @@ let ``LangNext-TypeEval Exclude of Records`` () =
 
   let actual =
     t3
-    |> TypeExpr.Eval None Location.Unknown
+    |> eval
     |> State.Run(
       TypeCheckContext.Empty("", ""),
       [ A.Name |> TypeCheckScope.Empty.Resolve, A
@@ -421,7 +426,7 @@ let ``LangNext-TypeEval Exclude of Unions`` () =
 
   let actual =
     t3
-    |> TypeExpr.Eval None Location.Unknown
+    |> eval
     |> State.Run(
       TypeCheckContext.Empty("", ""),
       [ A.Name |> TypeCheckScope.Empty.Resolve, A
@@ -484,7 +489,7 @@ let ``LangNext-TypeEval Exclude fails on incompatible types`` () =
 
   let actual =
     t3
-    |> TypeExpr.Eval None Location.Unknown
+    |> eval
     |> State.Run(
       TypeCheckContext.Empty("", ""),
       [ A.Name |> TypeCheckScope.Empty.Resolve, A
@@ -515,7 +520,7 @@ let ``LangNext-TypeEval Rotate from union to record`` () =
 
   let actual =
     t
-    |> TypeExpr.Eval None Location.Unknown
+    |> eval
     |> State.Run(
       TypeCheckContext.Empty("", ""),
       [ A.Name |> TypeCheckScope.Empty.Resolve, A
@@ -555,7 +560,7 @@ let ``LangNext-TypeEval Rotate from record to union`` () =
 
   let actual =
     t
-    |> TypeExpr.Eval None Location.Unknown
+    |> eval
     |> State.Run(
       TypeCheckContext.Empty("", ""),
       [ A.Name |> TypeCheckScope.Empty.Resolve, A
@@ -594,11 +599,9 @@ let ``LangNext-TypeEval (generic) Apply`` () =
     )
 
   let actual =
-    t
-    |> TypeExpr.Eval None Location.Unknown
-    |> State.Run(TypeCheckContext.Empty("", ""), TypeCheckState.Empty)
+    t |> eval |> State.Run(TypeCheckContext.Empty("", ""), TypeCheckState.Empty)
 
-  let expected =
+  let expected: TypeValue<IComparable> =
     TypeValue.Tuple
       { value =
           [ TypeValue.PrimitiveWithTrivialSource PrimitiveType.Int32
@@ -662,7 +665,7 @@ let ``LangNext-TypeEval (generic) Apply of type instead of symbol fails`` () =
 
   let actual =
     t
-    |> TypeExpr.Eval None Location.Unknown
+    |> eval
     |> State.Run(
       TypeCheckContext.Empty("", ""),
       TypeCheckState.Create(
@@ -696,7 +699,7 @@ let ``LangNext-TypeEval (generic) Apply of symbol instead of type fails`` () =
 
   let actual =
     t
-    |> TypeExpr.Eval None Location.Unknown
+    |> eval
     |> State.Run(
       TypeCheckContext.Empty("", ""),
       TypeCheckState.Create(

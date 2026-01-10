@@ -16,10 +16,10 @@ module Lambda =
 
   let private discriminator = "lambda"
 
-  type TypeValue with
+  type TypeValue<'valueExt> with
     static member FromJsonLambda
-      (fromExpr: JsonValue -> Sum<TypeExpr, Errors>)
-      : JsonValue -> Sum<TypeParameter * TypeExpr, Errors> =
+      (fromExpr: JsonValue -> Sum<TypeExpr<'valueExt>, Errors>)
+      : JsonValue -> Sum<TypeParameter * TypeExpr<'valueExt>, Errors> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun lambdaFields ->
         sum {
           let! lambdaFields = lambdaFields |> JsonValue.AsRecordMap
@@ -33,7 +33,9 @@ module Lambda =
           return param, body
         })
 
-    static member ToJsonLambda(rootToJson: TypeExpr -> JsonValue) : TypeParameter * TypeExpr -> JsonValue =
+    static member ToJsonLambda
+      (rootToJson: TypeExpr<'valueExt> -> JsonValue)
+      : TypeParameter * TypeExpr<'valueExt> -> JsonValue =
       fun (param, body) ->
         let paramJson = TypeParameter.ToJson param
         let bodyJson = body |> rootToJson

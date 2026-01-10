@@ -18,10 +18,10 @@ module Union =
 
   let private discriminator = "union"
 
-  type TypeValue with
+  type TypeValue<'valueExt> with
     static member FromJsonUnion
-      (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
-      : JsonValue -> Sum<OrderedMap<TypeSymbol, TypeValue>, Errors> =
+      (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors>)
+      : JsonValue -> Sum<OrderedMap<TypeSymbol, TypeValue<'valueExt>>, Errors> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun unionFields ->
         sum {
           let! cases = unionFields |> JsonValue.AsArray
@@ -41,7 +41,9 @@ module Union =
           return caseTypes
         })
 
-    static member ToJsonUnion(rootToJson: TypeValue -> JsonValue) : OrderedMap<TypeSymbol, TypeValue> -> JsonValue =
+    static member ToJsonUnion
+      (rootToJson: TypeValue<'valueExt> -> JsonValue)
+      : OrderedMap<TypeSymbol, TypeValue<'valueExt>> -> JsonValue =
       OrderedMap.toArray
       >> Array.map (fun (symbol, value) -> JsonValue.Array [| TypeSymbol.ToJson symbol; rootToJson value |])
       >> JsonValue.Array

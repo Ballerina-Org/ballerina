@@ -25,10 +25,10 @@ module Lambda =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
-    static member internal TypeCheckLambda
+  type Expr<'T, 'Id, 've when 'Id: comparison> with
+    static member internal TypeCheckLambda<'valueExt when 'valueExt: comparison>
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
-      : TypeChecker<ExprLambda<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
+      : TypeChecker<ExprLambda<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
           ({ Param = x
@@ -44,7 +44,10 @@ module Lambda =
 
           let! t =
             t
-            |> Option.map (fun t -> t |> TypeExpr.Eval None loc0 |> Expr<'T, 'Id, 'valueExt>.liftTypeEval)
+            |> Option.map (fun t ->
+              t
+              |> TypeExpr.Eval () typeCheckExpr None loc0
+              |> Expr<'T, 'Id, 'valueExt>.liftTypeEval)
             |> state.RunOption
 
           // (p: State<'a, UnificationContext, UnificationState, Errors>)
@@ -75,9 +78,9 @@ module Lambda =
           let! t_x =
             freshVarType
             |> fst
-            |> TypeValue.Instantiate TypeExpr.Eval loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
             |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
-          // let! t_body = t_body |> TypeValue.Instantiate TypeExpr.Eval loc0 |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
+          // let! t_body = t_body |> TypeValue.Instantiate () (TypeExpr.Eval ()) loc0 |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
           // do!
           //     UnificationState.DeleteVariable freshVar
@@ -86,7 +89,7 @@ module Lambda =
 
           let! t_res =
             TypeValue.CreateArrow(t_x, t_body)
-            |> TypeValue.Instantiate TypeExpr.Eval loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
           return Expr.Lambda(x, Some t_x, body, loc0, ctx.Scope), t_res, Kind.Star, ctx

@@ -12,8 +12,8 @@ open Ballerina.Data.Spec.Model
 open Ballerina.Errors
 
 type LookupValue<'valueExt> =
-  { Value: Value<TypeValue, 'valueExt>
-    Typed: TypeValue
+  { Value: Value<TypeValue<'valueExt>, 'valueExt>
+    Typed: TypeValue<'valueExt>
     Lookup:
       {| Name: LookupName
          Descriptor: LookupDescriptor |} }
@@ -24,8 +24,8 @@ module Entity =
     (entityId: Guid, entityName: EntityName)
     (_renderer: Renderer<_, _>)
     (seeds: SpecData<_, _>)
-    (schema: Schema<TypeValue, ResolvedIdentifier, 'valueExt>)
-    : Sum<Value<TypeValue, 'valueExt> * LookupValue<'valueExt> list, 'e> =
+    (schema: Schema<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>)
+    : Sum<Value<TypeValue<'valueExt>, 'valueExt> * LookupValue<'valueExt> list, 'e> =
 
     let source = seeds.Entities |> Map.find entityName |> Map.find entityId
     //FIXME: use find with errors
@@ -55,9 +55,9 @@ module Entity =
     }
 
   let insertLookupValues
-    (sourceValue: Value<TypeValue, 'valueExt>)
+    (sourceValue: Value<TypeValue<'valueExt>, 'valueExt>)
     (lookupValues: LookupValue<'valueExt> seq)
-    : Sum<Value<TypeValue, 'valueExt>, Errors> =
+    : Sum<Value<TypeValue<'valueExt>, 'valueExt>, Errors> =
     lookupValues
     |> Seq.fold
       (fun acc lookupValue ->

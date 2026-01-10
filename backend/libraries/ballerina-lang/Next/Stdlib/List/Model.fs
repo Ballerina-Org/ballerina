@@ -5,18 +5,18 @@ module Model =
   open Ballerina.DSL.Next.Types
 
   // type ListConstructors<'ext> =
-  //   | List_Cons of {| Closure: Option<Value<TypeValue, 'ext>> |}
+  //   | List_Cons of {| Closure: Option<Value<TypeValue<'ext>, 'ext>> |}
   //   | List_Nil
 
   type ListOperations<'ext> =
     | List_Cons
     | List_Nil
-    | List_Map of {| f: Option<Value<TypeValue, 'ext>> |}
-    | List_Filter of {| f: Option<Value<TypeValue, 'ext>> |}
-    | List_Append of {| l: Option<Value<TypeValue, 'ext>> |}
+    | List_Map of {| f: Option<Value<TypeValue<'ext>, 'ext>> |}
+    | List_Filter of {| f: Option<Value<TypeValue<'ext>, 'ext>> |}
+    | List_Append of {| l: Option<Value<TypeValue<'ext>, 'ext>> |}
     | List_Fold of
-      {| f: Option<Value<TypeValue, 'ext>>
-         acc: Option<Value<TypeValue, 'ext>> |}
+      {| f: Option<Value<TypeValue<'ext>, 'ext>>
+         acc: Option<Value<TypeValue<'ext>, 'ext>> |}
     | List_Length
 
     override self.ToString() : string =
@@ -30,7 +30,7 @@ module Model =
       | List_Length -> "List::length"
 
   type ListValues<'ext> =
-    | List of List<Value<TypeValue, 'ext>>
+    | List of List<Value<TypeValue<'ext>, 'ext>>
 
     override self.ToString() : string =
       match self with

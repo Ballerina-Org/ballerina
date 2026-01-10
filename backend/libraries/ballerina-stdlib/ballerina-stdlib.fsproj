@@ -10,6 +10,7 @@
         <Compile Include="Core\Object\Model.fs" />
         <Compile Include="Core\Map\Model.fs" />
         <Compile Include="Core\Guid\Model.fs" />
+        <Compile Include="Core\Core.fs" />
         <Compile Include="Errors\Model.fs" />
         <Compile Include="Errors\Localized\Model.fs" />
         <Compile Include="Errors\Patterns.fs" />

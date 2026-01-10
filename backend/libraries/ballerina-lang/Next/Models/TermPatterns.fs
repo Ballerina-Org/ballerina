@@ -176,8 +176,7 @@ module Patterns =
       Expr<'T, 'Id, 'valueExt>.Apply(f, a, Location.Unknown, TypeCheckScope.Empty)
 
     static member FromValue
-      (v: Value<TypeValue, 'valueExt>, t: TypeValue, k: Kind, loc: Location, scope: TypeCheckScope)
-      =
+      (v: Value<TypeValue<'valueExt>, 'valueExt>, t: TypeValue<'valueExt>, k: Kind, loc: Location, scope: TypeCheckScope) =
       { Expr =
           FromValue(
             { Value = v
@@ -187,7 +186,7 @@ module Patterns =
         Location = loc
         Scope = scope }
 
-    static member FromValue(v: Value<TypeValue, 'valueExt>, t: TypeValue, k: Kind) =
+    static member FromValue(v: Value<TypeValue<'valueExt>, 'valueExt>, t: TypeValue<'valueExt>, k: Kind) =
       Expr<'T, 'Id, 'valueExt>.FromValue(v, t, k, Location.Unknown, TypeCheckScope.Empty)
 
     static member Let
@@ -259,6 +258,22 @@ module Patterns =
 
     static member RecordDes(e: Expr<'T, 'Id, 'valueExt>, id: 'Id) =
       Expr<'T, 'Id, 'valueExt>.RecordDes(e, id, Location.Unknown, TypeCheckScope.Empty)
+
+    static member EntitiesDes(e: Expr<'T, 'Id, 'valueExt>, loc: Location, scope: TypeCheckScope) =
+      { Expr = ExprRec.EntitiesDes({ Expr = e })
+        Location = loc
+        Scope = scope }
+
+    static member EntitiesDes(e: Expr<'T, 'Id, 'valueExt>) =
+      Expr<'T, 'Id, 'valueExt>.EntitiesDes(e, Location.Unknown, TypeCheckScope.Empty)
+
+    static member EntityDes(e: Expr<'T, 'Id, 'valueExt>, n: SchemaEntityName, loc: Location, scope: TypeCheckScope) =
+      { Expr = ExprRec.EntityDes({ Expr = e; EntityName = n })
+        Location = loc
+        Scope = scope }
+
+    static member EntityDes(e: Expr<'T, 'Id, 'valueExt>, n: SchemaEntityName) =
+      Expr<'T, 'Id, 'valueExt>.EntityDes(e, n, Location.Unknown, TypeCheckScope.Empty)
 
     static member UnionDes
       (
