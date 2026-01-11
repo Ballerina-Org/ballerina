@@ -27,7 +27,7 @@
     "@types/uuid": "^9.0.8",
     "ballerina-core": "*",
     "create-domain": "*",
-    "link": "^2.1.0",
+    "link": "^2.1.2",
     "playground-core": "*",
     "react-refresh": "^0.18.0",
     "typescript": "^5.9.3"
