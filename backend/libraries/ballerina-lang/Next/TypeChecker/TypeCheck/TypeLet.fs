@@ -38,10 +38,10 @@ module TypeLet =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
-    static member internal TypeCheckTypeLet
+  type Expr<'T, 'Id, 've when 'Id: comparison> with
+    static member internal TypeCheckTypeLet<'valueExt when 'valueExt: comparison>
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
-      : TypeChecker<ExprTypeLet<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
+      : TypeChecker<ExprTypeLet<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
           ({ Name = typeIdentifier
@@ -59,7 +59,7 @@ module TypeLet =
           // do Console.ReadLine() |> ignore
 
           let! typeDefinition =
-            TypeExpr.Eval (Some(ExprTypeLetBindingName typeIdentifier)) loc0 typeDefinition
+            TypeExpr.Eval () typeCheckExpr (Some(ExprTypeLetBindingName typeIdentifier)) loc0 typeDefinition
             |> Expr.liftTypeEval
             |> state.MapContext(
               TypeCheckContext.Updaters.Scope(TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier)))
@@ -76,7 +76,8 @@ module TypeLet =
 
           let scope = scope |> TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier))
 
-          let bind_component (v, t, k) : Updater<Map<ResolvedIdentifier, (TypeValue * Kind)>> = Map.add v (t, k)
+          let bind_component (v, t, k) : Updater<Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)>> =
+            Map.add v (t, k)
 
           let! definition_cases =
             typeDefinition
@@ -103,7 +104,8 @@ module TypeLet =
                       type_parameters
 
                   let wrap_type_params_kind arg_t =
-                    arg_t |> List.foldBack (fun tp acc -> Kind.Arrow(tp.Kind, acc)) type_parameters
+                    arg_t
+                    |> List.foldBack (fun (tp: TypeParameter) acc -> Kind.Arrow(tp.Kind, acc)) type_parameters
 
                   do!
                     TypeCheckState.bindUnionCaseConstructor
@@ -155,6 +157,37 @@ module TypeLet =
               |> state.All)
             |> state.RunOption
             |> state.Map(Option.map (List.fold (>>) id) >> Option.defaultValue id)
+
+          let! entities =
+            typeDefinition
+            |> fst
+            |> TypeValue.AsSchema
+            |> ofSum
+            |> state.Catch
+            |> state.Map(Sum.toOption)
+
+          do!
+            entities
+            |> Option.map (fun schema ->
+              schema.Entities
+              |> OrderedMap.toSeq
+              |> Seq.map (fun (entityName, entityDef) ->
+                state {
+                  let scope =
+                    { TypeCheckScope.Empty with
+                        Type = Some(typeIdentifier) }
+
+                  do!
+                    TypeCheckState.bindType
+                      (entityName.Name |> Identifier.LocalScope |> scope.Resolve)
+                      (entityDef.TypeWithProps, Kind.Star)
+                    |> Expr.liftTypeEval
+
+                  return ()
+                })
+              |> state.All)
+            |> state.RunOption
+            |> state.Ignore
 
           let! rest, rest_t, rest_k, ctx_rest =
             !rest

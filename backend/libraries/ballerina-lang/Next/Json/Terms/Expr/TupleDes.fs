@@ -11,6 +11,7 @@ module TupleDes =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.Errors
   open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.DSL.Next.Types
   open Ballerina.DSL.Next.Terms.Patterns
 
   let private discriminator = "tuple-des"

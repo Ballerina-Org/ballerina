@@ -54,7 +54,7 @@ let ``SpecNext-Schema updater descriptor parses`` () =
     """
     |> JsonValue.Parse
 
-  let expected: Updater<TypeExpr, Identifier, unit> =
+  let expected: Updater<TypeExpr<Unit>, Identifier, unit> =
     { Updater.Path =
         [ UpdaterPathStep.Field "FieldName"
           UpdaterPathStep.ListItem(Var.Create "VariableBoundToChangedItem")
@@ -64,7 +64,7 @@ let ``SpecNext-Schema updater descriptor parses`` () =
       Condition = Expr.Primitive(PrimitiveValue.Bool true, Location.Unknown, TypeCheckScope.Empty)
       Expr = Expr.Primitive(PrimitiveValue.Int32 100, Location.Unknown, TypeCheckScope.Empty) }
 
-  let parser: JsonValue -> Sum<Updater<TypeExpr, Identifier, unit>, Errors> =
+  let parser: JsonValue -> Sum<Updater<TypeExpr<Unit>, Identifier, unit>, Errors> =
     Updater.FromJson >> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
 
   match json |> parser with
@@ -84,13 +84,13 @@ let ``SpecNext-Schema entity descriptor parses`` () =
     """
     |> JsonValue.Parse
 
-  let expected: EntityDescriptor<TypeExpr, Identifier, unit> =
+  let expected: EntityDescriptor<TypeExpr<Unit>, Identifier, unit> =
     { Type = "MyType" |> Identifier.LocalScope |> TypeExpr.Lookup
       Methods = Set.ofList [ Get; GetMany; Create; Delete ]
       Updaters = []
       Predicates = Map.empty }
 
-  let parser: JsonValue -> Sum<EntityDescriptor<TypeExpr, Identifier, unit>, Errors> =
+  let parser: JsonValue -> Sum<EntityDescriptor<TypeExpr<Unit>, Identifier, unit>, Errors> =
     EntityDescriptor.FromJson >> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
 
   match json |> parser with
@@ -230,7 +230,7 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
     """
     |> JsonValue.Parse
 
-  let expected: Schema<TypeExpr, Identifier, unit> =
+  let expected: Schema<TypeExpr<Unit>, Identifier, unit> =
     { Types = OrderedMap.empty
       Entities =
         Map.ofList
@@ -240,7 +240,7 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
                Updaters = []
                Predicates =
                  [ ("SomePredicate",
-                    Expr<TypeExpr, Identifier, unit>
+                    Expr<TypeExpr<Unit>, Identifier, unit>
                       .Primitive(PrimitiveValue.Bool false, Location.Unknown, TypeCheckScope.Empty)) ]
                  |> Map.ofList })
             ({ EntityName = "TargetTable" },
@@ -249,7 +249,7 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
                Updaters = []
                Predicates =
                  [ ("AnotherPredicate",
-                    Expr<TypeExpr, Identifier, unit>
+                    Expr<TypeExpr<Unit>, Identifier, unit>
                       .Primitive(PrimitiveValue.Bool true, Location.Unknown, TypeCheckScope.Empty)) ]
                  |> Map.ofList }) ]
       Lookups =
@@ -276,8 +276,9 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
                       Path = [] })
                  ) }) ] }
 
-  let parser: JsonValue -> Sum<Schema<TypeExpr, Identifier, unit>, Errors> =
-    Schema.FromJson >> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
+  let parser: JsonValue -> Sum<Schema<TypeExpr<Unit>, Identifier, unit>, Errors> =
+    Ballerina.Data.Schema.Model.Schema.FromJson
+    >> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
 
   match json |> parser with
   | Right e -> Assert.Fail($"Failed to parse schema descriptor: {e}")

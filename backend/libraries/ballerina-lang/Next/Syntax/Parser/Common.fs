@@ -27,6 +27,7 @@ module Common =
   let colonOperator = parseOperator Operator.Colon
   let semicolonOperator = parseOperator Operator.SemiColon
   let commaOperator = parseOperator Operator.Comma
+  let doubleDotOperator = parseOperator Operator.DoubleDot
   let dotOperator = parseOperator Operator.Dot
   let doubleColonOperator = parseOperator Operator.DoubleColon
   let openRoundBracketOperator = parseOperator (Operator.RoundBracket Bracket.Open)
@@ -140,15 +141,40 @@ module Common =
   let thenKeyword = parseKeyword Keyword.Then
   let elseKeyword = parseKeyword Keyword.Else
 
-  let identifierMatch =
+  let singleIdentifier =
     parser.Exactly(fun t ->
       match t.Token with
       | Token.Identifier id -> Some id
       | _ -> None)
 
+  let caseLiteral () =
+    parser.Exactly(fun t ->
+      match t.Token with
+      | Token.CaseLiteral(i, n) -> { Case = i; Count = n } |> Some
+      | _ -> None)
+
+  let softKeyword k =
+    parser.Exactly(fun t ->
+      match t.Token with
+      | Token.Identifier id when k = id -> Some()
+      | _ -> None)
+
+  let schemaKeyword = softKeyword "schema"
+  let entityKeyword = softKeyword "entity"
+  let relationKeyword = softKeyword "relation"
+  let searchByKeyword = softKeyword "searchBy"
+  let propertyKeyword = parseKeyword Keyword.Property
+  let fromKeyword = softKeyword "from"
+  let toKeyword = softKeyword "to"
+  let fieldKeyword = softKeyword "field"
+  let mapKeyword = softKeyword "map"
+  let iteratorKeyword = softKeyword "iterator"
+  let caseKeyword = softKeyword "case"
+  let itemKeyword = softKeyword "item"
+
   let rec identifiersMatch () =
     parser {
-      let! id = identifierMatch
+      let! id = singleIdentifier
 
       return!
         parser.Any
@@ -176,9 +202,25 @@ module Common =
           | _ -> return Identifier.FullyQualified(ids.Tail, ids.Head)
         }
         parser {
-          let! id = identifierMatch
+          let! id = singleIdentifier
           return Identifier.LocalScope id
         } ]
+
+  let identifierWithLookups () =
+    parser {
+      let! id = identifierLocalOrFullyQualified ()
+
+      let! lookups =
+        parser.Many(
+          parser {
+            do! dotOperator
+            let! prop = singleIdentifier
+            return prop
+          }
+        )
+
+      return id, lookups
+    }
 
   let betweenBrackets p =
     parser {
@@ -205,3 +247,15 @@ module Common =
         }
         |> parser.MapError(Errors.SetPriority ErrorPriority.High)
     }
+
+  let afterKeyword k p =
+    parser {
+      do! k
+      return! p |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+    }
+
+  let intLiteralToken () =
+    parser.Exactly(fun t ->
+      match t.Token with
+      | Token.IntLiteral s -> s |> Some
+      | _ -> None)

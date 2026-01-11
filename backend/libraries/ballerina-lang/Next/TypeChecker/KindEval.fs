@@ -20,12 +20,12 @@ module KindEval =
   open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.DSL.Next.Types.TypeChecker.Patterns
 
-  type TypeExpr with
-    static member KindEval: TypeExprKindEval =
+  type TypeExpr<'valueExt> with
+    static member KindEval<'ve when 've: comparison>() : TypeExprKindEval<'ve> =
       fun _n loc0 t ->
         state {
-          let (!) = TypeValue.KindEval None loc0
-          let (!!) = TypeExpr.KindEval None loc0
+          let (!) = TypeValue.KindEval<'ve> () None loc0
+          let (!!) = TypeExpr.KindEval<'ve> () None loc0
           let error e = Errors.Singleton(loc0, e)
 
           match t with
@@ -46,13 +46,13 @@ module KindEval =
           | _ -> return Kind.Star
         }
 
-  and TypeValue with
-    static member KindEval: TypeValueKindEval =
+  and TypeValue<'valueExt> with
+    static member KindEval<'ve when 've: comparison>() : TypeValueKindEval<'ve> =
       fun _n loc0 t ->
         state {
 
-          // let (!) = TypeValue.KindEval None loc0
-          let (!!) = TypeExpr.KindEval None loc0
+          // let (!) = TypeValue.KindEval<'ve> () None loc0
+          let (!!) = TypeExpr.KindEval<'ve> () None loc0
 
           // let error e = Errors.Singleton(loc0, e)
 

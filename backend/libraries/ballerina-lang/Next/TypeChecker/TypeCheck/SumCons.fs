@@ -30,10 +30,10 @@ module SumCons =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
-  type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
-    static member internal TypeCheckSumCons
-      (_typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
-      : TypeChecker<ExprSumCons<TypeExpr, Identifier, 'valueExt>, 'valueExt> =
+  type Expr<'T, 'Id, 've when 'Id: comparison> with
+    static member internal TypeCheckSumCons<'valueExt when 'valueExt: comparison>
+      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      : TypeChecker<ExprSumCons<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun _context_t ({ Selector = cons }) ->
         state {
           let! ctx = state.GetContext()
@@ -54,7 +54,7 @@ module SumCons =
 
           let! return_t =
             TypeValue.CreateArrow(cases[cons.Case - 1], TypeValue.CreateSum(cases |> List.ofSeq))
-            |> TypeValue.Instantiate TypeExpr.Eval loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
           return Expr.SumCons(cons, loc0, ctx.Scope), return_t, Kind.Star, ctx

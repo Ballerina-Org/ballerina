@@ -17,7 +17,7 @@ module Patterns =
 
     static member AsReplace
       (delta: Delta<'valueExtension, 'deltaExtension>)
-      : Sum<Value<TypeValue, 'valueExtension>, Errors> =
+      : Sum<Value<TypeValue<'valueExtension>, 'valueExtension>, Errors> =
       match delta with
       | Replace v -> sum.Return v
       | other -> sum.Throw(Errors.Singleton $"Expected a replace delta but got {other}")

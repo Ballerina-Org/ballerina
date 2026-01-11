@@ -13,13 +13,13 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.Option
 
-  let private boolTypeValue = TypeValue.CreateBool()
-  let private int64TypeValue = TypeValue.CreateInt64()
-  let private int32TypeValue = TypeValue.CreateInt32()
-
   let Int64Extension<'ext>
     (operationLens: PartialLens<'ext, Int64Operations<'ext>>)
     : OperationsExtension<'ext, Int64Operations<'ext>> =
+
+    let boolTypeValue = TypeValue.CreateBool()
+    let int64TypeValue = TypeValue.CreateInt64()
+    let int32TypeValue = TypeValue.CreateInt32()
 
     let int64PlusId =
       Identifier.FullyQualified([ "int64" ], "+") |> TypeCheckScope.Empty.Resolve
@@ -57,7 +57,7 @@ module Extension =
                 return Int64Operations.Plus({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int64(vClosure + v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int64(vClosure + v))
             } }
 
     let int64MinusId =
@@ -96,7 +96,7 @@ module Extension =
                 return Int64Operations.Minus({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int64(vClosure - v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int64(vClosure - v))
             } }
 
     let int64DivideId =
@@ -134,7 +134,7 @@ module Extension =
                 return Int64Operations.Divide({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int64(vClosure / v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int64(vClosure / v))
             } }
 
     let int64PowerId =
@@ -178,7 +178,7 @@ module Extension =
                   |> sum.MapError(Errors.FromErrors loc0)
                   |> reader.OfSum
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int64(pown vClosure v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int64(pown vClosure v))
             } }
 
     let int64ModId =
@@ -216,7 +216,7 @@ module Extension =
                 return Int64Operations.Mod({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Int64(vClosure % v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int64(vClosure % v))
             } }
 
     let int64EqualId =
@@ -254,7 +254,7 @@ module Extension =
                 return Int64Operations.Equal({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
     let int64NotEqualId =
@@ -292,7 +292,7 @@ module Extension =
                 return Int64Operations.NotEqual({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
     let int64GreaterThanId =
@@ -330,7 +330,7 @@ module Extension =
                 return Int64Operations.GreaterThan({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
     let int64GreaterThanOrEqualId =
@@ -371,7 +371,7 @@ module Extension =
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
     let int64LessThanId =
@@ -409,7 +409,7 @@ module Extension =
                 return Int64Operations.LessThan({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
     let int64LessThanOrEqualId =
@@ -447,7 +447,7 @@ module Extension =
                 return Int64Operations.LessThanOrEqual({| v1 = Some v |}) |> operationLens.Set |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))
             } }
 
     { TypeVars = []

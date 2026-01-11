@@ -15,10 +15,10 @@ module TypeValueImported =
 
   let private discriminator = "imported"
 
-  type TypeValue with
+  type TypeValue<'valueExt> with
     static member FromJsonImported
-      (fromRootJson: JsonValue -> Sum<TypeValue, Errors>)
-      : JsonValue -> Sum<TypeValue, Errors> =
+      (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors>)
+      : JsonValue -> Sum<TypeValue<'valueExt>, Errors> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun applyFields ->
         sum {
 
@@ -41,7 +41,9 @@ module TypeValueImported =
             )
         })
 
-    static member ToJsonImported(toRootJson: TypeValue -> JsonValue) : ImportedTypeValue -> JsonValue =
+    static member ToJsonImported
+      (toRootJson: TypeValue<'valueExt> -> JsonValue)
+      : ImportedTypeValue<'valueExt> -> JsonValue =
       fun i ->
         let idJson = i.Id |> ResolvedIdentifier.ToJson
         let symJson = i.Sym |> TypeSymbol.ToJson
