@@ -14,7 +14,9 @@ module DeltaExt =
   open Ballerina.Data.Delta.Extensions
 
   type DeltaExt with
-    static member FromJson(valueParser: JsonValue -> Sum<Value<TypeValue, ValueExt>, Errors>) : JsonParser<DeltaExt> =
+    static member FromJson
+      (valueParser: JsonValue -> Sum<Value<TypeValue<ValueExt>, ValueExt>, Errors>)
+      : JsonParser<DeltaExt> =
       fun json ->
         Sum.assertDiscriminatorAndContinueWithValue
           "deltaExt"
@@ -99,7 +101,7 @@ module DeltaExt =
           json
 
     static member ToJson
-      (valueEncoder: JsonEncoderWithError<Value<TypeValue, ValueExt>>)
+      (valueEncoder: JsonEncoderWithError<Value<TypeValue<ValueExt>, ValueExt>>)
       (deltaExt: DeltaExt)
       : Sum<JsonValue, Errors> =
       sum {

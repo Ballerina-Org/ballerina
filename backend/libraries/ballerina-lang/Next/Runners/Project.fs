@@ -2,49 +2,22 @@ namespace Ballerina.DSL.Next.Runners
 
 [<AutoOpen>]
 module Project =
-  open Ballerina.StdLib.String
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
-  open Ballerina.Collections.Option
   open Ballerina.LocalizedErrors
   open System
-  open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Types.Model
-  open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
-  open Ballerina.DSL.Next.Unification
-  open Ballerina.DSL.Next.Types.TypeChecker.AdHocPolymorphicOperators
   open Ballerina.DSL.Next.Types.TypeChecker.Model
-  open Ballerina.DSL.Next.Types.TypeChecker.Patterns
-  open Ballerina.DSL.Next.Types.TypeChecker.Eval
-  open Ballerina.DSL.Next.Types.TypeChecker.LiftOtherSteps
-  open Ballerina.DSL.Next.Types.TypeChecker.Primitive
-  open Ballerina.DSL.Next.Types.TypeChecker.Lookup
-  open Ballerina.DSL.Next.Types.TypeChecker.Lambda
-  open Ballerina.DSL.Next.Types.TypeChecker.Apply
-  open Ballerina.DSL.Next.Types.TypeChecker.If
-  open Ballerina.DSL.Next.Types.TypeChecker.Let
-  open Ballerina.DSL.Next.Types.TypeChecker.RecordCons
-  open Ballerina.DSL.Next.Types.TypeChecker.RecordWith
-  open Ballerina.DSL.Next.Types.TypeChecker.RecordDes
-  open Ballerina.DSL.Next.Types.TypeChecker.UnionDes
-  open Ballerina.DSL.Next.Types.TypeChecker.SumDes
-  open Ballerina.DSL.Next.Types.TypeChecker.SumCons
-  open Ballerina.DSL.Next.Types.TypeChecker.TupleDes
-  open Ballerina.DSL.Next.Types.TypeChecker.TupleCons
-  open Ballerina.DSL.Next.Types.TypeChecker.TypeLambda
-  open Ballerina.DSL.Next.Types.TypeChecker.TypeLet
   open Ballerina.DSL.Next.Types.TypeChecker.Expr
   open Ballerina.Fun
-  open Ballerina.StdLib.OrderPreservingMap
-  open Ballerina.Cat.Collections.OrderedMap
-  open Ballerina.Collections.NonEmptyList
-  open Ballerina.DSL.Next.Extensions
-  open Ballerina.DSL.Next.StdLib.Extensions
   open Ballerina.Parser
   open Ballerina.DSL.Next.Syntax
-
+  open System.IO
+  open System.Text.Json
+  open System.Text.Json.Serialization
+  open Ballerina.StdLib.String
 
   type ProjectBuildConfiguration = { Files: List<FileBuildConfiguration> }
 
@@ -56,37 +29,51 @@ module Project =
       Content: Unit -> string
       Checksum: Checksum }
 
-  and ProjectCache<'valueExt> =
+  and ProjectCache<'valueExt when 'valueExt: comparison> =
     { Fold:
         List<FileBuildConfiguration>
           -> (FileBuildConfiguration * int
-            -> State<Expr<TypeValue, ResolvedIdentifier, 'valueExt>, Unit, TypeCheckContext * TypeCheckState, Errors>)
-          -> Sum<List<Expr<TypeValue, ResolvedIdentifier, 'valueExt>> * TypeCheckContext * TypeCheckState, Errors> }
+            -> State<
+              Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>,
+              Unit,
+              TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
+              Errors
+             >)
+          -> Sum<
+            List<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> *
+            TypeCheckContext<'valueExt> *
+            TypeCheckState<'valueExt>,
+            Errors
+           > }
 
 
   // added to appease the autoformatter Gods
   type Fun<'a, 'b> = 'a -> 'b
 
-  type BuildCache<'valueExt> =
+  type BuildCache<'valueExt when 'valueExt: comparison> =
     { TryGet:
-        FileName * List<FileName>
+        FileName
           -> Option<
             Checksum *
             List<Checksum> *
-            Sum<Expr<TypeValue, ResolvedIdentifier, 'valueExt> * (TypeCheckContext * TypeCheckState) option, Errors>
+            Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
+            TypeCheckContext<'valueExt> *
+            TypeCheckState<'valueExt>
            >
       Set:
-        FileName * List<FileName>
+        FileName
           -> Fun<
             Checksum *
             List<Checksum> *
-            Sum<Expr<TypeValue, ResolvedIdentifier, 'valueExt> * (TypeCheckContext * TypeCheckState) option, Errors>,
+            Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
+            TypeCheckContext<'valueExt> *
+            TypeCheckState<'valueExt>,
             Unit
            > }
 
-  let abstract_build_cache<'valueExt>
+  let abstract_build_cache<'valueExt when 'valueExt: comparison>
     (cache: BuildCache<'valueExt>)
-    (ctx0: TypeCheckContext, st0: TypeCheckState)
+    (ctx0: TypeCheckContext<'valueExt>, st0: TypeCheckState<'valueExt>)
     : ProjectCache<'valueExt> =
     { Fold =
         fun files typeCheck ->
@@ -96,33 +83,29 @@ module Project =
             (fun
                  (acc:
                    Sum<
-                     List<FileName * Checksum * Expr<TypeValue, ResolvedIdentifier, 'valueExt>> *
-                     TypeCheckContext *
-                     TypeCheckState,
+                     List<FileName * Checksum * Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> *
+                     TypeCheckContext<'valueExt> *
+                     TypeCheckState<'valueExt>,
                      Errors
                     >)
                  ((file, index): FileBuildConfiguration * int) ->
               sum {
                 let! prev_files, ctx, st = acc
-                let prev_filenames = prev_files |> List.map (fun (n, _, _) -> n)
                 let prev_checksums = prev_files |> List.map (fun (_, v, _) -> v)
 
-                let cached_entry = cache.TryGet(file.FileName, prev_filenames)
+                let cached_entry = cache.TryGet file.FileName
 
                 match cached_entry with
-                | Some(checksum, checksums, result) when checksum = file.Checksum && prev_checksums = checksums ->
+                | Some(checksum, checksums, expr, ctx', st') when
+                  checksum = file.Checksum && prev_checksums = checksums
+                  ->
                   do Console.WriteLine $"Cache hit for {file.FileName.Path}"
-                  let! expr, st_ctx' = result
-                  let ctx', st' = st_ctx' |> Option.defaultValue (ctx, st)
                   return (file.FileName, file.Checksum, expr) :: prev_files, ctx', st'
                 | _ ->
                   let! expr, st_ctx' = typeCheck (file, index) |> State.Run((), (ctx, st)) |> sum.MapError fst
                   let ctx', st' = st_ctx' |> Option.defaultValue (ctx, st)
 
-                  do
-                    cache.Set
-                      (file.FileName, prev_filenames)
-                      (file.Checksum, prev_checksums, Left(expr, Some(ctx', st')))
+                  do cache.Set file.FileName (file.Checksum, prev_checksums, expr, ctx', st')
 
                   // do Console.WriteLine $"Cache miss for {file.FileName.Path}"
                   // do Console.WriteLine $"Updated cache size: {cache.Count}"
@@ -133,31 +116,103 @@ module Project =
             (Left([], ctx0, st0))
           |> sum.Map((fun (l, c, s) -> l |> List.map (fun (_, _, v) -> v), c, s)) }
 
-  let memcache<'valueExt> (ctx0: TypeCheckContext, st0: TypeCheckState) : ProjectCache<'valueExt> =
+  let memcache<'valueExt when 'valueExt: comparison>
+    (ctx0: TypeCheckContext<'valueExt>, st0: TypeCheckState<'valueExt>)
+    : ProjectCache<'valueExt> =
     let memcache: BuildCache<'valueExt> =
       let mutable cache
         : Map<
-            FileName * List<FileName>,
+            FileName,
             Checksum *
             List<Checksum> *
-            Sum<Expr<TypeValue, ResolvedIdentifier, 'valueExt> * (TypeCheckContext * TypeCheckState) option, Errors>
+            Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
+            TypeCheckContext<'valueExt> *
+            TypeCheckState<'valueExt>
            > =
         Map.empty
 
       { TryGet =
-          fun (file, prev_filenames) ->
+          fun file ->
             cache
-            |> Map.tryFindWithError (file, prev_filenames) "build cache" file.Path Location.Unknown
+            |> Map.tryFindWithError file "build cache" file.Path Location.Unknown
             |> Sum.toOption
         Set = fun k v -> cache <- cache |> Map.add k v }
 
     abstract_build_cache memcache (ctx0, st0)
 
+  type private BuildCacheDto<'valueExt when 'valueExt: comparison> =
+    { Checksum: Checksum
+      PrevFilesChecksums: Checksum array
+      Expr: Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>
+      Context: TypeCheckContext<'valueExt>
+      State: TypeCheckState<'valueExt> }
+
+    member this.ToDomain() =
+      (this.Checksum, this.PrevFilesChecksums |> List.ofArray, this.Expr, this.Context, this.State)
+
+    // Type check context and state are huge when serialized (~22k lines rn), so they are skipped
+    static member FromDomain(checksum, prevFilesChecksums, expr, context, state) =
+      { Checksum = checksum
+        PrevFilesChecksums = prevFilesChecksums |> Array.ofList
+        Expr = expr
+        Context = context
+        State = state }
+
+  let hardDriveCache<'valueExt when 'valueExt: equality and 'valueExt: comparison>
+    (ctx0: TypeCheckContext<'valueExt>, st0: TypeCheckState<'valueExt>)
+    : ProjectCache<'valueExt> =
+    let options = JsonFSharpOptions.Default().ToJsonSerializerOptions()
+    let cacheFolder = "build-cache"
+
+    let buildCachePath original =
+      Path.Combine(cacheFolder, Path.ChangeExtension(original, ".json"))
+
+    let hddCache: BuildCache<'valueExt> =
+      { TryGet =
+          fun { Path = path } ->
+            let path = buildCachePath path
+
+            if File.Exists path then
+              use content = File.OpenRead path
+
+              try
+                let dto = JsonSerializer.Deserialize<BuildCacheDto<'valueExt>>(content, options)
+                Some <| dto.ToDomain()
+              with ex ->
+                Console.WriteLine
+                  "Warning: unable to read build cache.
+It could be because the cache structure is outdated, and is expected in such case."
+
+                Console.WriteLine ex.Message.ReasonablyClamped
+                None
+            else
+              None
+
+        Set =
+          fun { Path = path } data ->
+            let path = buildCachePath path
+            let dto = BuildCacheDto<_>.FromDomain data
+
+            try
+              Directory.CreateDirectory cacheFolder |> ignore
+              use writer = File.Create path
+              JsonSerializer.Serialize(writer, dto, options)
+            with ex ->
+              Console.WriteLine $"Warning: unable to write build cache: {ex.Message.ReasonablyClamped}" }
+
+    abstract_build_cache hddCache (ctx0, st0)
+
   type ProjectBuildConfiguration with
-    static member BuildCached<'valueExt>
+    static member BuildCached<'valueExt when 'valueExt: comparison>
       (cache: ProjectCache<'valueExt>)
       (project: ProjectBuildConfiguration)
-      : Sum<List<Expr<TypeValue, ResolvedIdentifier, 'valueExt>> * TypeCheckContext * TypeCheckState, Errors> =
+      : Sum<
+          List<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> *
+          TypeCheckContext<'valueExt> *
+          TypeCheckState<'valueExt>,
+          Errors
+         >
+      =
       sum {
         let! expressions, finalContext, finalState =
           cache.Fold project.Files (fun (file, index) ->
@@ -190,7 +245,7 @@ module Project =
               let typeCheckerStopwatch = System.Diagnostics.Stopwatch.StartNew()
 
               let! (typeCheckedExpr, typeValue, _, ctx'), st' =
-                Expr.TypeCheck None program
+                Expr.TypeCheck () None program
                 |> State.Run(ctx, st)
                 |> sum.MapError fst
                 |> state.OfSum

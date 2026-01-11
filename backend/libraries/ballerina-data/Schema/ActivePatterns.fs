@@ -1,12 +1,13 @@
 ﻿namespace Ballerina.Data.Schema
 
 open Ballerina.Cat.Collections.OrderedMap
+open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.Types
 open Ballerina.DSL.Next.Terms
 open Ballerina.DSL.Next.Types.Patterns
 
 module ActivePatterns =
-  let (|CollectionReference|_|) (m: WithSourceMapping<OrderedMap<TypeSymbol, TypeValue * Kind>>) =
+  let (|CollectionReference|_|) (m: WithSourceMapping<OrderedMap<TypeSymbol, TypeValue<ValueExt> * Kind>, ValueExt>) =
     match OrderedMap.toList m.value with
     | [ (k, _); (k2, _) ] when k.Name.LocalName = "DisplayValue" && k2.Name.LocalName = "Id" ->
       Some(CollectionReference m.value)

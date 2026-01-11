@@ -11,12 +11,14 @@
         <Compile Include="State\WithError\Model.fs" />
         <Compile Include="Algorithms\TopologicalSort.fs" />
         <Compile Include="Core\OrderedMap.fs" />
+        <Compile Include="Core\MemoizeTests.fs" />
         <Compile Include="Formats\Iso8601\DateOnlyTests.fs" />
         <Compile Include="Formats\Iso8601\DateTimeTests.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="AutoFixture.NUnit4" Version="4.19.0" />
         <PackageReference Include="coverlet.collector" Version="6.0.4">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

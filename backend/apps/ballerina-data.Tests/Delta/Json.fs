@@ -27,7 +27,7 @@ let ``Assert Delta -> ToJson -> FromJson -> Delta`` (expression: Delta<ValueExt,
     Expr.ToJson >> Reader.Run(TypeValue.ToJson, ResolvedIdentifier.ToJson)
 
   let rootValueToJson =
-    Json.buildRootEncoder<TypeValue, ValueExt> (NonEmptyList.OfList(Value.ToJson, []))
+    Json.buildRootEncoder<TypeValue<ValueExt>, ValueExt> (NonEmptyList.OfList(Value.ToJson, []))
 
   let valueEncoder = rootValueToJson >> Reader.Run(rootExprToJson, TypeValue.ToJson)
 
@@ -44,7 +44,7 @@ let ``Assert Delta -> ToJson -> FromJson -> Delta`` (expression: Delta<ValueExt,
       Expr.FromJson >> Reader.Run(TypeValue.FromJson, ResolvedIdentifier.FromJson)
 
     let rootValueFromJson =
-      Json.buildRootParser<TypeValue, ResolvedIdentifier, ValueExt> (NonEmptyList.OfList(Value.FromJson, []))
+      Json.buildRootParser<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt> (NonEmptyList.OfList(Value.FromJson, []))
 
     let valueParser =
       rootValueFromJson

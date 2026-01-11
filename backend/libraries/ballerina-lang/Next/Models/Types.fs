@@ -4,8 +4,13 @@ namespace Ballerina.DSL.Next.Types
 module Model =
   open System
   open Ballerina.StdLib.OrderPreservingMap
+  open Ballerina.StdLib.Formats
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.StdLib.Object
+  open Ballerina.LocalizedErrors
+  open Ballerina.Collections.Sum
+
+  type LocalIdentifier = { Name: string }
 
   type Identifier =
     | LocalScope of string
@@ -28,10 +33,30 @@ module Model =
         Type = type_
         Name = name }
 
+    static member FromIdentifier(id: Identifier) : ResolvedIdentifier =
+      match id with
+      | Identifier.FullyQualified(t :: _, name) ->
+        { Assembly = ""
+          Module = ""
+          Type = Some t
+          Name = name }
+      | Identifier.FullyQualified(_, name)
+      | Identifier.LocalScope(name) ->
+        { Assembly = ""
+          Module = ""
+          Type = None
+          Name = name }
+
     static member Create(name: string) : ResolvedIdentifier =
       { Assembly = ""
         Module = ""
         Type = None
+        Name = name }
+
+    static member Create(``type``: string, name: string) =
+      { Assembly = ""
+        Module = ""
+        Type = Some ``type``
         Name = name }
 
     override id.ToString() =
@@ -123,12 +148,14 @@ module Model =
   and Kind =
     | Symbol
     | Star
+    | Schema
     | Arrow of Kind * Kind
 
     override k.ToString() =
       match k with
       | Symbol -> "Symbol"
       | Star -> "*"
+      | Schema -> "Schema"
       | Arrow(k1, k2) -> $"({k1} -> {k2})"
 
   and TypeSymbol =
@@ -158,33 +185,100 @@ module Model =
       | RecordFields -> "RecordFields"
       | UnionConstructors -> "UnionConstructors"
 
-  and TypeExpr =
-    | FromTypeValue of TypeValue
+  and SumConsSelector = { Case: int; Count: int }
+  and TupleDesSelector = { Index: int }
+
+  and SchemaEntityName = { Name: string }
+  and SchemaRelationName = { Name: string }
+
+  and SearchByLookup =
+    { Identifier: Identifier
+      Lookups: List<string> }
+
+  and SchemaEntityPropertyExpr<'valueExt> =
+    { Name: LocalIdentifier
+      Path: Option<SchemaPathExpr>
+      Type: TypeExpr<'valueExt>
+      Body: Expr<TypeExpr<'valueExt>, Identifier, 'valueExt> }
+
+  and SchemaEntityExpr<'valueExt> =
+    { Name: SchemaEntityName
+      Type: TypeExpr<'valueExt>
+      Id: TypeExpr<'valueExt>
+      SearchBy: List<SearchByLookup>
+      Properties: List<SchemaEntityPropertyExpr<'valueExt>> }
+
+  and Cardinality =
+    | Zero
+    | One
+    | Many
+
+  and SchemaRelationCardinality = { From: Cardinality; To: Cardinality }
+
+  and SchemaPathTypeDecompositionExpr =
+    | Field of Identifier
+    | Item of TupleDesSelector
+    | UnionCase of Identifier
+    | SumCase of SumConsSelector
+    | Iterator of
+      {| Mapper: Identifier
+         Container: Identifier
+         TypeDef: Identifier |}
+
+    override sps.ToString() =
+      match sps with
+      | Field name -> $"Field({name})"
+      | Item i -> $"Item({i})"
+      | UnionCase name -> $"UnionCase({name})"
+      | SumCase name -> $"SumCase({name})"
+      | Iterator collection -> $"Iterator({collection.Mapper}::{collection.TypeDef})"
+
+  and SchemaPathSegmentExpr = Option<LocalIdentifier> * SchemaPathTypeDecompositionExpr
+  and SchemaPathExpr = List<SchemaPathSegmentExpr>
+
+  and SchemaRelationExpr =
+    { Name: SchemaRelationName
+      From: Identifier * Option<SchemaPathExpr>
+      To: Identifier * Option<SchemaPathExpr> }
+
+  and SchemaExpr<'valueExt> =
+    { DeclaredAtForNominalEquality: Location
+      Entities: List<SchemaEntityExpr<'valueExt>>
+      Relations: List<SchemaRelationExpr> }
+
+  and TypeExpr<'valueExt> =
+    | FromTypeValue of TypeValue<'valueExt>
     | Primitive of PrimitiveType
-    | Let of string * TypeExpr * TypeExpr
-    | LetSymbols of List<string> * SymbolsKind * TypeExpr
+    | RecordDes of TypeExpr<'valueExt> * Sum<LocalIdentifier, int>
+    | Let of string * TypeExpr<'valueExt> * TypeExpr<'valueExt>
+    | LetSymbols of List<string> * SymbolsKind * TypeExpr<'valueExt>
     | NewSymbol of string
     | Lookup of Identifier
-    | Apply of TypeExpr * TypeExpr
-    | Lambda of TypeParameter * TypeExpr
-    | Arrow of TypeExpr * TypeExpr
-    | Record of List<TypeExpr * TypeExpr>
-    | Tuple of List<TypeExpr>
-    | Union of List<TypeExpr * TypeExpr>
-    | Set of TypeExpr
-    | Map of TypeExpr * TypeExpr
-    | KeyOf of TypeExpr
-    | Sum of List<TypeExpr>
-    | Flatten of TypeExpr * TypeExpr
-    | Exclude of TypeExpr * TypeExpr
-    | Rotate of TypeExpr
-    | Imported of ImportedTypeValue
+    | Apply of TypeExpr<'valueExt> * TypeExpr<'valueExt>
+    | Lambda of TypeParameter * TypeExpr<'valueExt>
+    | Arrow of TypeExpr<'valueExt> * TypeExpr<'valueExt>
+    | Record of List<TypeExpr<'valueExt> * TypeExpr<'valueExt>>
+    | Tuple of List<TypeExpr<'valueExt>>
+    | Union of List<TypeExpr<'valueExt> * TypeExpr<'valueExt>>
+    | Set of TypeExpr<'valueExt>
+    | Map of TypeExpr<'valueExt> * TypeExpr<'valueExt>
+    | KeyOf of TypeExpr<'valueExt>
+    | Sum of List<TypeExpr<'valueExt>>
+    | Flatten of TypeExpr<'valueExt> * TypeExpr<'valueExt>
+    | Exclude of TypeExpr<'valueExt> * TypeExpr<'valueExt>
+    | Rotate of TypeExpr<'valueExt>
+    | Schema of SchemaExpr<'valueExt>
+    | Imported of ImportedTypeValue<'valueExt>
 
     override self.ToString() =
       match self with
       | FromTypeValue tv -> tv.ToString()
       | Imported i -> i.ToString()
       | Primitive p -> p.ToString()
+      | RecordDes(t, selector) ->
+        match selector with
+        | Sum.Left field_name -> $"{t.ToString()}.{field_name.Name}"
+        | Sum.Right index -> $"{t.ToString()}.{index}"
       | Let(name, value, body) -> $"Let {name} = {value} in {body})"
       | LetSymbols(names, symbolsKind, body) ->
         let comma = ", " in $"LetSymbols({String.Join(comma, names)}):{symbolsKind} in {body})"
@@ -214,40 +308,91 @@ module Model =
       | Flatten(t1, t2) -> $"Flatten[{t1}, {t2}]"
       | Exclude(t1, t2) -> $"Exclude[{t1}, {t2}]"
       | Rotate t -> $"Rotate[{t}]"
+      | Schema s -> $"Schema[{s.Entities.Length} Entities, {s.Relations.Length} Relations]"
 
 
-
-  and TypeBinding =
+  and TypeBinding<'valueExt> =
     { Identifier: Identifier
-      Type: TypeExpr }
+      Type: TypeExpr<'valueExt> }
 
-  and TypeVariablesScope = Map<string, TypeValue * Kind>
+  and TypeVariablesScope<'valueExt> = Map<string, TypeValue<'valueExt> * Kind>
   and TypeParametersScope = Map<string, Kind>
 
   // all the applicables in type expressions minus lambdas (clear from type expr eval impl)
-  and SymbolicTypeApplication =
-    | Lookup of Identifier * TypeValue
-    | Application of SymbolicTypeApplication * TypeValue
+  and SymbolicTypeApplication<'valueExt> =
+    | Lookup of Identifier * TypeValue<'valueExt>
+    | Application of SymbolicTypeApplication<'valueExt> * TypeValue<'valueExt>
 
     override sta.ToString() =
       match sta with
       | Lookup(id, arg) -> $"{id}[{arg}]"
       | Application(f, a) -> $"({f})[{a}]"
 
-  and TypeValue =
-    | Primitive of WithSourceMapping<PrimitiveType>
+  and SchemaPathTypeDecomposition<'valueExt> =
+    | Field of Identifier
+    | Item of TupleDesSelector
+    | UnionCase of Identifier
+    | SumCase of SumConsSelector
+    | Iterator of
+      {| Mapper: Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>
+         Container: TypeValue<'valueExt>
+         TypeDef: TypeValue<'valueExt> |}
+
+    override sps.ToString() =
+      match sps with
+      | Field name -> $"Field({name})"
+      | Item i -> $"Item({i})"
+      | UnionCase name -> $"UnionCase({name})"
+      | SumCase name -> $"SumCase({name})"
+      | Iterator collection -> $"Iterator({collection.Mapper}::{collection.TypeDef})"
+
+  and SchemaPathSegment<'valueExt> = SchemaPathTypeDecomposition<'valueExt>
+  and SchemaPath<'valueExt> = List<SchemaPathSegment<'valueExt>>
+
+  and SchemaEntityProperty<'valueExt> =
+    { PropertyName: LocalIdentifier
+      Path: SchemaPath<'valueExt>
+      ReturnType: TypeValue<'valueExt>
+      ReturnKind: Kind
+      Body: Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> }
+
+  and SchemaEntity<'valueExt> =
+    { Name: SchemaEntityName
+      TypeOriginal: TypeValue<'valueExt>
+      TypeWithProps: TypeValue<'valueExt>
+      Id: TypeValue<'valueExt>
+      SearchBy: List<SearchByLookup>
+      Properties: List<SchemaEntityProperty<'valueExt>> }
+
+  and SchemaRelation =
+    { Name: SchemaRelationName
+      From: Identifier
+      To: Identifier }
+
+  and Schema<'valueExt> =
+    { DeclaredAtForNominalEquality: Location
+      Entities: OrderedMap<SchemaEntityName, SchemaEntity<'valueExt>>
+      Relations: OrderedMap<SchemaRelationName, SchemaRelation> }
+
+
+  and TypeValue<'valueExt> =
+    | Primitive of WithSourceMapping<PrimitiveType, 'valueExt>
     | Var of TypeVar
     | Lookup of Identifier // TODO: Figure out what to do with this (orig name wise) after recursion in type checking is implement correctly
-    | Lambda of WithSourceMapping<TypeParameter * TypeExpr>
-    | Application of WithSourceMapping<SymbolicTypeApplication>
-    | Arrow of WithSourceMapping<TypeValue * TypeValue>
-    | Record of WithSourceMapping<OrderedMap<TypeSymbol, TypeValue * Kind>>
-    | Tuple of WithSourceMapping<List<TypeValue>>
-    | Union of WithSourceMapping<OrderedMap<TypeSymbol, TypeValue>>
-    | Sum of WithSourceMapping<List<TypeValue>>
-    | Set of WithSourceMapping<TypeValue>
-    | Map of WithSourceMapping<TypeValue * TypeValue>
-    | Imported of ImportedTypeValue // FIXME: This should also have an orig name, implement once the extension is implemented completely
+    | Lambda of WithSourceMapping<TypeParameter * TypeExpr<'valueExt>, 'valueExt>
+    | Application of WithSourceMapping<SymbolicTypeApplication<'valueExt>, 'valueExt>
+    | Arrow of WithSourceMapping<TypeValue<'valueExt> * TypeValue<'valueExt>, 'valueExt>
+    | Record of WithSourceMapping<OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>, 'valueExt>
+    | Tuple of WithSourceMapping<List<TypeValue<'valueExt>>, 'valueExt>
+    | Union of WithSourceMapping<OrderedMap<TypeSymbol, TypeValue<'valueExt>>, 'valueExt>
+    | Sum of WithSourceMapping<List<TypeValue<'valueExt>>, 'valueExt>
+    | Set of WithSourceMapping<TypeValue<'valueExt>, 'valueExt>
+    | Map of WithSourceMapping<TypeValue<'valueExt> * TypeValue<'valueExt>, 'valueExt>
+    | Imported of ImportedTypeValue<'valueExt> // FIXME: This should also have an orig name, implement once the extension is implemented completely
+    | Schema of Schema<'valueExt>
+    | Entities of Schema<'valueExt>
+    | Entity of Schema<'valueExt> * TypeValue<'valueExt> * TypeValue<'valueExt> * TypeValue<'valueExt>
+    | Relation of SchemaRelation
 
     override self.ToString() =
       match self with
@@ -290,6 +435,11 @@ module Model =
       | Sum({ value = types }) ->
         let comma = " + "
         $"({String.Join(comma, types)})"
+      | Schema s -> $"Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]"
+      | Entities s -> $"SchemaEntities[{s.Entities.Count}]"
+      | Entity(s, e, e_with_props, id) ->
+        $"SchemaEntity[Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]][{e}][{e_with_props}][{id}]"
+      | Relation r -> $"SchemaRelation[{r.Name}]"
 
 
   and ExprTypeLetBindingName =
@@ -298,25 +448,25 @@ module Model =
     override self.ToString() =
       let (ExprTypeLetBindingName s) = self in s
 
-  and TypeExprSourceMapping =
-    | OriginExprTypeLet of ExprTypeLetBindingName * TypeExpr
-    | OriginTypeExpr of TypeExpr
+  and TypeExprSourceMapping<'valueExt> =
+    | OriginExprTypeLet of ExprTypeLetBindingName * TypeExpr<'valueExt>
+    | OriginTypeExpr of TypeExpr<'valueExt>
     | NoSourceMapping of string
 
-  and WithSourceMapping<'v> =
+  and WithSourceMapping<'v, 'valueExt> =
     { value: 'v
-      typeExprSource: TypeExprSourceMapping
+      typeExprSource: TypeExprSourceMapping<'valueExt>
       typeCheckScopeSource: TypeCheckScope }
 
     override self.ToString() = self.value.ToString()
 
-  and ImportedTypeValue =
+  and ImportedTypeValue<'valueExt> =
     { Id: ResolvedIdentifier
       Sym: TypeSymbol
       Parameters: List<TypeParameter>
-      Arguments: List<TypeValue>
-      UnionLike: Option<OrderedMap<TypeSymbol, TypeExpr>>
-      RecordLike: Option<OrderedMap<TypeSymbol, TypeExpr>> }
+      Arguments: List<TypeValue<'valueExt>>
+      UnionLike: Option<OrderedMap<TypeSymbol, TypeExpr<'valueExt>>>
+      RecordLike: Option<OrderedMap<TypeSymbol, TypeExpr<'valueExt>>> }
 
     override self.ToString() =
       // let pars = String.Join(" ", self.Parameters |> List.map (fun a -> $"{a} => "))
@@ -345,7 +495,7 @@ module Model =
     override self.ToString() =
       match self with
       | Unit -> "()"
-      | Guid -> "Guid"
+      | Guid -> "guid"
       | Int32 -> "int"
       | Int64 -> "int:Signed64"
       | Float32 -> "float:Float32"
@@ -356,3 +506,258 @@ module Model =
       | DateTime -> "time:Utc"
       | DateOnly -> "time:Date"
       | TimeSpan -> "time:Interval"
+
+  and Var =
+    { Name: string }
+
+    static member Create name : Var = { Var.Name = name }
+
+  and ExprLookup<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Id: 'Id }
+
+    override self.ToString() = self.Id.ToString()
+
+  and ExprLambda<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Param: Var
+      ParamType: Option<'T>
+      Body: Expr<'T, 'Id, 'valueExt> }
+
+  and ExprApply<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { F: Expr<'T, 'Id, 'valueExt>
+      Arg: Expr<'T, 'Id, 'valueExt> }
+
+  and ExprLet<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Var: Var
+      Type: Option<'T>
+      Val: Expr<'T, 'Id, 'valueExt>
+      Rest: Expr<'T, 'Id, 'valueExt> }
+
+  and ExprIf<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Cond: Expr<'T, 'Id, 'valueExt>
+      Then: Expr<'T, 'Id, 'valueExt>
+      Else: Expr<'T, 'Id, 'valueExt> }
+
+  and ExprTypeLambda<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Param: TypeParameter
+      Body: Expr<'T, 'Id, 'valueExt> }
+
+  and ExprTypeApply<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Func: Expr<'T, 'Id, 'valueExt>
+      TypeArg: 'T }
+
+  and ExprTypeLet<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Name: string
+      TypeDef: 'T
+      Body: Expr<'T, 'Id, 'valueExt> }
+
+  and ExprRecordCons<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Fields: List<'Id * Expr<'T, 'Id, 'valueExt>> }
+
+  and ExprRecordWith<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Record: Expr<'T, 'Id, 'valueExt>
+      Fields: List<'Id * Expr<'T, 'Id, 'valueExt>> }
+
+  and ExprTupleCons<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Items: List<Expr<'T, 'Id, 'valueExt>> }
+
+  and ExprTupleDes<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Tuple: Expr<'T, 'Id, 'valueExt>
+      Item: TupleDesSelector }
+
+  and ExprSumCons<'T, 'Id, 'valueExt when 'Id: comparison> = { Selector: SumConsSelector }
+
+  and ExprRecordDes<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Expr: Expr<'T, 'Id, 'valueExt>
+      Field: 'Id }
+
+  and ExprEntitiesDes<'T, 'Id, 'valueExt when 'Id: comparison> = { Expr: Expr<'T, 'Id, 'valueExt> }
+
+  and ExprEntityDes<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Expr: Expr<'T, 'Id, 'valueExt>
+      EntityName: SchemaEntityName }
+
+  and ExprUnionDes<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Handlers: Map<'Id, CaseHandler<'T, 'Id, 'valueExt>>
+      Fallback: Option<Expr<'T, 'Id, 'valueExt>> }
+
+  and ExprSumDes<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Handlers: Map<SumConsSelector, CaseHandler<'T, 'Id, 'valueExt>> }
+
+  and ExprFromValue<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Value: Value<TypeValue<'valueExt>, 'valueExt>
+      ValueType: TypeValue<'valueExt>
+      ValueKind: Kind }
+
+  and ExprRec<'T, 'Id, 'valueExt when 'Id: comparison> =
+    | Primitive of PrimitiveValue
+    | Lookup of ExprLookup<'T, 'Id, 'valueExt>
+    | TypeLambda of ExprTypeLambda<'T, 'Id, 'valueExt>
+    | TypeApply of ExprTypeApply<'T, 'Id, 'valueExt>
+    | TypeLet of ExprTypeLet<'T, 'Id, 'valueExt>
+    | Lambda of ExprLambda<'T, 'Id, 'valueExt>
+    | FromValue of ExprFromValue<'T, 'Id, 'valueExt>
+    | Apply of ExprApply<'T, 'Id, 'valueExt>
+    | Let of ExprLet<'T, 'Id, 'valueExt>
+    | If of ExprIf<'T, 'Id, 'valueExt>
+    | RecordCons of ExprRecordCons<'T, 'Id, 'valueExt>
+    | RecordWith of ExprRecordWith<'T, 'Id, 'valueExt>
+    | TupleCons of ExprTupleCons<'T, 'Id, 'valueExt>
+    | SumCons of ExprSumCons<'T, 'Id, 'valueExt>
+    | RecordDes of ExprRecordDes<'T, 'Id, 'valueExt>
+    | EntitiesDes of ExprEntitiesDes<'T, 'Id, 'valueExt>
+    | EntityDes of ExprEntityDes<'T, 'Id, 'valueExt>
+    | UnionDes of ExprUnionDes<'T, 'Id, 'valueExt>
+    | TupleDes of ExprTupleDes<'T, 'Id, 'valueExt>
+    | SumDes of ExprSumDes<'T, 'Id, 'valueExt>
+
+    override self.ToString() : string =
+      match self with
+      | TypeLambda({ ExprTypeLambda.Param = tp
+                     Body = body }) -> $"(Λ{tp.ToString()} => {body.ToString()})"
+      | TypeApply({ Func = e; TypeArg = t }) -> $"{e.ToString()} [{t.ToString()}]"
+      | Lambda({ Param = v
+                 ParamType = topt
+                 Body = body }) ->
+        match topt with
+        | Some t -> $"(fun ({v.Name}: {t.ToString()}) -> {body.ToString()})"
+        | None -> $"(fun {v.Name} -> {body.ToString()})"
+      | Apply({ F = e1; Arg = e2 }) -> $"({e1.ToString()} {e2.ToString()})"
+      | FromValue({ Value = v
+                    ValueType = t
+                    ValueKind = k }) -> $"({v.ToString()} : {t.ToString()} :: {k.ToString()}])"
+      | Let({ Var = v
+              Type = topt
+              Val = e1
+              Rest = e2 }) ->
+        match topt with
+        | Some t -> $"(let {v.Name}: {t.ToString()} = {e1.ToString()} in {e2.ToString()})"
+        | None -> $"(let {v.Name} = {e1.ToString()} in {e2.ToString()})"
+      | TypeLet({ Name = name
+                  TypeDef = t
+                  Body = body }) -> $"(type {name} = {t.ToString()}; {body.ToString()})"
+      | RecordCons { Fields = fields } ->
+        let fieldStr =
+          fields
+          |> List.map (fun (k, v) -> $"{k.ToString()} = {v.ToString()}")
+          |> String.concat "; "
+
+        $"{{ {fieldStr} }}"
+      | RecordWith({ Record = record; Fields = fields }) ->
+        let fieldStr =
+          fields
+          |> List.map (fun (k, v) -> $"{k.ToString()} = {v.ToString()}")
+          |> String.concat "; "
+
+        $"{{ {record.ToString()} with {fieldStr} }}"
+      | TupleCons { Items = items } ->
+        let itemStr = items |> List.map (fun v -> v.ToString()) |> String.concat ", "
+        $"({itemStr})"
+      | SumCons({ Selector = selector }) -> $"{selector.Case}Of{selector.Count}"
+      | RecordDes({ Expr = record; Field = field }) -> $"{record.ToString()}.{field.ToString()}"
+      | EntitiesDes({ Expr = entities }) -> $"{entities.ToString()}.Entities"
+      | EntityDes({ Expr = entity
+                    EntityName = entityName }) -> $"{entity.ToString()}.{entityName.ToString()}"
+      | UnionDes({ Handlers = handlers
+                   Fallback = defaultOpt }) ->
+        let handlerStr =
+          handlers
+          |> Map.toList
+          |> List.map (fun (k, (v, body)) -> $"{k.ToString()}({v.Name}) => {body.ToString()}")
+          |> String.concat " | "
+
+        match defaultOpt with
+        | Some defaultExpr -> $"(match {handlerStr} | _ => {defaultExpr.ToString()})"
+        | None -> $"(match {handlerStr})"
+      | TupleDes({ ExprTupleDes.Tuple = tuple
+                   Item = selector }) -> $"{tuple.ToString()}.{selector.Index}"
+      | SumDes { Handlers = handlers } ->
+        let handlerStr =
+          handlers
+          |> Map.toList
+          |> List.map (fun (k, (v, body)) -> $"{k.Case}Of{k.Count} ({v.Name} => {body.ToString()})")
+          |> String.concat " | "
+
+        $"(match {handlerStr})"
+      | Primitive p -> p.ToString()
+      | Lookup id -> id.ToString()
+      | If({ Cond = cond
+             Then = thenExpr
+             Else = elseExpr }) -> $"(if {cond.ToString()} then {thenExpr.ToString()} else {elseExpr.ToString()})"
+
+  and Expr<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Expr: ExprRec<'T, 'Id, 'valueExt>
+      Location: Location
+      Scope: TypeCheckScope }
+
+    override self.ToString() : string = self.Expr.ToString()
+
+  and CaseHandler<'T, 'Id, 'valueExt when 'Id: comparison> = Var * Expr<'T, 'Id, 'valueExt>
+
+  and PrimitiveValue =
+    | Int32 of Int32
+    | Int64 of Int64
+    | Float32 of float32
+    | Float64 of float
+    | Decimal of decimal
+    | Bool of bool
+    | Guid of Guid
+    | String of string
+    | Date of DateOnly
+    | DateTime of DateTime
+    | TimeSpan of TimeSpan
+    | Unit
+
+    override self.ToString() : string =
+      match self with
+      | Int32 v -> v.ToString()
+      | Int64 v -> v.ToString()
+      | Float32 v -> v.ToString()
+      | Float64 v -> v.ToString()
+      | Decimal v -> v.ToString()
+      | Bool v -> v.ToString()
+      | Guid v -> v.ToString()
+      | String v -> $"\"{v}\""
+      | Date v -> Iso8601.DateOnly.print v
+      | DateTime v -> Iso8601.DateTime.printUtc v
+      | TimeSpan v -> v.ToString()
+      | Unit -> "()"
+
+  and Value<'T, 'valueExt> =
+    | TypeLambda of TypeParameter * Expr<'T, ResolvedIdentifier, 'valueExt>
+    | Lambda of
+      Var *
+      Expr<'T, ResolvedIdentifier, 'valueExt> *
+      Map<ResolvedIdentifier, Value<'T, 'valueExt>> *
+      TypeCheckScope
+    | Record of Map<ResolvedIdentifier, Value<'T, 'valueExt>>
+    | UnionCase of ResolvedIdentifier * Value<'T, 'valueExt>
+    | RecordDes of ResolvedIdentifier
+    | UnionCons of ResolvedIdentifier
+    | Tuple of List<Value<'T, 'valueExt>>
+    | Sum of SumConsSelector * Value<'T, 'valueExt>
+    | Primitive of PrimitiveValue
+    | Var of Var
+    | Ext of 'valueExt
+
+    override self.ToString() : string =
+      match self with
+      | TypeLambda(tp, body) -> $"(Fun {tp.ToString()} => {body})"
+      | Lambda(v, body, _closure, _scope) -> $"(fun {v.Name} -> {body})"
+      | Record fields ->
+        let fieldStr =
+          fields
+          |> Map.toList
+          |> List.map (fun (k, v) -> $"{k.ToString()} = {v.ToString()}")
+          |> String.concat "; "
+
+        $"{{ {fieldStr} }}"
+      | UnionCase(case, value) -> $"{case}({value.ToString()})"
+      | RecordDes ts -> ts.ToString()
+      | UnionCons ts -> ts.ToString()
+      | Tuple values ->
+        let valueStr = values |> List.map (fun v -> v.ToString()) |> String.concat ", "
+        $"({valueStr})"
+      | Sum(selector, value) -> $"{selector.Case}Of{selector.Count}({value.ToString()})"
+      | Primitive p -> p.ToString()
+      | Var v -> v.Name
+      | Ext e -> e.ToString()
