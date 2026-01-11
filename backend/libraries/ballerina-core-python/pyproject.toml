@@ -21,7 +21,7 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 ruff = "0.12.7"
 # Keep in sync with the extension! https://marketplace.visualstudio.com/items?itemName=ms-python.mypy-type-checker
 mypy = "1.19.1" 
-pytest = "8.4.1" 
+pytest = "9.0.2" 
 tomli = "2.4.0" # Needed by mypy
 
 [tool.ruff]
