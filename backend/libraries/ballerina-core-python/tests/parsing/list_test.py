@@ -9,7 +9,59 @@ def test_list_to_json() -> None:
     value = [1, 2, 3]
     serializer = list_to_json(int32_to_json)
     serialized = serializer(value)
-    assert serialized == {DISCRIMINATOR_KEY: "list", VALUE_KEY: [int32_to_json(1), int32_to_json(2), int32_to_json(3)]}
+    expected: Json = {
+        "discriminator": "apply",
+        "value": (
+            {"discriminator": "lookup", "value": {"discriminator": "id", "value": ("List", "Cons")}},
+            {
+                "discriminator": "tuple-cons",
+                "value": [
+                    {"discriminator": "int32", "value": "1"},
+                    {
+                        "discriminator": "apply",
+                        "value": (
+                            {"discriminator": "lookup", "value": {"discriminator": "id", "value": ("List", "Cons")}},
+                            {
+                                "discriminator": "tuple-cons",
+                                "value": [
+                                    {"discriminator": "int32", "value": "2"},
+                                    {
+                                        "discriminator": "apply",
+                                        "value": (
+                                            {
+                                                "discriminator": "lookup",
+                                                "value": {"discriminator": "id", "value": ("List", "Cons")},
+                                            },
+                                            {
+                                                "discriminator": "tuple-cons",
+                                                "value": [
+                                                    {"discriminator": "int32", "value": "3"},
+                                                    {
+                                                        "discriminator": "apply",
+                                                        "value": (
+                                                            {
+                                                                "discriminator": "lookup",
+                                                                "value": {
+                                                                    "discriminator": "id",
+                                                                    "value": ("List", "Nil"),
+                                                                },
+                                                            },
+                                                            {"discriminator": "unit"},
+                                                        ),
+                                                    },
+                                                ],
+                                            },
+                                        ),
+                                    },
+                                ],
+                            },
+                        ),
+                    },
+                ],
+            },
+        ),
+    }
+    assert serialized == expected
 
 
 def test_list_from_json() -> None:
