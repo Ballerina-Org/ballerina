@@ -10,9 +10,6 @@ open Ballerina.DSL.Expr.Types.Patterns
 open Ballerina.DSL.FormEngine.Model
 open Ballerina.DSL.Next.Runners
 open Ballerina.DSL.Next.StdLib.Extensions
-open Ballerina.DSL.Next.StdLib.List.Model
-open Ballerina.DSL.Next.Terms
-open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Types
 open System.Text
 open Ballerina.Errors
@@ -20,69 +17,15 @@ open Ballerina.StdLib
 
 type private Value = Value<TypeValue<ValueExt>, ValueExt>
 
-module internal EnumFilteringProgram =
+module EnumFilteringProgram =
   [<Literal>]
-  let private UserContextTypeName = "UserContext"
-
-  [<Literal>]
-  let private CasesTypeName = "CasesToFilter"
+  let UserContextTypeName = "UserContext"
 
   [<Literal>]
-  let private ERPTypeName = "ERP"
+  let CasesTypeName = "CasesToFilter"
 
-  // TODO to be defined by Sven
-  type UserContext =
-    { IsSuperAdmin: bool
-      TenantERP: string }
-
-    member this.ToExpr() =
-      let value =
-        Value.Record(
-          seq {
-            yield
-              ResolvedIdentifier.Create(UserContextTypeName, "IsSuperAdmin"),
-              Value.Primitive <| PrimitiveValue.Bool this.IsSuperAdmin
-
-            yield
-              ResolvedIdentifier.Create(UserContextTypeName, "TenantERP"),
-              Value.UnionCase(
-                ResolvedIdentifier.Create(ERPTypeName, this.TenantERP),
-                Value.Primitive <| PrimitiveValue.Unit
-              )
-          }
-          |> Map.ofSeq
-        )
-
-      Expr<_, _, _>.FromValue(value, TypeValue.Lookup <| LocalScope UserContextTypeName, Kind.Symbol)
-
-  type FilterableEnumFields =
-    | Fields of string NonEmptySet
-
-    member this.ToExpr() =
-      let (Fields fields) = this
-
-      let fields =
-        [ for field in fields do
-            yield
-              Value.UnionCase(ResolvedIdentifier.Create(CasesTypeName, field), Value.Primitive <| PrimitiveValue.Unit) ]
-
-      let value = ValueExt(Choice1Of5(ListValues(List fields))) |> Value.Ext
-
-      Expr<_, _, _>
-        .FromValue(
-          value,
-          TypeValue.Lookup(
-            LocalScope(
-              TypeExpr
-                .Apply(
-                  TypeExpr.Lookup(Identifier.LocalScope "List"),
-                  TypeExpr.Lookup(Identifier.LocalScope CasesTypeName)
-                )
-                .ToString()
-            )
-          ),
-          Kind.Symbol
-        )
+  [<Literal>]
+  let ERPTypeName = "ERP"
 
   let private buildUnionCase (caseName: CaseName) = $"| {caseName.CaseName} of ()"
 
@@ -188,7 +131,7 @@ List::filter[{CasesTypeName}]
       | Left(exprs, _, st) -> return EnumCaseFilterExpr.Filter(exprs, st)
     }
 
-  let buildFilteringExpr enumName { Filters = filters } typeContext =
+  let internal buildFilteringExpr enumName { Filters = filters } typeContext =
     if filters.IsEmpty then
       Left EnumCaseFilterExpr.PassAll
     else
