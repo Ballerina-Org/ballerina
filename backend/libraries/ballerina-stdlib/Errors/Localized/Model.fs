@@ -46,6 +46,14 @@ module LocalizedErrors =
         Priority = e.Priority
         Location = loc }
 
+    member this.ToRegularError() : Errors.Error =
+      { Message =
+          if this.Location = Location.Unknown then
+            this.Message
+          else
+            $"{this.Message}; Location: {this.Location}"
+        Priority = this.Priority }
+
     static member Updaters =
       {| Message = fun u err -> { err with Message = u (err.Message) }
          Priority = fun u err -> { err with Priority = u (err.Priority) }
@@ -64,6 +72,9 @@ module LocalizedErrors =
 
     static member FromErrors (loc: Location) (e: Errors.Errors) : Errors =
       { Errors = e.Errors |> NonEmptyList.map (LocalizedError.FromError loc) }
+
+    member this.ToRegularErrors() : Errors.Errors =
+      { Errors = this.Errors |> NonEmptyList.map _.ToRegularError() }
 
     static member Concat(e1, e2) =
       { Errors = NonEmptyList.OfList(e1.Errors.Head, e1.Errors.Tail @ (e2.Errors |> NonEmptyList.ToList)) }

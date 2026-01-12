@@ -7,7 +7,7 @@ module Errors =
   open Ballerina.Reader.WithError
   open System
   open Ballerina.StdLib.String
-
+  open Ballerina.Collections.TaskSum
   open Ballerina.Collections.NonEmptyList
   open Fun
 
@@ -103,3 +103,7 @@ module Errors =
   type ReaderBuilder with
     member reader.WithErrorContext err =
       reader.MapError(Errors.Map(String.appendNewline err))
+
+  type TaskSumBuilder with
+    member this.WithErrorContext err =
+      this.MapRight(Errors.Map(String.appendNewline err))
