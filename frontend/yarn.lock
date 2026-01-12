@@ -7630,10 +7630,10 @@ lines-and-columns@^1.1.6:
   resolved "https://registry.yarnpkg.com/lines-and-columns/-/lines-and-columns-1.2.4.tgz#eca284f75d2965079309dc0ad9255abb2ebc1632"
   integrity sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==
 
-link@^2.1.0:
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/link/-/link-2.1.1.tgz#c5db408c295fcc75c9f7ff44ae62607e9b836dfa"
-  integrity sha512-NV3AUVYBovJ6eVQcTeRoPnZSxzt2LOijNd+ugEZKRy/XeQlpTRhVRkuDv5kOlXwMAUx30vfUc7asRFb9RT65yg==
+link@^2.1.2:
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/link/-/link-2.1.2.tgz#59b622c7c4987290a8a45bf742cf81fcf0565980"
+  integrity sha512-n+OitQgtITNBGiWmEMgMiXo/fkf3yeyLm2nXm87vO4DDpaYrx57AZs/PMDk25qJIv+l586V226B2mA1H/n9zvg==
 
 locate-path@^3.0.0:
   version "3.0.0"
