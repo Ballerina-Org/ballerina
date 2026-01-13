@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>form_builder_lang_parser</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Lexer.fs" />
+    <Compile Include="Parser\Renderer.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\ballerina-cat\ballerina-cat.fsproj" />
+    <ProjectReference Include="..\..\..\ballerina-stdlib\ballerina-stdlib.fsproj" />
+    <ProjectReference Include="..\..\Next\Syntax\ballerina-lang-parser.fsproj" />
+    <ProjectReference Include="..\..\ballerina-lang-v1.fsproj" />
+    <ProjectReference Include="..\Model\form-builder-model.fsproj" />
+  </ItemGroup>
+
+</Project>

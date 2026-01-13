@@ -1,0 +1,231 @@
+form FriendDetails : Friend {
+  Name as "First Name" string(defaultString);
+  Surname as "Last Name" string(defaultString);
+  tab main with
+    column main with
+      group main with Name, Surname
+}
+
+form(userDetails) UserDetails : User {
+  Name as "First Name" string(defaultString);
+  Surname as "Last Name" string(defaultString);
+  Birthday as "Birthday" date(defaultDate);
+  Email as "Email" string(defaultString);
+  SubscribeToNewsletter as "Subscribe to Newsletter" bool(defaultBoolean);
+  FavoriteColor as "FavoriteColor" enum(defaultEnum) single from colors as "Favorite Color";
+  Friends as "Friends" record(streamingTable) : User {
+    Name as "First Name" string(defaultString);
+    Surname string(defaultString);
+    FavoriteColor as "Favorite Color" enum(defaultEnum) single from colors;
+  };
+  disable Friends;
+  tab main with
+    column main with
+      group main with Name, Surname, Birthday, Email, SubscribeToNewsletter, FavoriteColor, Friends
+}
+
+form LandArea : LandArea {
+  X number(defaultNumber);
+  Y number(defaultNumber);
+  tab main with
+    column main with
+      group main with X, Y
+}
+
+form PlotInfo : PlotInfo {
+  LandArea form LandArea;
+  tab main with
+    column main with
+      group main with LandArea
+}
+
+form(Address) Address : Address {
+  StreetNumberAndCity tuple(defaultTuple3) (
+    string(defaultString), 
+    number(defaultNumber), 
+    stream(defaultInfiniteStream) from cities  
+  );
+  tab main with
+    column main with
+      group main with StreetNumberAndCity
+}
+
+entrypoint form PersonConfig : PersonConfig {
+  ActiveAddressFields as "addresses tab field selection" enum(defaultEnumMultiselect) multi from addressesFields;
+  tab main with
+    column main with
+      group main with ActiveAddressFields
+}
+
+form(personDetails) DeveloperJob : DeveloperJob {
+  Name string(defaultString);
+  Salary number(defaultNumber);
+  Language string(defaultString);
+  tab main with
+    column main with
+      group main with Name, Salary, Language
+}
+
+form(personDetails) DesignerJob : DesignerJob {
+  Name string(defaultString);
+  Salary number(defaultNumber);
+  DesignTool string(defaultString);
+  Certifications list(defaultList) string(defaultString);
+  tab main with
+    column main with
+      group main with Name, Salary, DesignTool, Certifications
+}
+
+form FriendsTable : User {
+  Name string(defaultString);
+  Surname string(defaultString);
+  FavoriteColor enum(defaultEnum) single from colors;
+  details form userDetails;
+  disable Surname;
+}
+
+form(streamingTable) FriendsFriendsTable : Friend {
+  Name string(defaultString);
+  Surname string(defaultString);
+  FavoriteColor enum(defaultEnum) from colors;
+  disable Surname
+}
+
+entrypoint form(personDetails) Person : Person = {
+  Friends form(streamingTable) {
+    Name string(defaultString);
+    Surname string(defaultString);
+    FavoriteColor enum(defaultEnum) single from colors;
+    City stream(defaultInfiniteStream) from cities;
+    StreetNumberAndCity tuple(defaultTuple3) (
+      string(defaultString),
+      number(defaultNumber),
+      stream(defaultInfiniteStream) from cities
+    );
+
+    details record(userDetails) {
+      Name as "First Name" string(defaultString);
+      Surname as "Last Name" string(defaultString);
+      Birthday as "Birthday" date(defaultDate);
+      Email as "Email" string(defaultString);
+      SubscribeToNewsletter as "Subscribe to Newsletter" bool(defaultBoolean);
+      FavoriteColor enum(defaultEnum) single from colors;
+      Friends as "Friends" table(friendsFriendsTable) from ActiveFriendsApi;
+    };
+    disable Surname;
+
+    //in the json there is an extra api field after the rendererer block. What does this element correspond to in the AST?
+  };  
+
+  Job as "Job" union(job) with
+  | DeveloperJob -> record(job) : DeveloperJob {
+      Name string(defaultString);
+      Salary number(defaultNumber);
+      Language string(defaultString);
+      tab main with
+        column main with
+          group main with Name, Salary, Language
+    }
+  | Designer -> form(DesignerJob);
+  Category as "Category" string(defaultCategory);
+  FullName as "full Name" tuple(defaultTuple2) (
+    string(defaultString) as "Name",
+    string(defaultString) as "surname"
+  );
+  Birthday tooltip "happy Birthday!" date(defaultDate);
+  FavoriteColor enum(defaultEnum) single from colors;
+  Gender as "Gender" sum(defaultSum) with
+  | 1of2 -> unit(defaultUnit)
+  | 2of2 -> enum(defaultGender) single from genders;
+
+  Dependants as "Dependants" tooltip "someone who depends on you" map(defaultMap)
+    string(defaultString),
+    string(defaultCategory);
+  FriendsByCategory as "Friend by Category" map(defaultMap)
+    string(defaultCategory),
+    string(defaultString);
+  Relatives as "Relatives" tooltip "someone who you are related to" list(defaultList) string(defaultCategory) as "one relative" tooltip "relative";
+  SubscribeToNewsletter as "subscribe to newsletter" bool(defaultBool);
+  Interests as "Interests" enum(defaultEnumMultiselect) multi from interests;
+  Departments stream(defaultInfiniteStreamMultiselect) from departments;
+  SchoolAddress as "school address" form(address);
+  MainAddress as "main address" sum(defaultSum) with
+  | 1of2 -> string(defaultString)
+  | 2of2 -> tuple(defaultTuple2) (form(Address), form(PlotInfo));
+  AddressesBy as "addresses by" sum(defaultSum) with
+  | 1of2 -> map(defaultMap)
+      enum(defaultEnum) single from colors,
+      form(address)
+  | 2of2 -> map(defaultMap) string(defaultString), form(address);
+  ImportantDate as "important date" option(maybeDate) with
+  | 2of2 -> date(defaultDate)
+  | 1of2 -> unit(defaultUnit);
+  CutOffDates as "cut off dates" list(defaultList) 
+    option maybeDate with
+    | 2of2 -> date(defaultDate)
+    | 1of2 -> unit(defaultUnit);
+  Emails as "Emails" list(defaultList) string(defaultString);
+  AddressesAndAddressesWithLabel as "other addresses" tuple(defaultTuple2) (
+    list(defaultList) form(address),
+    map(defaultMap) string(defaultString), form(address)
+  );
+  AddressesByCity as "addresses by city" map(defaultMap)
+    stream(defaultInfiniteStream) from cities,
+    form(address);
+  AddressesWithColorLabel as "addresses with color label" map(defaultMap)
+    enum(defaultEnum) single from colors,
+    form(address);
+  Permissions as "Permissions" map(defaultMap)
+    enum(defaultEnum) single from permissions,
+    bool(defaultBoolean);
+  CityByDepartment as "city by department" map(defaultMap)
+    stream(defaultInfiniteStream) from departments,
+    stream(defaultInfiniteStream) from cities;
+  ShoeColours as "shoe colours" enum(defaultEnumMultiselect) multi from colors;
+  FriendsBirthdays as "Friends birthdays" map(defaultMap)
+    string(defaultString),
+    date(defaultDate);
+  Holidays as "Holidays" list(defaultList) date(defaultDate);
+  FriendsAddresses as "Friends addresses" map(defaultMap)
+    string(defaultString),
+    list(defaultList) form(address);
+  BestFriend as "Best Friend" record(bestFriend) : User {
+    details record : User {
+      Name string(defaultString);
+      tab main with
+        column main with
+          group main with Name
+    };
+    preview record : User {
+      Name string(defaultString);
+      Surname string(defaultString);
+      Email string(defaultString);
+      tab main with
+        column main with
+          group main with Name, Surname, Email
+    };
+    tab main with
+      column demographics with
+        group main with
+          BestFriend,
+          Friends,
+          Job,
+          Category,
+          FullName,
+          Birthday,
+          Gender,
+          Emails,
+          Dependants,
+          FriendsByCategory,
+          Relatives,
+          FriendsBirthdays,
+          ShoeColours,
+          ImportantDate,
+          CutOffDates
+      column mailing with
+        group main with SubscribeToNewsletter, Interests, FavoriteColor
+      column addresses with
+        group main with AddressesByCity;
+  };
+  disable ImportantDate;
+}

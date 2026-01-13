@@ -66,6 +66,7 @@ module Model =
       | Left res -> Left(Some res)
       | Right _ -> Left(None)
 
+    member _.Zero() = Sum.Left()
     member _.Throw(e) = Sum.Right e
     member _.Return(result: 'a) = Sum.Left result
     member sum.ReturnFrom(result: Sum<_, _>) = result

@@ -1,0 +1,147 @@
+letter ::= "A" | ... | "Z"
+           | "a" | ... | "z"
+
+digit ::= "0" | "1" | "2" | "3" | "4"
+          | "5" | "6" | "7" | "8" | "9"
+
+id ::= letter | letter identifierBody
+
+identifierBody ::= letter
+  | digit
+  | "_"
+  | letter identifierBody
+  | digit identifierBody
+  | "_" identifierBody
+
+stringLiteral ::= "\"" <stringContents> "\""
+
+stringContents ::= "" | stringChar stringContents
+
+(* ordinaryChar is any non-special character *)
+stringChar ::= ordinaryChar 
+
+(* anyChar is any character *)
+comment ::= "//" {anyChar}
+
+rendererDef ::= "(" id ")"
+
+(* renderer expressions *)
+cardinality ::= ("single" | "multi")
+primitives ::=
+  "string"
+  | "int32"
+  | "int64"
+  | "float32"
+  | "float64"
+  | "date"
+  | "dateonly"
+  | "string_id"
+  | "guid"
+  | "bool"
+  | "base64"
+  | "secret"
+  | "unit"
+  
+nestedRenderer ::= rendererExpr
+
+primitive ::= primitives rendererDef
+map ::= "map" rendererDef nestedRenderer "," nestedRenderer
+
+pair ::= nestedRenderer "," nestedRenderer
+tupleSeq ::= nestedRenderer {"," tupleSeq}
+tupleItems ::= pair {"," tupleSeq}
+tuple ::= "tuple" rendererDef "(" tupleItems ")"
+
+optionCase ::=
+  "|" "1of2" "->" nestedRenderer
+  "|" "2of2" "->" nestedRenderer 
+option ::= "option" rendererDef "with" optionCase
+
+list ::= "list" rendererDef nestedRenderer
+readonly ::= "readonly" rendererDef nestedRenderer
+
+sumCase ::=
+| "|" "1of2" "->" nestedRenderer
+| "|" "2of2" "->" nestedRenderer
+sum ::= "sum" rendererDef "with" sumCase
+
+enum ::= "enum" rendererDef [cardinality] "from" id
+stream ::= 
+  "stream" rendererDef [cardinality] "from" id
+  (* the case below does not seem to be used in the validator *)
+  | "stream" "lookup" [cardinality] id ":" id "from" id ":" id
+table ::= "table" rendererDef "from" id
+form ::= "form" rendererDef
+recordBody ::= "{" [formMember {formMember}] [disableBlock] "}"
+record ::= "record" [rendererDef] recordBody
+
+inlineForm ::= "form" [rendererDef] formBody
+
+unionCase ::= "|" id "->" nestedRenderer
+union ::= "union" rendererDef "with" unionCase {unionCase}
+
+manyBody ::=
+"linked" nestedRenderer ["unlinked" nestedRenderer]
+| "element" nestedRenderer
+
+one ::= "one" rendererDef "from" id detailsRenderer [previewRenderer]
+many ::= "many" rendererDef "from" id manyBody
+
+
+rendererExpr ::= 
+  primitive
+  | map
+  | tuple
+  | option
+  | list
+  | readonly
+  | sum
+  | enum
+  | stream
+  | table
+  | formBody
+  | record
+  | union
+  | inlineForm
+  | one
+  | many
+
+(* field declaration *)
+label ::= "as" stringLiteral
+tooltip ::= "tooltip" stringLiteral
+details ::= "details" stringLiteral
+displayProps ::= [label] [tooltip] [details]
+field ::= id displayProps rendererExpr ";"
+fields ::= {field}
+
+(* tabs *)
+fieldSeq ::= id {"," fieldSeq}
+tab ::= "tab" id "with" columns
+column ::= "column" id groups
+group ::= "group" id "with" fieldSeq
+tabs ::= {tab}
+columns ::= column {columns}
+groups ::= group {groups}
+
+(* details and highlights *)
+detailsRenderer ::= "details" nestedRenderer
+previewRenderer ::= "preview" nestedRenderer
+highlights ::= "highlights" fieldSeq
+
+(* forms *)
+formMember ::= {
+  field
+  | tab
+}
+disableBlock ::= "disable" id {"," id}
+formBody ::= "{" [formMember {formMember}] [disableBlock] [detailsRenderer] [highlights] "}"
+formTable ::= ["entrypoint"] "form" [rendererDef] id ":" id formBody
+formAnnotated ::= ["entrypoint"] "form" ":" id rendererExpr
+formDeclaration ::= formTable | formAnnotated
+formSeq ::= formDeclaration {formDeclaration}
+
+(* spec *)
+formSpec ::= formSeq
+
+
+

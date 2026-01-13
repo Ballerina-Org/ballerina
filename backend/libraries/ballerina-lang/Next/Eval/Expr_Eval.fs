@@ -83,6 +83,13 @@ module Eval =
                 |> reader.Throw }
         Symbols = ExprEvalContextSymbols.Empty }
 
+    static member WithTypeCheckingSymbols<'valueExtension>
+      (ctx: ExprEvalContext<'valueExtension>)
+      (symbols: TypeExprEvalSymbols)
+      : ExprEvalContext<'valueExtension> =
+      { ctx with
+          Symbols = ExprEvalContextSymbols.Append ctx.Symbols (ExprEvalContextSymbols.FromTypeChecker symbols) }
+
     static member Getters =
       {| Values = fun (c: ExprEvalContext<'valueExtension>) -> c.Values
          ExtensionOps = fun (c: ExprEvalContext<'valueExtension>) -> c.ExtensionOps

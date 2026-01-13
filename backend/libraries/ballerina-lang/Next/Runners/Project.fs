@@ -18,11 +18,20 @@ module Project =
   open System.Text.Json
   open System.Text.Json.Serialization
   open Ballerina.StdLib.String
+  open Ballerina.Collections.NonEmptyList
 
-  type ProjectBuildConfiguration = { Files: List<FileBuildConfiguration> }
+  type ProjectBuildConfiguration =
+    { Files: NonEmptyList<FileBuildConfiguration> }
 
   and FileName = { Path: string }
-  and Checksum = { Value: string }
+
+  and Checksum =
+    { Value: string }
+
+    static member Compute(s: string) =
+      use md5 = System.Security.Cryptography.MD5.Create()
+      { Checksum.Value = BitConverter.ToString(md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes(s))) }
+
 
   and FileBuildConfiguration =
     { FileName: FileName
@@ -31,7 +40,7 @@ module Project =
 
   and ProjectCache<'valueExt when 'valueExt: comparison> =
     { Fold:
-        List<FileBuildConfiguration>
+        NonEmptyList<FileBuildConfiguration>
           -> (FileBuildConfiguration * int
             -> State<
               Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>,
@@ -40,7 +49,7 @@ module Project =
               Errors
              >)
           -> Sum<
-            List<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> *
+            NonEmptyList<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> *
             TypeCheckContext<'valueExt> *
             TypeCheckState<'valueExt>,
             Errors
@@ -75,46 +84,80 @@ module Project =
     (cache: BuildCache<'valueExt>)
     (ctx0: TypeCheckContext<'valueExt>, st0: TypeCheckState<'valueExt>)
     : ProjectCache<'valueExt> =
+    let processFile
+      (typeCheck:
+        FileBuildConfiguration * int
+          -> State<
+            Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>,
+            Unit,
+            TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
+            Errors
+           >)
+      (prevChecksums: List<Checksum>)
+      (ctx: TypeCheckContext<'valueExt>)
+      (st: TypeCheckState<'valueExt>)
+      (file: FileBuildConfiguration, index: int)
+      : Sum<
+          Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
+          TypeCheckContext<'valueExt> *
+          TypeCheckState<'valueExt>,
+          Errors
+         >
+      =
+      let cached_entry = cache.TryGet file.FileName
+
+      match cached_entry with
+      | Some(checksum, checksums, expr, ctx', st') when checksum = file.Checksum && prevChecksums = checksums ->
+        Console.WriteLine $"Cache hit for {file.FileName.Path}"
+        Left(expr, ctx', st')
+      | _ ->
+        sum {
+          let! expr, st_ctx' = typeCheck (file, index) |> State.Run((), (ctx, st)) |> sum.MapError fst
+          let ctx', st' = st_ctx' |> Option.defaultValue (ctx, st)
+          do cache.Set file.FileName (file.Checksum, prevChecksums, expr, ctx', st')
+
+          // do Console.WriteLine $"Cache miss for {file.FileName.Path}"
+          // do Console.WriteLine $"Updated cache size: {cache.Count}"
+          // do Console.WriteLine $"Updated cache keys: {cache.Keys.AsFSharpString}"
+
+          expr, ctx', st'
+        }
+
     { Fold =
-        fun files typeCheck ->
+        fun
+            (files: NonEmptyList<FileBuildConfiguration>)
+            (typeCheck:
+              FileBuildConfiguration * int
+                -> State<
+                  Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>,
+                  Unit,
+                  TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
+                  Errors
+                 >) ->
           files
-          |> Seq.mapi (fun i file -> (file, i))
-          |> Seq.fold
+          |> NonEmptyList.mapi (fun i file -> file, i)
+          |> NonEmptyList.fold
             (fun
                  (acc:
                    Sum<
-                     List<FileName * Checksum * Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> *
+                     NonEmptyList<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> *
+                     List<Checksum> *
                      TypeCheckContext<'valueExt> *
                      TypeCheckState<'valueExt>,
                      Errors
                     >)
                  ((file, index): FileBuildConfiguration * int) ->
               sum {
-                let! prev_files, ctx, st = acc
-                let prev_checksums = prev_files |> List.map (fun (_, v, _) -> v)
-
-                let cached_entry = cache.TryGet file.FileName
-
-                match cached_entry with
-                | Some(checksum, checksums, expr, ctx', st') when
-                  checksum = file.Checksum && prev_checksums = checksums
-                  ->
-                  do Console.WriteLine $"Cache hit for {file.FileName.Path}"
-                  return (file.FileName, file.Checksum, expr) :: prev_files, ctx', st'
-                | _ ->
-                  let! expr, st_ctx' = typeCheck (file, index) |> State.Run((), (ctx, st)) |> sum.MapError fst
-                  let ctx', st' = st_ctx' |> Option.defaultValue (ctx, st)
-
-                  do cache.Set file.FileName (file.Checksum, prev_checksums, expr, ctx', st')
-
-                  // do Console.WriteLine $"Cache miss for {file.FileName.Path}"
-                  // do Console.WriteLine $"Updated cache size: {cache.Count}"
-                  // do Console.WriteLine $"Updated cache keys: {cache.Keys.AsFSharpString}"
-
-                  return (file.FileName, file.Checksum, expr) :: prev_files, ctx', st'
+                let! prevExprs, prevChecksums, ctx, st = acc
+                let! expr, ctx', st' = processFile typeCheck prevChecksums ctx st (file, index)
+                NonEmptyList.OfList(expr, NonEmptyList.ToList prevExprs), file.Checksum :: prevChecksums, ctx', st'
               })
-            (Left([], ctx0, st0))
-          |> sum.Map((fun (l, c, s) -> l |> List.map (fun (_, _, v) -> v), c, s)) }
+            (fun (file, index) ->
+              sum {
+                let! expr, ctx', st' = processFile typeCheck [] ctx0 st0 (file, index)
+                NonEmptyList.One expr, [ file.Checksum ], ctx', st'
+              })
+          |> sum.Map(fun (exprs, _, ctx, st) -> exprs, ctx, st) }
 
   let memcache<'valueExt when 'valueExt: comparison>
     (ctx0: TypeCheckContext<'valueExt>, st0: TypeCheckState<'valueExt>)
@@ -207,7 +250,7 @@ It could be because the cache structure is outdated, and is expected in such cas
       (cache: ProjectCache<'valueExt>)
       (project: ProjectBuildConfiguration)
       : Sum<
-          List<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> *
+          NonEmptyList<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> *
           TypeCheckContext<'valueExt> *
           TypeCheckState<'valueExt>,
           Errors
@@ -259,7 +302,7 @@ It could be because the cache structure is outdated, and is expected in such cas
 
               do typeCheckerStopwatch.Stop()
 
-              if index <> project.Files.Length - 1 then
+              if index <> (NonEmptyList.ToList project.Files).Length - 1 then
                 do!
                   typeCheckedExpr
                   |> Expr.AsTerminatedByConstantUnit
@@ -269,5 +312,5 @@ It could be because the cache structure is outdated, and is expected in such cas
               return typeCheckedExpr
             })
 
-        return expressions |> List.rev, finalContext, finalState
+        return expressions |> NonEmptyList.rev, finalContext, finalState
       }

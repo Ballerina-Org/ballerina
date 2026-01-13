@@ -404,6 +404,7 @@ module Model =
          HighlightedFilters: List<FieldName>
          //  Preview: Option<FormBody>
          Columns: Map<string, Column<'ExprExtension, 'ValueExtension>>
+         Tabs: FormTabs<'ExprExtension, 'ValueExtension>
          VisibleColumns: FormGroup<'ExprExtension, 'ValueExtension>
          DisabledColumns: FormGroup<'ExprExtension, 'ValueExtension>
          DataContextColumns: FormGroup<'ExprExtension, 'ValueExtension>

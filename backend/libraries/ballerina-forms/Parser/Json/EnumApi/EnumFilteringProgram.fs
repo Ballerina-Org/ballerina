@@ -14,6 +14,7 @@ open Ballerina.DSL.Next.Types
 open System.Text
 open Ballerina.Errors
 open Ballerina.StdLib
+open Ballerina.Collections.NonEmptyList
 
 type private Value = Value<TypeValue<ValueExt>, ValueExt>
 
@@ -114,21 +115,19 @@ List::filter[{CasesTypeName}]
 
       let project =
         { Files =
-            [ commonFile
-              { FileName = { Path = $"{enumName}-filter.bl" }
-                Content = fun () -> filterProgram
-                Checksum = { Value = getChecksum filterProgram } } ] }
+            NonEmptyList.OfList(
+              commonFile,
+              [ { FileName = { Path = $"{enumName}-filter.bl" }
+                  Content = fun () -> filterProgram
+                  Checksum = { Value = getChecksum filterProgram } } ]
+            ) }
+
 
       let buildResult = ProjectBuildConfiguration.BuildCached buildCache project
 
       match buildResult with
       | Right errors -> return! $"Enum filtering build errors:\n{errors}" |> Errors.Singleton |> Right
-      | Left([], _, _) ->
-        return!
-          "Tried to compile enum filtering but no source files were found"
-          |> Errors.Singleton
-          |> Right
-      | Left(exprs, _, st) -> return EnumCaseFilterExpr.Filter(exprs, st)
+      | Left(exprs, _, st) -> return EnumCaseFilterExpr.Filter(exprs |> NonEmptyList.ToList, st)
     }
 
   let internal buildFilteringExpr enumName { Filters = filters } typeContext =

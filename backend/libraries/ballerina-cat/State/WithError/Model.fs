@@ -78,7 +78,6 @@ module WithError =
     static member bind (k: 'a -> State<'b, 'c, 's, 'e>) (p: State<'a, 'c, 's, 'e>) : State<'b, 'c, 's, 'e> =
       State.map k p |> State.flatten
 
-
   type StateBuilder() =
     member _.Ignore p = State.map ignore p
     member _.Map f p = State.map f p

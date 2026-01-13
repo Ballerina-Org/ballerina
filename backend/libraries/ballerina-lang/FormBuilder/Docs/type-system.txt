@@ -1,0 +1,161 @@
+--------------------------------
+string(rid) => string
+
+--------------------------------
+string_id(rid) => string
+
+------------------------------
+base64(rid) => string
+
+------------------------------
+secret(rid) => string
+
+--------------------------------------------
+date(rid) => date_time | date_only
+
+---------------------------
+guid(rid) => guid
+
+
+//should we change the syntax to specify the right numeric format, or should we use an algebraic type?
+---------------------------------------------------------
+number(rid) => int32 | int64 | float32 | float64
+
+
+rexp1 => T1
+rexp2 => T2
+---------------------------------------------------------------
+map(rid) rexp1 rexp2 => Map<T1, T2>
+
+
+rexp1 => T1
+rexp2 => T2
+...
+rexpn => Tn
+-------------------------------------------------------------------------
+tuple(rid) (rexp1, rexp2, ..., rexpn) => Tuple<T1, T2, ..., Tn>
+
+
+rexp1 => unit
+rexp2 => T2
+--------------------------------------------------------------
+option(rid) with | 1of2 -> rexp1 | 2of2 => rexp2 => Option<T2>
+
+rexp1 => T1
+rexp2 => unit
+--------------------------------------------------------------
+option(rid) with | 1of2 -> rexp1 | 2of2 => rexp2 => Option<T1>
+
+rexp1 => T1
+rexp2 => T2
+--------------------------------------------------------------
+sum(rid) with | 1of2 -> rexp1 | 2of2 -> rexp2 => Sum<T1, T2>
+
+
+rexp => T
+----------------------------------
+list(rid) rexp => rexp2 => List<T>
+
+
+//Should we enforce the corresponding field to be among the disabled fields?
+rexp => T
+------------------------------------------
+readonly(rid) rexp => rexp2 => T
+
+
+api => T
+-----------------------------------------------
+enum(rid) from api => T
+
+
+api => T
+------------------------------------------------
+enum(rid) single from api => T
+
+api => T
+------------------------------------------
+stream(rid) from api => SingleSelection<T>
+
+api => T
+-------------------------------------------------
+stream(rid) single from api => SingleSelection<T>
+
+api => T
+-----------------------------------------------
+stream(rid) multi from api => MultiSelection<T>
+
+
+api => T
+-----------------------------------
+table(rid) from api => Map<guid, T>
+
+
+formRendererType => T
+T u formFieldType
+------------------------------------------------------------
+form(rid), formFieldType, formRendererType => formFieldType
+
+form(rid) { body } => T
+T u formfieldType
+--------------------------------------------------
+form(rid) { body }, formFieldType => formFieldType
+
+
+rexp1 => T1
+rexp2 => T2
+...
+rexpn => Tn
+
+forall Ti where i in [1..n]
+  Ti u cti
+----------------------------------------------------------------------------------------------------------------------
+union(rid) with | case1 -> rexp1 | case2 -> rexp2 | ... | casen -> rexpn, (ct1, ct2, ..., ctn), unionType => unionType
+
+
+//the api needs to take as input a pagination and needs to return List<id, string>
+fieldType => Tf
+api => (int * int) => List<id, string>
+T u Tf
+------------------------------------------------------
+one(rid) from api details preview, fieldType => T
+
+
+fieldType => Tf
+api => (int * int) => List<id, string>
+T u Tf
+--------------------------------------------------------------------
+many(rid) from api linked rlink unlinked ulink, fieldType => Many<Tf>
+
+
+fieldType => Tf
+api => T
+T u Tf
+--------------------------------------------------------
+many(rid) from api element erend, fieldType => List<Tf>
+
+record(rid) { body } => T
+T u fieldType
+--------------------------------------------
+record(rid) { body }, fieldType => fieldType
+
+
+
+//field
+id in fieldIds
+rexp => T
+T u fieldTypes[id]
+-----------------------------------------------
+id displayProps rexp, fieldIds, fieldTypes => T
+
+
+fields subsetof fieldIds
+------------------------------
+group id with fields, fieldIds
+
+
+
+
+
+
+
+

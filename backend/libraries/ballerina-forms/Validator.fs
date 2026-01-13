@@ -678,14 +678,7 @@ module Validator =
         | Renderer.RecordRenderer fields ->
           do! FormFields.ValidatePredicates ctx typeCheck globalType rootType localType fields.Fields
         | Renderer.UnionRenderer cases ->
-          let! typeCases = localType |> ExprType.AsUnion |> state.OfSum
-
           for case in cases.Cases do
-            let! typeCase =
-              typeCases
-              |> Map.tryFind ({ CaseName = case.Key })
-              |> Sum.fromOption (fun () -> Errors.Singleton $"Error: cannot find type case {case.Key}")
-              |> state.OfSum
 
             do!
               NestedRenderer.ValidatePredicates
@@ -694,7 +687,7 @@ module Validator =
                 typeCheck
                 globalType
                 rootType
-                typeCase.Fields
+                localType
                 case.Value
         | Renderer.InlineFormRenderer i ->
           let! formType = FormBody.Type ctx.Types i |> state.OfSum
