@@ -1,8 +1,7 @@
 namespace Ballerina.Collections
 
 module NonEmptyList =
-  open Ballerina.Fun
-
+  // NoneEmptyList is the implementation of a free subgroup
   type NonEmptyList<'e> =
     | NonEmptyList of 'e * List<'e>
 
@@ -25,13 +24,25 @@ module NonEmptyList =
       let l = l |> NonEmptyList.ToList |> List.rev
       NonEmptyList.OfList(l.Head, l.Tail)
 
-    static member map (f: 'e -> 'b) (l: NonEmptyList<'e>) =
-      match l with
-      | NonEmptyList(h, t) -> NonEmptyList(f h, t |> List.map f)
+    static member map (f: 'e -> 'b) (NonEmptyList(h, t): NonEmptyList<'e>) = NonEmptyList(f h, t |> List.map f)
+
+    static member mapi (f: int -> 'e -> 'b) (NonEmptyList(h, t): NonEmptyList<'e>) : NonEmptyList<'b> =
+      NonEmptyList(f 0 h, t |> List.mapi (fun i e -> f (i + 1) e))
+
+    static member fold
+      (f: 'state -> 'e -> 'state)
+      (initial: 'e -> 'state)
+      (NonEmptyList(h, t): NonEmptyList<'e>)
+      : 'state =
+      List.fold f (initial h) t
+
 
     static member reduce (f: 'e -> 'e -> 'e) (l: NonEmptyList<'e>) =
       match l with
       | NonEmptyList(h, t) -> List.reduce f (h :: t)
+
+    static member append (NonEmptyList(head1, tail1): NonEmptyList<'e>) (NonEmptyList(head2, tail2): NonEmptyList<'e>) =
+      NonEmptyList.OfList(head1, tail1 @ [ head2 ] @ tail2)
 
     static member ToList(l: NonEmptyList<'e>) =
       match l with

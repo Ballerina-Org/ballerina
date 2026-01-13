@@ -1,0 +1,719 @@
+﻿namespace Ballerina.DSL.FormBuilder.Types
+
+module TypeChecker =
+  open Ballerina.Collections.Sum
+  open Ballerina.DSL.Next.Types
+  open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.State.WithError
+  open Ballerina.DSL.Next.Unification
+  open Ballerina.LocalizedErrors
+  open Ballerina.DSL.Next.Types.TypeChecker.Model
+  open Ballerina.Cat.Collections.OrderedMap
+  open Ballerina.Collections.NonEmptyList
+  open Ballerina.DSL.Next.StdLib.Extensions
+  open Ballerina.DSL.FormBuilder.Model.FormAST
+  open Ballerina.DSL.Next.Types.TypeChecker.LiftOtherSteps
+
+  let listExtension = (fst stdExtensions).List
+
+  let makeListType (typeArgument: TypeValue<'valueExt>) =
+    { ImportedTypeValue.Id = listExtension.TypeName |> fst
+      Sym = listExtension.TypeName |> snd
+      Parameters =
+        listExtension.TypeVars
+        |> List.map (fun (v, k) -> TypeParameter.Create(v.Name, k))
+      Arguments = [ typeArgument ]
+      UnionLike = None
+      RecordLike = None }
+
+
+  let errorsToLocalizedErrors (errors: Ballerina.Errors.Errors) : Errors =
+    { Errors =
+        errors.Errors
+        |> NonEmptyList.map (fun error ->
+          { Location = Location.Unknown
+            Message = error.Message
+            Priority = error.Priority }) }
+
+  let assertType
+    (typeAssert: TypeValue<'valueExt> -> Sum<'t, Ballerina.Errors.Errors>)
+    (typeValue: TypeValue<'valueExt>)
+    =
+    typeAssert typeValue |> state.OfSum |> State.mapError errorsToLocalizedErrors
+
+  let assertList (targetType: TypeValue<'valueExt>) =
+    state {
+      let! importedType = assertType TypeValue.AsImported targetType
+
+      if importedType.Id = (listExtension.TypeName |> fst) then
+        match importedType.Arguments with
+        | [ listArg ] -> return listArg
+        | _ ->
+          return!
+            state.Throw(
+              Errors.Singleton(
+                Location.Unknown,
+                $"Expected one type argument for list but {importedType.Arguments.Length} were given."
+              )
+            )
+      else
+        return!
+          state.Throw(
+            Errors.Singleton(Location.Unknown, $"Expected list but {importedType.Id} was given.")
+            |> Errors.SetPriority ErrorPriority.High
+          )
+    }
+
+  type FormTypeCheckerState<'valueExt when 'valueExt: comparison> =
+    { BallerinaTypeCheckState: TypeCheckState<'valueExt>
+      FormTypes: Map<FormIdentifier, TypeValue<'valueExt>> }
+
+    static member Init typeCheckState =
+      { BallerinaTypeCheckState = typeCheckState
+        FormTypes = Map.empty }
+
+  type FormTypeCheckingContext<'valueExt when 'valueExt: comparison> =
+    { Types: Map<string, TypeValue<'valueExt>>
+      TypeCheckContext: TypeCheckContext<'valueExt>
+      APIContext: Map<TypeValue<'valueExt>, string * TypeValue<'valueExt>> }
+
+    static member Init types typeCheckContext apiContext =
+      { Types = types
+        TypeCheckContext = typeCheckContext
+        APIContext = apiContext }
+
+    static member FindTargetEntityKeyType
+      (typeValue: TypeValue<'valueExt>)
+      (context: FormTypeCheckingContext<'valueExt>)
+      =
+      context.APIContext
+      |> Map.tryFind typeValue
+      |> Sum.fromOption (fun () ->
+        Errors.Singleton(Location.Unknown, $"It was not possible to find the key type {typeValue} in the api context.")
+        |> Errors.SetPriority ErrorPriority.High)
+
+  let runUnification
+    (unificationState: State<Unit, UnificationContext<'valueExt>, UnificationState<'valueExt>, Errors>)
+    : State<Unit, FormTypeCheckingContext<'valueExt>, FormTypeCheckerState<'valueExt>, Errors> =
+    unificationState
+    |> Expr<'T, 'Id, 'valueExt>.liftUnification
+    |> State.mapState
+      (fun (typeCheckState, _) -> typeCheckState.BallerinaTypeCheckState)
+      (fun (unificationState, _) typeCheckState ->
+        { typeCheckState with
+            BallerinaTypeCheckState = unificationState })
+    |> State.mapContext (fun typeCheckContext -> typeCheckContext.TypeCheckContext)
+
+  type FormTypeCheckingError =
+    { FormTypeCheckErrors: List<string> }
+
+    static member Concat(err1: FormTypeCheckingError, err2: FormTypeCheckingError) =
+      { FormTypeCheckErrors =
+          List.concat (
+            seq {
+              err1.FormTypeCheckErrors
+              err2.FormTypeCheckErrors
+            }
+          ) }
+
+  let unifyPrimitive (targetType: TypeValue<'valueExt>) (rendererType: TypeValue<'valueExt>) =
+    state {
+      do! TypeValue.Unify(Location.Unknown, targetType, rendererType) |> runUnification
+      return targetType
+    }
+
+  let checkPrimitive (targetType: TypeValue<'valueExt>) (primitive: PrimitiveRendererKind) =
+    state {
+      match primitive with
+      | PrimitiveRendererKind.String
+      | PrimitiveRendererKind.StringId
+      | PrimitiveRendererKind.Base64
+      | PrimitiveRendererKind.Secret ->
+        return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.String)
+      | PrimitiveRendererKind.Int32 -> return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.Int32)
+      | PrimitiveRendererKind.Int64 -> return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.Int64)
+      | PrimitiveRendererKind.Float32 ->
+        return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.Float32)
+      | PrimitiveRendererKind.Float ->
+        return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.Float64)
+      | PrimitiveRendererKind.Date ->
+        return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.DateTime)
+      | PrimitiveRendererKind.DateOnly ->
+        return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.DateOnly)
+      | PrimitiveRendererKind.Bool -> return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.Bool)
+      | PrimitiveRendererKind.Guid -> return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.Guid)
+      | PrimitiveRendererKind.Unit -> return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.Unit)
+    }
+
+  let rec checkMap (targetType: TypeValue<'valueExt>) (mapRenderer: MapRenderer<Unchecked>) =
+    state {
+      let! keyType, valueType = assertType TypeValue.AsMap targetType |> state.Map(fun mapType -> mapType.value)
+      let! keyExpr = checkRenderer keyType mapRenderer.Key
+      let! valueExpr = checkRenderer valueType mapRenderer.Value
+
+      do!
+        TypeValue.Unify(Location.Unknown, targetType, TypeValue.CreateMap(keyExpr.Type, valueExpr.Type))
+        |> runUnification
+
+      return
+        { Map = mapRenderer.Map
+          Key = keyExpr
+          Value = valueExpr
+          Type = targetType }
+    }
+
+  and checkTuple (targetType: TypeValue<'valueExt>) (tupleRenderer: TupleRenderer<Unchecked>) =
+    state {
+      let! tupleTargetItemTypes = assertType TypeValue.AsTuple targetType
+
+      if tupleTargetItemTypes.Length <> tupleRenderer.Items.Length then
+        return!
+          state.Throw(
+            Errors.Singleton(
+              Location.Unknown,
+              $"Tuple items mismatch: expected {tupleTargetItemTypes.Length} but {tupleRenderer.Items.Length} were given."
+            )
+            |> Errors.SetPriority ErrorPriority.High
+          )
+      else
+        let! itemRenderers =
+          state.All(
+            List.zip tupleTargetItemTypes tupleRenderer.Items
+            |> List.map (fun (targetItemType, renderer) -> checkRenderer targetItemType renderer)
+          )
+
+        let rendererTupleType =
+          TypeValue.CreateTuple(itemRenderers |> List.map (fun renderer -> renderer.Type))
+
+        do!
+          TypeValue.Unify(Location.Unknown, targetType, rendererTupleType)
+          |> runUnification
+
+        return
+          { Tuple = tupleRenderer.Tuple
+            Items = itemRenderers
+            Type = targetType }
+    }
+
+  and unionCaseMismatchError (expectedCases: int) (givenCases: int) =
+    state.Throw(
+      Errors.Singleton(Location.Unknown, $"Expected {expectedCases} cases but {givenCases} given.")
+      |> Errors.SetPriority ErrorPriority.High
+    )
+
+  and checkSum (targetType: TypeValue<'valueExt>) (sumRenderer: SumRenderer<Unchecked>) =
+    state {
+      let! sumTargetType = assertType TypeValue.AsSum targetType
+
+      match sumTargetType with
+      | firstCaseType :: [ secondCaseType ] ->
+        let! leftRendererTypedExpr = checkRenderer firstCaseType sumRenderer.Left
+        let! rightRendererTypedExpr = checkRenderer secondCaseType sumRenderer.Right
+
+        do!
+          TypeValue.Unify(
+            Location.Unknown,
+            targetType,
+            TypeValue.CreateSum [ leftRendererTypedExpr.Type; rightRendererTypedExpr.Type ]
+          )
+          |> runUnification
+
+        return
+          { Sum = sumRenderer.Sum
+            Left = leftRendererTypedExpr
+            Right = rightRendererTypedExpr
+            Type = targetType }
+      | _ -> return! unionCaseMismatchError 2 sumTargetType.Length
+    }
+
+  and checkUnion (targetType: TypeValue<'valueExt>) (unionRenderer: UnionRenderer<Unchecked>) =
+    state {
+      let! _, targetCases = assertType TypeValue.AsUnion targetType
+
+      let! casesTypedExprs =
+        unionRenderer.Cases
+        |> Map.toList
+        |> List.map (fun (CaseIdentifier case, renderer) ->
+          state {
+            match
+              targetCases.data
+              |> Map.tryFindKey (fun targetCase _ -> targetCase.Name = LocalScope case)
+            with
+            | Some targetCase ->
+              let targetCaseType = targetCases.data.[targetCase]
+              let! rendererType = checkRenderer targetCaseType renderer
+              return targetCase, rendererType, CaseIdentifier case
+            | None ->
+              return!
+                state.Throw(
+                  Errors.Singleton(Location.Unknown, $"Cannot find union case {case}.")
+                  |> Errors.SetPriority ErrorPriority.High
+                )
+          })
+        |> state.All
+
+      let unionRendererType =
+        TypeValue.CreateUnion(
+          casesTypedExprs
+          |> List.map (fun (symbol, renderer, _) -> symbol, renderer.Type)
+          |> OrderedMap.ofList
+        )
+
+      do!
+        TypeValue.Unify(Location.Unknown, targetType, unionRendererType)
+        |> runUnification
+
+      return
+        { Union = unionRenderer.Union
+          Cases = casesTypedExprs |> List.map (fun (_, expr, case) -> case, expr) |> Map.ofList
+          Type = targetType }
+    }
+
+  (*
+    Type checking one and many requires a Map<TypeValue, string * TypeValue> in the context: the key is the type of the key of the target entity, 
+    the string is the name of the API, while the last type value is the type of the target entity. This will be passed as input to the form compiler. 
+    The type checker will look up for the key type in the map, then it will check if the api name matches, and then it will try to type check the renderer 
+    expression against the target type value. The schema entity needs to contain a field whose type is the same TypeValue as the key in the map.
+
+    EXAMPLE:
+    
+    type MyKey = {
+      Key: guid;
+    }
+
+    in type MyEntity = {
+      A: int32;
+      B: string;
+      C: MyKey
+    }
+
+    and the corresponding form is:
+
+    form MyEntityForm(myEntityFormRenderer) : MyEntity {
+      A: int32(defaultInt);
+      B: string(defaultString);
+      C: one(oneRenderer) from myApi 
+        details ...//here goes the details renderer expression
+        ;
+    }
+
+    When type checking the field C, the type checker will look for entry in the map where the key is a Record type "MyKey", then it will check that the
+    corresponding entry contains "myApi" as api name and that the target api value is compatible with the renderer expression of the details (and the same 
+    for the optional preview).
+
+    As for many, it behaves in the same way except it will expect List [MyKey] as type of the field, so the lookup will use the type argument of the list 
+    instead of directly using the type value of the field so:
+      - check that the target type is a list.
+      - check that the type argument of the list exists as a key in the map.
+      - check that the api name matches the provided one.
+      - check that the type value in the map is compatible with the renderer expression.
+
+  *)
+
+  and checkApi (apiName: string) (keyType: TypeValue<'valueExt>) =
+    state {
+      let! context = state.GetContext()
+      let! api, linkedEntityType = FormTypeCheckingContext.FindTargetEntityKeyType keyType context |> state.OfSum
+
+      if api <> apiName then
+        return!
+          state.Throw(
+            Errors.Singleton(Location.Unknown, $"Undefined api {apiName}.")
+            |> Errors.SetPriority ErrorPriority.High
+          )
+
+      return linkedEntityType
+    }
+
+  and checkOne
+    (targetType: TypeValue<'valueExt>)
+    (oneRenderer: OneRenderer<Unchecked>)
+    : State<
+        OneRenderer<TypeValue<'valueExt>>,
+        FormTypeCheckingContext<'valueExt>,
+        FormTypeCheckerState<'valueExt>,
+        Errors
+       >
+    =
+    state {
+      let (ApiIdentifier apiName) = oneRenderer.Api
+      let! linkedEntityType = checkApi apiName targetType
+
+      let! typedPreviewExpression =
+        state {
+          match oneRenderer.Preview with
+          | None -> return None
+          | Some expr -> return! checkRenderer linkedEntityType expr |> state.Map Some
+        }
+
+      let! typedDetailsExpression = checkRenderer linkedEntityType oneRenderer.Details
+
+      return
+        { Api = oneRenderer.Api
+          Details = typedDetailsExpression
+          Preview = typedPreviewExpression
+          One = oneRenderer.One
+          Type = targetType }
+    }
+
+  and checkMany (targetType: TypeValue<'valueExt>) (manyRenderer: ManyRenderer<Unchecked>) =
+    state {
+      let! keyListType = assertList targetType
+      let (ApiIdentifier apiName) = manyRenderer.Api
+      let! linkedEntityType = checkApi apiName keyListType
+
+      let! typedBody =
+        state {
+          match manyRenderer.Body with
+          | LinkedUnlinked linkedUnlinked ->
+            let! linkedTypedExpr = checkRenderer linkedEntityType linkedUnlinked.Linked
+
+            let! unlinkedTypedExpr =
+              state {
+                match linkedUnlinked.Unlinked with
+                | None -> return None
+                | Some unlinked -> return! checkRenderer linkedEntityType unlinked |> state.Map Some
+              }
+
+            return
+              LinkedUnlinked
+                { Linked = linkedTypedExpr
+                  Unlinked = unlinkedTypedExpr }
+          | Element renderer ->
+            let! typedRendererExpr = checkRenderer linkedEntityType renderer
+            return Element typedRendererExpr
+        }
+
+      return
+        { Api = manyRenderer.Api
+          Body = typedBody
+          Many = manyRenderer.Many
+          Type = targetType }
+    }
+
+  (*
+    Type checking a list requires to verify that the target type is an imported type, since lists are not first-class citizens in ballerina-lang, rather they 
+    come from a standard library. We then check that the provided imported type is a list, and that it contains exactly one type argument. If that succeeds, 
+    we then type check the type argument of the given list in ballerina-lang agains the renderer expression of the list renderer. We then create a list type with 
+    the type of the renderer expression and unify it with the target type.
+  *)
+  and checkList (targetType: TypeValue<'valueExt>) (listRenderer: ListRenderer<Unchecked>) =
+    state {
+      let! listArgType = assertList targetType
+      let! rendererElementTypedExpr = checkRenderer listArgType listRenderer.Element
+
+      do!
+        TypeValue.Unify(
+          Location.Unknown,
+          targetType,
+          makeListType rendererElementTypedExpr.Type |> TypeValue.CreateImported
+        )
+        |> runUnification
+
+      return
+        { Element = rendererElementTypedExpr
+          List = listRenderer.List
+          Type = targetType }
+    }
+
+  and checkReadonly (targetType: TypeValue<'valueExt>) (readonlyRenderer: ReadonlyRenderer<Unchecked>) =
+    state {
+      let! rendererTypedExpr = checkRenderer targetType readonlyRenderer.Value
+
+      return
+        { Readonly = readonlyRenderer.Readonly
+          Type = targetType
+          Value = rendererTypedExpr }
+    }
+
+
+  and checkFormByReference
+    (formIdentifier: FormIdentifier)
+    : State<TypeValue<'valueExt>, FormTypeCheckingContext<'valueExt>, FormTypeCheckerState<'valueExt>, Errors> =
+    state {
+      match!
+        state.GetState()
+        |> state.Map(fun state -> state.FormTypes |> Map.tryFind formIdentifier)
+      with
+      | Some typeValue -> return typeValue
+      | None ->
+        let (FormIdentifier formName) = formIdentifier
+
+        return!
+          state.Throw(
+            Errors.Singleton(Location.Unknown, $"Undefined form {formName}")
+            |> Errors.SetPriority ErrorPriority.High
+          )
+    }
+
+  //check that the field exists for the given type
+  and findFieldType
+    (FormIdentifier formName: FormIdentifier)
+    (fieldTypes: OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>)
+    (fieldIdentifier: FieldIdentifier)
+    =
+    state {
+      let (FieldIdentifier fieldName) = fieldIdentifier
+
+      match
+        fieldTypes.data
+        |> Map.tryFindKey (fun typeSymbol _ ->
+          match typeSymbol.Name with
+          | LocalScope id -> id = fieldName
+          | _ -> false)
+      with
+      | None ->
+        return!
+          state.Throw(
+            Errors.Singleton(Location.Unknown, $"The field {fieldName} cannot be found in type {formName}")
+            |> Errors.SetPriority ErrorPriority.High
+          )
+      | Some fieldSymbol ->
+        let fieldType, _ = fieldTypes.data.[fieldSymbol]
+        return fieldType
+    }
+
+  and checkField
+    (formIdentifier: FormIdentifier)
+    (fieldTypes: OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>)
+    (field: Field<Unchecked>)
+    : State<Field<TypeValue<'valueExt>>, FormTypeCheckingContext<'valueExt>, FormTypeCheckerState<'valueExt>, Errors> =
+    state {
+      let! fieldType = findFieldType formIdentifier fieldTypes field.Name
+      let! fieldRendererTypedExpr = checkRenderer fieldType field.Renderer
+
+      do!
+        TypeValue.Unify(Location.Unknown, fieldType, fieldRendererTypedExpr.Type)
+        |> runUnification
+
+      return
+        { Details = field.Details
+          Label = field.Label
+          Name = field.Name
+          Renderer = fieldRendererTypedExpr
+          Tooltip = field.Tooltip
+          Type = fieldType }
+    }
+
+  and checkTab (formId: FormIdentifier) (fieldTypes: OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>) (tab: Tab) =
+    let checkAllTabFields =
+      [ for _, column in tab.Columns |> Map.toList do
+          for _, group in column.Groups |> Map.toList do
+            let checkGroupFields =
+              seq {
+                for fieldId in group do
+                  yield findFieldType formId fieldTypes fieldId
+              }
+
+            yield! checkGroupFields ]
+
+    checkAllTabFields |> state.All |> state.Ignore
+
+  and checkMembers
+    (formIdentifier: FormIdentifier)
+    (fieldTypes: OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>)
+    (members: Members<Unchecked>)
+    =
+    state {
+      let! fieldWithTypes =
+        members.Fields
+        |> Map.map (fun _ field -> checkField formIdentifier fieldTypes field)
+        |> Map.values
+        |> state.All
+
+      do!
+        members.Tabs
+        |> Map.map (fun _ tab -> checkTab formIdentifier fieldTypes tab)
+        |> Map.values
+        |> state.All
+        |> state.Ignore
+
+      return
+        { Fields = fieldWithTypes |> List.map (fun field -> field.Name, field) |> Map.ofList
+          Tabs = members.Tabs }
+    }
+
+  and checkDisabledFields
+    (formIdentifier: FormIdentifier)
+    (fieldTypes: OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>)
+    (disabledFields: Set<FieldIdentifier>)
+    =
+    disabledFields
+    |> Set.toList
+    |> List.map (fun field -> findFieldType formIdentifier fieldTypes field)
+    |> state.All
+    |> state.Ignore
+
+  and checkHighlights
+    (formIdentifier: FormIdentifier)
+    (fieldTypes: OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>)
+    (highlights: Set<FieldIdentifier>)
+    =
+    highlights
+    |> Set.toList
+    |> List.map (fun field -> findFieldType formIdentifier fieldTypes field)
+    |> state.All
+    |> state.Ignore
+
+  and checkFormBody
+    (formId: FormIdentifier)
+    (fieldTypes: OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>)
+    (formBody: FormBody<Unchecked>)
+    =
+    state {
+      let! checkedMembers = checkMembers formId fieldTypes formBody.Members
+      do! checkDisabledFields formId fieldTypes formBody.DisabledFields
+      do! checkHighlights formId fieldTypes formBody.Highlights
+
+      let! detailsTypedExpr =
+        state {
+          match formBody.Details with
+          | None -> return None
+          | Some details ->
+            let! detailsExpr = checkRenderer (TypeValue.CreateRecord fieldTypes) details
+
+            do!
+              TypeValue.Unify(Location.Unknown, TypeValue.CreateRecord fieldTypes, detailsExpr.Type)
+              |> runUnification
+
+            return Some detailsExpr
+        }
+
+      return
+        { Details = detailsTypedExpr
+          DisabledFields = formBody.DisabledFields
+          Highlights = formBody.Highlights
+          Members = checkedMembers }
+    }
+
+  and expectedFieldRecordTypeError (fieldId: string) =
+    state.Throw(
+      Errors.Singleton(Location.Unknown, $"Expected record type for field {fieldId}")
+      |> Errors.SetPriority ErrorPriority.High
+    )
+
+  and checkRecord (targetType: TypeValue<'valueExt>) (recordRenderer: RecordRenderer<Unchecked>) =
+    state {
+      let! recordTargetType = assertType TypeValue.AsRecord targetType
+      let anonymousFormId = FormIdentifier "anonymous record"
+      do! checkDisabledFields anonymousFormId recordTargetType recordRenderer.DisabledFields
+      let! checkedMembers = checkMembers anonymousFormId recordTargetType recordRenderer.Members
+
+      return
+        { DisabledFields = recordRenderer.DisabledFields
+          Members = checkedMembers
+          Renderer = recordRenderer.Renderer
+          Type = targetType }
+    }
+
+  and checkInlineForm (targetType: TypeValue<'valueExt>) (inlineFormRenderer: InlineFormRenderer<Unchecked>) =
+    state {
+      let! recordTargetType = assertType TypeValue.AsRecord targetType
+      let formIdentifier = FormIdentifier "anonymous form"
+      let! typedFormBody = checkFormBody formIdentifier recordTargetType inlineFormRenderer.Body
+
+      return
+        { Body = typedFormBody
+          InlineForm = inlineFormRenderer.InlineForm
+          Type = targetType }
+    }
+
+
+  and checkRenderer
+    (targetType: TypeValue<'valueExt>)
+    (renderer: RendererExpression<Unchecked>)
+    : State<
+        RendererExpression<TypeValue<'valueExt>>,
+        FormTypeCheckingContext<'valueExt>,
+        FormTypeCheckerState<'valueExt>,
+        Errors
+       >
+    =
+    state {
+      match renderer with
+      | RendererExpression.Primitive primitive ->
+        return!
+          state {
+            let! primitiveType = checkPrimitive targetType primitive.Renderer
+
+            return
+              RendererExpression.Primitive
+                { Primitive = primitive.Primitive
+                  Renderer = primitive.Renderer
+                  Type = primitiveType }
+          }
+      | Map map -> return! checkMap targetType map |> state.Map Map
+      | RendererExpression.Tuple tuple -> return! checkTuple targetType tuple |> state.Map RendererExpression.Tuple
+      | List list -> return! checkList targetType list |> state.Map List
+      | Readonly readonly -> return! checkReadonly targetType readonly |> state.Map Readonly
+      | RendererExpression.Sum sum -> return! checkSum targetType sum |> state.Map RendererExpression.Sum
+      | Union union -> return! checkUnion targetType union |> state.Map Union
+      | RendererExpression.Record record -> return! checkRecord targetType record |> state.Map RendererExpression.Record
+      | Form(formId as FormIdentifier formName, Unchecked) ->
+        match!
+          state.GetState()
+          |> state.Map(fun state -> state.FormTypes |> Map.tryFind formId)
+        with
+        | None ->
+          return!
+            state.Throw(
+              Errors.Singleton(Location.Unknown, $"Undefined form {formName}")
+              |> Errors.SetPriority ErrorPriority.High
+            )
+        | Some formType -> return Form(formId, formType)
+      | InlineForm inlineform -> return! checkInlineForm targetType inlineform |> state.Map InlineForm
+      | _ -> return! state.Throw(Errors.Singleton(Location.Unknown, $"Unsupported renderer {renderer}."))
+    }
+
+  let checkForm
+    (form: Form<Unchecked>)
+    : State<Form<TypeValue<'valueExt>>, FormTypeCheckingContext<'valueExt>, FormTypeCheckerState<'valueExt>, Errors> =
+    state {
+      let (TypeIdentifier formTypeId) = form.TypeIdentifier
+
+      match!
+        state.GetContext()
+        |> state.Map(fun ctxt -> ctxt.Types |> Map.tryFind formTypeId)
+      with
+      | None ->
+        return!
+          state.Throw(
+            Errors.Singleton(Location.Unknown, $"Type {formTypeId} is undefined.")
+            |> Errors.SetPriority ErrorPriority.High
+          )
+      | Some formType ->
+        let! recordType = assertType TypeValue.AsRecord formType
+        let! typeCheckedBody = checkFormBody form.Form recordType form.Body
+
+        let typeCheckedForm =
+          { Body = typeCheckedBody
+            Form = form.Form
+            IsEntryPoint = form.IsEntryPoint
+            RendererId = form.RendererId
+            Type = formType
+            TypeIdentifier = form.TypeIdentifier }
+
+        do!
+          state.SetState(fun state ->
+            { state with
+                FormTypes = state.FormTypes.Add(typeCheckedForm.Form, typeCheckedForm.Type) })
+
+        return typeCheckedForm
+    }
+
+  let checkFormDefinitions (formDefinition: FormDefinitions<Unchecked>) =
+    state {
+      let! checkedForms =
+        state.All(
+          formDefinition.Forms
+          |> OrderedMap.values
+          |> List.map (fun form -> checkForm form)
+        )
+
+      let checkedFormMap =
+        [ for form in checkedForms do
+            yield form.Form, form ]
+        |> OrderedMap.ofList
+
+      return { Forms = checkedFormMap }
+    }

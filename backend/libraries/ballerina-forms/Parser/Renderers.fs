@@ -977,6 +977,7 @@ module Renderers =
                    MethodLabels = actionLabels
                    VisibleColumns = visibleColumns
                    DisabledColumns = disabledColumns
+                   Tabs = { FormTabs = Map.empty }
                    DataContextColumns = dataContextColumns |}
                 |> FormBody.Table
           }

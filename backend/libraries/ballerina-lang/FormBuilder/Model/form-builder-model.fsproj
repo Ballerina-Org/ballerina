@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>form_builder_model.fsproj</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Explicitly exclude obsolete warnings as errors -->
+    <WarningsNotAsErrors>0044</WarningsNotAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="FormAST.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\ballerina-cat\ballerina-cat.fsproj" />
+    <ProjectReference Include="..\..\Next\Models\ballerina-lang-models.fsproj" />
+  </ItemGroup>
+
+</Project>

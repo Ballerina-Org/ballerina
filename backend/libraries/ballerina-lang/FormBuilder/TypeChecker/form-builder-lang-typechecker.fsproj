@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>form_builder_lang_typechecker.fsproj</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="TypeChecker.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\ballerina-cat\ballerina-cat.fsproj" />
+    <ProjectReference Include="..\..\..\ballerina-stdlib\ballerina-stdlib.fsproj" />
+    <ProjectReference Include="..\..\ballerina-lang-v1.fsproj" />
+    <ProjectReference Include="..\..\Next\Models\ballerina-lang-models.fsproj" />
+    <ProjectReference Include="..\..\Next\TypeChecker\ballerina-lang-typecheck.fsproj" />
+    <ProjectReference Include="..\..\Next\Stdlib\ballerina-lang-stdlib.fsproj" />
+    <ProjectReference Include="..\Model\form-builder-model.fsproj" />
+  </ItemGroup>
+
+</Project>
