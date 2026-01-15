@@ -625,7 +625,7 @@ export const TableAbstractRenderer = <
         CellTemplates.map((_, fieldName) =>
           props.context.preprocessedSpecContext != undefined &&
           props.context.preprocessedSpecContext.disabledFields.includes(
-            `[Values][element][${fieldName}]`,
+            `${props.context.usePreprocessor ? domNodeId : legacy_domNodeId}[${fieldName}]`,
           )
             ? ValueOrErrors.Default.return(fieldName)
             : ValueOrErrors.Default.return(null),
