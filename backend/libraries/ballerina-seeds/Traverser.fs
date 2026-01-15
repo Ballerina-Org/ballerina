@@ -73,12 +73,12 @@ module Traverser =
         match typeValue with
         | TypeValue.Imported x when x.Id.Name = "List" && List.length x.Arguments = 1 ->
           let! values = [ 0..2 ] |> List.map (fun _ -> (!) x.Arguments.Head) |> state.All
-          let listExtValue = ListValues >> Choice1Of5 >> ValueExt.ValueExt
+          let listExtValue = ListValues >> Choice1Of6 >> ValueExt.ValueExt
           let lv = List.Model.ListValues.List values |> listExtValue
           return Value.Ext lv
         | TypeValue.Imported x when x.Id.Name = "Option" && List.length x.Arguments = 1 ->
           let! value = (!) x.Arguments.Head
-          let ext = OptionValues >> Choice2Of5 >> ValueExt.ValueExt
+          let ext = OptionValues >> Choice2Of6 >> ValueExt.ValueExt
           let valueExt = Option.Model.OptionValues.Option(Some value) |> ext
           return Value.Ext valueExt
         | TypeValue.Imported _ ->

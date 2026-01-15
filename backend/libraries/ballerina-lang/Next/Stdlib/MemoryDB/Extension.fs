@@ -2,6 +2,8 @@ namespace Ballerina.DSL.Next.StdLib.MemoryDB
 
 [<AutoOpen>]
 module Extension =
+  open Ballerina.StdLib.String
+  open Ballerina.Collections.Option
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
   open Ballerina.LocalizedErrors
@@ -17,7 +19,7 @@ module Extension =
   open System
   open Ballerina.Cat.Collections.OrderedMap
 
-  let MemoryDBRunExtension<'ext>
+  let MemoryDBRunExtension<'ext when 'ext: comparison>
     (valueLens: PartialLens<'ext, MemoryDBValues<'ext>>)
     : TypeLambdaExtension<'ext, MemoryDBValues<'ext>> =
 
@@ -49,7 +51,10 @@ module Extension =
           |> Sum.mapRight (Errors.FromErrors Location.Unknown)
           |> reader.OfSum
 
-        return MemoryDBValues.TypeAppliedRun schema |> valueLens.Set |> Ext
+        return
+          MemoryDBValues.TypeAppliedRun(schema, { entities = Map.empty })
+          |> valueLens.Set
+          |> Ext
       }
 
     let evalToTypeApplicable
@@ -75,6 +80,7 @@ module Extension =
     let apply
       (_loc0: Location)
       (schema: Schema<'ext>)
+      (db: MutableMemoryDB<'ext>)
       (value: Value<TypeValue<'ext>, 'ext>)
       (_rest: List<Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext>>)
       : ExprEvaluator<'ext, Value<TypeValue<'ext>, 'ext>> =
@@ -86,7 +92,7 @@ module Extension =
               schema.Entities
               |> OrderedMap.toSeq
               |> Seq.map (fun (k, v) ->
-                k.Name |> ResolvedIdentifier.Create, MemoryDBValues.EntityRef(schema, v) |> valueLens.Set |> Ext)
+                k.Name |> ResolvedIdentifier.Create, MemoryDBValues.EntityRef(schema, db, v) |> valueLens.Set |> Ext)
               |> Map.ofSeq
             ) ]
           |> Map.ofList
@@ -97,7 +103,7 @@ module Extension =
             Expr.FromValue(value, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
             Expr.FromValue(arg, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
           )
-          |> Expr.Eval _rest
+          |> fun e -> Expr.Eval(NonEmptyList.OfList(e, _rest))
       }
 
     let evalToApplicable
@@ -111,13 +117,13 @@ module Extension =
           |> sum.OfOption((loc0, $"Error: cannot get value from extension") |> Errors.Singleton)
           |> reader.OfSum
 
-        let! schema =
+        let! schema, db =
           v
           |> MemoryDBValues.AsTypeAppliedRun
           |> sum.MapError(Errors.FromErrors loc0)
           |> reader.OfSum
 
-        return Applicable(fun arg -> apply loc0 schema arg _rest)
+        return Applicable(fun arg -> apply loc0 schema db arg _rest)
       }
 
     { ExtensionType = memoryDBRunId, memoryDBRunType, memoryDBRunKind
@@ -127,7 +133,7 @@ module Extension =
       EvalToTypeApplicable = evalToTypeApplicable
       EvalToApplicable = evalToApplicable }
 
-  let MemoryDBGetByIdExtension<'ext>
+  let MemoryDBGetByIdExtension<'ext when 'ext: comparison>
     (valueLens: PartialLens<'ext, MemoryDBValues<'ext>>)
     : OperationsExtension<'ext, MemoryDBValues<'ext>> =
 
@@ -176,9 +182,9 @@ module Extension =
       Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))))
 
     let getByIdOperation: OperationExtension<_, _> =
-      { Type = memoryDBGetByIdType
-        Kind = memoryDBGetByIdKind
-        Operation = MemoryDBValues.GetById {| EntityRef = None |}
+      { PublicIdentifiers =
+          Some
+          <| (memoryDBGetByIdType, memoryDBGetByIdKind, MemoryDBValues.GetById {| EntityRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -210,18 +216,27 @@ module Extension =
                   |> reader.OfSum
 
                 return MemoryDBValues.GetById({| EntityRef = Some v |}) |> valueLens.Set |> Ext
-              | Some(_schema, _entity) -> // the closure has the first operand - second step in the application
-                return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+              | Some(_schema, _db, _entity) -> // the closure has the first operand - second step in the application
+                let v =
+                  option {
+                    let! entity = _db.entities |> Map.tryFind _entity.Name
+                    let! value = entity |> Map.tryFind v
+                    return value
+                  }
+
+                match v with
+                | None -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                | Some value -> return Value.Sum({ Case = 2; Count = 2 }, value)
             } }
 
     { TypeVars = []
       Operations = [ memoryDBGetById, getByIdOperation ] |> Map.ofList }
 
-  let MemoryDBCreateExtension<'ext>
+  let MemoryDBCUDExtension<'ext when 'ext: comparison>
     (valueLens: PartialLens<'ext, MemoryDBValues<'ext>>)
     : OperationsExtension<'ext, MemoryDBValues<'ext>> =
 
-    let memoryDBCreateC =
+    let memoryDBCreateId =
       Identifier.FullyQualified([ "MemoryDB" ], "create")
       |> TypeCheckScope.Empty.Resolve
 
@@ -266,10 +281,456 @@ module Extension =
     let memoryDBCreateKind =
       Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))))
 
+    let memoryDBCalculatePropertyId =
+      Identifier.FullyQualified([ "MemoryDB" ], "@@@calculateSchemaProperty")
+      |> TypeCheckScope.Empty.Resolve
+
+    let CalculatePropertyOperation: OperationExtension<_, _> =
+      { PublicIdentifiers = None
+        OperationsLens =
+          valueLens
+          |> PartialLens.BindGet (function
+            | MemoryDBValues.EvalProperty _ as p -> Some p
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              let! op =
+                op
+                |> MemoryDBValues.AsEvalProperty
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              match op.Path with
+              | (segment_binding, p) :: ps ->
+                match p with
+                | SchemaPathTypeDecomposition.Field fieldName ->
+                  let! vFields = v |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                  let! vField =
+                    vFields
+                    |> Map.tryFind fieldName
+                    |> sum.OfOption(Errors.Singleton(loc0, $"Field {fieldName.Name} not found in record"))
+                    |> reader.OfSum
+
+                  let! valueWithProps =
+                    Expr.Apply(
+                      Expr.FromValue(
+                        MemoryDBValues.EvalProperty { op with Path = ps } |> valueLens.Set |> Ext,
+                        TypeValue.CreatePrimitive PrimitiveType.Unit,
+                        Kind.Star
+                      ),
+                      Expr.FromValue(vField, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    )
+                    |> fun e -> NonEmptyList.OfList(e, _rest)
+                    |> Expr.Eval
+                    |> reader.MapContext(
+                      match segment_binding with
+                      | Some id ->
+                        ExprEvalContext.Updaters.Values(
+                          Map.add (id.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) vField
+                        )
+                      | None -> id
+                    )
+
+                  let valueWithProps = Value.Record(vFields |> Map.add fieldName valueWithProps)
+                  return valueWithProps
+                | SchemaPathTypeDecomposition.Item fieldName ->
+                  let! vFields = v |> Value.AsTuple |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                  let! vField =
+                    vFields
+                    |> Seq.tryItem (fieldName.Index - 1)
+                    |> sum.OfOption(Errors.Singleton(loc0, $"Item {fieldName.Index} not found in tuple"))
+                    |> reader.OfSum
+
+                  let! valueWithProps =
+                    Expr.Apply(
+                      Expr.FromValue(
+                        MemoryDBValues.EvalProperty { op with Path = ps } |> valueLens.Set |> Ext,
+                        TypeValue.CreatePrimitive PrimitiveType.Unit,
+                        Kind.Star
+                      ),
+                      Expr.FromValue(vField, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    )
+                    |> fun e -> NonEmptyList.OfList(e, _rest)
+                    |> Expr.Eval
+                    |> reader.MapContext(
+                      match segment_binding with
+                      | Some id ->
+                        ExprEvalContext.Updaters.Values(
+                          Map.add (id.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) vField
+                        )
+                      | None -> id
+                    )
+
+                  let valueWithProps =
+                    Value.Tuple(
+                      vFields
+                      |> Seq.mapi (fun i v -> if i = fieldName.Index - 1 then valueWithProps else v)
+                      |> Seq.toList
+                    )
+
+                  return valueWithProps
+                | SchemaPathTypeDecomposition.UnionCase expectedCaseId ->
+                  let! actualCaseId, vCaseContent =
+                    v |> Value.AsUnion |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                  if actualCaseId.Name <> expectedCaseId.Name then
+                    return v
+                  else
+                    let! vCaseContentWithProps =
+                      Expr.Apply(
+                        Expr.FromValue(
+                          MemoryDBValues.EvalProperty { op with Path = ps } |> valueLens.Set |> Ext,
+                          TypeValue.CreatePrimitive PrimitiveType.Unit,
+                          Kind.Star
+                        ),
+                        Expr.FromValue(vCaseContent, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                      )
+                      |> fun e -> NonEmptyList.OfList(e, _rest)
+                      |> Expr.Eval
+                      |> reader.MapContext(
+                        match segment_binding with
+                        | Some id ->
+                          ExprEvalContext.Updaters.Values(
+                            Map.add (id.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) vCaseContent
+                          )
+                        | None -> id
+                      )
+
+                    let valueWithProps = Value.UnionCase(actualCaseId, vCaseContentWithProps)
+
+                    return valueWithProps
+                | SchemaPathTypeDecomposition.SumCase expectedCaseId ->
+                  let! actualCaseId, vCaseContent =
+                    v |> Value.AsSum |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                  if actualCaseId <> expectedCaseId then
+                    return v
+                  else
+                    let! vCaseContentWithProps =
+                      Expr.Apply(
+                        Expr.FromValue(
+                          MemoryDBValues.EvalProperty { op with Path = ps } |> valueLens.Set |> Ext,
+                          TypeValue.CreatePrimitive PrimitiveType.Unit,
+                          Kind.Star
+                        ),
+                        Expr.FromValue(vCaseContent, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                      )
+                      |> fun e -> NonEmptyList.OfList(e, _rest)
+                      |> Expr.Eval
+                      |> reader.MapContext(
+                        match segment_binding with
+                        | Some id ->
+                          ExprEvalContext.Updaters.Values(
+                            Map.add (id.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) vCaseContent
+                          )
+                        | None -> id
+                      )
+
+                    let valueWithProps = Value.Sum(actualCaseId, vCaseContentWithProps)
+
+                    return valueWithProps
+                | SchemaPathTypeDecomposition.Iterator iterator ->
+                  // iterator.Mapper(fun item -> evalProperty(ps, item))(v)
+                  // replace "item" with the binding name if present
+                  let lambda_var_name =
+                    match segment_binding with
+                    | Some id -> id.Name
+                    | None -> "item"
+
+                  let! res =
+                    Expr.Apply(
+                      Expr.Apply(
+                        iterator.Mapper,
+                        Expr.Lambda(
+                          Var.Create lambda_var_name,
+                          None,
+                          Expr.Apply(
+                            Expr.FromValue(
+                              MemoryDBValues.EvalProperty { op with Path = ps } |> valueLens.Set |> Ext,
+                              TypeValue.CreatePrimitive PrimitiveType.Unit,
+                              Kind.Star
+                            ),
+                            Expr.Lookup(lambda_var_name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
+                          )
+                        )
+                      ),
+                      Expr.FromValue(v, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    )
+                    |> fun e -> NonEmptyList.OfList(e, _rest)
+                    |> Expr.Eval
+
+                  return res
+              | [] ->
+                let! propertyValue = op.Body |> fun e -> NonEmptyList.OfList(e, _rest) |> Expr.Eval
+                let! vFields = v |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                return
+                  Value.Record(
+                    vFields
+                    |> Map.add (op.PropertyName.Name |> ResolvedIdentifier.Create) propertyValue
+                  )
+            } }
+
+    let calculateProps (v: Value<TypeValue<'ext>, 'ext>) (_entity: SchemaEntity<'ext>) =
+      List.fold
+        (fun acc prop ->
+          reader {
+            let! valueSoFar = acc
+
+            return!
+              Expr.Apply(
+                Expr.FromValue(
+                  MemoryDBValues.EvalProperty
+                    { PropertyName = prop.PropertyName
+                      Path = prop.Path
+                      Body = prop.Body }
+                  |> valueLens.Set
+                  |> Ext,
+                  TypeValue.CreatePrimitive PrimitiveType.Unit,
+                  Kind.Star
+                ),
+                Expr.FromValue(valueSoFar, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+              )
+              |> NonEmptyList.One
+              |> Expr.Eval
+              |> reader.MapContext(
+                ExprEvalContext.Updaters.Values(
+                  Map.add ("self" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) v
+                )
+              )
+          })
+        (reader { return v })
+        _entity.Properties
+
+
+    let memoryDBStripPropertyId =
+      Identifier.FullyQualified([ "MemoryDB" ], "@@@stripSchemaProperty")
+      |> TypeCheckScope.Empty.Resolve
+
+    let StripPropertyOperation: OperationExtension<_, _> =
+      { PublicIdentifiers = None
+        OperationsLens =
+          valueLens
+          |> PartialLens.BindGet (function
+            | MemoryDBValues.StripProperty _ as p -> Some p
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              let! op =
+                op
+                |> MemoryDBValues.AsStripProperty
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              match op.Path with
+              | (segment_binding, p) :: ps ->
+                match p with
+                | SchemaPathTypeDecomposition.Field fieldName ->
+                  let! vFields = v |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                  let! vField =
+                    vFields
+                    |> Map.tryFind fieldName
+                    |> sum.OfOption(Errors.Singleton(loc0, $"Field {fieldName.Name} not found in record"))
+                    |> reader.OfSum
+
+                  let! valueWithProps =
+                    Expr.Apply(
+                      Expr.FromValue(
+                        MemoryDBValues.StripProperty { op with Path = ps } |> valueLens.Set |> Ext,
+                        TypeValue.CreatePrimitive PrimitiveType.Unit,
+                        Kind.Star
+                      ),
+                      Expr.FromValue(vField, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    )
+                    |> fun e -> NonEmptyList.OfList(e, _rest)
+                    |> Expr.Eval
+                    |> reader.MapContext(
+                      match segment_binding with
+                      | Some id ->
+                        ExprEvalContext.Updaters.Values(
+                          Map.add (id.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) vField
+                        )
+                      | None -> id
+                    )
+
+                  let valueWithProps = Value.Record(vFields |> Map.add fieldName valueWithProps)
+                  return valueWithProps
+                | SchemaPathTypeDecomposition.Item fieldName ->
+                  let! vFields = v |> Value.AsTuple |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                  let! vField =
+                    vFields
+                    |> Seq.tryItem (fieldName.Index - 1)
+                    |> sum.OfOption(Errors.Singleton(loc0, $"Item {fieldName.Index} not found in tuple"))
+                    |> reader.OfSum
+
+                  let! valueWithProps =
+                    Expr.Apply(
+                      Expr.FromValue(
+                        MemoryDBValues.StripProperty { op with Path = ps } |> valueLens.Set |> Ext,
+                        TypeValue.CreatePrimitive PrimitiveType.Unit,
+                        Kind.Star
+                      ),
+                      Expr.FromValue(vField, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    )
+                    |> fun e -> NonEmptyList.OfList(e, _rest)
+                    |> Expr.Eval
+                    |> reader.MapContext(
+                      match segment_binding with
+                      | Some id ->
+                        ExprEvalContext.Updaters.Values(
+                          Map.add (id.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) vField
+                        )
+                      | None -> id
+                    )
+
+                  let valueWithProps =
+                    Value.Tuple(
+                      vFields
+                      |> Seq.mapi (fun i v -> if i = fieldName.Index - 1 then valueWithProps else v)
+                      |> Seq.toList
+                    )
+
+                  return valueWithProps
+                | SchemaPathTypeDecomposition.UnionCase expectedCaseId ->
+                  let! actualCaseId, vCaseContent =
+                    v |> Value.AsUnion |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                  if actualCaseId.Name <> expectedCaseId.Name then
+                    return v
+                  else
+                    let! vCaseContentWithProps =
+                      Expr.Apply(
+                        Expr.FromValue(
+                          MemoryDBValues.StripProperty { op with Path = ps } |> valueLens.Set |> Ext,
+                          TypeValue.CreatePrimitive PrimitiveType.Unit,
+                          Kind.Star
+                        ),
+                        Expr.FromValue(vCaseContent, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                      )
+                      |> fun e -> NonEmptyList.OfList(e, _rest)
+                      |> Expr.Eval
+                      |> reader.MapContext(
+                        match segment_binding with
+                        | Some id ->
+                          ExprEvalContext.Updaters.Values(
+                            Map.add (id.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) vCaseContent
+                          )
+                        | None -> id
+                      )
+
+                    let valueWithProps = Value.UnionCase(actualCaseId, vCaseContentWithProps)
+
+                    return valueWithProps
+                | SchemaPathTypeDecomposition.SumCase expectedCaseId ->
+                  let! actualCaseId, vCaseContent =
+                    v |> Value.AsSum |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                  if actualCaseId <> expectedCaseId then
+                    return v
+                  else
+                    let! vCaseContentWithProps =
+                      Expr.Apply(
+                        Expr.FromValue(
+                          MemoryDBValues.StripProperty { op with Path = ps } |> valueLens.Set |> Ext,
+                          TypeValue.CreatePrimitive PrimitiveType.Unit,
+                          Kind.Star
+                        ),
+                        Expr.FromValue(vCaseContent, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                      )
+                      |> fun e -> NonEmptyList.OfList(e, _rest)
+                      |> Expr.Eval
+                      |> reader.MapContext(
+                        match segment_binding with
+                        | Some id ->
+                          ExprEvalContext.Updaters.Values(
+                            Map.add (id.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) vCaseContent
+                          )
+                        | None -> id
+                      )
+
+                    let valueWithProps = Value.Sum(actualCaseId, vCaseContentWithProps)
+
+                    return valueWithProps
+                | SchemaPathTypeDecomposition.Iterator iterator ->
+                  // iterator.Mapper(fun item -> evalProperty(ps, item))(v)
+                  // replace "item" with the binding name if present
+                  let lambda_var_name =
+                    match segment_binding with
+                    | Some id -> id.Name
+                    | None -> "item"
+
+                  let! res =
+                    Expr.Apply(
+                      Expr.Apply(
+                        iterator.Mapper,
+                        Expr.Lambda(
+                          Var.Create lambda_var_name,
+                          None,
+                          Expr.Apply(
+                            Expr.FromValue(
+                              MemoryDBValues.StripProperty { op with Path = ps } |> valueLens.Set |> Ext,
+                              TypeValue.CreatePrimitive PrimitiveType.Unit,
+                              Kind.Star
+                            ),
+                            Expr.Lookup(lambda_var_name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
+                          )
+                        )
+                      ),
+                      Expr.FromValue(v, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    )
+                    |> fun e -> NonEmptyList.OfList(e, _rest)
+                    |> Expr.Eval
+
+                  return res
+              | [] ->
+
+                let! vFields = v |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                return Value.Record(vFields |> Map.remove (op.PropertyName.Name |> ResolvedIdentifier.Create))
+            } }
+
+    let stripProps (v: Value<TypeValue<'ext>, 'ext>) (_entity: SchemaEntity<'ext>) =
+      List.fold
+        (fun acc prop ->
+          reader {
+            let! valueSoFar = acc
+
+            return!
+              Expr.Apply(
+                Expr.FromValue(
+                  MemoryDBValues.StripProperty
+                    { PropertyName = prop.PropertyName
+                      Path = prop.Path
+                      Body = prop.Body }
+                  |> valueLens.Set
+                  |> Ext,
+                  TypeValue.CreatePrimitive PrimitiveType.Unit,
+                  Kind.Star
+                ),
+                Expr.FromValue(valueSoFar, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+              )
+              |> NonEmptyList.One
+              |> Expr.Eval
+              |> reader.MapContext(
+                ExprEvalContext.Updaters.Values(
+                  Map.add ("self" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) v
+                )
+              )
+          })
+        (reader { return v })
+        _entity.Properties
+
+
     let CreateOperation: OperationExtension<_, _> =
-      { Type = memoryDBCreateType
-        Kind = memoryDBCreateKind
-        Operation = MemoryDBValues.Create {| EntityRef = None |}
+      { PublicIdentifiers =
+          Some
+          <| (memoryDBCreateType, memoryDBCreateKind, MemoryDBValues.Create {| EntityRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -301,16 +762,26 @@ module Extension =
                   |> reader.OfSum
 
                 return MemoryDBValues.Create({| EntityRef = Some v |}) |> valueLens.Set |> Ext
-              | Some(_schema, _entity) -> // the closure has the first operand - second step in the application
-                return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+              | Some(_schema, _db, _entity) -> // the closure has the first operand - second step in the application
+                let! v = v |> Value.AsTuple |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                match v with
+                | [ _entityId; v ] ->
+                  let! valueWithProps = calculateProps v _entity
+
+                  do
+                    _db.entities <-
+                      _db.entities
+                      |> Map.change _entity.Name (function
+                        | Some entities -> Some(entities |> Map.add _entityId valueWithProps)
+                        | None -> Some(Map.empty |> Map.add _entityId valueWithProps))
+
+                  return Value.Sum({ Case = 2; Count = 2 }, valueWithProps)
+                | _ ->
+                  return!
+                    sum.Throw(Errors.Singleton(loc0, "Expected a tuple with 2 elements when creating DB entity"))
+                    |> reader.OfSum
             } }
-
-    { TypeVars = []
-      Operations = [ memoryDBCreateC, CreateOperation ] |> Map.ofList }
-
-  let MemoryDBUpdateExtension<'ext>
-    (valueLens: PartialLens<'ext, MemoryDBValues<'ext>>)
-    : OperationsExtension<'ext, MemoryDBValues<'ext>> =
 
     let memoryDBUpdateId =
       Identifier.FullyQualified([ "MemoryDB" ], "update")
@@ -361,9 +832,9 @@ module Extension =
       Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))))
 
     let UpdateOperation: OperationExtension<_, _> =
-      { Type = memoryDBUpdateType
-        Kind = memoryDBUpdateKind
-        Operation = MemoryDBValues.Update {| EntityRef = None |}
+      { PublicIdentifiers =
+          Some
+          <| (memoryDBUpdateType, memoryDBUpdateKind, MemoryDBValues.Update {| EntityRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -395,16 +866,51 @@ module Extension =
                   |> reader.OfSum
 
                 return MemoryDBValues.Update({| EntityRef = Some v |}) |> valueLens.Set |> Ext
-              | Some(_schema, _entity) -> // the closure has the first operand - second step in the application
-                return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+              | Some(_schema, _db, _entity) -> // the closure has the first operand - second step in the application
+
+                let! v = v |> Value.AsTuple |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                match v with
+                | [ _entityId; updateFunc ] ->
+                  let existingValue =
+                    option {
+                      let! entity = _db.entities |> Map.tryFind _entity.Name
+                      let! value = entity |> Map.tryFind _entityId
+                      return value
+                    }
+
+                  match existingValue with
+                  | None -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                  | Some existingValue ->
+                    let! existingValueWithoutProps = stripProps existingValue _entity
+
+                    let! updatedValue =
+                      Expr.Apply(
+                        Expr.FromValue(updateFunc, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
+                        Expr.FromValue(
+                          existingValueWithoutProps,
+                          TypeValue.CreatePrimitive PrimitiveType.Unit,
+                          Kind.Star
+                        )
+                      )
+                      |> NonEmptyList.One
+                      |> Expr.Eval
+
+                    let! valueWithProps = calculateProps updatedValue _entity
+
+                    do
+                      _db.entities <-
+                        _db.entities
+                        |> Map.change _entity.Name (function
+                          | Some entities -> Some(entities |> Map.add _entityId valueWithProps)
+                          | None -> Some(Map.empty |> Map.add _entityId valueWithProps))
+
+                    return Value.Sum({ Case = 2; Count = 2 }, valueWithProps)
+                | _ ->
+                  return!
+                    sum.Throw(Errors.Singleton(loc0, "Expected a tuple with 2 elements when updating DB entity"))
+                    |> reader.OfSum
             } }
-
-    { TypeVars = []
-      Operations = [ memoryDBUpdateId, UpdateOperation ] |> Map.ofList }
-
-  let MemoryDBDeleteExtension<'ext>
-    (valueLens: PartialLens<'ext, MemoryDBValues<'ext>>)
-    : OperationsExtension<'ext, MemoryDBValues<'ext>> =
 
     let memoryDBDeleteId =
       Identifier.FullyQualified([ "MemoryDB" ], "delete")
@@ -448,9 +954,9 @@ module Extension =
       Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))))
 
     let DeleteOperation: OperationExtension<_, _> =
-      { Type = memoryDBDeleteType
-        Kind = memoryDBDeleteKind
-        Operation = MemoryDBValues.Delete {| EntityRef = None |}
+      { PublicIdentifiers =
+          Some
+          <| (memoryDBDeleteType, memoryDBDeleteKind, MemoryDBValues.Delete {| EntityRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -461,7 +967,7 @@ module Extension =
             reader {
               let! op =
                 op
-                |> MemoryDBValues.AsUpdate
+                |> MemoryDBValues.AsDelete
                 |> sum.MapError(Errors.FromErrors loc0)
                 |> reader.OfSum
 
@@ -482,9 +988,15 @@ module Extension =
                   |> reader.OfSum
 
                 return MemoryDBValues.Delete({| EntityRef = Some v |}) |> valueLens.Set |> Ext
-              | Some(_schema, _entity) -> // the closure has the first operand - second step in the application
+              | Some(_schema, _db, _entity) -> // the closure has the first operand - second step in the application
                 return Value.Primitive(PrimitiveValue.Bool true)
             } }
 
     { TypeVars = []
-      Operations = [ memoryDBDeleteId, DeleteOperation ] |> Map.ofList }
+      Operations =
+        [ (memoryDBStripPropertyId, StripPropertyOperation)
+          (memoryDBCalculatePropertyId, CalculatePropertyOperation)
+          (memoryDBCreateId, CreateOperation)
+          (memoryDBUpdateId, UpdateOperation)
+          (memoryDBDeleteId, DeleteOperation) ]
+        |> Map.ofList }

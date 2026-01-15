@@ -23,7 +23,12 @@ module Operations =
         let values =
           opsExt.Operations
           |> Map.toSeq
-          |> Seq.fold (fun acc (caseId, caseExt) -> acc |> Map.add caseId (caseExt.Type, caseExt.Kind)) values
+          |> Seq.fold
+            (fun acc (caseId, caseExt) ->
+              match caseExt.PublicIdentifiers with
+              | None -> acc
+              | Some(t, k, _) -> acc |> Map.add caseId (t, k))
+            values
 
         { typeCheckContext with
             Values = values }
@@ -65,8 +70,11 @@ module Operations =
           |> Map.toSeq
           |> Seq.fold
             (fun acc (caseId, caseExt) ->
-              acc
-              |> Map.add caseId (caseExt.Operation |> caseExt.OperationsLens.Set |> Value.Ext))
+              match caseExt.PublicIdentifiers with
+              | None -> acc
+              | Some(_, _, publicIdentifiers) ->
+                acc
+                |> Map.add caseId (publicIdentifiers |> caseExt.OperationsLens.Set |> Value.Ext))
             values
 
         { evalContext with

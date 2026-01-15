@@ -26,7 +26,7 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Update="FSharp.Core" Version="9.0.303" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.7" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
         <PackageReference Include="FSharp.Data" Version="6.6.0" />
     </ItemGroup>
     <ItemGroup>

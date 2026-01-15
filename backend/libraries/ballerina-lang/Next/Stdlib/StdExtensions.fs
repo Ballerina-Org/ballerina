@@ -7,21 +7,31 @@ open Ballerina.DSL.Next.StdLib
 open Ballerina.DSL.Next.Types
 
 type ValueExt =
-  | ValueExt of Choice<ListExt, OptionExt, PrimitiveExt, CompositeTypeExt, MemoryDBExt>
+  | ValueExt of Choice<ListExt, OptionExt, PrimitiveExt, CompositeTypeExt, MemoryDBExt, MapExt>
 
   override self.ToString() =
     match self with
-    | ValueExt(Choice1Of5 ext) -> ext.ToString()
-    | ValueExt(Choice2Of5 ext) -> ext.ToString()
-    | ValueExt(Choice3Of5 ext) -> ext.ToString()
-    | ValueExt(Choice4Of5 ext) -> ext.ToString()
-    | ValueExt(Choice5Of5 ext) -> ext.ToString()
+    | ValueExt(Choice1Of6 ext) -> ext.ToString()
+    | ValueExt(Choice2Of6 ext) -> ext.ToString()
+    | ValueExt(Choice3Of6 ext) -> ext.ToString()
+    | ValueExt(Choice4Of6 ext) -> ext.ToString()
+    | ValueExt(Choice5Of6 ext) -> ext.ToString()
+    | ValueExt(Choice6Of6 ext) -> ext.ToString()
 
   static member Getters = {| ValueExt = fun (ValueExt e) -> e |}
 
   static member Updaters = {| ValueExt = fun u (ValueExt e) -> ValueExt(u e) |}
 
 and MemoryDBExt = MemoryDBValues of MemoryDB.Model.MemoryDBValues<ValueExt>
+
+and MapExt =
+  | MapOperations of Map.Model.MapOperations<ValueExt>
+  | MapValues of Map.Model.MapValues<ValueExt>
+
+  override self.ToString() : string =
+    match self with
+    | MapOperations ops -> ops.ToString()
+    | MapValues vals -> vals.ToString()
 
 and CompositeTypeExt =
   | CompositeType of Choice<DateOnlyExt, DateTimeExt, GuidExt, TimeSpanExt>
@@ -138,34 +148,44 @@ type StdExtensions =
         TimeSpan.Model.TimeSpanConstructors,
         PrimitiveValue,
         TimeSpan.Model.TimeSpanOperations<ValueExt>
-       > }
+       >
+    Map: TypeExtension<ValueExt, Unit, Map.Model.MapValues<ValueExt>, Map.Model.MapOperations<ValueExt>> }
 
 type ListExt with
   static member ValueLens =
     { Get =
         ValueExt.Getters.ValueExt
         >> (function
-        | Choice1Of5(ListValues x) -> Some x
+        | Choice1Of6(ListValues x) -> Some x
         | _ -> None)
-      Set = ListValues >> Choice1Of5 >> ValueExt.ValueExt }
+      Set = ListValues >> Choice1Of6 >> ValueExt.ValueExt }
 
 type MemoryDBExt with
   static member ValueLens =
     { Get =
         ValueExt.Getters.ValueExt
         >> (function
-        | Choice5Of5(MemoryDBExt.MemoryDBValues x) -> Some x
+        | Choice5Of6(MemoryDBExt.MemoryDBValues x) -> Some x
         | _ -> None)
-      Set = MemoryDBExt.MemoryDBValues >> Choice5Of5 >> ValueExt.ValueExt }
+      Set = MemoryDBExt.MemoryDBValues >> Choice5Of6 >> ValueExt.ValueExt }
 
 type OptionExt with
   static member ValueLens =
     { Get =
         ValueExt.Getters.ValueExt
         >> (function
-        | Choice2Of5(OptionValues x) -> Some x
+        | Choice2Of6(OptionValues x) -> Some x
         | _ -> None)
-      Set = OptionValues >> Choice2Of5 >> ValueExt.ValueExt }
+      Set = OptionValues >> Choice2Of6 >> ValueExt.ValueExt }
+
+type MapExt with
+  static member ValueLens =
+    { Get =
+        ValueExt.Getters.ValueExt
+        >> (function
+        | Choice6Of6(MapValues x) -> Some x
+        | _ -> None)
+      Set = MapValues >> Choice6Of6 >> ValueExt.ValueExt }
 
 let stdExtensions =
 
@@ -175,14 +195,8 @@ let stdExtensions =
   let memoryDBGetByIdExtension =
     MemoryDB.Extension.MemoryDBGetByIdExtension<ValueExt> MemoryDBExt.ValueLens
 
-  let memoryDBCreateExtension =
-    MemoryDB.Extension.MemoryDBCreateExtension<ValueExt> MemoryDBExt.ValueLens
-
-  let memoryDBUpdateExtension =
-    MemoryDB.Extension.MemoryDBUpdateExtension<ValueExt> MemoryDBExt.ValueLens
-
-  let memoryDBDeleteExtension =
-    MemoryDB.Extension.MemoryDBDeleteExtension<ValueExt> MemoryDBExt.ValueLens
+  let memoryDBCUDExtension =
+    MemoryDB.Extension.MemoryDBCUDExtension<ValueExt> MemoryDBExt.ValueLens
 
   let listExtension =
     List.Extension.ListExtension<ValueExt>
@@ -190,9 +204,9 @@ let stdExtensions =
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
-          | Choice1Of5(ListOperations x) -> Some x
+          | Choice1Of6(ListOperations x) -> Some x
           | _ -> None)
-        Set = ListOperations >> Choice1Of5 >> ValueExt.ValueExt }
+        Set = ListOperations >> Choice1Of6 >> ValueExt.ValueExt }
 
   let optionExtension =
     Option.Extension.OptionExtension<ValueExt>
@@ -200,39 +214,39 @@ let stdExtensions =
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
-          | Choice2Of5(OptionConstructors x) -> Some x
+          | Choice2Of6(OptionConstructors x) -> Some x
           | _ -> None)
-        Set = OptionConstructors >> Choice2Of5 >> ValueExt.ValueExt }
+        Set = OptionConstructors >> Choice2Of6 >> ValueExt.ValueExt }
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
-          | Choice2Of5(OptionOperations x) -> Some x
+          | Choice2Of6(OptionOperations x) -> Some x
           | _ -> None)
-        Set = OptionOperations >> Choice2Of5 >> ValueExt.ValueExt }
+        Set = OptionOperations >> Choice2Of6 >> ValueExt.ValueExt }
 
   let dateOnlyExtension =
     DateOnly.Extension.DateOnlyExtension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
-          | Choice4Of5(CompositeType(Choice1Of4(DateOnlyConstructors x))) -> Some x
+          | Choice4Of6(CompositeType(Choice1Of4(DateOnlyConstructors x))) -> Some x
           | _ -> None)
         Set =
           DateOnlyConstructors
           >> Choice1Of4
           >> CompositeType
-          >> Choice4Of5
+          >> Choice4Of6
           >> ValueExt.ValueExt }
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
-          | Choice4Of5(CompositeType(Choice1Of4(DateOnlyOperations x))) -> Some x
+          | Choice4Of6(CompositeType(Choice1Of4(DateOnlyOperations x))) -> Some x
           | _ -> None)
         Set =
           DateOnlyOperations
           >> Choice1Of4
           >> CompositeType
-          >> Choice4Of5
+          >> Choice4Of6
           >> ValueExt.ValueExt }
 
   let boolExtension =
@@ -240,78 +254,78 @@ let stdExtensions =
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
-          | Choice3Of5(BoolOperations x) -> Some x
+          | Choice3Of6(BoolOperations x) -> Some x
           | _ -> None)
-        Set = BoolOperations >> Choice3Of5 >> ValueExt.ValueExt }
+        Set = BoolOperations >> Choice3Of6 >> ValueExt.ValueExt }
 
   let int32Extension =
     Int32.Extension.Int32Extension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
-          | Choice3Of5(Int32Operations x) -> Some x
+          | Choice3Of6(Int32Operations x) -> Some x
           | _ -> None)
-        Set = Int32Operations >> Choice3Of5 >> ValueExt.ValueExt }
+        Set = Int32Operations >> Choice3Of6 >> ValueExt.ValueExt }
 
   let int64Extension =
     Int64.Extension.Int64Extension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
-          | Choice3Of5(Int64Operations x) -> Some x
+          | Choice3Of6(Int64Operations x) -> Some x
           | _ -> None)
-        Set = Int64Operations >> Choice3Of5 >> ValueExt.ValueExt }
+        Set = Int64Operations >> Choice3Of6 >> ValueExt.ValueExt }
 
   let float32Extension =
     Float32.Extension.Float32Extension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
-          | Choice3Of5(Float32Operations x) -> Some x
+          | Choice3Of6(Float32Operations x) -> Some x
           | _ -> None)
-        Set = Float32Operations >> Choice3Of5 >> ValueExt.ValueExt }
+        Set = Float32Operations >> Choice3Of6 >> ValueExt.ValueExt }
 
   let float64Extension =
     Float64.Extension.Float64Extension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
-          | Choice3Of5(Float64Operations x) -> Some x
+          | Choice3Of6(Float64Operations x) -> Some x
           | _ -> None)
-        Set = Float64Operations >> Choice3Of5 >> ValueExt.ValueExt }
+        Set = Float64Operations >> Choice3Of6 >> ValueExt.ValueExt }
 
   let decimalExtension =
     Decimal.Extension.DecimalExtension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
-          | Choice3Of5(DecimalOperations x) -> Some x
+          | Choice3Of6(DecimalOperations x) -> Some x
           | _ -> None)
-        Set = DecimalOperations >> Choice3Of5 >> ValueExt.ValueExt }
+        Set = DecimalOperations >> Choice3Of6 >> ValueExt.ValueExt }
 
   let dateTimeExtension =
     DateTime.Extension.DateTimeExtension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
-          | Choice4Of5(CompositeType(Choice2Of4(DateTimeConstructors x))) -> Some x
+          | Choice4Of6(CompositeType(Choice2Of4(DateTimeConstructors x))) -> Some x
           | _ -> None)
         Set =
           DateTimeConstructors
           >> Choice2Of4
           >> CompositeType
-          >> Choice4Of5
+          >> Choice4Of6
           >> ValueExt.ValueExt }
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
-          | Choice4Of5(CompositeType(Choice2Of4(DateTimeOperations x))) -> Some x
+          | Choice4Of6(CompositeType(Choice2Of4(DateTimeOperations x))) -> Some x
           | _ -> None)
         Set =
           DateTimeOperations
           >> Choice2Of4
           >> CompositeType
-          >> Choice4Of5
+          >> Choice4Of6
           >> ValueExt.ValueExt }
 
   let timeSpanExtension =
@@ -319,24 +333,24 @@ let stdExtensions =
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
-          | Choice4Of5(CompositeType(Choice4Of4(TimeSpanConstructors x))) -> Some x
+          | Choice4Of6(CompositeType(Choice4Of4(TimeSpanConstructors x))) -> Some x
           | _ -> None)
         Set =
           TimeSpanConstructors
           >> Choice4Of4
           >> CompositeType
-          >> Choice4Of5
+          >> Choice4Of6
           >> ValueExt.ValueExt }
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
-          | Choice4Of5(CompositeType(Choice4Of4(TimeSpanOperations x))) -> Some x
+          | Choice4Of6(CompositeType(Choice4Of4(TimeSpanOperations x))) -> Some x
           | _ -> None)
         Set =
           TimeSpanOperations
           >> Choice4Of4
           >> CompositeType
-          >> Choice4Of5
+          >> Choice4Of6
           >> ValueExt.ValueExt }
 
   let stringExtension =
@@ -344,37 +358,46 @@ let stdExtensions =
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
-          | Choice3Of5(StringOperations x) -> Some x
+          | Choice3Of6(StringOperations x) -> Some x
           | _ -> None)
-        Set = StringOperations >> Choice3Of5 >> ValueExt.ValueExt }
+        Set = StringOperations >> Choice3Of6 >> ValueExt.ValueExt }
 
   let guidExtension =
     Guid.Extension.GuidExtension<ValueExt>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
-          | Choice4Of5(CompositeType(Choice3Of4(GuidConstructors x))) -> Some x
+          | Choice4Of6(CompositeType(Choice3Of4(GuidConstructors x))) -> Some x
           | _ -> None)
         Set =
           GuidConstructors
           >> Choice3Of4
           >> CompositeType
-          >> Choice4Of5
+          >> Choice4Of6
           >> ValueExt.ValueExt }
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
-          | Choice4Of5(CompositeType(Choice3Of4(GuidOperations x))) -> Some x
+          | Choice4Of6(CompositeType(Choice3Of4(GuidOperations x))) -> Some x
           | _ -> None)
-        Set = GuidOperations >> Choice3Of4 >> CompositeType >> Choice4Of5 >> ValueExt.ValueExt }
+        Set = GuidOperations >> Choice3Of4 >> CompositeType >> Choice4Of6 >> ValueExt.ValueExt }
+
+  let mapExtension =
+    Map.Extension.MapExtension<ValueExt>
+      MapExt.ValueLens
+      { Get =
+          ValueExt.Getters.ValueExt
+          >> (function
+          | Choice6Of6(MapOperations x) -> Some x
+          | _ -> None)
+        Set = MapOperations >> Choice6Of6 >> ValueExt.ValueExt }
+      (Some ListExt.ValueLens)
 
   let context =
     LanguageContext<ValueExt>.Empty
     |> (memoryDBRunExtension |> TypeLambdaExtension.RegisterLanguageContext)
     |> (memoryDBGetByIdExtension |> OperationsExtension.RegisterLanguageContext)
-    |> (memoryDBCreateExtension |> OperationsExtension.RegisterLanguageContext)
-    |> (memoryDBUpdateExtension |> OperationsExtension.RegisterLanguageContext)
-    |> (memoryDBDeleteExtension |> OperationsExtension.RegisterLanguageContext)
+    |> (memoryDBCUDExtension |> OperationsExtension.RegisterLanguageContext)
     |> (listExtension |> TypeExtension.RegisterLanguageContext)
     |> (optionExtension |> TypeExtension.RegisterLanguageContext)
     |> (dateOnlyExtension |> TypeExtension.RegisterLanguageContext)
@@ -388,6 +411,7 @@ let stdExtensions =
     |> (float64Extension |> OperationsExtension.RegisterLanguageContext)
     |> (decimalExtension |> OperationsExtension.RegisterLanguageContext)
     |> (stringExtension |> OperationsExtension.RegisterLanguageContext)
+    |> (mapExtension |> TypeExtension.RegisterLanguageContext)
 
   { List = listExtension
     Int32 = int32Extension
@@ -400,5 +424,6 @@ let stdExtensions =
     DateTime = dateTimeExtension
     String = stringExtension
     Guid = guidExtension
-    TimeSpan = timeSpanExtension },
+    TimeSpan = timeSpanExtension
+    Map = mapExtension },
   context

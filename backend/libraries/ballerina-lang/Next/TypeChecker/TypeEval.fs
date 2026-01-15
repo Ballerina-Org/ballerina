@@ -131,9 +131,11 @@ module Eval =
 
                                   match segment with
                                   | (maybe_var_name, SchemaPathTypeDecompositionExpr.Field f) ->
-                                    let! t_record = t |> TypeValue.AsRecord |> ofSum
+                                    let! t_record = t |> TypeValue.AsRecordWithSourceMapping |> ofSum
+                                    let t_record_scope = t_record.typeCheckScopeSource
+                                    let t_record = t_record.value
 
-                                    let! (_, (f_t, f_k)) =
+                                    let! (f_i, (f_t, f_k)) =
                                       t_record
                                       |> OrderedMap.toSeq
                                       |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.LocalName)
@@ -149,16 +151,21 @@ module Eval =
                                     let next_segments =
                                       match maybe_var_name with
                                       | Some var_name ->
-                                        (Identifier.LocalScope var_name.Name |> ctx.Scope.Resolve, (next_t, f_k))
+                                        (Identifier.LocalScope var_name.Name |> TypeCheckScope.Empty.Resolve,
+                                         (next_t, f_k))
                                         :: segments_acc
                                       | None -> segments_acc
 
                                     return
-                                      next_t, next_segments, (SchemaPathTypeDecomposition.Field f) :: resolved_scope
+                                      next_t,
+                                      next_segments,
+                                      (maybe_var_name,
+                                       f_i.Name |> t_record_scope.Resolve |> SchemaPathTypeDecomposition.Field)
+                                      :: resolved_scope
                                   | (maybe_var_name, SchemaPathTypeDecompositionExpr.UnionCase f) ->
-                                    let! _, t_union = t |> TypeValue.AsUnion |> ofSum
+                                    let! _, t_union_scope, t_union = t |> TypeValue.AsUnionWithSourceMapping |> ofSum
 
-                                    let! (_, case_t) =
+                                    let! (case_i, case_t) =
                                       t_union
                                       |> OrderedMap.toSeq
                                       |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.LocalName)
@@ -171,7 +178,7 @@ module Eval =
                                     let next_segments =
                                       match maybe_var_name with
                                       | Some var_name ->
-                                        (Identifier.LocalScope var_name.Name |> ctx.Scope.Resolve,
+                                        (Identifier.LocalScope var_name.Name |> TypeCheckScope.Empty.Resolve,
                                          (next_t, Kind.Star))
                                         :: segments_acc
                                       | None -> segments_acc
@@ -179,7 +186,9 @@ module Eval =
                                     return
                                       next_t,
                                       next_segments,
-                                      (SchemaPathTypeDecomposition.UnionCase f) :: resolved_scope
+                                      (maybe_var_name,
+                                       case_i.Name |> t_union_scope.Resolve |> SchemaPathTypeDecomposition.UnionCase)
+                                      :: resolved_scope
                                   | (maybe_var_name, SchemaPathTypeDecompositionExpr.SumCase f) ->
                                     let! t_sum = t |> TypeValue.AsSum |> ofSum
 
@@ -202,7 +211,7 @@ module Eval =
                                       let next_segments =
                                         match maybe_var_name with
                                         | Some var_name ->
-                                          (Identifier.LocalScope var_name.Name |> ctx.Scope.Resolve,
+                                          (Identifier.LocalScope var_name.Name |> TypeCheckScope.Empty.Resolve,
                                            (next_t, Kind.Star))
                                           :: segments_acc
                                         | None -> segments_acc
@@ -210,7 +219,7 @@ module Eval =
                                       return
                                         next_t,
                                         next_segments,
-                                        (SchemaPathTypeDecomposition.SumCase f) :: resolved_scope
+                                        (maybe_var_name, SchemaPathTypeDecomposition.SumCase f) :: resolved_scope
                                   | (maybe_var_name, SchemaPathTypeDecompositionExpr.Item f) ->
                                     let! t_tuple = t |> TypeValue.AsTuple |> ofSum
 
@@ -233,13 +242,15 @@ module Eval =
                                       let next_segments =
                                         match maybe_var_name with
                                         | Some var_name ->
-                                          (Identifier.LocalScope var_name.Name |> ctx.Scope.Resolve,
+                                          (Identifier.LocalScope var_name.Name |> TypeCheckScope.Empty.Resolve,
                                            (next_t, Kind.Star))
                                           :: segments_acc
                                         | None -> segments_acc
 
                                       return
-                                        next_t, next_segments, (SchemaPathTypeDecomposition.Item f) :: resolved_scope
+                                        next_t,
+                                        next_segments,
+                                        (maybe_var_name, SchemaPathTypeDecomposition.Item f) :: resolved_scope
                                   | (maybe_var_name, SchemaPathTypeDecompositionExpr.Iterator it) ->
                                     let! container, _ = it.Container |> TypeExpr.Lookup |> (!)
                                     let! t_arg, _ = it.TypeDef |> TypeExpr.Lookup |> (!)
@@ -250,7 +261,7 @@ module Eval =
                                     let next_segments =
                                       match maybe_var_name with
                                       | Some var_name ->
-                                        (Identifier.LocalScope var_name.Name |> ctx.Scope.Resolve,
+                                        (Identifier.LocalScope var_name.Name |> TypeCheckScope.Empty.Resolve,
                                          (next_t, Kind.Star))
                                         :: segments_acc
                                       | None -> segments_acc
@@ -258,10 +269,11 @@ module Eval =
                                     return
                                       next_t,
                                       next_segments,
-                                      (SchemaPathTypeDecomposition.Iterator
-                                        {| Container = container
-                                           TypeDef = t_arg
-                                           Mapper = mapper |})
+                                      (maybe_var_name,
+                                       SchemaPathTypeDecomposition.Iterator
+                                         {| Container = container
+                                            TypeDef = t_arg
+                                            Mapper = mapper |})
                                       :: resolved_scope
                                 })
                               (state { return t, [], [] })
@@ -277,9 +289,10 @@ module Eval =
                             typeCheckExpr (Some p_decl_t) p.Body
                             |> state.MapContext(
                               TypeCheckContext.Updaters.Values(
-                                Map.add (Identifier.LocalScope "self" |> ctx.Scope.Resolve) (t, t_k)
+                                Map.add (Identifier.LocalScope "self" |> TypeCheckScope.Empty.Resolve) (t, t_k)
                                 >> path_scope
                               )
+                              >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
                             )
 
                           do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
@@ -305,20 +318,33 @@ module Eval =
                         | [] ->
                           let! fields = t |> TypeValue.AsRecord |> ofSum
 
-                          let fields =
+                          if
                             fields
-                            |> OrderedMap.add
-                              (name.Name |> Identifier.LocalScope |> TypeSymbol.Create)
-                              (result_t, Kind.Star)
+                            |> OrderedMap.toSeq
+                            |> Seq.filter (fun (k, _) -> k.Name.LocalName = name.Name)
+                            |> Seq.isEmpty
+                            |> not
+                          then
+                            return!
+                              (loc0,
+                               $"Error: a field with the same name as property {name.Name} already exists in record type {t}")
+                              |> Errors.Singleton
+                              |> state.Throw
+                          else
+                            let fields =
+                              fields
+                              |> OrderedMap.add
+                                (name.Name |> Identifier.LocalScope |> TypeSymbol.Create)
+                                (result_t, Kind.Star)
 
-                          return TypeValue.CreateRecord fields
-                        | (SchemaPathTypeDecomposition.Field f) :: path ->
+                            return TypeValue.CreateRecord fields
+                        | (_, SchemaPathTypeDecomposition.Field f) :: path ->
                           let! fields = t |> TypeValue.AsRecord |> ofSum
 
                           let! f_s, (f_t, f_k) =
                             fields
                             |> OrderedMap.toSeq
-                            |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.LocalName)
+                            |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.Name)
                             |> Sum.fromOption (fun () ->
                               (loc0, $"Error: cannot find field {f} in record type {t}") |> Errors.Singleton)
                             |> state.OfSum
@@ -328,13 +354,13 @@ module Eval =
                           let fields = fields |> OrderedMap.add f_s (f_t, f_k)
 
                           return TypeValue.CreateRecord fields
-                        | (SchemaPathTypeDecomposition.UnionCase f) :: path ->
+                        | (_, SchemaPathTypeDecomposition.UnionCase f) :: path ->
                           let! _, fields = t |> TypeValue.AsUnion |> ofSum
 
                           let! f_s, f_t =
                             fields
                             |> OrderedMap.toSeq
-                            |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.LocalName)
+                            |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.Name)
                             |> Sum.fromOption (fun () ->
                               (loc0, $"Error: cannot find field {f} in record type {t}") |> Errors.Singleton)
                             |> state.OfSum
@@ -344,7 +370,7 @@ module Eval =
                           let fields = fields |> OrderedMap.add f_s f_t
 
                           return TypeValue.CreateUnion fields
-                        | (SchemaPathTypeDecomposition.SumCase f) :: path ->
+                        | (_, SchemaPathTypeDecomposition.SumCase f) :: path ->
                           let! fields = t |> TypeValue.AsSum |> ofSum
 
                           let! f_t =
@@ -359,7 +385,7 @@ module Eval =
                           let fields = fields |> List.mapi (fun i ft -> if i = f.Case - 1 then f_t else ft)
 
                           return TypeValue.CreateSum fields
-                        | (SchemaPathTypeDecomposition.Item f) :: path ->
+                        | (_, SchemaPathTypeDecomposition.Item f) :: path ->
                           let! fields = t |> TypeValue.AsTuple |> ofSum
 
                           let! f_t =
@@ -374,7 +400,7 @@ module Eval =
                           let fields = fields |> List.mapi (fun i ft -> if i = f.Index - 1 then f_t else ft)
 
                           return TypeValue.CreateTuple fields
-                        | (SchemaPathTypeDecomposition.Iterator f) :: path ->
+                        | (_, SchemaPathTypeDecomposition.Iterator f) :: path ->
                           let f_t = f.TypeDef
                           let! f_t = f_t + (path, name, result_t)
 
@@ -505,7 +531,7 @@ module Eval =
                         let! t_map, _ =
                           context.Values
                           |> Map.tryFindWithError
-                            (it.Mapper |> context.Scope.Resolve)
+                            (it.Mapper |> TypeCheckScope.Empty.Resolve)
                             "mapper function"
                             it.Mapper.LocalName
                             loc0

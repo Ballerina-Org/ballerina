@@ -19,6 +19,10 @@
         <Compile Include="List/Patterns.fs" />
         <Compile Include="List/Extension.fs" />
 
+        <Compile Include="Map/Model.fs" />
+        <Compile Include="Map/Patterns.fs" />
+        <Compile Include="Map/Extension.fs" />
+
         <Compile Include="Int32/Model.fs" />
         <Compile Include="Int32/Patterns.fs" />
         <Compile Include="Int32/Extension.fs" />

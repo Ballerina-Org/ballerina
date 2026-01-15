@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <RootNamespace>Ballerina.DSL.FormBuilder.V2ToV1Bridge</RootNamespace>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Types\Types.fs" />
+        <Compile Include="Forms\Forms.fs" />
+        <Compile Include="ToV1Json.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!--
+        https://fsharp.github.io/fsharp-compiler-docs/fsharp-core-notes.html#How-to-explicitly-reference-FSharp-Core -->
+        <PackageReference Update="FSharp.Core" Version="9.0.303" />
+        <PackageReference Include="FSharp.Data" Version="6.6.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\ballerina-cat\ballerina-cat.fsproj" />
+        <ProjectReference Include="..\..\..\ballerina-lang\ballerina-lang-v1.fsproj" />
+        <ProjectReference Include="..\..\..\ballerina-lang\Next\ballerina-lang.fsproj" />
+        <ProjectReference Include="..\..\..\ballerina-lang\Next\Stdlib\ballerina-lang-stdlib.fsproj" />
+        <ProjectReference
+            Include="..\..\..\ballerina-lang\FormBuilder\Model\form-builder-model.fsproj" />
+    </ItemGroup>
+
+</Project>

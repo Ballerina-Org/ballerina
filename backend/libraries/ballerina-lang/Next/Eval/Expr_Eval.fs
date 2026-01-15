@@ -10,19 +10,13 @@ module Eval =
   open Ballerina.StdLib.String
   open Ballerina.StdLib.Object
   open System
-  open Ballerina.DSL.Next.Unification
-  open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Types.TypeChecker.Model
-  open Ballerina.DSL.Next.Types.TypeChecker.Expr
-  open Ballerina.DSL.Next.Types.TypeChecker.Eval
-  open Ballerina.DSL.Next.Types.Model
   open Ballerina
-  open Ballerina.StdLib.OrderPreservingMap
   open Ballerina.Cat.Collections.OrderedMap
-  open Ballerina.DSL.Next.Types.TypeChecker.Expr
+  open Ballerina.Collections.NonEmptyList
 
   type ExprEvalContextSymbols =
     { Types: Map<ResolvedIdentifier, TypeSymbol>
@@ -116,8 +110,8 @@ module Eval =
               |> Map.add (fVVar.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) argV
 
             let! res =
-              fvBody
-              |> Expr.Eval rest
+              NonEmptyList.OfList(fvBody, rest)
+              |> Expr.Eval
               |> reader.MapContext(ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) closure))
               |> reader.Catch
 
@@ -133,12 +127,12 @@ module Eval =
           |> reader.MapError(Errors.SetPriority ErrorPriority.High)
       }
 
+    // NOTE: expressions are concatenated in the order of the input (the returned value is of the type of the last expression)
     static member Eval<'valueExtension>
-      (rest: List<Expr<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>>)
-      (e: Expr<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>)
+      (NonEmptyList(e, rest): NonEmptyList<Expr<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>>)
       : ExprEvaluator<'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>> =
-      let (!) = Expr.Eval<'valueExtension> []
-      let (!!) = Expr.Eval<'valueExtension> rest
+      let (!) = NonEmptyList.One >> Expr.Eval<'valueExtension>
+      let (!!) = fun e -> Expr.Eval<'valueExtension>(NonEmptyList(e, rest))
       let loc0 = e.Location
 
       reader {
@@ -147,7 +141,7 @@ module Eval =
 
           match rest with
           | [] -> return Value.Primitive PrimitiveValue.Unit
-          | p :: rest -> return! Expr.Eval rest p
+          | p :: rest -> return! Expr.Eval(NonEmptyList.OfList(p, rest))
         | ExprRec.Primitive v -> return Value.Primitive v
         | ExprRec.If { Cond = cond
                        Then = thenBody

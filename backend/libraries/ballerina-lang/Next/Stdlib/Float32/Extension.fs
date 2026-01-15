@@ -25,9 +25,11 @@ module Extension =
 
     let plusOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32PlusId,
-      { Type = TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, float32TypeValue))
-        Kind = Kind.Star
-        Operation = Float32Operations.Plus {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, float32TypeValue)),
+              Kind.Star,
+              Float32Operations.Plus {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -63,9 +65,11 @@ module Extension =
 
     let minusOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32MinusId,
-      { Type = TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, float32TypeValue))
-        Kind = Kind.Star
-        Operation = Float32Operations.Minus {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, float32TypeValue)),
+              Kind.Star,
+              Float32Operations.Minus {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -101,9 +105,11 @@ module Extension =
 
     let divideOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32DivideId,
-      { Type = TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, float32TypeValue))
-        Kind = Kind.Star
-        Operation = Float32Operations.Divide {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, float32TypeValue)),
+              Kind.Star,
+              Float32Operations.Divide {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -139,9 +145,11 @@ module Extension =
 
     let powerOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32PowerId,
-      { Type = TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(int32TypeValue, float32TypeValue))
-        Kind = Kind.Star
-        Operation = Float32Operations.Power {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(int32TypeValue, float32TypeValue)),
+              Kind.Star,
+              Float32Operations.Power {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -183,9 +191,11 @@ module Extension =
 
     let modOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32ModId,
-      { Type = TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, float32TypeValue))
-        Kind = Kind.Star
-        Operation = Float32Operations.Mod {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, float32TypeValue)),
+              Kind.Star,
+              Float32Operations.Mod {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -221,9 +231,11 @@ module Extension =
 
     let equalOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32EqualId,
-      { Type = TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = Float32Operations.Equal {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, boolTypeValue)),
+              Kind.Star,
+              Float32Operations.Equal {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -259,9 +271,11 @@ module Extension =
 
     let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32NotEqualId,
-      { Type = TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = Float32Operations.NotEqual {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, boolTypeValue)),
+              Kind.Star,
+              Float32Operations.NotEqual {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -297,9 +311,11 @@ module Extension =
 
     let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32GreaterThanId,
-      { Type = TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = Float32Operations.GreaterThan {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, boolTypeValue)),
+              Kind.Star,
+              Float32Operations.GreaterThan {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -335,9 +351,11 @@ module Extension =
 
     let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32GreaterThanOrEqualId,
-      { Type = TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = Float32Operations.GreaterThanOrEqual {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, boolTypeValue)),
+              Kind.Star,
+              Float32Operations.GreaterThanOrEqual {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -376,9 +394,11 @@ module Extension =
 
     let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32LessThanId,
-      { Type = TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = Float32Operations.LessThan {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, boolTypeValue)),
+              Kind.Star,
+              Float32Operations.LessThan {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -414,9 +434,11 @@ module Extension =
 
     let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
       float32LessThanOrEqualId,
-      { Type = TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = Float32Operations.LessThanOrEqual {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(float32TypeValue, TypeValue.CreateArrow(float32TypeValue, boolTypeValue)),
+              Kind.Star,
+              Float32Operations.LessThanOrEqual {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function

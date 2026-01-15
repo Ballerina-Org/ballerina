@@ -26,9 +26,11 @@ module Extension =
 
     let plusOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64PlusId,
-      { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, int64TypeValue))
-        Kind = Kind.Star
-        Operation = Int64Operations.Plus {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, int64TypeValue)),
+              Kind.Star,
+              Int64Operations.Plus {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -65,9 +67,11 @@ module Extension =
 
     let minusOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64MinusId,
-      { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, int64TypeValue))
-        Kind = Kind.Star
-        Operation = Int64Operations.Minus {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, int64TypeValue)),
+              Kind.Star,
+              Int64Operations.Minus {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -104,9 +108,11 @@ module Extension =
 
     let divideOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64DivideId,
-      { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, int64TypeValue))
-        Kind = Kind.Star
-        Operation = Int64Operations.Divide {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, int64TypeValue)),
+              Kind.Star,
+              Int64Operations.Divide {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -142,9 +148,11 @@ module Extension =
 
     let powerOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64PowerId,
-      { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int32TypeValue, int64TypeValue))
-        Kind = Kind.Star
-        Operation = Int64Operations.Power {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int32TypeValue, int64TypeValue)),
+              Kind.Star,
+              Int64Operations.Power {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -186,9 +194,11 @@ module Extension =
 
     let modOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64ModId,
-      { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, int64TypeValue))
-        Kind = Kind.Star
-        Operation = Int64Operations.Mod {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, int64TypeValue)),
+              Kind.Star,
+              Int64Operations.Mod {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -224,9 +234,11 @@ module Extension =
 
     let equalOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64EqualId,
-      { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = Int64Operations.Equal {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, boolTypeValue)),
+              Kind.Star,
+              Int64Operations.Equal {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -262,9 +274,11 @@ module Extension =
 
     let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64NotEqualId,
-      { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = Int64Operations.NotEqual {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, boolTypeValue)),
+              Kind.Star,
+              Int64Operations.NotEqual {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -300,9 +314,11 @@ module Extension =
 
     let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64GreaterThanId,
-      { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = Int64Operations.GreaterThan {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, boolTypeValue)),
+              Kind.Star,
+              Int64Operations.GreaterThan {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -338,9 +354,11 @@ module Extension =
 
     let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64GreaterThanOrEqualId,
-      { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = Int64Operations.GreaterThanOrEqual {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, boolTypeValue)),
+              Kind.Star,
+              Int64Operations.GreaterThanOrEqual {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -379,9 +397,11 @@ module Extension =
 
     let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64LessThanId,
-      { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = Int64Operations.LessThan {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, boolTypeValue)),
+              Kind.Star,
+              Int64Operations.LessThan {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -417,9 +437,11 @@ module Extension =
 
     let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Int64Operations<'ext>> =
       int64LessThanOrEqualId,
-      { Type = TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = Int64Operations.LessThanOrEqual {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(int64TypeValue, TypeValue.CreateArrow(int64TypeValue, boolTypeValue)),
+              Kind.Star,
+              Int64Operations.LessThanOrEqual {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function

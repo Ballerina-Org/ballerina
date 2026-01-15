@@ -14,7 +14,9 @@ open Ballerina.DSL.Next.StdLib
 open Ballerina.DSL.Next.Runners
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.StdLib.List.Model
+open Ballerina.DSL.Next.StdLib.Map.Model
 open Ballerina.Cat.Collections.OrderedMap
+open Ballerina.Collections.NonEmptyList
 
 let context = Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval.context
 
@@ -41,7 +43,7 @@ let private run (program: string) =
       //   |> Map.ofList
       }
 
-    let evalResult = Expr.Eval [] program |> Reader.Run evalContext
+    let evalResult = Expr.Eval(NonEmptyList.One program) |> Reader.Run evalContext
 
     match evalResult with
     | Left value -> Sum.Left(value, typeValue)
@@ -455,7 +457,7 @@ in f true, f false
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Tuple [ Ext(ValueExt(Choice1Of5(_v1))); Ext(ValueExt(Choice1Of5(_v2))) ] -> Assert.Pass()
+    | Tuple [ Ext(ValueExt(Choice1Of6(_v1))); Ext(ValueExt(Choice1Of6(_v2))) ] -> Assert.Pass()
     | _ -> Assert.Fail($"Expected a tuple of two list values, got {value.AsFSharpString}")
 
   | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
@@ -478,13 +480,13 @@ in l,l1,l2,l3,l4
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Tuple [ Ext(ValueExt(Choice1Of5(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
+    | Tuple [ Ext(ValueExt(Choice1Of6(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
                                                                                              Value.Primitive(Int32 -2)
                                                                                              Value.Primitive(Int32 3) ]))))
-              Ext(ValueExt(Choice1Of5(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Bool true)
+              Ext(ValueExt(Choice1Of6(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Bool true)
                                                                                              Value.Primitive(Bool false)
                                                                                              Value.Primitive(Bool true) ]))))
-              Ext(ValueExt(Choice1Of5(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
+              Ext(ValueExt(Choice1Of6(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
                                                                                              Value.Primitive(Int32 3) ]))))
               Value.Primitive(Int32 2)
               Value.Primitive(Bool false) ] -> Assert.Pass()
@@ -563,7 +565,7 @@ in List::append [string] l1 l2
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Ext(ValueExt(Choice1Of5(ListExt.ListValues(List.Model.ListValues.List [ Value.Primitive(String "hello")
+    | Ext(ValueExt(Choice1Of6(ListExt.ListValues(List.Model.ListValues.List [ Value.Primitive(String "hello")
                                                                               Value.Primitive(String " ")
                                                                               Value.Primitive(String "world")
                                                                               Value.Primitive(String "bonjour")
@@ -1030,7 +1032,7 @@ in match _ with
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Ext(ValueExt.ValueExt(Choice1Of5(ListExt.ListValues(ListValues.List([ Value.Record _ ]))))) ->
+    | Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Record _ ]))))) ->
       Assert.Pass $"Correctly evaluated to a record"
     | _ -> Assert.Fail $"Expected a record, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
@@ -1059,7 +1061,7 @@ in match _ with
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Ext(ValueExt.ValueExt(Choice1Of5(ListExt.ListValues(ListValues.List([ Value.Record _ ]))))) ->
+    | Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Record _ ]))))) ->
       Assert.Pass $"Correctly evaluated to a record"
     | _ -> Assert.Fail $"Expected a record, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
@@ -1155,8 +1157,8 @@ in singleton [int32] 10, singleton [bool] true
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Tuple [ Value.Ext(ValueExt.ValueExt(Choice1Of5(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Int32 10) ])))))
-                    Value.Ext(ValueExt.ValueExt(Choice1Of5(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ]))))) ] ->
+    | Value.Tuple [ Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Int32 10) ])))))
+                    Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ]))))) ] ->
       Assert.Pass $"Correctly evaluated to (10, true)"
     | _ -> Assert.Fail $"Expected a record, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
@@ -1177,8 +1179,8 @@ in singleton 10, singleton true
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Tuple [ Value.Ext(ValueExt.ValueExt(Choice1Of5(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Int32 10) ])))))
-                    Value.Ext(ValueExt.ValueExt(Choice1Of5(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ]))))) ] ->
+    | Value.Tuple [ Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Int32 10) ])))))
+                    Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ]))))) ] ->
       Assert.Pass $"Correctly evaluated to (10, true)"
     | _ -> Assert.Fail $"Expected a record, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
@@ -1285,4 +1287,62 @@ in id [SomethingWithEvidence]
 
       Assert.Pass $"Correctly evaluated"
     | _ -> Assert.Fail $"Expected a lambda, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
+
+[<Test>]
+let ``LangNext-Integration map set, empty, map operations succeed`` () =
+  let program =
+    """
+let empty = Map::Empty [string][int32] ()
+in let m = Map::set [string][int32] ("key1", 1) empty
+in let n = Map::set [string][int32] ("key2", 2) m
+in Map::map (fun (v:int32) -> v + 100) n
+      """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Ext(ValueExt.ValueExt(Choice6Of6(MapExt.MapValues(MapValues.Map(map))))) ->
+      let mapList = map |> Map.toList
+
+      match mapList with
+      | [ (Value.Primitive(PrimitiveValue.String "key1"), Value.Primitive(PrimitiveValue.Int32 101))
+          (Value.Primitive(PrimitiveValue.String "key2"), Value.Primitive(PrimitiveValue.Int32 102)) ]
+      | [ (Value.Primitive(PrimitiveValue.String "key2"), Value.Primitive(PrimitiveValue.Int32 102))
+          (Value.Primitive(PrimitiveValue.String "key1"), Value.Primitive(PrimitiveValue.Int32 101)) ] -> Assert.Pass()
+      | _ -> Assert.Fail $"Expected map with key1->101 and key2->102, got {mapList}"
+    | _ -> Assert.Fail $"Expected a map, got {value}"
+  | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
+
+[<Test>]
+let ``LangNext-Integration map maptoList operation succeeds`` () =
+  let program =
+    """
+let empty = Map::Empty [string][int32] ()
+in let m = Map::set [string][int32] ("key1", 1) (Map::set [string][int32] ("key2", 2) empty)
+in Map::maptoList [string][int32] m
+      """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(value, _typeValue) ->
+    match value with
+    | Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List(listValues))))) ->
+      let tuple1 =
+        Value.Tuple
+          [ Value.Primitive(PrimitiveValue.String "key1")
+            Value.Primitive(PrimitiveValue.Int32 1) ]
+
+      let tuple2 =
+        Value.Tuple
+          [ Value.Primitive(PrimitiveValue.String "key2")
+            Value.Primitive(PrimitiveValue.Int32 2) ]
+
+      match listValues with
+      | [ v1; v2 ] when (v1 = tuple1 && v2 = tuple2) || (v1 = tuple2 && v2 = tuple1) -> Assert.Pass()
+      | _ -> Assert.Fail $"Expected list with [(key1, 1), (key2, 2)] in any order, got {listValues}"
+    | _ -> Assert.Fail $"Expected a list, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"

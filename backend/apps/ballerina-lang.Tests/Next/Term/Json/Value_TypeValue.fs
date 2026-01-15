@@ -108,7 +108,7 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
       """{"discriminator": "list", "value":[{"discriminator":"int32","value":"1"},{"discriminator":"int32","value":"2"}]}""",
       Value.Ext(
         ValueExt(
-          Choice1Of5(
+          Choice1Of6(
             ListValues(
               List.Model.ListValues.List
                 [ PrimitiveValue.Int32 1 |> Value.Primitive
@@ -120,11 +120,11 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
       """{"discriminator": "option", "value":{"discriminator":"int32","value":"1"}}""",
       Value.Ext(
         ValueExt(
-          Choice2Of5(OptionValues(Option.Model.OptionValues.Option(PrimitiveValue.Int32 1 |> Value.Primitive |> Some)))
+          Choice2Of6(OptionValues(Option.Model.OptionValues.Option(PrimitiveValue.Int32 1 |> Value.Primitive |> Some)))
         )
       )
       """{"discriminator": "option", "value":null}""",
-      Value.Ext(ValueExt(Choice2Of5(OptionValues(Option.Model.OptionValues.Option None)))) ]
+      Value.Ext(ValueExt(Choice2Of6(OptionValues(Option.Model.OptionValues.Option None)))) ]
 
   for json, expected in testCases do
     (expected, JsonValue.Parse json)
