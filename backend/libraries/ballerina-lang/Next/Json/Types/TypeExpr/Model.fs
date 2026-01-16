@@ -59,4 +59,6 @@ module TypeExpr =
         | TypeExpr.FromTypeValue _ -> failwith "Not implemented"
         | TypeExpr.Imported _ -> failwith "Imported ToJson not implemented"
         | TypeExpr.Schema _ -> failwith "Schema ToJson not implemented"
+        | TypeExpr.Entities _ -> failwith "Entities ToJson not implemented"
+        | TypeExpr.Entity _ -> failwith "Entity ToJson not implemented"
         | TypeExpr.RecordDes(_, _) -> failwith "RecordDes ToJson not implemented"

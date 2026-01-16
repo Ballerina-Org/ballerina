@@ -31,6 +31,13 @@ module Unification =
 
         match t with
         | TypeExpr.RecordDes(t, _) -> return! TypeExpr.FreeVariables t
+        | TypeExpr.Entities s -> return! TypeExpr.FreeVariables s
+        | TypeExpr.Entity(s, e, e_with_props, id) ->
+          let! sVars = TypeExpr.FreeVariables s
+          let! eVars = TypeExpr.FreeVariables e
+          let! eWithPropsVars = TypeExpr.FreeVariables e_with_props
+          let! idVars = TypeExpr.FreeVariables id
+          return Set.unionMany [ sVars; eVars; eWithPropsVars; idVars ]
         | TypeExpr.Schema s ->
           return!
             s.Entities

@@ -87,6 +87,24 @@ module Eval =
             | None -> TypeExprSourceMapping.OriginTypeExpr t
 
           match t with
+          | TypeExpr.Entities schema ->
+            let! schema, schema_k = !schema
+            do! schema_k |> Kind.AsSchema |> ofSum |> state.Ignore
+
+            let! a_schema = schema |> TypeValue.AsSchema |> ofSum
+            return TypeValue.CreateEntities a_schema, Kind.Star
+          | TypeExpr.Entity(s, e, e_with_props, id) ->
+            let! s, s_k = !s
+            do! s_k |> Kind.AsSchema |> ofSum |> state.Ignore
+            let! e, e_k = !e
+            do! e_k |> Kind.AsStar |> ofSum |> state.Ignore
+            let! e_with_props, e_with_props_k = !e_with_props
+            do! e_with_props_k |> Kind.AsStar |> ofSum |> state.Ignore
+            let! id, id_k = !id
+            do! id_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+            let! a_schema = s |> TypeValue.AsSchema |> ofSum
+            return TypeValue.CreateEntity(a_schema, e, e_with_props, id), Kind.Star
           | TypeExpr.Schema schema ->
             let repeatedEntityNames =
               schema.Entities
@@ -656,10 +674,32 @@ module Eval =
                     state {
                       match v with
                       | Identifier.LocalScope "SchemaEntities" ->
-                        return TypeValue.Lookup v, Kind.Arrow(Kind.Schema, Kind.Star)
+                        return
+                          TypeValue.CreateLambda(
+                            TypeParameter.Create("s", Kind.Schema),
+                            TypeExpr.Entities(TypeExpr.Lookup(Identifier.LocalScope "s"))
+                          ),
+                          Kind.Arrow(Kind.Schema, Kind.Star)
                       | Identifier.LocalScope "SchemaEntity" ->
                         return
-                          TypeValue.Lookup v,
+                          TypeValue.CreateLambda(
+                            TypeParameter.Create("s", Kind.Schema),
+                            TypeExpr.Lambda(
+                              TypeParameter.Create("e", Kind.Star),
+                              TypeExpr.Lambda(
+                                TypeParameter.Create("e_with_props", Kind.Star),
+                                TypeExpr.Lambda(
+                                  TypeParameter.Create("id", Kind.Star),
+                                  TypeExpr.Entity(
+                                    TypeExpr.Lookup(Identifier.LocalScope "s"),
+                                    TypeExpr.Lookup(Identifier.LocalScope "e"),
+                                    TypeExpr.Lookup(Identifier.LocalScope "e_with_props"),
+                                    TypeExpr.Lookup(Identifier.LocalScope "id")
+                                  )
+                                )
+                              )
+                            )
+                          ),
                           Kind.Arrow(
                             Kind.Schema,
                             Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
@@ -819,33 +859,7 @@ module Eval =
                       |> error
                       |> state.Throw
                   else
-                    match f_l with
-                    | Identifier.LocalScope "SchemaEntities" ->
-                      let! a_schema = a |> TypeValue.AsSchema |> ofSum
-                      return TypeValue.CreateEntities a_schema, Kind.Star
-                    | Identifier.LocalScope "SchemaEntity" ->
-                      let! a_schema = a |> TypeValue.AsSchema |> ofSum
-
-                      return
-                        TypeValue.CreateLambda(
-                          TypeParameter.Create("e", Kind.Star),
-                          TypeExpr.Lambda(
-                            TypeParameter.Create("e_with_props", Kind.Star),
-                            TypeExpr.Lambda(
-                              TypeParameter.Create("id", Kind.Star),
-                              TypeExpr.FromTypeValue(
-                                TypeValue.CreateEntity(
-                                  a_schema,
-                                  TypeValue.Lookup(Identifier.LocalScope "e"),
-                                  TypeValue.Lookup(Identifier.LocalScope "e_with_props"),
-                                  TypeValue.Lookup(Identifier.LocalScope "id")
-                                )
-                              )
-                            )
-                          )
-                        ),
-                        Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
-                    | _ -> return TypeValue.CreateApplication(SymbolicTypeApplication.Lookup(f_l, a)), f_k_o
+                    return TypeValue.CreateApplication(SymbolicTypeApplication.Lookup(f_l, a)), f_k_o
                 })
                 (state {
                   let! { value = f_app } = f |> TypeValue.AsApplication |> ofSum
