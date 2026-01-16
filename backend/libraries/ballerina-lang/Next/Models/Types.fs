@@ -268,6 +268,8 @@ module Model =
     | Exclude of TypeExpr<'valueExt> * TypeExpr<'valueExt>
     | Rotate of TypeExpr<'valueExt>
     | Schema of SchemaExpr<'valueExt>
+    | Entities of TypeExpr<'valueExt>
+    | Entity of TypeExpr<'valueExt> * TypeExpr<'valueExt> * TypeExpr<'valueExt> * TypeExpr<'valueExt>
     | Imported of ImportedTypeValue<'valueExt>
 
     override self.ToString() =
@@ -309,6 +311,8 @@ module Model =
       | Exclude(t1, t2) -> $"Exclude[{t1}, {t2}]"
       | Rotate t -> $"Rotate[{t}]"
       | Schema s -> $"Schema[{s.Entities.Length} Entities, {s.Relations.Length} Relations]"
+      | Entities e -> $"Entities[{e}]"
+      | Entity(s, e, e_with_props, id) -> $"SchemaEntity[Schema[{s}][{e}][{e_with_props}][{id}]"
 
 
   and TypeBinding<'valueExt> =
