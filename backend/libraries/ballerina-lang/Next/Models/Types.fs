@@ -329,9 +329,9 @@ module Model =
       | Application(f, a) -> $"({f})[{a}]"
 
   and SchemaPathTypeDecomposition<'valueExt> =
-    | Field of Identifier
+    | Field of ResolvedIdentifier
     | Item of TupleDesSelector
-    | UnionCase of Identifier
+    | UnionCase of ResolvedIdentifier
     | SumCase of SumConsSelector
     | Iterator of
       {| Mapper: Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>
@@ -346,7 +346,7 @@ module Model =
       | SumCase name -> $"SumCase({name})"
       | Iterator collection -> $"Iterator({collection.Mapper}::{collection.TypeDef})"
 
-  and SchemaPathSegment<'valueExt> = SchemaPathTypeDecomposition<'valueExt>
+  and SchemaPathSegment<'valueExt> = Option<LocalIdentifier> * SchemaPathTypeDecomposition<'valueExt>
   and SchemaPath<'valueExt> = List<SchemaPathSegment<'valueExt>>
 
   and SchemaEntityProperty<'valueExt> =

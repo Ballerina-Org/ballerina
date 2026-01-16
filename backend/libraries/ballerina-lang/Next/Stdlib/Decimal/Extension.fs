@@ -27,9 +27,9 @@ module Extension =
 
     let toStringOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalToStringId,
-      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateString())
-        Kind = Kind.Star
-        Operation = DecimalOperations.String
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateString()), Kind.Star, DecimalOperations.String)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -62,9 +62,11 @@ module Extension =
 
     let plusOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalPlusId,
-      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue))
-        Kind = Kind.Star
-        Operation = DecimalOperations.Plus {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue)),
+              Kind.Star,
+              DecimalOperations.Plus {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -102,9 +104,11 @@ module Extension =
 
     let minusOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalMinusId,
-      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue))
-        Kind = Kind.Star
-        Operation = DecimalOperations.Minus {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue)),
+              Kind.Star,
+              DecimalOperations.Minus {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -140,9 +144,11 @@ module Extension =
 
     let productOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalProductId,
-      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue))
-        Kind = Kind.Star
-        Operation = DecimalOperations.Times {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue)),
+              Kind.Star,
+              DecimalOperations.Times {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -178,9 +184,11 @@ module Extension =
 
     let divideOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalDivideId,
-      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue))
-        Kind = Kind.Star
-        Operation = DecimalOperations.Divide {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue)),
+              Kind.Star,
+              DecimalOperations.Divide {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -216,9 +224,11 @@ module Extension =
 
     let powerOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalPowerId,
-      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(int32TypeValue, decimalTypeValue))
-        Kind = Kind.Star
-        Operation = DecimalOperations.Power {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(int32TypeValue, decimalTypeValue)),
+              Kind.Star,
+              DecimalOperations.Power {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -260,9 +270,11 @@ module Extension =
 
     let modOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalModId,
-      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue))
-        Kind = Kind.Star
-        Operation = DecimalOperations.Mod {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, decimalTypeValue)),
+              Kind.Star,
+              DecimalOperations.Mod {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -298,9 +310,11 @@ module Extension =
 
     let equalOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalEqualId,
-      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = DecimalOperations.Equal {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue)),
+              Kind.Star,
+              DecimalOperations.Equal {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -336,9 +350,11 @@ module Extension =
 
     let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalNotEqualId,
-      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = DecimalOperations.NotEqual {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue)),
+              Kind.Star,
+              DecimalOperations.NotEqual {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -374,9 +390,11 @@ module Extension =
 
     let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalGreaterThanId,
-      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = DecimalOperations.GreaterThan {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue)),
+              Kind.Star,
+              DecimalOperations.GreaterThan {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -412,9 +430,11 @@ module Extension =
 
     let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalGreaterThanOrEqualId,
-      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = DecimalOperations.GreaterThanOrEqual {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue)),
+              Kind.Star,
+              DecimalOperations.GreaterThanOrEqual {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -453,9 +473,11 @@ module Extension =
 
     let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalLessThanId,
-      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = DecimalOperations.LessThan {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue)),
+              Kind.Star,
+              DecimalOperations.LessThan {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -491,9 +513,11 @@ module Extension =
 
     let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
       decimalLessThanOrEqualId,
-      { Type = TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = DecimalOperations.LessThanOrEqual {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateArrow(decimalTypeValue, boolTypeValue)),
+              Kind.Star,
+              DecimalOperations.LessThanOrEqual {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function

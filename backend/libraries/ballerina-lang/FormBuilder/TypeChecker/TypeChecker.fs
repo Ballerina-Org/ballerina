@@ -15,6 +15,7 @@ module TypeChecker =
   open Ballerina.DSL.Next.Types.TypeChecker.LiftOtherSteps
 
   let listExtension = (fst stdExtensions).List
+  let mapExtension = (fst stdExtensions).Map
 
   let makeListType (typeArgument: TypeValue<'valueExt>) =
     { ImportedTypeValue.Id = listExtension.TypeName |> fst
@@ -23,6 +24,16 @@ module TypeChecker =
         listExtension.TypeVars
         |> List.map (fun (v, k) -> TypeParameter.Create(v.Name, k))
       Arguments = [ typeArgument ]
+      UnionLike = None
+      RecordLike = None }
+
+  let makeMapType (keyType: TypeValue<'valueExt>) (valueType: TypeValue<'valueExt>) =
+    { ImportedTypeValue.Id = mapExtension.TypeName |> fst
+      Sym = mapExtension.TypeName |> snd
+      Parameters =
+        mapExtension.TypeVars
+        |> List.map (fun (v, k) -> TypeParameter.Create(v.Name, k))
+      Arguments = [ keyType; valueType ]
       UnionLike = None
       RecordLike = None }
 
@@ -60,6 +71,29 @@ module TypeChecker =
         return!
           state.Throw(
             Errors.Singleton(Location.Unknown, $"Expected list but {importedType.Id} was given.")
+            |> Errors.SetPriority ErrorPriority.High
+          )
+    }
+
+  let assertMap (targetType: TypeValue<'valueExt>) =
+    state {
+      let! importedType = assertType TypeValue.AsImported targetType
+
+      if importedType.Id = (mapExtension.TypeName |> fst) then
+        match importedType.Arguments with
+        | [ keyType; valueType ] -> return keyType, valueType
+        | _ ->
+          return!
+            state.Throw(
+              Errors.Singleton(
+                Location.Unknown,
+                $"Expected two type arguments for map but {importedType.Arguments.Length} were given."
+              )
+            )
+      else
+        return!
+          state.Throw(
+            Errors.Singleton(Location.Unknown, $"Expected map but {importedType.Id} was given.")
             |> Errors.SetPriority ErrorPriority.High
           )
     }
@@ -145,24 +179,7 @@ module TypeChecker =
       | PrimitiveRendererKind.Unit -> return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.Unit)
     }
 
-  let rec checkMap (targetType: TypeValue<'valueExt>) (mapRenderer: MapRenderer<Unchecked>) =
-    state {
-      let! keyType, valueType = assertType TypeValue.AsMap targetType |> state.Map(fun mapType -> mapType.value)
-      let! keyExpr = checkRenderer keyType mapRenderer.Key
-      let! valueExpr = checkRenderer valueType mapRenderer.Value
-
-      do!
-        TypeValue.Unify(Location.Unknown, targetType, TypeValue.CreateMap(keyExpr.Type, valueExpr.Type))
-        |> runUnification
-
-      return
-        { Map = mapRenderer.Map
-          Key = keyExpr
-          Value = valueExpr
-          Type = targetType }
-    }
-
-  and checkTuple (targetType: TypeValue<'valueExt>) (tupleRenderer: TupleRenderer<Unchecked>) =
+  let rec checkTuple (targetType: TypeValue<'valueExt>) (tupleRenderer: TupleRenderer<Unchecked>) =
     state {
       let! tupleTargetItemTypes = assertType TypeValue.AsTuple targetType
 
@@ -413,6 +430,27 @@ module TypeChecker =
       return
         { Element = rendererElementTypedExpr
           List = listRenderer.List
+          Type = targetType }
+    }
+
+  and checkMap (targetType: TypeValue<'valueExt>) (mapRenderer: MapRenderer<Unchecked>) =
+    state {
+      let! keyType, valueType = assertMap targetType
+      let! keyExpr = checkRenderer keyType mapRenderer.Key
+      let! valueExpr = checkRenderer valueType mapRenderer.Value
+
+      do!
+        TypeValue.Unify(
+          Location.Unknown,
+          targetType,
+          makeMapType keyExpr.Type valueExpr.Type |> TypeValue.CreateImported
+        )
+        |> runUnification
+
+      return
+        { Map = mapRenderer.Map
+          Key = keyExpr
+          Value = valueExpr
           Type = targetType }
     }
 

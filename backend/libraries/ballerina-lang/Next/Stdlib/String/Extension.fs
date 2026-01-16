@@ -28,9 +28,9 @@ module Extension =
 
     let lengthOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringLengthId,
-      { Type = TypeValue.CreateArrow(stringTypeValue, int32TypeValue)
-        Kind = Kind.Star
-        Operation = StringOperations.Length
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(stringTypeValue, int32TypeValue), Kind.Star, StringOperations.Length)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -63,9 +63,11 @@ module Extension =
 
     let plusOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringPlusId,
-      { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, stringTypeValue))
-        Kind = Kind.Star
-        Operation = StringOperations.Concat {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, stringTypeValue)),
+              Kind.Star,
+              StringOperations.Concat {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -103,9 +105,11 @@ module Extension =
 
     let equalOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringEqualId,
-      { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = StringOperations.Equal {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue)),
+              Kind.Star,
+              StringOperations.Equal {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -141,9 +145,11 @@ module Extension =
 
     let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringNotEqualId,
-      { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = StringOperations.NotEqual {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue)),
+              Kind.Star,
+              StringOperations.NotEqual {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -179,9 +185,11 @@ module Extension =
 
     let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringGreaterThanId,
-      { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = StringOperations.GreaterThan {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue)),
+              Kind.Star,
+              StringOperations.GreaterThan {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -217,9 +225,11 @@ module Extension =
 
     let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringGreaterThanOrEqualId,
-      { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = StringOperations.GreaterThanOrEqual {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue)),
+              Kind.Star,
+              StringOperations.GreaterThanOrEqual {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -258,9 +268,11 @@ module Extension =
 
     let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringLessThanId,
-      { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = StringOperations.LessThan {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue)),
+              Kind.Star,
+              StringOperations.LessThan {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -296,9 +308,11 @@ module Extension =
 
     let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
       stringLessThanOrEqualId,
-      { Type = TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = StringOperations.LessThanOrEqual {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue)),
+              Kind.Star,
+              StringOperations.LessThanOrEqual {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function

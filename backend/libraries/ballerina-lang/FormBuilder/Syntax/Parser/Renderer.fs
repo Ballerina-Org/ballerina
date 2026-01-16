@@ -37,6 +37,7 @@ module Parser =
     parser.Exactly(fun t ->
       match t.Token with
       | Token.Identifier id -> Some id
+      | Token.Keyword k -> k.ToString() |> Some
       | _ -> None)
 
 

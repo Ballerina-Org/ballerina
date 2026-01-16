@@ -24,9 +24,7 @@ module Model =
          > }
 
   and OperationExtension<'ext, 'extOperations> =
-    { Type: TypeValue<'ext> // "Int -> Int -> Int"
-      Kind: Kind // *
-      Operation: 'extOperations
+    { PublicIdentifiers: Option<TypeValue<'ext> * Kind * 'extOperations>
       OperationsLens: PartialLens<'ext, 'extOperations> // lens to access the value inside the extension value
       Apply:
         Location

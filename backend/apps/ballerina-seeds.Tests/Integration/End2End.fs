@@ -222,7 +222,7 @@ let ``Seeds: List extension`` () =
 
         let! listValues =
           match choice with
-          | Choice1Of5(ListExt.ListValues v) -> sum.Return v
+          | Choice1Of6(ListExt.ListValues v) -> sum.Return v
           | _ -> sum.Throw(Ballerina.Errors.Errors.Singleton "Expected List, got other ext")
 
         let (List.Model.ListValues.List values) = listValues

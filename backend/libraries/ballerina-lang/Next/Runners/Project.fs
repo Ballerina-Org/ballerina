@@ -246,6 +246,61 @@ It could be because the cache structure is outdated, and is expected in such cas
     abstract_build_cache hddCache (ctx0, st0)
 
   type ProjectBuildConfiguration with
+    static member ParseFile<'valueExt when 'valueExt: comparison>
+      (file: FileBuildConfiguration)
+      : Sum<ParserResult<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors>, Errors> =
+      sum {
+        let initialLocation = Location.Initial file.FileName.Path
+        let parserStopwatch = System.Diagnostics.Stopwatch.StartNew()
+
+        let! ParserResult(actual, _) =
+          tokens
+          |> Parser.Run(file.Content() |> Seq.toList, initialLocation)
+          |> sum.MapError fst
+
+        do parserStopwatch.Stop()
+
+        do parserStopwatch.Start()
+
+        let! parserResult =
+          Parser.Expr.program ()
+          |> Parser.Run(actual, initialLocation)
+          |> sum.MapError fst
+
+        do parserStopwatch.Stop()
+        do Console.WriteLine $"Parsed {file.FileName.Path}\nin {parserStopwatch.ElapsedMilliseconds} ms"
+
+        parserResult
+      }
+
+    static member TypeCheck<'valueExt when 'valueExt: comparison>
+      (file: FileBuildConfiguration)
+      : Sum<ParserResult<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors>, Errors> =
+      sum {
+        let initialLocation = Location.Initial file.FileName.Path
+        let parserStopwatch = System.Diagnostics.Stopwatch.StartNew()
+
+        let! ParserResult(actual, _) =
+          tokens
+          |> Parser.Run(file.Content() |> Seq.toList, initialLocation)
+          |> sum.MapError fst
+
+        do parserStopwatch.Stop()
+
+        do parserStopwatch.Start()
+
+        let! parserResult =
+          Parser.Expr.program ()
+          |> Parser.Run(actual, initialLocation)
+          |> sum.MapError fst
+
+        do parserStopwatch.Stop()
+        do Console.WriteLine $"Parsed {file.FileName.Path}\nin {parserStopwatch.ElapsedMilliseconds} ms"
+
+        parserResult
+      }
+
+
     static member BuildCached<'valueExt when 'valueExt: comparison>
       (cache: ProjectCache<'valueExt>)
       (project: ProjectBuildConfiguration)
@@ -256,35 +311,14 @@ It could be because the cache structure is outdated, and is expected in such cas
           Errors
          >
       =
+
       sum {
         let! expressions, finalContext, finalState =
           cache.Fold project.Files (fun (file, index) ->
             state {
+              let! ParserResult(program, _) = file |> ProjectBuildConfiguration.ParseFile |> state.OfSum
+
               let! ctx, st = state.GetState()
-
-              let initialLocation = Location.Initial file.FileName.Path
-              let parserStopwatch = System.Diagnostics.Stopwatch.StartNew()
-
-              let! (ParserResult(actual, _)) =
-                tokens
-                |> Parser.Run(file.Content() |> Seq.toList, initialLocation)
-                |> sum.MapError fst
-                |> state.OfSum
-
-              do parserStopwatch.Stop()
-
-              do parserStopwatch.Start()
-
-              let! ParserResult(program, _) =
-                Parser.Expr.program ()
-                |> Parser.Run(actual, initialLocation)
-                |> sum.MapError fst
-                |> state.OfSum
-
-              do parserStopwatch.Stop()
-
-              do Console.WriteLine $"Parsed {file.FileName.Path}\nin {parserStopwatch.ElapsedMilliseconds} ms"
-
               let typeCheckerStopwatch = System.Diagnostics.Stopwatch.StartNew()
 
               let! (typeCheckedExpr, typeValue, _, ctx'), st' =

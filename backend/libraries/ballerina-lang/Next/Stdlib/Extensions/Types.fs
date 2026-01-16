@@ -16,6 +16,7 @@ module Types =
   open Ballerina.DSL.Next.Terms
   open Ballerina.StdLib.OrderPreservingMap
   open Ballerina.Cat.Collections.OrderedMap
+  open Ballerina.Collections.NonEmptyList
 
   type TypeExtension<'e, 'extConstructors, 'extValues, 'extOperations> with
     static member RegisterTypeCheckContext<'ext when 'ext: comparison>
@@ -117,7 +118,8 @@ module Types =
 
                           return!
                             handlerBody
-                            |> Expr.Eval []
+                            |> NonEmptyList.One
+                            |> Expr.Eval
                             |> reader.MapContext(
                               ExprEvalContext.Updaters.Values(
                                 Map.add (handlerVar.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) v

@@ -24,9 +24,11 @@ module Extension =
 
     let andOperation: ResolvedIdentifier * OperationExtension<'ext, BoolOperations<'ext>> =
       boolAndId,
-      { Type = TypeValue.CreateArrow(boolTypeValue, TypeValue.CreateArrow(boolTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = BoolOperations.And {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(boolTypeValue, TypeValue.CreateArrow(boolTypeValue, boolTypeValue)),
+              Kind.Star,
+              BoolOperations.And {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -63,9 +65,11 @@ module Extension =
 
     let orOperation: ResolvedIdentifier * OperationExtension<'ext, BoolOperations<'ext>> =
       boolOrId,
-      { Type = TypeValue.CreateArrow(boolTypeValue, TypeValue.CreateArrow(boolTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = BoolOperations.Or {| v1 = None |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(boolTypeValue, TypeValue.CreateArrow(boolTypeValue, boolTypeValue)),
+              Kind.Star,
+              BoolOperations.Or {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -102,9 +106,9 @@ module Extension =
 
     let notOperation: ResolvedIdentifier * OperationExtension<'ext, BoolOperations<'ext>> =
       boolNotId,
-      { Type = TypeValue.CreateArrow(boolTypeValue, boolTypeValue)
-        Kind = Kind.Star
-        Operation = BoolOperations.Not {| v1 = () |}
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(boolTypeValue, boolTypeValue), Kind.Star, BoolOperations.Not {| v1 = () |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function

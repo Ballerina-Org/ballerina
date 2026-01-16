@@ -261,10 +261,28 @@ module Patterns =
         | _ -> return! $"Error: expected union type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
+    static member AsUnionWithSourceMapping(t: TypeValue<'valueExt>) =
+      sum {
+        match t with
+        | TypeValue.Union { typeCheckScopeSource = source
+                            value = cases } -> return ([], source, cases)
+        | TypeValue.Lambda { value = type_par, TypeExpr.FromTypeValue body } ->
+          let! type_pars, source, cases = TypeValue.AsUnionWithSourceMapping body
+          return type_par :: type_pars, source, cases
+        | _ -> return! $"Error: expected union type, got {t}" |> Errors.Singleton |> sum.Throw
+      }
+
     static member AsRecord(t: TypeValue<'valueExt>) =
       sum {
         match t with
         | TypeValue.Record(fields) -> return fields.value
+        | _ -> return! $"Error: expected record type, got {t}" |> Errors.Singleton |> sum.Throw
+      }
+
+    static member AsRecordWithSourceMapping(t: TypeValue<'valueExt>) =
+      sum {
+        match t with
+        | TypeValue.Record(fields) -> return fields
         | _ -> return! $"Error: expected record type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 

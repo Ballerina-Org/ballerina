@@ -1,4 +1,4 @@
-﻿module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval
+module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval
 
 open NUnit.Framework
 open FSharp.Data
@@ -36,6 +36,7 @@ open Ballerina.DSL.Next.StdLib.Guid
 open Ballerina.DSL.Next.StdLib.TimeSpan
 open Ballerina.DSL.Next.StdLib
 open Ballerina.DSL.Next.StdLib.Extensions
+open Ballerina.Collections.NonEmptyList
 
 let private (!) = Identifier.LocalScope
 let private (=>) t f = Identifier.FullyQualified([ t ], f)
@@ -55,24 +56,26 @@ let ops, context = stdExtensions
 
 let typeCheck = Expr.TypeCheck()
 
+let private runTypeCheck (program: Expr<TypeExpr<ValueExt>, Identifier, ValueExt>) =
+  typeCheck None program
+  |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+
+let private eval (program: Expr<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt>) =
+  Expr.Eval(NonEmptyList.One program) |> Reader.Run context.ExprEvalContext
+
 [<Test>]
 let ``LangNext-ExprEval (generic) Apply of custom Option type succeeds`` () =
   let program =
     Expr.TypeApply(Expr.Lookup(Identifier.FullyQualified([ "Option" ], "Some")), TypeExpr.Primitive PrimitiveType.Int32)
 
-  let initialContext = context.TypeCheckContext
-
-  let initialState = context.TypeCheckState
-  let actual = typeCheck None program |> State.Run(initialContext, initialState)
+  let actual = runTypeCheck program
 
   match actual with
   | Left((program, _typeValue, _, _), _state) ->
-    let initialContext = context.ExprEvalContext
-
-    let actual = Expr.Eval [] program |> Reader.Run initialContext
+    let actual = eval program
 
     let expected: Value<TypeValue<ValueExt>, ValueExt> =
-      Choice2Of5(OptionConstructors Option_Some) |> ValueExt |> Ext
+      Choice2Of6(OptionConstructors Option_Some) |> ValueExt |> Ext
 
     match actual with
     | Sum.Left actual -> Assert.That(actual, Is.EqualTo(expected))
@@ -92,19 +95,14 @@ let ``LangNext-ExprEval construction of custom Option.Some succeeds`` () =
       Expr.Primitive(PrimitiveValue.Int32 100)
     )
 
-  let initialContext = context.TypeCheckContext
-
-  let initialState = context.TypeCheckState
-  let actual = typeCheck None program |> State.Run(initialContext, initialState)
+  let actual = runTypeCheck program
 
   match actual with
   | Left((program, _typeValue, _, _), _state) ->
-    let initialContext = context.ExprEvalContext
-
-    let actual = Expr.Eval [] program |> Reader.Run initialContext
+    let actual = eval program
 
     let expected: Value<TypeValue<ValueExt>, ValueExt> =
-      Choice2Of5(OptionValues(Option(Some(Value.Primitive(PrimitiveValue.Int32 100)))))
+      Choice2Of6(OptionValues(Option(Some(Value.Primitive(PrimitiveValue.Int32 100)))))
       |> ValueExt
       |> Ext
 
@@ -126,19 +124,14 @@ let ``LangNext-ExprEval construction of custom Option.None succeeds`` () =
       Expr.Primitive(PrimitiveValue.Unit)
     )
 
-  let initialContext = context.TypeCheckContext
-
-  let initialState = context.TypeCheckState
-  let actual = typeCheck None program |> State.Run(initialContext, initialState)
+  let actual = runTypeCheck program
 
   match actual with
   | Left((program, _typeValue, _, _), _state) ->
-    let initialContext = context.ExprEvalContext
-
-    let actual = Expr.Eval [] program |> Reader.Run initialContext
+    let actual = eval program
 
     let expected: Value<TypeValue<ValueExt>, ValueExt> =
-      Choice2Of5(OptionValues(Option None)) |> ValueExt |> Ext
+      Choice2Of6(OptionValues(Option None)) |> ValueExt |> Ext
 
     match actual with
     | Sum.Left actual -> Assert.That(actual, Is.EqualTo(expected))
@@ -155,15 +148,13 @@ let ``Int32 addition operation works`` () =
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -181,15 +172,13 @@ let ``Int32 multiplication operation works`` () =
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -207,15 +196,13 @@ let ``Int32 subtraction operation works`` () =
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -233,15 +220,13 @@ let ``Int32 equal operation works`` () =
       Expr.Primitive(PrimitiveValue.Int32 5)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -259,15 +244,13 @@ let ``Int32 not equal operation works`` () =
       Expr.Primitive(PrimitiveValue.Int32 5)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -285,15 +268,13 @@ let ``Int32 greater than operation works`` () =
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -311,15 +292,13 @@ let ``Int32 greater than or equal operation works`` () =
       Expr.Primitive(PrimitiveValue.Int32 5)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -337,15 +316,13 @@ let ``Int64 power operation works`` () =
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt64()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -363,15 +340,13 @@ let ``Int64 mod operation works`` () =
       Expr.Primitive(PrimitiveValue.Int64 5L)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt64()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -390,15 +365,13 @@ let ``Float32 plus operation works`` () =
       Expr.Primitive(PrimitiveValue.Float32 3.0f)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -416,15 +389,13 @@ let ``Float32 minus operation works`` () =
       Expr.Primitive(PrimitiveValue.Float32 5.0f)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -442,15 +413,13 @@ let ``Float32 divide operation works`` () =
       Expr.Primitive(PrimitiveValue.Float32 3.0f)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -468,15 +437,13 @@ let ``Float32 power operation works`` () =
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -494,15 +461,13 @@ let ``Float32 mod operation works`` () =
       Expr.Primitive(PrimitiveValue.Float32 3.0f)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -520,15 +485,13 @@ let ``Float32 equal operation works`` () =
       Expr.Primitive(PrimitiveValue.Float32 5.0f)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -546,15 +509,13 @@ let ``Float32 not equal operation works`` () =
       Expr.Primitive(PrimitiveValue.Float32 5.0f)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -572,15 +533,13 @@ let ``Float32 greater than operation works`` () =
       Expr.Primitive(PrimitiveValue.Float32 3.0f)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -598,15 +557,13 @@ let ``Float32 greater than or equal operation works`` () =
       Expr.Primitive(PrimitiveValue.Float32 5.0f)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -623,15 +580,13 @@ let ``Decimal equal operation works`` () =
       Expr.Primitive(PrimitiveValue.Decimal 12.0M)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -649,15 +604,13 @@ let ``Decimal not equal operation works`` () =
       Expr.Primitive(PrimitiveValue.Decimal 12.0M)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -675,15 +628,13 @@ let ``Decimal greater than operation works`` () =
       Expr.Primitive(PrimitiveValue.Decimal 1.0M)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -701,15 +652,13 @@ let ``Decimal greater than or equal operation works`` () =
       Expr.Primitive(PrimitiveValue.Decimal 12.0M)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -727,15 +676,13 @@ let ``Decimal power operation works`` () =
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateDecimal()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -752,15 +699,13 @@ let ``String concatenation operation works`` () =
       Expr.Primitive(PrimitiveValue.String "World")
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateString()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -778,15 +723,13 @@ let ``String equal operation works`` () =
       Expr.Primitive(PrimitiveValue.String "Hello")
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -804,15 +747,13 @@ let ``String not equal operation works`` () =
       Expr.Primitive(PrimitiveValue.String "World")
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -830,15 +771,13 @@ let ``String greater than operation works`` () =
       Expr.Primitive(PrimitiveValue.String "World")
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -856,15 +795,13 @@ let ``String greater than or equal operation works`` () =
       Expr.Primitive(PrimitiveValue.String "Hello")
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -882,15 +819,13 @@ let ``Bool and operation works`` () =
       Expr.Primitive(PrimitiveValue.Bool false)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -908,15 +843,13 @@ let ``Bool or operation works`` () =
       Expr.Primitive(PrimitiveValue.Bool true)
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -931,15 +864,13 @@ let ``Bool not operation works`` () =
   let program =
     Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "bool" ], "!")), Expr.Primitive(PrimitiveValue.Bool true))
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -960,15 +891,13 @@ let ``Guid equal operation works`` () =
       Expr.Primitive(PrimitiveValue.Guid(System.Guid("88888888-4444-4444-4444-121212121212")))
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -989,15 +918,13 @@ let ``Guid not equal operation works`` () =
       Expr.Primitive(PrimitiveValue.Guid(System.Guid("88888888-4444-4444-4444-121212121212")))
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -1015,15 +942,13 @@ let ``DateOnly diff operation works`` () =
       Expr.Primitive(PrimitiveValue.Date(System.DateOnly(1, 1, 1)))
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateTimeSpan()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -1047,15 +972,13 @@ let ``DateOnly toDateTime operation works`` () =
           Expr.Primitive(PrimitiveValue.Int32(40)) ]
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateDateTime()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -1073,15 +996,13 @@ let ``DateOnly getYear operation works`` () =
       Expr.Primitive(PrimitiveValue.Date(System.DateOnly(2025, 10, 10)))
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -1099,15 +1020,13 @@ let ``DateOnly getMonth operation works`` () =
       Expr.Primitive(PrimitiveValue.Date(System.DateOnly(2025, 10, 10)))
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -1125,15 +1044,13 @@ let ``DateOnly getDay operation works`` () =
       Expr.Primitive(PrimitiveValue.Date(System.DateOnly(2025, 10, 10)))
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -1151,15 +1068,13 @@ let ``DateOnly getDayOfWeek operation works`` () =
       Expr.Primitive(PrimitiveValue.Date(System.DateOnly(2025, 10, 10)))
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -1177,15 +1092,13 @@ let ``DateOnly getDayOfYear operation works`` () =
       Expr.Primitive(PrimitiveValue.Date(System.DateOnly(2025, 10, 10)))
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -1203,15 +1116,13 @@ let ``DateTime toDateOnly operation works`` () =
       Expr.Primitive(PrimitiveValue.DateTime(System.DateTime(2025, 10, 10, 10, 10, 10)))
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateDateOnly()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -1232,15 +1143,13 @@ let ``TimeSpan equal operation works`` () =
       Expr.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan(1, 0, 0)))
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -1262,15 +1171,13 @@ let ``TimeSpan not equal operation works`` () =
       Expr.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan(1, 0, 0)))
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
@@ -1291,15 +1198,13 @@ let ``TimeSpan greater than operation works`` () =
       Expr.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan(1, 0, 44)))
     )
 
-  let typeCheckResult =
-    typeCheck None program
-    |> State.Run(context.TypeCheckContext, context.TypeCheckState)
+  let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
     Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
 
-    let evalResult = Expr.Eval [] typedProgram |> Reader.Run context.ExprEvalContext
+    let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->

@@ -28,14 +28,14 @@ let private buildAndEval (files: NonEmptyList<string * string>) =
   let buildResult = ProjectBuildConfiguration.BuildCached cache project
 
   match buildResult with
-  | Left(NonEmptyList(head, tail), _, finalState) ->
+  | Left(exprs, _, finalState) ->
     let evalContext =
       ExprEvalContext.WithTypeCheckingSymbols context.ExprEvalContext finalState.Symbols
 
-    let evalResult = Expr.Eval tail head |> Reader.Run evalContext
+    let evalResult = Expr.Eval exprs |> Reader.Run evalContext
 
     match evalResult with
-    | Left value -> Left(value, List.length tail + 1)
+    | Left value -> Left(value, NonEmptyList.ToList exprs |> List.length)
     | Right e -> Right $"Evaluation failed: {e.AsFSharpString}"
   | Right e -> Right $"Build failed: {e.AsFSharpString}"
 

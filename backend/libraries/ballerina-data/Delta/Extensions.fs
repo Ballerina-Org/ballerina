@@ -30,17 +30,17 @@ module Extensions =
         fun (value: Value) ->
           sum {
             match value with
-            | Value.Ext(ValueExt(Choice1Of5(ListValues(List l)))) ->
+            | Value.Ext(ValueExt(Choice1Of6(ListValues(List l)))) ->
               match delta with
               | DeltaExt.DeltaExt(Choice1Of3(UpdateElement(i, v))) ->
                 let next = List.updateAt i v l
-                return ValueExt(Choice1Of5(ListValues(List next))) |> Value.Ext
+                return ValueExt(Choice1Of6(ListValues(List next))) |> Value.Ext
               | DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.AppendElement(v))) ->
                 let next = List.append l [ v ]
-                return ValueExt(Choice1Of5(ListValues(List next))) |> Value.Ext
+                return ValueExt(Choice1Of6(ListValues(List next))) |> Value.Ext
               | DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.RemoveElement(i))) ->
                 let next = List.removeAt i l
-                return ValueExt(Choice1Of5(ListValues(List next))) |> Value.Ext
+                return ValueExt(Choice1Of6(ListValues(List next))) |> Value.Ext
               | other -> return! sum.Throw(Errors.Singleton $"Unimplemented delta ext toUpdater for {other}")
             | Value.Tuple elements ->
               match delta with
