@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.1
-      - uses: actions/setup-dotnet@v5.0.1
+      - uses: actions/setup-dotnet@v5.1.0
       - run: dotnet tool restore
       - run: dotnet build backend
       - run: dotnet fantomas --check backend
