@@ -44,6 +44,9 @@ module Patterns =
   type SchemaEntityName with
     static member Create(name: string) : SchemaEntityName = { Name = name }
 
+  type SchemaRelationName with
+    static member Create(name: string) : SchemaRelationName = { Name = name }
+
   type Kind with
     static member AsStar(kind: Kind) =
       match kind with
@@ -223,13 +226,31 @@ module Patterns =
     static member CreateSchema(v: Schema<'valueExt>) : TypeValue<'valueExt> = TypeValue.Schema v
 
     static member CreateEntities(s: Schema<'valueExt>) : TypeValue<'valueExt> = TypeValue.Entities s
+    static member CreateRelations(s: Schema<'valueExt>) : TypeValue<'valueExt> = TypeValue.Relations s
 
     static member CreateEntity
       (s: Schema<'valueExt>, e: TypeValue<'valueExt>, e': TypeValue<'valueExt>, id: TypeValue<'valueExt>)
       : TypeValue<'valueExt> =
       TypeValue.Entity(s, e, e', id)
 
-    static member CreateRelation(v: SchemaRelation) : TypeValue<'valueExt> = TypeValue.Relation v
+    static member CreateLookupMaybe
+      (s: Schema<'valueExt>, e: TypeValue<'valueExt>, id: TypeValue<'valueExt>)
+      : TypeValue<'valueExt> =
+      TypeValue.LookupMaybe(s, e, id)
+
+    static member CreateLookupOne
+      (s: Schema<'valueExt>, e: TypeValue<'valueExt>, id: TypeValue<'valueExt>)
+      : TypeValue<'valueExt> =
+      TypeValue.LookupOne(s, e, id)
+
+    static member CreateLookupMany
+      (s: Schema<'valueExt>, e: TypeValue<'valueExt>, id: TypeValue<'valueExt>)
+      : TypeValue<'valueExt> =
+      TypeValue.LookupMany(s, e, id)
+
+    static member CreateRelation(s, rn: SchemaRelationName, c, f, f', f_id, t, t', t_id) : TypeValue<'valueExt> =
+      TypeValue.Relation(s, rn, c, f, f', f_id, t, t', t_id)
+
     static member CreateVar(v: TypeVar) : TypeValue<'valueExt> = TypeValue.Var v
 
     static member CreateApplication(v: SymbolicTypeApplication<'valueExt>) : TypeValue<'valueExt> =
@@ -298,6 +319,20 @@ module Patterns =
         match t with
         | TypeValue.Entities(schema) -> return schema
         | _ -> return! $"Error: expected entities type, got {t}" |> Errors.Singleton |> sum.Throw
+      }
+
+    static member AsRelations(t: TypeValue<'valueExt>) =
+      sum {
+        match t with
+        | TypeValue.Relations(schema) -> return schema
+        | _ -> return! $"Error: expected relations type, got {t}" |> Errors.Singleton |> sum.Throw
+      }
+
+    static member AsRelation(t: TypeValue<'valueExt>) =
+      sum {
+        match t with
+        | TypeValue.Relation(s, rn, c, f, f', f_id, t, t', t_id) -> return (s, rn, c, f, f', f_id, t, t', t_id)
+        | _ -> return! $"Error: expected relation type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
     static member AsTuple(t: TypeValue<'valueExt>) =
@@ -391,6 +426,27 @@ module Patterns =
         | _ -> return! $"Error: expected application type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
+    static member AsLookupMaybe(t: TypeValue<'valueExt>) =
+      sum {
+        match t with
+        | TypeValue.LookupMaybe(s, f', t_id) -> return (s, f', t_id)
+        | _ -> return! $"Error: expected lookup maybe type, got {t}" |> Errors.Singleton |> sum.Throw
+      }
+
+    static member AsLookupOne(t: TypeValue<'valueExt>) =
+      sum {
+        match t with
+        | TypeValue.LookupOne(s, f', t_id) -> return (s, f', t_id)
+        | _ -> return! $"Error: expected lookup one type, got {t}" |> Errors.Singleton |> sum.Throw
+      }
+
+    static member AsLookupMany(t: TypeValue<'valueExt>) =
+      sum {
+        match t with
+        | TypeValue.LookupMany(s, f', t_id) -> return (s, f', t_id)
+        | _ -> return! $"Error: expected lookup many type, got {t}" |> Errors.Singleton |> sum.Throw
+      }
+
     static member DropSourceMapping(t: TypeValue<'valueExt>) =
       match t with
       | TypeValue.Var id -> TypeValue.Var id
@@ -408,8 +464,13 @@ module Patterns =
       | TypeValue.Map v -> TypeValue.CreateMap v.value
       | TypeValue.Schema v -> TypeValue.CreateSchema v
       | TypeValue.Entities v -> TypeValue.CreateEntities v
+      | TypeValue.Relations v -> TypeValue.CreateRelations v
       | TypeValue.Entity(s, e, e', id) -> TypeValue.CreateEntity(s, e, e', id)
-      | TypeValue.Relation v -> TypeValue.CreateRelation v
+      | TypeValue.Relation(s, rn, c, f, f', f_id, t, t', t_id) ->
+        TypeValue.CreateRelation(s, rn, c, f, f', f_id, t, t', t_id)
+      | TypeValue.LookupMaybe(s, f', t_id) -> TypeValue.CreateLookupMaybe(s, f', t_id)
+      | TypeValue.LookupOne(s, f', t_id) -> TypeValue.CreateLookupOne(s, f', t_id)
+      | TypeValue.LookupMany(s, f', t_id) -> TypeValue.CreateLookupMany(s, f', t_id)
 
     static member SetSourceMapping(t: TypeValue<'valueExt>, source: TypeExprSourceMapping<'valueExt>) =
       match t with
@@ -429,7 +490,11 @@ module Patterns =
       | TypeValue.Map v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Map
       | TypeValue.Schema _
       | TypeValue.Entities _
+      | TypeValue.Relations _
       | TypeValue.Entity _
+      | TypeValue.LookupMaybe _
+      | TypeValue.LookupOne _
+      | TypeValue.LookupMany _
       | TypeValue.Relation _ -> t
 
   type TypeValue<'valueExt> with

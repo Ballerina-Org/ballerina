@@ -543,6 +543,20 @@ module Eval =
             |> reader.OfSum
 
           return entities_v
+        | ExprRec.RelationsDes({ Expr = s }) ->
+          let! s_v = !s
+          let! s_v = s_v |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+          let! relations_v =
+            s_v
+            |> Map.tryFindWithError
+              ("Relations" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
+              "relations schema field"
+              "Relations"
+              loc0
+            |> reader.OfSum
+
+          return relations_v
         | ExprRec.EntityDes({ Expr = s; EntityName = entityName }) ->
           let! s_v = !s
           let! s_v = s_v |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
@@ -557,5 +571,45 @@ module Eval =
             |> reader.OfSum
 
           return entity_v
+        | ExprRec.RelationDes({ Expr = s
+                                RelationName = relationName }) ->
+          let! s_v = !s
+          let! s_v = s_v |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+          let! relation_v =
+            s_v
+            |> Map.tryFindWithError
+              (relationName.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
+              "relation schema field"
+              relationName.Name
+              loc0
+            |> reader.OfSum
+
+          return relation_v
+        | ExprRec.RelationLookupDes({ Expr = record_v
+                                      RelationName = _relation_name
+                                      Direction = direction }) ->
+          let! record_v = !record_v
+
+          let! record_v =
+            record_v
+            |> Value.AsRecord
+            |> sum.MapError(Errors.FromErrors loc0)
+            |> reader.OfSum
+
+          let! relation_v =
+            record_v
+            |> Map.tryFindWithError
+              ((match direction with
+                | FromTo -> "From"
+                | _ -> "To")
+               |> Identifier.LocalScope
+               |> TypeCheckScope.Empty.Resolve)
+              "relation schema field From/To"
+              direction.AsFSharpString
+              loc0
+            |> reader.OfSum
+
+          return relation_v
         | _ -> return! (loc0, $"Cannot eval expression {e}") |> Errors.Singleton |> reader.Throw
       }

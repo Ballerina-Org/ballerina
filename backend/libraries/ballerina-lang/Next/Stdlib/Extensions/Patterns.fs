@@ -11,4 +11,5 @@ module Patterns =
     static member Empty: LanguageContext<'ext> =
       { TypeCheckContext = TypeCheckContext.Empty("", "")
         TypeCheckState = TypeCheckState.Empty
-        ExprEvalContext = ExprEvalContext.Empty }
+        ExprEvalContext = ExprEvalContext.Empty
+        TypeCheckedPreludes = [] }

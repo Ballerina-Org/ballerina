@@ -115,7 +115,10 @@ module Expr =
                 return! Expr.TypeCheckTypeApply (Expr<'T, 'Id, 'valueExt>.TypeCheck(), loc0) context_t type_apply_expr
 
               | ExprRec.EntityDes _
-              | ExprRec.EntitiesDes _ ->
+              | ExprRec.RelationDes _
+              | ExprRec.EntitiesDes _
+              | ExprRec.RelationsDes _
+              | ExprRec.RelationLookupDes _ ->
                 return!
                   Errors.Singleton(
                     loc0,

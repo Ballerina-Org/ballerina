@@ -267,6 +267,14 @@ module Patterns =
     static member EntitiesDes(e: Expr<'T, 'Id, 'valueExt>) =
       Expr<'T, 'Id, 'valueExt>.EntitiesDes(e, Location.Unknown, TypeCheckScope.Empty)
 
+    static member RelationsDes(e: Expr<'T, 'Id, 'valueExt>, loc: Location, scope: TypeCheckScope) =
+      { Expr = ExprRec.RelationsDes({ Expr = e })
+        Location = loc
+        Scope = scope }
+
+    static member RelationsDes(e: Expr<'T, 'Id, 'valueExt>) =
+      Expr<'T, 'Id, 'valueExt>.RelationsDes(e, Location.Unknown, TypeCheckScope.Empty)
+
     static member EntityDes(e: Expr<'T, 'Id, 'valueExt>, n: SchemaEntityName, loc: Location, scope: TypeCheckScope) =
       { Expr = ExprRec.EntityDes({ Expr = e; EntityName = n })
         Location = loc
@@ -274,6 +282,36 @@ module Patterns =
 
     static member EntityDes(e: Expr<'T, 'Id, 'valueExt>, n: SchemaEntityName) =
       Expr<'T, 'Id, 'valueExt>.EntityDes(e, n, Location.Unknown, TypeCheckScope.Empty)
+
+    static member RelationDes
+      (e: Expr<'T, 'Id, 'valueExt>, n: SchemaRelationName, loc: Location, scope: TypeCheckScope)
+      =
+      { Expr = ExprRec.RelationDes({ Expr = e; RelationName = n })
+        Location = loc
+        Scope = scope }
+
+    static member RelationDes(e: Expr<'T, 'Id, 'valueExt>, n: SchemaRelationName) =
+      Expr<'T, 'Id, 'valueExt>.RelationDes(e, n, Location.Unknown, TypeCheckScope.Empty)
+
+    static member RelationLookupDes
+      (
+        e: Expr<'T, 'Id, 'valueExt>,
+        n: SchemaRelationName,
+        d: RelationLookupDirection,
+        loc: Location,
+        scope: TypeCheckScope
+      ) =
+      { Expr =
+          ExprRec.RelationLookupDes(
+            { Expr = e
+              RelationName = n
+              Direction = d }
+          )
+        Location = loc
+        Scope = scope }
+
+    static member RelationLookupDes(e: Expr<'T, 'Id, 'valueExt>, n: SchemaRelationName, d: RelationLookupDirection) =
+      Expr<'T, 'Id, 'valueExt>.RelationLookupDes(e, n, d, Location.Unknown, TypeCheckScope.Empty)
 
     static member UnionDes
       (

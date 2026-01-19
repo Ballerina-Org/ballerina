@@ -218,8 +218,16 @@ module Traverser =
           return! state.Throw(Errors.Singleton(Location.Unknown, "Schema Entity seeds not implemented yet"))
         | TypeValue.Entities _ ->
           return! state.Throw(Errors.Singleton(Location.Unknown, "Schema Entities seeds not implemented yet"))
-        | TypeValue.Relation _relation ->
+        | TypeValue.Relations _ ->
+          return! state.Throw(Errors.Singleton(Location.Unknown, "Schema Relations seeds not implemented yet"))
+        | TypeValue.Relation _ ->
           return! state.Throw(Errors.Singleton(Location.Unknown, "Schema Relation seeds not implemented yet"))
+        | TypeValue.LookupMaybe _ ->
+          return! state.Throw(Errors.Singleton(Location.Unknown, "Schema LookupMaybe seeds not implemented yet"))
+        | TypeValue.LookupOne _ ->
+          return! state.Throw(Errors.Singleton(Location.Unknown, "Schema LookupOne seeds not implemented yet"))
+        | TypeValue.LookupMany _ ->
+          return! state.Throw(Errors.Singleton(Location.Unknown, "Schema LookupMany seeds not implemented yet"))
       }
 
 type SeedingContext with

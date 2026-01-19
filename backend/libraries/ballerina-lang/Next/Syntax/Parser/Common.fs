@@ -166,6 +166,7 @@ module Common =
   let propertyKeyword = parseKeyword Keyword.Property
   let fromKeyword = softKeyword "from"
   let toKeyword = softKeyword "to"
+  let cardinalityKeyword = softKeyword "cardinality"
   let fieldKeyword = softKeyword "field"
   let mapKeyword = softKeyword "map"
   let iteratorKeyword = softKeyword "iterator"

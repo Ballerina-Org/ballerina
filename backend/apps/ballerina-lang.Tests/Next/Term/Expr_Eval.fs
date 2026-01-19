@@ -61,7 +61,8 @@ let private runTypeCheck (program: Expr<TypeExpr<ValueExt>, Identifier, ValueExt
   |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
 let private eval (program: Expr<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt>) =
-  Expr.Eval(NonEmptyList.One program) |> Reader.Run context.ExprEvalContext
+  Expr.Eval(NonEmptyList.prependList context.TypeCheckedPreludes (NonEmptyList.One program))
+  |> Reader.Run context.ExprEvalContext
 
 [<Test>]
 let ``LangNext-ExprEval (generic) Apply of custom Option type succeeds`` () =

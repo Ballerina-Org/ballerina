@@ -25,19 +25,6 @@ module TypeLambdas =
         { typeCheckContext with
             Values = values }
 
-    static member RegisterTypeCheckState<'ext when 'ext: comparison>
-      (ext: TypeLambdaExtension<'ext, 'extTypeLambda>)
-      : Updater<TypeCheckState<'ext>> =
-      fun typeCheckState ->
-
-        let bindings = typeCheckState.Bindings
-
-        let bindings =
-          ext.ReferencedTypes
-          |> Seq.fold (fun acc (id, typeValue, kind) -> acc |> Map.add id (typeValue, kind)) bindings
-
-        { typeCheckState with
-            Bindings = bindings }
 
     static member RegisterExprEvalContext<'ext when 'ext: comparison>
       (ext: TypeLambdaExtension<'ext, 'extTypeLambda>)
@@ -63,5 +50,6 @@ module TypeLambdas =
         { TypeCheckContext =
             langCtx.TypeCheckContext
             |> (ext |> TypeLambdaExtension.RegisterTypeCheckContext)
-          TypeCheckState = langCtx.TypeCheckState |> (ext |> TypeLambdaExtension.RegisterTypeCheckState)
-          ExprEvalContext = langCtx.ExprEvalContext |> (ext |> TypeLambdaExtension.RegisterExprEvalContext) }
+          TypeCheckState = langCtx.TypeCheckState
+          ExprEvalContext = langCtx.ExprEvalContext |> (ext |> TypeLambdaExtension.RegisterExprEvalContext)
+          TypeCheckedPreludes = langCtx.TypeCheckedPreludes }

@@ -32,7 +32,9 @@ let private buildAndEval (files: NonEmptyList<string * string>) =
     let evalContext =
       ExprEvalContext.WithTypeCheckingSymbols context.ExprEvalContext finalState.Symbols
 
-    let evalResult = Expr.Eval exprs |> Reader.Run evalContext
+    let evalResult =
+      Expr.Eval(NonEmptyList.prependList context.TypeCheckedPreludes exprs)
+      |> Reader.Run evalContext
 
     match evalResult with
     | Left value -> Left(value, NonEmptyList.ToList exprs |> List.length)

@@ -68,4 +68,8 @@ module TypeValue =
       | TypeValue.Schema _ -> failwith "Schema ToJson not implemented"
       | TypeValue.Entity _ -> failwith "Schema Entity ToJson not implemented"
       | TypeValue.Entities _ -> failwith "Schema Entities ToJson not implemented"
+      | TypeValue.Relations _ -> failwith "Schema Relations ToJson not implemented"
       | TypeValue.Relation _ -> failwith "Schema Relation ToJson not implemented"
+      | TypeValue.LookupMaybe _ -> failwith "Schema LookupMaybe ToJson not implemented"
+      | TypeValue.LookupOne _ -> failwith "Schema LookupOne ToJson not implemented"
+      | TypeValue.LookupMany _ -> failwith "Schema LookupMany ToJson not implemented"

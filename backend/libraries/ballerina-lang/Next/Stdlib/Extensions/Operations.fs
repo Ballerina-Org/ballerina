@@ -91,4 +91,5 @@ module Operations =
           TypeCheckState = langCtx.TypeCheckState |> (opsExt |> OperationsExtension.RegisterTypeCheckState)
           ExprEvalContext =
             langCtx.ExprEvalContext
-            |> (opsExt |> OperationsExtension.RegisterExprEvalContext) }
+            |> (opsExt |> OperationsExtension.RegisterExprEvalContext)
+          TypeCheckedPreludes = langCtx.TypeCheckedPreludes }

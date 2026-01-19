@@ -200,4 +200,5 @@ module Types =
       fun langCtx ->
         { TypeCheckContext = langCtx.TypeCheckContext |> (typeExt |> TypeExtension.RegisterTypeCheckContext)
           TypeCheckState = langCtx.TypeCheckState |> (typeExt |> TypeExtension.RegisterTypeCheckState)
-          ExprEvalContext = langCtx.ExprEvalContext |> (typeExt |> TypeExtension.RegisterExprEvalContext) }
+          ExprEvalContext = langCtx.ExprEvalContext |> (typeExt |> TypeExtension.RegisterExprEvalContext)
+          TypeCheckedPreludes = langCtx.TypeCheckedPreludes }

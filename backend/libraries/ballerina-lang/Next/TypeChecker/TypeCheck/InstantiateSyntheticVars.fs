@@ -115,7 +115,19 @@ module InstantiateSyntheticVars =
         | ExprRec.EntitiesDes({ Expr = e }) ->
           let! e = !e
           return Expr.EntitiesDes(e, loc0, expr.Scope)
+        | ExprRec.RelationsDes({ Expr = e }) ->
+          let! e = !e
+          return Expr.RelationsDes(e, loc0, expr.Scope)
         | ExprRec.EntityDes({ Expr = e; EntityName = entityName }) ->
           let! e = !e
           return Expr.EntityDes(e, entityName, loc0, expr.Scope)
+        | ExprRec.RelationDes({ Expr = e
+                                RelationName = relationName }) ->
+          let! e = !e
+          return Expr.RelationDes(e, relationName, loc0, expr.Scope)
+        | ExprRec.RelationLookupDes({ Expr = e
+                                      RelationName = relationName
+                                      Direction = direction }) ->
+          let! e = !e
+          return Expr.RelationLookupDes(e, relationName, direction, loc0, expr.Scope)
       }

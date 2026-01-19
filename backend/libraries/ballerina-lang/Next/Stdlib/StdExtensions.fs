@@ -1,5 +1,6 @@
 ﻿module Ballerina.DSL.Next.StdLib.Extensions
 
+open System
 open Ballerina.DSL.Next.StdLib.TimeSpan
 open Ballerina.Lenses
 open Ballerina.DSL.Next.Extensions
@@ -22,7 +23,12 @@ type ValueExt =
 
   static member Updaters = {| ValueExt = fun u (ValueExt e) -> ValueExt(u e) |}
 
-and MemoryDBExt = MemoryDBValues of MemoryDB.Model.MemoryDBValues<ValueExt>
+and MemoryDBExt =
+  | MemoryDBValues of MemoryDB.Model.MemoryDBValues<ValueExt>
+
+  override self.ToString() : string =
+    match self with
+    | MemoryDBValues vals -> vals.ToString()
 
 and MapExt =
   | MapOperations of Map.Model.MapOperations<ValueExt>
