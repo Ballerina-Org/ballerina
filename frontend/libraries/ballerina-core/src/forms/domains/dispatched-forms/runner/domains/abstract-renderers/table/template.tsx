@@ -651,9 +651,11 @@ export const TableAbstractRenderer = <
 
     const validColumns = CellTemplates.keySeq().toArray();
 
-    const validVisibleColumns = visibleColumns.value.columns.filter((column) =>
-      validColumns.includes(column),
-    );
+    const validVisibleColumns = Set(
+      visibleColumns.value.columns.filter((column) =>
+        validColumns.includes(column),
+      ),
+    ).toArray();
 
     const embeddedTableData =
       props.context.customFormState.loadingState != "loaded"
