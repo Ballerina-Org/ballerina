@@ -1,4 +1,4 @@
-import { List, Map, OrderedMap, Set } from "immutable";
+import { List, Map, OrderedMap, OrderedSet, Set } from "immutable";
 import {
   BasicUpdater,
   id,
@@ -651,7 +651,7 @@ export const TableAbstractRenderer = <
 
     const validColumns = CellTemplates.keySeq().toArray();
 
-    const validVisibleColumns = Set(
+    const validVisibleColumns = OrderedSet(
       visibleColumns.value.columns.filter((column) =>
         validColumns.includes(column),
       ),
