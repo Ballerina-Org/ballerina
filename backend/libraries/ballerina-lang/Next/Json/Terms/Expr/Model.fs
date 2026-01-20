@@ -76,4 +76,7 @@ module ExprJson =
         | ExprRec.Primitive p -> Expr.ToJsonPrimitive p
         | ExprRec.Lookup s -> Expr.ToJsonLookup s
         | ExprRec.EntitiesDes _ -> failwith "Not implemented"
+        | ExprRec.RelationsDes _ -> failwith "Not implemented"
         | ExprRec.EntityDes _ -> failwith "Not implemented"
+        | ExprRec.RelationDes _ -> failwith "Not implemented"
+        | ExprRec.RelationLookupDes _ -> failwith "Not implemented"

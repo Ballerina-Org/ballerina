@@ -52,7 +52,11 @@ module Extension =
           |> reader.OfSum
 
         return
-          MemoryDBValues.TypeAppliedRun(schema, { entities = Map.empty })
+          MemoryDBValues.TypeAppliedRun(
+            schema,
+            { entities = Map.empty
+              relations = Map.empty }
+          )
           |> valueLens.Set
           |> Ext
       }
@@ -86,6 +90,41 @@ module Extension =
       : ExprEvaluator<'ext, Value<TypeValue<'ext>, 'ext>> =
       reader {
 
+        let! relation_values =
+          schema.Relations
+          |> OrderedMap.toSeq
+          |> Seq.map (fun (k, v) ->
+            reader {
+              let! from =
+                schema.Entities
+                |> OrderedMap.tryFind (v.From.LocalName |> SchemaEntityName.Create)
+                |> sum.OfOption(Errors.Singleton(_loc0, $"Entity {v.From.LocalName} not found in schema"))
+                |> reader.OfSum
+
+              let! to_ =
+                schema.Entities
+                |> OrderedMap.tryFind (v.To.LocalName |> SchemaEntityName.Create)
+                |> sum.OfOption(Errors.Singleton(_loc0, $"Entity {v.To.LocalName} not found in schema"))
+                |> reader.OfSum
+
+              return
+                k.Name |> ResolvedIdentifier.Create,
+                Value.Record(
+                  [ "Relation" |> ResolvedIdentifier.Create,
+                    MemoryDBValues.RelationRef(schema, db, v, from, to_) |> valueLens.Set |> Ext
+                    "From" |> ResolvedIdentifier.Create,
+                    MemoryDBValues.RelationLookupRef(schema, db, RelationLookupDirection.FromTo, v, from, to_)
+                    |> valueLens.Set
+                    |> Ext
+                    "To" |> ResolvedIdentifier.Create,
+                    MemoryDBValues.RelationLookupRef(schema, db, RelationLookupDirection.ToFrom, v, from, to_)
+                    |> valueLens.Set
+                    |> Ext ]
+                  |> Map.ofList
+                )
+            })
+          |> reader.All
+
         let arg =
           [ "Entities" |> ResolvedIdentifier.Create,
             Value.Record(
@@ -94,7 +133,8 @@ module Extension =
               |> Seq.map (fun (k, v) ->
                 k.Name |> ResolvedIdentifier.Create, MemoryDBValues.EntityRef(schema, db, v) |> valueLens.Set |> Ext)
               |> Map.ofSeq
-            ) ]
+            )
+            "Relations" |> ResolvedIdentifier.Create, Value.Record(relation_values |> Map.ofSeq) ]
           |> Map.ofList
           |> Value.Record
 
@@ -127,7 +167,6 @@ module Extension =
       }
 
     { ExtensionType = memoryDBRunId, memoryDBRunType, memoryDBRunKind
-      ReferencedTypes = []
       Value = MemoryDBValues.Run
       ValueLens = valueLens
       EvalToTypeApplicable = evalToTypeApplicable
@@ -992,11 +1031,310 @@ module Extension =
                 return Value.Primitive(PrimitiveValue.Bool true)
             } }
 
+    let memoryDBLinkId =
+      Identifier.FullyQualified([ "MemoryDB" ], "link")
+      |> TypeCheckScope.Empty.Resolve
+
+    let memoryDBLinkType =
+      TypeValue.CreateLambda(
+        TypeParameter.Create("schema", Kind.Schema),
+        TypeExpr.Lambda(
+          TypeParameter.Create("from", Kind.Star),
+          TypeExpr.Lambda(
+            TypeParameter.Create("from_with_props", Kind.Star),
+            TypeExpr.Lambda(
+              TypeParameter.Create("from_id", Kind.Star),
+              TypeExpr.Lambda(
+                TypeParameter.Create("to", Kind.Star),
+                TypeExpr.Lambda(
+                  TypeParameter.Create("to_with_props", Kind.Star),
+                  TypeExpr.Lambda(
+                    TypeParameter.Create("to_id", Kind.Star),
+                    TypeExpr.Arrow(
+                      TypeExpr.Apply(
+                        TypeExpr.Apply(
+                          TypeExpr.Apply(
+                            TypeExpr.Apply(
+                              TypeExpr.Apply(
+                                TypeExpr.Apply(
+                                  TypeExpr.Apply(
+                                    TypeExpr.Lookup("SchemaRelation" |> Identifier.LocalScope),
+                                    TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+
+                                  ),
+                                  TypeExpr.Lookup("from" |> Identifier.LocalScope)
+                                ),
+                                TypeExpr.Lookup("from_with_props" |> Identifier.LocalScope)
+                              ),
+                              TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                            ),
+                            TypeExpr.Lookup("to" |> Identifier.LocalScope)
+                          ),
+                          TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
+                        ),
+                        TypeExpr.Lookup("to_id" |> Identifier.LocalScope)
+                      ),
+                      TypeExpr.Arrow(
+                        TypeExpr.Tuple
+                          [ TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                            TypeExpr.Lookup("to_id" |> Identifier.LocalScope) ],
+                        TypeExpr.Sum [ TypeExpr.Primitive PrimitiveType.Unit; TypeExpr.Primitive PrimitiveType.Unit ]
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+
+    let memoryDBLinkKind =
+      Kind.Arrow(
+        Kind.Schema,
+        Kind.Arrow(
+          Kind.Star,
+          Kind.Arrow(
+            Kind.Star,
+            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))))
+          )
+        )
+      )
+
+    let LinkOperation: OperationExtension<_, _> =
+      { PublicIdentifiers =
+          Some
+          <| (memoryDBLinkType, memoryDBLinkKind, MemoryDBValues.Link {| RelationRef = None |})
+        OperationsLens =
+          valueLens
+          |> PartialLens.BindGet (function
+            | MemoryDBValues.Link v -> Some(MemoryDBValues.Link v)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              let! op =
+                op
+                |> MemoryDBValues.AsLink
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              match op.RelationRef with
+              | None -> // the closure is empty - first step in the application
+                let! v = v |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                let! v =
+                  v
+                  |> Map.tryFind (ResolvedIdentifier.Create "Relation")
+                  |> sum.OfOption(Errors.Singleton(loc0, "Cannot find 'Relation' field in link operation"))
+                  |> reader.OfSum
+
+                let! v = v |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                let! v =
+                  v
+                  |> valueLens.Get
+                  |> sum.OfOption(Errors.Singleton(loc0, "Cannot get value from extension"))
+                  |> reader.OfSum
+
+                let! v =
+                  v
+                  |> MemoryDBValues.AsRelationRef
+                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> reader.OfSum
+
+                return MemoryDBValues.Link({| RelationRef = Some v |}) |> valueLens.Set |> Ext
+              | Some(_schema, _db, _relation, _from, _to) -> // the closure has the first operand - second step in the application
+
+                let! v = v |> Value.AsTuple |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                match v with
+                | [ _fromId; _toId ] ->
+
+                  let add_link (relation: MemoryDBRelation<'ext>) : MemoryDBRelation<'ext> =
+                    { relation with
+                        All = relation.All |> Set.add (_fromId, _toId)
+                        From =
+                          relation.From
+                          |> Map.change _fromId (function
+                            | Some toSet -> Some(toSet |> Set.add _toId)
+                            | None -> Some(Set.singleton _toId))
+                        To =
+                          relation.To
+                          |> Map.change _toId (function
+                            | Some fromSet -> Some(fromSet |> Set.add _fromId)
+                            | None -> Some(Set.singleton _fromId)) }
+
+                  do
+                    _db.relations <-
+                      _db.relations
+                      |> Map.change _relation.Name (function
+                        | Some relations -> Some(relations |> add_link)
+                        | None -> Some(MemoryDBRelation.Empty |> add_link))
+
+                  return Value.Sum({ Case = 2; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                | _ ->
+                  return!
+                    sum.Throw(Errors.Singleton(loc0, "Expected a tuple with 2 elements when linking relation"))
+                    |> reader.OfSum
+            } }
+
+    let memoryDBUnlinkId =
+      Identifier.FullyQualified([ "MemoryDB" ], "unlink")
+      |> TypeCheckScope.Empty.Resolve
+
+    let memoryDBUnlinkType =
+      TypeValue.CreateLambda(
+        TypeParameter.Create("schema", Kind.Schema),
+        TypeExpr.Lambda(
+          TypeParameter.Create("from", Kind.Star),
+          TypeExpr.Lambda(
+            TypeParameter.Create("from_with_props", Kind.Star),
+            TypeExpr.Lambda(
+              TypeParameter.Create("from_id", Kind.Star),
+              TypeExpr.Lambda(
+                TypeParameter.Create("to", Kind.Star),
+                TypeExpr.Lambda(
+                  TypeParameter.Create("to_with_props", Kind.Star),
+                  TypeExpr.Lambda(
+                    TypeParameter.Create("to_id", Kind.Star),
+                    TypeExpr.Arrow(
+                      TypeExpr.Apply(
+                        TypeExpr.Apply(
+                          TypeExpr.Apply(
+                            TypeExpr.Apply(
+                              TypeExpr.Apply(
+                                TypeExpr.Apply(
+                                  TypeExpr.Apply(
+                                    TypeExpr.Lookup("SchemaRelation" |> Identifier.LocalScope),
+                                    TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+
+                                  ),
+                                  TypeExpr.Lookup("from" |> Identifier.LocalScope)
+                                ),
+                                TypeExpr.Lookup("from_with_props" |> Identifier.LocalScope)
+                              ),
+                              TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                            ),
+                            TypeExpr.Lookup("to" |> Identifier.LocalScope)
+                          ),
+                          TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
+                        ),
+                        TypeExpr.Lookup("to_id" |> Identifier.LocalScope)
+                      ),
+                      TypeExpr.Arrow(
+                        TypeExpr.Tuple
+                          [ TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                            TypeExpr.Lookup("to_id" |> Identifier.LocalScope) ],
+                        TypeExpr.Sum [ TypeExpr.Primitive PrimitiveType.Unit; TypeExpr.Primitive PrimitiveType.Unit ]
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+
+    let memoryDBUnlinkKind =
+      Kind.Arrow(
+        Kind.Schema,
+        Kind.Arrow(
+          Kind.Star,
+          Kind.Arrow(
+            Kind.Star,
+            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))))
+          )
+        )
+      )
+
+    let UnlinkOperation: OperationExtension<_, _> =
+      { PublicIdentifiers =
+          Some
+          <| (memoryDBUnlinkType, memoryDBUnlinkKind, MemoryDBValues.Link {| RelationRef = None |})
+        OperationsLens =
+          valueLens
+          |> PartialLens.BindGet (function
+            | MemoryDBValues.Unlink v -> Some(MemoryDBValues.Unlink v)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              let! op =
+                op
+                |> MemoryDBValues.AsUnlink
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              match op.RelationRef with
+              | None -> // the closure is empty - first step in the application
+                let! v = v |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                let! v =
+                  v
+                  |> Map.tryFind (ResolvedIdentifier.Create "Relation")
+                  |> sum.OfOption(Errors.Singleton(loc0, "Cannot find 'Relation' field in unlink operation"))
+                  |> reader.OfSum
+
+                let! v = v |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                let! v =
+                  v
+                  |> valueLens.Get
+                  |> sum.OfOption(Errors.Singleton(loc0, "Cannot get value from extension"))
+                  |> reader.OfSum
+
+                let! v =
+                  v
+                  |> MemoryDBValues.AsRelationRef
+                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> reader.OfSum
+
+                return MemoryDBValues.Unlink({| RelationRef = Some v |}) |> valueLens.Set |> Ext
+              | Some(_schema, _db, _relation, _from, _to) -> // the closure has the first operand - second step in the application
+
+                let! v = v |> Value.AsTuple |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                match v with
+                | [ _fromId; _toId ] ->
+
+                  let remove_link (relation: MemoryDBRelation<'ext>) : MemoryDBRelation<'ext> =
+                    { relation with
+                        All = relation.All |> Set.remove (_fromId, _toId)
+                        From =
+                          relation.From
+                          |> Map.change _fromId (function
+                            | Some toSet -> Some(toSet |> Set.remove _toId)
+                            | None -> Some(Set.empty))
+                        To =
+                          relation.To
+                          |> Map.change _toId (function
+                            | Some fromSet -> Some(fromSet |> Set.remove _fromId)
+                            | None -> Some(Set.empty)) }
+
+                  do
+                    _db.relations <-
+                      _db.relations
+                      |> Map.change _relation.Name (function
+                        | Some relations -> Some(relations |> remove_link)
+                        | None -> Some(MemoryDBRelation.Empty |> remove_link))
+
+                  return Value.Sum({ Case = 2; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                | _ ->
+                  return!
+                    sum.Throw(Errors.Singleton(loc0, "Expected a tuple with 2 elements when unlinking relation"))
+                    |> reader.OfSum
+            } }
+
+
     { TypeVars = []
       Operations =
         [ (memoryDBStripPropertyId, StripPropertyOperation)
           (memoryDBCalculatePropertyId, CalculatePropertyOperation)
           (memoryDBCreateId, CreateOperation)
           (memoryDBUpdateId, UpdateOperation)
+          (memoryDBLinkId, LinkOperation)
+          (memoryDBUnlinkId, UnlinkOperation)
           (memoryDBDeleteId, DeleteOperation) ]
         |> Map.ofList }

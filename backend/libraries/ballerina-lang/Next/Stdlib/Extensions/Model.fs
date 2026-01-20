@@ -12,7 +12,8 @@ module Model =
   type LanguageContext<'ext when 'ext: comparison> =
     { TypeCheckContext: TypeCheckContext<'ext>
       TypeCheckState: TypeCheckState<'ext>
-      ExprEvalContext: ExprEvalContext<'ext> }
+      ExprEvalContext: ExprEvalContext<'ext>
+      TypeCheckedPreludes: List<Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext>> }
 
   type OperationsExtension<'ext, 'extOperations> =
     { TypeVars: List<TypeVar * Kind> // example: [ ("a", Star) ]
@@ -72,10 +73,9 @@ module Model =
 
   and TypeLambdaExtension<'ext, 'extTypeLambda> =
     { ExtensionType: ResolvedIdentifier * TypeValue<'ext> * Kind
-      ReferencedTypes: List<ResolvedIdentifier * TypeValue<'ext> * Kind>
       Value: 'extTypeLambda // eval value bindings will contain an entry from the extension identifier to this value (modulo DU packaging)
       ValueLens: PartialLens<'ext, 'extTypeLambda> // lens to handle wrapping and upwrapping between the extension value and the core value
       EvalToTypeApplicable: ExtensionEvaluator<'ext> // implementation of what happens at runtime when the extension is type applied (instantiation)
       EvalToApplicable: ExtensionEvaluator<'ext> } // implementation of what happens at runtime when the extension is applied
 
-  type PreludeTypes<'ext> = List<string * TypeExpr<'ext>>
+  type ExtensionPrelude = ExtensionPrelude of string

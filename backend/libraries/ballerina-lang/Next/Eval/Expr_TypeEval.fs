@@ -151,8 +151,20 @@ module TypeEval =
           | ExprRec.EntitiesDes({ Expr = entities_expr }) ->
             let! entitiesType = !entities_expr
             return Expr.EntitiesDes(entitiesType, expr.Location, ctx.Scope)
+          | ExprRec.RelationsDes({ Expr = entities_expr }) ->
+            let! entitiesType = !entities_expr
+            return Expr.RelationsDes(entitiesType, expr.Location, ctx.Scope)
           | ExprRec.EntityDes({ Expr = entity_expr
                                 EntityName = entity_name }) ->
             let! entityType = !entity_expr
             return Expr.EntityDes(entityType, entity_name, expr.Location, ctx.Scope)
+          | ExprRec.RelationDes({ Expr = relation_expr
+                                  RelationName = relation_name }) ->
+            let! relationType = !relation_expr
+            return Expr.RelationDes(relationType, relation_name, expr.Location, ctx.Scope)
+          | ExprRec.RelationLookupDes({ Expr = record_v
+                                        RelationName = relation_name
+                                        Direction = direction }) ->
+            let! recordType = !record_v
+            return Expr.RelationLookupDes(recordType, relation_name, direction, expr.Location, ctx.Scope)
         }

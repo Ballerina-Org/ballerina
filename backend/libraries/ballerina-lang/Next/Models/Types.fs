@@ -239,7 +239,8 @@ module Model =
   and SchemaRelationExpr =
     { Name: SchemaRelationName
       From: Identifier * Option<SchemaPathExpr>
-      To: Identifier * Option<SchemaPathExpr> }
+      To: Identifier * Option<SchemaPathExpr>
+      Cardinality: Option<SchemaRelationCardinality> }
 
   and SchemaExpr<'valueExt> =
     { DeclaredAtForNominalEquality: Location
@@ -269,7 +270,16 @@ module Model =
     | Rotate of TypeExpr<'valueExt>
     | Schema of SchemaExpr<'valueExt>
     | Entities of TypeExpr<'valueExt>
-    | Entity of TypeExpr<'valueExt> * TypeExpr<'valueExt> * TypeExpr<'valueExt> * TypeExpr<'valueExt>
+    | Relations of TypeExpr<'valueExt>
+    | Entity of s: TypeExpr<'valueExt> * e: TypeExpr<'valueExt> * e': TypeExpr<'valueExt> * e_id: TypeExpr<'valueExt>
+    | Relation of
+      s: TypeExpr<'valueExt> *
+      f: TypeExpr<'valueExt> *
+      f': TypeExpr<'valueExt> *
+      f_id: TypeExpr<'valueExt> *
+      t: TypeExpr<'valueExt> *
+      t': TypeExpr<'valueExt> *
+      t_id: TypeExpr<'valueExt>
     | Imported of ImportedTypeValue<'valueExt>
 
     override self.ToString() =
@@ -311,8 +321,11 @@ module Model =
       | Exclude(t1, t2) -> $"Exclude[{t1}, {t2}]"
       | Rotate t -> $"Rotate[{t}]"
       | Schema s -> $"Schema[{s.Entities.Length} Entities, {s.Relations.Length} Relations]"
-      | Entities e -> $"Entities[{e}]"
+      | Entities e -> $"SchemaEntities[{e}]"
+      | Relations e -> $"SchemaRelations[{e}]"
       | Entity(s, e, e_with_props, id) -> $"SchemaEntity[Schema[{s}][{e}][{e_with_props}][{id}]"
+      | Relation(s, f, f_with_props, f_id, t, t_with_props, t_id) ->
+        $"SchemaRelation[Schema[{s}][{f}][{f_with_props}][{f_id}][{t}][{t_with_props}][{t_id}]"
 
 
   and TypeBinding<'valueExt> =
@@ -371,7 +384,8 @@ module Model =
   and SchemaRelation =
     { Name: SchemaRelationName
       From: Identifier
-      To: Identifier }
+      To: Identifier
+      Cardinality: Option<SchemaRelationCardinality> }
 
   and Schema<'valueExt> =
     { DeclaredAtForNominalEquality: Location
@@ -395,8 +409,21 @@ module Model =
     | Imported of ImportedTypeValue<'valueExt> // FIXME: This should also have an orig name, implement once the extension is implemented completely
     | Schema of Schema<'valueExt>
     | Entities of Schema<'valueExt>
-    | Entity of Schema<'valueExt> * TypeValue<'valueExt> * TypeValue<'valueExt> * TypeValue<'valueExt>
-    | Relation of SchemaRelation
+    | Relations of Schema<'valueExt>
+    | Entity of Schema<'valueExt> * e: TypeValue<'valueExt> * e': TypeValue<'valueExt> * e_id: TypeValue<'valueExt>
+    | Relation of
+      Schema<'valueExt> *
+      rn: SchemaRelationName *
+      c: Option<SchemaRelationCardinality> *
+      f: TypeValue<'valueExt> *
+      f': TypeValue<'valueExt> *
+      f_id: TypeValue<'valueExt> *
+      t: TypeValue<'valueExt> *
+      t': TypeValue<'valueExt> *
+      t_id: TypeValue<'valueExt>
+    | LookupMaybe of Schema<'valueExt> * target': TypeValue<'valueExt> * source_id: TypeValue<'valueExt>
+    | LookupOne of Schema<'valueExt> * target': TypeValue<'valueExt> * source_id: TypeValue<'valueExt>
+    | LookupMany of Schema<'valueExt> * target': TypeValue<'valueExt> * source_id: TypeValue<'valueExt>
 
     override self.ToString() =
       match self with
@@ -443,7 +470,15 @@ module Model =
       | Entities s -> $"SchemaEntities[{s.Entities.Count}]"
       | Entity(s, e, e_with_props, id) ->
         $"SchemaEntity[Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]][{e}][{e_with_props}][{id}]"
-      | Relation r -> $"SchemaRelation[{r.Name}]"
+      | Relations s -> $"SchemaRelations[{s.Relations.Count}]"
+      | LookupMaybe(s, f', t_id) ->
+        $"SchemaLookupMaybe[Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]][{f'}][{t_id}]"
+      | LookupOne(s, f', t_id) ->
+        $"SchemaLookupOne[Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]][{f'}][{t_id}]"
+      | LookupMany(s, f', t_id) ->
+        $"SchemaLookupMany[Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]][{f'}][{t_id}]"
+      | Relation(s, rn, _c, f, f', f_id, t, t', t_id) ->
+        $"SchemaRelation[{rn.Name} Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]][{f}][{f'}][{f_id}][{t}][{t'}][{t_id}]"
 
 
   and ExprTypeLetBindingName =
@@ -576,9 +611,26 @@ module Model =
 
   and ExprEntitiesDes<'T, 'Id, 'valueExt when 'Id: comparison> = { Expr: Expr<'T, 'Id, 'valueExt> }
 
+  and ExprRelationsDes<'T, 'Id, 'valueExt when 'Id: comparison> = { Expr: Expr<'T, 'Id, 'valueExt> }
+
+  and ExprLookupsDes<'T, 'Id, 'valueExt when 'Id: comparison> = { Expr: Expr<'T, 'Id, 'valueExt> }
+
   and ExprEntityDes<'T, 'Id, 'valueExt when 'Id: comparison> =
     { Expr: Expr<'T, 'Id, 'valueExt>
       EntityName: SchemaEntityName }
+
+  and ExprRelationDes<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Expr: Expr<'T, 'Id, 'valueExt>
+      RelationName: SchemaRelationName }
+
+  and RelationLookupDirection =
+    | FromTo
+    | ToFrom
+
+  and ExprRelationLookupDes<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Expr: Expr<'T, 'Id, 'valueExt>
+      RelationName: SchemaRelationName
+      Direction: RelationLookupDirection }
 
   and ExprUnionDes<'T, 'Id, 'valueExt when 'Id: comparison> =
     { Handlers: Map<'Id, CaseHandler<'T, 'Id, 'valueExt>>
@@ -609,7 +661,10 @@ module Model =
     | SumCons of ExprSumCons<'T, 'Id, 'valueExt>
     | RecordDes of ExprRecordDes<'T, 'Id, 'valueExt>
     | EntitiesDes of ExprEntitiesDes<'T, 'Id, 'valueExt>
+    | RelationsDes of ExprRelationsDes<'T, 'Id, 'valueExt>
     | EntityDes of ExprEntityDes<'T, 'Id, 'valueExt>
+    | RelationDes of ExprRelationDes<'T, 'Id, 'valueExt>
+    | RelationLookupDes of ExprRelationLookupDes<'T, 'Id, 'valueExt>
     | UnionDes of ExprUnionDes<'T, 'Id, 'valueExt>
     | TupleDes of ExprTupleDes<'T, 'Id, 'valueExt>
     | SumDes of ExprSumDes<'T, 'Id, 'valueExt>
@@ -659,8 +714,20 @@ module Model =
       | SumCons({ Selector = selector }) -> $"{selector.Case}Of{selector.Count}"
       | RecordDes({ Expr = record; Field = field }) -> $"{record.ToString()}.{field.ToString()}"
       | EntitiesDes({ Expr = entities }) -> $"{entities.ToString()}.Entities"
+      | RelationsDes({ Expr = relations }) -> $"{relations.ToString()}.Relations"
       | EntityDes({ Expr = entity
                     EntityName = entityName }) -> $"{entity.ToString()}.{entityName.ToString()}"
+      | RelationDes({ Expr = relation
+                      RelationName = relationName }) -> $"{relation.ToString()}.{relationName.ToString()}"
+      | RelationLookupDes({ Expr = relation
+                            RelationName = _relationName
+                            Direction = direction }) ->
+        let dirStr =
+          match direction with
+          | FromTo -> "From"
+          | ToFrom -> "To"
+
+        $"{relation.ToString()}.{dirStr}"
       | UnionDes({ Handlers = handlers
                    Fallback = defaultOpt }) ->
         let handlerStr =

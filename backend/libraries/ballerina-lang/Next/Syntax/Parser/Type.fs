@@ -151,27 +151,27 @@ module Type =
         return TypeExpr.Primitive PrimitiveType.Unit
       }
 
-    // let cardinality () =
-    //   parser.Any
-    //     [ parser {
-    //         let! v = intLiteralToken ()
+    let cardinality () =
+      parser.Any
+        [ parser {
+            let! v = intLiteralToken ()
 
-    //         if v = 0 then
-    //           return Cardinality.Zero
-    //         elif v = 1 then
-    //           return Cardinality.One
-    //         else
-    //           let! loc = parser.Location
+            if v = 0 then
+              return Cardinality.Zero
+            elif v = 1 then
+              return Cardinality.One
+            else
+              let! loc = parser.Location
 
-    //           return!
-    //             (loc, $"Error: invalid cardinality value {v}, expected 0 or 1")
-    //             |> Errors.Singleton
-    //             |> parser.Throw
-    //       }
-    //       parser {
-    //         do! starOperator
-    //         return Cardinality.Many
-    //       } ]
+              return!
+                (loc, $"Error: invalid cardinality value {v}, expected 0 or 1")
+                |> Errors.Singleton
+                |> parser.Throw
+          }
+          parser {
+            do! starOperator
+            return Cardinality.Many
+          } ]
 
     let schemaPathSegments () =
       parser.ManyIndex(fun i ->
@@ -261,12 +261,31 @@ module Type =
           let! toEntity = identifierLocalOrFullyQualified ()
           let! toPath = schemaPath ()
 
+          let! hasCardinality = cardinalityKeyword |> parser.Try
+
+          let! cardinality =
+            match hasCardinality with
+            | Right _ -> parser { return None }
+            | Left() ->
+              parser {
+                let! from = cardinality ()
+                do! doubleDotOperator
+                let! to_ = cardinality ()
+
+                return
+                  Some(
+                    { SchemaRelationCardinality.From = from
+                      To = to_ }
+                  )
+              }
+
           do! closeCurlyBracketOperator
 
           return
             { SchemaRelationExpr.Name = { SchemaRelationName.Name = relationName }
               From = (fromEntity, fromPath)
-              To = (toEntity, toPath) }
+              To = (toEntity, toPath)
+              Cardinality = cardinality }
         })
 
     let entity () =

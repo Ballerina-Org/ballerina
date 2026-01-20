@@ -43,7 +43,9 @@ let private run (program: string) =
       //   |> Map.ofList
       }
 
-    let evalResult = Expr.Eval(NonEmptyList.One program) |> Reader.Run evalContext
+    let evalResult =
+      Expr.Eval(NonEmptyList.prependList context.TypeCheckedPreludes (NonEmptyList.One program))
+      |> Reader.Run evalContext
 
     match evalResult with
     | Left value -> Sum.Left(value, typeValue)

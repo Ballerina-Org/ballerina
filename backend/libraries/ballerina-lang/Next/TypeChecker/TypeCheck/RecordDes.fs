@@ -41,28 +41,11 @@ module RecordDes =
           let! record_v, record_t, record_k, _ = !record_expr
 
           return!
-            state.Either3
+            state.Either5
               (state {
                 do! record_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                let! fields_t =
-                  state.Either
-                    (record_t |> TypeValue.AsRecord |> ofSum)
-                    (state {
-                      let! id = TypeCheckState.TryResolveIdentifier(fieldName, loc0)
-                      let! fields_t = TypeCheckState.TryFindRecordField(id, loc0) |> state.Map fst
-                      let expected_record_t = TypeValue.CreateRecord fields_t
-
-                      do!
-                        TypeValue.Unify(loc0, record_t, expected_record_t)
-                        |> Expr.liftUnification
-                        |> state.MapError(Errors.SetPriority ErrorPriority.High)
-
-                      return fields_t
-                    })
-                  |> state.MapError Errors.FilterHighestPriorityOnly
-
-                return!
+                let resolve_lookup (fields_t: OrderedMap<TypeSymbol, (TypeValue<'valueExt> * Kind)>) =
                   state {
                     let! field_n, (field_t, field_k) =
                       fields_t
@@ -75,60 +58,187 @@ module RecordDes =
                       )
                       |> ofSum
 
-                    // do Console.WriteLine($"---- TypeCheck RecordDes {fieldName} ----")
-
                     let! fieldName =
                       state.Either
                         (TypeCheckState.TryResolveIdentifier(field_n, loc0))
                         (state { return fieldName |> ctx.Scope.Resolve })
 
-                    // do Console.WriteLine($"---- TypeChecked RecordDes {fieldName} ----")
-                    // t_fields
-                    // |> OrderedMap.keys
-
-                    // do Console.WriteLine($"{fields_expr}.{fieldName}")
-                    // do Console.WriteLine($"fields: {fields.ToFSharpString}")
-                    // do Console.ReadLine() |> ignore
-
-                    // let! field_t =
-                    //   t_fields
-                    //   |> OrderedMap.tryFindWithError fieldName "fields" fieldName.ToFSharpString
-                    //   |> ofSum
-
                     return Expr.RecordDes(record_v, fieldName, loc0, ctx.Scope), field_t, field_k, ctx
                   }
                   |> state.MapError(Errors.SetPriority ErrorPriority.High)
+
+
+                return!
+                  state.Either
+                    (state {
+                      let! fields_t = record_t |> TypeValue.AsRecord |> ofSum
+                      return! resolve_lookup fields_t
+                    })
+                    (state {
+                      let! id = TypeCheckState.TryResolveIdentifier(fieldName, loc0)
+                      let! fields_t = TypeCheckState.TryFindRecordField(id, loc0) |> state.Map fst
+                      let expected_record_t = TypeValue.CreateRecord fields_t
+
+                      do!
+                        TypeValue.Unify(loc0, record_t, expected_record_t)
+                        |> Expr.liftUnification
+                        |> state.MapError(Errors.SetPriority ErrorPriority.High)
+
+                      return! resolve_lookup fields_t
+                    })
+                  |> state.MapError Errors.FilterHighestPriorityOnly
 
               })
               (state {
                 do! record_k |> Kind.AsSchema |> ofSum |> state.Ignore
                 let! schema_t = record_t |> TypeValue.AsSchema |> ofSum
-                let schema_v = record_v
 
-                if fieldName.LocalName = "Entities" then
-                  return Expr.EntitiesDes(schema_v, loc0, ctx.Scope), TypeValue.CreateEntities(schema_t), Kind.Star, ctx
-                else
+                return!
+                  state {
+                    let schema_v = record_v
 
-                  return!
-                    Errors.Singleton(loc0, $"Error: cannot find field {fieldName} in schema {schema_v}")
-                    |> state.Throw
+                    if fieldName.LocalName = "Entities" then
+                      return
+                        Expr.EntitiesDes(schema_v, loc0, ctx.Scope), TypeValue.CreateEntities(schema_t), Kind.Star, ctx
+                    elif fieldName.LocalName = "Relations" then
+                      return
+                        Expr.RelationsDes(schema_v, loc0, ctx.Scope),
+                        TypeValue.CreateRelations(schema_t),
+                        Kind.Star,
+                        ctx
+                    else
+
+                      return!
+                        Errors.Singleton(loc0, $"Error: cannot find field {fieldName} in schema {schema_v}")
+                        |> state.Throw
+                  }
+                  |> state.MapError(Errors.SetPriority ErrorPriority.High)
               })
               (state {
                 do! record_k |> Kind.AsStar |> ofSum |> state.Ignore
                 let! schema_t = record_t |> TypeValue.AsEntities |> ofSum
-                let schema_v = record_v
 
-                let fieldName = fieldName.LocalName |> SchemaEntityName.Create
+                return!
+                  state {
+                    let schema_v = record_v
 
-                let! entity =
-                  schema_t.Entities
-                  |> OrderedMap.tryFindWithError fieldName "entities" fieldName.Name
+                    let fieldName = fieldName.LocalName |> SchemaEntityName.Create
+
+                    let! entity =
+                      schema_t.Entities
+                      |> OrderedMap.tryFindWithError fieldName "entity" fieldName.Name
+                      |> ofSum
+
+                    return
+                      Expr.EntityDes(schema_v, fieldName, loc0, ctx.Scope),
+                      TypeValue.CreateEntity(schema_t, entity.TypeOriginal, entity.TypeWithProps, entity.Id),
+                      Kind.Star,
+                      ctx
+                  }
+                  |> state.MapError(Errors.SetPriority ErrorPriority.High)
+              })
+              (state {
+                do! record_k |> Kind.AsStar |> ofSum |> state.Ignore
+                let! schema_t = record_t |> TypeValue.AsRelations |> ofSum
+
+                return!
+                  state {
+                    let schema_v = record_v
+
+                    let fieldName = fieldName.LocalName |> SchemaRelationName.Create
+
+                    let! relation =
+                      schema_t.Relations
+                      |> OrderedMap.tryFindWithError fieldName "relations" fieldName.Name
+                      |> ofSum
+
+                    let! from =
+                      schema_t.Entities
+                      |> OrderedMap.tryFindWithError
+                        (relation.From.LocalName |> SchemaEntityName.Create)
+                        "entity"
+                        relation.From.LocalName
+                      |> ofSum
+
+                    let! to_ =
+                      schema_t.Entities
+                      |> OrderedMap.tryFindWithError
+                        (relation.To.LocalName |> SchemaEntityName.Create)
+                        "entity"
+                        relation.To.LocalName
+                      |> ofSum
+
+                    return
+                      Expr.RelationDes(schema_v, fieldName, loc0, ctx.Scope),
+                      TypeValue.CreateRelation(
+                        schema_t,
+                        fieldName,
+                        relation.Cardinality,
+                        from.TypeOriginal,
+                        from.TypeWithProps,
+                        from.Id,
+                        to_.TypeOriginal,
+                        to_.TypeWithProps,
+                        to_.Id
+                      ),
+                      Kind.Star,
+                      ctx
+                  }
+                  |> state.MapError(Errors.SetPriority ErrorPriority.High)
+              })
+              (state {
+                do! record_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                let! schema_t, relation_name, cardinality, _from, from', from_id, _to_, to', to_id =
+                  record_t |> TypeValue.AsRelation |> ofSum
+
+                let! cardinality =
+                  cardinality
+                  |> sum.OfOption("Error: relation cardinality is missing" |> Ballerina.Errors.Errors.Singleton)
                   |> ofSum
 
-                return
-                  Expr.EntityDes(schema_v, fieldName, loc0, ctx.Scope),
-                  TypeValue.CreateEntity(schema_t, entity.TypeOriginal, entity.TypeWithProps, entity.Id),
-                  Kind.Star,
-                  ctx
+                return!
+                  state {
+                    let! flipped =
+                      state {
+                        if fieldName.LocalName = "To" then
+                          return false
+                        elif fieldName.LocalName = "From" then
+                          return true
+                        else
+                          return!
+                            Errors.Singleton(loc0, $"Error: cannot find field {fieldName} in relation {record_v}")
+                            |> state.Throw
+                      }
+
+                    let source_id, target', target_cardinality =
+                      if flipped then
+                        to_id, from', cardinality.From
+                      else
+                        from_id, to', cardinality.To
+
+                    let result =
+                      Expr.RelationLookupDes(
+                        record_v,
+                        relation_name,
+                        (if flipped then
+                           RelationLookupDirection.ToFrom
+                         else
+                           RelationLookupDirection.FromTo),
+                        loc0,
+                        ctx.Scope
+                      )
+
+                    match target_cardinality with
+                    | Cardinality.Zero ->
+                      return result, TypeValue.LookupMaybe(schema_t, target', source_id), Kind.Star, ctx
+                    | Cardinality.One ->
+                      return result, TypeValue.LookupOne(schema_t, target', source_id), Kind.Star, ctx
+                    | Cardinality.Many ->
+                      return result, TypeValue.LookupMany(schema_t, target', source_id), Kind.Star, ctx
+                  }
+                  |> state.MapError(Errors.SetPriority ErrorPriority.High)
               })
+            |> state.MapError Errors.FilterHighestPriorityOnly
+
         }

@@ -32,12 +32,22 @@ module Unification =
         match t with
         | TypeExpr.RecordDes(t, _) -> return! TypeExpr.FreeVariables t
         | TypeExpr.Entities s -> return! TypeExpr.FreeVariables s
+        | TypeExpr.Relations s -> return! TypeExpr.FreeVariables s
         | TypeExpr.Entity(s, e, e_with_props, id) ->
           let! sVars = TypeExpr.FreeVariables s
           let! eVars = TypeExpr.FreeVariables e
           let! eWithPropsVars = TypeExpr.FreeVariables e_with_props
           let! idVars = TypeExpr.FreeVariables id
           return Set.unionMany [ sVars; eVars; eWithPropsVars; idVars ]
+        | TypeExpr.Relation(s, f, f_with_props, f_id, t, t_with_props, t_id) ->
+          let! sVars = TypeExpr.FreeVariables s
+          let! fVars = TypeExpr.FreeVariables f
+          let! fWithPropsVars = TypeExpr.FreeVariables f_with_props
+          let! fIdVars = TypeExpr.FreeVariables f_id
+          let! tVars = TypeExpr.FreeVariables t
+          let! tWithPropsVars = TypeExpr.FreeVariables t_with_props
+          let! tIdVars = TypeExpr.FreeVariables t_id
+          return Set.unionMany [ sVars; fVars; fWithPropsVars; fIdVars; tVars; tWithPropsVars; tIdVars ]
         | TypeExpr.Schema s ->
           return!
             s.Entities
@@ -149,6 +159,14 @@ module Unification =
           let! idVars = TypeValue.FreeVariables id
           return Set.unionMany [ sVars; tVars; tWithPropsVars; idVars ]
         | TypeValue.Entities s -> return! schema_free_vars s
+        | TypeValue.Relations s -> return! schema_free_vars s
+        | TypeValue.LookupMaybe(s, e, id)
+        | TypeValue.LookupOne(s, e, id)
+        | TypeValue.LookupMany(s, e, id) ->
+          let! sVars = schema_free_vars s
+          let! eVars = TypeValue.FreeVariables e
+          let! idVars = TypeValue.FreeVariables id
+          return Set.unionMany [ sVars; eVars; idVars ]
         | TypeValue.Relation _ -> return Set.empty
         | TypeValue.Var v ->
 
@@ -509,11 +527,33 @@ module Unification =
             do! v1 == v2
         | TypeValue.Schema e1, TypeValue.Schema e2 -> do! unifySchemas e1 e2
         | TypeValue.Entities e1, TypeValue.Entities e2 -> do! unifySchemas e1 e2
+        | TypeValue.Relations e1, TypeValue.Relations e2 -> do! unifySchemas e1 e2
         | TypeValue.Entity(s1, e1, e1with_props, eid1), TypeValue.Entity(s2, e2, e2with_props, eid2) ->
           do! unifySchemas s1 s2
           do! e1 == e2
           do! e1with_props == e2with_props
           do! eid1 == eid2
+        | TypeValue.Relation(s1, _, _, f1, f1with_props, fid1, t1, t1with_props, tid1),
+          TypeValue.Relation(s2, _, _, f2, f2with_props, fid2, t2, t2with_props, tid2) ->
+          do! unifySchemas s1 s2
+          do! f1 == f2
+          do! f1with_props == f2with_props
+          do! fid1 == fid2
+          do! t1 == t2
+          do! t1with_props == t2with_props
+          do! tid1 == tid2
+        | TypeValue.LookupMaybe(s1, e1, id1), TypeValue.LookupMaybe(s2, e2, id2) ->
+          do! unifySchemas s1 s2
+          do! e1 == e2
+          do! id1 == id2
+        | TypeValue.LookupOne(s1, e1, id1), TypeValue.LookupOne(s2, e2, id2) ->
+          do! unifySchemas s1 s2
+          do! e1 == e2
+          do! id1 == id2
+        | TypeValue.LookupMany(s1, e1, id1), TypeValue.LookupMany(s2, e2, id2) ->
+          do! unifySchemas s1 s2
+          do! e1 == e2
+          do! id1 == id2
         | _ -> return! $"Cannot unify types: {left} and {right}" |> error |> state.Throw
       }
 
@@ -615,6 +655,10 @@ module Unification =
             let! schema = instantiateSchema schema
 
             return schema |> TypeValue.Entities
+          | TypeValue.Relations schema ->
+            let! schema = instantiateSchema schema
+
+            return schema |> TypeValue.Relations
           | TypeValue.Entity(schema, entityType, entityTypeWithProps, entityId) ->
             let! schema = instantiateSchema schema
 
@@ -623,11 +667,45 @@ module Unification =
             let! entityId = TypeValue.Instantiate () typeEval loc0 entityId
 
             return TypeValue.Entity(schema, entityType, entityTypeWithProps, entityId)
-          | TypeValue.Relation _ ->
-            return!
-              $"Error: instantiation of entities, entity, and relation types not yet implemented"
-              |> error
-              |> state.Throw
+          | TypeValue.Relation(schema, relation_name, cardinality, from, fromWithProps, fromId, to_, toWithProps, toId) ->
+            let! schema = instantiateSchema schema
+
+            let! fromType = TypeValue.Instantiate () typeEval loc0 from
+            let! fromTypeWithProps = TypeValue.Instantiate () typeEval loc0 fromWithProps
+            let! fromId = TypeValue.Instantiate () typeEval loc0 fromId
+            let! toType = TypeValue.Instantiate () typeEval loc0 to_
+            let! toTypeWithProps = TypeValue.Instantiate () typeEval loc0 toWithProps
+            let! toId = TypeValue.Instantiate () typeEval loc0 toId
+
+            return
+              TypeValue.Relation(
+                schema,
+                relation_name,
+                cardinality,
+                fromType,
+                fromTypeWithProps,
+                fromId,
+                toType,
+                toTypeWithProps,
+                toId
+              )
+          | TypeValue.LookupMaybe(schema, elementType, elementId) ->
+            let! schema = instantiateSchema schema
+
+            let! elementType = TypeValue.Instantiate () typeEval loc0 elementType
+            let! elementId = TypeValue.Instantiate () typeEval loc0 elementId
+
+            return TypeValue.LookupMaybe(schema, elementType, elementId)
+          | TypeValue.LookupOne(schema, elementType, elementId) ->
+            let! schema = instantiateSchema schema
+            let! elementType = TypeValue.Instantiate () typeEval loc0 elementType
+            let! elementId = TypeValue.Instantiate () typeEval loc0 elementId
+            return TypeValue.LookupOne(schema, elementType, elementId)
+          | TypeValue.LookupMany(schema, elementType, elementId) ->
+            let! schema = instantiateSchema schema
+            let! elementType = TypeValue.Instantiate () typeEval loc0 elementType
+            let! elementId = TypeValue.Instantiate () typeEval loc0 elementId
+            return TypeValue.LookupMany(schema, elementType, elementId)
           | TypeValue.Imported({ Arguments = arguments } as t) ->
             // do Console.WriteLine $"Instantiating imported type {t}"
             // do Console.WriteLine $"Arguments: {arguments |> Seq.map (fun a -> a.ToFSharpString) |> Seq.toList}"

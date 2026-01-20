@@ -64,3 +64,8 @@ module NonEmptyList =
       | _ -> None
 
     static member One(e: 'e) = NonEmptyList(e, [])
+
+    static member prependList (l: List<'e>) (NonEmptyList(head, tail): NonEmptyList<'e>) =
+      match l with
+      | [] -> NonEmptyList(head, tail)
+      | listHead :: listTail -> NonEmptyList.OfList(listHead, listTail @ [ head ] @ tail)
