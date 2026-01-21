@@ -231,11 +231,11 @@ module RecordDes =
 
                     match target_cardinality with
                     | Cardinality.Zero ->
-                      return result, TypeValue.LookupMaybe(schema_t, target', source_id), Kind.Star, ctx
+                      return result, TypeValue.RelationLookupOption(schema_t, source_id, target'), Kind.Star, ctx
                     | Cardinality.One ->
-                      return result, TypeValue.LookupOne(schema_t, target', source_id), Kind.Star, ctx
+                      return result, TypeValue.RelationLookupOne(schema_t, source_id, target'), Kind.Star, ctx
                     | Cardinality.Many ->
-                      return result, TypeValue.LookupMany(schema_t, target', source_id), Kind.Star, ctx
+                      return result, TypeValue.RelationLookupMany(schema_t, source_id, target'), Kind.Star, ctx
                   }
                   |> state.MapError(Errors.SetPriority ErrorPriority.High)
               })

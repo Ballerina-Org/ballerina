@@ -1,4 +1,4 @@
-﻿module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Integration
+module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Integration
 
 open NUnit.Framework
 open Ballerina.StdLib.Object
@@ -1348,3 +1348,158 @@ in Map::maptoList [string][int32] m
       | _ -> Assert.Fail $"Expected list with [(key1, 1), (key2, 2)] in any order, got {listValues}"
     | _ -> Assert.Fail $"Expected a list, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
+
+(*
+List size = 200 -------------------
+BEFORE PARSING TOKENS                                                                   
+
+Time taken: 00:00:00.1940570
+
+PARSING TOKENS OK
+
+Time taken: 00:00:10.6251000
+
+PARSING PROGRAM OK
+BEFORE TYPE CHECKING                                                                                            
+
+Time taken: 00:00:00.4527620
+
+List size = 400 --------------------
+BEFORE PARSING TOKENS                 
+
+Time taken: 00:00:00.4582300
+
+PARSING TOKENS OK
+
+Time taken: 00:00:29.0341010
+
+PARSING PROGRAM OK
+BEFORE TYPE CHECKING                
+
+Time taken: 00:00:01.931802
+
+List size = 800 --------------------
+BEFORE PARSING TOKENS                                                                   
+
+Time taken: 00:00:01.2275040
+
+PARSING TOKENS OK
+
+Time taken: 00:01:31.0587370
+
+PARSING PROGRAM OK                                                                      
+BEFORE TYPE CHECKING                                                                                       
+
+Time taken: 00:00:10.2837940
+
+List size = 1600 --------------
+
+BEFORE PARSING TOKENS                                                                                         
+
+Time taken: 00:00:03.9334170
+
+PARSING TOKENS OK
+
+Time taken: 00:05:13.1547770
+
+PARSING PROGRAM OK
+BEFORE TYPE CHECKING                                                                                        
+
+Time taken: 00:01:07.7189350
+*)
+
+(*
+Stackless monads
+
+List size = 200
+BEFORE PARSING TOKENS                                                                                          
+
+Time taken: 00:00:00.2684860
+
+PARSING TOKENS OK
+BEFORE PARSING PROGRAM                                                                                         
+
+Time taken: 00:00:06.2997870
+
+PARSING PROGRAM OK
+BEFORE TYPE CHECKING                                                                                          
+
+Time taken: 00:00:00.4550920
+
+List size = 400
+BEFORE PARSING TOKENS                                                                                          
+
+Time taken: 00:00:00.5031170
+
+PARSING TOKENS OK
+
+Time taken: 00:00:11.9504680
+
+PARSING PROGRAM OK
+BEFORE TYPE CHECKING                                                                                          
+
+Time taken: 00:00:01.3342000
+
+List size = 800
+BEFORE PARSING TOKENS                                                                                          
+
+Time taken: 00:00:01.0997350
+
+PARSING TOKENS OK
+
+Time taken: 00:00:22.9022750
+
+PARSING PROGRAM OK
+BEFORE TYPE CHECKING                                                                                          
+
+Time taken: 00:00:05.3398620
+
+List size = 1600
+BEFORE PARSING TOKENS                                                                                          
+
+Time taken: 00:00:03.0137700
+
+PARSING TOKENS OK
+
+Time taken: 00:00:45.9683190
+
+PARSING PROGRAM OK
+BEFORE TYPE CHECKING                                                                                          
+
+Time taken: 00:00:23.6824260
+
+List size = 3200
+BEFORE PARSING TOKENS                                                                                            
+
+Time taken: 00:00:09.0641730
+
+PARSING TOKENS OK
+
+Time taken: 00:01:30.5152150
+
+PARSING PROGRAM OK
+BEFORE TYPE CHECKING                                                                                          
+
+Time taken: 00:01:57.1312520
+*)
+
+[<Test>]
+let ``StackOverflow`` () =
+  let expectedLength = 300
+
+  let listProgram =
+    [ 1..expectedLength ]
+    |> List.rev
+    |> List.fold (fun acc elem -> $"List::Cons [int32] ({elem}, {acc})") "List::Nil [int32] ()"
+
+  let program = sprintf "let l = %s in List::length [int32] l" listProgram
+
+  match program |> run with
+  | Left(value, typeValue) ->
+    match typeValue with
+    | TypeValue.Primitive { value = PrimitiveType.Int32 } ->
+      match value with
+      | Value.Primitive(Int32 length) -> Assert.That(length, Is.EqualTo(expectedLength))
+      | _ -> Assert.Fail $"Type was correct (Int32), but value was not an int. Got value: {value.AsFSharpString}"
+    | _ -> Assert.Fail $"Expected type to be Int32, but got: {typeValue.AsFSharpString}. Value: {value.AsFSharpString}"
+  | Right e -> Assert.Fail $"Run failed (possibly due to stack overflow). Error: {e.AsFSharpString}"

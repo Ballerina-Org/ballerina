@@ -236,20 +236,36 @@ module Patterns =
     static member CreateLookupMaybe
       (s: Schema<'valueExt>, e: TypeValue<'valueExt>, id: TypeValue<'valueExt>)
       : TypeValue<'valueExt> =
-      TypeValue.LookupMaybe(s, e, id)
+      TypeValue.RelationLookupOption(s, e, id)
 
     static member CreateLookupOne
       (s: Schema<'valueExt>, e: TypeValue<'valueExt>, id: TypeValue<'valueExt>)
       : TypeValue<'valueExt> =
-      TypeValue.LookupOne(s, e, id)
+      TypeValue.RelationLookupOne(s, e, id)
 
     static member CreateLookupMany
       (s: Schema<'valueExt>, e: TypeValue<'valueExt>, id: TypeValue<'valueExt>)
       : TypeValue<'valueExt> =
-      TypeValue.LookupMany(s, e, id)
+      TypeValue.RelationLookupMany(s, e, id)
 
     static member CreateRelation(s, rn: SchemaRelationName, c, f, f', f_id, t, t', t_id) : TypeValue<'valueExt> =
       TypeValue.Relation(s, rn, c, f, f', f_id, t, t', t_id)
+
+    static member CreateRelationLookupOne
+      (schema: Schema<'valueExt>, target': TypeValue<'valueExt>, source_id)
+      : TypeValue<'valueExt> =
+      TypeValue.RelationLookupOne(schema, target', source_id)
+
+    static member CreateRelationLookupOption
+      (schema: Schema<'valueExt>, target': TypeValue<'valueExt>, source_id)
+      : TypeValue<'valueExt> =
+      TypeValue.RelationLookupOption(schema, target', source_id)
+
+
+    static member CreateRelationLookupMany
+      (schema: Schema<'valueExt>, target': TypeValue<'valueExt>, source_id)
+      : TypeValue<'valueExt> =
+      TypeValue.RelationLookupMany(schema, target', source_id)
 
     static member CreateVar(v: TypeVar) : TypeValue<'valueExt> = TypeValue.Var v
 
@@ -429,21 +445,21 @@ module Patterns =
     static member AsLookupMaybe(t: TypeValue<'valueExt>) =
       sum {
         match t with
-        | TypeValue.LookupMaybe(s, f', t_id) -> return (s, f', t_id)
+        | TypeValue.RelationLookupOption(s, f', t_id) -> return (s, f', t_id)
         | _ -> return! $"Error: expected lookup maybe type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
     static member AsLookupOne(t: TypeValue<'valueExt>) =
       sum {
         match t with
-        | TypeValue.LookupOne(s, f', t_id) -> return (s, f', t_id)
+        | TypeValue.RelationLookupOne(s, f', t_id) -> return (s, f', t_id)
         | _ -> return! $"Error: expected lookup one type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
     static member AsLookupMany(t: TypeValue<'valueExt>) =
       sum {
         match t with
-        | TypeValue.LookupMany(s, f', t_id) -> return (s, f', t_id)
+        | TypeValue.RelationLookupMany(s, f', t_id) -> return (s, f', t_id)
         | _ -> return! $"Error: expected lookup many type, got {t}" |> Errors.Singleton |> sum.Throw
       }
 
@@ -468,9 +484,9 @@ module Patterns =
       | TypeValue.Entity(s, e, e', id) -> TypeValue.CreateEntity(s, e, e', id)
       | TypeValue.Relation(s, rn, c, f, f', f_id, t, t', t_id) ->
         TypeValue.CreateRelation(s, rn, c, f, f', f_id, t, t', t_id)
-      | TypeValue.LookupMaybe(s, f', t_id) -> TypeValue.CreateLookupMaybe(s, f', t_id)
-      | TypeValue.LookupOne(s, f', t_id) -> TypeValue.CreateLookupOne(s, f', t_id)
-      | TypeValue.LookupMany(s, f', t_id) -> TypeValue.CreateLookupMany(s, f', t_id)
+      | TypeValue.RelationLookupOption(s, f', t_id) -> TypeValue.CreateLookupMaybe(s, f', t_id)
+      | TypeValue.RelationLookupOne(s, f', t_id) -> TypeValue.CreateLookupOne(s, f', t_id)
+      | TypeValue.RelationLookupMany(s, f', t_id) -> TypeValue.CreateLookupMany(s, f', t_id)
 
     static member SetSourceMapping(t: TypeValue<'valueExt>, source: TypeExprSourceMapping<'valueExt>) =
       match t with
@@ -492,9 +508,9 @@ module Patterns =
       | TypeValue.Entities _
       | TypeValue.Relations _
       | TypeValue.Entity _
-      | TypeValue.LookupMaybe _
-      | TypeValue.LookupOne _
-      | TypeValue.LookupMany _
+      | TypeValue.RelationLookupOption _
+      | TypeValue.RelationLookupOne _
+      | TypeValue.RelationLookupMany _
       | TypeValue.Relation _ -> t
 
   type TypeValue<'valueExt> with

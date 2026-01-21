@@ -7,10 +7,14 @@ module WithError =
   open Ballerina.Collections.NonEmptyList
   open Ballerina.Reader.WithError
 
-  type State<'a, 'c, 's, 'e> =
-    | State of ('c * 's -> Sum<'a * Option<'s>, 'e * Option<'s>>)
+  open Ballerina.Stackless.State.WithError.StacklessStateWithError
 
-    member this.run(c, s) = let (State p) = this in p (c, s)
+  type State<'a, 'c, 's, 'e> =
+    | State of FreeNode<'a, 'c, 's, 'e>
+
+    member this.run(c, s) =
+      let (State p) = this
+      FreeNode.run c s p
 
     static member Run (input: 'c * 's) (p: State<'a, 'c, 's, 'e>) = p.run input
 
@@ -22,78 +26,57 @@ module WithError =
       (Δ: 's * 'c -> 'sOuter -> 'sOuter)
       ((State p): State<'a, 'c, 's, 'e>)
       : State<'a, 'c, 'sOuter, 'e> =
-      State(fun (c, s0: 'sOuter) ->
-        match p (c, (``∇`` (s0, c))) with
-        | Sum.Left(res, u_s) -> Sum.Left(res, u_s |> Option.map (fun s -> Δ (s, c) s0))
-        | Sum.Right(e, u_s) -> Sum.Right(e, u_s |> Option.map (fun s -> Δ (s, c) s0)))
+      State(
+        FreeNode.fromStep (fun (c, s0: 'sOuter) ->
+          match FreeNode.run c (``∇`` (s0, c)) p with
+          | Left(res, u_s) -> Left(res, u_s |> Option.map (fun s -> Δ (s, c) s0))
+          | Right(e, u_s) -> Right(e, u_s |> Option.map (fun s -> Δ (s, c) s0)))
+      )
 
     static member mapContext<'cOuter>
       (``∇``: 'cOuter -> 'c)
       ((State p): State<'a, 'c, 's, 'e>)
       : State<'a, 'cOuter, 's, 'e> =
-      State(fun (c, s0) -> p (``∇`` c, s0))
-
-    static member mapContextFromState<'cOuter>
-      (``∇``: 's * 'cOuter -> 'c)
-      ((State p): State<'a, 'c, 's, 'e>)
-      : State<'a, 'cOuter, 's, 'e> =
-      State(fun (c, s0) -> p (``∇`` (s0, c), s0))
+      State(FreeNode.fromStep (fun (c, s0) -> FreeNode.run (``∇`` c) s0 p))
 
     static member map<'b> (f: 'a -> 'b) ((State p): State<'a, 'c, 's, 'e>) : State<'b, 'c, 's, 'e> =
-      State(fun s0 ->
-        match p s0 with
-        | Sum.Left(res, u_s) -> Sum.Left(f res, u_s)
-        | Sum.Right e -> Sum.Right e)
+      State(FreeNode.bind p (fun a -> FreeNode.Return(f a)))
 
     static member mapError<'e1> (f: 'e -> 'e1) ((State p): State<'a, 'c, 's, 'e>) : State<'a, 'c, 's, 'e1> =
-      State(fun s0 ->
-        match p s0 with
-        | Sum.Left l -> Sum.Left l
-        | Sum.Right(e, s1) -> Sum.Right(f e, s1))
+      State(
+        FreeNode.fromStep (fun (c, s) ->
+          match FreeNode.run c s p with
+          | Left(v, s') -> Left(v, s')
+          | Right(e, s') -> Right(f e, s'))
+      )
 
-    static member fromValue(res: 'a) = State(fun _ -> Sum.Left(res, None))
-
-    static member flatten((State p): State<State<'a, 'c, 's, 'e>, 'c, 's, 'e>) : State<'a, 'c, 's, 'e> =
-      State(fun (c, s0) ->
-        match p (c, s0) with
-        | Sum.Left(State p', s1) ->
-          match
-            p' (
-              match s1 with
-              | None -> c, s0
-              | Some s1 -> c, s1
-            )
-          with
-          | Sum.Left(res, s2) ->
-            Sum.Left(
-              res,
-              match s2, s1 with
-              | Some _, _ -> s2
-              | None, Some _ -> s1
-              | _ -> None
-            )
-          | Sum.Right e -> Sum.Right e
-        | Sum.Right e -> Sum.Right e)
-
-    static member bind (k: 'a -> State<'b, 'c, 's, 'e>) (p: State<'a, 'c, 's, 'e>) : State<'b, 'c, 's, 'e> =
-      State.map k p |> State.flatten
+    static member bind<'a, 'b, 'c, 's, 'e>
+      (k: 'a -> State<'b, 'c, 's, 'e>)
+      (p: State<'a, 'c, 's, 'e>)
+      : State<'b, 'c, 's, 'e> =
+      let (State p') = p
+      State(FreeNode.bind p' (fun a -> let (State p'') = k a in p''))
 
   type StateBuilder() =
     member _.Ignore p = State.map ignore p
     member _.Map f p = State.map f p
     member _.MapContext f p = State.mapContext f p
     member _.MapError f p = State.mapError f p
-    member _.Zero<'c, 's, 'e>() = State.fromValue<'c, 's, 'e> ()
-    member _.Return<'a, 'c, 's, 'e>(result: 'a) = State.fromValue<'c, 's, 'e> result
-    member _.Yield(result: 'a) = State.fromValue<'c, 's, 'e> result
+    member _.Zero<'c, 's, 'e>() : State<unit, 'c, 's, 'e> = State(FreeNode.Return())
+    member _.Return<'a, 'c, 's, 'e>(result: 'a) : State<'a, 'c, 's, 'e> = State(FreeNode.Return result)
+    member _.Yield<'a, 'c, 's, 'e>(result: 'a) : State<'a, 'c, 's, 'e> = State(FreeNode.Return result)
     member _.Bind(p: State<'a, 'c, 's, 'e>, k: 'a -> State<'b, 'c, 's, 'e>) = State.bind k p
     member _.Combine(p: State<'b, 'c, 's, 'e>, k: State<'a, 'c, 's, 'e>) = State.bind (fun _ -> k) p
     member state.Repeat(p: State<'a, 'c, 's, 'e>) : State<'a, 'c, 's, 'e> = state.Bind(p, fun _ -> state.Repeat(p))
-    member _.GetContext() = State(fun (c, _) -> Sum.Left(c, None))
-    member _.GetState() = State(fun (_, s) -> Sum.Left(s, None))
+
+    member _.GetContext<'c, 's, 'e>() : State<'c, 'c, 's, 'e> =
+      State(FreeNode.fromStep (fun (c: 'c, _) -> Left(c, None)))
+
+    member _.GetState() =
+      State(FreeNode<'s, 'c, 's, 'e>.getState)
 
     member _.SetState(u: U<'s>) =
-      State(fun (_, s) -> Sum.Left((), Some(u s)))
+      State(FreeNode<'s, 'c, 's, 'e>.setState u)
 
     member state.ReturnFrom(p: State<'a, 'c, 's, 'e>) =
       state {
@@ -101,14 +84,10 @@ module WithError =
         return res
       }
 
-    member _.Catch((State p): State<'a, 'c, 's, 'e>) : State<Sum<'a, 'e>, 'c, 's, 'e> =
-      State(fun cs ->
-        match p cs with
-        | Left(res: 'a, u_s: Option<'s>) -> let result: Sum<'a, 'e> = Left res in Left(result, u_s)
-        | Right(err: 'e, u_s: Option<'s>) -> let result: Sum<'a, 'e> = Right err in Left(result, u_s))
+    member _.Catch((State p): State<'a, 'c, 's, 'e>) : State<Sum<'a, 'e>, 'c, 's, 'e> = State(FreeNode.catch p)
 
-    member _.Throw(e: 'e) = State(fun _ -> Sum.Right(e, None))
-    member state.Delay p = state.Bind((state.Return()), p)
+    member _.Throw(e: 'e) = State(FreeNode.throw e)
+    member state.Delay<'a, 'c, 's, 'e>(p: unit -> State<'a, 'c, 's, 'e>) : State<'a, 'c, 's, 'e> = p ()
 
     member state.AnyAcc<'a, 'c, 's, 'e>
       (e: {| concat: 'e * 'e -> 'e |}, e0: Option<'e>, l: NonEmptyList<State<'a, 'c, 's, 'e>>)
@@ -132,40 +111,8 @@ module WithError =
     member state.Any<'a, 'c, 's, 'e>
       (e: {| concat: 'e * 'e -> 'e |}, ps: NonEmptyList<State<'a, 'c, 's, 'e>>)
       : State<'a, 'c, 's, 'e> =
-      State(fun (c: 'c, s0: 's) ->
-        let mutable s = None
-        let mutable errors: 'e option = None
-        let mutable result: 'a option = None
-
-        for p in ps do
-          if result.IsSome then
-            // Short-circuiting: if there are already errors, skip running further computations
-            ()
-          else
-            let s0 = s |> Option.defaultValue s0
-            let res = p.run (c, s0)
-
-            match res with
-            | Left(v, s1) ->
-              result <- Some v
-
-              match s1 with
-              | Some s1 -> s <- Some s1
-              | None -> ()
-            | Right(err, s1) ->
-              match s1 with
-              | Some s1 -> s <- Some s1
-              | None -> ()
-
-              errors <-
-                match errors with
-                | Some errs -> Some(e.concat (errs, err))
-                | None -> Some err
-
-        match result, errors with
-        | Some result, _ -> Left(result, s)
-        | None, Some errors -> Right(errors, None)
-        | _ -> failwith "Unreachable: NonEmptyList must have at least one element")
+      let ps = ps |> NonEmptyList.ToList |> List.map (fun (State p) -> p)
+      State(FreeNode.any e.concat ps)
 
     member inline state.Any<'a, 'c, 's, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
       (ps: NonEmptyList<State<'a, 'c, 's, 'b>>)
@@ -177,34 +124,9 @@ module WithError =
       =
       NonEmptyList.OfList(p, ps) |> state.Any
 
-    member state.All<'a, 'c, 's, 'e>(e: {| concat: 'e * 'e -> 'e |}, ps: List<State<'a, 'c, 's, 'e>>) =
-      State(fun (c: 'c, s0: 's) ->
-
-        let mutable s = None
-        let mutable res = ResizeArray<'a>()
-        let mutable err_acc: Option<'e> = None
-
-        for p in ps do
-          if err_acc.IsSome then
-            ()
-          else
-            let s0 = s |> Option.defaultValue s0
-
-            match p |> State.Run(c, s0) with
-            | Left(v, s1) ->
-              res.Add v
-              s <- s1 |> Option.orElse s
-            | Right(err, s1) ->
-              err_acc <-
-                match err_acc with
-                | Some err_acc -> e.concat (err_acc, err) |> Some
-                | None -> Some err
-
-              s <- s1 |> Option.orElse s
-
-        match err_acc with
-        | None -> Left(res |> List.ofSeq, s) // all succeeded
-        | Some err -> Right(err, None))
+    member state.All<'a, 'c, 's, 'e>(_e: {| concat: 'e * 'e -> 'e |}, ps: List<State<'a, 'c, 's, 'e>>) =
+      let ps = ps |> List.map (fun (State p) -> p)
+      State(FreeNode.all ps)
 
     member inline state.All<'a, 'c, 's, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
       (ps: List<State<'a, 'c, 's, 'b>>)
@@ -236,22 +158,20 @@ module WithError =
       |> state.Map(Map.ofSeq)
 
     member state.OfReader<'a, 'c, 's, 'e>(Reader r: Reader<'a, 'c, 'e>) : State<'a, 'c, 's, 'e> =
-      State(fun (c, _s) ->
-        match r c with
-        | Sum.Left(res) -> Sum.Left(res, None)
-        | Sum.Right(err) -> Sum.Right(err, None))
+      State(
+        FreeNode.fromStep (fun (c, _s) ->
+          match r c with
+          | Sum.Left(res) -> Left(res, None)
+          | Sum.Right(err) -> Right(err, None))
+      )
 
     member state.OfStateReader<'a, 'c, 's, 'e>(Reader r: Reader<'a, 's, 'e>) : State<'a, 'c, 's, 'e> =
-      State(fun (_c, s) ->
-        match r s with
-        | Sum.Left(res) -> Sum.Left(res, None)
-        | Sum.Right(err) -> Sum.Right(err, None))
-
-    member state.ToReader<'a, 'c, 's, 'e>(State p: State<'a, 'c, 's, 'e>) : Reader<'a, 'c * 's, 'e> =
-      Reader(fun (c, s) ->
-        match p (c, s) with
-        | Sum.Left(res, _) -> Sum.Left(res)
-        | Sum.Right(err, _) -> Sum.Right(err))
+      State(
+        FreeNode.fromStep (fun (_c, s) ->
+          match r s with
+          | Sum.Left(res) -> Left(res, None)
+          | Sum.Right(err) -> Right(err, None))
+      )
 
     member state.OfSum s =
       match s with
@@ -272,9 +192,6 @@ module WithError =
         | Right e, _
         | _, Right e -> return! state.Throw e
       }
-
-    member inline state.All3 p1 p2 p3 =
-      state.All2 p1 (state.All2 p2 p3) |> state.Map Tuple.fromNested3
 
     member inline state.All4 p1 p2 p3 p4 =
       state.All2 p1 (state.All2 p2 (state.All2 p3 p4)) |> state.Map Tuple.fromNested4
@@ -297,19 +214,6 @@ module WithError =
 
     member inline state.Either5 p1 p2 p3 p4 p5 =
       state.Either p1 (state.Either p2 (state.Either p3 (state.Either p4 p5)))
-
-    member inline state.Memo (get: 'i -> 's -> 'o option, set: 'i * 'o -> Updater<'s>) (f: 'i -> State<'o, _, 's, _>) =
-      fun (i: 'i) ->
-        state {
-          let! s = state.GetState()
-
-          match get i s with
-          | Some(v) -> return v
-          | None ->
-            let! v = f i
-            do! set (i, v) |> state.SetState
-            return v
-        }
 
     member state.RunOption(p: Option<State<'a, 'c, 's, 'e>>) =
       state {

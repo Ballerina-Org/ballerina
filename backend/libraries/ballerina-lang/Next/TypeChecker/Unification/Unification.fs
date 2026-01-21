@@ -48,6 +48,21 @@ module Unification =
           let! tWithPropsVars = TypeExpr.FreeVariables t_with_props
           let! tIdVars = TypeExpr.FreeVariables t_id
           return Set.unionMany [ sVars; fVars; fWithPropsVars; fIdVars; tVars; tWithPropsVars; tIdVars ]
+        | TypeExpr.RelationLookupOne(s, t', f_id) ->
+          let! sVars = TypeExpr.FreeVariables s
+          let! tVars = TypeExpr.FreeVariables t'
+          let! fIdVars = TypeExpr.FreeVariables f_id
+          return Set.unionMany [ sVars; tVars; fIdVars ]
+        | TypeExpr.RelationLookupOption(s, t', f_id) ->
+          let! sVars = TypeExpr.FreeVariables s
+          let! tVars = TypeExpr.FreeVariables t'
+          let! fIdVars = TypeExpr.FreeVariables f_id
+          return Set.unionMany [ sVars; tVars; fIdVars ]
+        | TypeExpr.RelationLookupMany(s, t', f_id) ->
+          let! sVars = TypeExpr.FreeVariables s
+          let! tVars = TypeExpr.FreeVariables t'
+          let! fIdVars = TypeExpr.FreeVariables f_id
+          return Set.unionMany [ sVars; tVars; fIdVars ]
         | TypeExpr.Schema s ->
           return!
             s.Entities
@@ -160,9 +175,9 @@ module Unification =
           return Set.unionMany [ sVars; tVars; tWithPropsVars; idVars ]
         | TypeValue.Entities s -> return! schema_free_vars s
         | TypeValue.Relations s -> return! schema_free_vars s
-        | TypeValue.LookupMaybe(s, e, id)
-        | TypeValue.LookupOne(s, e, id)
-        | TypeValue.LookupMany(s, e, id) ->
+        | TypeValue.RelationLookupOption(s, e, id)
+        | TypeValue.RelationLookupOne(s, e, id)
+        | TypeValue.RelationLookupMany(s, e, id) ->
           let! sVars = schema_free_vars s
           let! eVars = TypeValue.FreeVariables e
           let! idVars = TypeValue.FreeVariables id
@@ -542,15 +557,15 @@ module Unification =
           do! t1 == t2
           do! t1with_props == t2with_props
           do! tid1 == tid2
-        | TypeValue.LookupMaybe(s1, e1, id1), TypeValue.LookupMaybe(s2, e2, id2) ->
+        | TypeValue.RelationLookupOption(s1, e1, id1), TypeValue.RelationLookupOption(s2, e2, id2) ->
           do! unifySchemas s1 s2
           do! e1 == e2
           do! id1 == id2
-        | TypeValue.LookupOne(s1, e1, id1), TypeValue.LookupOne(s2, e2, id2) ->
+        | TypeValue.RelationLookupOne(s1, e1, id1), TypeValue.RelationLookupOne(s2, e2, id2) ->
           do! unifySchemas s1 s2
           do! e1 == e2
           do! id1 == id2
-        | TypeValue.LookupMany(s1, e1, id1), TypeValue.LookupMany(s2, e2, id2) ->
+        | TypeValue.RelationLookupMany(s1, e1, id1), TypeValue.RelationLookupMany(s2, e2, id2) ->
           do! unifySchemas s1 s2
           do! e1 == e2
           do! id1 == id2
@@ -689,23 +704,23 @@ module Unification =
                 toTypeWithProps,
                 toId
               )
-          | TypeValue.LookupMaybe(schema, elementType, elementId) ->
+          | TypeValue.RelationLookupOption(schema, elementType, elementId) ->
             let! schema = instantiateSchema schema
 
             let! elementType = TypeValue.Instantiate () typeEval loc0 elementType
             let! elementId = TypeValue.Instantiate () typeEval loc0 elementId
 
-            return TypeValue.LookupMaybe(schema, elementType, elementId)
-          | TypeValue.LookupOne(schema, elementType, elementId) ->
+            return TypeValue.RelationLookupOption(schema, elementType, elementId)
+          | TypeValue.RelationLookupOne(schema, elementType, elementId) ->
             let! schema = instantiateSchema schema
             let! elementType = TypeValue.Instantiate () typeEval loc0 elementType
             let! elementId = TypeValue.Instantiate () typeEval loc0 elementId
-            return TypeValue.LookupOne(schema, elementType, elementId)
-          | TypeValue.LookupMany(schema, elementType, elementId) ->
+            return TypeValue.RelationLookupOne(schema, elementType, elementId)
+          | TypeValue.RelationLookupMany(schema, elementType, elementId) ->
             let! schema = instantiateSchema schema
             let! elementType = TypeValue.Instantiate () typeEval loc0 elementType
             let! elementId = TypeValue.Instantiate () typeEval loc0 elementId
-            return TypeValue.LookupMany(schema, elementType, elementId)
+            return TypeValue.RelationLookupMany(schema, elementType, elementId)
           | TypeValue.Imported({ Arguments = arguments } as t) ->
             // do Console.WriteLine $"Instantiating imported type {t}"
             // do Console.WriteLine $"Arguments: {arguments |> Seq.map (fun a -> a.ToFSharpString) |> Seq.toList}"

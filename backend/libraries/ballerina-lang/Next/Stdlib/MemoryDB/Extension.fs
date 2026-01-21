@@ -272,6 +272,7 @@ module Extension =
       Operations = [ memoryDBGetById, getByIdOperation ] |> Map.ofList }
 
   let MemoryDBCUDExtension<'ext when 'ext: comparison>
+    (listSet: List<Value<TypeValue<'ext>, 'ext>> -> 'ext)
     (valueLens: PartialLens<'ext, MemoryDBValues<'ext>>)
     : OperationsExtension<'ext, MemoryDBValues<'ext>> =
 
@@ -1154,13 +1155,13 @@ module Extension =
                   let add_link (relation: MemoryDBRelation<'ext>) : MemoryDBRelation<'ext> =
                     { relation with
                         All = relation.All |> Set.add (_fromId, _toId)
-                        From =
-                          relation.From
+                        FromTo =
+                          relation.FromTo
                           |> Map.change _fromId (function
                             | Some toSet -> Some(toSet |> Set.add _toId)
                             | None -> Some(Set.singleton _toId))
-                        To =
-                          relation.To
+                        ToFrom =
+                          relation.ToFrom
                           |> Map.change _toId (function
                             | Some fromSet -> Some(fromSet |> Set.add _fromId)
                             | None -> Some(Set.singleton _fromId)) }
@@ -1252,7 +1253,7 @@ module Extension =
     let UnlinkOperation: OperationExtension<_, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBUnlinkType, memoryDBUnlinkKind, MemoryDBValues.Link {| RelationRef = None |})
+          <| (memoryDBUnlinkType, memoryDBUnlinkKind, MemoryDBValues.Unlink {| RelationRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -1300,18 +1301,21 @@ module Extension =
                 | [ _fromId; _toId ] ->
 
                   let remove_link (relation: MemoryDBRelation<'ext>) : MemoryDBRelation<'ext> =
-                    { relation with
-                        All = relation.All |> Set.remove (_fromId, _toId)
-                        From =
-                          relation.From
-                          |> Map.change _fromId (function
-                            | Some toSet -> Some(toSet |> Set.remove _toId)
-                            | None -> Some(Set.empty))
-                        To =
-                          relation.To
-                          |> Map.change _toId (function
-                            | Some fromSet -> Some(fromSet |> Set.remove _fromId)
-                            | None -> Some(Set.empty)) }
+                    let res =
+                      { relation with
+                          All = relation.All |> Set.remove (_fromId, _toId)
+                          FromTo =
+                            relation.FromTo
+                            |> Map.change _fromId (function
+                              | Some toSet -> Some(toSet |> Set.remove _toId)
+                              | None -> Some(Set.empty))
+                          ToFrom =
+                            relation.ToFrom
+                            |> Map.change _toId (function
+                              | Some fromSet -> Some(fromSet |> Set.remove _fromId)
+                              | None -> Some(Set.empty)) }
+
+                    res
 
                   do
                     _db.relations <-
@@ -1327,6 +1331,324 @@ module Extension =
                     |> reader.OfSum
             } }
 
+    let actual_lookup
+      loc0
+      (
+        _schema: Schema<'ext>,
+        _db: MutableMemoryDB<'ext>,
+        _dir,
+        _relation: SchemaRelation,
+        _from: SchemaEntity<'ext>,
+        _to: SchemaEntity<'ext>
+      )
+      v
+      =
+      reader {
+        let! relation_ref =
+          _db.relations
+          |> Map.tryFind _relation.Name
+          |> sum.OfOption(Errors.Singleton(loc0, "Relation not found"))
+          |> reader.OfSum
+
+        let source_entity_ref, target_entity_ref, source_to_targets =
+          match _dir with
+          | FromTo -> _from, _to, relation_ref.FromTo
+          | ToFrom -> _to, _from, relation_ref.ToFrom
+
+        let source_id = v
+
+        let! sources =
+          _db.entities
+          |> Map.tryFind source_entity_ref.Name
+          |> sum.OfOption(Errors.Singleton(loc0, "Source entity not found"))
+          |> reader.OfSum
+
+        let! targets =
+          _db.entities
+          |> Map.tryFind target_entity_ref.Name
+          |> sum.OfOption(Errors.Singleton(loc0, "Target entity not found"))
+          |> reader.OfSum
+
+        do!
+          sources
+          |> Map.tryFind source_id
+          |> sum.OfOption(Errors.Singleton(loc0, "Source ID not found"))
+          |> reader.OfSum
+          |> reader.Ignore
+
+        let target_ids =
+          source_to_targets |> Map.tryFind source_id |> Option.defaultValue Set.empty
+
+        return!
+          target_ids
+          |> Set.toSeq
+          |> Seq.map (fun target_id ->
+            reader {
+              let! target_v =
+                targets
+                |> Map.tryFind target_id
+                |> sum.OfOption(Errors.Singleton(loc0, "Target ID not found"))
+                |> reader.OfSum
+
+              return target_v
+            })
+          |> reader.All
+      }
+
+    let memoryDBLookupOneId =
+      Identifier.FullyQualified([ "MemoryDB" ], "lookupOne")
+      |> TypeCheckScope.Empty.Resolve
+
+    let memoryDBLookupOneType =
+      TypeValue.CreateLambda(
+        TypeParameter.Create("schema", Kind.Schema),
+        TypeExpr.Lambda(
+          TypeParameter.Create("from_id", Kind.Star),
+          TypeExpr.Lambda(
+            TypeParameter.Create("to_with_props", Kind.Star),
+            TypeExpr.Arrow(
+              TypeExpr.Apply(
+                TypeExpr.Apply(
+                  TypeExpr.Apply(
+                    TypeExpr.Lookup("SchemaLookupOne" |> Identifier.LocalScope),
+                    TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+                  ),
+                  TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                ),
+                TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
+              ),
+              TypeExpr.Arrow(
+                TypeExpr.Lookup("from_id" |> Identifier.LocalScope),
+                TypeExpr.Sum
+                  [ TypeExpr.Primitive PrimitiveType.Unit
+                    TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope) ]
+              )
+            )
+          )
+        )
+      )
+
+    let memoryDBLookupOneKind =
+      Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
+
+
+    let LookupOneOperation: OperationExtension<_, _> =
+      { PublicIdentifiers =
+          Some
+          <| (memoryDBLookupOneType, memoryDBLookupOneKind, MemoryDBValues.LookupOne {| RelationRef = None |})
+        OperationsLens =
+          valueLens
+          |> PartialLens.BindGet (function
+            | MemoryDBValues.LookupOne v -> Some(MemoryDBValues.LookupOne v)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              let! op =
+                op
+                |> MemoryDBValues.AsLookupOne
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              match op.RelationRef with
+              | None -> // the closure is empty - first step in the application
+                let! v = v |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                let! v =
+                  v
+                  |> valueLens.Get
+                  |> sum.OfOption(Errors.Singleton(loc0, "Cannot get value from extension"))
+                  |> reader.OfSum
+
+                let! v =
+                  v
+                  |> MemoryDBValues.AsRelationLookupRef
+                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> reader.OfSum
+
+                return MemoryDBValues.LookupOne {| RelationRef = Some v |} |> valueLens.Set |> Ext
+              | Some relation_ref -> // the closure has the first operand - second step in the application
+                let! target_values = actual_lookup loc0 relation_ref v |> reader.Catch
+
+                match target_values with
+                | Right(_e: Errors) -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                | Left target_values ->
+                  match target_values |> List.tryHead with
+                  | Some v -> return Value.Sum({ Case = 2; Count = 2 }, v)
+                  | _ -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+            } }
+
+    let memoryDBLookupOptionId =
+      Identifier.FullyQualified([ "MemoryDB" ], "lookupOption")
+      |> TypeCheckScope.Empty.Resolve
+
+    let memoryDBLookupOptionType =
+      TypeValue.CreateLambda(
+        TypeParameter.Create("schema", Kind.Schema),
+        TypeExpr.Lambda(
+          TypeParameter.Create("from_id", Kind.Star),
+          TypeExpr.Lambda(
+            TypeParameter.Create("to_with_props", Kind.Star),
+            TypeExpr.Arrow(
+              TypeExpr.Apply(
+                TypeExpr.Apply(
+                  TypeExpr.Apply(
+                    TypeExpr.Lookup("SchemaLookupOption" |> Identifier.LocalScope),
+                    TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+                  ),
+                  TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                ),
+                TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
+              ),
+              TypeExpr.Arrow(
+                TypeExpr.Lookup("from_id" |> Identifier.LocalScope),
+                TypeExpr.Sum
+                  [ TypeExpr.Primitive PrimitiveType.Unit
+                    TypeExpr.Sum
+                      [ TypeExpr.Primitive PrimitiveType.Unit
+                        TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope) ] ]
+              )
+            )
+          )
+        )
+      )
+
+    let memoryDBLookupOptionKind =
+      Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
+
+    let LookupOptionOperation: OperationExtension<_, _> =
+      { PublicIdentifiers =
+          Some
+          <| (memoryDBLookupOptionType, memoryDBLookupOptionKind, MemoryDBValues.LookupOption {| RelationRef = None |})
+        OperationsLens =
+          valueLens
+          |> PartialLens.BindGet (function
+            | MemoryDBValues.LookupOption v -> Some(MemoryDBValues.LookupOption v)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              let! op =
+                op
+                |> MemoryDBValues.AsLookupOption
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              match op.RelationRef with
+              | None -> // the closure is empty - first step in the application
+                let! v = v |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                let! v =
+                  v
+                  |> valueLens.Get
+                  |> sum.OfOption(Errors.Singleton(loc0, "Cannot get value from extension"))
+                  |> reader.OfSum
+
+                let! v =
+                  v
+                  |> MemoryDBValues.AsRelationLookupRef
+                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> reader.OfSum
+
+                return MemoryDBValues.LookupOption {| RelationRef = Some v |} |> valueLens.Set |> Ext
+              | Some relation_ref -> // the closure has the first operand - second step in the application
+                let! target_values = actual_lookup loc0 relation_ref v |> reader.Catch
+
+                match target_values with
+                | Right(_e: Errors) -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                | Left target_values ->
+                  match target_values |> List.tryHead with
+                  | Some v -> return Value.Sum({ Case = 2; Count = 2 }, Value.Sum({ Case = 2; Count = 2 }, v))
+                  | _ ->
+                    return
+                      Value.Sum(
+                        { Case = 2; Count = 2 },
+                        Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                      )
+            } }
+
+    let memoryDBLookupManyId =
+      Identifier.FullyQualified([ "MemoryDB" ], "lookupMany")
+      |> TypeCheckScope.Empty.Resolve
+
+    let memoryDBLookupManyType =
+      TypeValue.CreateLambda(
+        TypeParameter.Create("schema", Kind.Schema),
+        TypeExpr.Lambda(
+          TypeParameter.Create("from_id", Kind.Star),
+          TypeExpr.Lambda(
+            TypeParameter.Create("to_with_props", Kind.Star),
+            TypeExpr.Arrow(
+              TypeExpr.Apply(
+                TypeExpr.Apply(
+                  TypeExpr.Apply(
+                    TypeExpr.Lookup("SchemaLookupMany" |> Identifier.LocalScope),
+                    TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+                  ),
+                  TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                ),
+                TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
+              ),
+              TypeExpr.Arrow(
+                TypeExpr.Lookup("from_id" |> Identifier.LocalScope),
+                TypeExpr.Sum
+                  [ TypeExpr.Primitive PrimitiveType.Unit
+                    TypeExpr.Apply(
+                      TypeExpr.Lookup("List" |> Identifier.LocalScope),
+                      TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
+                    ) ]
+              )
+            )
+          )
+        )
+      )
+
+    let memoryDBLookupManyKind =
+      Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
+
+    let LookupManyOperation: OperationExtension<_, _> =
+      { PublicIdentifiers =
+          Some
+          <| (memoryDBLookupManyType, memoryDBLookupManyKind, MemoryDBValues.LookupMany {| RelationRef = None |})
+        OperationsLens =
+          valueLens
+          |> PartialLens.BindGet (function
+            | MemoryDBValues.LookupMany v -> Some(MemoryDBValues.LookupMany v)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              let! op =
+                op
+                |> MemoryDBValues.AsLookupMany
+                |> sum.MapError(Errors.FromErrors loc0)
+                |> reader.OfSum
+
+              match op.RelationRef with
+              | None -> // the closure is empty - first step in the application
+                let! v = v |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+                let! v =
+                  v
+                  |> valueLens.Get
+                  |> sum.OfOption(Errors.Singleton(loc0, "Cannot get value from extension"))
+                  |> reader.OfSum
+
+                let! v =
+                  v
+                  |> MemoryDBValues.AsRelationLookupRef
+                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> reader.OfSum
+
+                return MemoryDBValues.LookupMany {| RelationRef = Some v |} |> valueLens.Set |> Ext
+              | Some relation_ref -> // the closure has the first operand - second step in the application
+                let! target_values = actual_lookup loc0 relation_ref v |> reader.Catch
+
+                match target_values with
+                | Right(_e: Errors) -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                | Left target_values -> return Value.Sum({ Case = 2; Count = 2 }, target_values |> listSet |> Ext)
+
+            } }
 
     { TypeVars = []
       Operations =
@@ -1336,5 +1658,8 @@ module Extension =
           (memoryDBUpdateId, UpdateOperation)
           (memoryDBLinkId, LinkOperation)
           (memoryDBUnlinkId, UnlinkOperation)
+          (memoryDBLookupOptionId, LookupOptionOperation)
+          (memoryDBLookupOneId, LookupOneOperation)
+          (memoryDBLookupManyId, LookupManyOperation)
           (memoryDBDeleteId, DeleteOperation) ]
         |> Map.ofList }

@@ -64,3 +64,6 @@ module TypeExpr =
         | TypeExpr.Entity _ -> failwith "Entity ToJson not implemented"
         | TypeExpr.Relation _ -> failwith "Relation ToJson not implemented"
         | TypeExpr.RecordDes(_, _) -> failwith "RecordDes ToJson not implemented"
+        | TypeExpr.RelationLookupOne _ -> failwith "RelationLookupOne ToJson not implemented"
+        | TypeExpr.RelationLookupOption _ -> failwith "RelationLookupOption ToJson not implemented"
+        | TypeExpr.RelationLookupMany _ -> failwith "RelationLookupMany ToJson not implemented"
