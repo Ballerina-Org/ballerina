@@ -280,6 +280,9 @@ module Model =
       t: TypeExpr<'valueExt> *
       t': TypeExpr<'valueExt> *
       t_id: TypeExpr<'valueExt>
+    | RelationLookupOne of s: TypeExpr<'valueExt> * f_id: TypeExpr<'valueExt> * t': TypeExpr<'valueExt>
+    | RelationLookupOption of s: TypeExpr<'valueExt> * f_id: TypeExpr<'valueExt> * t': TypeExpr<'valueExt>
+    | RelationLookupMany of s: TypeExpr<'valueExt> * f_id: TypeExpr<'valueExt> * t': TypeExpr<'valueExt>
     | Imported of ImportedTypeValue<'valueExt>
 
     override self.ToString() =
@@ -326,6 +329,9 @@ module Model =
       | Entity(s, e, e_with_props, id) -> $"SchemaEntity[Schema[{s}][{e}][{e_with_props}][{id}]"
       | Relation(s, f, f_with_props, f_id, t, t_with_props, t_id) ->
         $"SchemaRelation[Schema[{s}][{f}][{f_with_props}][{f_id}][{t}][{t_with_props}][{t_id}]"
+      | RelationLookupOne(s, t', f_id) -> $"SchemaLookupOne[Schema[{s}][{t'}][{f_id}]"
+      | RelationLookupOption(s, t', f_id) -> $"SchemaLookupOption[Schema[{s}][{t'}][{f_id}]"
+      | RelationLookupMany(s, t', f_id) -> $"SchemaLookupMany[Schema[{s}][{t'}][{f_id}]"
 
 
   and TypeBinding<'valueExt> =
@@ -421,9 +427,9 @@ module Model =
       t: TypeValue<'valueExt> *
       t': TypeValue<'valueExt> *
       t_id: TypeValue<'valueExt>
-    | LookupMaybe of Schema<'valueExt> * target': TypeValue<'valueExt> * source_id: TypeValue<'valueExt>
-    | LookupOne of Schema<'valueExt> * target': TypeValue<'valueExt> * source_id: TypeValue<'valueExt>
-    | LookupMany of Schema<'valueExt> * target': TypeValue<'valueExt> * source_id: TypeValue<'valueExt>
+    | RelationLookupOption of Schema<'valueExt> * source_id: TypeValue<'valueExt> * target': TypeValue<'valueExt>
+    | RelationLookupOne of Schema<'valueExt> * source_id: TypeValue<'valueExt> * target': TypeValue<'valueExt>
+    | RelationLookupMany of Schema<'valueExt> * source_id: TypeValue<'valueExt> * target': TypeValue<'valueExt>
 
     override self.ToString() =
       match self with
@@ -471,11 +477,11 @@ module Model =
       | Entity(s, e, e_with_props, id) ->
         $"SchemaEntity[Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]][{e}][{e_with_props}][{id}]"
       | Relations s -> $"SchemaRelations[{s.Relations.Count}]"
-      | LookupMaybe(s, f', t_id) ->
-        $"SchemaLookupMaybe[Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]][{f'}][{t_id}]"
-      | LookupOne(s, f', t_id) ->
+      | RelationLookupOption(s, f', t_id) ->
+        $"SchemaLookupOption[Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]][{f'}][{t_id}]"
+      | RelationLookupOne(s, f', t_id) ->
         $"SchemaLookupOne[Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]][{f'}][{t_id}]"
-      | LookupMany(s, f', t_id) ->
+      | RelationLookupMany(s, f', t_id) ->
         $"SchemaLookupMany[Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]][{f'}][{t_id}]"
       | Relation(s, rn, _c, f, f', f_id, t, t', t_id) ->
         $"SchemaRelation[{rn.Name} Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]][{f}][{f'}][{f_id}][{t}][{t'}][{t_id}]"

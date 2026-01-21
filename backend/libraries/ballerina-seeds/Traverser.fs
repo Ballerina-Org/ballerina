@@ -222,11 +222,11 @@ module Traverser =
           return! state.Throw(Errors.Singleton(Location.Unknown, "Schema Relations seeds not implemented yet"))
         | TypeValue.Relation _ ->
           return! state.Throw(Errors.Singleton(Location.Unknown, "Schema Relation seeds not implemented yet"))
-        | TypeValue.LookupMaybe _ ->
+        | TypeValue.RelationLookupOption _ ->
           return! state.Throw(Errors.Singleton(Location.Unknown, "Schema LookupMaybe seeds not implemented yet"))
-        | TypeValue.LookupOne _ ->
+        | TypeValue.RelationLookupOne _ ->
           return! state.Throw(Errors.Singleton(Location.Unknown, "Schema LookupOne seeds not implemented yet"))
-        | TypeValue.LookupMany _ ->
+        | TypeValue.RelationLookupMany _ ->
           return! state.Throw(Errors.Singleton(Location.Unknown, "Schema LookupMany seeds not implemented yet"))
       }
 

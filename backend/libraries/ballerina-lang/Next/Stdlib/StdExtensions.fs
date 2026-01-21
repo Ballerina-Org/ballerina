@@ -202,7 +202,12 @@ let stdExtensions =
     MemoryDB.Extension.MemoryDBGetByIdExtension<ValueExt> MemoryDBExt.ValueLens
 
   let memoryDBCUDExtension =
-    MemoryDB.Extension.MemoryDBCUDExtension<ValueExt> MemoryDBExt.ValueLens
+    MemoryDB.Extension.MemoryDBCUDExtension<ValueExt>
+      (fun values ->
+        ListExt.ListValues(List.Model.ListValues.List values)
+        |> Choice1Of6
+        |> ValueExt.ValueExt)
+      MemoryDBExt.ValueLens
 
   let listExtension =
     List.Extension.ListExtension<ValueExt>

@@ -11,6 +11,7 @@
     <Compile Include="Collections/Sum.fs" />
     <Compile Include="Collections\TaskSum.fs" />
     <Compile Include="State/WithError.fs" />
+    <Compile Include="State/StacklessWithError.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

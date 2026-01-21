@@ -121,12 +121,6 @@ module Seq =
     //   (ps:seq<State<'a,'c,'s,'b>>) =
     //   state.All({| concat='b.Concat |}, ps |> Seq.toList)
 
-    member state.ToState(State p) =
-      Ballerina.State.WithError.State(fun (c, s) ->
-        match p (c, s) with
-        | Sum.Left(res, u_s) -> Sum.Left(res, u_s)
-        | Sum.Right e -> Sum.Right e)
-
     member state.OfSum s =
       match s with
       | Left res -> state.Return res

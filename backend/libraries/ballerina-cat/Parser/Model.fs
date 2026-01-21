@@ -7,6 +7,7 @@ module Model =
   open Ballerina.Collections
   open Ballerina.Collections.NonEmptyList
   open Ballerina.Reader.WithError
+  open Ballerina.Stackless.State.WithError.StacklessStateWithError
 
 
   open FSharp.Core
@@ -24,30 +25,39 @@ module Model =
       : ParserResult<'b, 'sym, 'loc, 'err> =
       ParserResult(f a, rest)
 
+
   type Parser<'a, 'sym, 'loc, 'err> =
-    | Parser of ((List<'sym> * 'loc) -> Sum<ParserResult<'a, 'sym, 'loc, 'err>, 'err * Option<List<'sym> * 'loc>>)
+    | Parser of FreeNode<'a, unit, List<'sym> * 'loc, 'err>
 
-    static member Run (input: List<'sym>, loc: 'loc) (Parser p: Parser<'a, 'sym, 'loc, 'err>) = p (input, loc)
+    static member Run (input: List<'sym>, loc: 'loc) (Parser p: Parser<'a, 'sym, 'loc, 'err>) =
+      match FreeNode.run () (input, loc) p with
+      | Left(v, s1) -> Left(ParserResult(v, s1))
+      | Right(e, s1) -> Right(e, s1)
 
-    static member Throw(e: 'err) : Parser<'a, 'sym, 'loc, 'err> = Parser(fun _ -> Right(e, None))
+    static member Throw(e: 'err) : Parser<'a, 'sym, 'loc, 'err> = Parser(FreeNode.throw e)
 
-    static member Return(v: 'a) : Parser<'a, 'sym, 'loc, 'err> =
-      Parser(fun _ -> Left(ParserResult.Return v))
+    static member Return(v: 'a) : Parser<'a, 'sym, 'loc, 'err> = Parser(FreeNode.Return v)
 
-    static member Map (f: 'a -> 'b) (p: Parser<'a, 'sym, 'loc, 'err>) : Parser<'b, 'sym, 'loc, 'err> =
-      Parser(fun (input: List<'sym>, loc: 'loc) -> p |> Parser.Run(input, loc) |> Sum.map (ParserResult.Map f))
+    static member Map (f: 'a -> 'b) (Parser p: Parser<'a, 'sym, 'loc, 'err>) : Parser<'b, 'sym, 'loc, 'err> =
+      Parser(FreeNode.bind p (fun a -> FreeNode.Return(f a)))
 
-    static member MapError (f: 'err -> 'err) (p: Parser<'a, 'sym, 'loc, 'err>) : Parser<'a, 'sym, 'loc, 'err> =
-      Parser(fun (input: List<'sym>, loc: 'loc) -> p |> Parser.Run(input, loc) |> Sum.mapRight (fun (e, y) -> f e, y))
+    static member MapError (f: 'err -> 'err) (Parser p: Parser<'a, 'sym, 'loc, 'err>) : Parser<'a, 'sym, 'loc, 'err> =
+      let mapped =
+        FreeNode.bind (FreeNode.catch p) (fun res ->
+          match res with
+          | Left v -> FreeNode.Return v
+          | Right e -> FreeNode.throw (f e))
+
+      Parser mapped
 
     static member Flatten(p0: Parser<Parser<'a, 'sym, 'loc, 'err>, 'sym, 'loc, 'err>) : Parser<'a, 'sym, 'loc, 'err> =
-      Parser(fun (s0: List<'sym> * 'loc) ->
-        match p0 |> Parser.Run s0 with
-        | Right e -> Right e
-        | Left(ParserResult(p1, s1)) ->
-          match Parser.Run (s1 |> Option.defaultValue s0) p1 with
-          | Right e -> Right e
-          | Left(ParserResult(v, s2)) -> Left(ParserResult(v, Option.orElse s1 s2)))
+      let (Parser p0) = p0
+      Parser(FreeNode.bind p0 (fun (Parser p1) -> p1))
+
+  let fromStep
+    (f: List<'sym> * 'loc -> Sum<'a * Option<List<'sym> * 'loc>, 'err * Option<List<'sym> * 'loc>>)
+    : Parser<'a, 'sym, 'loc, 'err> =
+    Parser(FreeNode.fromStep (fun (_c, s) -> f s))
 
   type ParserBuilder<'sym, 'loc, 'err when 'sym: equality>
     (
@@ -64,9 +74,9 @@ module Model =
     member _.Return(v: 'a) : Parser<'a, 'sym, 'loc, 'err> = Parser.Return v
 
     member _.EndOfStream() : Parser<Unit, 'sym, 'loc, 'err> =
-      Parser(fun (input: List<'sym>, loc0: 'loc) ->
+      fromStep (fun (input: List<'sym>, loc0: 'loc) ->
         match input with
-        | [] -> Left(ParserResult((), Some([], loc0)))
+        | [] -> Left((), Some([], loc0))
         | x :: _ -> Right(err.UnexpectedSymbol loc0 x, None))
 
     member _.Bind
@@ -87,114 +97,60 @@ module Model =
     member _.Run(p: Parser<'a, 'sym, 'loc, 'err>) : Parser<'a, 'sym, 'loc, 'err> = p
 
     member _.Exactly(expected: 'sym) : Parser<'sym, 'sym, 'loc, 'err> =
-      Parser(fun (input: List<'sym>, loc0: 'loc) ->
+      fromStep (fun (input: List<'sym>, loc0: 'loc) ->
         match input with
         | [] -> (err.UnexpectedEndOfFile loc0, None) |> Right
         | x :: xs ->
           if x = expected then
             let loc1 = loc0 |> loc.Step x
-            Left(ParserResult(x, Some(xs, loc1)))
+            Left(x, Some(xs, loc1))
           else
             (err.UnexpectedSymbol loc0 x, None) |> Right)
 
     member _.Exactly(predicate: 'sym -> bool) : Parser<'sym, 'sym, 'loc, 'err> =
-      Parser(fun (input: List<'sym>, loc0: 'loc) ->
+      fromStep (fun (input: List<'sym>, loc0: 'loc) ->
         match input with
         | [] -> (err.UnexpectedEndOfFile loc0, None) |> Right
         | x :: xs ->
           if predicate x then
             let loc1 = loc0 |> loc.Step x
-            Left(ParserResult(x, Some(xs, loc1)))
+            Left(x, Some(xs, loc1))
           else
             (err.UnexpectedSymbol loc0 x, None) |> Right)
 
     member _.Exactly(predicate: 'sym -> Option<'a>) : Parser<'a, 'sym, 'loc, 'err> =
-      Parser(fun (input: List<'sym>, loc0: 'loc) ->
+      fromStep (fun (input: List<'sym>, loc0: 'loc) ->
         match input with
         | [] -> (err.UnexpectedEndOfFile loc0, None) |> Right
         | x :: xs ->
           match predicate x with
           | Some res ->
             let loc1 = loc0 |> loc.Step x
-            Left(ParserResult(res, Some(xs, loc1)))
+            Left(res, Some(xs, loc1))
           | None -> (err.UnexpectedSymbol loc0 x, None) |> Right)
 
     member _.Try(p: Parser<'a, 'sym, 'loc, 'err>) : Parser<Sum<'a, 'err>, 'sym, 'loc, 'err> =
-      Parser(fun (input: List<'sym>, loc0: 'loc) ->
-        match p |> Parser.Run(input, loc0) with
-        | Left(ParserResult(v, s1)) -> Left(ParserResult(Left v, s1))
-        | Right(e, s1) -> Left(ParserResult(Right e, s1)))
+      let (Parser p') = p
+      Parser(FreeNode.catch p')
 
     member parser.All(ps: List<Parser<'a, 'sym, 'loc, 'err>>) : Parser<List<'a>, 'sym, 'loc, 'err> =
-      Parser(fun s0 ->
-        let mutable s = None
-        let mutable res = ResizeArray<'a>()
-        let mutable err_acc: Option<'err> = None
-
-        for p in ps do
-          if err_acc.IsSome then
-            ()
-          else
-            let s0 = s |> Option.defaultValue s0
-
-            match p |> Parser.Run s0 with
-            | Left(ParserResult(v, s1)) ->
-              res.Add v
-              s <- s1 |> Option.orElse s
-            | Right(e, s1) ->
-              err_acc <-
-                match err_acc with
-                | Some err_acc -> err.Concat(err_acc, e) |> Some
-                | None -> Some e
-
-              s <- s1 |> Option.orElse s
-
-        match err_acc with
-        | None -> Left(ParserResult(res |> List.ofSeq, s)) // all succeeded
-        | Some err -> Right(err, None))
-
+      let ps = ps |> List.map (fun (Parser p) -> p)
+      Parser(FreeNode.all ps)
 
     member parser.Any(ps: List<Parser<'a, 'sym, 'loc, 'err>>) : Parser<'a, 'sym, 'loc, 'err> =
-      Parser(fun s0 ->
-        let mutable s = None
-        let mutable res = None
-        let mutable err_acc: Option<'err> = None
-
-        for p in ps do
-          if res.IsSome then
-            ()
-          else
-            let s0 = s |> Option.defaultValue s0
-
-            match p |> Parser.Run s0 with
-            | Left(ParserResult(v, s1)) ->
-              res <- Some v
-              s <- s1 |> Option.orElse s
-            | Right(e, s1) ->
-              err_acc <-
-                match err_acc with
-                | Some err_acc -> err.Concat(err_acc, e) |> Some
-                | None -> Some e
-
-              s <- s1 |> Option.orElse s
-
-        match res, err_acc with
-        | Some res, _ -> Left(ParserResult(res, s)) // all succeeded
-        | _, Some err -> Right(err, None)
-        | _ -> Right(err.AnyFailed(snd s0), None))
-      |> parser.MapError err.FilterHighestPriorityOnly
+      let ps = ps |> List.map (fun (Parser p) -> p)
+      Parser(FreeNode.any err.Concat ps)
 
     member parser.Stream: Parser<List<'sym>, 'sym, 'loc, 'err> =
-      Parser(fun (input: List<'sym>, _) -> Left(ParserResult.Return input))
+      fromStep (fun (input: List<'sym>, _) -> Left(input, None))
 
     member parser.State: Parser<List<'sym> * 'loc, 'sym, 'loc, 'err> =
-      Parser(fun s -> Left(ParserResult.Return s))
+      fromStep (fun s -> Left(s, None))
 
-    member parser.SetState(s: List<'sym> * 'loc) : Parser<Unit, 'sym, 'loc, 'err> =
-      Parser(fun _ -> Left(ParserResult.FromState((), s)))
+    member parser.SetState(s: List<'sym> * 'loc) : Parser<Unit, 'sym, 'loc, 'err> = fromStep (fun _ -> Left((), Some s))
 
     member parser.Location: Parser<'loc, 'sym, 'loc, 'err> =
-      Parser(fun (_, loc) -> Left(ParserResult.Return loc))
+      fromStep (fun (_input, loc) -> Left(loc, None))
 
     member parser.MapError (f: 'err -> 'err) (p: Parser<'a, 'sym, 'loc, 'err>) : Parser<'a, 'sym, 'loc, 'err> =
       Parser.MapError f p
@@ -220,16 +176,12 @@ module Model =
       parser.ManyAcc [] p
 
     member parser.Lookahead(p: Parser<'a, 'sym, 'loc, 'err>) : Parser<'a, 'sym, 'loc, 'err> =
-      Parser(fun s0 ->
-        match p |> Parser.Run s0 with
-        | Left(ParserResult(v, _)) -> Left(ParserResult(v, None)) // restore original state
-        | Right(e, _) -> Right(e, None))
-    // parser {
-    //   let! s = parser.State
-    //   let! res = p
-    //   do! parser.SetState s
-    //   return res
-    // }
+      parser {
+        let! s = parser.State
+        let! res = p |> parser.Try
+        do! parser.SetState s
+        return! parser.OfSum res
+      }
 
     member parser.OfSum(p: Sum<'a, 'err>) : Parser<'a, 'sym, 'loc, 'err> =
       match p with
