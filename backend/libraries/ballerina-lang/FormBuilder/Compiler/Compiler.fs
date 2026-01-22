@@ -48,12 +48,22 @@ module FormCompiler =
   let compileForms<'valueExt when 'valueExt: comparison>
     (input: FormCompilerInput<'valueExt>)
     (languageContext: LanguageContext<'valueExt>)
+    (stdExtensions: StdExtensions<'valueExt>)
     =
     sum {
       let formsInitialLocation = Location.Initial input.Forms.Source
 
+      // Append "in ()" if the types program doesn't already end with it
+      let typesProgram =
+        let trimmed = input.Types.Program.TrimEnd()
+
+        if trimmed.EndsWith("in ()") || trimmed.EndsWith("in()") then
+          input.Types.Program
+        else
+          $"{input.Types.Program}\nin ()"
+
       let! types, _, typeCheckState =
-        Expr.TypeCheckString languageContext input.Types.Program
+        Expr.TypeCheckString languageContext typesProgram
         |> Sum.mapRight (fun errors -> errors.AsFSharpString)
 
       let! ParserResult(formTokens, _) =
@@ -73,7 +83,7 @@ module FormCompiler =
         FormTypeCheckingContext<ValueExt>.Init memoizedTypes languageContext.TypeCheckContext input.ApiTypes
 
       let! typeCheckedFormDefinitions, _ =
-        checkFormDefinitions formDefinitions
+        checkFormDefinitions formDefinitions stdExtensions
         |> State.Run(formTypeCheckContext, formTypeCheckState)
         |> Sum.mapRight (fun (errors, _) -> errors.AsFSharpString)
 
