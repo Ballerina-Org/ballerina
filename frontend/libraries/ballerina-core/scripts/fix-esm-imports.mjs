@@ -17,8 +17,7 @@ const binDir = join(__dirname, "..", "bin");
 
 // Regex to match relative imports/exports without file extensions
 // Matches: from "./path" or from "../path" (not from "package")
-const importExportRegex =
-  /(from\s+["'])(\.\.?\/[^"']+)(["'])/g;
+const importExportRegex = /(from\s+["'])(\.\.?\/[^"']+)(["'])/g;
 
 /**
  * Check if a path already has a file extension
