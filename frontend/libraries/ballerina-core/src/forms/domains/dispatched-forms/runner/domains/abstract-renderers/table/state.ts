@@ -65,10 +65,12 @@ const FiltersAndSorting = {
     Sorting,
   }),
   Operations: {
-    Serialize: (filtersAndSorting: FiltersAndSorting): string =>
-      new TextEncoder()
-        .encode(JSON.stringify(filtersAndSorting))
-        .reduce((acc, b) => acc + String.fromCharCode(b), ""),
+    Serialize: (filtersAndSorting: FiltersAndSorting): string => {
+      const json = JSON.stringify(filtersAndSorting);
+      const utf8Bytes = new TextEncoder().encode(json);
+      const binaryString = String.fromCodePoint(...utf8Bytes);
+      return btoa(binaryString);
+    },
   },
 };
 
