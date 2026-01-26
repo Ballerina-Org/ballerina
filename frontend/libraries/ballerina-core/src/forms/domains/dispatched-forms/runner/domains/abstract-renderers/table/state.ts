@@ -65,9 +65,10 @@ const FiltersAndSorting = {
     Sorting,
   }),
   Operations: {
-    Serialize: (filtersAndSorting: FiltersAndSorting): string => {
-      return btoa(JSON.stringify(filtersAndSorting));
-    },
+    Serialize: (filtersAndSorting: FiltersAndSorting): string =>
+      new TextEncoder()
+        .encode(JSON.stringify(filtersAndSorting))
+        .reduce((acc, b) => acc + String.fromCharCode(b), ""),
   },
 };
 
