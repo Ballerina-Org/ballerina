@@ -66,7 +66,10 @@ const FiltersAndSorting = {
   }),
   Operations: {
     Serialize: (filtersAndSorting: FiltersAndSorting): string => {
-      return btoa(JSON.stringify(filtersAndSorting));
+      const json = JSON.stringify(filtersAndSorting);
+      const utf8Bytes = new TextEncoder().encode(json);
+      const binaryString = String.fromCodePoint(...utf8Bytes);
+      return btoa(binaryString);
     },
   },
 };
