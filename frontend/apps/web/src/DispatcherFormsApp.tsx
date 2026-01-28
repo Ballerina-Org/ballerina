@@ -458,6 +458,7 @@ export const DispatcherFormsApp = (props: {}) => {
                       },
                       globallyDisabled: false,
                       globallyReadOnly: false,
+                      usePreprocessor: false,
                     }}
                     setState={setPersonConfigState}
                     view={unit}
@@ -509,6 +510,7 @@ export const DispatcherFormsApp = (props: {}) => {
                     },
                     globallyDisabled: false,
                     globallyReadOnly: false,
+                    usePreprocessor: false,
                   }}
                   setState={setPersonPassthroughFormState}
                   view={unit}

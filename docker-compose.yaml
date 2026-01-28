@@ -89,6 +89,21 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  ballerina-core-build:
+    build:
+      context: ./frontend
+      dockerfile: libraries/ballerina-core/Dockerfile
+      target: global-dependencies
+    working_dir: /app/frontend/libraries/ballerina-core/
+    volumes:
+      - .:/app:ro
+      - ./frontend/libraries/ballerina-core/bin:/app/frontend/libraries/ballerina-core/bin
+    command: yarn build
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
   ballerina-core-prettier:
     build:
       context: ./frontend

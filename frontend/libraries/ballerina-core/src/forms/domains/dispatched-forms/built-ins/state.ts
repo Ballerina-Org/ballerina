@@ -209,6 +209,7 @@ type BuiltInApiConverters = {
   "<=": ApiConverter<ValueFilterSmallerThanOrEqualsTo>;
   "<": ApiConverter<ValueFilterSmallerThan>;
   StartsWith: ApiConverter<ValueFilterStartsWith>;
+  Record: ApiConverter<Record<string, any>>;
 };
 
 export type ConcreteRenderers<
@@ -1332,14 +1333,6 @@ export const dispatchFromAPIRawValue =
           return ValueOrErrors.Default.return(PredicateValue.Default.unit());
         }
 
-        if (
-          !PredicateValue.Operations.IsPrimitive(raw) &&
-          !injectedPrimitives?.keySeq().contains(t.name as keyof T)
-        ) {
-          return ValueOrErrors.Default.throwOne(
-            `primitive expected but got ${JSON.stringify(raw)}`,
-          );
-        }
         return ValueOrErrors.Default.return(
           converters[t.name].fromAPIRawValue(raw),
         );
@@ -1582,15 +1575,12 @@ export const dispatchFromAPIRawValue =
 
       // TODO -- this can be more functional
       if (t.kind == "record") {
-        if (typeof raw != "object") {
-          return ValueOrErrors.Default.throwOne(
-            `object expected but got ${JSON.stringify(raw)}`,
-          );
-        }
+        const converterResult = converters["Record"].fromAPIRawValue(raw)
+
         let result: OrderedMap<string, PredicateValue> = OrderedMap();
         let errors: List<string> = List();
         t.fields.forEach((fieldType, fieldName) => {
-          const fieldValue = raw[fieldName];
+          const fieldValue = converterResult[fieldName];
           if (fieldValue !== null && fieldValue === undefined) {
             return;
           }
@@ -2106,6 +2096,7 @@ export const dispatchToAPIRawValue =
           injectedPrimitives,
         )(raw, formState);
 
+      // TODO -- this can be more functional
       if (t.kind == "record") {
         if (!PredicateValue.Operations.IsRecord(raw)) {
           return ValueOrErrors.Default.throwOne(
@@ -2144,14 +2135,19 @@ export const dispatchToAPIRawValue =
         );
         if (errors.kind == "errors") return errors;
 
+        const result = res.reduce(
+          (acc: any, [fieldName, value]: [fieldName: string, value: any]) => {
+            acc[fieldName] = value.value;
+            return acc;
+          },
+          {} as any,
+        );
+
         return ValueOrErrors.Operations.Return(
-          res.reduce(
-            (acc: any, [fieldName, value]: [fieldName: string, value: any]) => {
-              acc[fieldName] = value.value;
-              return acc;
-            },
-            {} as any,
-          ),
+          converters["Record"].toAPIRawValue([
+            result,
+            formState?.commonFormState?.modifiedByUser ?? false,
+          ]),
         );
       }
 
