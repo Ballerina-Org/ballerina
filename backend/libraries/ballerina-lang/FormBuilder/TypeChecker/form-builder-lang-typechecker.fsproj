@@ -18,6 +18,7 @@
     <ProjectReference Include="..\..\Next\TypeChecker\ballerina-lang-typecheck.fsproj" />
     <ProjectReference Include="..\..\Next\Stdlib\ballerina-lang-stdlib.fsproj" />
     <ProjectReference Include="..\Model\form-builder-model.fsproj" />
+    <ProjectReference Include="..\..\..\unbound-core\unbound-core.fsproj" />
   </ItemGroup>
 
 </Project>

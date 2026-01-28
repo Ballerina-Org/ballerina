@@ -124,38 +124,38 @@ and PrimitiveExt =
     | DecimalOperations ops -> ops.ToString()
     | StringOperations ops -> ops.ToString()
 
-type StdExtensions =
-  { List: TypeExtension<ValueExt, Unit, List.Model.ListValues<ValueExt>, List.Model.ListOperations<ValueExt>>
-    Bool: OperationsExtension<ValueExt, Bool.Model.BoolOperations<ValueExt>>
-    Int32: OperationsExtension<ValueExt, Int32.Model.Int32Operations<ValueExt>>
-    Int64: OperationsExtension<ValueExt, Int64.Model.Int64Operations<ValueExt>>
-    Float32: OperationsExtension<ValueExt, Float32.Model.Float32Operations<ValueExt>>
-    Float64: OperationsExtension<ValueExt, Float64.Model.Float64Operations<ValueExt>>
-    Decimal: OperationsExtension<ValueExt, Decimal.Model.DecimalOperations<ValueExt>>
+type StdExtensions<'valueExt when 'valueExt: comparison> =
+  { List: TypeExtension<'valueExt, Unit, List.Model.ListValues<'valueExt>, List.Model.ListOperations<'valueExt>>
+    Bool: OperationsExtension<'valueExt, Bool.Model.BoolOperations<'valueExt>>
+    Int32: OperationsExtension<'valueExt, Int32.Model.Int32Operations<'valueExt>>
+    Int64: OperationsExtension<'valueExt, Int64.Model.Int64Operations<'valueExt>>
+    Float32: OperationsExtension<'valueExt, Float32.Model.Float32Operations<'valueExt>>
+    Float64: OperationsExtension<'valueExt, Float64.Model.Float64Operations<'valueExt>>
+    Decimal: OperationsExtension<'valueExt, Decimal.Model.DecimalOperations<'valueExt>>
     DateOnly:
       TypeExtension<
-        ValueExt,
+        'valueExt,
         DateOnly.Model.DateOnlyConstructors,
         PrimitiveValue,
-        DateOnly.Model.DateOnlyOperations<ValueExt>
+        DateOnly.Model.DateOnlyOperations<'valueExt>
        >
     DateTime:
       TypeExtension<
-        ValueExt,
+        'valueExt,
         DateTime.Model.DateTimeConstructors,
         PrimitiveValue,
-        DateTime.Model.DateTimeOperations<ValueExt>
+        DateTime.Model.DateTimeOperations<'valueExt>
        >
-    String: OperationsExtension<ValueExt, String.Model.StringOperations<ValueExt>>
-    Guid: TypeExtension<ValueExt, Guid.Model.GuidConstructors, PrimitiveValue, Guid.Model.GuidOperations<ValueExt>>
+    String: OperationsExtension<'valueExt, String.Model.StringOperations<'valueExt>>
+    Guid: TypeExtension<'valueExt, Guid.Model.GuidConstructors, PrimitiveValue, Guid.Model.GuidOperations<'valueExt>>
     TimeSpan:
       TypeExtension<
-        ValueExt,
+        'valueExt,
         TimeSpan.Model.TimeSpanConstructors,
         PrimitiveValue,
-        TimeSpan.Model.TimeSpanOperations<ValueExt>
+        TimeSpan.Model.TimeSpanOperations<'valueExt>
        >
-    Map: TypeExtension<ValueExt, Unit, Map.Model.MapValues<ValueExt>, Map.Model.MapOperations<ValueExt>> }
+    Map: TypeExtension<'valueExt, Unit, Map.Model.MapValues<'valueExt>, Map.Model.MapOperations<'valueExt>> }
 
 type ListExt with
   static member ValueLens =

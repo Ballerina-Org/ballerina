@@ -348,7 +348,7 @@ module Parser =
 
   and parseForm () =
     parser {
-      do! keyword Form
+      do! keyword View
       let! formConfig = parseRendererDef ()
 
       (*
@@ -606,7 +606,7 @@ module Parser =
 
   and parseInlineForm () =
     parser {
-      do! keyword Form
+      do! keyword View
 
       let! rendererId =
         parser.Try(parseRendererDef ())
@@ -718,7 +718,7 @@ module Parser =
   and parseFormTable () =
     parser {
       let! isEntryPoint = parser.Try(keyword EntryPoint) |> parser.Map(Sum.toOption >> Option.isSome)
-      do! keyword Form
+      do! keyword View
 
       return!
         parser {
