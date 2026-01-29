@@ -61,6 +61,7 @@ export type OneAbstractRendererState = CommonAbstractRendererState & {
           BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
         >
       | undefined;
+    shouldReinitialize: boolean;
   };
 };
 
@@ -81,6 +82,7 @@ export const OneAbstractRendererState = {
       status: "closed",
       getChunkWithParams: getChunk,
       stream: Sum.Default.right("not initialized"),
+      shouldReinitialize: false,
     },
   }),
   Updaters: {
@@ -100,6 +102,9 @@ export const OneAbstractRendererState = {
         ),
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "previewStates",
+        ),
+        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
+          "shouldReinitialize",
         ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<OneAbstractRendererState>()({
@@ -121,6 +126,10 @@ export const OneAbstractRendererState = {
               shouldReload,
             ]),
           ),
+        ),
+      reinitializeStream: (): Updater<OneAbstractRendererState> =>
+        OneAbstractRendererState.Updaters.Core.customFormState.children.shouldReinitialize(
+          replaceWith(true),
         ),
     },
   },
@@ -192,6 +201,7 @@ export type OneAbstractRendererViewForeignMutationsExpected<Flags = BaseFlags> =
     delete?: VoidCallbackWithOptionalFlags<Flags>;
     clear?: SimpleCallback<void>;
     loadMore: SimpleCallback<void>;
+    reinitializeStream: SimpleCallback<void>;
   };
 
 export type OneAbstractRendererView<

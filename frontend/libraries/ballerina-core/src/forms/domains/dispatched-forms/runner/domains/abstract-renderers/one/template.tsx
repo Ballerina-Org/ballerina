@@ -510,6 +510,10 @@ export const OneAbstractRenderer = <
                       delta,
                     );
               },
+              reinitializeStream: () =>
+                props.setState(
+                  OneAbstractRendererState.Updaters.Template.reinitializeStream(),
+                ),
             }}
             DetailsRenderer={
               value.kind === "unit" || value.isSome
