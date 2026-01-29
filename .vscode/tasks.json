@@ -9,6 +9,66 @@
 			"group": "build",
 			"label": "Build: absample.fsproj",
 			"detail": "Build the absample.fsproj project using dotnet build"
+		},
+		{
+			"label": "Ballerina Core: Frontend Dependency Updater",
+			"type": "shell",
+			"command": "docker compose run --remove-orphans --build --rm ballerina-core-frontend-dependency-updater",
+			"problemMatcher": [],
+			"isBackground": false,
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"close": false
+			}
+		},
+		{
+			"label": "Ballerina Core: Frontend Dependency Installer",
+			"type": "shell",
+			"command": "docker compose run --remove-orphans --build --rm ballerina-core-frontend-dependency-installer",
+			"problemMatcher": [],
+			"isBackground": false,
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"close": false
+			}
+		},
+		{
+			"label": "Ballerina Core: TSC",
+			"type": "shell",
+			"command": "docker compose run --remove-orphans --build --rm ballerina-core-tsc",
+			"problemMatcher": ["$tsc"],
+			"isBackground": false,
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"close": false
+			}
+		},
+		{
+			"label": "Ballerina Core: Build",
+			"type": "shell",
+			"command": "docker compose run --remove-orphans --build --rm ballerina-core-build",
+			"problemMatcher": [],
+			"isBackground": false,
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"close": false
+			}
+		},
+		{
+			"label": "Ballerina Core: Prettier",
+			"type": "shell",
+			"command": "docker compose run --remove-orphans --build --rm ballerina-core-prettier",
+			"problemMatcher": [],
+			"isBackground": false,
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated",
+				"close": false
+			}
 		}
 	]
 }

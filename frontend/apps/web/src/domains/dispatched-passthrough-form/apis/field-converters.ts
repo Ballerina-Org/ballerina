@@ -292,4 +292,8 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
         StartsWith: _.startsWith,
       }),
     },
+    Record: {
+      fromAPIRawValue: (_) => _,
+      toAPIRawValue: ([_, __]) => _,
+    },
   };
