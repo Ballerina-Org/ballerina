@@ -1577,6 +1577,12 @@ export const dispatchFromAPIRawValue =
       if (t.kind == "record") {
         const converterResult = converters["Record"].fromAPIRawValue(raw);
 
+        if(typeof converterResult !== "object") {
+          return ValueOrErrors.Default.throwOne(
+            `object expected but got ${JSON.stringify(converterResult)}`,
+          );
+        }
+
         let result: OrderedMap<string, PredicateValue> = OrderedMap();
         let errors: List<string> = List();
         t.fields.forEach((fieldType, fieldName) => {
