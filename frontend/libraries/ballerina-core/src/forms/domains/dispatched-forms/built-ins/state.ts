@@ -1575,7 +1575,7 @@ export const dispatchFromAPIRawValue =
 
       // TODO -- this can be more functional
       if (t.kind == "record") {
-        const converterResult = converters["Record"].fromAPIRawValue(raw)
+        const converterResult = converters["Record"].fromAPIRawValue(raw);
 
         let result: OrderedMap<string, PredicateValue> = OrderedMap();
         let errors: List<string> = List();
