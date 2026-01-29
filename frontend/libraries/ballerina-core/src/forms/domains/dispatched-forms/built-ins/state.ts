@@ -1577,7 +1577,7 @@ export const dispatchFromAPIRawValue =
       if (t.kind == "record") {
         const converterResult = converters["Record"].fromAPIRawValue(raw);
 
-        if(typeof converterResult !== "object") {
+        if (typeof converterResult !== "object") {
           return ValueOrErrors.Default.throwOne(
             `object expected but got ${JSON.stringify(converterResult)}`,
           );
