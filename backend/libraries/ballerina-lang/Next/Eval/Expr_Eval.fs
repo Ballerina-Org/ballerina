@@ -2,11 +2,14 @@ namespace Ballerina.DSL.Next.Terms
 
 [<AutoOpen>]
 module Eval =
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Collections.Map
   open Ballerina.Coroutines.Model
   open Ballerina.Reader.WithError
+  open Ballerina.Errors
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.StdLib.String
   open Ballerina.StdLib.Object
   open System
@@ -43,9 +46,16 @@ module Eval =
       ExtensionOps: ValueExtensionOps<'valueExtension>
       Symbols: ExprEvalContextSymbols }
 
+  and ApplicableExtEvalResult<'valueExtension> =
+    (Location
+      -> List<Expr<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>>
+      -> 'valueExtension
+      -> Value<TypeValue<'valueExtension>, 'valueExtension>
+      -> ExprEvaluator<'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
+
   and ExtEvalResult<'valueExtension> =
     | Result of Value<TypeValue<'valueExtension>, 'valueExtension>
-    | Async of Coroutine<ExtEvalResult<'valueExtension>, Unit, Unit, Unit, Errors>
+    | Async of Coroutine<ExtEvalResult<'valueExtension>, Unit, Unit, Unit, Errors<Location>>
     | Applicable of
       (Value<TypeValue<'valueExtension>, 'valueExtension>
         -> ExprEvaluator<'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
@@ -62,9 +72,10 @@ module Eval =
       -> ExprEvaluator<'valueExtension, ExtEvalResult<'valueExtension>>
 
   and ValueExtensionOps<'valueExtension> =
-    { Eval: ExtensionEvaluator<'valueExtension> }
+    { Eval: ExtensionEvaluator<'valueExtension>
+      Applicables: Map<ResolvedIdentifier, ApplicableExtEvalResult<'valueExtension>> }
 
-  and ExprEvaluator<'valueExtension, 'res> = Reader<'res, ExprEvalContext<'valueExtension>, Errors>
+  and ExprEvaluator<'valueExtension, 'res> = Reader<'res, ExprEvalContext<'valueExtension>, Errors<Location>>
 
   type ExprEvalContext<'valueExtension> with
     static member Empty: ExprEvalContext<'valueExtension> =
@@ -72,9 +83,10 @@ module Eval =
         ExtensionOps =
           { Eval =
               fun loc0 _ _ ->
-                (loc0, $"Error: cannot evaluate empty extension")
-                |> Errors.Singleton
-                |> reader.Throw }
+                (fun () -> $"Error: cannot evaluate empty extension")
+                |> Errors.Singleton loc0
+                |> reader.Throw
+            Applicables = Map.empty }
         Symbols = ExprEvalContextSymbols.Empty }
 
     static member WithTypeCheckingSymbols<'valueExtension>
@@ -101,7 +113,10 @@ module Eval =
     static member EvalApply (loc0: Location) (rest: List<_>) (fV, argV) =
       reader {
         let! fVVar, fvBody, closure, _scope =
-          fV |> Value.AsLambda |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+          fV
+          |> Value.AsLambda
+          |> sum.MapError(Errors.MapContext(replaceWith loc0))
+          |> reader.OfSum
 
         return!
           reader {
@@ -124,7 +139,7 @@ module Eval =
               // do Console.ReadLine() |> ignore
               return! err |> reader.Throw
           }
-          |> reader.MapError(Errors.SetPriority ErrorPriority.High)
+          |> reader.MapError(Errors<Location>.MapPriority(replaceWith ErrorPriority.High))
       }
 
     // NOTE: expressions are concatenated in the order of the input (the returned value is of the type of the last expression)
@@ -153,8 +168,8 @@ module Eval =
           | Value.Primitive(PrimitiveValue.Bool false) -> return! !!elseBody
           | v ->
             return!
-              (loc0, $"expected boolean in if condition, got {v}")
-              |> Errors.Singleton
+              (fun () -> $"expected boolean in if condition, got {v}")
+              |> Errors.Singleton loc0
               |> reader.Throw
         | ExprRec.Let { Var = var
                         Type = _varType
@@ -172,7 +187,7 @@ module Eval =
 
           let! res =
             ctx.Values
-            |> Map.tryFindWithError id "variables" (id.AsFSharpString) loc0
+            |> Map.tryFindWithError id "variables" (fun () -> id.AsFSharpString) loc0
             |> reader.OfSum
             |> reader.Catch
 
@@ -200,7 +215,7 @@ module Eval =
           let! recordV =
             recordV
             |> Value.AsRecord
-            |> sum.MapError(Errors.FromErrors loc0)
+            |> sum.MapError(Errors.MapContext(replaceWith loc0))
             |> reader.OfSum
 
           // let! ctx = reader.GetContext()
@@ -225,7 +240,7 @@ module Eval =
           let! recordV =
             recordV
             |> Value.AsRecord
-            |> sum.MapError(Errors.FromErrors loc0)
+            |> sum.MapError(Errors.MapContext(replaceWith loc0))
             |> reader.OfSum
 
           // let! ctx = reader.GetContext()
@@ -237,7 +252,7 @@ module Eval =
 
           return!
             recordV
-            |> Map.tryFindWithError fieldId "record field" (fieldId.AsFSharpString) loc0
+            |> Map.tryFindWithError fieldId "record field" (fun () -> fieldId.AsFSharpString) loc0
             |> reader.OfSum
 
         | ExprRec.TupleCons { Items = fields } ->
@@ -247,14 +262,19 @@ module Eval =
         | ExprRec.TupleDes { ExprTupleDes.Tuple = recordExpr
                              Item = fieldId } ->
           let! recordV = !recordExpr
-          let! recordV = recordV |> Value.AsTuple |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+          let! recordV =
+            recordV
+            |> Value.AsTuple
+            |> sum.MapError(Errors.MapContext(replaceWith loc0))
+            |> reader.OfSum
 
           return!
             recordV
             |> List.tryItem (fieldId.Index - 1)
             |> sum.OfOption(
-              (loc0, $"Error: tuple index {fieldId.Index} out of bounds, size {List.length recordV}")
-              |> Errors.Singleton
+              (fun () -> $"Error: tuple index {fieldId.Index} out of bounds, size {List.length recordV}")
+              |> Errors.Singleton loc0
             )
             |> reader.OfSum
         | ExprRec.SumCons({ Selector = selector }) ->
@@ -278,14 +298,17 @@ module Eval =
             reader.Any2
               (reader {
                 let! unionVCase, unionV =
-                  unionV |> Value.AsUnion |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+                  unionV
+                  |> Value.AsUnion
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
 
                 return!
                   reader {
 
                     let! caseHandler =
                       cases
-                      |> Map.tryFindWithError unionVCase "union case" (unionVCase.AsFSharpString) loc0
+                      |> Map.tryFindWithError unionVCase "union case" (fun () -> unionVCase.AsFSharpString) loc0
                       |> reader.OfSum
                       |> reader.Catch
                       |> reader.Map(Sum.toOption)
@@ -306,15 +329,19 @@ module Eval =
                       | Some fallback -> return! !fallback
                       | None ->
                         return!
-                          (loc0,
-                           $"Error: cannot find case handler for union case. Cases = {cases.Keys.AsFSharpString}. Case = {unionVCase.AsFSharpString}.")
-                          |> Errors.Singleton
+                          (fun () ->
+                            $"Error: cannot find case handler for union case. Cases = {cases.Keys.AsFSharpString}. Case = {unionVCase.AsFSharpString}.")
+                          |> Errors.Singleton loc0
                           |> reader.Throw
                   }
-                  |> reader.MapError(Errors.SetPriority ErrorPriority.High)
+                  |> reader.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
               })
               (reader {
-                let! unionV = unionV |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+                let! unionV, _ =
+                  unionV
+                  |> Value.AsExt
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
 
                 return!
                   reader {
@@ -325,22 +352,27 @@ module Eval =
                     | Matchable f -> return! f cases
                     | _ ->
                       return!
-                        (loc0, "Expected an applicable or matchable extension function")
-                        |> Errors.Singleton
+                        (fun () -> "Expected an applicable or matchable extension function")
+                        |> Errors.Singleton loc0
                         |> reader.Throw
                   }
-                  |> reader.MapError(Errors.SetPriority ErrorPriority.High)
+                  |> reader.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
               })
-            |> reader.MapError(Errors.FilterHighestPriorityOnly)
+            |> reader.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
         | ExprRec.Apply({ F = { Expr = ExprRec.SumDes cases }
                           Arg = sumE }) ->
           let! sumV = !sumE
-          let! sumVCase, sumV = sumV |> Value.AsSum |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+          let! sumVCase, sumV =
+            sumV
+            |> Value.AsSum
+            |> sum.MapError(Errors.MapContext(replaceWith loc0))
+            |> reader.OfSum
 
           let! caseHandler =
             cases.Handlers
-            |> Map.tryFindWithError sumVCase "sum case" (sumVCase.AsFSharpString) loc0
+            |> Map.tryFindWithError sumVCase "sum case" (fun () -> sumVCase.AsFSharpString) loc0
             |> reader.OfSum
 
           let caseVar, caseBody = caseHandler
@@ -363,11 +395,20 @@ module Eval =
             reader.Any(
               reader { return! Expr.EvalApply loc0 rest (fV, argV) },
               [ reader {
-                  let! fUnionCons = fV |> Value.AsUnionCons |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+                  let! fUnionCons =
+                    fV
+                    |> Value.AsUnionCons
+                    |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                    |> reader.OfSum
+
                   return Value.UnionCase(fUnionCons, argV)
                 }
                 reader {
-                  let! fRecord = fV |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+                  let! fRecord =
+                    fV
+                    |> Value.AsRecord
+                    |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                    |> reader.OfSum
 
                   return!
                     reader {
@@ -376,56 +417,80 @@ module Eval =
                         |> Map.tryFindWithError
                           ("cons" |> Identifier.LocalScope |> e.Scope.Resolve)
                           "record field"
-                          "cons"
+                          (fun () -> "cons")
                           loc0
                         |> reader.OfSum
 
                       let! fUnionCons =
                         fRecordCons
                         |> Value.AsUnionCons
-                        |> sum.MapError(Errors.FromErrors loc0)
+                        |> sum.MapError(Errors.MapContext(replaceWith loc0))
                         |> reader.OfSum
 
                       return Value.UnionCase(fUnionCons, argV)
                     }
-                    |> reader.MapError(Errors.SetPriority ErrorPriority.High)
+                    |> reader.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 }
                 reader {
-                  let! fieldId = fV |> Value.AsRecordDes |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+                  let! fieldId =
+                    fV
+                    |> Value.AsRecordDes
+                    |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                    |> reader.OfSum
 
                   return!
                     reader {
                       // let fieldId = fieldId.Name
-                      let! recordV = argV |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+                      let! recordV =
+                        argV
+                        |> Value.AsRecord
+                        |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                        |> reader.OfSum
 
                       return!
                         recordV
-                        |> Map.tryFindWithError fieldId "record field" (fieldId.ToString()) loc0
+                        |> Map.tryFindWithError fieldId "record field" (fun () -> fieldId.ToString()) loc0
                         |> reader.OfSum
                         |> reader.MapError(Errors.Map(String.append $" in record {argV}"))
                     }
-                    |> reader.MapError(Errors.SetPriority ErrorPriority.High)
+                    |> reader.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 }
                 reader {
-                  let! fExt = fV |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+                  let! fExt, app_id =
+                    fV
+                    |> Value.AsExt
+                    |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                    |> reader.OfSum
 
                   return!
                     reader {
                       let! ctx = reader.GetContext()
-                      let! fExt = ctx.ExtensionOps.Eval loc0 rest fExt
 
-                      match fExt with
-                      | Applicable f -> return! f argV
-                      | _ ->
-                        return!
-                          (loc0, "Expected an applicable or matchable extension function")
-                          |> Errors.Singleton
-                          |> reader.Throw
+                      match app_id with
+                      | Some app_id ->
+
+                        let f = ctx.ExtensionOps.Applicables |> Map.tryFind app_id
+
+                        match f with
+                        | Some f -> return! f loc0 rest fExt argV
+                        | None ->
+                          let! fExt = ctx.ExtensionOps.Eval loc0 rest fExt
+
+                          match fExt with
+                          | Applicable f -> return! f argV
+                          | _ -> return! (fun () -> $"Cannot apply {fExt}") |> Errors.Singleton loc0 |> reader.Throw
+                      | None ->
+                        let! fExt = ctx.ExtensionOps.Eval loc0 rest fExt
+
+                        match fExt with
+                        | Applicable f -> return! f argV
+                        | _ -> return! (fun () -> $"Cannot apply {fExt}") |> Errors.Singleton loc0 |> reader.Throw
+
                     }
-                    |> reader.MapError(Errors.SetPriority ErrorPriority.High)
+                    |> reader.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 } ]
             )
-            |> reader.MapError(Errors.FilterHighestPriorityOnly)
+            |> reader.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
         | ExprRec.Lambda { Param = var
                            ParamType = _
@@ -447,7 +512,7 @@ module Eval =
           let! definition_as_union =
             typeDefinition
             |> TypeValue.AsUnion
-            |> sum.MapError(Errors.FromErrors loc0)
+            |> sum.MapError(Errors.MapContext(replaceWith loc0))
             |> reader.OfSum
             |> reader.Catch
             |> reader.Map(Sum.toOption)
@@ -474,7 +539,7 @@ module Eval =
           let! definition_fields =
             typeDefinition
             |> TypeValue.AsRecord
-            |> sum.MapError(Errors.FromErrors loc0)
+            |> sum.MapError(Errors.MapContext(replaceWith loc0))
             |> reader.OfSum
             |> reader.Catch
             |> reader.Map(Sum.toOption)
@@ -508,10 +573,10 @@ module Eval =
               reader {
                 let! typeLambda = !typeLambda
 
-                let! ext =
+                let! ext, _ =
                   typeLambda
                   |> Value.AsExt
-                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
                   |> reader.OfSum
 
                 let! ctx = reader.GetContext()
@@ -521,8 +586,8 @@ module Eval =
                 | TypeApplicable f -> return! f typeArg
                 | _ ->
                   return!
-                    (loc0, $"Expected extension to be type applicable, got {ext}")
-                    |> Errors.Singleton
+                    (fun () -> $"Expected extension to be type applicable, got {ext}")
+                    |> Errors.Singleton loc0
                     |> reader.Throw
               },
               // this says we do not care about the type info
@@ -531,42 +596,57 @@ module Eval =
 
         | ExprRec.EntitiesDes({ Expr = s }) ->
           let! s_v = !s
-          let! s_v = s_v |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+          let! s_v =
+            s_v
+            |> Value.AsRecord
+            |> sum.MapError(Errors.MapContext(replaceWith loc0))
+            |> reader.OfSum
 
           let! entities_v =
             s_v
             |> Map.tryFindWithError
               ("Entities" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
               "entities schema field"
-              "Entities"
+              (fun () -> "Entities")
               loc0
             |> reader.OfSum
 
           return entities_v
         | ExprRec.RelationsDes({ Expr = s }) ->
           let! s_v = !s
-          let! s_v = s_v |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+          let! s_v =
+            s_v
+            |> Value.AsRecord
+            |> sum.MapError(Errors.MapContext(replaceWith loc0))
+            |> reader.OfSum
 
           let! relations_v =
             s_v
             |> Map.tryFindWithError
               ("Relations" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
               "relations schema field"
-              "Relations"
+              (fun () -> "Relations")
               loc0
             |> reader.OfSum
 
           return relations_v
         | ExprRec.EntityDes({ Expr = s; EntityName = entityName }) ->
           let! s_v = !s
-          let! s_v = s_v |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+          let! s_v =
+            s_v
+            |> Value.AsRecord
+            |> sum.MapError(Errors.MapContext(replaceWith loc0))
+            |> reader.OfSum
 
           let! entity_v =
             s_v
             |> Map.tryFindWithError
               (entityName.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
               "entity schema field"
-              entityName.Name
+              (fun () -> entityName.Name)
               loc0
             |> reader.OfSum
 
@@ -574,14 +654,19 @@ module Eval =
         | ExprRec.RelationDes({ Expr = s
                                 RelationName = relationName }) ->
           let! s_v = !s
-          let! s_v = s_v |> Value.AsRecord |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+
+          let! s_v =
+            s_v
+            |> Value.AsRecord
+            |> sum.MapError(Errors.MapContext(replaceWith loc0))
+            |> reader.OfSum
 
           let! relation_v =
             s_v
             |> Map.tryFindWithError
               (relationName.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
               "relation schema field"
-              relationName.Name
+              (fun () -> relationName.Name)
               loc0
             |> reader.OfSum
 
@@ -594,7 +679,7 @@ module Eval =
           let! record_v =
             record_v
             |> Value.AsRecord
-            |> sum.MapError(Errors.FromErrors loc0)
+            |> sum.MapError(Errors.MapContext(replaceWith loc0))
             |> reader.OfSum
 
           let! relation_v =
@@ -606,10 +691,14 @@ module Eval =
                |> Identifier.LocalScope
                |> TypeCheckScope.Empty.Resolve)
               "relation schema field From/To"
-              direction.AsFSharpString
+              (fun () -> direction.AsFSharpString)
               loc0
             |> reader.OfSum
 
           return relation_v
-        | _ -> return! (loc0, $"Cannot eval expression {e}") |> Errors.Singleton |> reader.Throw
+        | _ ->
+          return!
+            (fun () -> $"Cannot eval expression {e}")
+            |> Errors.Singleton loc0
+            |> reader.Throw
       }

@@ -1,8 +1,9 @@
-﻿namespace Ballerina.DSL.Next.Delta.Json
+namespace Ballerina.DSL.Next.Delta.Json
 
 [<AutoOpen>]
 module Replace =
   open Ballerina.Errors
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader

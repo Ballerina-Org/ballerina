@@ -5,6 +5,9 @@ module Model =
   open System
   open Ballerina.DSL.Next.Types
   open Ballerina.DSL.Next.Terms
+  open Ballerina.Reader.WithError
+  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
 
   type MemoryDBRelation<'ext when 'ext: comparison> =
     { All: Set<Value<TypeValue<'ext>, 'ext> * Value<TypeValue<'ext>, 'ext>>
@@ -23,7 +26,28 @@ module Model =
   type RelationRef<'ext when 'ext: comparison> =
     Schema<'ext> * MutableMemoryDB<'ext> * SchemaRelation * SchemaEntity<'ext> * SchemaEntity<'ext>
 
-  type EntityRef<'ext when 'ext: comparison> = Schema<'ext> * MutableMemoryDB<'ext> * SchemaEntity<'ext>
+  [<CustomEquality; CustomComparison>]
+  type SchemaAsValue<'ext when 'ext: comparison> =
+    { Value: Lazy<Value<TypeValue<'ext>, 'ext>> }
+
+    override x.ToString() = $"SchemaAsValue(Schema:\n{x.Value})"
+
+    override x.Equals(yobj) =
+      match yobj with
+      | :? SchemaAsValue<'ext> as y -> (x.Value = y.Value)
+      | _ -> false
+
+    override x.GetHashCode() = hash x.Value.Value
+
+    interface System.IComparable with
+      member x.CompareTo yobj =
+        match yobj with
+        | :? SchemaAsValue<'ext> as y -> compare x.Value.Value y.Value.Value
+        | _ -> invalidArg "yobj" "cannot compare values of different types"
+
+
+  type EntityRef<'ext when 'ext: comparison> =
+    Schema<'ext> * MutableMemoryDB<'ext> * SchemaEntity<'ext> * SchemaAsValue<'ext>
 
   type RelationLookupRef<'ext when 'ext: comparison> =
     Schema<'ext> *
@@ -33,27 +57,68 @@ module Model =
     SchemaEntity<'ext> *
     SchemaEntity<'ext>
 
+  [<CustomEquality; CustomComparison>]
+  type MemoryDBIO<'ext when 'ext: comparison> =
+    { Schema: Schema<'ext>
+      SchemaAsValue: Value<TypeValue<'ext>, 'ext>
+      DB: MutableMemoryDB<'ext>
+      EvalContext: ExprEvalContext<'ext>
+      CalculateProps:
+        Value<TypeValue<'ext>, 'ext>
+          -> SchemaEntity<'ext>
+          -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'ext>, Errors<Location>>
+      Main: Value<TypeValue<'ext>, 'ext> }
+
+
+    override x.ToString() = $"MemoryDBIO(Schema:\n{x.Schema})"
+
+    override x.Equals(yobj) =
+      match yobj with
+      | :? MemoryDBIO<'ext> as y ->
+        (x.Schema = y.Schema
+         && x.DB = y.DB
+         && x.Main = y.Main
+         && x.SchemaAsValue = y.SchemaAsValue)
+      | _ -> false
+
+    override x.GetHashCode() =
+      hash x.Schema ^^^ hash x.DB ^^^ hash x.Main ^^^ hash x.SchemaAsValue
+
+    interface System.IComparable with
+      member x.CompareTo yobj =
+        match yobj with
+        | :? MemoryDBIO<'ext> as y -> compare (x.Schema, x.SchemaAsValue, x.Main) (y.Schema, y.SchemaAsValue, y.Main)
+        | _ -> invalidArg "yobj" "cannot compare values of different types"
+
+
   type MemoryDBValues<'ext when 'ext: comparison> =
-    | EntityRef of Schema<'ext> * MutableMemoryDB<'ext> * SchemaEntity<'ext>
+    | EntityRef of EntityRef<'ext>
     | RelationRef of Schema<'ext> * MutableMemoryDB<'ext> * SchemaRelation * SchemaEntity<'ext> * SchemaEntity<'ext>
     | Link of {| RelationRef: Option<RelationRef<'ext>> |}
     | Unlink of {| RelationRef: Option<RelationRef<'ext>> |}
     | LookupOne of {| RelationRef: Option<RelationLookupRef<'ext>> |}
     | LookupOption of {| RelationRef: Option<RelationLookupRef<'ext>> |}
-    | LookupMany of {| RelationRef: Option<RelationLookupRef<'ext>> |}
+    | LookupMany of
+      {| RelationRef: Option<RelationLookupRef<'ext>>
+         EntityId: Option<Value<TypeValue<'ext>, 'ext>> |}
     | RelationLookupRef of RelationLookupRef<'ext>
     | EvalProperty of MemoryDBEvalProperty<'ext>
     | StripProperty of MemoryDBEvalProperty<'ext>
     | Create of {| EntityRef: Option<EntityRef<'ext>> |}
     | Update of {| EntityRef: Option<EntityRef<'ext>> |}
+    | Upsert of {| EntityRef: Option<EntityRef<'ext>> |}
+    | UpsertMany of {| EntityRef: Option<EntityRef<'ext>> |}
+    | UpdateMany of {| EntityRef: Option<EntityRef<'ext>> |}
+    | DeleteMany of {| EntityRef: Option<EntityRef<'ext>> |}
     | Delete of {| EntityRef: Option<EntityRef<'ext>> |}
     | GetById of {| EntityRef: Option<EntityRef<'ext>> |}
     | Run
+    | DBIO of MemoryDBIO<'ext>
     | TypeAppliedRun of Schema<'ext> * MutableMemoryDB<'ext>
 
     override this.ToString() =
       match this with
-      | EntityRef(_, _, entity) -> $"EntityRef({entity.Name})"
+      | EntityRef(_, _, entity, _) -> $"EntityRef({entity.Name})"
       | RelationRef(_, _, relation, fromEntity, toEntity) ->
         $"RelationRef({relation.Name}, from: {fromEntity.Name}, to: {toEntity.Name})"
       | Link link ->
@@ -102,7 +167,12 @@ module Model =
       | StripProperty prop -> $"StripProperty({prop.PropertyName})"
       | Create _ -> "Create"
       | Update _ -> "Update"
+      | Upsert _ -> "Upsert"
+      | UpsertMany _ -> "UpsertMany"
+      | UpdateMany _ -> "UpdateMany"
+      | DeleteMany _ -> "DeleteMany"
       | Delete _ -> "Delete"
       | GetById _ -> "GetById"
       | Run -> "Run"
+      | DBIO dbio -> $"DBIO({dbio})"
       | TypeAppliedRun(_schema, _) -> $"TypeAppliedRun)"

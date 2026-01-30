@@ -1,4 +1,4 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
 
 open Ballerina.DSL.Next.Json
 
@@ -6,6 +6,7 @@ open Ballerina.DSL.Next.Json
 module Map =
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.StdLib.Json.Sum
@@ -17,8 +18,8 @@ module Map =
 
   type TypeValue<'valueExt> with
     static member FromJsonMap
-      (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors>)
-      : JsonValue -> Sum<TypeValue<'valueExt> * TypeValue<'valueExt>, Errors> =
+      (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors<unit>>)
+      : JsonValue -> Sum<TypeValue<'valueExt> * TypeValue<'valueExt>, Errors<unit>> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun mapFields ->
         sum {
           let! (key, value) = mapFields |> JsonValue.AsPair

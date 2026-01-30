@@ -1,8 +1,9 @@
-﻿namespace Ballerina.DSL.Next.Json
+namespace Ballerina.DSL.Next.Json
 
 open Ballerina.DSL.Next.Terms.Model
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.Errors
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.Reader.WithError
 open FSharp.Data
@@ -11,13 +12,13 @@ open Ballerina.Collections.NonEmptyList
 open Keys
 
 // parsing
-type JsonParser<'T> = JsonValue -> Sum<'T, Errors>
+type JsonParser<'T> = JsonValue -> Sum<'T, Errors<Unit>>
 
 type ValueParserReader<'T, 'Id, 'valueExt when 'Id: comparison> =
-  Reader<Value<'T, 'valueExt>, JsonParser<Expr<'T, 'Id, 'valueExt>> * JsonParser<'T> * JsonParser<'Id>, Errors>
+  Reader<Value<'T, 'valueExt>, JsonParser<Expr<'T, 'Id, 'valueExt>> * JsonParser<'T> * JsonParser<'Id>, Errors<Unit>>
 
 type ExprParserReader<'T, 'Id, 'valueExt when 'Id: comparison> =
-  Reader<Expr<'T, 'Id, 'valueExt>, JsonParser<'T> * JsonParser<'Id>, Errors>
+  Reader<Expr<'T, 'Id, 'valueExt>, JsonParser<'T> * JsonParser<'Id>, Errors<Unit>>
 
 type ValueParser<'T, 'Id, 'valueExt when 'Id: comparison> = JsonValue -> ValueParserReader<'T, 'Id, 'valueExt>
 
@@ -30,13 +31,13 @@ type ValueParserLayer<'T, 'Id, 'valueExt when 'Id: comparison> =
 
 // encoding/serializing
 type JsonEncoder<'T> = 'T -> JsonValue
-type JsonEncoderWithError<'T> = 'T -> Sum<JsonValue, Errors>
+type JsonEncoderWithError<'T> = 'T -> Sum<JsonValue, Errors<Unit>>
 
-type ExprEncoderReader<'T, 'Id> = Reader<JsonValue, JsonEncoder<'T> * JsonEncoder<'Id>, Errors>
+type ExprEncoderReader<'T, 'Id> = Reader<JsonValue, JsonEncoder<'T> * JsonEncoder<'Id>, Errors<Unit>>
 type ExprEncoder<'T, 'Id, 'valueExt when 'Id: comparison> = Expr<'T, 'Id, 'valueExt> -> ExprEncoderReader<'T, 'Id>
 
 type ValueEncoderReader<'T, 'valueExt> =
-  Reader<JsonValue, JsonEncoderWithError<Expr<'T, ResolvedIdentifier, 'valueExt>> * JsonEncoder<'T>, Errors>
+  Reader<JsonValue, JsonEncoderWithError<Expr<'T, ResolvedIdentifier, 'valueExt>> * JsonEncoder<'T>, Errors<Unit>>
 
 type ValueEncoder<'T, 'valueExt> = Value<'T, 'valueExt> -> ValueEncoderReader<'T, 'valueExt>
 

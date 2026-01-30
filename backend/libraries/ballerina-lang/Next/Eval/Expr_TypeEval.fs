@@ -6,7 +6,9 @@ module TypeEval =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.State.WithError
+  open Ballerina.Errors
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.DSL.Next.Types.TypeChecker.Expr
   open Ballerina.DSL.Next.Types.TypeChecker.Eval
   open Ballerina.DSL.Next.Types.TypeChecker.Expr
@@ -23,7 +25,7 @@ module TypeEval =
             Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>,
             TypeCheckContext<'valueExt>,
             TypeCheckState<'valueExt>,
-            Errors
+            Errors<Location>
            >
       =
       fun typeCheckExpr loc0 expr ->

@@ -7,7 +7,9 @@ open Ballerina.DSL.Next.Types
 module Primitive =
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
+  open Ballerina
   open Ballerina.Collections.Sum
+  open Ballerina
   open Ballerina.Collections.Sum.Operators
   open Ballerina.Errors
   open System
@@ -17,11 +19,11 @@ module Primitive =
   open Ballerina.DSL.Next.Json.Keys
 
   type Int32 with
-    static member FromString: string -> Sum<int, Errors> =
+    static member FromString: string -> Sum<int, Errors<_>> =
       Int32.TryParse
       >> function
         | true, value -> sum.Return value
-        | false, _ -> sum.Throw(Errors.Singleton "Error: expected int, found non-integer string")
+        | false, _ -> sum.Throw(Errors.Singleton () (fun () -> "Error: expected int, found non-integer string"))
 
     static member ToJsonString: int -> JsonValue =
       fun i ->
@@ -30,11 +32,11 @@ module Primitive =
              valueKey, JsonValue.String(i.ToString(CultureInfo.InvariantCulture)) |]
 
   type Int64 with
-    static member FromString: string -> Sum<int64, Errors> =
+    static member FromString: string -> Sum<int64, Errors<_>> =
       Int64.TryParse
       >> function
         | true, value -> sum.Return value
-        | false, _ -> sum.Throw(Errors.Singleton "Error: expected int64, found non-integer string")
+        | false, _ -> sum.Throw(Errors.Singleton () (fun () -> "Error: expected int64, found non-integer string"))
 
     static member ToJsonString: int64 -> JsonValue =
       fun i ->
@@ -43,11 +45,11 @@ module Primitive =
              valueKey, JsonValue.String(i.ToString(CultureInfo.InvariantCulture)) |]
 
   type Single with
-    static member FromString: string -> Sum<float32, Errors> =
+    static member FromString: string -> Sum<float32, Errors<_>> =
       Single.TryParse
       >> function
         | true, value -> sum.Return value
-        | false, _ -> sum.Throw(Errors.Singleton "Error: expected float32, found non-float32 string")
+        | false, _ -> sum.Throw(Errors.Singleton () (fun () -> "Error: expected float32, found non-float32 string"))
 
     static member ToJsonString: float32 -> JsonValue =
       fun f ->
@@ -56,11 +58,11 @@ module Primitive =
              valueKey, JsonValue.String(f.ToString(CultureInfo.InvariantCulture)) |]
 
   type Double with
-    static member FromString: string -> Sum<float, Errors> =
+    static member FromString: string -> Sum<float, Errors<_>> =
       Double.TryParse
       >> function
         | true, value -> sum.Return value
-        | false, _ -> sum.Throw(Errors.Singleton "Error: expected float64, found non-float64 string")
+        | false, _ -> sum.Throw(Errors.Singleton () (fun () -> "Error: expected float64, found non-float64 string"))
 
     static member ToJsonString: float -> JsonValue =
       fun f ->
@@ -69,11 +71,11 @@ module Primitive =
              valueKey, JsonValue.String(f.ToString(CultureInfo.InvariantCulture)) |]
 
   type Guid with
-    static member FromString: string -> Sum<System.Guid, Errors> =
+    static member FromString: string -> Sum<System.Guid, Errors<_>> =
       Guid.TryParse
       >> function
         | true, value -> sum.Return value
-        | false, _ -> sum.Throw(Errors.Singleton "Error: expected Guid, found non-Guid string")
+        | false, _ -> sum.Throw(Errors.Singleton () (fun () -> "Error: expected Guid, found non-Guid string"))
 
     static member ToJsonString: System.Guid -> JsonValue =
       _.ToString("D", System.Globalization.CultureInfo.InvariantCulture)
@@ -81,11 +83,11 @@ module Primitive =
       >> Json.discriminator "guid"
 
   type Decimal with
-    static member FromString: string -> Sum<System.Decimal, Errors> =
+    static member FromString: string -> Sum<System.Decimal, Errors<_>> =
       Decimal.TryParse
       >> function
         | true, value -> sum.Return value
-        | false, _ -> sum.Throw(Errors.Singleton "Error: expected Decimal, found non-Decimal string")
+        | false, _ -> sum.Throw(Errors.Singleton () (fun () -> "Error: expected Decimal, found non-Decimal string"))
 
     static member ToJsonString: Decimal -> JsonValue =
       fun d ->
@@ -94,11 +96,11 @@ module Primitive =
              valueKey, JsonValue.String(d.ToString(CultureInfo.InvariantCulture)) |]
 
   type Boolean with
-    static member FromString: string -> Sum<bool, Errors> =
+    static member FromString: string -> Sum<bool, Errors<_>> =
       Boolean.TryParse
       >> function
         | true, value -> sum.Return value
-        | false, _ -> sum.Throw(Errors.Singleton "Error: expected boolean, found non-boolean string")
+        | false, _ -> sum.Throw(Errors.Singleton () (fun () -> "Error: expected boolean, found non-boolean string"))
 
     static member ToJsonString: bool -> JsonValue =
       fun b ->
@@ -107,11 +109,11 @@ module Primitive =
              valueKey, JsonValue.String(b.ToString().ToLowerInvariant()) |]
 
   type DateOnly with
-    static member FromString: string -> Sum<DateOnly, Errors> =
+    static member FromString: string -> Sum<DateOnly, Errors<_>> =
       Iso8601.DateOnly.tryParse
       >> function
         | Some value -> sum.Return value
-        | None -> sum.Throw(Errors.Singleton "Error: expected DateOnly, found non-DateOnly string")
+        | None -> sum.Throw(Errors.Singleton () (fun () -> "Error: expected DateOnly, found non-DateOnly string"))
 
     static member ToJsonString date =
       JsonValue.Record
@@ -119,11 +121,11 @@ module Primitive =
            valueKey, date |> Iso8601.DateOnly.print |> JsonValue.String |]
 
   type DateTime with
-    static member FromString: string -> Sum<DateTime, Errors> =
+    static member FromString: string -> Sum<DateTime, Errors<_>> =
       Iso8601.DateTime.tryParse
       >> function
         | Some value -> sum.Return value
-        | None -> sum.Throw(Errors.Singleton "Error: expected DateTime, found non-DateTime string")
+        | None -> sum.Throw(Errors.Singleton () (fun () -> "Error: expected DateTime, found non-DateTime string"))
 
     static member ToJsonString: DateTime -> JsonValue =
       fun date ->
@@ -132,11 +134,11 @@ module Primitive =
              valueKey, date |> Iso8601.DateTime.printUtc |> JsonValue.String |]
 
   type TimeSpan with
-    static member FromString: string -> Sum<TimeSpan, Errors> =
+    static member FromString: string -> Sum<TimeSpan, Errors<_>> =
       TimeSpan.TryParse
       >> function
         | true, value -> sum.Return value
-        | false, _ -> sum.Throw(Errors.Singleton "Error: expected TimeSpan, found non-TimeSpan string")
+        | false, _ -> sum.Throw(Errors.Singleton () (fun () -> "Error: expected TimeSpan, found non-TimeSpan string"))
 
     static member ToJsonString: TimeSpan -> JsonValue =
       fun t ->
@@ -187,7 +189,7 @@ module Primitive =
               )
             with
             | true, v -> sum.Return v
-            | false, _ -> sum.Throw(Errors.Singleton $"Invalid decimal: '{s}'")
+            | false, _ -> sum.Throw(Errors.Singleton () (fun () -> $"Invalid decimal: '{s}'"))
 
           return PrimitiveValue.Decimal v
         })

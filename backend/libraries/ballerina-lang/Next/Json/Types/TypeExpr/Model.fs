@@ -5,13 +5,14 @@ module TypeExpr =
   open FSharp.Data
   open Ballerina.StdLib.String
   open Ballerina.StdLib.Object
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Json
 
   type TypeExpr<'valueExt> with
-    static member FromJson(json: JsonValue) : Sum<TypeExpr<'valueExt>, Errors> =
+    static member FromJson(json: JsonValue) : Sum<TypeExpr<'valueExt>, Errors<_>> =
       sum.Any(
         TypeExpr.FromJsonPrimitive json,
         [ TypeExpr.FromJsonApply TypeExpr.FromJson json
@@ -28,9 +29,9 @@ module TypeExpr =
           TypeExpr.FromJsonKeyOf TypeExpr.FromJson json
           TypeExpr.FromJsonFlatten TypeExpr.FromJson json
           TypeExpr.FromJsonExclude TypeExpr.FromJson json
-          $"Unknown TypeExpr JSON: {json.AsFSharpString.ReasonablyClamped}"
-          |> Errors.Singleton
-          |> Errors.WithPriority ErrorPriority.High
+          fun () -> $"Unknown TypeExpr JSON: {json.AsFSharpString.ReasonablyClamped}"
+          |> Errors.Singleton()
+          |> Errors.MapPriority(replaceWith ErrorPriority.High)
           |> sum.Throw ]
       )
       |> sum.MapError(Errors.HighestPriority)

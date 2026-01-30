@@ -3,12 +3,15 @@ namespace Ballerina.DSL.Next.Types.TypeChecker
 module Eval =
   open System
   open Ballerina.Fun
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Object
   open Ballerina.StdLib.String
   open Ballerina.State.WithError
   open Ballerina.Reader.WithError
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
+  open Ballerina.Errors
   open Ballerina.Collections.Map
   open System
   open Ballerina.DSL.Next.Types.Model
@@ -31,10 +34,10 @@ module Eval =
           let (!!) = TypeExpr.Eval () exprTypeCheck None loc0
           let! ctx = state.GetContext()
 
-          let error e = Errors.Singleton(loc0, e)
+          let error e = Errors.Singleton loc0 e
 
-          let ofSum (p: Sum<'a, Ballerina.Errors.Errors>) =
-            p |> Sum.mapRight (Errors.FromErrors loc0) |> state.OfSum
+          let ofSum (p: Sum<'a, Errors<Unit>>) =
+            p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
           match t with
           | TypeExpr.NewSymbol name -> return TypeSymbol.Create(Identifier.LocalScope name)
@@ -64,7 +67,7 @@ module Eval =
               |> state.MapContext(TypeCheckContext.Updaters.TypeVariables(replaceWith closure))
           | _ ->
             return!
-              $"Error: invalid type expression when evaluating for symbol, got {t}"
+              (fun () -> $"Error: invalid type expression when evaluating for symbol, got {t}")
               |> error
               |> state.Throw
         }
@@ -76,10 +79,10 @@ module Eval =
           let (!!) = TypeExpr.EvalAsSymbol<'ve> () typeCheckExpr loc0
           let! ctx = state.GetContext()
 
-          let error e = Errors.Singleton(loc0, e)
+          let error e = Errors.Singleton loc0 e
 
-          let ofSum (p: Sum<'a, Ballerina.Errors.Errors>) =
-            p |> Sum.mapRight (Errors.FromErrors loc0) |> state.OfSum
+          let ofSum (p: Sum<'a, Errors<Unit>>) =
+            p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
           let source =
             match n with
@@ -187,7 +190,7 @@ module Eval =
               return!
                 let sep = ", " in
 
-                $"Error: schema has repeated entity names: {String.join sep repeatedEntityNames}"
+                (fun () -> $"Error: schema has repeated entity names: {String.join sep repeatedEntityNames}")
                 |> error
                 |> state.Throw
             else
@@ -228,8 +231,8 @@ module Eval =
                                       |> OrderedMap.toSeq
                                       |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.LocalName)
                                       |> Sum.fromOption (fun () ->
-                                        (loc0, $"Error: cannot find field {f} in record type {t}")
-                                        |> Errors.Singleton)
+                                        (fun () -> $"Error: cannot find field {f} in record type {t}")
+                                        |> Errors.Singleton loc0)
                                       |> state.OfSum
 
                                     do! f_k |> Kind.AsStar |> ofSum |> state.Ignore
@@ -258,7 +261,8 @@ module Eval =
                                       |> OrderedMap.toSeq
                                       |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.LocalName)
                                       |> Sum.fromOption (fun () ->
-                                        (loc0, $"Error: cannot find case {f} in union type {t}") |> Errors.Singleton)
+                                        (fun () -> $"Error: cannot find case {f} in union type {t}")
+                                        |> Errors.Singleton loc0)
                                       |> state.OfSum
 
                                     let next_t = case_t
@@ -282,16 +286,16 @@ module Eval =
 
                                     if f.Case < 1 || f.Case > t_sum.Length || f.Count <> t_sum.Length then
                                       return!
-                                        (loc0, $"Error: sum case {f} is out of bounds for sum type {t}")
-                                        |> Errors.Singleton
+                                        (fun () -> $"Error: sum case {f} is out of bounds for sum type {t}")
+                                        |> Errors.Singleton loc0
                                         |> state.Throw
                                     else
                                       let! case_t =
                                         t_sum
                                         |> Seq.tryItem (f.Case - 1)
                                         |> Sum.fromOption (fun () ->
-                                          (loc0, $"Error: cannot find sum case {f} in sum type {t}")
-                                          |> Errors.Singleton)
+                                          (fun () -> $"Error: cannot find sum case {f} in sum type {t}")
+                                          |> Errors.Singleton loc0)
                                         |> state.OfSum
 
                                       let next_t = case_t
@@ -313,16 +317,16 @@ module Eval =
 
                                     if f.Index < 1 || f.Index > t_tuple.Length then
                                       return!
-                                        (loc0, $"Error: tuple index {f} is out of bounds for tuple type {t}")
-                                        |> Errors.Singleton
+                                        (fun () -> $"Error: tuple index {f} is out of bounds for tuple type {t}")
+                                        |> Errors.Singleton loc0
                                         |> state.Throw
                                     else
                                       let! item_t =
                                         t_tuple
                                         |> Seq.tryItem (f.Index - 1)
                                         |> Sum.fromOption (fun () ->
-                                          (loc0, $"Error: cannot find tuple index {f} in tuple type {t}")
-                                          |> Errors.Singleton)
+                                          (fun () -> $"Error: cannot find tuple index {f} in tuple type {t}")
+                                          |> Errors.Singleton loc0)
                                         |> state.OfSum
 
                                       let next_t = item_t
@@ -414,9 +418,9 @@ module Eval =
                             |> not
                           then
                             return!
-                              (loc0,
-                               $"Error: a field with the same name as property {name.Name} already exists in record type {t}")
-                              |> Errors.Singleton
+                              (fun () ->
+                                $"Error: a field with the same name as property {name.Name} already exists in record type {t}")
+                              |> Errors.Singleton loc0
                               |> state.Throw
                           else
                             let fields =
@@ -434,7 +438,8 @@ module Eval =
                             |> OrderedMap.toSeq
                             |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.Name)
                             |> Sum.fromOption (fun () ->
-                              (loc0, $"Error: cannot find field {f} in record type {t}") |> Errors.Singleton)
+                              (fun () -> $"Error: cannot find field {f} in record type {t}")
+                              |> Errors.Singleton loc0)
                             |> state.OfSum
 
                           let! f_t = f_t + (path, name, result_t)
@@ -450,7 +455,8 @@ module Eval =
                             |> OrderedMap.toSeq
                             |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.Name)
                             |> Sum.fromOption (fun () ->
-                              (loc0, $"Error: cannot find field {f} in record type {t}") |> Errors.Singleton)
+                              (fun () -> $"Error: cannot find field {f} in record type {t}")
+                              |> Errors.Singleton loc0)
                             |> state.OfSum
 
                           let! f_t = f_t + (path, name, result_t)
@@ -465,7 +471,8 @@ module Eval =
                             fields
                             |> Seq.tryItem (f.Case - 1)
                             |> Sum.fromOption (fun () ->
-                              (loc0, $"Error: cannot find field {f} in record type {t}") |> Errors.Singleton)
+                              (fun () -> $"Error: cannot find field {f} in record type {t}")
+                              |> Errors.Singleton loc0)
                             |> state.OfSum
 
                           let! f_t = f_t + (path, name, result_t)
@@ -480,7 +487,8 @@ module Eval =
                             fields
                             |> Seq.tryItem (f.Index - 1)
                             |> Sum.fromOption (fun () ->
-                              (loc0, $"Error: cannot find field {f} in record type {t}") |> Errors.Singleton)
+                              (fun () -> $"Error: cannot find field {f} in record type {t}")
+                              |> Errors.Singleton loc0)
                             |> state.OfSum
 
                           let! f_t = f_t + (path, name, result_t)
@@ -514,7 +522,13 @@ module Eval =
                         TypeOriginal = t
                         TypeWithProps = t_with_props
                         SearchBy = e.SearchBy
-                        Properties = properties }
+                        Properties = properties
+                        OnCreating = None
+                        OnCreated = None
+                        OnUpdating = None
+                        OnUpdated = None
+                        OnDeleting = None
+                        OnDeleted = None }
                   })
                 |> OrderedMap.ofList
                 |> state.AllMapOrdered
@@ -530,7 +544,7 @@ module Eval =
                 return!
                   let sep = ", " in
 
-                  $"Error: schema has repeated relation names: {String.join sep repeatedRelationNames}"
+                  (fun () -> $"Error: schema has repeated relation names: {String.join sep repeatedRelationNames}")
                   |> error
                   |> state.Throw
               else
@@ -554,8 +568,8 @@ module Eval =
                           |> OrderedMap.toSeq
                           |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = fieldName.LocalName)
                           |> Sum.fromOption (fun () ->
-                            (loc0, $"Error: cannot find field {fieldName} in record type {source}")
-                            |> Errors.Singleton)
+                            (fun () -> $"Error: cannot find field {fieldName} in record type {source}")
+                            |> Errors.Singleton loc0)
                           |> state.OfSum
 
                         return! validatePath fieldType target rest
@@ -567,8 +581,8 @@ module Eval =
                           |> OrderedMap.toSeq
                           |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = caseName.LocalName)
                           |> Sum.fromOption (fun () ->
-                            (loc0, $"Error: cannot find case {caseName} in union type {source}")
-                            |> Errors.Singleton)
+                            (fun () -> $"Error: cannot find case {caseName} in union type {source}")
+                            |> Errors.Singleton loc0)
                           |> state.OfSum
 
                         return! validatePath caseType target rest
@@ -581,16 +595,16 @@ module Eval =
                           || caseName.Count <> sourceCase.Length
                         then
                           return!
-                            (loc0, $"Error: sum case {caseName} is out of bounds for sum type {source}")
-                            |> Errors.Singleton
+                            (fun () -> $"Error: sum case {caseName} is out of bounds for sum type {source}")
+                            |> Errors.Singleton loc0
                             |> state.Throw
                         else
                           let! caseType =
                             sourceCase
                             |> Seq.tryItem (caseName.Case - 1)
                             |> Sum.fromOption (fun () ->
-                              (loc0, $"Error: cannot find sum case {caseName} in sum type {source}")
-                              |> Errors.Singleton)
+                              (fun () -> $"Error: cannot find sum case {caseName} in sum type {source}")
+                              |> Errors.Singleton loc0)
                             |> state.OfSum
 
                           return! validatePath caseType target rest
@@ -599,16 +613,16 @@ module Eval =
 
                         if item.Index < 1 || item.Index > sourceCase.Length then
                           return!
-                            (loc0, $"Error: tuple index {item} is out of bounds for tuple type {source}")
-                            |> Errors.Singleton
+                            (fun () -> $"Error: tuple index {item} is out of bounds for tuple type {source}")
+                            |> Errors.Singleton loc0
                             |> state.Throw
                         else
                           let! caseType =
                             sourceCase
                             |> Seq.tryItem (item.Index - 1)
                             |> Sum.fromOption (fun () ->
-                              (loc0, $"Error: cannot find tuple index {item} in tuple type {source}")
-                              |> Errors.Singleton)
+                              (fun () -> $"Error: cannot find tuple index {item} in tuple type {source}")
+                              |> Errors.Singleton loc0)
                             |> state.OfSum
 
                           return! validatePath caseType target rest
@@ -621,7 +635,7 @@ module Eval =
                           |> Map.tryFindWithError
                             (it.Mapper |> TypeCheckScope.Empty.Resolve)
                             "mapper function"
-                            it.Mapper.LocalName
+                            (fun () -> it.Mapper.LocalName)
                             loc0
                           |> state.OfSum
 
@@ -655,16 +669,16 @@ module Eval =
                         entities
                         |> OrderedMap.tryFind ((r.From |> fst).LocalName |> SchemaEntityName.Create)
                         |> Sum.fromOption (fun () ->
-                          (loc0, $"Error: cannot find entity {r.From} for relation {r.Name}")
-                          |> Errors.Singleton)
+                          (fun () -> $"Error: cannot find entity {r.From} for relation {r.Name}")
+                          |> Errors.Singleton loc0)
                         |> state.OfSum
 
                       let! toEntity =
                         entities
                         |> OrderedMap.tryFind ((r.To |> fst).LocalName |> SchemaEntityName.Create)
                         |> Sum.fromOption (fun () ->
-                          (loc0, $"Error: cannot find entity {r.To} for relation {r.Name}")
-                          |> Errors.Singleton)
+                          (fun () -> $"Error: cannot find entity {r.To} for relation {r.Name}")
+                          |> Errors.Singleton loc0)
                         |> state.OfSum
 
                       match fromPath with
@@ -684,16 +698,276 @@ module Eval =
                   |> OrderedMap.ofList
                   |> state.AllMapOrdered
 
-                let schema =
+                let resulting_schema_without_hooks =
                   { DeclaredAtForNominalEquality = loc0
                     Entities = entities
                     Relations = relations }
 
-                return TypeValue.Schema schema, Kind.Schema
+                let hooks_scope =
+                  { TypeCheckScope.Empty with
+                      Type = Some "Schema" }
+
+                let! (state_to_restore: TypeCheckState<'ve>) = state.GetState()
+
+                do!
+                  resulting_schema_without_hooks.Entities
+                  |> OrderedMap.values
+                  |> Seq.map (fun e_typechecked ->
+                    state {
+                      let! (_ctx: TypeCheckContext<'ve>) = state.GetContext()
+                      let! (_s: TypeCheckState<'ve>) = state.GetState()
+
+                      do!
+                        TypeCheckState.bindType
+                          (e_typechecked.Name.Name |> Identifier.LocalScope |> hooks_scope.Resolve)
+                          (e_typechecked.TypeWithProps, Kind.Star)
+                    })
+                  |> state.All
+                  |> state.Ignore
+
+                let! entities_with_hooks =
+                  schema.Entities
+                  |> Seq.map (fun e_parsed ->
+                    state {
+                      let! e_typechecked =
+                        resulting_schema_without_hooks.Entities
+                        |> OrderedMap.tryFind (e_parsed.Name.Name |> SchemaEntityName.Create)
+                        |> Sum.fromOption (fun () ->
+                          (fun () -> $"Error: cannot find typechecked entity for parsed entity {e_parsed.Name}")
+                          |> Errors.Singleton loc0)
+                        |> state.OfSum
+
+                      let! e_typechecked =
+                        state {
+                          match e_parsed.OnCreating with
+                          | None -> return { e_typechecked with OnCreating = None }
+                          | Some on_creating ->
+                            let! on_creating_expr, on_creating_t, on_creating_k, _ = typeCheckExpr None on_creating
+                            do! on_creating_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                            do!
+                              TypeValue.Unify(
+                                loc0,
+                                on_creating_t,
+                                // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
+                                TypeValue.CreateArrow(
+                                  TypeValue.Schema resulting_schema_without_hooks,
+                                  TypeValue.CreateArrow(
+                                    e_typechecked.Id,
+                                    TypeValue.CreateArrow(
+                                      e_typechecked.TypeOriginal,
+                                      TypeValue.CreateArrow(
+                                        e_typechecked.TypeWithProps,
+                                        TypeValue.CreateSum
+                                          [ TypeValue.CreateUnit()
+                                            TypeValue.Lookup(Identifier.LocalScope "Error")
+                                            e_typechecked.TypeOriginal ]
+                                      )
+                                    )
+                                  )
+                                )
+                              )
+                              |> Expr.liftUnification
+
+                            return
+                              { e_typechecked with
+                                  OnCreating = Some on_creating_expr }
+                        }
+
+                      let! e_typechecked =
+                        state {
+                          match e_parsed.OnCreated with
+                          | None -> return { e_typechecked with OnCreated = None }
+                          | Some on_created ->
+                            let! on_created_expr, on_created_t, on_created_k, _ = typeCheckExpr None on_created
+                            do! on_created_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                            do!
+                              TypeValue.Unify(
+                                loc0,
+                                on_created_t,
+                                // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
+                                TypeValue.CreateArrow(
+                                  TypeValue.Schema resulting_schema_without_hooks,
+                                  TypeValue.CreateArrow(
+                                    e_typechecked.Id,
+                                    TypeValue.CreateArrow(
+                                      e_typechecked.TypeWithProps,
+                                      TypeValue.CreateSum
+                                        [ TypeValue.CreateUnit(); TypeValue.Lookup(Identifier.LocalScope "Error") ]
+                                    )
+                                  )
+                                )
+                              )
+                              |> Expr.liftUnification
+
+                            return
+                              { e_typechecked with
+                                  OnCreated = Some on_created_expr }
+                        }
+
+                      let! e_typechecked =
+                        state {
+                          match e_parsed.OnUpdating with
+                          | None -> return { e_typechecked with OnUpdating = None }
+                          | Some on_updating ->
+                            let! on_updating_expr, on_updating_t, on_updating_k, _ = typeCheckExpr None on_updating
+                            do! on_updating_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                            do!
+                              TypeValue.Unify(
+                                loc0,
+                                on_updating_t,
+                                // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
+                                TypeValue.CreateArrow(
+                                  TypeValue.Schema resulting_schema_without_hooks,
+                                  TypeValue.CreateArrow(
+                                    e_typechecked.Id,
+                                    TypeValue.CreateArrow(
+                                      e_typechecked.TypeWithProps,
+                                      TypeValue.CreateArrow(
+                                        e_typechecked.TypeOriginal,
+                                        TypeValue.CreateArrow(
+                                          e_typechecked.TypeWithProps,
+                                          TypeValue.CreateSum
+                                            [ TypeValue.CreateUnit()
+                                              TypeValue.Lookup(Identifier.LocalScope "Error")
+                                              e_typechecked.TypeOriginal ]
+                                        )
+                                      )
+                                    )
+                                  )
+                                )
+                              )
+                              |> Expr.liftUnification
+
+                            return
+                              { e_typechecked with
+                                  OnUpdating = Some on_updating_expr }
+                        }
+
+                      let! e_typechecked =
+                        state {
+                          match e_parsed.OnUpdated with
+                          | None -> return { e_typechecked with OnUpdated = None }
+                          | Some on_updated ->
+                            let! on_updated_expr, on_updated_t, on_updated_k, _ = typeCheckExpr None on_updated
+                            do! on_updated_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                            do!
+                              TypeValue.Unify(
+                                loc0,
+                                on_updated_t,
+                                // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
+                                TypeValue.CreateArrow(
+                                  TypeValue.Schema resulting_schema_without_hooks,
+                                  TypeValue.CreateArrow(
+                                    e_typechecked.Id,
+                                    TypeValue.CreateArrow(
+                                      e_typechecked.TypeWithProps,
+                                      TypeValue.CreateArrow(
+                                        e_typechecked.TypeWithProps,
+                                        TypeValue.CreateSum
+                                          [ TypeValue.CreateUnit(); TypeValue.Lookup(Identifier.LocalScope "Error") ]
+                                      )
+                                    )
+                                  )
+                                )
+                              )
+                              |> Expr.liftUnification
+
+                            return
+                              { e_typechecked with
+                                  OnUpdated = Some on_updated_expr }
+                        }
+
+                      let! e_typechecked =
+                        state {
+                          match e_parsed.OnDeleting with
+                          | None -> return { e_typechecked with OnDeleting = None }
+                          | Some on_deleting ->
+                            let! on_deleting_expr, on_deleting_t, on_deleting_k, _ = typeCheckExpr None on_deleting
+                            do! on_deleting_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                            do!
+                              TypeValue.Unify(
+                                loc0,
+                                on_deleting_t,
+                                // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
+                                TypeValue.CreateArrow(
+                                  TypeValue.Schema resulting_schema_without_hooks,
+                                  TypeValue.CreateArrow(
+                                    e_typechecked.Id,
+                                    TypeValue.CreateArrow(
+                                      e_typechecked.TypeWithProps,
+                                      TypeValue.CreateSum
+                                        [ TypeValue.CreateUnit(); TypeValue.Lookup(Identifier.LocalScope "Error") ]
+                                    )
+                                  )
+                                )
+                              )
+                              |> Expr.liftUnification
+
+                            return
+                              { e_typechecked with
+                                  OnDeleting = Some on_deleting_expr }
+                        }
+
+                      let! e_typechecked =
+                        state {
+                          match e_parsed.OnDeleted with
+                          | None -> return { e_typechecked with OnDeleted = None }
+                          | Some on_deleted ->
+                            let! on_deleted_expr, on_deleted_t, on_deleted_k, _ = typeCheckExpr None on_deleted
+                            do! on_deleted_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                            do!
+                              TypeValue.Unify(
+                                loc0,
+                                on_deleted_t,
+                                // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
+                                TypeValue.CreateArrow(
+                                  TypeValue.Schema resulting_schema_without_hooks,
+                                  TypeValue.CreateArrow(
+                                    e_typechecked.Id,
+                                    TypeValue.CreateArrow(
+                                      e_typechecked.TypeWithProps,
+                                      TypeValue.CreateSum
+                                        [ TypeValue.CreateUnit(); TypeValue.Lookup(Identifier.LocalScope "Error") ]
+                                    )
+                                  )
+                                )
+                              )
+                              |> Expr.liftUnification
+
+                            return
+                              { e_typechecked with
+                                  OnDeleted = Some on_deleted_expr }
+                        }
+
+                      return e_parsed.Name, e_typechecked
+                    })
+                  |> state.All
+                  |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+                  |> state.MapContext(
+                    TypeCheckContext.Updaters.TypeVariables(
+                      Map.add "Schema" (TypeValue.Schema resulting_schema_without_hooks, Kind.Schema)
+                    )
+                  )
+
+                do! state.SetState(state_to_restore |> replaceWith)
+
+                let entities_with_hooks = entities_with_hooks |> OrderedMap.ofList
+
+                let resulting_schema =
+                  { resulting_schema_without_hooks with
+                      Entities = entities_with_hooks }
+
+                return TypeValue.Schema resulting_schema, Kind.Schema
           | TypeExpr.FromTypeValue tv ->
             // do Console.WriteLine($"Instantiating type value {tv}")
-            let! ctx = state.GetContext()
-            let! s = state.GetState()
+            let! (ctx: TypeCheckContext<'ve>) = state.GetContext()
+            let! (s: TypeCheckState<'ve>) = state.GetState()
             let scope = ctx.TypeVariables |> Map.map (fun _ (_, k) -> k)
             let scope = Map.merge (fun _ -> id) scope ctx.TypeParameters
             let! k = TypeValue.KindEval () n loc0 tv |> state.MapContext(fun _ -> scope)
@@ -723,7 +997,7 @@ module Eval =
                     Parameters = []
                     Arguments = parameters @ args },
               Kind.Star
-          | TypeExpr.NewSymbol _ -> return! $"Errors cannot evaluate {t} as a type" |> error |> state.Throw
+          | TypeExpr.NewSymbol _ -> return! (fun () -> $"Errors cannot evaluate {t} as a type") |> error |> state.Throw
           | TypeExpr.Primitive p ->
             return
               TypeValue.Primitive
@@ -866,14 +1140,14 @@ module Eval =
                         let! c = state.GetContext()
 
                         return!
-                          $"Error: cannot find type for {v} with context ({c.TypeVariables.AsFSharpString})"
+                          (fun () -> $"Error: cannot find type for {v} with context ({c.TypeVariables.AsFSharpString})")
                           |> error
                           |> state.Throw
-                          |> state.MapError(Errors.SetPriority(ErrorPriority.High))
+                          |> state.MapError(Errors<_>.MapPriority(replaceWith ErrorPriority.High))
                     } ]
                 )
               )
-              |> state.MapError(Errors.FilterHighestPriorityOnly)
+              |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
 
             // do Console.WriteLine($"Lookup {v} resolved to {res}")
 
@@ -934,8 +1208,8 @@ module Eval =
                   let! resultValue, resultKind = !rest
                   return TypeValue.SetSourceMapping(resultValue, source), resultKind
                 })
-                (state { return! $"Error: cannot evaluate let binding {x}" |> error |> state.Throw }
-                 |> state.MapError(Errors.SetPriority ErrorPriority.High))
+                (state { return! (fun () -> $"Error: cannot evaluate let binding {x}") |> error |> state.Throw }
+                 |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High)))
 
           | TypeExpr.Apply(f, a) ->
             // do Console.WriteLine($"Evaluating type application of {f} to {a}")
@@ -988,14 +1262,14 @@ module Eval =
 
                   if a_k <> f_k_i then
                     return!
-                      $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}"
+                      (fun () -> $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}")
                       |> error
                       |> state.Throw
                   else
                     match f_i.Parameters with
                     | [] ->
                       return!
-                        $"Error: cannot apply imported type {f_i.Id.Name} with no parameters"
+                        (fun () -> $"Error: cannot apply imported type {f_i.Id.Name} with no parameters")
                         |> error
                         |> state.Throw
                     | _ :: ps ->
@@ -1013,7 +1287,7 @@ module Eval =
 
                   if a_k <> f_k_i then
                     return!
-                      $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}"
+                      (fun () -> $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}")
                       |> error
                       |> state.Throw
                   else
@@ -1026,15 +1300,20 @@ module Eval =
 
                   if a_k <> f_k_i then
                     return!
-                      $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}"
+                      (fun () -> $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}")
                       |> error
                       |> state.Throw
                   else
                     return TypeValue.CreateApplication(SymbolicTypeApplication.Application(f_app, a)), f_k_o
                 })
-                (state { return! $"Error: cannot evaluate type application {t}" |> error |> state.Throw }
-                 |> state.MapError(Errors.SetPriority ErrorPriority.High))
-              |> state.MapError(Errors.FilterHighestPriorityOnly)
+                (state {
+                  return!
+                    (fun () -> $"Error: cannot evaluate type application {t}")
+                    |> error
+                    |> state.Throw
+                 }
+                 |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High)))
+              |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
           | TypeExpr.Lambda(param, bodyExpr) ->
             // let fresh_var_t =
             //   TypeValue.Var(
@@ -1201,10 +1480,10 @@ module Eval =
             do! tk |> Kind.AsStar |> ofSum |> state.Ignore
 
             let failure =
-              $"Error: cannot evaluate record destructuring {tv}.{comp}"
+              (fun () -> $"Error: cannot evaluate record destructuring {tv}.{comp}")
               |> error
               |> state.Throw
-              |> state.MapError(Errors.SetPriority ErrorPriority.High)
+              |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
             match comp with
             | Left field ->
@@ -1218,8 +1497,8 @@ module Eval =
                       |> OrderedMap.toSeq
                       |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = field.Name)
                       |> Sum.fromOption (fun () ->
-                        (loc0, $"Error: cannot find field {field} in record type {tv}")
-                        |> Errors.Singleton)
+                        (fun () -> $"Error: cannot find field {field} in record type {tv}")
+                        |> Errors.Singleton loc0)
                       |> state.OfSum
 
                     return TypeValue.SetSourceMapping(field_t, source), field_k
@@ -1232,8 +1511,8 @@ module Eval =
                         |> OrderedMap.toSeq
                         |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = field.Name)
                         |> Sum.fromOption (fun () ->
-                          (loc0, $"Error: cannot find case {field} in union type {tv}")
-                          |> Errors.Singleton)
+                          (fun () -> $"Error: cannot find case {field} in union type {tv}")
+                          |> Errors.Singleton loc0)
                         |> state.OfSum
 
                       return TypeValue.SetSourceMapping(case_t, source), Kind.Star
@@ -1248,16 +1527,16 @@ module Eval =
 
                     if item < 1 || item > items.Length then
                       return!
-                        (loc0, $"Error: tuple index {item} is out of bounds for tuple type {tv}")
-                        |> Errors.Singleton
+                        (fun () -> $"Error: tuple index {item} is out of bounds for tuple type {tv}")
+                        |> Errors.Singleton loc0
                         |> state.Throw
                     else
                       let! item_t =
                         items
                         |> Seq.tryItem (item - 1)
                         |> Sum.fromOption (fun () ->
-                          (loc0, $"Error: cannot find tuple index {item} in tuple type {tv}")
-                          |> Errors.Singleton)
+                          (fun () -> $"Error: cannot find tuple index {item} in tuple type {tv}")
+                          |> Errors.Singleton loc0)
                         |> state.OfSum
 
                       return TypeValue.SetSourceMapping(item_t, source), Kind.Star
@@ -1267,16 +1546,16 @@ module Eval =
 
                       if item < 1 || item > items.Length then
                         return!
-                          (loc0, $"Error: sum case {item} is out of bounds for sum type {tv}")
-                          |> Errors.Singleton
+                          (fun () -> $"Error: sum case {item} is out of bounds for sum type {tv}")
+                          |> Errors.Singleton loc0
                           |> state.Throw
                       else
                         let! item_t =
                           items
                           |> Seq.tryItem (item - 1)
                           |> Sum.fromOption (fun () ->
-                            (loc0, $"Error: cannot find sum case {item} in sum type {tv}")
-                            |> Errors.Singleton)
+                            (fun () -> $"Error: cannot find sum case {item} in sum type {tv}")
+                            |> Errors.Singleton loc0)
                           |> state.OfSum
 
                         return TypeValue.SetSourceMapping(item_t, source), Kind.Star
@@ -1288,8 +1567,8 @@ module Eval =
                         imported.Arguments
                         |> List.tryItem (item - 1)
                         |> Sum.fromOption (fun () ->
-                          (loc0, $"Error: cannot find argument {item} in imported type {tv}")
-                          |> Errors.Singleton)
+                          (fun () -> $"Error: cannot find argument {item} in imported type {tv}")
+                          |> Errors.Singleton loc0)
                         |> state.OfSum
 
                       return TypeValue.SetSourceMapping(item_t, source), Kind.Star
@@ -1326,7 +1605,7 @@ module Eval =
                       Kind.Star
                   else
                     return!
-                      $"Error: cannot flatten types with overlapping keys: {keys1} and {keys2}"
+                      (fun () -> $"Error: cannot flatten types with overlapping keys: {keys1} and {keys2}")
                       |> error
                       |> state.Throw
                 })
@@ -1352,12 +1631,12 @@ module Eval =
                       Kind.Star
                   else
                     return!
-                      $"Error: cannot flatten types with overlapping keys: {keys1} and {keys2}"
+                      (fun () -> $"Error: cannot flatten types with overlapping keys: {keys1} and {keys2}")
                       |> error
                       |> state.Throw
                 })
-                (state { return! $"Error: cannot evaluate flattening " |> error |> state.Throw }
-                 |> state.MapError(Errors.SetPriority ErrorPriority.High))
+                (state { return! (fun () -> $"Error: cannot evaluate flattening ") |> error |> state.Throw }
+                 |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High)))
           | TypeExpr.Exclude(type1, type2) ->
             let! type1, type1_k = !type1
             let! type2, type2_k = !type2
@@ -1398,8 +1677,8 @@ module Eval =
                         typeCheckScopeSource = ctx.Scope },
                     Kind.Star
                 })
-                (state { return! $"Error: cannot evaluate exclude " |> error |> state.Throw }
-                 |> state.MapError(Errors.SetPriority ErrorPriority.High))
+                (state { return! (fun () -> $"Error: cannot evaluate exclude ") |> error |> state.Throw }
+                 |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High)))
           | TypeExpr.Rotate(t) ->
             let! t, t_k = !t
             do! t_k |> Kind.AsStar |> ofSum |> state.Ignore
@@ -1434,6 +1713,6 @@ module Eval =
                         typeCheckScopeSource = ctx.Scope },
                     Kind.Star
                 })
-                (state { return! $"Error: cannot evaluate rotation" |> error |> state.Throw }
-                 |> state.MapError(Errors.SetPriority ErrorPriority.High))
+                (state { return! (fun () -> $"Error: cannot evaluate rotation") |> error |> state.Throw }
+                 |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High)))
         }

@@ -1,10 +1,11 @@
-﻿namespace Ballerina.VirtualFolders.Interactions
+namespace Ballerina.VirtualFolders.Interactions
 (*
 modes of engagement for user/system behavior (UI/workspace state)
 *)
 
 open System.IO
 open Ballerina.Collections.NonEmptyList
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.Errors
 open Ballerina.VirtualFolders
@@ -41,16 +42,9 @@ module Explore =
     sum {
       let! inputFile =
         tryFind path (Folder vfs)
-        |> sum.OfOption(Errors.Singleton $"Cannot find file: path")
+        |> sum.OfOption(Errors.Singleton () (fun () -> $"Cannot find file: path"))
 
-      let! file =
-        VfsNode.AsFile inputFile
-        |> sum.MapError(fun e ->
-          { Errors =
-              e.Errors
-              |> NonEmptyList.map (fun e ->
-                { Message = e.Message
-                  Priority = e.Priority }) })
+      let! file = VfsNode.AsFile inputFile |> sum.MapError(Errors.MapContext(replaceWith ()))
 
       return file.Content |> List.singleton
     }

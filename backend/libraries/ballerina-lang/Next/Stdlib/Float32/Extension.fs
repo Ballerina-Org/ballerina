@@ -2,9 +2,12 @@ namespace Ballerina.DSL.Next.StdLib.Float32
 
 [<AutoOpen>]
 module Extension =
+  open Ballerina
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.Model
@@ -41,20 +44,26 @@ module Extension =
               let! op =
                 op
                 |> Float32Operations.AsPlus
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsFloat32
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return Float32Operations.Plus({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (Float32Operations.Plus({| v1 = Some v |}) |> operationLens.Set, Some float32PlusId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float32(vClosure + v))
@@ -81,20 +90,26 @@ module Extension =
               let! op =
                 op
                 |> Float32Operations.AsMinus
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsFloat32
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return Float32Operations.Minus({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (Float32Operations.Minus({| v1 = Some v |}) |> operationLens.Set, Some float32MinusId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float32(vClosure - v))
@@ -121,20 +136,26 @@ module Extension =
               let! op =
                 op
                 |> Float32Operations.AsDivide
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsFloat32
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return Float32Operations.Divide({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (Float32Operations.Divide({| v1 = Some v |}) |> operationLens.Set, Some float32DivideId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float32(vClosure / v))
@@ -162,25 +183,31 @@ module Extension =
               let! op =
                 op
                 |> Float32Operations.AsPower
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
                 let! v =
                   v
                   |> PrimitiveValue.AsFloat32
-                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
                   |> reader.OfSum
 
-                return Float32Operations.Power({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (Float32Operations.Power({| v1 = Some v |}) |> operationLens.Set, Some float32PowerId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
                 let! v =
                   v
                   |> PrimitiveValue.AsInt32
-                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
                   |> reader.OfSum
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float32(pown vClosure v))
@@ -207,20 +234,26 @@ module Extension =
               let! op =
                 op
                 |> Float32Operations.AsMod
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsFloat32
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return Float32Operations.Mod({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (Float32Operations.Mod({| v1 = Some v |}) |> operationLens.Set, Some float32ModId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float32(vClosure % v))
@@ -247,20 +280,26 @@ module Extension =
               let! op =
                 op
                 |> Float32Operations.AsEqual
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsFloat32
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return Float32Operations.Equal({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (Float32Operations.Equal({| v1 = Some v |}) |> operationLens.Set, Some float32EqualId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
@@ -287,20 +326,26 @@ module Extension =
               let! op =
                 op
                 |> Float32Operations.AsNotEqual
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsFloat32
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return Float32Operations.NotEqual({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (Float32Operations.NotEqual({| v1 = Some v |}) |> operationLens.Set, Some float32NotEqualId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
@@ -327,20 +372,26 @@ module Extension =
               let! op =
                 op
                 |> Float32Operations.AsGreaterThan
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsFloat32
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return Float32Operations.GreaterThan({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (Float32Operations.GreaterThan({| v1 = Some v |}) |> operationLens.Set, Some float32GreaterThanId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
@@ -367,22 +418,26 @@ module Extension =
               let! op =
                 op
                 |> Float32Operations.AsGreaterThanOrEqual
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsFloat32
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  Float32Operations.GreaterThanOrEqual({| v1 = Some v |})
-                  |> operationLens.Set
+                  (Float32Operations.GreaterThanOrEqual({| v1 = Some v |}) |> operationLens.Set,
+                   Some float32GreaterThanOrEqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
@@ -410,20 +465,26 @@ module Extension =
               let! op =
                 op
                 |> Float32Operations.AsLessThan
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsFloat32
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return Float32Operations.LessThan({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (Float32Operations.LessThan({| v1 = Some v |}) |> operationLens.Set, Some float32LessThanId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
@@ -450,20 +511,27 @@ module Extension =
               let! op =
                 op
                 |> Float32Operations.AsLessThanOrEqual
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsFloat32
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return Float32Operations.LessThanOrEqual({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (Float32Operations.LessThanOrEqual({| v1 = Some v |}) |> operationLens.Set,
+                   Some float32LessThanOrEqualId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))

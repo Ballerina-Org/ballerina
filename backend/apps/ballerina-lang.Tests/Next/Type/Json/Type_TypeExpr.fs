@@ -1,6 +1,7 @@
-﻿module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Type.Json.Type_TypeExpr
+module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Type.Json.Type_TypeExpr
 
 open System
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.StdLib.Extensions
 open NUnit.Framework

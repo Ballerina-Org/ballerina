@@ -3,11 +3,14 @@ namespace Ballerina.DSL.Next.Types
 [<AutoOpen>]
 module Model =
   open System
+  open Ballerina.StdLib.String
   open Ballerina.StdLib.OrderPreservingMap
   open Ballerina.StdLib.Formats
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.StdLib.Object
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
+  open Ballerina
   open Ballerina.Collections.Sum
 
   type LocalIdentifier = { Name: string }
@@ -201,19 +204,50 @@ module Model =
       Type: TypeExpr<'valueExt>
       Body: Expr<TypeExpr<'valueExt>, Identifier, 'valueExt> }
 
+  and SchemaEntityHook =
+    | Creating
+    | Created
+    | Updating
+    | Updated
+    | Deleting
+    | Deleted
+
   and SchemaEntityExpr<'valueExt> =
     { Name: SchemaEntityName
       Type: TypeExpr<'valueExt>
       Id: TypeExpr<'valueExt>
       SearchBy: List<SearchByLookup>
-      Properties: List<SchemaEntityPropertyExpr<'valueExt>> }
+      Properties: List<SchemaEntityPropertyExpr<'valueExt>>
+      OnCreating: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
+      OnCreated: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
+      OnUpdating: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
+      OnUpdated: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
+      OnDeleting: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
+      OnDeleted: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>> }
 
   and Cardinality =
     | Zero
     | One
     | Many
 
-  and SchemaRelationCardinality = { From: Cardinality; To: Cardinality }
+  and SchemaRelationCardinality =
+    { From: Cardinality
+      To: Cardinality }
+
+    override c.ToString() =
+      let fromStr =
+        match c.From with
+        | Zero -> "0"
+        | One -> "1"
+        | Many -> "*"
+
+      let toStr =
+        match c.To with
+        | Zero -> "0"
+        | One -> "1"
+        | Many -> "*"
+
+      $"{fromStr}..{toStr}"
 
   and SchemaPathTypeDecompositionExpr =
     | Field of Identifier
@@ -385,7 +419,16 @@ module Model =
       TypeWithProps: TypeValue<'valueExt>
       Id: TypeValue<'valueExt>
       SearchBy: List<SearchByLookup>
-      Properties: List<SchemaEntityProperty<'valueExt>> }
+      Properties: List<SchemaEntityProperty<'valueExt>>
+      OnCreating: Option<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>>
+      OnCreated: Option<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>>
+      OnUpdating: Option<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>>
+      OnUpdated: Option<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>>
+      OnDeleting: Option<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>>
+      OnDeleted: Option<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> }
+
+    override entity.ToString() =
+      $"{entity.Name.Name} (Id: {entity.Id}): {entity.TypeOriginal} -> {entity.TypeWithProps}"
 
   and SchemaRelation =
     { Name: SchemaRelationName
@@ -393,10 +436,33 @@ module Model =
       To: Identifier
       Cardinality: Option<SchemaRelationCardinality> }
 
+    override r.ToString() =
+      let cardStr =
+        match r.Cardinality with
+        | Some c -> $" ({c})"
+        | None -> ""
+
+      $"{r.Name.Name}: {r.From} -> {r.To}{cardStr}"
+
   and Schema<'valueExt> =
     { DeclaredAtForNominalEquality: Location
       Entities: OrderedMap<SchemaEntityName, SchemaEntity<'valueExt>>
       Relations: OrderedMap<SchemaRelationName, SchemaRelation> }
+
+    override s.ToString() =
+      let entities =
+        s.Entities
+        |> OrderedMap.toList
+        |> List.map (fun (_name, entity) -> $"{entity}")
+        |> String.join "; "
+
+      let relations =
+        s.Relations
+        |> OrderedMap.toList
+        |> List.map (fun (_name, relation) -> $"{relation}")
+        |> String.join "; "
+
+      $"[Entities: {entities}, Relations: {relations}]"
 
 
   and TypeValue<'valueExt> =
@@ -814,7 +880,7 @@ module Model =
     | Sum of SumConsSelector * Value<'T, 'valueExt>
     | Primitive of PrimitiveValue
     | Var of Var
-    | Ext of 'valueExt
+    | Ext of 'valueExt * applicableId: Option<ResolvedIdentifier>
 
     override self.ToString() : string =
       match self with
@@ -837,4 +903,4 @@ module Model =
       | Sum(selector, value) -> $"{selector.Case}Of{selector.Count}({value.ToString()})"
       | Primitive p -> p.ToString()
       | Var v -> v.Name
-      | Ext e -> e.ToString()
+      | Ext(e, _) -> e.ToString()

@@ -2,10 +2,12 @@ namespace Ballerina.DSL.Next.Types.TypeChecker
 
 module Let =
   open Ballerina.StdLib.String
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Collections.Option
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open System
   open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Types.Model
@@ -40,8 +42,8 @@ module Let =
         let (!) = typeCheckExpr context_t
         let (=>) c e = typeCheckExpr c e
 
-        let ofSum (p: Sum<'a, Ballerina.Errors.Errors>) =
-          p |> Sum.mapRight (Errors.FromErrors loc0) |> state.OfSum
+        let ofSum (p: Sum<'a, Errors<Unit>>) =
+          p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
         state {
           let! ctx = state.GetContext()
@@ -59,6 +61,7 @@ module Let =
           match x_type with
           | Some(x_type, x_type_kind) ->
             do! x_type_kind |> Kind.AsStar |> ofSum |> state.Ignore
+
             do! TypeValue.Unify(loc0, t1, x_type) |> Expr<'T, 'Id, 'valueExt>.liftUnification
           | _ -> ()
 

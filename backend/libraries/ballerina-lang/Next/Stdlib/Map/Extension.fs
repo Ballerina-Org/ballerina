@@ -2,6 +2,7 @@ namespace Ballerina.DSL.Next.StdLib.Map
 
 [<AutoOpen>]
 module Extension =
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.DSL.Next.Types
   open Ballerina.Lenses
@@ -13,6 +14,8 @@ module Extension =
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
+  open Ballerina
 
 
   let MapExtension<'ext when 'ext: comparison>
@@ -47,13 +50,13 @@ module Extension =
 
     let getValueAsMap
       (v: Value<TypeValue<'ext>, 'ext>)
-      : Sum<Map<Value<TypeValue<'ext>, 'ext>, Value<TypeValue<'ext>, 'ext>>, Ballerina.Errors.Errors> =
+      : Sum<Map<Value<TypeValue<'ext>, 'ext>, Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
       sum {
-        let! v = v |> Value.AsExt
+        let! v, _ = v |> Value.AsExt
 
         let! v =
           valueLens.Get v
-          |> sum.OfOption("cannot get map value" |> Ballerina.Errors.Errors.Singleton)
+          |> sum.OfOption((fun () -> $"cannot get map value") |> Errors<Unit>.Singleton())
 
         let! v = v |> MapValues.AsMap
         v
@@ -91,14 +94,19 @@ module Extension =
               let! op =
                 op
                 |> MapOperations.AsMap
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application (value function)
-                return MapOperations.Map_Map({| f = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (MapOperations.Map_Map({| f = Some v |}) |> operationLens.Set, Some mapMapId)
+                  |> Ext
               | Some f -> // the closure has the value function - second step in the application (the map)
-                let! map = getValueAsMap v |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+                let! map =
+                  getValueAsMap v
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
 
                 let! newMap =
                   map
@@ -110,7 +118,7 @@ module Extension =
                     })
                   |> reader.All
 
-                return MapValues.Map(Map.ofList newMap) |> valueLens.Set |> Ext
+                return (MapValues.Map(Map.ofList newMap) |> valueLens.Set, Some mapMapId) |> Ext
             } }
 
     let setOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, MapValues<'ext>, MapOperations<'ext>> =
@@ -142,28 +150,47 @@ module Extension =
               let! op =
                 op
                 |> MapOperations.AsSet
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application (key, value tuple)
-                let! items = v |> Value.AsTuple |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+                let! items =
+                  v
+                  |> Value.AsTuple
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
 
                 match items with
-                | [ key; value ] -> return MapOperations.Map_Set(Some(key, value)) |> operationLens.Set |> Ext
-                | _ -> return! (loc0, "Error: expected pair (key, value)") |> Errors.Singleton |> reader.Throw
+                | [ key; value ] ->
+                  return
+                    (MapOperations.Map_Set(Some(key, value)) |> operationLens.Set, Some mapSetId)
+                    |> Ext
+                | _ ->
+                  return!
+                    (fun () -> "Error: expected pair (key, value)")
+                    |> Errors.Singleton loc0
+                    |> reader.Throw
               | Some(key, value) -> // the closure has the key-value pair - second step in the application (the map)
-                let! map = v |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+                let! map, _ =
+                  v
+                  |> Value.AsExt
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
 
                 let! map =
                   map
                   |> valueLens.Get
-                  |> sum.OfOption((loc0, "Error: expected map") |> Errors.Singleton)
+                  |> sum.OfOption((fun () -> "Error: expected map") |> Errors.Singleton loc0)
                   |> reader.OfSum
 
-                let! map = map |> MapValues.AsMap |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+                let! map =
+                  map
+                  |> MapValues.AsMap
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
 
-                return MapValues.Map(Map.add key value map) |> valueLens.Set |> Ext
+                return (MapValues.Map(Map.add key value map) |> valueLens.Set, Some mapSetId) |> Ext
             } }
 
     let emptyOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, MapValues<'ext>, MapOperations<'ext>> =
@@ -189,10 +216,10 @@ module Extension =
               do!
                 op
                 |> MapOperations.AsEmpty
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return MapValues.Map(Map.empty) |> valueLens.Set |> Ext
+              return (MapValues.Map(Map.empty) |> valueLens.Set, Some mapEmptyId) |> Ext
             } }
 
     let maptolistOperation
@@ -228,19 +255,22 @@ module Extension =
               do!
                 op
                 |> MapOperations.AsMapToList
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! map = getValueAsMap v |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! map =
+                getValueAsMap v
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let tupleList = map |> Map.toList |> List.map (fun (k, v) -> Value.Tuple([ k; v ]))
 
               match listValueLens with
-              | Some listLens -> return ListValues.List tupleList |> listLens.Set |> Ext
+              | Some listLens -> return (ListValues.List tupleList |> listLens.Set, None) |> Ext
               | None ->
                 return!
-                  (loc0, "Error: Map::maptolist requires List extension value lens")
-                  |> Errors.Singleton
+                  (fun () -> "Error: Map::maptolist requires List extension value lens")
+                  |> Errors.Singleton loc0
                   |> reader.Throw
             } }
 
@@ -254,5 +284,5 @@ module Extension =
           | MapValues.Map map when not (Map.isEmpty map) ->
             let (firstKey, firstValue) = map |> Map.toList |> List.head
             let rest = map |> Map.remove firstKey |> MapValues.Map
-            Value<TypeValue<'ext>, 'ext>.Tuple([ firstKey; firstValue; rest |> valueLens.Set |> Ext ])
+            Value<TypeValue<'ext>, 'ext>.Tuple([ firstKey; firstValue; (rest |> valueLens.Set, None) |> Ext ])
           | _ -> Value<TypeValue<'ext>, 'ext>.Primitive PrimitiveValue.Unit }

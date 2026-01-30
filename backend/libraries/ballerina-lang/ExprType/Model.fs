@@ -3,6 +3,7 @@ namespace Ballerina.DSL.Expr.Types
 module Model =
   open System
   open Ballerina.Collections.Map
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.DSL.Expr.Model
@@ -36,7 +37,7 @@ module Model =
         |> Set.isEmpty
         ->
         Map.merge (fun a _ -> a) fields1 fields2 |> ExprType.RecordType |> Left
-      | _ -> Right(Errors.Singleton $$"""Error: cannot merge types {{t1}} and {{t2}}.""")
+      | _ -> Right(Errors.Singleton () (fun () -> $$"""Error: cannot merge types {{t1}} and {{t2}}."""))
 
     static member GetTypesFreeVars(t: ExprType) : Set<ExprTypeId> =
       let (!) = ExprType.GetTypesFreeVars

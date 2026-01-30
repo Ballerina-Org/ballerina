@@ -1,5 +1,6 @@
-﻿module Ballerina.Data.Tests.Seeds.Schema
+module Ballerina.Data.Tests.Seeds.Schema
 
+open Ballerina
 open Ballerina.Collections.Sum
 open NUnit.Framework
 

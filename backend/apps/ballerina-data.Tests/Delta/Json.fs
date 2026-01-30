@@ -5,6 +5,7 @@ open Ballerina.Data.Delta.Extensions
 open NUnit.Framework
 open FSharp.Data
 open Ballerina.Reader.WithError
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Terms.Model

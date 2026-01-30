@@ -1,6 +1,7 @@
-﻿module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Json.Value_TypeValue_Primitive
+module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Json.Value_TypeValue_Primitive
 
 open System
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.Types
 open NUnit.Framework

@@ -4,6 +4,7 @@ module Lexer =
   open System
   open Ballerina.DSL.Next.Syntax.Lexer
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
 
   type Symbol = char
 
@@ -13,7 +14,7 @@ module Lexer =
 
 
   type Keyword =
-    | Form
+    | View
     | From
     | As
     | String
@@ -66,7 +67,7 @@ module Lexer =
 
     override this.ToString() : string =
       match this with
-      | Form -> "form"
+      | View -> "view"
       | From -> "from"
       | As -> "as"
       | String -> "string"
@@ -192,7 +193,7 @@ module Lexer =
     tokenizer {
       let! res =
         tokenizer.Any
-          [ word (Form.ToString()) |> tokenizer.Map(LocalizedToken.FromKeyword Form)
+          [ word (View.ToString()) |> tokenizer.Map(LocalizedToken.FromKeyword View)
             word (From.ToString()) |> tokenizer.Map(LocalizedToken.FromKeyword From)
             word (As.ToString()) |> tokenizer.Map(LocalizedToken.FromKeyword As)
             word (Keyword.StringId.ToString())

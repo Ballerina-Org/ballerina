@@ -6,6 +6,7 @@ open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Terms.Model
 open Ballerina.Data.Delta.ToUpdater
 open Ballerina.Data.Delta.Model
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.Types.Patterns
 

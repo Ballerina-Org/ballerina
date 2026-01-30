@@ -6,6 +6,7 @@ open FSharp.Data
 open NUnit.Framework
 open Common
 open Ballerina.DSL.Expr.Types.Model
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.Errors
 

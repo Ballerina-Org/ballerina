@@ -2,6 +2,7 @@ module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Project
 
 open NUnit.Framework
 open Ballerina.StdLib.Object
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.Reader.WithError
 open Ballerina.DSL.Next.Types.Model
@@ -9,6 +10,7 @@ open Ballerina.DSL.Next.Types.TypeChecker.Model
 open Ballerina.DSL.Next.Terms
 open Ballerina.DSL.Next.Runners.Project
 open Ballerina.Collections.NonEmptyList
+open Ballerina.Errors
 
 
 let private fileFromNameAndContent (name: string) (content: string) : FileBuildConfiguration =
@@ -38,8 +40,12 @@ let private buildAndEval (files: NonEmptyList<string * string>) =
 
     match evalResult with
     | Left value -> Left(value, NonEmptyList.ToList exprs |> List.length)
-    | Right e -> Right $"Evaluation failed: {e.AsFSharpString}"
-  | Right e -> Right $"Build failed: {e.AsFSharpString}"
+    | Right(e: Errors.Errors<Patterns.Location>) ->
+      let errString = Errors.ToString(e, "\n")
+      Right(sprintf "Evaluation failed: %s" errString)
+  | Right e ->
+    let errString = Errors.ToString(e, "\n")
+    Right(sprintf "Build failed: %s" errString)
 
 
 [<Test>]

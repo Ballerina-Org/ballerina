@@ -2,16 +2,15 @@ namespace Ballerina.DSL.Next.Runners
 
 [<AutoOpen>]
 module Project =
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
-  open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open System
   open Ballerina.DSL.Next.Types.Model
-  open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.DSL.Next.Types.TypeChecker.Expr
-  open Ballerina.Fun
   open Ballerina.Parser
   open Ballerina.DSL.Next.Syntax
   open System.IO
@@ -38,6 +37,11 @@ module Project =
       Content: Unit -> string
       Checksum: Checksum }
 
+    static member FromFile(fileName: string, fileContent: string) =
+      { FileName = { Path = fileName }
+        Content = fun () -> fileContent
+        Checksum = Checksum.Compute fileContent }
+
   and ProjectCache<'valueExt when 'valueExt: comparison> =
     { Fold:
         NonEmptyList<FileBuildConfiguration>
@@ -46,13 +50,13 @@ module Project =
               Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>,
               Unit,
               TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
-              Errors
+              Errors<Location>
              >)
           -> Sum<
             NonEmptyList<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> *
             TypeCheckContext<'valueExt> *
             TypeCheckState<'valueExt>,
-            Errors
+            Errors<Location>
            > }
 
 
@@ -91,7 +95,7 @@ module Project =
             Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>,
             Unit,
             TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
-            Errors
+            Errors<Location>
            >)
       (prevChecksums: List<Checksum>)
       (ctx: TypeCheckContext<'valueExt>)
@@ -101,7 +105,7 @@ module Project =
           Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
           TypeCheckContext<'valueExt> *
           TypeCheckState<'valueExt>,
-          Errors
+          Errors<Location>
          >
       =
       let cached_entry = cache.TryGet file.FileName
@@ -132,7 +136,7 @@ module Project =
                   Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>,
                   Unit,
                   TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
-                  Errors
+                  Errors<Location>
                  >) ->
           files
           |> NonEmptyList.mapi (fun i file -> file, i)
@@ -144,7 +148,7 @@ module Project =
                      List<Checksum> *
                      TypeCheckContext<'valueExt> *
                      TypeCheckState<'valueExt>,
-                     Errors
+                     Errors<Location>
                     >)
                  ((file, index): FileBuildConfiguration * int) ->
               sum {
@@ -177,7 +181,7 @@ module Project =
       { TryGet =
           fun file ->
             cache
-            |> Map.tryFindWithError file "build cache" file.Path Location.Unknown
+            |> Map.tryFindWithError file "build cache" (fun () -> file.Path) Location.Unknown
             |> Sum.toOption
         Set = fun k v -> cache <- cache |> Map.add k v }
 
@@ -248,7 +252,11 @@ It could be because the cache structure is outdated, and is expected in such cas
   type ProjectBuildConfiguration with
     static member ParseFile<'valueExt when 'valueExt: comparison>
       (file: FileBuildConfiguration)
-      : Sum<ParserResult<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors>, Errors> =
+      : Sum<
+          ParserResult<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>>,
+          Errors<Location>
+         >
+      =
       sum {
         let initialLocation = Location.Initial file.FileName.Path
         let parserStopwatch = System.Diagnostics.Stopwatch.StartNew()
@@ -262,7 +270,8 @@ It could be because the cache structure is outdated, and is expected in such cas
 
         do parserStopwatch.Start()
 
-        let! parserResult =
+        let! (parserResult:
+          ParserResult<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>>) =
           Parser.Expr.program ()
           |> Parser.Run(actual, initialLocation)
           |> sum.MapError fst
@@ -270,36 +279,11 @@ It could be because the cache structure is outdated, and is expected in such cas
         do parserStopwatch.Stop()
         do Console.WriteLine $"Parsed {file.FileName.Path}\nin {parserStopwatch.ElapsedMilliseconds} ms"
 
-        parserResult
-      }
-
-    static member TypeCheck<'valueExt when 'valueExt: comparison>
-      (file: FileBuildConfiguration)
-      : Sum<ParserResult<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors>, Errors> =
-      sum {
-        let initialLocation = Location.Initial file.FileName.Path
-        let parserStopwatch = System.Diagnostics.Stopwatch.StartNew()
-
-        let! ParserResult(actual, _) =
-          tokens
-          |> Parser.Run(file.Content() |> Seq.toList, initialLocation)
-          |> sum.MapError fst
-
-        do parserStopwatch.Stop()
-
-        do parserStopwatch.Start()
-
-        let! parserResult =
-          Parser.Expr.program ()
-          |> Parser.Run(actual, initialLocation)
-          |> sum.MapError fst
-
-        do parserStopwatch.Stop()
-        do Console.WriteLine $"Parsed {file.FileName.Path}\nin {parserStopwatch.ElapsedMilliseconds} ms"
+        // match parserResult with
+        // | ParserResult(program, _) -> do Console.WriteLine $"Parsed program is\n{program}\n"
 
         parserResult
       }
-
 
     static member BuildCached<'valueExt when 'valueExt: comparison>
       (cache: ProjectCache<'valueExt>)
@@ -308,7 +292,7 @@ It could be because the cache structure is outdated, and is expected in such cas
           NonEmptyList<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> *
           TypeCheckContext<'valueExt> *
           TypeCheckState<'valueExt>,
-          Errors
+          Errors<Location>
          >
       =
 
@@ -340,7 +324,7 @@ It could be because the cache structure is outdated, and is expected in such cas
                 do!
                   typeCheckedExpr
                   |> Expr.AsTerminatedByConstantUnit
-                  |> sum.MapError(Errors.FromErrors Location.Unknown)
+                  |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
                   |> state.OfSum
 
               return typeCheckedExpr

@@ -1,7 +1,8 @@
-﻿namespace Ballerina.Data.Delta
+namespace Ballerina.Data.Delta
 
 [<AutoOpen>]
 module ToUpdater =
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Terms.Patterns
@@ -17,12 +18,12 @@ module ToUpdater =
       (deltaExtensionHandler:
         'deltaExtension
           -> Value<TypeValue<'valueExtension>, 'valueExtension>
-          -> Sum<Value<TypeValue<'valueExtension>, 'valueExtension>, Errors>)
+          -> Sum<Value<TypeValue<'valueExtension>, 'valueExtension>, Errors<unit>>)
       (delta: Delta<'valueExtension, 'deltaExtension>)
       : Sum<
           Value<TypeValue<'valueExtension>, 'valueExtension>
-            -> Sum<Value<TypeValue<'valueExtension>, 'valueExtension>, Errors>,
-          Errors
+            -> Sum<Value<TypeValue<'valueExtension>, 'valueExtension>, Errors<unit>>,
+          Errors<unit>
          >
       =
       sum {
@@ -43,7 +44,7 @@ module ToUpdater =
 
                 let! targetSymbol, currentValue =
                   fieldValues
-                  |> Map.tryFindByWithError (fun (ts, _) -> ts.Name = fieldName) "field values" fieldName
+                  |> Map.tryFindByWithError (fun (ts, _) -> ts.Name = fieldName) "field values" (fun () -> fieldName) ()
 
                 let! updatedValue = fieldUpdater currentValue
 
@@ -76,7 +77,7 @@ module ToUpdater =
                   fieldValues
                   |> List.tryItem fieldIndex
                   |> Sum.fromOption (fun () ->
-                    Errors.Singleton $"Error: tuple does not have field at index {fieldIndex}")
+                    Errors.Singleton () (fun () -> $"Error: tuple does not have field at index {fieldIndex}"))
 
                 let! fieldValue = fieldUpdater fieldValue
                 let fields = fieldValues |> List.updateAt fieldIndex fieldValue
