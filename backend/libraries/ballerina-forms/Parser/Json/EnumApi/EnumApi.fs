@@ -7,6 +7,7 @@ module internal EnumApi =
   open Ballerina.DSL.Parser.ExprType
   open Ballerina.DSL.FormEngine.Model
   open Ballerina.DSL.Expr.Types.Patterns
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.StdLib.Json.Patterns
@@ -22,9 +23,9 @@ module internal EnumApi =
       | [ (value, ExprType.LookupType underlyingUnion) ] when value = valueFieldName -> return underlyingUnion
       | _ ->
         return!
-          $$"""Error: invalid enum reference type passed to enum '{{enumName}}'. Expected { {{valueFieldName}}:ENUM }, found {{fields}}."""
-          |> Errors.Singleton
-          |> Right
+          Errors.Singleton () (fun () ->
+            $$"""Error: invalid enum reference type passed to enum '{{enumName}}'. Expected { {{valueFieldName}}:ENUM }, found {{fields}}.""")
+          |> sum.Throw
     }
 
   type EnumApi with

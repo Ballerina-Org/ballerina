@@ -1,8 +1,9 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
 
 [<AutoOpen>]
 module ResolvedTypeIdentifier =
   open Ballerina.StdLib.Json.Sum
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.Errors

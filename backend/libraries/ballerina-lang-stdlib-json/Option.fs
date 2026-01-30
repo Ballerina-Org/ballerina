@@ -1,8 +1,9 @@
-﻿namespace Ballerina.DSL.Next.StdLib.Option.Json
+namespace Ballerina.DSL.Next.StdLib.Option.Json
 
 [<AutoOpen>]
 module Extension =
 
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Json
@@ -14,6 +15,7 @@ module Extension =
   open Ballerina.DSL.Next.Types
   open Ballerina.Reader.WithError
   open FSharp.Data
+  open Ballerina.Errors
 
   let parser<'ext>
     (lens: PartialLens<'ext, OptionValues<'ext>>)
@@ -28,7 +30,7 @@ module Extension =
           | jsonValue -> Some jsonValue
 
         let! opt = opt |> Option.map rootValueParser |> reader.RunOption
-        return OptionValues.Option opt |> lens.Set |> Ext
+        return (OptionValues.Option opt |> lens.Set, None) |> Ext
       })
 
   let encoder
@@ -37,11 +39,11 @@ module Extension =
     (v: Value<TypeValue<'ext>, 'ext>)
     : ValueEncoderReader<TypeValue<'ext>, 'ext> =
     reader {
-      let! v = Value.AsExt v |> reader.OfSum
+      let! v, _ = Value.AsExt v |> reader.OfSum
 
       let! v =
         lens.Get v
-        |> sum.OfOption("cannot get option value" |> Ballerina.Errors.Errors.Singleton)
+        |> sum.OfOption((fun () -> "cannot get option value") |> Errors<Unit>.Singleton())
         |> reader.OfSum
 
       let! v = v |> OptionValues.AsOption |> reader.OfSum

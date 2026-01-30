@@ -1,5 +1,6 @@
-﻿namespace Ballerina.Seeds
+namespace Ballerina.Seeds
 
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.Types.Model
@@ -8,6 +9,7 @@ open Ballerina.Data.Seeds
 
 open Ballerina.Data.Spec.Model
 open Ballerina.LocalizedErrors
+open Ballerina.Errors
 open Ballerina.Reader.WithError
 open Ballerina.Seeds
 
@@ -18,7 +20,7 @@ module Runner =
 
   let seed
     (schema: Schema<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt>)
-    : Reader<SpecData<TypeValue<ValueExt>, ValueExt>, SeedingContext, Errors> =
+    : Reader<SpecData<TypeValue<ValueExt>, ValueExt>, SeedingContext, Errors<unit>> =
     reader {
       let! ctx = reader.GetContext()
 

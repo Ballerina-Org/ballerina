@@ -165,6 +165,12 @@ module Model =
       |> sum.All
       |> sum.Map(Map.ofList)
 
+    member inline sum.AllNonEmptyList<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
+      (NonEmptyList(head, tail): NonEmptyList<Sum<'a, 'b>>)
+      : Sum<NonEmptyList<'a>, 'b> =
+      sum.All2 head (tail |> sum.All)
+      |> sum.Map(fun (head, tail) -> NonEmptyList.OfList(head, tail))
+
     member inline sum.RunOption(p: Option<Sum<'a, 'b>>) =
       sum {
         match p with
@@ -184,6 +190,21 @@ module Model =
 // [<AutoOpen>]
 module Operators =
   let (>>=) f g = fun x -> sum.Bind(f x, g)
+
+  /// Alternative operator (Any for 2 cases)
+  let inline (<|>) (lhs: Sum<'a, 'b>) (rhs: Sum<'a, 'b>) : Sum<'a, 'b> =
+    match lhs with
+    | Left a -> Left a
+    | Right b1 ->
+      match rhs with
+      | Left a -> Left a
+      | Right b2 -> Right((^b: (static member Concat: ^b * ^b -> ^b) (b1, b2)))
+
+  /// Resolution operator
+  let (<|>%) =
+    function
+    | Left a -> fun _ -> a
+    | Right _ -> id
 
   type Sum<'a, 'b> with
     static member Then(f, g) = fun x -> sum.Bind(f x, g)

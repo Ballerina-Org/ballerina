@@ -3,19 +3,17 @@ namespace Ballerina.DSL.Next.Extensions
 [<AutoOpen>]
 module Types =
   open Ballerina
+  open Ballerina
   open Ballerina.Collections.Sum
+  open Ballerina.Collections.Map
   open Ballerina.Reader.WithError
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Types.Model
-  open Ballerina.DSL.Next.Types.Patterns
-  open Ballerina.DSL.Next.Types.TypeChecker.Expr
   open Ballerina.DSL.Next.Types.TypeChecker.Model
-  open Ballerina.DSL.Next.Types.TypeChecker.Eval
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.Terms
-  open Ballerina.StdLib.OrderPreservingMap
-  open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
   type TypeExtension<'e, 'extConstructors, 'extValues, 'extOperations> with
@@ -53,21 +51,7 @@ module Types =
           |> List.fold (fun acc k -> Kind.Arrow(k, acc)) Kind.Star
 
         let typeExtUnion =
-          TypeValue.Imported
-            { Id = typeExt.TypeName |> fst
-              Sym = typeExt.TypeName |> snd
-              Parameters = typeExt.TypeVars |> List.map (fun (tv, k) -> TypeParameter.Create(tv.Name, k))
-              Arguments = []
-              UnionLike =
-                if typeExt.Cases |> Map.isEmpty then
-                  None
-                else
-                  typeExt.Cases
-                  |> Map.toSeq
-                  |> Seq.map (fun ((_, sym), caseExt) -> (sym, caseExt.CaseType))
-                  |> OrderedMap.ofSeq
-                  |> Some
-              RecordLike = None }
+          typeExt |> TypeExtension.ToImportedTypeValue |> TypeValue.Imported
 
         let bindings =
           typeCheckState.Bindings
@@ -102,7 +86,7 @@ module Types =
                   reader {
                     let! v =
                       caseExt.ValueLens.Get v
-                      |> sum.OfOption((loc0, $"Error: cannot get value from extension") |> Errors.Singleton)
+                      |> sum.OfOption((fun () -> $"Error: cannot get value from extension") |> Errors.Singleton loc0)
                       |> reader.OfSum
 
                     let v = typeExt.Deconstruct v
@@ -112,7 +96,7 @@ module Types =
                         reader {
                           let! handlerVar, handlerBody =
                             handlers
-                            |> Map.tryFindWithError caseId "handlers" "Option.Some" loc0
+                            |> Map.tryFindWithError caseId "handlers" (fun () -> "Option.Some") loc0
                             |> reader.OfSum
 
 
@@ -130,7 +114,10 @@ module Types =
                   [ (reader {
                       let! v =
                         caseExt.ConsLens.Get v
-                        |> sum.OfOption((loc0, $"Error: cannot extra constructor from extension") |> Errors.Singleton)
+                        |> sum.OfOption(
+                          (fun () -> $"Error: cannot extra constructor from extension")
+                          |> Errors.Singleton loc0
+                        )
                         |> reader.OfSum
 
                       return
@@ -160,7 +147,10 @@ module Types =
                   reader {
                     let! v =
                       caseExt.OperationsLens.Get v
-                      |> sum.OfOption((loc0, $"Error: cannot extra constructor from extension") |> Errors.Singleton)
+                      |> sum.OfOption(
+                        (fun () -> $"Error: cannot extra constructor from extension")
+                        |> Errors.Singleton loc0
+                      )
                       |> reader.OfSum
 
                     return
@@ -179,7 +169,8 @@ module Types =
           |> Map.toSeq
           |> Seq.fold
             (fun acc ((caseId, _), caseExt) ->
-              acc |> Map.add caseId (caseExt.Constructor |> caseExt.ConsLens.Set |> Ext))
+              acc
+              |> Map.add caseId ((caseExt.Constructor |> caseExt.ConsLens.Set, None) |> Ext))
             evalContext.Values
 
         let values =
@@ -187,12 +178,37 @@ module Types =
           |> Map.toSeq
           |> Seq.fold
             (fun acc (caseId, caseExt) ->
-              acc |> Map.add caseId (caseExt.Operation |> caseExt.OperationsLens.Set |> Ext))
+              acc
+              |> Map.add caseId ((caseExt.Operation |> caseExt.OperationsLens.Set, None) |> Ext))
             values
+
+        let applicables: Map<ResolvedIdentifier, ApplicableExtEvalResult<'ext>> =
+          typeExt.Operations
+          |> Map.map
+            (fun
+                 (_k: ResolvedIdentifier)
+                 (op: TypeOperationExtension<'ext, 'extConstructors, 'extValues, 'extOperations>) ->
+              fun loc0 rest f v ->
+                reader {
+                  let! f =
+                    op.OperationsLens.Get f
+                    |> sum.OfOption(
+                      (fun () -> $"Error: cannot extract constructor from extension")
+                      |> Errors.Singleton loc0
+                    )
+                    |> reader.OfSum
+
+                  return! op.Apply loc0 rest (f, v)
+                })
+
+        let applicables =
+          Map.merge (fun _ -> id) evalContext.ExtensionOps.Applicables applicables
 
         { evalContext with
             Values = values
-            ExtensionOps = { Eval = ops } }
+            ExtensionOps =
+              { Eval = ops
+                Applicables = applicables } }
 
     static member RegisterLanguageContext
       (typeExt: TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations>)

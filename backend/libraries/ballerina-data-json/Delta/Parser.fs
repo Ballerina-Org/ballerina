@@ -14,7 +14,7 @@ type DeltaParserReader<'valueExtension, 'deltaExtension> =
   Reader<
     Delta<'valueExtension, 'deltaExtension>,
     JsonParser<Value<TypeValue<'valueExtension>, 'valueExtension>> * JsonParser<'deltaExtension>,
-    Errors
+    Errors<Unit>
    >
 
 type DeltaParser<'valueExtension, 'deltaExtension> = JsonValue -> DeltaParserReader<'valueExtension, 'deltaExtension>
@@ -23,7 +23,7 @@ type DeltaEncoderReader<'valueExtension, 'deltaExtension> =
   Reader<
     JsonValue,
     JsonEncoderWithError<Value<TypeValue<'valueExtension>, 'valueExtension>> * JsonEncoderWithError<'deltaExtension>,
-    Errors
+    Errors<Unit>
    >
 
 type DeltaEncoder<'valueExtension, 'deltaExtension> =

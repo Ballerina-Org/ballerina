@@ -28,7 +28,7 @@ module Eval =
       ExprEvalState,
       ExprEvalContext<'ExprExtension, 'ValueExtension>,
       Unit,
-      Errors
+      Errors<unit>
      >
 
   type ExprEval<'ExprExtension, 'ValueExtension> =
@@ -86,13 +86,17 @@ module Eval =
               return! operatorEvalExtensions.Apply {| func = extensionFunc; arg = arg |}
             | _ ->
               return!
-                $"runtime error: {fValue} should be a function because it is applied"
-                |> Errors.Singleton
+                (fun () -> $"runtime error: {fValue} should be a function because it is applied")
+                |> Errors.Singleton()
                 |> co.Throw
 
           | VarLookup varName ->
             let! ctx = co.GetContext()
-            let! varValue = ctx.Vars |> Map.tryFindWithError varName "var" varName.VarName |> co.ofSum
+
+            let! varValue =
+              ctx.Vars
+              |> Map.tryFindWithError varName "var" (fun () -> varName.VarName) ()
+              |> co.ofSum
 
             return varValue
           | Value v -> return v
@@ -121,7 +125,10 @@ module Eval =
 
             match value with
             | Value.CaseCons(caseName, caseValue) ->
-              let! varName, handler = caseHandlers |> Map.tryFindWithError caseName "case name" caseName |> co.ofSum
+              let! varName, handler =
+                caseHandlers
+                |> Map.tryFindWithError caseName "case name" (fun () -> caseName) ()
+                |> co.ofSum
 
               return!
                 !handler
@@ -133,8 +140,8 @@ module Eval =
                      caseHandlers = caseHandlers |}
             | _ ->
               return!
-                $"runtime error: {value} should be a case constructor because it is matched"
-                |> Errors.Singleton
+                (fun () -> $"runtime error: {value} should be a case constructor because it is matched")
+                |> Errors.Singleton()
                 |> co.Throw
 
           | MakeCase(caseName, value) ->
@@ -150,13 +157,13 @@ module Eval =
               | Some v -> return v
               | None ->
                 return!
-                  $"runtime error: {fieldName} not found in record {e}"
-                  |> Errors.Singleton
+                  fun () -> $"runtime error: {fieldName} not found in record {e}"
+                  |> Errors.Singleton()
                   |> co.Throw
             | _ ->
               return!
-                $"runtime error: {e} should be a record because it is field looked up"
-                |> Errors.Singleton
+                fun () -> $"runtime error: {e} should be a record because it is field looked up"
+                |> Errors.Singleton()
                 |> co.Throw
 
           | Expr.GenericApply(typeF, typeArg) ->
@@ -174,9 +181,13 @@ module Eval =
                      types = ctx.Types |}
             | _ ->
               return!
-                $"runtime error: {e} should be a generic lambda because it is applied"
-                |> Errors.Singleton
+                fun () -> $"runtime error: {e} should be a generic lambda because it is applied"
+                |> Errors.Singleton()
                 |> co.Throw
           | Expr.Extension e -> return! evalExtension (!) e
-          | e -> return! $"runtime error: eval({e}) not implemented" |> Errors.Singleton |> co.Throw
+          | e ->
+            return!
+              (fun () -> $"runtime error: eval({e}) not implemented")
+              |> Errors.Singleton()
+              |> co.Throw
         }

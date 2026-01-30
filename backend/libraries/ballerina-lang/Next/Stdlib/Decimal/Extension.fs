@@ -2,9 +2,12 @@ namespace Ballerina.DSL.Next.StdLib.Decimal
 
 [<AutoOpen>]
 module Extension =
+  open Ballerina
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.Model
@@ -42,15 +45,19 @@ module Extension =
               do!
                 op
                 |> DecimalOperations.AsString
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDecimal
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
 
@@ -79,20 +86,26 @@ module Extension =
               let! op =
                 op
                 |> DecimalOperations.AsPlus
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDecimal
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return DecimalOperations.Plus({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (DecimalOperations.Plus({| v1 = Some v |}) |> operationLens.Set, Some decimalPlusId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Decimal(vClosure + v))
@@ -120,20 +133,26 @@ module Extension =
               let! op =
                 op
                 |> DecimalOperations.AsMinus
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDecimal
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return DecimalOperations.Minus({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (DecimalOperations.Minus({| v1 = Some v |}) |> operationLens.Set, Some decimalMinusId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Decimal(vClosure - v))
@@ -160,20 +179,26 @@ module Extension =
               let! op =
                 op
                 |> DecimalOperations.AsTimes
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDecimal
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return DecimalOperations.Times({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (DecimalOperations.Times({| v1 = Some v |}) |> operationLens.Set, Some decimalProductId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Decimal(vClosure * v))
@@ -200,20 +225,26 @@ module Extension =
               let! op =
                 op
                 |> DecimalOperations.AsDivide
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDecimal
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return DecimalOperations.Divide({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (DecimalOperations.Divide({| v1 = Some v |}) |> operationLens.Set, Some decimalDivideId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Decimal(vClosure / v))
@@ -241,25 +272,31 @@ module Extension =
               let! op =
                 op
                 |> DecimalOperations.AsPower
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
                 let! v =
                   v
                   |> PrimitiveValue.AsDecimal
-                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
                   |> reader.OfSum
 
-                return DecimalOperations.Power({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (DecimalOperations.Power({| v1 = Some v |}) |> operationLens.Set, Some decimalPowerId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
                 let! v =
                   v
                   |> PrimitiveValue.AsInt32
-                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
                   |> reader.OfSum
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Decimal(pown vClosure v))
@@ -286,20 +323,26 @@ module Extension =
               let! op =
                 op
                 |> DecimalOperations.AsMod
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDecimal
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return DecimalOperations.Mod({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (DecimalOperations.Mod({| v1 = Some v |}) |> operationLens.Set, Some decimalModId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Decimal(vClosure % v))
@@ -326,20 +369,26 @@ module Extension =
               let! op =
                 op
                 |> DecimalOperations.AsEqual
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDecimal
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return DecimalOperations.Equal({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (DecimalOperations.Equal({| v1 = Some v |}) |> operationLens.Set, Some decimalEqualId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
@@ -366,20 +415,26 @@ module Extension =
               let! op =
                 op
                 |> DecimalOperations.AsNotEqual
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDecimal
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return DecimalOperations.NotEqual({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (DecimalOperations.NotEqual({| v1 = Some v |}) |> operationLens.Set, Some decimalNotEqualId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
@@ -406,20 +461,26 @@ module Extension =
               let! op =
                 op
                 |> DecimalOperations.AsGreaterThan
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDecimal
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return DecimalOperations.GreaterThan({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (DecimalOperations.GreaterThan({| v1 = Some v |}) |> operationLens.Set, Some decimalGreaterThanId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
@@ -446,22 +507,26 @@ module Extension =
               let! op =
                 op
                 |> DecimalOperations.AsGreaterThanOrEqual
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDecimal
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  DecimalOperations.GreaterThanOrEqual({| v1 = Some v |})
-                  |> operationLens.Set
+                  (DecimalOperations.GreaterThanOrEqual({| v1 = Some v |}) |> operationLens.Set,
+                   Some decimalGreaterThanOrEqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
@@ -489,20 +554,26 @@ module Extension =
               let! op =
                 op
                 |> DecimalOperations.AsLessThan
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDecimal
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return DecimalOperations.LessThan({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (DecimalOperations.LessThan({| v1 = Some v |}) |> operationLens.Set, Some decimalLessThanId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
@@ -529,20 +600,27 @@ module Extension =
               let! op =
                 op
                 |> DecimalOperations.AsLessThanOrEqual
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDecimal
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return DecimalOperations.LessThanOrEqual({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (DecimalOperations.LessThanOrEqual({| v1 = Some v |}) |> operationLens.Set,
+                   Some decimalLessThanOrEqualId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))

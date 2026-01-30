@@ -1,9 +1,10 @@
-﻿namespace Ballerina.Data.Json
+namespace Ballerina.Data.Json
 
 open Ballerina.Data.Schema.Model
 
 module Model =
   open System
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Json
@@ -80,7 +81,7 @@ module Model =
     static member FromJson
       (rootFromJson: ValueParser<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>)
       (json: JsonValue)
-      : Sum<SpecData<TypeValue<'valueExtension>, 'valueExtension>, Errors> =
+      : Sum<SpecData<TypeValue<'valueExtension>, 'valueExtension>, Errors<unit>> =
 
       let rootExprFromJson =
         Expr.FromJson >> Reader.Run(TypeValue.FromJson, ResolvedIdentifier.FromJson)
@@ -95,9 +96,12 @@ module Model =
         let! entities =
           container
           |> Map.ofArray
-          |> Map.tryFindWithError "entities" "entities" "entities"
+          |> Map.tryFindWithError "entities" "entities" (fun () -> "entities") ()
 
-        let! lookups = container |> Map.ofArray |> Map.tryFindWithError "lookups" "lookups" "lookups"
+        let! lookups =
+          container
+          |> Map.ofArray
+          |> Map.tryFindWithError "lookups" "lookups" (fun () -> "lookups") ()
 
         let! entities = JsonValue.AsArray entities
         let! lookups = JsonValue.AsArray lookups
@@ -107,9 +111,14 @@ module Model =
           |> Array.map (fun e ->
             sum {
               let! e = JsonValue.AsRecord e
-              let! name = e |> Map.ofArray |> Map.tryFindWithError "name" "name" "name"
+              let! name = e |> Map.ofArray |> Map.tryFindWithError "name" "name" (fun () -> "name") ()
               let! name = JsonValue.AsString name
-              let! values = e |> Map.ofArray |> Map.tryFindWithError "values" "values" "values"
+
+              let! values =
+                e
+                |> Map.ofArray
+                |> Map.tryFindWithError "values" "values" (fun () -> "values") ()
+
               let! values = JsonValue.AsArray values
 
               let! vs =
@@ -117,8 +126,8 @@ module Model =
                 |> Array.map (fun v ->
                   sum {
                     let! v = JsonValue.AsRecord v
-                    let! id = v |> Map.ofArray |> Map.tryFindWithError "id" "id" "id"
-                    let! value = v |> Map.ofArray |> Map.tryFindWithError "value" "value" "value"
+                    let! id = v |> Map.ofArray |> Map.tryFindWithError "id" "id" (fun () -> "id") ()
+                    let! value = v |> Map.ofArray |> Map.tryFindWithError "value" "value" (fun () -> "value") ()
                     let! id = JsonValue.AsString id
                     let id = Guid.Parse id
                     let! value = parser value
@@ -137,9 +146,14 @@ module Model =
           |> Array.map (fun e ->
             sum {
               let! e = JsonValue.AsRecord e
-              let! name = e |> Map.ofArray |> Map.tryFindWithError "name" "name" "name"
+              let! name = e |> Map.ofArray |> Map.tryFindWithError "name" "name" (fun () -> "name") ()
               let! name = JsonValue.AsString name
-              let! values = e |> Map.ofArray |> Map.tryFindWithError "values" "values" "values"
+
+              let! values =
+                e
+                |> Map.ofArray
+                |> Map.tryFindWithError "values" "values" (fun () -> "values") ()
+
               let! values = JsonValue.AsArray values
 
               let! vs =
@@ -147,8 +161,8 @@ module Model =
                 |> Array.map (fun v ->
                   sum {
                     let! v = JsonValue.AsRecord v
-                    let! id = v |> Map.ofArray |> Map.tryFindWithError "id" "id" "id"
-                    let! value = v |> Map.ofArray |> Map.tryFindWithError "value" "value" "value"
+                    let! id = v |> Map.ofArray |> Map.tryFindWithError "id" "id" (fun () -> "id") ()
+                    let! value = v |> Map.ofArray |> Map.tryFindWithError "value" "value" (fun () -> "value") ()
                     let! id = JsonValue.AsString id
                     let id = Guid.Parse id
                     let! value = JsonValue.AsArray value

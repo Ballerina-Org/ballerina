@@ -4,9 +4,12 @@ namespace Ballerina.DSL.Next.Syntax
 module Lexer =
   open Ballerina.Parser
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.Errors
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open System
   open Ballerina.Collections.NonEmptyList
+  open Ballerina
   open Ballerina.Collections.Sum
 
   type Symbol = char
@@ -199,14 +202,14 @@ module Lexer =
 
 
   let tokenizer =
-    ParserBuilder<Symbol, Location, Errors>(
+    ParserBuilder<Symbol, Location, Errors<Location>>(
       {| Step = Location.Step |},
-      {| UnexpectedEndOfFile = fun loc -> (loc, $"Unexpected end of file at {loc}") |> Errors.Singleton
-         AnyFailed = fun loc -> (loc, "No matching token") |> Errors.Singleton
-         NotFailed = fun loc -> (loc, $"Expected token not found at {loc}") |> Errors.Singleton
-         UnexpectedSymbol = fun loc c -> (loc, $"Unexpected symbol: {c}") |> Errors.Singleton
-         FilterHighestPriorityOnly = Errors.FilterHighestPriorityOnly
-         Concat = Errors.Concat |}
+      {| UnexpectedEndOfFile = fun loc -> (fun () -> $"Unexpected end of file at {loc}") |> Errors.Singleton loc
+         AnyFailed = fun loc -> (fun () -> "No matching token") |> Errors.Singleton loc
+         NotFailed = fun loc -> (fun () -> $"Expected token not found at {loc}") |> Errors.Singleton loc
+         UnexpectedSymbol = fun loc c -> (fun () -> $"Unexpected symbol: {c}") |> Errors.Singleton loc
+         FilterHighestPriorityOnly = Errors<Location>.FilterHighestPriorityOnly
+         Concat = Errors.Concat<Location> |}
     )
 
   let newline = '\n' |> tokenizer.Exactly
@@ -383,8 +386,8 @@ module Lexer =
         if isFloat then
           if not (System.Single.TryParse(literal, &floatValue)) then
             return!
-              (loc, $"Cannot parse float literal {literal} at {loc}")
-              |> Errors.Singleton
+              (fun () -> $"Cannot parse float literal {literal} at {loc}")
+              |> Errors.Singleton loc
               |> tokenizer.Throw
           else
             let value = if minus then -floatValue else floatValue
@@ -397,8 +400,8 @@ module Lexer =
           if isDouble then
             if not (System.Double.TryParse(literal, &doubleValue)) then
               return!
-                (loc, $"Cannot parse double literal {literal} at {loc}")
-                |> Errors.Singleton
+                (fun () -> $"Cannot parse double literal {literal} at {loc}")
+                |> Errors.Singleton loc
                 |> tokenizer.Throw
             else
               let value = if minus then -doubleValue else doubleValue
@@ -408,8 +411,8 @@ module Lexer =
 
             if not (System.Decimal.TryParse(literal, &decimalValue)) then
               return!
-                (loc, $"Cannot parse decimal literal {literal} at {loc}")
-                |> Errors.Singleton
+                (fun () -> $"Cannot parse decimal literal {literal} at {loc}")
+                |> Errors.Singleton loc
                 |> tokenizer.Throw
             else
               let value = if minus then -decimalValue else decimalValue
@@ -429,16 +432,16 @@ module Lexer =
             do Console.WriteLine $"Cannot parse int64 literal {longLiteral} at {loc}"
 
             return!
-              (loc, $"Cannot parse int64 literal {longLiteral} at {loc}")
-              |> Errors.Singleton
+              (fun () -> $"Cannot parse int64 literal {longLiteral} at {loc}")
+              |> Errors.Singleton loc
               |> tokenizer.Throw
           else
             let value = if minus then -longValue else longValue
             return LocalizedToken.FromInt64Literal value loc
         else if not (System.Int32.TryParse(literal, &value)) then
           return!
-            (loc, $"Cannot parse int literal {literal} at {loc}")
-            |> Errors.Singleton
+            (fun () -> $"Cannot parse int literal {literal} at {loc}")
+            |> Errors.Singleton loc
             |> tokenizer.Throw
         else
           let! ofTotal =
@@ -460,8 +463,8 @@ module Lexer =
 
             if not (System.Int32.TryParse(ofTotal, &total)) then
               return!
-                (loc, $"Cannot parse case literal total {ofTotal} at {loc}")
-                |> Errors.Singleton
+                (fun () -> $"Cannot parse case literal total {ofTotal} at {loc}")
+                |> Errors.Singleton loc
                 |> tokenizer.Throw
             else
               return LocalizedToken.FromCaseLiteral (value, total) loc
@@ -477,8 +480,8 @@ module Lexer =
 
       if not (System.Int32.TryParse(literal, &value)) then
         return!
-          (loc, $"Cannot parse tuple item literal {literal} at {loc}")
-          |> Errors.Singleton
+          (fun () -> $"Cannot parse tuple item literal {literal} at {loc}")
+          |> Errors.Singleton loc
           |> tokenizer.Throw
       else
         return

@@ -1,6 +1,7 @@
 module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Type.Eval
 
 open System
+open Ballerina
 open Ballerina.Collections.Sum
 open NUnit.Framework
 open Ballerina.DSL.Next.Types.Model
@@ -13,6 +14,7 @@ open Ballerina.State.WithError
 open Ballerina.Cat.Tests.BusinessRuleEngine.Next.Type.Patterns
 open Ballerina.Cat.Collections.OrderedMap
 open Ballerina.LocalizedErrors
+open Ballerina.Errors
 
 let private typeCheck: ExprTypeChecker<IComparable> = Expr.TypeCheck()
 let private evalFull: TypeExprEval<IComparable> = TypeExpr.Eval()

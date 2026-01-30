@@ -2,6 +2,7 @@ module Ballerina.Tests.State.WithError
 
 open NUnit.Framework
 open Ballerina.State.WithError
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.Collections.NonEmptyList
 

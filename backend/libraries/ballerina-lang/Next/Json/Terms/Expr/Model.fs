@@ -1,5 +1,6 @@
 ﻿namespace Ballerina.DSL.Next.Terms.Json
 
+open Ballerina
 open Ballerina.DSL.Next.Json
 
 [<AutoOpen>]
@@ -34,9 +35,9 @@ module ExprJson =
             Expr.FromJsonIf Expr.FromJson json
             Expr.FromJsonPrimitive(json)
             Expr.FromJsonLookup(json)
-            $"Unknown Expr JSON: {json.AsFSharpString.ReasonablyClamped}"
-            |> Errors.Singleton
-            |> Errors.WithPriority ErrorPriority.Medium
+            fun () -> $"Unknown Expr JSON: {json.AsFSharpString.ReasonablyClamped}"
+            |> Errors.Singleton()
+            |> Errors.MapPriority(replaceWith ErrorPriority.Medium)
             |> reader.Throw ]
         )
         |> reader.MapError(Errors.HighestPriority)

@@ -1,7 +1,8 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
 
 [<AutoOpen>]
 module TypeParameter =
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.Errors
@@ -15,17 +16,19 @@ module TypeParameter =
   let private nameKey = "name"
 
   type TypeParameter with
-    static member FromJson(json: JsonValue) : Sum<TypeParameter, Errors> =
+    static member FromJson(json: JsonValue) : Sum<TypeParameter, Errors<_>> =
       sum {
         let! fields = json |> JsonValue.AsRecordMap
 
         let! name =
           fields
-          |> (Map.tryFindWithError nameKey "TypeParameter" nameKey >>= JsonValue.AsString)
+          |> (Map.tryFindWithError nameKey "TypeParameter" (fun () -> nameKey) ()
+              >>= JsonValue.AsString)
 
         let! kind =
           fields
-          |> (Map.tryFindWithError kindKey "TypeParameter" kindKey >>= Kind.FromJson)
+          |> (Map.tryFindWithError kindKey "TypeParameter" (fun () -> kindKey) ()
+              >>= Kind.FromJson)
 
         return { Name = name; Kind = kind }
       }

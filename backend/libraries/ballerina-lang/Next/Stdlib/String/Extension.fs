@@ -2,9 +2,11 @@ namespace Ballerina.DSL.Next.StdLib.String
 
 [<AutoOpen>]
 module Extension =
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.Model
@@ -12,6 +14,7 @@ module Extension =
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.Option
+  open Ballerina
 
   let StringExtension<'ext>
     (operationLens: PartialLens<'ext, StringOperations<'ext>>)
@@ -43,15 +46,19 @@ module Extension =
               do!
                 op
                 |> StringOperations.AsLength
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsString
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
 
@@ -80,20 +87,26 @@ module Extension =
               let! op =
                 op
                 |> StringOperations.AsConcat
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsString
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return StringOperations.Concat({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (StringOperations.Concat({| v1 = Some v |}) |> operationLens.Set, Some stringPlusId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.String(vClosure + v))
@@ -121,20 +134,26 @@ module Extension =
               let! op =
                 op
                 |> StringOperations.AsEqual
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsString
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return StringOperations.Equal({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (StringOperations.Equal({| v1 = Some v |}) |> operationLens.Set, Some stringEqualId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
@@ -161,20 +180,26 @@ module Extension =
               let! op =
                 op
                 |> StringOperations.AsNotEqual
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsString
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return StringOperations.NotEqual({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (StringOperations.NotEqual({| v1 = Some v |}) |> operationLens.Set, Some stringNotEqualId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
@@ -201,20 +226,26 @@ module Extension =
               let! op =
                 op
                 |> StringOperations.AsGreaterThan
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsString
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return StringOperations.GreaterThan({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (StringOperations.GreaterThan({| v1 = Some v |}) |> operationLens.Set, Some stringGreaterThanId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
@@ -241,22 +272,26 @@ module Extension =
               let! op =
                 op
                 |> StringOperations.AsGreaterThanOrEqual
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsString
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  StringOperations.GreaterThanOrEqual({| v1 = Some v |})
-                  |> operationLens.Set
+                  (StringOperations.GreaterThanOrEqual({| v1 = Some v |}) |> operationLens.Set,
+                   Some stringGreaterThanOrEqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
@@ -284,20 +319,26 @@ module Extension =
               let! op =
                 op
                 |> StringOperations.AsLessThan
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsString
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return StringOperations.LessThan({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (StringOperations.LessThan({| v1 = Some v |}) |> operationLens.Set, Some stringLessThanId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
@@ -324,20 +365,27 @@ module Extension =
               let! op =
                 op
                 |> StringOperations.AsLessThanOrEqual
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsString
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return StringOperations.LessThanOrEqual({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (StringOperations.LessThanOrEqual({| v1 = Some v |}) |> operationLens.Set,
+                   Some stringLessThanOrEqualId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))

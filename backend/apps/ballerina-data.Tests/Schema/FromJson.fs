@@ -2,6 +2,7 @@ module Ballerina.Data.Tests.Schema.FromJson
 
 open Ballerina.Data.Schema.Model
 open Ballerina.Reader.WithError
+open Ballerina
 open Ballerina.Collections.Sum
 open NUnit.Framework
 open Ballerina.DSL.Next.Types.Model
@@ -64,8 +65,9 @@ let ``SpecNext-Schema updater descriptor parses`` () =
       Condition = Expr.Primitive(PrimitiveValue.Bool true, Location.Unknown, TypeCheckScope.Empty)
       Expr = Expr.Primitive(PrimitiveValue.Int32 100, Location.Unknown, TypeCheckScope.Empty) }
 
-  let parser: JsonValue -> Sum<Updater<TypeExpr<Unit>, Identifier, unit>, Errors> =
-    Updater.FromJson >> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
+  let parser: JsonValue -> Sum<Updater<TypeExpr<Unit>, Identifier, unit>, Errors<unit>> =
+    Ballerina.Data.Schema.Model.Updater.FromJson
+    >> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
 
   match json |> parser with
   | Right e -> Assert.Fail($"Failed to parse updater descriptor: {e}")
@@ -90,7 +92,7 @@ let ``SpecNext-Schema entity descriptor parses`` () =
       Updaters = []
       Predicates = Map.empty }
 
-  let parser: JsonValue -> Sum<EntityDescriptor<TypeExpr<Unit>, Identifier, unit>, Errors> =
+  let parser: JsonValue -> Sum<EntityDescriptor<TypeExpr<Unit>, Identifier, unit>, Errors<unit>> =
     EntityDescriptor.FromJson >> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
 
   match json |> parser with
@@ -276,7 +278,7 @@ let ``SpecNext-Schema full schema descriptor parses`` () =
                       Path = [] })
                  ) }) ] }
 
-  let parser: JsonValue -> Sum<Schema<TypeExpr<Unit>, Identifier, unit>, Errors> =
+  let parser: JsonValue -> Sum<Schema<TypeExpr<Unit>, Identifier, unit>, Errors<unit>> =
     Ballerina.Data.Schema.Model.Schema.FromJson
     >> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
 

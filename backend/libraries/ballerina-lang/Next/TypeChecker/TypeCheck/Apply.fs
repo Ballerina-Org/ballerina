@@ -2,10 +2,12 @@ namespace Ballerina.DSL.Next.Types.TypeChecker
 
 module Apply =
   open Ballerina.StdLib.String
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Collections.Option
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open System
   open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Types.Model
@@ -34,18 +36,24 @@ module Apply =
         let (!) = typeCheckExpr context_t
         let (=>) c e = typeCheckExpr c e
 
-        let ofSum (p: Sum<'a, Ballerina.Errors.Errors>) =
-          p |> Sum.mapRight (Errors.FromErrors loc0) |> state.OfSum
+        let ofSum (p: Sum<'a, Errors<Unit>>) =
+          p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
         state {
+          // do Console.WriteLine($"Typechecking application expression at {loc0}...")
+          // do Console.WriteLine($"Function expression: {f_expr}")
+          // do Console.WriteLine($"Argument expression: {a_expr}")
           let f = f_expr
-          let! a, t_a, a_k, _ = !a_expr
+          let! a, t_a, a_k, _ = None => a_expr
           do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
           let! ctx = state.GetContext()
-          let error e = Errors.Singleton(loc0, e)
+          let error e = Errors.Singleton loc0 e
+          // do Console.WriteLine($"t_a: {t_a}")
+          // do Console.WriteLine($"a_k: {a_k}")
+          // do Console.ReadLine() |> ignore
 
-          let ofSum (p: Sum<'a, Ballerina.Errors.Errors>) =
-            p |> Sum.mapRight (Errors.FromErrors loc0) |> state.OfSum
+          let ofSum (p: Sum<'a, Errors<Unit>>) =
+            p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
           return!
             state.Either
@@ -61,7 +69,10 @@ module Apply =
                         state {
                           match context_t with
                           | None ->
-                            return! (loc0, "Context is not set, skipping branch") |> Errors.Singleton |> state.Throw
+                            return!
+                              (fun () -> "Context is not set, skipping branch")
+                              |> Errors.Singleton loc0
+                              |> state.Throw
                           | Some context_t ->
                             let! context_cases = context_t |> TypeValue.AsUnion |> sum.Map snd |> ofSum
 
@@ -138,7 +149,7 @@ module Apply =
 
                           return Expr.Apply(Expr.Lookup f_lookup, a, loc0, ctx.Scope), f_o, f_k, ctx
                         }
-                        |> state.MapError(Errors.SetPriority ErrorPriority.High)
+                        |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                     })
                     (state {
                       let! resolved = TypeCheckContext.TryFindVar(f_lookup, loc0) |> state.Catch
@@ -146,7 +157,7 @@ module Apply =
                       do!
                         resolved
                         |> Sum.AsRight
-                        |> Sum.fromOption (fun () -> $"Error: variable found, skipping branch" |> error)
+                        |> Sum.fromOption (fun () -> (fun () -> $"Error: variable found, skipping branch") |> error)
                         |> state.OfSum
                         |> state.Ignore
 
@@ -161,7 +172,7 @@ module Apply =
                               |> Map.tryFindWithError
                                 (f_lookup.Name, a_primitive)
                                 "ad-hoc polymorphism resolutions"
-                                f_lookup.AsFSharpString
+                                (fun () -> f_lookup.AsFSharpString)
                                 loc0
                               |> state.OfSum
 
@@ -197,7 +208,7 @@ module Apply =
                             let k_res = Kind.Star
                             return Expr.Apply(adhoc_op, a, loc0, ctx.Scope), t_res, k_res, ctx
                           }
-                          |> state.MapError(Errors.SetPriority ErrorPriority.Medium)
+                          |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium))
                       elif f_lookup.Name = "!" then
                         return!
                           state {
@@ -227,17 +238,17 @@ module Apply =
                                 let k_res = Kind.Star
                                 return Expr.Apply(bool_op, a, loc0, ctx.Scope), t_res, k_res, ctx
                               }
-                              |> state.MapError(Errors.SetPriority ErrorPriority.High)
+                              |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
                           }
                       else
                         return!
-                          $"Error: cannot resolve with ad-hoc polymorphism, found variable {f_lookup}"
+                          (fun () -> $"Error: cannot resolve with ad-hoc polymorphism, found variable {f_lookup}")
                           |> error
                           |> state.Throw
-                          |> state.MapError(Errors.SetPriority ErrorPriority.Low)
+                          |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Low))
                     })
-                  |> state.MapError(Errors.FilterHighestPriorityOnly)
+                  |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
               })
               (state {
                 let! t_a_has_structure =
@@ -246,6 +257,12 @@ module Apply =
                     | TypeValue.Var _ -> return false
                     | _ -> return true
                   }
+
+                // do Console.WriteLine($"t_a_has_structure: {t_a_has_structure}")
+                // do Console.WriteLine($"t_a: {t_a}")
+                // do Console.WriteLine($"f_expr: {f_expr}")
+                // do Console.WriteLine($"a_expr: {a_expr}")
+                // do Console.ReadLine() |> ignore
 
                 let f_constraint =
                   if t_a_has_structure |> not then
@@ -263,8 +280,13 @@ module Apply =
 
                 let rec pad (f_expr: Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>) =
                   state {
+                    // do Console.WriteLine($"typechecking function expression {f_expr}...")
+                    // do Console.WriteLine($"with constraint {f_constraint}...")
+                    // do Console.ReadLine() |> ignore
                     let! f, t_f, f_k, _ = f_constraint => f_expr
-
+                    // do Console.WriteLine($"t_f: {t_f}")
+                    // do Console.WriteLine($"f_k: {f_k}")
+                    // do Console.ReadLine() |> ignore
                     match f_k with
                     | Kind.Arrow(Kind.Star, _) ->
                       let guid = Guid.CreateVersion7()
@@ -286,14 +308,18 @@ module Apply =
                     | _ -> return f, t_f, f_k
                   }
 
+                // do Console.WriteLine($"Padding and typechecking function expression {f}...")
                 let! f, t_f, f_k = pad f
+                // do Console.WriteLine($"t_f: {t_f}")
+                // do Console.WriteLine($"f_k: {f_k}")
+                // do Console.ReadLine() |> ignore
                 do! f_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                 let! (f_input, f_output) =
                   TypeValue.AsArrow t_f
                   |> ofSum
                   |> state.Map WithSourceMapping.Getters.Value
-                  |> state.MapError(Errors.SetPriority ErrorPriority.Medium)
+                  |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium))
 
                 return!
                   state.Any(
@@ -322,7 +348,7 @@ module Apply =
 
                           return Expr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx
                         }
-                        |> state.MapError(Errors.SetPriority ErrorPriority.High)
+                        |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                     },
                     [ state {
                         do! TypeValue.Unify(loc0, f_input, t_a) |> Expr<'T, 'Id, 'valueExt>.liftUnification
@@ -334,17 +360,17 @@ module Apply =
 
                         return Expr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx
                       }
-                      |> state.MapError(Errors.SetPriority ErrorPriority.High)
+                      |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                       // $"Error: cannot resolve application"
                       // |> error
                       // |> state.Throw
-                      // |> state.MapError(Errors.SetPriority ErrorPriority.Medium)
+                      // |> state.MapError(Errors.MapPriority(replaceWith  ErrorPriority.Medium))
                       ]
                   )
-                  |> state.MapError Errors.FilterHighestPriorityOnly
+                  |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
               })
-            |> state.MapError(Errors.FilterHighestPriorityOnly)
+            |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
 
 
         }
-        |> state.MapError(Errors.FilterHighestPriorityOnly)
+        |> state.MapError(Errors<_>.FilterHighestPriorityOnly)

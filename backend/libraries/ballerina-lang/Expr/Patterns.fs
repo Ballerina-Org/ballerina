@@ -2,6 +2,7 @@ namespace Ballerina.DSL.Expr
 
 module Patterns =
   open Model
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
 
@@ -9,7 +10,7 @@ module Patterns =
     static member AsLambda(e: Expr<'ExprExtension, 'ValueExtension>) =
       match e with
       | Expr.Value(Value.Lambda(v, t, returnType, b)) -> sum { return (v, t, returnType, b) }
-      | _ -> sum.Throw(Errors.Singleton $"Error: expected lambda, found {e.ToString()}")
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Error: expected lambda, found {e.ToString()}"))
 
     static member FromTypeBindings
       (bindings: Map<ExprTypeId, ExprType>)

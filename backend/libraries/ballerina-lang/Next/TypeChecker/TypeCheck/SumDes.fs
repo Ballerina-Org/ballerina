@@ -2,10 +2,12 @@ namespace Ballerina.DSL.Next.Types.TypeChecker
 
 module SumDes =
   open Ballerina.StdLib.String
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Collections.Option
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open System
   open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Types.Model
@@ -30,10 +32,10 @@ module SumDes =
       fun context_t ({ Handlers = handlers }) ->
         let (!) = typeCheckExpr None
 
-        let ofSum (p: Sum<'a, Ballerina.Errors.Errors>) =
-          p |> Sum.mapRight (Errors.FromErrors loc0) |> state.OfSum
+        let ofSum (p: Sum<'a, Errors<Unit>>) =
+          p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
-        let error e = Errors.Singleton(loc0, e)
+        let error e = Errors.Singleton loc0 e
 
         state {
           let! ctx = state.GetContext()
@@ -46,7 +48,10 @@ module SumDes =
             |> Seq.toList
             <> [ 1 .. handlers.Count ]
           then
-            return! $"Error: sum cases must be 1..{handlers.Count}" |> error |> state.Throw
+            return!
+              (fun () -> $"Error: sum cases must be 1..{handlers.Count}")
+              |> error
+              |> state.Throw
 
           let! context_t =
             context_t
@@ -93,7 +98,7 @@ module SumDes =
                       return!
                         t_i
                         |> List.tryItem (_k.Case - 1)
-                        |> sum.OfOption("impossible" |> error)
+                        |> sum.OfOption((fun () -> "impossible") |> error)
                         |> state.OfSum
                   }
 
@@ -116,7 +121,7 @@ module SumDes =
                 return (var, body), var_t
               })
             |> state.AllMap
-            |> state.MapError(Errors.SetPriority ErrorPriority.High)
+            |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
           let handlersSorted =
             handlers

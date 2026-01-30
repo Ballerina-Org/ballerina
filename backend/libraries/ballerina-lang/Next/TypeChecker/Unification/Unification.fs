@@ -2,11 +2,14 @@ namespace Ballerina.DSL.Next
 
 [<AutoOpen>]
 module Unification =
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Collections.NonEmptyList
   open Ballerina.State.WithError
   open Ballerina.Reader.WithError
+  open Ballerina.Errors
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open System
   open Ballerina.Fun
   open Ballerina.StdLib.Object
@@ -22,7 +25,7 @@ module Unification =
   type TypeExpr<'ve> with
     static member FreeVariables<'valueExt when 'valueExt: comparison>
       (t: TypeExpr<'valueExt>)
-      : Reader<Set<TypeVar>, UnificationContext<'valueExt>, Errors> =
+      : Reader<Set<TypeVar>, UnificationContext<'valueExt>, Errors<Location>> =
       reader {
         let! ctx = reader.GetContext()
 
@@ -124,7 +127,7 @@ module Unification =
   and SymbolicTypeApplication<'ve> with
     static member FreeVariables<'valueExt when 'valueExt: comparison>
       (t: SymbolicTypeApplication<'valueExt>)
-      : Reader<Set<TypeVar>, UnificationContext<'valueExt>, Errors> =
+      : Reader<Set<TypeVar>, UnificationContext<'valueExt>, Errors<Location>> =
       reader {
         // let! ctx = reader.GetContext()
 
@@ -145,7 +148,7 @@ module Unification =
   and TypeValue<'ve> with
     static member FreeVariables<'valueExt when 'valueExt: comparison>
       (t: TypeValue<'valueExt>)
-      : Reader<Set<TypeVar>, UnificationContext<'valueExt>, Errors> =
+      : Reader<Set<TypeVar>, UnificationContext<'valueExt>, Errors<Location>> =
       reader {
         let! ctx = reader.GetContext()
 
@@ -243,9 +246,9 @@ module Unification =
   type TypeValue<'ve> with
     static member MostSpecific<'valueExt when 'valueExt: comparison>
       (loc0: Location, t1: TypeValue<'valueExt>, t2: TypeValue<'valueExt>)
-      : Reader<TypeValue<'valueExt>, TypeCheckState<'valueExt>, Errors> =
+      : Reader<TypeValue<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>> =
       reader {
-        let error e = Errors.Singleton(loc0, e)
+        let error e = Errors.Singleton loc0 e
 
         let (==) a b =
           TypeValue.MostSpecific<'valueExt>(loc0, a, b)
@@ -255,7 +258,7 @@ module Unification =
         | TypeValue.Lookup l1, TypeValue.Lookup l2 when l1 = l2 -> return t1
         | TypeValue.Lookup l1, TypeValue.Lookup l2 when l1 <> l2 ->
           return!
-            $"Cannot determine most specific type between {t1} and {t2}"
+            (fun () -> $"Cannot determine most specific type between {t1} and {t2}")
             |> error
             |> reader.Throw
         | TypeValue.Lookup _, _ -> return t2
@@ -294,7 +297,7 @@ module Unification =
             e1.value
             |> OrderedMap.map (fun k (v1, k1) ->
               reader {
-                let ofSum = Sum.mapRight (Errors.FromErrors loc0) >> reader.OfSum
+                let ofSum = Sum.mapRight (Errors.MapContext(replaceWith loc0)) >> reader.OfSum
                 let! v2, _ = e2.value |> OrderedMap.tryFindWithError k "record" k.Name.LocalName |> ofSum
 
                 let! res = v1 == v2
@@ -308,7 +311,7 @@ module Unification =
             e1.value
             |> OrderedMap.map (fun k v1 ->
               reader {
-                let ofSum = Sum.mapRight (Errors.FromErrors loc0) >> reader.OfSum
+                let ofSum = Sum.mapRight (Errors.MapContext(replaceWith loc0)) >> reader.OfSum
                 let! v2 = e2.value |> OrderedMap.tryFindWithError k "union" k.Name.LocalName |> ofSum
 
                 return! v1 == v2
@@ -318,7 +321,7 @@ module Unification =
           return TypeValue.CreateUnion items
         | _ ->
           return!
-            $"Cannot determine most specific type between {t1} and {t2}"
+            (fun () -> $"Cannot determine most specific type between {t1} and {t2}")
             |> error
             |> reader.Throw
 
@@ -328,7 +331,9 @@ module Unification =
   type TypeValue<'ve> with
     static member EquivalenceClassesOp<'res, 'valueExt when 'valueExt: comparison>
       (loc0: Location)
-      : State<'res, _, _, Errors> -> State<_, UnificationContext<'valueExt>, UnificationState<'valueExt>, Errors> =
+      : State<'res, _, _, Errors<Location>>
+          -> State<_, UnificationContext<'valueExt>, UnificationState<'valueExt>, Errors<Location>>
+      =
       fun op ->
         state {
           let! ctx = state.GetContext()
@@ -357,7 +362,7 @@ module Unification =
 
     static member Unify<'valueExt when 'valueExt: comparison>
       (loc0: Location, left: TypeValue<'valueExt>, right: TypeValue<'valueExt>)
-      : State<Unit, UnificationContext<'valueExt>, UnificationState<'valueExt>, Errors> =
+      : State<Unit, UnificationContext<'valueExt>, UnificationState<'valueExt>, Errors<Location>> =
 
       // do Console.WriteLine($"Unifying {left} and {right}")
       // do Console.ReadLine() |> ignore
@@ -365,9 +370,9 @@ module Unification =
       let left = TypeValue.DropSourceMapping left
       let right = TypeValue.DropSourceMapping right
 
-      let error e = Errors.Singleton(loc0, e)
+      let error e = Errors.Singleton loc0 e
 
-      let ofSum = Sum.mapRight (Errors.FromErrors loc0) >> state.OfSum
+      let ofSum = Sum.mapRight (Errors.MapContext(replaceWith loc0)) >> state.OfSum
 
       let (==) a b = TypeValue.Unify(loc0, a, b)
 
@@ -381,12 +386,12 @@ module Unification =
             )
           then
             return!
-              $"Cannot unify types: {left} and {right}, the number of entities and relations does not match"
+              (fun () -> $"Cannot unify types: {left} and {right}, the number of entities and relations does not match")
               |> error
               |> state.Throw
           else
             for (k1, v1) in e1.Entities |> OrderedMap.toSeq do
-              let ofSum = Sum.mapRight (Errors.FromErrors loc0) >> state.OfSum
+              let ofSum = Sum.mapRight (Errors.MapContext(replaceWith loc0)) >> state.OfSum
 
               let! v2 = e2.Entities |> OrderedMap.tryFindWithError k1 "schema entity" k1.Name |> ofSum
 
@@ -395,18 +400,18 @@ module Unification =
               do! v1.TypeWithProps == v2.TypeWithProps
 
         // for (k1, v1) in e1.Relations |> OrderedMap.toSeq do
-        //   let ofSum = Sum.mapRight (Errors.FromErrors loc0) >> state.OfSum
+        //   let ofSum = Sum.mapRight (Errors.MapContext(replaceWith loc0)) >> state.OfSum
 
         //   let! v2 =
         //     e2.Relations
-        //     |> OrderedMap.tryFindWithError k1 "schema relation" k1.Name
+        //     |> OrderedMap.tryFindWithError k1 "schema relation" (fun () -> k1.Name)
         //     |> ofSum
 
         }
 
       let bind
         (var: TypeVar, value: TypeValue<'valueExt>)
-        : State<Unit, UnificationContext<'valueExt>, UnificationState<'valueExt>, Errors> =
+        : State<Unit, UnificationContext<'valueExt>, UnificationState<'valueExt>, Errors<Location>> =
         let bind_eq_c =
           EquivalenceClasses.Bind(
             var,
@@ -449,7 +454,10 @@ module Unification =
         | t, TypeValue.Var v -> return! bind (v, t)
         | TypeValue.Lambda { value = p1, t1 }, TypeValue.Lambda { value = p2, t2 } ->
           if p1.Kind <> p2.Kind then
-            return! $"Cannot unify type parameters: {p1} and {p2}" |> error |> state.Throw
+            return!
+              (fun () -> $"Cannot unify type parameters: {p1} and {p2}")
+              |> error
+              |> state.Throw
           else
             let! ctx = state.GetContext()
             let! s = state.GetState()
@@ -537,7 +545,7 @@ module Unification =
             do! v1 == v2
         | TypeValue.Union { value = e1 }, TypeValue.Union { value = e2 } when e1.Count = e2.Count ->
           for (k1, v1) in e1 |> OrderedMap.toSeq do
-            let ofSum = Sum.mapRight (Errors.FromErrors loc0) >> state.OfSum
+            let ofSum = Sum.mapRight (Errors.MapContext(replaceWith loc0)) >> state.OfSum
             let! v2 = e2 |> OrderedMap.tryFindWithError k1 "union field" k1.Name.LocalName |> ofSum
             do! v1 == v2
         | TypeValue.Schema e1, TypeValue.Schema e2 -> do! unifySchemas e1 e2
@@ -569,7 +577,7 @@ module Unification =
           do! unifySchemas s1 s2
           do! e1 == e2
           do! id1 == id2
-        | _ -> return! $"Cannot unify types: {left} and {right}" |> error |> state.Throw
+        | _ -> return! (fun () -> $"Cannot unify types: {left} and {right}") |> error |> state.Throw
       }
 
   type SymbolicTypeApplication<'ve> with
@@ -578,11 +586,11 @@ module Unification =
       : TypeExprEvalPlain<'valueExt>
           -> Location
           -> SymbolicTypeApplication<'valueExt>
-          -> State<TypeValue<'valueExt>, TypeInstantiateContext<'valueExt>, TypeCheckState<'valueExt>, Errors>
+          -> State<TypeValue<'valueExt>, TypeInstantiateContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>>
       =
       fun typeEval loc0 t ->
         state {
-          // let error e = Errors.Singleton(loc0, e)
+          // let error e = Errors.Singleton loc0 e
 
           match t with
           | SymbolicTypeApplication.Lookup(l, a) ->
@@ -626,11 +634,11 @@ module Unification =
       : TypeExprEvalPlain<'valueExt>
           -> Location
           -> TypeValue<'valueExt>
-          -> State<TypeValue<'valueExt>, TypeInstantiateContext<'valueExt>, TypeCheckState<'valueExt>, Errors>
+          -> State<TypeValue<'valueExt>, TypeInstantiateContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>>
       =
       fun typeEval loc0 t ->
         state {
-          let error e = Errors.Singleton(loc0, e)
+          let error e = Errors.Singleton loc0 e
 
           let instantiateSchema schema =
             state {
@@ -782,7 +790,7 @@ module Unification =
                 with
                 | [] ->
                   return!
-                    $"Variable {v} has no representative in the equivalence class"
+                    (fun () -> $"Variable {v} has no representative in the equivalence class")
                     |> error
                     |> state.Throw
                 | x :: xs -> return! NonEmptyList.OfList(x, xs) |> state.Any
@@ -792,7 +800,7 @@ module Unification =
 
             let! t =
               s.Bindings
-              |> TypeBindings.tryFindWithError (l |> ctx.Scope.Resolve) "lookup" l.AsFSharpString loc0
+              |> TypeBindings.tryFindWithError (l |> ctx.Scope.Resolve) "lookup" (fun () -> l.AsFSharpString) loc0
               |> state.OfSum
               |> state.Catch
 
@@ -802,11 +810,15 @@ module Unification =
               return!
                 state.Either
                   (ctx.TypeVariables
-                   |> TypeVariablesScope.tryFindWithError l.LocalName "type variable" l.AsFSharpString loc0
+                   |> TypeVariablesScope.tryFindWithError l.LocalName "type variable" (fun () -> l.AsFSharpString) loc0
                    |> sum.Map fst
                    |> state.OfSum)
                   (ctx.TypeParameters
-                   |> TypeParametersScope.tryFindWithError l.LocalName "type parameter" l.AsFSharpString loc0
+                   |> TypeParametersScope.tryFindWithError
+                     l.LocalName
+                     "type parameter"
+                     (fun () -> l.AsFSharpString)
+                     loc0
                    |> sum.Map(fun _ -> TypeValue.Lookup l)
                    |> state.OfSum)
           | TypeValue.Lambda { value = par, body } ->

@@ -7,18 +7,25 @@ module Precedence =
   open Ballerina.Collections.Option
   open Ballerina.Parser
   open Ballerina.Collections.NonEmptyList
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.DSL.Next.Terms
 
+  type OperandMergeability =
+    | Mergeable
+    | NonMergeable
+
   type BinaryOperatorsElement<'operand, 'operator> =
-    | Operand of 'operand
+    | Operand of 'operand * OperandMergeability
     | Operator of 'operator
 
   type BinaryOperatorsOperations<'operand, 'operator, 'expr> =
-    { Compose: 'operand * 'operator * 'operand -> 'operand
+    { Compose:
+        'operand * OperandMergeability * 'operator * 'operand * OperandMergeability -> 'operand * OperandMergeability
       ToExpr: 'operand -> 'expr }
 
   type OperatorAssociativity =
@@ -34,20 +41,53 @@ module Precedence =
     (loc: Location)
     (precedence: List<OperatorsPrecedence<'operator>>)
     (l0: List<BinaryOperatorsElement<'operand, 'operator>>)
-    =
+    : Sum<'expr, Errors<Location>> =
     let rec collapse (p: OperatorsPrecedence<'operator>) (l: List<BinaryOperatorsElement<'operand, 'operator>>) =
       sum {
         match l with
         | [ _ ] -> return l
-        | Operand e1 :: Operator op :: Operand e2 :: rest when p.Operators |> Set.contains op ->
-          return! (binOp.Compose(e1, op, e2) |> Operand) :: rest |> collapse p
-        | Operand e1 :: Operator op :: rest ->
+        | Operand(e1, src1) :: Operator op :: Operand(e2, src2) :: rest when p.Operators |> Set.contains op ->
+          return! (binOp.Compose(e1, src1, op, e2, src2) |> Operand) :: rest |> collapse p
+        | Operand(e1, src1) :: Operator op :: rest ->
           let! rest1 = collapse p rest
-          return Operand e1 :: Operator op :: rest1
+          return Operand(e1, src1) :: Operator op :: rest1
         | _ ->
           return!
-            (loc, $"Error: cannot collapse operators sequence {l.AsFSharpString}")
-            |> Errors.Singleton
+            (fun () -> $"Error: cannot collapse operators sequence {l.AsFSharpString}")
+            |> Errors.Singleton loc
+            |> sum.Throw
+      }
+
+    let rec collapseRight (p: OperatorsPrecedence<'operator>) (l: List<BinaryOperatorsElement<'operand, 'operator>>) =
+      sum {
+        // do
+        //   Console.WriteLine
+        //     $"Collapsing right-associative operators chain step: l={l.AsFSharpString}, prefix={prefix.AsFSharpString}"
+
+        // do Console.ReadLine() |> ignore
+
+        match l with
+        | [ _ ] -> l
+        | [ Operand(e1, src1); Operator op; Operand(e2, src2) ] when p.Operators |> Set.contains op ->
+          return [ binOp.Compose(e1, src1, op, e2, src2) |> Operand ]
+        | Operand(e1, src1) :: Operator op :: rest ->
+          match! collapseRight p rest with
+          | Operand(e2, src2) :: rest ->
+            if p.Operators |> Set.contains op then
+              return (binOp.Compose(e1, src1, op, e2, src2) |> Operand) :: rest
+            else
+              return Operand(e1, src1) :: Operator op :: Operand(e2, src2) :: rest
+          | _ ->
+            return!
+              (fun () -> $"Error: cannot collapse operators sequence {l.AsFSharpString}")
+              |> Errors.Singleton loc
+              |> sum.Throw
+        // | Operand(e1, src1) :: Operator op :: Operand(e2, src2) :: rest ->
+        //   return! collapseRight p (Operand(e2, src2) :: rest) (Operator op :: (Operand(e1, src1) :: prefix))
+        | _ ->
+          return!
+            (fun () -> $"Error: cannot collapse operators sequence {l.AsFSharpString}")
+            |> Errors.Singleton loc
             |> sum.Throw
       }
 
@@ -55,11 +95,11 @@ module Precedence =
       match precedence with
       | [] ->
         match l0 with
-        | [ Operand x ] -> return binOp.ToExpr x
+        | [ Operand(x, _) ] -> return binOp.ToExpr x
         | l ->
           return!
-            (loc, $"Error: invalid operator sequence, residual elements {l} cannot be further processes")
-            |> Errors.Singleton
+            (fun () -> $"Error: invalid operator sequence, residual elements {l} cannot be further processes")
+            |> Errors.Singleton loc
             |> sum.Throw
       | p :: ps ->
         let! l1 =
@@ -73,9 +113,8 @@ module Precedence =
               // do Console.ReadLine() |> ignore
               return res
             | OperatorAssociativity.AssociateRight ->
-              let l0 = l0 |> List.rev
-              let! res = l0 |> collapse p
-              return res |> List.rev
+              let! res = collapseRight p l0
+              return res
           }
 
         return! collapseBinaryOperatorsChain binOp loc ps l1

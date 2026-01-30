@@ -2,9 +2,12 @@ namespace Ballerina.DSL.Next.StdLib.Option
 
 [<AutoOpen>]
 module Extension =
+  open Ballerina
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types
@@ -48,7 +51,7 @@ module Extension =
             )
           )
         Constructor = Option_Some
-        Apply = fun _loc0 _rest (_, v) -> reader { return OptionValues.Option(Some v) |> valueLens.Set |> Ext }
+        Apply = fun _loc0 _rest (_, v) -> reader { return (OptionValues.Option(Some v) |> valueLens.Set, None) |> Ext }
         ValueLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -75,7 +78,7 @@ module Extension =
             )
           )
         Constructor = Option_None
-        Apply = fun _loc0 _rest (_, _) -> reader { return OptionValues.Option None |> valueLens.Set |> Ext }
+        Apply = fun _loc0 _rest (_, _) -> reader { return (OptionValues.Option None |> valueLens.Set, None) |> Ext }
         ValueLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -123,24 +126,30 @@ module Extension =
               let! op =
                 op
                 |> OptionOperations.AsMap
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return OptionOperations.Option_Map({| f = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (OptionOperations.Option_Map({| f = Some v |}) |> operationLens.Set, Some optionMapId)
+                  |> Ext
               | Some f -> // the closure has the function - second step in the application
-                let! v = v |> Value.AsExt |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+                let! v, _ =
+                  v
+                  |> Value.AsExt
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
 
                 let! v =
                   valueLens.Get v
-                  |> sum.OfOption((loc0, "cannot get option value") |> Errors.Singleton)
+                  |> sum.OfOption((fun () -> "cannot get option value") |> Errors.Singleton loc0)
                   |> reader.OfSum
 
                 let! v =
                   v
                   |> OptionValues.AsOption
-                  |> sum.MapError(Errors.FromErrors loc0)
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
                   |> reader.OfSum
 
                 let! v' =
@@ -148,7 +157,7 @@ module Extension =
                   |> FSharp.Core.Option.map (fun v -> Expr.EvalApply loc0 rest (f, v))
                   |> reader.RunOption
 
-                return OptionValues.Option v' |> valueLens.Set |> Ext
+                return (OptionValues.Option v' |> valueLens.Set, None) |> Ext
             } //: 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 

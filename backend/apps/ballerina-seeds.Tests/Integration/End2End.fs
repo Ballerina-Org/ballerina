@@ -1,8 +1,9 @@
-﻿module Ballerina.Data.Tests.Seeds.EndToEnd
+module Ballerina.Data.Tests.Seeds.EndToEnd
 
 open System
 open System.Text.RegularExpressions
 open Ballerina.Collections.NonEmptyList
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.Extensions
 open Ballerina.DSL.Next.Json
@@ -15,6 +16,7 @@ open Ballerina.DSL.Next.Terms.Model
 open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Terms.Json
 open Ballerina.LocalizedErrors
+open Ballerina.Errors
 open Ballerina.Reader.WithError
 open Ballerina.Seeds
 open Ballerina.State.WithError
@@ -63,7 +65,7 @@ let private evalJsonAndSeed (e: EntityName) (str: string) =
 
         let! typesJson =
           JsonValue.AsRecord json
-          |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+          |> Sum.mapRight (Errors.MapContext(replaceWith Location.Unknown))
           |> state.OfSum
 
         let! types =
@@ -71,7 +73,7 @@ let private evalJsonAndSeed (e: EntityName) (str: string) =
           |> List.ofArray
           |> List.map (fun (name, value) -> TypeExpr.FromJson value |> sum.Map(fun typeExpr -> name, typeExpr))
           |> sum.All
-          |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+          |> Sum.mapRight (Errors.MapContext(replaceWith Location.Unknown))
           |> state.OfSum
 
         do!
@@ -98,7 +100,7 @@ let private evalJsonAndSeed (e: EntityName) (str: string) =
       |> Map.map (fun key (typeValue, kind) -> Traverser.seed e typeValue |> state.Map(fun seed -> key, kind, seed))
       |> state.AllMap
       |> State.Run(seedCtx, seedState)
-      |> sum.MapError fst
+      |> sum.MapError(fst >> Errors.MapContext(replaceWith Location.Unknown))
 
     return seeds
   }
@@ -110,7 +112,7 @@ let ``Seeds: Json with nested records (Spec fragment) -> Parse TypeExpr -> Eval 
 
   evalJsonAndSeed { EntityName = "Person" } SampleData.Records.nested
   |> function
-    | Right e -> Assert.Fail(e.Errors.Head.Message)
+    | Right e -> Assert.Fail(e.Errors().Head.Message)
     | Left seeds ->
 
       let _, _, person =
@@ -160,7 +162,7 @@ let ``Seeds: Json with Flatten expression (Spec fragment) -> Parse TypeExpr -> E
 
   evalJsonAndSeed { EntityName = "Person" } SampleData.Records.flatten
   |> function
-    | Right e -> Assert.Fail(e.Errors.Head.Message)
+    | Right e -> Assert.Fail(e.Errors().Head.Message)
     | Left seeds ->
 
       let _, _, person =
@@ -199,7 +201,7 @@ let ``Seeds: List extension`` () =
 
   evalJsonAndSeed { EntityName = "Person" } SampleData.Records.withList
   |> function
-    | Right e -> Assert.Fail(e.Errors.Head.Message)
+    | Right e -> Assert.Fail(e.Errors().Head.Message)
     | Left seeds ->
 
       let _, _, company =
@@ -217,13 +219,13 @@ let ``Seeds: List extension`` () =
 
         let field = companyRec |> Map.find fieldKey
 
-        let! ext = field |> Value.AsExt
+        let! ext, _ = field |> Value.AsExt
         let choice = ValueExt.Getters.ValueExt ext
 
         let! listValues =
           match choice with
           | Choice1Of6(ListExt.ListValues v) -> sum.Return v
-          | _ -> sum.Throw(Ballerina.Errors.Errors.Singleton "Expected List, got other ext")
+          | _ -> sum.Throw(Errors<Unit>.Singleton () (fun () -> "Expected List, got other ext"))
 
         let (List.Model.ListValues.List values) = listValues
 
@@ -251,7 +253,7 @@ let insert
   (ctx: SeedingContext)
   : Sum<
       Value<TypeValue<ValueExt>, ValueExt> * Option<TypeCheckState<ValueExt>>,
-      Errors * Option<TypeCheckState<ValueExt>>
+      Errors<_> * Option<TypeCheckState<ValueExt>>
      >
   =
   let json = SampleData.Specs.PersonGenders |> JsonValue.Parse
@@ -261,7 +263,7 @@ let insert
       Ballerina.Data.Schema.Model.Schema.FromJson json
       |> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
       |> state.OfSum
-      |> state.MapError(Errors.FromErrors Location.Unknown)
+      |> state.MapError(Errors.MapContext(replaceWith Location.Unknown))
 
     let lookupPath =
       spec.Lookups
@@ -271,7 +273,12 @@ let insert
 
     let! schema = spec |> Ballerina.Data.Schema.Model.Schema.SchemaEval()
 
-    let! seeds = Runner.seed schema |> Reader.Run ctx |> state.OfSum
+    let! seeds =
+      Runner.seed schema
+      |> Reader.Run ctx
+      |> state.OfSum
+      |> state.MapError(Errors.MapContext(replaceWith Location.Unknown))
+
     let lookups = seeds.Lookups |> Map.find { LookupName = "PeopleGenders" }
     let sampleOneToMany = lookups |> Map.toSeq |> Seq.head
     let counts, reverse = analyze lookups
@@ -291,28 +298,36 @@ let insert
 
     return!
       Value.insert genders people lookupPath
-      |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+      |> Sum.mapRight (Errors.MapContext(replaceWith Location.Unknown))
       |> state.OfSum
   }
   |> State.Run(languageContext.TypeCheckContext, languageContext.TypeCheckState)
 
 let private tryExtractGender
   (value: Value<TypeValue<ValueExt>, ValueExt>)
-  : Sum<option<ResolvedIdentifier> * Map<ResolvedIdentifier, Value<TypeValue<ValueExt>, ValueExt>>, Errors> =
+  : Sum<option<ResolvedIdentifier> * Map<ResolvedIdentifier, Value<TypeValue<ValueExt>, ValueExt>>, Errors<_>> =
   sum {
-    let! record = Value.AsRecord value |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+    let! record =
+      Value.AsRecord value
+      |> Sum.mapRight (Errors.MapContext(replaceWith Location.Unknown))
 
     let! _, biology =
       record
       |> Map.tryFindByWithError
         (fun (k, _v) -> k.Name = "Biology")
         "record field"
-        "biology field not found"
+        (fun () -> "biology field not found")
         Location.Unknown
 
 
-    let! _, biology = Value.AsUnion biology |> Sum.mapRight (Errors.FromErrors Location.Unknown)
-    let! fields = Value.AsRecord biology |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+    let! _, biology =
+      Value.AsUnion biology
+      |> Sum.mapRight (Errors.MapContext(replaceWith Location.Unknown))
+
+    let! fields =
+      Value.AsRecord biology
+      |> Sum.mapRight (Errors.MapContext(replaceWith Location.Unknown))
+
     let genderKey = fields |> Map.tryFindKey (fun ts _ -> ts.Name = "Gender")
     return genderKey, fields
   }
@@ -332,14 +347,18 @@ let ``Seed lookups, insert item via path, path satisfied results in item being i
 
     let! genderKey =
       genderKey
-      |> sum.OfOption(Errors.Singleton(Location.Unknown, "Gender not found"))
+      |> sum.OfOption(Errors.Singleton Location.Unknown (fun () -> "Gender not found"))
 
     let gender = fields |> Map.find genderKey
-    let! ts, _ = Value.AsUnion gender |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+
+    let! ts, _ =
+      Value.AsUnion gender
+      |> Sum.mapRight (Errors.MapContext(replaceWith Location.Unknown))
+
     return ts.Name
   }
   |> function
-    | Right error -> Assert.Fail error.Errors.Head.Message
+    | Right error -> Assert.Fail (error.Errors()).Head.Message
     | Left gender -> Assert.That([ "F"; "M"; "X" ] |> List.contains gender, Is.True)
 
 [<Test>]
@@ -352,20 +371,26 @@ let ``Seed lookups, insert item via path, path not satisfied results with no ins
             PickItemStrategy = Last } // ensures Secret union case (does not satisfy path) is seeded
       |> sum.MapError fst
 
-    let! record = Value.AsRecord result |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+    let! record =
+      Value.AsRecord result
+      |> Sum.mapRight (Errors.MapContext(replaceWith Location.Unknown))
 
     let! _, biology =
       record
       |> Map.tryFindByWithError
         (fun (k, _v) -> k.Name = "Biology")
         "record field"
-        "biology field not found"
+        (fun () -> "biology field not found")
         Location.Unknown
 
-    let! unionCase = biology |> Value.AsUnion |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+    let! unionCase =
+      biology
+      |> Value.AsUnion
+      |> Sum.mapRight (Errors.MapContext(replaceWith Location.Unknown))
+
     return unionCase
   }
   |> function
-    | Right error -> Assert.Fail $"Test assumes no errors but got {error.Errors.Head.Message}"
+    | Right error -> Assert.Fail $"Test assumes no errors but got {error.Errors().Head.Message}"
     | Left(_, unionCase) ->
       Assert.That(unionCase.IsPrimitive, Is.True, "biology remains a union case that has unit, not an inserted field")

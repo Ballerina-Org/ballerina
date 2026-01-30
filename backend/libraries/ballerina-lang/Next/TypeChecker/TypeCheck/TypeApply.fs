@@ -2,10 +2,12 @@ namespace Ballerina.DSL.Next.Types.TypeChecker
 
 module TypeApply =
   open Ballerina.StdLib.String
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Collections.Option
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open System
   open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Types.Model
@@ -45,10 +47,10 @@ module TypeApply =
       fun context_t ({ Func = fExpr; TypeArg = tExpr }) ->
         let (!) = typeCheckExpr context_t
 
-        let ofSum (p: Sum<'a, Ballerina.Errors.Errors>) =
-          p |> Sum.mapRight (Errors.FromErrors loc0) |> state.OfSum
+        let ofSum (p: Sum<'a, Errors<Unit>>) =
+          p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
-        let error e = Errors.Singleton(loc0, e)
+        let error e = Errors.Singleton loc0 e
 
         state {
           let! ctx = state.GetContext()
@@ -64,7 +66,7 @@ module TypeApply =
 
           if f_k_i <> t_k then
             return!
-              $"Error: mismatched kind, expected {f_k_i} but got {t_k}"
+              (fun () -> $"Error: mismatched kind, expected {f_k_i} but got {t_k}")
               |> error
               |> state.Throw
           else

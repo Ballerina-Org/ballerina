@@ -1,6 +1,7 @@
 module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Type.Json.Type_TypeValue_PrimitiveType
 
 open Ballerina.Fun
+open Ballerina
 open Ballerina.Collections.Sum
 open NUnit.Framework
 open FSharp.Data
