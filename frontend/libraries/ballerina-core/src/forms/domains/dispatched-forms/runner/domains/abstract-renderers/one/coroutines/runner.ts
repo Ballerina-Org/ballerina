@@ -48,8 +48,7 @@ export const initializeStreamRunner = <
   >(initializeStream<CustomPresentationContext, ExtraContext>(), {
     interval: 15,
     runFilter: (props) =>
-      (props.context.customFormState.stream.kind === "r" ||
-        props.context.customFormState.shouldReinitialize) &&
+      props.context.customFormState.stream.kind === "r" &&
       props.context.customFormState.getChunkWithParams !== undefined,
   });
 

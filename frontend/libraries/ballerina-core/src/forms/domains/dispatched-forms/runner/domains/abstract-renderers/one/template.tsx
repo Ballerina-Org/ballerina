@@ -512,7 +512,14 @@ export const OneAbstractRenderer = <
               },
               reinitializeStream: () =>
                 props.setState(
-                  OneAbstractRendererState.Updaters.Template.reinitializeStream(),
+                  OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                    replaceWith(
+                      Sum.Default.right<
+                        ValueInfiniteStreamState,
+                        "not initialized"
+                      >("not initialized"),
+                    ),
+                  ),
                 ),
             }}
             DetailsRenderer={
