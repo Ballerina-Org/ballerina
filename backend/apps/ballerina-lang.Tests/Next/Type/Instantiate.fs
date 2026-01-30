@@ -1,6 +1,7 @@
 module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Type.Instantiate
 
 open System
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.StdLib.Extensions
 open NUnit.Framework
@@ -11,6 +12,7 @@ open Ballerina.DSL.Next.EquivalenceClasses
 open Ballerina.DSL.Next.Unification
 open Ballerina.State.WithError
 open Ballerina.LocalizedErrors
+open Ballerina.Errors
 open Ballerina.DSL.Next.Types.TypeChecker.Eval
 open Ballerina.DSL.Next.Types.TypeChecker.Model
 open Ballerina.DSL.Next.Types.TypeChecker.Patterns

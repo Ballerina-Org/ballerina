@@ -7,10 +7,12 @@ module Kind =
   open Ballerina.Collections.Option
   open Ballerina.Parser
   open Ballerina.Collections.NonEmptyList
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.DSL.Next.Terms
 
   let rec kindDecl () =

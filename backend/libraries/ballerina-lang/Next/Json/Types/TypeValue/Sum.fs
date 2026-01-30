@@ -1,9 +1,10 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
 
 [<AutoOpen>]
 module Sum =
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.StdLib.Json.Sum
@@ -16,8 +17,8 @@ module Sum =
 
   type TypeValue<'valueExt> with
     static member FromJsonSum
-      (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors>)
-      : JsonValue -> Sum<List<TypeValue<'valueExt>>, Errors> =
+      (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors<unit>>)
+      : JsonValue -> Sum<List<TypeValue<'valueExt>>, Errors<unit>> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun sumFields ->
         sum {
           let! cases = sumFields |> JsonValue.AsArray

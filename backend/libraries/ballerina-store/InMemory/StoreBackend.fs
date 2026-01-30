@@ -4,6 +4,7 @@ open System
 open System.Linq
 open System.Collections.Concurrent
 open Ballerina
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.Types.TypeChecker.Model
@@ -15,6 +16,7 @@ open Ballerina.Data.Spec.Model
 open Ballerina.Data.Store.Api.Model
 open Ballerina.Data.Store.Model
 open Ballerina.LocalizedErrors
+open Ballerina.Errors
 open Ballerina.Data.Delta.Model
 open Ballerina.Data.Delta.ToUpdater
 open Ballerina.State.WithError
@@ -44,7 +46,7 @@ module ConcurrentStore =
     (specName: SpecName)
     (path: VirtualPath option)
     (onDeltaExt:
-      DeltaExt -> Value<TypeValue<ValueExt>, ValueExt> -> Sum<Value<TypeValue<ValueExt>, ValueExt>, Errors.Errors>)
+      DeltaExt -> Value<TypeValue<ValueExt>, ValueExt> -> Sum<Value<TypeValue<ValueExt>, ValueExt>, Errors.Errors<unit>>)
     : SpecDataApi<ValueExt, DeltaExt> =
 
     let storeUpdater (u: U<SpecData<TypeValue<ValueExt>, ValueExt>>) =
@@ -57,12 +59,10 @@ module ConcurrentStore =
           | true -> return next.Seeds
           | false ->
             return!
-              sum.Throw(
-                Errors.Singleton(Location.Unknown, $"Updating seeds in the store failed for {specName.SpecName}")
-              )
+              sum.Throw(Errors.Singleton () (fun () -> $"Updating seeds in the store failed for {specName.SpecName}"))
         | _ ->
           return!
-            sum.Throw(Errors.Singleton(Location.Unknown, $"Updating seeds in the store failed for {specName.SpecName}"))
+            sum.Throw(Errors.Singleton () (fun () -> $"Updating seeds in the store failed for {specName.SpecName}"))
       }
 
     let entitiesApi =
@@ -70,31 +70,29 @@ module ConcurrentStore =
           fun entity id ->
             sum {
               match store.TryGetValue(specName) with
-              | false, _ ->
-                return! sum.Throw(Errors.Singleton(Location.Unknown, $"Store doesn't contain spec {specName}"))
+              | false, _ -> return! sum.Throw(Errors.Singleton () (fun () -> $"Store doesn't contain spec {specName}"))
               | true, spec ->
                 let seeds = spec.Seeds
 
                 let! entities =
                   seeds.Entities
-                  |> Map.tryFindWithError entity "entities" entity.EntityName Location.Unknown
+                  |> Map.tryFindWithError entity "entities" (fun () -> entity.EntityName) ()
 
                 return!
                   entities
-                  |> Map.tryFindWithError id "entities" $"{id} in {entity}" Location.Unknown
+                  |> Map.tryFindWithError id "entities" (fun () -> $"{id} in {entity}") ()
             }
         GetMany =
           fun entity (from, count) ->
             sum {
               match store.TryGetValue(specName) with
-              | false, _ ->
-                return! sum.Throw(Errors.Singleton(Location.Unknown, $"Store doesn't contain spec {specName}"))
+              | false, _ -> return! sum.Throw(Errors.Singleton () (fun () -> $"Store doesn't contain spec {specName}"))
               | true, spec ->
                 let seeds = spec.Seeds
 
                 let! entities =
                   seeds.Entities
-                  |> Map.tryFindWithError entity "entities" entity.EntityName Location.Unknown
+                  |> Map.tryFindWithError entity "entities" (fun () -> entity.EntityName) ()
 
                 let values = entities |> Map.toList |> List.skip from |> List.truncate count
 
@@ -106,14 +104,13 @@ module ConcurrentStore =
           fun entity value ->
             sum {
               match store.TryGetValue(specName) with
-              | false, _ ->
-                return! sum.Throw(Errors.Singleton(Location.Unknown, $"Store doesn't contain spec {specName}"))
+              | false, _ -> return! sum.Throw(Errors.Singleton () (fun () -> $"Store doesn't contain spec {specName}"))
               | true, spec ->
                 let seeds = spec.Seeds
 
                 let! entities =
                   seeds.Entities
-                  |> Map.tryFindWithError entity "entities" entity.EntityName Location.Unknown
+                  |> Map.tryFindWithError entity "entities" (fun () -> entity.EntityName) ()
 
                 let id = Guid.CreateVersion7()
                 let entities = entities |> Map.add id value
@@ -129,25 +126,20 @@ module ConcurrentStore =
           fun entity (id, delta) ->
             sum {
               match store.TryGetValue(specName) with
-              | false, _ ->
-                return! sum.Throw(Errors.Singleton(Location.Unknown, $"Store doesn't contain spec {specName}"))
+              | false, _ -> return! sum.Throw(Errors.Singleton () (fun () -> $"Store doesn't contain spec {specName}"))
               | true, spec ->
                 let seeds = spec.Seeds
 
                 let! entities =
                   seeds.Entities
-                  |> Map.tryFindWithError entity "entities" entity.EntityName Location.Unknown
+                  |> Map.tryFindWithError entity "entities" (fun () -> entity.EntityName) ()
 
-                let! entityValue =
-                  entities
-                  |> Map.tryFindWithError id "entity" $"{id} in {entity}" Location.Unknown
+                let! entityValue = entities |> Map.tryFindWithError id "entity" (fun () -> $"{id} in {entity}") ()
 
-                let! updater =
-                  delta
-                  |> Delta.ToUpdater onDeltaExt
-                  |> sum.MapError(Errors.FromErrors Location.Unknown)
+                let! updater = delta |> Delta.ToUpdater onDeltaExt
 
-                let! updated = updater entityValue |> sum.MapError(Errors.FromErrors Location.Unknown)
+                let! updated = updater entityValue
+
                 let entities = entities |> Map.add id updated
 
                 seeds
@@ -161,18 +153,17 @@ module ConcurrentStore =
           fun entityName id ->
             sum {
               match store.TryGetValue(specName) with
-              | false, _ ->
-                return! sum.Throw(Errors.Singleton(Location.Unknown, $"Store doesn't contain spec {specName}"))
+              | false, _ -> return! sum.Throw(Errors.Singleton () (fun () -> $"Store doesn't contain spec {specName}"))
               | true, spec ->
                 let seeds = spec.Seeds
 
                 let! entities =
                   seeds.Entities
-                  |> Map.tryFindWithError entityName "entities" entityName.EntityName Location.Unknown
+                  |> Map.tryFindWithError entityName "entities" (fun () -> entityName.EntityName) ()
 
                 let! _entity =
                   entities
-                  |> Map.tryFindWithError id "entity" $"{id} in {entityName}" Location.Unknown
+                  |> Map.tryFindWithError id "entity" (fun () -> $"{id} in {entityName}") ()
 
                 let entities = entities |> Map.remove id
 
@@ -184,32 +175,32 @@ module ConcurrentStore =
                 return ()
             } }
 
-    let link: LookupName -> Guid * Guid -> Sum<unit, Errors> =
+    let link: LookupName -> Guid * Guid -> Sum<unit, Errors<unit>> =
       fun lookup (sourceId, targetId) ->
         sum {
           match store.TryGetValue(specName) with
-          | false, _ -> return! sum.Throw(Errors.Singleton(Location.Unknown, $"Store doesn't contain spec {specName}"))
+          | false, _ -> return! sum.Throw(Errors.Singleton () (fun () -> $"Store doesn't contain spec {specName}"))
           | true, spec ->
             let seeds = spec.Seeds
 
             let! v2 =
               (WorkspaceVariant.WithPath path spec.WorkspaceVariant, spec.Folders)
               ||> Ballerina.Data.Schema.Model.Schema.FromJsonVirtualFolder
-              |> sum.MapError(Errors.FromErrors Location.Unknown)
+              |> sum.MapError(Errors.MapContext(replaceWith ()))
 
 
             let! lookupDescriptor =
               v2.Lookups
-              |> Map.tryFindWithError lookup "lookup descriptors" lookup.LookupName Location.Unknown
+              |> Map.tryFindWithError lookup "lookup descriptors" (fun () -> lookup.LookupName) ()
 
             let! lookups =
               seeds.Lookups
-              |> Map.tryFindWithError lookup "lookups" lookup.LookupName Location.Unknown
+              |> Map.tryFindWithError lookup "lookups" (fun () -> lookup.LookupName) ()
 
             let! sourceLookup =
               lookups
               |> Map.tryFind sourceId
-              |> Sum.fromOption (fun () -> Errors.Singleton(Location.Unknown, "source lookup for link cannot be found"))
+              |> Sum.fromOption (fun () -> Errors.Singleton () (fun () -> "source lookup for link cannot be found"))
 
             let sourceLookup = sourceLookup |> Set.add targetId
             let lookups = lookups |> Map.add sourceId sourceLookup
@@ -227,11 +218,11 @@ module ConcurrentStore =
 
               let! backwardLookup =
                 seeds.Lookups
-                |> Map.tryFindWithError backwardLookupName "lookups" backwardLookupName.LookupName Location.Unknown
+                |> Map.tryFindWithError backwardLookupName "lookups" (fun () -> backwardLookupName.LookupName) ()
 
               let! targetLookup =
                 backwardLookup
-                |> Map.tryFindWithError sourceId lookup.LookupName $"{targetId}" Location.Unknown
+                |> Map.tryFindWithError sourceId lookup.LookupName (fun () -> $"{targetId}") ()
 
               let targetLookup = targetLookup |> Set.add sourceId
               let backwardLookup = backwardLookup |> Map.add targetId targetLookup
@@ -244,30 +235,30 @@ module ConcurrentStore =
               return ()
         }
 
-    let unlink: LookupName -> Guid * Guid -> Sum<unit, Errors> =
+    let unlink: LookupName -> Guid * Guid -> Sum<unit, Errors<unit>> =
       fun lookupName (sourceId, targetId) ->
         sum {
           match store.TryGetValue(specName) with
-          | false, _ -> return! sum.Throw(Errors.Singleton(Location.Unknown, $"Store doesn't contain spec {specName}"))
+          | false, _ -> return! sum.Throw(Errors.Singleton () (fun () -> $"Store doesn't contain spec {specName}"))
           | true, spec ->
             let! v2 =
               (WorkspaceVariant.WithPath path spec.WorkspaceVariant, spec.Folders)
               ||> Ballerina.Data.Schema.Model.Schema.FromJsonVirtualFolder
-              |> sum.MapError(Errors.FromErrors Location.Unknown)
+              |> sum.MapError(Errors.MapContext(replaceWith ()))
 
             let seeds = spec.Seeds
 
             let! lookupDescriptor =
               v2.Lookups
-              |> Map.tryFindWithError lookupName "lookup descriptors" lookupName.LookupName Location.Unknown
+              |> Map.tryFindWithError lookupName "lookup descriptors" (fun () -> lookupName.LookupName) ()
 
             let! lookups =
               seeds.Lookups
-              |> Map.tryFindWithError lookupName "lookups" lookupName.LookupName Location.Unknown
+              |> Map.tryFindWithError lookupName "lookups" (fun () -> lookupName.LookupName) ()
 
             let! sourceLookup =
               lookups
-              |> Map.tryFindWithError sourceId lookupName.LookupName $"{sourceId}" Location.Unknown
+              |> Map.tryFindWithError sourceId lookupName.LookupName (fun () -> $"{sourceId}") ()
 
             let sourceLookup = sourceLookup |> Set.remove targetId
             let lookups = lookups |> Map.add sourceId sourceLookup
@@ -287,11 +278,11 @@ module ConcurrentStore =
                 | Some(backwardLookupName, _) ->
                   let! backwardLookup =
                     seeds.Lookups
-                    |> Map.tryFindWithError backwardLookupName "lookups" backwardLookupName.LookupName Location.Unknown
+                    |> Map.tryFindWithError backwardLookupName "lookups" (fun () -> backwardLookupName.LookupName) ()
 
                   let! targetLookup =
                     backwardLookup
-                    |> Map.tryFindWithError targetId lookupName.LookupName $"{targetId}" Location.Unknown
+                    |> Map.tryFindWithError targetId lookupName.LookupName (fun () -> $"{targetId}") ()
 
                   let targetLookup = targetLookup |> Set.remove sourceId
                   let backwardLookup = backwardLookup |> Map.add targetId targetLookup
@@ -307,31 +298,31 @@ module ConcurrentStore =
               }
         }
 
-    let unlinkFrom: LookupName -> Guid -> Sum<unit, Errors> =
+    let unlinkFrom: LookupName -> Guid -> Sum<unit, Errors<unit>> =
       fun lookupName sourceId ->
         sum {
           match store.TryGetValue(specName) with
-          | false, _ -> return! sum.Throw(Errors.Singleton(Location.Unknown, $"Store doesn't contain spec {specName}"))
+          | false, _ -> return! sum.Throw(Errors.Singleton () (fun () -> $"Store doesn't contain spec {specName}"))
           | true, spec ->
 
             let! v2 =
               (WorkspaceVariant.WithPath path spec.WorkspaceVariant, spec.Folders)
               ||> Ballerina.Data.Schema.Model.Schema.FromJsonVirtualFolder
-              |> sum.MapError(Errors.FromErrors Location.Unknown)
+              |> sum.MapError(Errors.MapContext(replaceWith ()))
 
             let seeds = spec.Seeds
 
             let! lookupDescriptor =
               v2.Lookups
-              |> Map.tryFindWithError lookupName "lookup descriptors" lookupName.LookupName Location.Unknown
+              |> Map.tryFindWithError lookupName "lookup descriptors" (fun () -> lookupName.LookupName) ()
 
             let! lookups =
               seeds.Lookups
-              |> Map.tryFindWithError lookupName "lookups" lookupName.LookupName Location.Unknown
+              |> Map.tryFindWithError lookupName "lookups" (fun () -> lookupName.LookupName) ()
 
             let! sourceLookup =
               lookups
-              |> Map.tryFindWithError sourceId lookupName.LookupName $"{sourceId}" Location.Unknown
+              |> Map.tryFindWithError sourceId lookupName.LookupName (fun () -> $"{sourceId}") ()
 
             let lookups = lookups |> Map.add sourceId Set.empty
 
@@ -351,15 +342,15 @@ module ConcurrentStore =
                 | Some(backwardLookupName, _) ->
                   let! backwardLookup =
                     seeds.Lookups
-                    |> Map.tryFindWithError backwardLookupName "lookups" backwardLookupName.LookupName Location.Unknown
+                    |> Map.tryFindWithError backwardLookupName "lookups" (fun () -> backwardLookupName.LookupName) ()
 
                   let! _ =
                     sourceLookup
-                    |> Set.map (fun targetId ->
+                    |> Seq.map (fun targetId ->
                       sum {
                         let! targetLookup =
                           backwardLookup
-                          |> Map.tryFindWithError targetId lookupName.LookupName $"{targetId}" Location.Unknown
+                          |> Map.tryFindWithError targetId lookupName.LookupName (fun () -> $"{targetId}") ()
 
                         let targetLookup = targetLookup |> Set.remove sourceId
                         let backwardLookup = backwardLookup |> Map.add targetId targetLookup
@@ -389,7 +380,7 @@ module ConcurrentStore =
 
               let! lookupDescriptor =
                 seeds.Lookups
-                |> Map.tryFindWithError lookupName "lookup descriptors" lookupName.LookupName Location.Unknown
+                |> Map.tryFindWithError lookupName "lookup descriptors" (fun () -> lookupName.LookupName) ()
 
               let lookup = lookupDescriptor |> Map.tryFind id //"lookups with id" $"{id}"
 
@@ -410,8 +401,7 @@ module ConcurrentStore =
                 let! targetValues =
                   targetIds
                   |> Seq.map (fun targetId ->
-                    entities
-                    |> Map.tryFindWithError targetId "target" $"{targetId}" Location.Unknown)
+                    entities |> Map.tryFindWithError targetId "target" (fun () -> $"{targetId}") ())
                   |> sum.All
 
                 return
@@ -426,22 +416,22 @@ module ConcurrentStore =
               let! v2 =
                 (WorkspaceVariant.WithPath path specState.WorkspaceVariant, specState.Folders)
                 ||> Ballerina.Data.Schema.Model.Schema.FromJsonVirtualFolder
-                |> sum.MapError(Errors.FromErrors Location.Unknown)
+                |> sum.MapError(Errors.MapContext(replaceWith ()))
 
 
               let seeds = specState.Seeds
 
               let! lookupDescriptor =
                 v2.Lookups
-                |> Map.tryFindWithError lookupName "lookup descriptors" lookupName.LookupName Location.Unknown
+                |> Map.tryFindWithError lookupName "lookup descriptors" (fun () -> lookupName.LookupName) ()
 
               let! entities =
                 seeds.Entities
                 |> Map.tryFindWithError
                   lookupDescriptor.Source
                   "entities"
-                  lookupDescriptor.Source.EntityName
-                  Location.Unknown
+                  (fun () -> lookupDescriptor.Source.EntityName)
+                  ()
 
               let targetId = Guid.CreateVersion7()
               let entities = entities |> Map.add targetId newTarget
@@ -465,31 +455,31 @@ module ConcurrentStore =
               let! v2 =
                 (WorkspaceVariant.WithPath path specState.WorkspaceVariant, specState.Folders)
                 ||> Ballerina.Data.Schema.Model.Schema.FromJsonVirtualFolder
-                |> sum.MapError(Errors.FromErrors Location.Unknown)
+                |> sum.MapError(Errors.MapContext(replaceWith ()))
 
               let seeds = specState.Seeds
 
               let! lookupDescriptor =
                 v2.Lookups
-                |> Map.tryFindWithError lookup "lookup descriptors" lookup.LookupName Location.Unknown
+                |> Map.tryFindWithError lookup "lookup descriptors" (fun () -> lookup.LookupName) ()
 
               let! targetEntities =
                 seeds.Entities
                 |> Map.tryFindWithError
                   lookupDescriptor.Target
                   "entities"
-                  lookupDescriptor.Target.EntityName
-                  Location.Unknown
+                  (fun () -> lookupDescriptor.Target.EntityName)
+                  ()
 
               let targetEntities = targetEntities |> Map.remove targetId
 
               let! lookups =
                 seeds.Lookups
-                |> Map.tryFindWithError lookup "lookups" lookup.LookupName Location.Unknown
+                |> Map.tryFindWithError lookup "lookups" (fun () -> lookup.LookupName) ()
 
               let! sourceLookup =
                 lookups
-                |> Map.tryFindWithError sourceId lookup.LookupName $"{sourceId}" Location.Unknown
+                |> Map.tryFindWithError sourceId lookup.LookupName (fun () -> $"{sourceId}") ()
 
               let sourceLookup = sourceLookup |> Set.remove targetId
               let lookups = lookups |> Map.add sourceId sourceLookup
@@ -511,7 +501,7 @@ module ConcurrentStore =
       Lookups = lookupsApi }
 
   let private error (msg: string) =
-    Errors.Singleton(Location.Unknown, msg) |> sum.Throw
+    Errors.Singleton () (fun () -> msg) |> sum.Throw
 
   let makeSpecsApi
     (store: ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>)
@@ -574,10 +564,11 @@ module ConcurrentStore =
   let seed
     (store: ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>)
     (seeder:
-      Schema<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt> -> Sum<SpecData<TypeValue<ValueExt>, ValueExt>, Errors>)
+      Schema<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt>
+        -> Sum<SpecData<TypeValue<ValueExt>, ValueExt>, Errors<unit>>)
     (name: SpecName)
     (path: VirtualPath option)
-    : State<SpecData<TypeValue<ValueExt>, ValueExt>, TypeCheckContext<ValueExt>, TypeCheckState<ValueExt>, Errors> =
+    : State<SpecData<TypeValue<ValueExt>, ValueExt>, TypeCheckContext<ValueExt>, TypeCheckState<ValueExt>, Errors<unit>> =
 
     state {
       match store.ContainsKey name with
@@ -591,10 +582,13 @@ module ConcurrentStore =
         let! v2 =
           (specStateWithVariant.WorkspaceVariant, specStateWithVariant.Folders)
           ||> Ballerina.Data.Schema.Model.Schema.FromJsonVirtualFolder
-          |> sum.MapError(Errors.FromErrors Location.Unknown)
+          |> sum.MapError(Errors.MapContext(replaceWith ()))
           |> state.OfSum
 
-        let! schemaValues = v2 |> Ballerina.Data.Schema.Model.Schema.SchemaEval()
+        let! schemaValues =
+          v2
+          |> Ballerina.Data.Schema.Model.Schema.SchemaEval()
+          |> state.MapError(Errors.MapContext(replaceWith ()))
 
         let! seeds = seeder schemaValues |> state.OfSum
         let updated = { specState with Seeds = seeds }
@@ -603,15 +597,15 @@ module ConcurrentStore =
         if result then
           return seeds
         else
-          return! state.Throw(Errors.Singleton(Location.Unknown, $"Updating spec {name} has failed"))
-      | _ -> return! state.Throw(Errors.Singleton(Location.Unknown, $"Can't create seeds for un-existing spec: {name}"))
+          return! state.Throw(Errors.Singleton () (fun () -> $"Updating spec {name} has failed"))
+      | _ -> return! state.Throw(Errors.Singleton () (fun () -> $"Can't create seeds for un-existing spec: {name}"))
     }
 
   let seedWith
     (store: ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>)
     (name: SpecName)
     (seeds: SpecData<TypeValue<ValueExt>, ValueExt>)
-    : Sum<unit, Errors> =
+    : Sum<unit, Errors<unit>> =
 
     sum {
 
@@ -626,9 +620,9 @@ module ConcurrentStore =
         if result then
           return ()
         else
-          return! sum.Throw(Errors.Singleton(Location.Unknown, $"SeedsWith failed. Cannot update the spec {name}"))
+          return! sum.Throw(Errors.Singleton () (fun () -> $"SeedsWith failed. Cannot update the spec {name}"))
       | false ->
-        return! sum.Throw(Errors.Singleton(Location.Unknown, $"SeedsWith failed. Spec {name} not present in the store"))
+        return! sum.Throw(Errors.Singleton () (fun () -> $"SeedsWith failed. Spec {name} not present in the store"))
     }
 
   let getSeeds (store: ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>) (specName: SpecName) =

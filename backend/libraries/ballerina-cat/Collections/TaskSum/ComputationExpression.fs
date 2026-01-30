@@ -1,6 +1,7 @@
 namespace Ballerina.Collections.TaskSum
 
 open System.Threading.Tasks
+open Ballerina
 open Ballerina.Collections.Sum
 
 // It's not a correct implementation but should do for now.

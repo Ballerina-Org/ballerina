@@ -10,6 +10,7 @@ type internal EnumCaseFilter =
 [<AutoOpen>]
 module EnumCaseFilter =
   open Ballerina.DSL.Parser.Patterns
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Json.Patterns
   open FSharp.Data

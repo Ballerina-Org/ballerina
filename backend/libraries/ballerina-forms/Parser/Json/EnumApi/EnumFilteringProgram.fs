@@ -3,6 +3,7 @@ namespace Ballerina.DSL.FormEngine.Parser
 open System
 open System.Security.Cryptography
 open Ballerina.Collections.NonEmptySet
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Expr.Model
 open Ballerina.DSL.Expr.Types.Model
@@ -41,12 +42,13 @@ module EnumFilteringProgram =
 
   let private getERPCases (context: TypeContext) =
     context.TryFind ERPTypeName
-    |> Sum.fromOption (fun () -> Errors.Singleton $"Type named {ERPTypeName} has to be defined!")
+    |> Sum.fromOption (fun () -> Errors.Singleton () (fun () -> $"Type named {ERPTypeName} has to be defined!"))
     |> Sum.bind (fun { Type = exprType } -> ExprType.AsUnion exprType)
     |> Sum.map _.Keys
     |> Sum.bind (fun cases ->
       NonEmptySet.TryOfSeq cases
-      |> Sum.fromOption (fun () -> Errors.Singleton $"{ERPTypeName} union has to have at least one case defined!"))
+      |> Sum.fromOption (fun () ->
+        Errors.Singleton () (fun () -> $"{ERPTypeName} union has to have at least one case defined!")))
 
   let private contextDefinition erpCases =
     StringBuilder()
@@ -99,10 +101,7 @@ List::filter[{CasesTypeName}]
       let! erpCases = getERPCases context
       let contextDefinition = contextDefinition erpCases
 
-      return
-        { FileName = { Path = "enum-filtering-common.bl" }
-          Content = fun () -> contextDefinition
-          Checksum = { Value = getChecksum contextDefinition } }
+      return FileBuildConfiguration.FromFile("enum-filtering-common.bl", contextDefinition)
     }
 
   let private getCommonFileMem = memoize getCommonFile
@@ -115,18 +114,17 @@ List::filter[{CasesTypeName}]
 
       let project =
         { Files =
-            NonEmptyList.OfList(
-              commonFile,
-              [ { FileName = { Path = $"{enumName}-filter.bl" }
-                  Content = fun () -> filterProgram
-                  Checksum = { Value = getChecksum filterProgram } } ]
-            ) }
+            NonEmptyList.OfList(commonFile, [ FileBuildConfiguration.FromFile($"{enumName}-filter.bl", filterProgram) ]) }
 
 
       let buildResult = ProjectBuildConfiguration.BuildCached buildCache project
 
       match buildResult with
-      | Right errors -> return! $"Enum filtering build errors:\n{errors}" |> Errors.Singleton |> Right
+      | Right errors ->
+        return!
+          (fun () -> $"Enum filtering build errors:\n{errors}")
+          |> Errors.Singleton()
+          |> Right
       | Left(exprs, _, st) -> return EnumCaseFilterExpr.Filter(exprs |> NonEmptyList.ToList, st)
     }
 

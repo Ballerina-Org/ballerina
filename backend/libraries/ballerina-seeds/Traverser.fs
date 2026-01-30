@@ -1,5 +1,6 @@
 ﻿namespace Ballerina.Seeds
 
+open Ballerina
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.Terms.Model
 open Ballerina.DSL.Next.Types.TypeChecker.Eval
@@ -11,6 +12,7 @@ open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.Data.Schema.Model
 open Ballerina.Data.Schema.ActivePatterns
 open Ballerina.LocalizedErrors
+open Ballerina.Errors
 open Ballerina.Seeds.Fakes
 open Ballerina.Reader.WithError
 
@@ -58,7 +60,7 @@ module Traverser =
 
   let rec seed
     (entity: EntityName)
-    : TypeValue<ValueExt> -> State<Value<TypeValue<ValueExt>, ValueExt>, SeedingContext, SeedingState, Errors> =
+    : TypeValue<ValueExt> -> State<Value<TypeValue<ValueExt>, ValueExt>, SeedingContext, SeedingState, Errors<unit>> =
     fun typeValue ->
 
       let (!) = seed entity
@@ -75,20 +77,18 @@ module Traverser =
           let! values = [ 0..2 ] |> List.map (fun _ -> (!) x.Arguments.Head) |> state.All
           let listExtValue = ListValues >> Choice1Of6 >> ValueExt.ValueExt
           let lv = List.Model.ListValues.List values |> listExtValue
-          return Value.Ext lv
+          return Value.Ext(lv, None)
         | TypeValue.Imported x when x.Id.Name = "Option" && List.length x.Arguments = 1 ->
           let! value = (!) x.Arguments.Head
           let ext = OptionValues >> Choice2Of6 >> ValueExt.ValueExt
           let valueExt = Option.Model.OptionValues.Option(Some value) |> ext
-          return Value.Ext valueExt
+          return Value.Ext(valueExt, None)
         | TypeValue.Imported _ ->
-          return! state.Throw(Errors.Singleton(Location.Unknown, "Imported seeds not implemented yet"))
-        | TypeValue.Arrow _ ->
-          return! state.Throw(Errors.Singleton(Location.Unknown, "Arrow seeds not implemented yet"))
-        | TypeValue.Lambda _ ->
-          return! state.Throw(Errors.Singleton(Location.Unknown, "Lambda seeds not implemented yet"))
+          return! state.Throw(Errors.Singleton () (fun () -> "Imported seeds not implemented yet"))
+        | TypeValue.Arrow _ -> return! state.Throw(Errors.Singleton () (fun () -> "Arrow seeds not implemented yet"))
+        | TypeValue.Lambda _ -> return! state.Throw(Errors.Singleton () (fun () -> "Lambda seeds not implemented yet"))
         | TypeValue.Application _ ->
-          return! state.Throw(Errors.Singleton(Location.Unknown, "Apply seeds not implemented yet"))
+          return! state.Throw(Errors.Singleton () (fun () -> "Apply seeds not implemented yet"))
         | TypeValue.Var _ ->
           do!
             state.SetState(fun s ->
@@ -109,8 +109,7 @@ module Traverser =
 
         | TypeValue.Sum { value = elements } ->
           match elements with
-          | [] ->
-            return! state.Throw(Errors.Singleton(Location.Unknown, "TypeValue.Sum with no elements can't be seeded"))
+          | [] -> return! state.Throw(Errors.Singleton () (fun () -> "TypeValue.Sum with no elements can't be seeded"))
           | elements ->
             let! values = elements |> Seq.map (!) |> state.All
 
@@ -158,6 +157,7 @@ module Traverser =
             TypeCheckState.tryFindType (id |> TypeCheckScope.Empty.Resolve, Location.Unknown)
             |> Reader.Run ctx.TypeContext
             |> state.OfSum
+            |> state.MapError(Errors.MapContext(replaceWith ()))
 
           return! (!!id.AsFSharpString) tv
         | TypeValue.Record(CollectionReference fields) ->
@@ -213,21 +213,21 @@ module Traverser =
           let! element = !element.value
           return Value.Tuple [ element ]
         | TypeValue.Schema _schema ->
-          return! state.Throw(Errors.Singleton(Location.Unknown, "Schema seeds not implemented yet"))
+          return! state.Throw(Errors.Singleton () (fun () -> "Schema seeds not implemented yet"))
         | TypeValue.Entity _ ->
-          return! state.Throw(Errors.Singleton(Location.Unknown, "Schema Entity seeds not implemented yet"))
+          return! state.Throw(Errors.Singleton () (fun () -> "Schema Entity seeds not implemented yet"))
         | TypeValue.Entities _ ->
-          return! state.Throw(Errors.Singleton(Location.Unknown, "Schema Entities seeds not implemented yet"))
+          return! state.Throw(Errors.Singleton () (fun () -> "Schema Entities seeds not implemented yet"))
         | TypeValue.Relations _ ->
-          return! state.Throw(Errors.Singleton(Location.Unknown, "Schema Relations seeds not implemented yet"))
+          return! state.Throw(Errors.Singleton () (fun () -> "Schema Relations seeds not implemented yet"))
         | TypeValue.Relation _ ->
-          return! state.Throw(Errors.Singleton(Location.Unknown, "Schema Relation seeds not implemented yet"))
+          return! state.Throw(Errors.Singleton () (fun () -> "Schema Relation seeds not implemented yet"))
         | TypeValue.RelationLookupOption _ ->
-          return! state.Throw(Errors.Singleton(Location.Unknown, "Schema LookupMaybe seeds not implemented yet"))
+          return! state.Throw(Errors.Singleton () (fun () -> "Schema LookupMaybe seeds not implemented yet"))
         | TypeValue.RelationLookupOne _ ->
-          return! state.Throw(Errors.Singleton(Location.Unknown, "Schema LookupOne seeds not implemented yet"))
+          return! state.Throw(Errors.Singleton () (fun () -> "Schema LookupOne seeds not implemented yet"))
         | TypeValue.RelationLookupMany _ ->
-          return! state.Throw(Errors.Singleton(Location.Unknown, "Schema LookupMany seeds not implemented yet"))
+          return! state.Throw(Errors.Singleton () (fun () -> "Schema LookupMany seeds not implemented yet"))
       }
 
 type SeedingContext with

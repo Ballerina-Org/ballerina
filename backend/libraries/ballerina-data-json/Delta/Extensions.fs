@@ -1,10 +1,11 @@
-﻿namespace Ballerina.DSL.Next.Delta.Json
+namespace Ballerina.DSL.Next.Delta.Json
 
 [<AutoOpen>]
 module DeltaExt =
   open Ballerina.Errors
   open Ballerina.DSL.Next.Json.Keys
   open FSharp.Data
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.DSL.Next.StdLib.Extensions
   open Ballerina.DSL.Next.Terms.Model
@@ -15,7 +16,7 @@ module DeltaExt =
 
   type DeltaExt with
     static member FromJson
-      (valueParser: JsonValue -> Sum<Value<TypeValue<ValueExt>, ValueExt>, Errors>)
+      (valueParser: JsonValue -> Sum<Value<TypeValue<ValueExt>, ValueExt>, Errors<unit>>)
       : JsonParser<DeltaExt> =
       fun json ->
         Sum.assertDiscriminatorAndContinueWithValue
@@ -26,12 +27,12 @@ module DeltaExt =
 
               let! discriminator =
                 container
-                |> Map.tryFindWithError "discriminator" "deltaExt" "Cant find discriminator in deltaExt"
+                |> Map.tryFindWithError "discriminator" "deltaExt" (fun () -> "Cant find discriminator in deltaExt") ()
                 |> Sum.bind JsonValue.AsString
 
               let! value =
                 container
-                |> Map.tryFindWithError "value" "deltaExt" "Cant find value in deltaExt"
+                |> Map.tryFindWithError "value" "deltaExt" (fun () -> "Cant find value in deltaExt") ()
 
               let! value =
                 match discriminator with
@@ -41,7 +42,11 @@ module DeltaExt =
 
                     let! discriminator =
                       container
-                      |> Map.tryFindWithError "discriminator" "deltaExt" "Cant find discriminator in list deltaExt"
+                      |> Map.tryFindWithError
+                        "discriminator"
+                        "deltaExt"
+                        (fun () -> "Cant find discriminator in list deltaExt")
+                        ()
                       |> Sum.bind JsonValue.AsString
 
                     let! value =
@@ -52,18 +57,30 @@ module DeltaExt =
 
                           let! value =
                             container
-                            |> Map.tryFindWithError "value" "deltaExt" "Cant find value in list deltaExt"
+                            |> Map.tryFindWithError
+                              "value"
+                              "deltaExt"
+                              (fun () -> "Cant find value in list deltaExt")
+                              ()
 
                           let! value = JsonValue.AsRecordMap value
 
                           let! index =
                             value
-                            |> Map.tryFindWithError "index" "deltaExt" "Cant find index in list deltaExt"
+                            |> Map.tryFindWithError
+                              "index"
+                              "deltaExt"
+                              (fun () -> "Cant find index in list deltaExt")
+                              ()
                             |> Sum.bind JsonValue.AsNumber
 
                           let! value =
                             value
-                            |> Map.tryFindWithError "value" "deltaExt" "Cant find value in list deltaExt"
+                            |> Map.tryFindWithError
+                              "value"
+                              "deltaExt"
+                              (fun () -> "Cant find value in list deltaExt")
+                              ()
 
                           let! value = valueParser value
                           return DeltaExt.DeltaExt(Choice1Of3(UpdateElement(int index, value)))
@@ -74,7 +91,11 @@ module DeltaExt =
 
                           let! value =
                             value
-                            |> Map.tryFindWithError "value" "deltaExt" "Cant find value in list deltaExt"
+                            |> Map.tryFindWithError
+                              "value"
+                              "deltaExt"
+                              (fun () -> "Cant find value in list deltaExt")
+                              ()
 
                           let! value = valueParser value
                           return DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.AppendElement(value)))
@@ -85,16 +106,24 @@ module DeltaExt =
 
                           let! index =
                             container
-                            |> Map.tryFindWithError "index" "deltaExt" "Cant find index in list deltaExt"
+                            |> Map.tryFindWithError
+                              "index"
+                              "deltaExt"
+                              (fun () -> "Cant find index in list deltaExt")
+                              ()
                             |> Sum.bind JsonValue.AsNumber
 
                           return DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.RemoveElement(int index)))
                         }
-                      | other -> sum.Throw(Errors.Singleton $"Unimplemented parser for deltaExt list op: {other}")
+                      | other ->
+                        sum.Throw(
+                          Errors.Singleton () (fun () -> $"Unimplemented parser for deltaExt list op: {other}")
+                        )
 
                     return value
                   }
-                | other -> sum.Throw(Errors.Singleton $"Unimplemented parser for deltaExt{other} discriminator")
+                | other ->
+                  sum.Throw(Errors.Singleton () (fun () -> $"Unimplemented parser for deltaExt{other} discriminator"))
 
               return value
             })
@@ -103,7 +132,7 @@ module DeltaExt =
     static member ToJson
       (valueEncoder: JsonEncoderWithError<Value<TypeValue<ValueExt>, ValueExt>>)
       (deltaExt: DeltaExt)
-      : Sum<JsonValue, Errors> =
+      : Sum<JsonValue, Errors<unit>> =
       sum {
 
         let! value =
@@ -138,9 +167,9 @@ module DeltaExt =
                       "index", JsonValue.Number(decimal i) |] |]
             |> sum.Return
           | DeltaExt.DeltaExt(Choice2Of3 _) ->
-            sum.Throw(Errors.Singleton "Option in Delta extensions serializers not yet implemented")
+            sum.Throw(Errors.Singleton () (fun () -> "Option in Delta extensions serializers not yet implemented"))
           | DeltaExt.DeltaExt(Choice3Of3(OptionDeltaExt)) ->
-            sum.Throw(Errors.Singleton "Option in Delta extensions serializers not yet implemented")
+            sum.Throw(Errors.Singleton () (fun () -> "Option in Delta extensions serializers not yet implemented"))
 
         return value |> Json.discriminator "deltaExt"
       }

@@ -1,8 +1,9 @@
-﻿namespace Ballerina.Collections.Sum
+namespace Ballerina.Collections.Sum
 
 [<AutoOpen>]
 
 module Patterns =
+  open Ballerina
   open Ballerina.Collections.Sum.Model
   open Ballerina.Fun
   open System

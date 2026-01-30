@@ -1,6 +1,7 @@
 module Ballerina.Forms.Tests.BridgeV1ToV2Tests
 
 open NUnit.Framework
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.FormBuilder.Compiler
 open Ballerina.DSL.Next.StdLib.Extensions
@@ -33,14 +34,14 @@ in type ARecord = {
 in ()"""
 
   let formsString =
-    """entrypoint form bRecord : BRecord {
+    """entrypoint view bRecord : BRecord {
   Z string(print);
   tab main with
     column main with
       group main with Z
 }
 
- entrypoint form recordForm : ARecord {
+ entrypoint view recordForm : ARecord {
   A string(print);
   B float32(readonlyFloat32);
   C list(listAsTable) guid(readonlyGuid);
@@ -52,10 +53,10 @@ in ()"""
     float32(readonlyFloat32),
     unit(unitEmptyString)
   );
-  F form(bRecord);
+  F view(bRecord);
   G union(readonlyUnion) with
     | X -> unit(unitEmptyString)
-    | AB -> form(bRecord);
+    | AB -> view(bRecord);
   H record(containerRecord){
     Z string(print);
     tab main with
@@ -78,7 +79,7 @@ in ()"""
 
   let languageContext = stdExtensions |> snd
 
-  match FormCompiler.compileForms compilerInput languageContext with
+  match FormCompiler.compileForms compilerInput languageContext (stdExtensions |> fst) with
   | Right errors -> Assert.Fail($"Compilation failed: {errors}")
   | Left formDefinitions ->
     let result = FormDefinitions.toV1Json formDefinitions

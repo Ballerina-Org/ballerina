@@ -5,10 +5,12 @@ module Parser =
   open System
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.FormBuilder.Model.FormAST
+  open Ballerina
   open Ballerina.Collections.Sum.Model
   open Ballerina.DSL.FormBuilder.Syntax.Lexer
   open Ballerina.Parser
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.Collections.NonEmptyList
   open Ballerina.Cat.Collections.OrderedMap
 
@@ -17,14 +19,14 @@ module Parser =
     | FormTab of TabIdentifier * Tab
 
   let parser =
-    ParserBuilder<LocalizedToken, Location, Errors>(
+    ParserBuilder<LocalizedToken, Location, Errors<Location>>(
       {| Step = fun lt _ -> lt.Location |},
-      {| UnexpectedEndOfFile = fun loc -> (loc, $"Unexpected end of file at {loc}") |> Errors.Singleton
-         AnyFailed = fun loc -> (loc, "No matching token") |> Errors.Singleton
-         NotFailed = fun loc -> (loc, $"Expected token not found at {loc}") |> Errors.Singleton
-         UnexpectedSymbol = fun loc c -> (loc, $"Unexpected symbol: {c}") |> Errors.Singleton
-         FilterHighestPriorityOnly = Errors.FilterHighestPriorityOnly
-         Concat = Errors.Concat |}
+      {| UnexpectedEndOfFile = fun loc -> (loc, fun () -> $"Unexpected end of file at {loc}") ||> Errors.Singleton
+         AnyFailed = fun loc -> (loc, fun () -> "No matching token") ||> Errors.Singleton
+         NotFailed = fun loc -> (loc, fun () -> $"Expected token not found at {loc}") ||> Errors.Singleton
+         UnexpectedSymbol = fun loc c -> (loc, fun () -> $"Unexpected symbol: {c}") ||> Errors.Singleton
+         FilterHighestPriorityOnly = Errors<_>.FilterHighestPriorityOnly
+         Concat = Errors.Concat<Location> |}
     )
 
   let stringLiteral () =
@@ -131,8 +133,8 @@ module Parser =
           | _ ->
             return!
               parser.Throw(
-                Errors.Singleton(loc, $"Unsupported parsed primitive: {primitiveKind.Token}")
-                |> Errors.SetPriority ErrorPriority.High
+                Errors.Singleton loc (fun () -> $"Unsupported parsed primitive: {primitiveKind.Token}")
+                |> Errors.MapPriority(replaceWith ErrorPriority.High)
               )
 
         }
@@ -232,10 +234,8 @@ module Parser =
 
   and twoCasesUnionError loc (firstCase: Token) (secondCase: Token) =
     parser.Throw(
-      Errors.Singleton(
-        loc,
-        $"Invalid option pattern matching cases: {string firstCase}, {string secondCase}. Expected {string Choice1} or {string Choice2}."
-      )
+      Errors.Singleton loc (fun () ->
+        $"Invalid option pattern matching cases: {string firstCase}, {string secondCase}. Expected {string Choice1} or {string Choice2}.")
     )
 
   and parseList () =
@@ -348,7 +348,7 @@ module Parser =
 
   and parseForm () =
     parser {
-      do! keyword Form
+      do! keyword View
       let! formConfig = parseRendererDef ()
 
       (*
@@ -388,8 +388,8 @@ module Parser =
             else
               return!
                 parser.Throw(
-                  Errors.Singleton(loc, $"Duplicate union case: {caseId}")
-                  |> Errors.SetPriority ErrorPriority.High
+                  Errors.Singleton loc (fun () -> $"Duplicate union case: {caseId}")
+                  |> Errors.MapPriority(replaceWith ErrorPriority.High)
                 )
           | _ -> return caseMap
         }
@@ -519,8 +519,8 @@ module Parser =
         if fields |> Map.containsKey field.Name then
           return!
             parser.Throw(
-              Errors.Singleton(loc, $"Field {field.Name} already defined.")
-              |> Errors.SetPriority ErrorPriority.High
+              Errors.Singleton loc (fun () -> $"Field {field.Name} already defined.")
+              |> Errors.MapPriority(replaceWith ErrorPriority.High)
             )
         else
           return! parseMembers (fields.Add(field.Name, field)) tabs
@@ -528,8 +528,8 @@ module Parser =
         if tabs |> Map.containsKey tabId then
           return!
             parser.Throw(
-              Errors.Singleton(loc, $"Tab {tabId} already defined.")
-              |> Errors.SetPriority ErrorPriority.High
+              Errors.Singleton loc (fun () -> $"Tab {tabId} already defined.")
+              |> Errors.MapPriority(replaceWith ErrorPriority.High)
             )
         else
           return! parseMembers fields (tabs.Add(tabId, tab))
@@ -606,7 +606,7 @@ module Parser =
 
   and parseInlineForm () =
     parser {
-      do! keyword Form
+      do! keyword View
 
       let! rendererId =
         parser.Try(parseRendererDef ())
@@ -718,7 +718,7 @@ module Parser =
   and parseFormTable () =
     parser {
       let! isEntryPoint = parser.Try(keyword EntryPoint) |> parser.Map(Sum.toOption >> Option.isSome)
-      do! keyword Form
+      do! keyword View
 
       return!
         parser {
@@ -739,7 +739,7 @@ module Parser =
               Body = createFormBody fields tabs disabledFields detailsRenderer highlights
               Type = Unchecked }
         }
-        |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+        |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
 
   and parseFormSpec () =

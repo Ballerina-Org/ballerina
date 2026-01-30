@@ -5,6 +5,7 @@ module Unification =
   open Ballerina.Fun
   open Ballerina.Collections.Option
   open Ballerina.Collections.Map
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.DSL.Expr.Model
@@ -58,7 +59,7 @@ module Unification =
       (typedefs: Map<ExprTypeId, ExprType>)
       (t1: ExprType)
       (t2: ExprType)
-      : Sum<UnificationConstraints, Errors> =
+      : Sum<UnificationConstraints, Errors<_>> =
       let (=?=) = ExprType.Unify tvars typedefs
 
       sum {
@@ -78,14 +79,17 @@ module Unification =
           return UnificationConstraints.Zero()
         | ExprType.LookupType l1, ExprType.LookupType l2 when l1 = l2 -> return UnificationConstraints.Zero()
         | ExprType.LookupType l1, ExprType.LookupType l2 when l1 <> l2 ->
-          return! sum.Throw(Errors.Singleton($"Error: types {t1} and {t2} cannot be unified under typedefs {typedefs}"))
+          return!
+            sum.Throw(
+              Errors.Singleton () (fun () -> $"Error: types {t1} and {t2} cannot be unified under typedefs {typedefs}")
+            )
         | ExprType.VarType v1, ExprType.VarType v2 ->
           match tvars |> Map.tryFind v1, tvars |> Map.tryFind v2 with
           | Some v1, Some v2 ->
             if v1 = v2 then
               return UnificationConstraints.Zero()
             else
-              return! sum.Throw(Errors.Singleton($"Error: types {t1} and {t2} cannot be unified"))
+              return! sum.Throw(Errors.Singleton () (fun () -> $"Error: types {t1} and {t2} cannot be unified"))
           | _ -> return UnificationConstraints.Singleton(v1, v2)
         | t, ExprType.LookupType tn
         | ExprType.LookupType tn, t ->
@@ -93,7 +97,8 @@ module Unification =
           | None ->
             return!
               sum.Throw(
-                Errors.Singleton($"Error: types {t1} and {t2}/{t} and {tn} cannot be unified under typedefs {typedefs}")
+                Errors.Singleton () (fun () ->
+                  $"Error: types {t1} and {t2}/{t} and {tn} cannot be unified under typedefs {typedefs}")
               )
           | Some t' -> return! t =?= t'
         | ExprType.ReadOnlyType(t1), ExprType.ReadOnlyType(t2)
@@ -115,7 +120,10 @@ module Unification =
 
           return partialUnifications |> Seq.fold (+) (UnificationConstraints.Zero())
         | ExprType.TupleType(_), ExprType.TupleType(_) ->
-          return! sum.Throw(Errors.Singleton($"Error: tuples of different length {t1} and {t2} cannot be unified"))
+          return!
+            sum.Throw(
+              Errors.Singleton () (fun () -> $"Error: tuples of different length {t1} and {t2} cannot be unified")
+            )
         | ExprType.UnionType(cs1), ExprType.UnionType(cs2) when cs1 |> Map.isEmpty && cs2 |> Map.isEmpty ->
           return UnificationConstraints.Zero()
         | ExprType.UnionType(cs1), ExprType.UnionType(cs2) ->
@@ -132,20 +140,27 @@ module Unification =
                 )
 
               return partialUnifications |> Seq.fold (+) (UnificationConstraints.Zero())
-            | _ -> return! sum.Throw(Errors.Singleton($"Error: cases {cs1} and {cs2} cannot be unified"))
+            | _ -> return! sum.Throw(Errors.Singleton () (fun () -> $"Error: cases {cs1} and {cs2} cannot be unified"))
           | _ ->
-            return! sum.Throw(Errors.Singleton($"Error: unions of different length {t1} and {t2} cannot be unified"))
+            return!
+              sum.Throw(
+                Errors.Singleton () (fun () -> $"Error: unions of different length {t1} and {t2} cannot be unified")
+              )
         | ExprType.RecordType(m1), ExprType.RecordType(m2) when m1 |> Map.isEmpty && m2 |> Map.isEmpty ->
           return UnificationConstraints.Zero()
         | ExprType.RecordType(m1), ExprType.RecordType(m2) ->
           match m1 |> Seq.tryHead with
           | None ->
-            return! sum.Throw(Errors.Singleton($"Error: records of different length {t1} and {t2} cannot be unified"))
+            return!
+              sum.Throw(
+                Errors.Singleton () (fun () -> $"Error: records of different length {t1} and {t2} cannot be unified")
+              )
           | Some first1 ->
             let m1 = m1 |> Map.remove first1.Key
 
             match m2 |> Map.tryFind first1.Key with
-            | None -> return! sum.Throw(Errors.Singleton($"Error: record fields {t1} and {t2} cannot be unified"))
+            | None ->
+              return! sum.Throw(Errors.Singleton () (fun () -> $"Error: record fields {t1} and {t2} cannot be unified"))
             | Some first2 ->
               let m2 = m2 |> Map.remove first1.Key
 
@@ -159,5 +174,5 @@ module Unification =
           if t1 = t2 then
             return UnificationConstraints.Zero()
           else
-            return! sum.Throw(Errors.Singleton($"Error: types {t1} and {t2} cannot be unified"))
+            return! sum.Throw(Errors.Singleton () (fun () -> $"Error: types {t1} and {t2} cannot be unified"))
       }

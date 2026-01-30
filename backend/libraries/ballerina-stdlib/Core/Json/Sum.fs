@@ -5,6 +5,7 @@ module Sum =
   open Ballerina.StdLib.String
   open Ballerina.StdLib.Object
   open Ballerina.StdLib.Json.Patterns
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
 
@@ -12,9 +13,9 @@ module Sum =
     member _.AssertDiscriminatorAndContinue<'ctx, 'T>
       (discriminatorKey: string)
       (discriminatorValue: string)
-      (k: Unit -> Sum<'T, Errors>)
+      (k: Unit -> Sum<'T, Errors<Unit>>)
       (json: JsonValue)
-      : Sum<'T, Errors> =
+      : Sum<'T, Errors<Unit>> =
       sum {
         let! fields = json |> JsonValue.AsRecordMap
 
@@ -25,21 +26,23 @@ module Sum =
 
           if jsonDiscriminatorValue = discriminatorValue && fields |> Map.isEmpty |> not then
             return!
-              $"Error: Expected no additional fields, but found {fields |> Map.count} ({(fields |> Map.keys).AsFSharpString.ReasonablyClamped})."
-              |> Errors.Singleton
-              |> Errors.WithPriority ErrorPriority.High
+              (fun () ->
+                $"Error: Expected no additional fields, but found {fields |> Map.count} ({(fields |> Map.keys).AsFSharpString.ReasonablyClamped}).")
+              |> Errors.Singleton()
+              |> Errors.MapPriority(replaceWith ErrorPriority.High)
               |> sum.Throw
           elif jsonDiscriminatorValue = discriminatorValue then
-            return! k () |> sum.MapError(Errors.WithPriority ErrorPriority.Medium)
+            return! k () |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium))
           else
             return!
-              $"Error: Expected discriminator '{discriminatorValue}', but found '{jsonDiscriminatorValue}'."
-              |> Errors.Singleton
+              (fun () -> $"Error: Expected discriminator '{discriminatorValue}', but found '{jsonDiscriminatorValue}'.")
+              |> Errors.Singleton()
               |> sum.Throw
         | None ->
           return!
-            $"Error: Expected field '{discriminatorKey}' in JSON object '{json.AsFSharpString}', but it was not found."
-            |> Errors.Singleton
+            (fun () ->
+              $"Error: Expected field '{discriminatorKey}' in JSON object '{json.AsFSharpString}', but it was not found.")
+            |> Errors.Singleton()
             |> sum.Throw
       }
 
@@ -47,9 +50,9 @@ module Sum =
       (discriminatorKey: string)
       (valueKey: string)
       (discriminatorValue: string)
-      (k: JsonValue -> Sum<'T, Errors>)
+      (k: JsonValue -> Sum<'T, Errors<Unit>>)
       (json: JsonValue)
-      : Sum<'T, Errors> =
+      : Sum<'T, Errors<Unit>> =
       sum {
         let! fields = json |> JsonValue.AsRecordMap
 
@@ -60,21 +63,23 @@ module Sum =
 
           if jsonDiscriminatorValue = discriminatorValue && fields |> Map.count <> 1 then
             return!
-              $"Error: Expected exactly one field, but found {fields |> Map.count} ({(fields |> Map.keys).AsFSharpString.ReasonablyClamped})."
-              |> Errors.Singleton
-              |> Errors.WithPriority ErrorPriority.High
+              (fun () ->
+                $"Error: Expected exactly one field, but found {fields |> Map.count} ({(fields |> Map.keys).AsFSharpString.ReasonablyClamped}).")
+              |> Errors.Singleton()
+              |> Errors.MapPriority(replaceWith ErrorPriority.High)
               |> sum.Throw
           elif jsonDiscriminatorValue = discriminatorValue then
-            let! fieldValue = fields |> Map.tryFindWithError valueKey "fields" valueKey
-            return! k fieldValue |> sum.MapError(Errors.WithPriority ErrorPriority.High)
+            let! fieldValue = fields |> Map.tryFindWithError valueKey "fields" (fun () -> valueKey) ()
+            return! k fieldValue |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
           else
             return!
-              $"Error: Expected discriminator '{discriminatorValue}', but found '{jsonDiscriminatorValue}'."
-              |> Errors.Singleton
+              (fun () -> $"Error: Expected discriminator '{discriminatorValue}', but found '{jsonDiscriminatorValue}'.")
+              |> Errors.Singleton()
               |> sum.Throw
         | None ->
           return!
-            $"Error: Expected field '{discriminatorKey}' in JSON object '{json.AsFSharpString}', but it was not found."
-            |> Errors.Singleton
+            (fun () ->
+              $"Error: Expected field '{discriminatorKey}' in JSON object '{json.AsFSharpString}', but it was not found.")
+            |> Errors.Singleton()
             |> sum.Throw
       }

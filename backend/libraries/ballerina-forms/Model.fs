@@ -110,10 +110,10 @@ module Model =
     static member FindArity
       (config: List<TupleCodegenConfigTypeDef>)
       (arity: int)
-      : Sum<TupleCodegenConfigTypeDef, Errors> =
+      : Sum<TupleCodegenConfigTypeDef, Errors<unit>> =
       config
       |> List.tryFind (fun c -> c.Ariety = arity)
-      |> Sum.fromOption (fun () -> Errors.Singleton $"Error: missing tuple config for arity {arity}")
+      |> Sum.fromOption (fun () -> Errors.Singleton () (fun () -> $"Error: missing tuple config for arity {arity}"))
 
 
   and CodegenConfigUnionDef =
@@ -415,13 +415,11 @@ module Model =
     static member FormDeclarationType
       (types: TypeContext)
       (self: FormBody<'ExprExtension, 'ValueExtension>)
-      : Sum<ExprType, Errors> =
+      : Sum<ExprType, Errors<unit>> =
       let lookupType (id: ExprTypeId) =
         let name = id.VarName
 
-        types
-        |> Map.tryFindWithError<string, TypeBinding> name "type" name
-        |> Sum.map (fun tb -> tb.Type)
+        types |> Map.tryFindWithError name "type" (fun () -> name) () |> Sum.map _.Type
 
       match self with
       | Annotated f -> lookupType f.TypeId
@@ -648,3 +646,23 @@ module Model =
             fun (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) ->
               { s with
                   ParsedFormsContext.Launchers = u (s.Launchers) } |}
+
+module Serialization =
+  open Model
+  open System.Text.Json
+  open System.Text.Json.Serialization
+  open Ballerina.Collections.Sum
+  open Ballerina.Errors
+
+  // NOTE: Model types are used directly for serialization
+  type CodeGenConfig with
+    static member Deserialize(serializedConfig: string) : Sum<CodeGenConfig, Errors<unit>> =
+      try
+        Left(
+          JsonSerializer.Deserialize<CodeGenConfig>(
+            serializedConfig,
+            JsonFSharpOptions.Default().ToJsonSerializerOptions()
+          )
+        )
+      with err ->
+        Right(Errors.Singleton () (fun () -> sprintf "Error when reading Go codegen config: %s" err.Message))

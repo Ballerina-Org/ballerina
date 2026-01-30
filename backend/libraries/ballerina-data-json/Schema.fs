@@ -7,6 +7,7 @@ open Ballerina.VirtualFolders.Operations
 module Json =
 
   open Ballerina.Reader.WithError
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.StdLib.Json.Patterns
@@ -26,14 +27,18 @@ module Json =
   open Ballerina.DSL.Next.Types
 
   type EntityMethod with
-    static member FromJson(jsonValue: JsonValue) : Sum<EntityMethod, Errors> =
+    static member FromJson(jsonValue: JsonValue) : Sum<EntityMethod, Errors<unit>> =
       sum {
         match! jsonValue |> JsonValue.AsString with
         | "get" -> return Get
         | "getMany" -> return GetMany
         | "create" -> return Create
         | "delete" -> return Delete
-        | _ -> return! $"Invalid entity method: {jsonValue}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Invalid entity method: {jsonValue}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member ToJson(method: EntityMethod) : JsonValue =
@@ -44,7 +49,7 @@ module Json =
       | Delete -> JsonValue.String "delete"
 
   type UpdaterPathStep with
-    static member FromJson(jsonValue: JsonValue) : Sum<UpdaterPathStep, Errors> =
+    static member FromJson(jsonValue: JsonValue) : Sum<UpdaterPathStep, Errors<unit>> =
       sum {
         let! keyword, parameter = jsonValue |> JsonValue.AsPair
         let! keyword = keyword |> JsonValue.AsString
@@ -69,7 +74,11 @@ module Json =
           let! caseName = caseName |> JsonValue.AsInt
           let! parameter = parameter |> JsonValue.AsString
           return UpdaterPathStep.SumCase(caseName, Var.Create parameter)
-        | _ -> return! $"Invalid updater keyword: {keyword}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Invalid updater keyword: {keyword}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member ToJson(step: UpdaterPathStep) : JsonValue =
@@ -90,7 +99,7 @@ module Json =
   type Updater<'Type, 'Id, 'ValueExt when 'Id: comparison> with
     static member FromJson
       (jsonValue: JsonValue)
-      : Reader<Updater<'Type, 'Id, 'ValueExt>, JsonParser<'Type> * JsonParser<'Id>, Errors> =
+      : Reader<Updater<'Type, 'Id, 'ValueExt>, JsonParser<'Type> * JsonParser<'Id>, Errors<unit>> =
       reader {
         let! path, condition, expr = jsonValue |> JsonValue.AsTriple |> reader.OfSum
         let! path = path |> JsonValue.AsArray |> reader.OfSum
@@ -106,7 +115,7 @@ module Json =
 
     static member ToJson
       (updater: Updater<'Type, 'Id, 'ValueExt>)
-      : Reader<JsonValue, JsonEncoder<'Type> * JsonEncoder<'Id>, Errors> =
+      : Reader<JsonValue, JsonEncoder<'Type> * JsonEncoder<'Id>, Errors<unit>> =
       let pathJson =
         updater.Path
         |> Seq.toArray
@@ -120,7 +129,7 @@ module Json =
       }
 
   type LookupMethod with
-    static member FromJson(jsonValue: JsonValue) : Sum<LookupMethod, Errors> =
+    static member FromJson(jsonValue: JsonValue) : Sum<LookupMethod, Errors<unit>> =
       sum {
         match! jsonValue |> JsonValue.AsString with
         | "get" -> return LookupMethod.Get
@@ -129,7 +138,11 @@ module Json =
         | "delete" -> return LookupMethod.Delete
         | "link" -> return LookupMethod.Link
         | "unlink" -> return LookupMethod.Unlink
-        | _ -> return! $"Invalid lookup method: {jsonValue}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Invalid lookup method: {jsonValue}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member ToJson(method: LookupMethod) : JsonValue =
@@ -141,19 +154,28 @@ module Json =
       | LookupMethod.Link -> JsonValue.String "link"
       | LookupMethod.Unlink -> JsonValue.String "unlink"
 
-  type JsonParser<'T> = JsonValue -> Sum<'T, Errors>
+  type JsonParser<'T> = JsonValue -> Sum<'T, Errors<unit>>
 
   type EntityDescriptor<'T, 'Id, 'ValueExt when 'Id: comparison> with
     static member FromJson
       (jsonValue: JsonValue)
-      : Reader<EntityDescriptor<'T, 'Id, 'ValueExt>, JsonParser<'T> * JsonParser<'Id>, Errors> =
+      : Reader<EntityDescriptor<'T, 'Id, 'ValueExt>, JsonParser<'T> * JsonParser<'Id>, Errors<unit>> =
       reader {
         let! jsonValue = jsonValue |> JsonValue.AsRecordMap |> reader.OfSum
-        let! typeValue = jsonValue |> Map.tryFindWithError "type" "entity" "type" |> reader.OfSum
+
+        let! typeValue =
+          jsonValue
+          |> Map.tryFindWithError "type" "entity" (fun () -> "type") ()
+          |> reader.OfSum
+
         let! ctx, _ = reader.GetContext()
         let! typeValue = typeValue |> ctx |> reader.OfSum
 
-        let! methods = jsonValue |> Map.tryFindWithError "methods" "entity" "methods" |> reader.OfSum
+        let! methods =
+          jsonValue
+          |> Map.tryFindWithError "methods" "entity" (fun () -> "methods") ()
+          |> reader.OfSum
+
         let! methods = methods |> JsonValue.AsArray |> reader.OfSum
 
         let! methods =
@@ -163,13 +185,17 @@ module Json =
           |> sum.Map Set.ofSeq
           |> reader.OfSum
 
-        let! updaters = jsonValue |> Map.tryFindWithError "updaters" "entity" "updaters" |> reader.OfSum
+        let! updaters =
+          jsonValue
+          |> Map.tryFindWithError "updaters" "entity" (fun () -> "updaters") ()
+          |> reader.OfSum
+
         let! updaters = updaters |> JsonValue.AsArray |> reader.OfSum
         let! updaters = updaters |> Seq.map Updater<'T, 'Id, 'ValueExt>.FromJson |> reader.All
 
         let! predicates =
           jsonValue
-          |> Map.tryFindWithError "predicates" "entity" "predicates"
+          |> Map.tryFindWithError "predicates" "entity" (fun () -> "predicates") ()
           |> reader.OfSum
 
         let! predicates = predicates |> JsonValue.AsRecordMap |> reader.OfSum
@@ -184,7 +210,7 @@ module Json =
 
     static member ToJson
       (entity: EntityDescriptor<'T, 'Id, 'ValueExt>)
-      : Reader<JsonValue, JsonEncoder<'T> * JsonEncoder<'Id>, Errors> =
+      : Reader<JsonValue, JsonEncoder<'T> * JsonEncoder<'Id>, Errors<unit>> =
       reader {
         let! ctx, _ = reader.GetContext()
         let typeJson = entity.Type |> ctx
@@ -205,24 +231,40 @@ module Json =
       }
 
   type DirectedLookupDescriptor with
-    static member FromJson(jsonValue: JsonValue) : Sum<DirectedLookupDescriptor, Errors> =
+    static member FromJson(jsonValue: JsonValue) : Sum<DirectedLookupDescriptor, Errors<unit>> =
       sum {
         let! jsonValue = jsonValue |> JsonValue.AsRecordMap
 
-        let! arity = jsonValue |> Map.tryFindWithError "arity" "lookup.directed" "arity"
+        let! arity =
+          jsonValue
+          |> Map.tryFindWithError "arity" "lookup.directed" (fun () -> "arity") ()
+
         let! arity = arity |> JsonValue.AsRecordMap
-        let! min = arity |> Map.tryFindWithError "min" "lookup.directed.arity" "min" |> sum.Catch
+
+        let! min =
+          arity
+          |> Map.tryFindWithError "min" "lookup.directed.arity" (fun () -> "min") ()
+          |> sum.Catch
+
         let! min = min |> Option.map JsonValue.AsInt |> sum.RunOption
-        let! max = arity |> Map.tryFindWithError "max" "lookup.directed.arity" "max" |> sum.Catch
+
+        let! max =
+          arity
+          |> Map.tryFindWithError "max" "lookup.directed.arity" (fun () -> "max") ()
+          |> sum.Catch
+
         let! max = max |> Option.map JsonValue.AsInt |> sum.RunOption
         let arity = { Min = min; Max = max }
 
-        let! methods = jsonValue |> Map.tryFindWithError "methods" "lookup.directed" "methods"
+        let! methods =
+          jsonValue
+          |> Map.tryFindWithError "methods" "lookup.directed" (fun () -> "methods") ()
+
         let! methods = methods |> JsonValue.AsArray
 
         let! methods = methods |> Seq.map LookupMethod.FromJson |> sum.All |> sum.Map Set.ofSeq
 
-        let! path = jsonValue |> Map.tryFindWithError "path" "entity" "path"
+        let! path = jsonValue |> Map.tryFindWithError "path" "entity" (fun () -> "path") ()
         let! path = path |> JsonValue.AsArray
         let! path = path |> Seq.map UpdaterPathStep.FromJson |> sum.All
 
@@ -253,28 +295,35 @@ module Json =
       JsonValue.Record [| "arity", arityJson; "methods", methodsJson; "path", path |]
 
   type LookupDescriptor with
-    static member FromJson(jsonValue: JsonValue) : Sum<LookupDescriptor, Errors> =
+    static member FromJson(jsonValue: JsonValue) : Sum<LookupDescriptor, Errors<unit>> =
       sum {
         let! jsonValue = jsonValue |> JsonValue.AsRecordMap
 
-        let! source = jsonValue |> Map.tryFindWithError "source" "lookup" "source"
+        let! source = jsonValue |> Map.tryFindWithError "source" "lookup" (fun () -> "source") ()
         let! source = source |> JsonValue.AsString
-        let! target = jsonValue |> Map.tryFindWithError "target" "lookup" "target"
+        let! target = jsonValue |> Map.tryFindWithError "target" "lookup" (fun () -> "target") ()
         let! target = target |> JsonValue.AsString
 
-        let! forward = jsonValue |> Map.tryFindWithError "forward" "lookup" "forward"
+        let! forward = jsonValue |> Map.tryFindWithError "forward" "lookup" (fun () -> "forward") ()
         let! forward = DirectedLookupDescriptor.FromJson forward
 
-        let! backward = jsonValue |> Map.tryFindWithError "backward" "lookup" "backward" |> sum.Catch
+        let! backward =
+          jsonValue
+          |> Map.tryFindWithError "backward" "lookup" (fun () -> "backward") ()
+          |> sum.Catch
 
         let! backward =
           backward
           |> Option.map (fun b ->
             sum {
               let! b = b |> JsonValue.AsRecordMap
-              let! name = b |> Map.tryFindWithError "name" "lookup.backward" "name"
+              let! name = b |> Map.tryFindWithError "name" "lookup.backward" (fun () -> "name") ()
               let! name = name |> JsonValue.AsString
-              let! descriptor = b |> Map.tryFindWithError "descriptor" "lookup.backward" "descriptor"
+
+              let! descriptor =
+                b
+                |> Map.tryFindWithError "descriptor" "lookup.backward" (fun () -> "descriptor") ()
+
               let! descriptor = DirectedLookupDescriptor.FromJson descriptor
               return { LookupName = name }, descriptor
             })
@@ -307,11 +356,15 @@ module Json =
   type Schema<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member FromJson
       (jsonValue: JsonValue)
-      : Reader<Schema<'T, 'Id, 'valueExt>, JsonParser<'T> * JsonParser<'Id>, Errors> =
+      : Reader<Schema<'T, 'Id, 'valueExt>, JsonParser<'T> * JsonParser<'Id>, Errors<unit>> =
       reader {
         let! jsonValue = jsonValue |> JsonValue.AsRecordMap |> reader.OfSum
 
-        let! entities = jsonValue |> Map.tryFindWithError "entities" "root" "entities" |> reader.OfSum
+        let! entities =
+          jsonValue
+          |> Map.tryFindWithError "entities" "root" (fun () -> "entities") ()
+          |> reader.OfSum
+
         let! entities = entities |> JsonValue.AsRecordMap |> reader.OfSum
 
         let entities =
@@ -320,7 +373,11 @@ module Json =
           |> List.map (fun (k, v) -> { EntityName = k }, v)
           |> Map.ofList
 
-        let! lookups = jsonValue |> Map.tryFindWithError "lookups" "root" "lookups" |> reader.OfSum
+        let! lookups =
+          jsonValue
+          |> Map.tryFindWithError "lookups" "root" (fun () -> "lookups") ()
+          |> reader.OfSum
+
         let! lookups = lookups |> JsonValue.AsRecordMap |> reader.OfSum
 
         let lookups =
@@ -349,7 +406,11 @@ module Json =
           |> reader.OfSum
 
 
-        let! types = jsonValue |> Map.tryFindWithError "types" "root" "types" |> reader.OfSum
+        let! types =
+          jsonValue
+          |> Map.tryFindWithError "types" "root" (fun () -> "types") ()
+          |> reader.OfSum
+
         let! types = JsonValue.AsRecord types |> reader.OfSum
 
         let! ctx, _ = reader.GetContext()
@@ -369,7 +430,7 @@ module Json =
 
     static member ToJson
       (schema: Schema<'T, 'Id, 'valueExt>)
-      : Reader<JsonValue, JsonEncoder<'T> * JsonEncoder<'Id>, Errors> =
+      : Reader<JsonValue, JsonEncoder<'T> * JsonEncoder<'Id>, Errors<unit>> =
 
       reader {
         let! entitiesJson =
@@ -406,11 +467,11 @@ module Json =
     static member FromJsonVirtualFolder
       (variant: WorkspaceVariant)
       (root: FolderNode)
-      : Sum<Schema<TypeExpr<'valueExtension>, Identifier, 'valueExtension>, Errors> =
+      : Sum<Schema<TypeExpr<'valueExtension>, Identifier, 'valueExtension>, Errors<unit>> =
       sum {
         let! merged =
           getWellKnownFile (Folder root) Merged
-          |> sum.OfOption(Errors.Singleton "Attempt to get merged spec failed")
+          |> sum.OfOption(Errors.Singleton () (fun () -> "Attempt to get merged spec failed"))
 
         let! schemaJson =
           match variant with
@@ -418,7 +479,11 @@ module Json =
             sum {
               let! content = FileContent.AsJson merged.Content
               let! r = JsonValue.AsRecord content
-              return! r |> Map.ofArray |> Map.tryFindWithError "schema" "api spec" "schema"
+
+              return!
+                r
+                |> Map.ofArray
+                |> Map.tryFindWithError "schema" "api spec" (fun () -> "schema") ()
             }
           | Explore(_split, path) when Transient.has path ->
             sum {
@@ -428,14 +493,14 @@ module Json =
 
               let! schemaContent =
                 tryFind schemaPath (Folder root)
-                |> sum.OfOption(Errors.Singleton $"Can't evaluate path {path} in vfs")
+                |> sum.OfOption(Errors.Singleton () (fun () -> $"Can't evaluate path {path} in vfs"))
 
               let! schemaFile = VfsNode.AsFile schemaContent
               let! schemaJson = FileContent.AsJson schemaFile.Content
 
               let! typesContent =
                 tryFind typesPath (Folder root)
-                |> sum.OfOption(Errors.Singleton $"Can't evaluate path {path} in vfs")
+                |> sum.OfOption(Errors.Singleton () (fun () -> $"Can't evaluate path {path} in vfs"))
 
               let! typesFile = VfsNode.AsFile typesContent
               let! typesJson = FileContent.AsJson typesFile.Content
@@ -444,7 +509,7 @@ module Json =
               let schema = Map.add "types" typesJson schema
               return JsonValue.Record(schema |> Map.toArray)
             }
-          | Explore(_, _path) -> sum.Throw(Errors.Singleton $"Missing path in exploring vfs")
+          | Explore(_, _path) -> sum.Throw(Errors.Singleton () (fun () -> $"Missing path in exploring vfs"))
 
         let! schema =
           Ballerina.Data.Schema.Model.Schema.FromJson schemaJson
@@ -453,7 +518,7 @@ module Json =
         return schema
       }
 
-    static member InsertTypesToSchema(schemaJson: JsonValue, typesJson: JsonValue) : Sum<JsonValue, Errors> =
+    static member InsertTypesToSchema(schemaJson: JsonValue, typesJson: JsonValue) : Sum<JsonValue, Errors<unit>> =
       sum {
         let! schema = JsonValue.AsRecordMap schemaJson
         let schema = Map.add "types" typesJson schema

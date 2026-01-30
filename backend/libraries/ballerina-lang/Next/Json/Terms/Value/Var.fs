@@ -1,4 +1,4 @@
-﻿namespace Ballerina.DSL.Next.Terms.Json
+namespace Ballerina.DSL.Next.Terms.Json
 
 [<AutoOpen>]
 module Var =
@@ -6,6 +6,7 @@ module Var =
   open Ballerina.Reader.WithError
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json
@@ -18,7 +19,7 @@ module Var =
   let private discriminator = "var"
 
   type Var with
-    static member FromJson: JsonValue -> Sum<Var, Errors> =
+    static member FromJson: JsonValue -> Sum<Var, Errors<unit>> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun nameJson ->
         sum {
           let! name = nameJson |> JsonValue.AsString

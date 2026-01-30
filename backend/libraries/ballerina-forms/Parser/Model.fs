@@ -2,6 +2,7 @@ namespace Ballerina.DSL.FormEngine.Parser
 
 module Model =
 
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open FSharp.Data
@@ -16,7 +17,7 @@ module Model =
       Tables: (string * JsonValue)[]
       Lookups: (string * JsonValue)[] }
 
-    static member Merge (main1: TopLevel) (main2: TopLevel) : Sum<TopLevel, Errors> =
+    static member Merge (main1: TopLevel) (main2: TopLevel) : Sum<TopLevel, Errors<unit>> =
       sum {
         let inline ensureNoOverlap (m1: seq<'k * 'v>) (m2: seq<'k * 'v>) name =
           sum {
@@ -29,7 +30,10 @@ module Model =
             if overlappingKeys |> Set.isEmpty then
               return ()
             else
-              return! sum.Throw(Errors.Singleton $"Error: {overlappingKeys} multiple definitions of the same {name} ")
+              return!
+                sum.Throw(
+                  Errors.Singleton () (fun () -> $"Error: {overlappingKeys} multiple definitions of the same {name} ")
+                )
           }
 
         do! ensureNoOverlap main1.Types main2.Types "Types"
@@ -59,15 +63,15 @@ module Model =
             Lookups = naiveMerge main1.Lookups main2.Lookups }
       }
 
-    static member MergeMany(mains: List<TopLevel>) : Sum<TopLevel, Errors> =
+    static member MergeMany(mains: List<TopLevel>) : Sum<TopLevel, Errors<unit>> =
       sum {
-        let liftedMerge (m1: Sum<TopLevel, Errors>) (m2: Sum<TopLevel, Errors>) =
+        let liftedMerge (m1: Sum<TopLevel, Errors<unit>>) (m2: Sum<TopLevel, Errors<unit>>) =
           sum {
             let! m1 = m1
             let! m2 = m2
             return! TopLevel.Merge m1 m2
           }
 
-        let (mains: List<Sum<TopLevel, Errors>>) = mains |> List.map sum.Return
+        let (mains: List<Sum<TopLevel, Errors<unit>>>) = mains |> List.map sum.Return
         return! mains |> List.reduce liftedMerge
       }

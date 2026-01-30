@@ -1,5 +1,6 @@
-﻿module Ballerina.Data.Tests.VirtualFolders.Operations
+module Ballerina.Data.Tests.VirtualFolders.Operations
 
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.VirtualFolders
 open Ballerina.VirtualFolders.Operations

@@ -2,6 +2,7 @@ module Ballerina.Tests.Collections.TaskSum
 
 open System.Threading.Tasks
 open AutoFixture.NUnit4
+open Ballerina
 open Ballerina.Collections.Sum
 open NUnit.Framework
 open Ballerina.Collections.TaskSum

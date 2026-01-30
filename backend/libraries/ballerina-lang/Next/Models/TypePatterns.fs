@@ -2,11 +2,15 @@ namespace Ballerina.DSL.Next.Types
 
 [<AutoOpen>]
 module Patterns =
+  open Ballerina
   open Ballerina.Collections.Sum
+  open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.Errors
   open System
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.Cat.Collections.OrderedMap
+  open Ballerina
 
   type TypeVar with
     static member Create(name: string) : TypeVar =
@@ -51,22 +55,22 @@ module Patterns =
     static member AsStar(kind: Kind) =
       match kind with
       | Kind.Star -> sum.Return()
-      | _ -> sum.Throw(Errors.Singleton $"Expected star kind, got {kind}")
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Expected star kind, got {kind})"))
 
     static member AsSchema(kind: Kind) =
       match kind with
       | Kind.Schema -> sum.Return()
-      | _ -> sum.Throw(Errors.Singleton $"Expected schema kind, got {kind}")
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Expected schema kind, got {kind})"))
 
     static member AsArrow(kind: Kind) =
       match kind with
       | Kind.Arrow(input, output) -> sum.Return(input, output)
-      | _ -> sum.Throw(Errors.Singleton $"Expected arrow kind, got {kind}")
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Expected arrow kind, got {kind})"))
 
     static member AsSymbol(kind: Kind) =
       match kind with
       | Kind.Symbol -> sum.Return()
-      | _ -> sum.Throw(Errors.Singleton $"Expected symbol kind, got {kind}")
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Expected symbol kind, got {kind})"))
 
   type WithSourceMapping<'v, 'valueExt> with
     static member Getters = {| Value = fun (v: WithSourceMapping<'v, 'valueExt>) -> v.value |}
@@ -283,8 +287,8 @@ module Patterns =
         | TypeValue.Lambda v -> return v
         | _ ->
           return!
-            $"Error: expected type lambda (ie generic), got {t}"
-            |> Errors.Singleton
+            (fun () -> $"Error: expected type lambda (ie generic), got {t}")
+            |> Errors.Singleton()
             |> sum.Throw
       }
 
@@ -295,7 +299,11 @@ module Patterns =
         | TypeValue.Lambda { value = type_par, TypeExpr.FromTypeValue body } ->
           let! type_pars, cases = TypeValue.AsUnion body
           return type_par :: type_pars, cases
-        | _ -> return! $"Error: expected union type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected union type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsUnionWithSourceMapping(t: TypeValue<'valueExt>) =
@@ -306,49 +314,77 @@ module Patterns =
         | TypeValue.Lambda { value = type_par, TypeExpr.FromTypeValue body } ->
           let! type_pars, source, cases = TypeValue.AsUnionWithSourceMapping body
           return type_par :: type_pars, source, cases
-        | _ -> return! $"Error: expected union type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected union type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsRecord(t: TypeValue<'valueExt>) =
       sum {
         match t with
         | TypeValue.Record(fields) -> return fields.value
-        | _ -> return! $"Error: expected record type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected record type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsRecordWithSourceMapping(t: TypeValue<'valueExt>) =
       sum {
         match t with
         | TypeValue.Record(fields) -> return fields
-        | _ -> return! $"Error: expected record type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected record type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsSchema(t: TypeValue<'valueExt>) =
       sum {
         match t with
         | TypeValue.Schema(schema) -> return schema
-        | _ -> return! $"Error: expected schema type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected schema type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsEntities(t: TypeValue<'valueExt>) =
       sum {
         match t with
         | TypeValue.Entities(schema) -> return schema
-        | _ -> return! $"Error: expected entities type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected entities type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsRelations(t: TypeValue<'valueExt>) =
       sum {
         match t with
         | TypeValue.Relations(schema) -> return schema
-        | _ -> return! $"Error: expected relations type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected relations type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsRelation(t: TypeValue<'valueExt>) =
       sum {
         match t with
         | TypeValue.Relation(s, rn, c, f, f', f_id, t, t', t_id) -> return (s, rn, c, f, f', f_id, t, t', t_id)
-        | _ -> return! $"Error: expected relation type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected relation type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsTuple(t: TypeValue<'valueExt>) =
@@ -357,8 +393,8 @@ module Patterns =
         | TypeValue.Tuple(fields) -> return fields.value
         | _ ->
           return!
-            $"Error: expected tuple type (ie generic), got {t}"
-            |> Errors.Singleton
+            (fun () -> $"Error: expected tuple type (ie generic), got {t})")
+            |> Errors.Singleton()
             |> sum.Throw
       }
 
@@ -366,21 +402,33 @@ module Patterns =
       sum {
         match t with
         | TypeValue.Sum(variants) -> return variants.value
-        | _ -> return! $"Error: expected sum type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected sum type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsArrow(t: TypeValue<'valueExt>) =
       sum {
         match t with
         | TypeValue.Arrow v -> return v
-        | _ -> return! $"Error: expected arrow type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected arrow type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsImported(t: TypeValue<'valueExt>) =
       sum {
         match t with
         | TypeValue.Imported i -> return i
-        | _ -> return! $"Error: expected imported type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected imported type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsImportedUnionLike(t: TypeValue<'valueExt>) =
@@ -389,7 +437,11 @@ module Patterns =
         | TypeValue.Imported { Sym = _
                                UnionLike = Some u
                                RecordLike = _ } -> return u
-        | _ -> return! $"Error: expected imported type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected imported type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsMap(t: TypeValue<'valueExt>) =
@@ -398,8 +450,8 @@ module Patterns =
         | TypeValue.Map v -> return v
         | _ ->
           return!
-            $"Error: expected map type (ie generic), got {t}"
-            |> Errors.Singleton
+            (fun () -> $"Error: expected map type (ie generic), got {t})")
+            |> Errors.Singleton()
             |> sum.Throw
       }
 
@@ -409,8 +461,8 @@ module Patterns =
         | TypeValue.Set(element) -> return element
         | _ ->
           return!
-            $"Error: expected set type (ie generic), got {t}"
-            |> Errors.Singleton
+            (fun () -> $"Error: expected set type (ie generic), got {t})")
+            |> Errors.Singleton()
             |> sum.Throw
       }
 
@@ -418,49 +470,77 @@ module Patterns =
       sum {
         match t with
         | TypeValue.Lookup id -> return id
-        | _ -> return! $"Error: expected type lookup, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected type lookup, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsVar(t: TypeValue<'valueExt>) =
       sum {
         match t with
         | TypeValue.Var id -> return id
-        | _ -> return! $"Error: expected type variable, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected type variable, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsPrimitive(t: TypeValue<'valueExt>) =
       sum {
         match t with
         | TypeValue.Primitive p -> return p
-        | _ -> return! $"Error: expected primitive type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected primitive type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsApplication(t: TypeValue<'valueExt>) =
       sum {
         match t with
         | TypeValue.Application v -> return v
-        | _ -> return! $"Error: expected application type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected application type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsLookupMaybe(t: TypeValue<'valueExt>) =
       sum {
         match t with
         | TypeValue.RelationLookupOption(s, f', t_id) -> return (s, f', t_id)
-        | _ -> return! $"Error: expected lookup maybe type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected lookup maybe type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsLookupOne(t: TypeValue<'valueExt>) =
       sum {
         match t with
         | TypeValue.RelationLookupOne(s, f', t_id) -> return (s, f', t_id)
-        | _ -> return! $"Error: expected lookup one type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected lookup one type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsLookupMany(t: TypeValue<'valueExt>) =
       sum {
         match t with
         | TypeValue.RelationLookupMany(s, f', t_id) -> return (s, f', t_id)
-        | _ -> return! $"Error: expected lookup many type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected lookup many type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member DropSourceMapping(t: TypeValue<'valueExt>) =
@@ -521,15 +601,19 @@ module Patterns =
       sum {
         match t with
         | TypeExpr.Lookup id -> return id
-        | _ -> return! $"Error: expected type lookup, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected type lookup, got {t}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsValue
       (loc0: Ballerina.LocalizedErrors.Location)
-      (tryFind: Identifier -> Sum<TypeValue<'valueExt>, Ballerina.LocalizedErrors.Errors>)
-      (tryFindSymbol: Identifier -> Sum<TypeSymbol, Ballerina.LocalizedErrors.Errors>)
+      (tryFind: Identifier -> Sum<TypeValue<'valueExt>, Errors<Location>>)
+      (tryFindSymbol: Identifier -> Sum<TypeSymbol, Errors<Location>>)
       (t: TypeExpr<'valueExt>)
-      : Sum<TypeValue<'valueExt>, Ballerina.LocalizedErrors.Errors> =
+      : Sum<TypeValue<'valueExt>, Errors<Location>> =
       let (!) = TypeExpr.AsValue loc0 tryFind tryFindSymbol
 
       sum {
@@ -547,9 +631,7 @@ module Patterns =
             fields
             |> Seq.map (fun (k, v) ->
               sum {
-                let! k =
-                  TypeExpr.AsLookup k
-                  |> Sum.mapRight (Ballerina.LocalizedErrors.Errors.FromErrors loc0)
+                let! k = TypeExpr.AsLookup k |> Sum.mapRight (Errors.MapContext(replaceWith loc0))
 
                 let! k = tryFindSymbol k
                 let! v = !v
@@ -568,9 +650,7 @@ module Patterns =
             cases
             |> Seq.map (fun (k, v) ->
               sum {
-                let! k =
-                  TypeExpr.AsLookup k
-                  |> Sum.mapRight (Ballerina.LocalizedErrors.Errors.FromErrors loc0)
+                let! k = TypeExpr.AsLookup k |> Sum.mapRight (Errors.MapContext(replaceWith loc0))
 
                 let! k = tryFindSymbol k
                 let! v = !v
@@ -593,8 +673,8 @@ module Patterns =
         | TypeExpr.FromTypeValue tv -> return tv
         | _ ->
           return!
-            (loc0, $"Error: expected type value, got {t}")
-            |> Ballerina.LocalizedErrors.Errors.Singleton
+            (fun () -> $"Error: expected type value, got {t}")
+            |> Errors.Singleton loc0
             |> sum.Throw
       }
 
@@ -602,98 +682,154 @@ module Patterns =
       sum {
         match t with
         | TypeExpr.Union(cases) -> return cases
-        | _ -> return! $"Error: expected union type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected union type, got {t}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsTuple(t: TypeExpr<'valueExt>) =
       sum {
         match t with
         | TypeExpr.Tuple(fields) -> return fields
-        | _ -> return! $"Error: expected tuple type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected tuple type, got {t}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsPrimitive(t: TypeExpr<'valueExt>) =
       sum {
         match t with
         | TypeExpr.Primitive p -> return p
-        | _ -> return! $"Error: expected primitive type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected primitive type, got {t}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsKeyOf(t: TypeExpr<'valueExt>) =
       sum {
         match t with
         | TypeExpr.KeyOf id -> return id
-        | _ -> return! $"Error: expected key of type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected key of type, got {t}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsRecord(t: TypeExpr<'valueExt>) =
       sum {
         match t with
         | TypeExpr.Record(fields) -> return fields
-        | _ -> return! $"Error: expected record type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected record type, got {t}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsArrow(t: TypeExpr<'valueExt>) =
       sum {
         match t with
         | TypeExpr.Arrow(input, output) -> return (input, output)
-        | _ -> return! $"Error: expected arrow type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected arrow type, got {t}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsMap(t: TypeExpr<'valueExt>) =
       sum {
         match t with
         | TypeExpr.Map(key, value) -> return (key, value)
-        | _ -> return! $"Error: expected map type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected map type, got {t}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsLambda(t: TypeExpr<'valueExt>) =
       sum {
         match t with
         | TypeExpr.Lambda(param, body) -> return (param, body)
-        | _ -> return! $"Error: expected type lambda, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected type lambda, got {t}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsSet(t: TypeExpr<'valueExt>) =
       sum {
         match t with
         | TypeExpr.Set(element) -> return element
-        | _ -> return! $"Error: expected set type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected set type, got {t}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsExclude(t: TypeExpr<'valueExt>) =
       sum {
         match t with
         | TypeExpr.Exclude(a, b) -> return (a, b)
-        | _ -> return! $"Error: expected type exclude, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected type exclude, got {t}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsApply(t: TypeExpr<'valueExt>) =
       sum {
         match t with
         | TypeExpr.Apply(id, args) -> return (id, args)
-        | _ -> return! $"Error: expected type application, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected type application, got {t}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsFlatten(t: TypeExpr<'valueExt>) =
       sum {
         match t with
         | TypeExpr.Flatten(id, args) -> return (id, args)
-        | _ -> return! $"Error: expected type flatten, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected type flatten, got {t}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsRotate(t: TypeExpr<'valueExt>) =
       sum {
         match t with
         | TypeExpr.Rotate t -> return t
-        | _ -> return! $"Error: expected type rotate, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected type rotate, got {t}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsSum(t: TypeExpr<'valueExt>) =
       sum {
         match t with
         | TypeExpr.Sum(variants) -> return variants
-        | _ -> return! $"Error: expected sum type, got {t}" |> Errors.Singleton |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: expected sum type, got {t}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
   type Identifier with
@@ -701,7 +837,11 @@ module Patterns =
       sum {
         match i with
         | Identifier.LocalScope s -> s
-        | FullyQualified _ -> return! $"Error: expected local scope, got {i}" |> Errors.Singleton |> sum.Throw
+        | FullyQualified _ ->
+          return!
+            (fun () -> $"Error: expected local scope, got {i}")
+            |> Errors.Singleton()
+            |> sum.Throw
       }
 
     static member AsFullyQualified(i: Identifier) =
@@ -710,8 +850,8 @@ module Patterns =
         | Identifier.FullyQualified(s, x) -> s, x
         | Identifier.LocalScope _ ->
           return!
-            $"Error: expected fully qualified identifier, got {i}"
-            |> Errors.Singleton
+            (fun () -> $"Error: expected fully qualified identifier, got {i}")
+            |> Errors.Singleton()
             |> sum.Throw
       }
 
@@ -719,54 +859,54 @@ module Patterns =
     static member AsUnit(p: PrimitiveType) =
       match p with
       | PrimitiveType.Unit -> sum.Return()
-      | _ -> sum.Throw(Errors.Singleton $"Expected Unit primitive type, got {p}")
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Expected Unit primitive type, got {p}"))
 
     static member AsGuid(p: PrimitiveType) =
       match p with
       | PrimitiveType.Guid -> sum.Return()
-      | _ -> sum.Throw(Errors.Singleton $"Expected Guid primitive type, got {p}")
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Expected Guid primitive type, got {p}"))
 
     static member AsInt32(p: PrimitiveType) =
       match p with
       | PrimitiveType.Int32 -> sum.Return()
-      | _ -> sum.Throw(Errors.Singleton $"Expected Int32 primitive type, got {p}")
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Expected Int32 primitive type, got {p}"))
 
     static member AsInt64(p: PrimitiveType) =
       match p with
       | PrimitiveType.Int64 -> sum.Return()
-      | _ -> sum.Throw(Errors.Singleton $"Expected Int64 primitive type, got {p}")
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Expected Int64 primitive type, got {p}"))
 
     static member AsFloat32(p: PrimitiveType) =
       match p with
       | PrimitiveType.Float32 -> sum.Return()
-      | _ -> sum.Throw(Errors.Singleton $"Expected Float32 primitive type, got {p}")
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Expected Float32 primitive type, got {p}"))
 
     static member AsFloat64(p: PrimitiveType) =
       match p with
       | PrimitiveType.Float64 -> sum.Return()
-      | _ -> sum.Throw(Errors.Singleton $"Expected Float64 primitive type, got {p}")
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Expected Float64 primitive type, got {p}"))
 
     static member AsDecimal(p: PrimitiveType) =
       match p with
       | PrimitiveType.Decimal -> sum.Return()
-      | _ -> sum.Throw(Errors.Singleton $"Expected Decimal primitive type, got {p}")
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Expected Decimal primitive type, got {p}"))
 
     static member AsBool(p: PrimitiveType) =
       match p with
       | PrimitiveType.Bool -> sum.Return()
-      | _ -> sum.Throw(Errors.Singleton $"Expected Bool primitive type, got {p}")
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Expected Bool primitive type, got {p}"))
 
     static member AsString(p: PrimitiveType) =
       match p with
       | PrimitiveType.String -> sum.Return()
-      | _ -> sum.Throw(Errors.Singleton $"Expected String primitive type, got {p}")
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Expected String primitive type, got {p}"))
 
     static member AsDateTime(p: PrimitiveType) =
       match p with
       | PrimitiveType.DateTime -> sum.Return()
-      | _ -> sum.Throw(Errors.Singleton $"Expected DateTime primitive type, got {p}")
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Expected DateTime primitive type, got {p}"))
 
     static member AsDateOnly(p: PrimitiveType) =
       match p with
       | PrimitiveType.DateOnly -> sum.Return()
-      | _ -> sum.Throw(Errors.Singleton $"Expected DateOnly primitive type, got {p}")
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Expected DateOnly primitive type, got {p}"))

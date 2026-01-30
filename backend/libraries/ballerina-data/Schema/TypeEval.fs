@@ -4,6 +4,7 @@ open Ballerina.Data.Schema.Model
 
 module TypeEval =
 
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.DSL.Next.Types.Model
@@ -15,6 +16,7 @@ module TypeEval =
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.TypeEval
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.StdLib.OrderPreservingMap
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.DSL.Next.Types.TypeChecker
@@ -34,7 +36,7 @@ module TypeEval =
           OrderedMap<Identifier, TypeValue<'ValueExt> * Kind>,
           TypeCheckContext<'ValueExt>,
           TypeCheckState<'ValueExt>,
-          Errors
+          Errors<Location>
          >
       =
       schema.Types
@@ -54,7 +56,7 @@ module TypeEval =
             Schema<TypeValue<'ValueExt>, ResolvedIdentifier, 'ValueExt>,
             TypeCheckContext<'ValueExt>,
             TypeCheckState<'ValueExt>,
-            Errors
+            Errors<Location>
            >
       =
       fun schema ->
@@ -72,7 +74,7 @@ module TypeEval =
                 do!
                   typeValK
                   |> Kind.AsStar
-                  |> Sum.mapRight (Errors.FromErrors Location.Unknown)
+                  |> Sum.mapRight (Errors.MapContext(replaceWith Location.Unknown))
                   |> state.OfSum
                   |> state.Ignore
 

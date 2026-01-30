@@ -1,6 +1,7 @@
-﻿namespace Ballerina.Data.Schema
+namespace Ballerina.Data.Schema
 
 open System
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.Extensions
 open Ballerina.DSL.Next.Types.Model
@@ -75,17 +76,17 @@ module Extract =
     match variant with
     | Explore _ ->
       sum {
-        let! path = path |> sum.OfOption(Errors.Singleton "Path is required")
+        let! path = path |> sum.OfOption(Errors.Singleton () (fun () -> "Path is required"))
         let schemaPath = withFileSuffix "_schema" path
         let typesPath = withFileSuffix "_typesV2" path
 
         let! schemaJson =
           tryFind schemaPath node
-          |> sum.OfOption(Errors.Singleton("Can't find schema file"))
+          |> sum.OfOption(Errors.Singleton () (fun () -> "Can't find schema file"))
 
         let! typesJson =
           tryFind typesPath node
-          |> sum.OfOption(Errors.Singleton("Can't find types file"))
+          |> sum.OfOption(Errors.Singleton () (fun () -> "Can't find types file"))
 
         let! schemaJson = VfsNode.AsFile schemaJson
         let! typesJson = VfsNode.AsFile typesJson
@@ -99,4 +100,4 @@ module Extract =
 
         return schema
       }
-    | Compose -> sum.Throw(Errors.Singleton("Not implemented v2 files retrieval for compose spec"))
+    | Compose -> sum.Throw(Errors.Singleton () (fun () -> "Not implemented v2 files retrieval for compose spec"))

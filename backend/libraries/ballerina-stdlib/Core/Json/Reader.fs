@@ -8,6 +8,7 @@ module Reader =
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.Collections.Map
   open Ballerina.Errors
+  open Ballerina
   open Ballerina.Collections.Sum
   open Sum
 
@@ -16,9 +17,9 @@ module Reader =
     member _.AssertDiscriminatorAndContinue<'ctx, 'T>
       (discriminatorKey: string)
       (discriminatorValue: string)
-      (k: Unit -> Reader<'T, 'ctx, Errors>)
+      (k: Unit -> Reader<'T, 'ctx, Errors<Unit>>)
       (json: JsonValue)
-      : Reader<'T, 'ctx, Errors> =
+      : Reader<'T, 'ctx, Errors<Unit>> =
       reader {
         let! ctx = reader.GetContext()
 
@@ -34,8 +35,8 @@ module Reader =
       (valueKey: string)
       (discriminatorValue: string)
       (json: JsonValue)
-      (k: JsonValue -> Reader<'T, 'ctx, Errors>)
-      : Reader<'T, 'ctx, Errors> =
+      (k: JsonValue -> Reader<'T, 'ctx, Errors<Unit>>)
+      : Reader<'T, 'ctx, Errors<Unit>> =
       reader {
         let! ctx = reader.GetContext()
 

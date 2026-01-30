@@ -2,10 +2,13 @@ namespace Ballerina.DSL.Next.Types.TypeChecker
 
 module LiftOtherSteps =
   open Ballerina.StdLib.String
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Collections.Option
+  open Ballerina.Errors
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open System
   open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Types.Model
@@ -23,8 +26,8 @@ module LiftOtherSteps =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member liftUnification<'a, 'valueExt when 'valueExt: comparison>
-      (p: State<'a, UnificationContext<'valueExt>, UnificationState<'valueExt>, Errors>)
-      : State<'a, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors> =
+      (p: State<'a, UnificationContext<'valueExt>, UnificationState<'valueExt>, Errors<Location>>)
+      : State<'a, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>> =
       state {
         let! s = state.GetState()
         let! ctx = state.GetContext()
@@ -52,8 +55,8 @@ module LiftOtherSteps =
       }
 
     static member liftTypeEval<'a, 'valueExt when 'valueExt: comparison>
-      (p: State<'a, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors>)
-      : State<'a, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors> =
+      (p: State<'a, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>>)
+      : State<'a, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>> =
       state {
         let! s = state.GetState()
         let! ctx = state.GetContext()
@@ -73,8 +76,8 @@ module LiftOtherSteps =
       }
 
     static member liftInstantiation<'a, 'valueExt when 'valueExt: comparison>
-      (p: State<'a, TypeInstantiateContext<'valueExt>, TypeCheckState<'valueExt>, Errors>)
-      : State<'a, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors> =
+      (p: State<'a, TypeInstantiateContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>>)
+      : State<'a, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>> =
       state {
         let! s = state.GetState()
         let! ctx = state.GetContext()

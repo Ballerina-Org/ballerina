@@ -1,4 +1,4 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
 
 open Ballerina.DSL.Next.Json
 
@@ -6,6 +6,7 @@ open Ballerina.DSL.Next.Json
 module Union =
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.StdLib.Json.Sum
@@ -20,8 +21,8 @@ module Union =
 
   type TypeValue<'valueExt> with
     static member FromJsonUnion
-      (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors>)
-      : JsonValue -> Sum<OrderedMap<TypeSymbol, TypeValue<'valueExt>>, Errors> =
+      (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors<unit>>)
+      : JsonValue -> Sum<OrderedMap<TypeSymbol, TypeValue<'valueExt>>, Errors<unit>> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun unionFields ->
         sum {
           let! cases = unionFields |> JsonValue.AsArray

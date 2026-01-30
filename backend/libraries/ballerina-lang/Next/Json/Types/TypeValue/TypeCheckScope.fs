@@ -1,4 +1,4 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
 
 open Ballerina.DSL.Next.Json
 open Ballerina.DSL.Next.Json.Json
@@ -6,6 +6,7 @@ open Ballerina.DSL.Next.Json.Json
 [<AutoOpen>]
 module TypeCheckScope =
   open FSharp.Data
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.DSL.Next.Types.Model
@@ -15,18 +16,22 @@ module TypeCheckScope =
   let private discriminator = "typeCheckScope"
 
   type TypeCheckScope with
-    static member FromJson: JsonValue -> Sum<TypeCheckScope, Errors> =
+    static member FromJson: JsonValue -> Sum<TypeCheckScope, Errors<_>> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun scope ->
         sum {
           let! fields = scope |> JsonValue.AsRecord
           let fields = Map.ofArray fields
 
 
-          let! ty = fields |> Map.tryFindWithError "type" "TypeCheckScope" "type"
+          let! ty = fields |> Map.tryFindWithError "type" "TypeCheckScope" (fun () -> "type") ()
           let ty = JsonValue.AsString ty |> Sum.toOption
-          let! md = fields |> Map.tryFindWithError "module" "TypeCheckScope" "module"
+          let! md = fields |> Map.tryFindWithError "module" "TypeCheckScope" (fun () -> "module") ()
           let! md = JsonValue.AsString md
-          let! assembly = fields |> Map.tryFindWithError "assembly" "TypeCheckScope" "module"
+
+          let! assembly =
+            fields
+            |> Map.tryFindWithError "assembly" "TypeCheckScope" (fun () -> "module") ()
+
           let! assembly = JsonValue.AsString assembly
 
           return
