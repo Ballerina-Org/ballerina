@@ -2,10 +2,12 @@ namespace Ballerina.DSL.Next.Types.TypeChecker
 
 module UnionDes =
   open Ballerina.StdLib.String
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Collections.Option
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open System
   open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Types.Model
@@ -38,10 +40,10 @@ module UnionDes =
         let (!) = typeCheckExpr None
         let (=>) c e = typeCheckExpr c e
 
-        let ofSum (p: Sum<'a, Ballerina.Errors.Errors>) =
-          p |> Sum.mapRight (Errors.FromErrors loc0) |> state.OfSum
+        let ofSum (p: Sum<'a, Errors<Unit>>) =
+          p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
-        let error e = Errors.Singleton(loc0, e)
+        let error e = Errors.Singleton loc0 e
 
         state {
           let! ctx = state.GetContext()
@@ -108,8 +110,8 @@ module UnionDes =
                 | x :: xs -> NonEmptyList.OfList(x, xs)
                 | [] ->
                   NonEmptyList.OfList(
-                    state.Throw(error "No handlers provided")
-                    |> state.MapError(Errors.SetPriority ErrorPriority.Medium),
+                    state.Throw(error (fun () -> "No handlers provided"))
+                    |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium)),
                     []
                   )
 
@@ -119,7 +121,7 @@ module UnionDes =
                 handlers
                 |> Seq.map fst
                 |> Seq.tryHead
-                |> Sum.fromOption (fun () -> (loc0, "Error: no handlers provided") |> Errors.Singleton)
+                |> Sum.fromOption (fun () -> (fun () -> "Error: no handlers provided") |> Errors.Singleton loc0)
                 |> state.OfSum
                 // |> state.Map(snd >> TypeValue.CreateUnion)
                 |> state.Map snd
@@ -192,7 +194,7 @@ module UnionDes =
                     let union_cases = union_t |> OrderedMap.keys |> Set.ofSeq
 
                     if handlers.Count <> union_cases.Count then
-                      return! $"Error: incomplete pattern matching" |> error |> state.Throw
+                      return! (fun () -> $"Error: incomplete pattern matching") |> error |> state.Throw
 
                   let! result_t =
                     TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0 result_t
@@ -218,7 +220,7 @@ module UnionDes =
 
                   return Expr.UnionDes(handlerExprs, fallback, loc0, ctx.Scope), arrowValue, Kind.Star, ctx
                 }
-                |> state.MapError(Errors.SetPriority ErrorPriority.High)
+                |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
             }
 
         }

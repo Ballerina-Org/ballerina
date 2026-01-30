@@ -1,4 +1,4 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
 
 open Ballerina.DSL.Next.Json
 
@@ -6,6 +6,7 @@ open Ballerina.DSL.Next.Json
 module TypeValueApply =
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.DSL.Next.Types.Model
@@ -16,9 +17,9 @@ module TypeValueApply =
   let private discriminator = "application"
 
   let rec private fromJsonSymbolicTypeApplication
-    (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors>)
+    (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors<_>>)
     (json: JsonValue)
-    : Sum<SymbolicTypeApplication<'valueExt>, Errors> =
+    : Sum<SymbolicTypeApplication<'valueExt>, Errors<_>> =
     sum {
       let! f, a = json |> JsonValue.AsPair
       let! a = a |> fromRootJson
@@ -46,8 +47,8 @@ module TypeValueApply =
 
   type TypeValue<'valueExt> with
     static member FromJsonApplication
-      (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors>)
-      : JsonValue -> Sum<SymbolicTypeApplication<'valueExt>, Errors> =
+      (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors<_>>)
+      : JsonValue -> Sum<SymbolicTypeApplication<'valueExt>, Errors<_>> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun applyFields ->
         sum {
           let! symbolicApp = applyFields |> fromJsonSymbolicTypeApplication fromRootJson

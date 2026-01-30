@@ -7,13 +7,16 @@ module Type =
   open Ballerina.Collections.Option
   open Ballerina.Parser
   open Ballerina.Collections.NonEmptyList
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Syntax
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.DSL.Next.Terms
+  open Ballerina
 
   type ComplexTypeKind =
     | ScopedIdentifier
@@ -47,9 +50,9 @@ module Type =
     }
 
   let rec typeDecl
-    (parseExpr: Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors>)
+    (parseExpr: Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>>)
     (parseComplexShapes: Set<ComplexTypeKind>)
-    : Parser<TypeExpr<'valueExt>, _, _, Errors> =
+    : Parser<TypeExpr<'valueExt>, _, _, Errors<Location>> =
     let lookupTypeDecl () =
       parser {
         let! id = singleIdentifier
@@ -64,7 +67,11 @@ module Type =
         | "bool" -> return TypeExpr.Primitive PrimitiveType.Bool
         | _ ->
           let! loc = parser.Location
-          return! (loc, $"Error: expected bool, got {id}") |> Errors.Singleton |> parser.Throw
+
+          return!
+            (fun () -> $"Error: expected bool, got {id}")
+            |> Errors.Singleton loc
+            |> parser.Throw
       }
 
     let int32TypeDecl () =
@@ -75,7 +82,11 @@ module Type =
         | "int32" -> return TypeExpr.Primitive PrimitiveType.Int32
         | _ ->
           let! loc = parser.Location
-          return! (loc, $"Error: expected int32, got {id}") |> Errors.Singleton |> parser.Throw
+
+          return!
+            (fun () -> $"Error: expected int32, got {id}")
+            |> Errors.Singleton loc
+            |> parser.Throw
       }
 
     let int64TypeDecl () =
@@ -86,7 +97,11 @@ module Type =
         | "int64" -> return TypeExpr.Primitive PrimitiveType.Int64
         | _ ->
           let! loc = parser.Location
-          return! (loc, $"Error: expected int64, got {id}") |> Errors.Singleton |> parser.Throw
+
+          return!
+            (fun () -> $"Error: expected int64, got {id}")
+            |> Errors.Singleton loc
+            |> parser.Throw
       }
 
     let float32TypeDecl () =
@@ -97,7 +112,11 @@ module Type =
         | "float32" -> return TypeExpr.Primitive PrimitiveType.Float32
         | _ ->
           let! loc = parser.Location
-          return! (loc, $"Error: expected float32, got {id}") |> Errors.Singleton |> parser.Throw
+
+          return!
+            (fun () -> $"Error: expected float32, got {id}")
+            |> Errors.Singleton loc
+            |> parser.Throw
       }
 
     let float64TypeDecl () =
@@ -108,7 +127,11 @@ module Type =
         | "float64" -> return TypeExpr.Primitive PrimitiveType.Float64
         | _ ->
           let! loc = parser.Location
-          return! (loc, $"Error: expected float64, got {id}") |> Errors.Singleton |> parser.Throw
+
+          return!
+            (fun () -> $"Error: expected float64, got {id}")
+            |> Errors.Singleton loc
+            |> parser.Throw
       }
 
     let decimalTypeDecl () =
@@ -119,7 +142,11 @@ module Type =
         | "decimal" -> return TypeExpr.Primitive PrimitiveType.Decimal
         | _ ->
           let! loc = parser.Location
-          return! (loc, $"Error: expected decimal, got {id}") |> Errors.Singleton |> parser.Throw
+
+          return!
+            (fun () -> $"Error: expected decimal, got {id}")
+            |> Errors.Singleton loc
+            |> parser.Throw
       }
 
     let stringTypeDecl () =
@@ -130,7 +157,11 @@ module Type =
         | "string" -> return TypeExpr.Primitive PrimitiveType.String
         | _ ->
           let! loc = parser.Location
-          return! (loc, $"Error: expected string, got {id}") |> Errors.Singleton |> parser.Throw
+
+          return!
+            (fun () -> $"Error: expected string, got {id}")
+            |> Errors.Singleton loc
+            |> parser.Throw
       }
 
     let guidTypeDecl () =
@@ -141,7 +172,56 @@ module Type =
         | "guid" -> return TypeExpr.Primitive PrimitiveType.Guid
         | _ ->
           let! loc = parser.Location
-          return! (loc, $"Error: expected guid, got {id}") |> Errors.Singleton |> parser.Throw
+
+          return!
+            (fun () -> $"Error: expected guid, got {id}")
+            |> Errors.Singleton loc
+            |> parser.Throw
+      }
+
+    let dateTimeTypeDecl () =
+      parser {
+        let! id = singleIdentifier
+
+        match id with
+        | "dateTime" -> return TypeExpr.Primitive PrimitiveType.DateTime
+        | _ ->
+          let! loc = parser.Location
+
+          return!
+            (fun () -> $"Error: expected dateTime, got {id}")
+            |> Errors.Singleton loc
+            |> parser.Throw
+      }
+
+    let dateOnlyTypeDecl () =
+      parser {
+        let! id = singleIdentifier
+
+        match id with
+        | "dateOnly" -> return TypeExpr.Primitive PrimitiveType.DateOnly
+        | _ ->
+          let! loc = parser.Location
+
+          return!
+            (fun () -> $"Error: expected dateOnly, got {id}")
+            |> Errors.Singleton loc
+            |> parser.Throw
+      }
+
+    let timeSpanTypeDecl () =
+      parser {
+        let! id = singleIdentifier
+
+        match id with
+        | "timeSpan" -> return TypeExpr.Primitive PrimitiveType.TimeSpan
+        | _ ->
+          let! loc = parser.Location
+
+          return!
+            (fun () -> $"Error: expected timeSpan, got {id}")
+            |> Errors.Singleton loc
+            |> parser.Throw
       }
 
     let unitTypeDecl () =
@@ -164,14 +244,24 @@ module Type =
               let! loc = parser.Location
 
               return!
-                (loc, $"Error: invalid cardinality value {v}, expected 0 or 1")
-                |> Errors.Singleton
+                (fun () -> $"Error: invalid cardinality value {v}, expected 0 or 1")
+                |> Errors.Singleton loc
                 |> parser.Throw
           }
           parser {
             do! starOperator
             return Cardinality.Many
-          } ]
+          }
+          parser {
+            let! loc = parser.Location
+
+            return!
+              (fun () -> $"Error: invalid cardinality")
+              |> Errors.Singleton loc
+              |> parser.Throw
+          }
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High)) ]
+      |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
     let schemaPathSegments () =
       parser.ManyIndex(fun i ->
@@ -194,57 +284,67 @@ module Type =
 
           let! res =
             parser.Any
-              [ parser {
-                  do! fieldKeyword
-                  let! id = identifierLocalOrFullyQualified ()
-                  return SchemaPathTypeDecompositionExpr.Field id
-                }
-                parser {
-                  do! caseKeyword
-                  let! id = identifierLocalOrFullyQualified ()
-                  return SchemaPathTypeDecompositionExpr.UnionCase id
-                }
-                parser {
-                  do! caseKeyword
-                  let! case = caseLiteral ()
-                  return SchemaPathTypeDecompositionExpr.SumCase case
-                }
-                parser {
-                  do! itemKeyword
-                  let! item = intLiteralToken ()
-                  return SchemaPathTypeDecompositionExpr.Item { Index = item }
-                }
-                parser {
-                  do! iteratorKeyword
-                  do! openRoundBracketOperator
-                  let! mapper = identifierLocalOrFullyQualified ()
-                  do! commaOperator
-                  let! containerType = identifierLocalOrFullyQualified ()
-                  do! commaOperator
-                  let! typeDef = identifierLocalOrFullyQualified ()
-                  do! closeRoundBracketOperator
+              [ afterKeyword
+                  fieldKeyword
+                  (parser {
+                    let! id = identifierLocalOrFullyQualified ()
+                    return SchemaPathTypeDecompositionExpr.Field id
+                  })
+                afterKeyword
+                  caseKeyword
+                  (parser.Any
+                    [ parser {
+                        let! id = identifierLocalOrFullyQualified ()
+                        return SchemaPathTypeDecompositionExpr.UnionCase id
+                      }
+                      parser {
+                        let! case = caseLiteral ()
+                        return SchemaPathTypeDecompositionExpr.SumCase case
+                      } ])
+                afterKeyword
+                  itemKeyword
+                  (parser {
+                    let! item = intLiteralToken ()
+                    return SchemaPathTypeDecompositionExpr.Item { Index = item }
+                  })
+                afterKeyword
+                  iteratorKeyword
+                  (parser {
+                    do! openRoundBracketOperator
+                    let! mapper = identifierLocalOrFullyQualified ()
+                    do! commaOperator
+                    let! containerType = identifierLocalOrFullyQualified ()
+                    do! commaOperator
+                    let! typeDef = identifierLocalOrFullyQualified ()
+                    do! closeRoundBracketOperator
 
-                  return
-                    SchemaPathTypeDecompositionExpr.Iterator
-                      {| Mapper = mapper
-                         Container = containerType
-                         TypeDef = typeDef |}
-                } ]
+                    return
+                      SchemaPathTypeDecompositionExpr.Iterator
+                        {| Mapper = mapper
+                           Container = containerType
+                           TypeDef = typeDef |}
+                  }) ]
+            |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
           return var, res
         })
+      |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
     let schemaPath () =
       parser {
         match! openSquareBracketOperator |> parser.Try with
         | Right _ -> return None
         | Left _ ->
+          return!
+            parser {
 
-          let! segments = schemaPathSegments ()
+              let! segments = schemaPathSegments ()
 
-          do! closeSquareBracketOperator
+              do! closeSquareBracketOperator
 
-          return Some segments
+              return Some segments
+            }
+            |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     let relation () =
@@ -289,43 +389,43 @@ module Type =
         })
 
     let entity () =
-      parser {
-        do! entityKeyword
+      afterKeyword
+        entityKeyword
+        (parser {
+          let! entityName = singleIdentifier
+          do! openCurlyBracketOperator
+          do! typeKeyword
+          let! entityType = typeDecl parseExpr parseAllComplexTypeShapes
+          let! idType = typeDecl parseExpr parseAllComplexTypeShapes
+          let! searchBy = searchByKeyword |> parser.Try
 
-        return!
-          parser {
-            let! entityName = singleIdentifier
-            do! openCurlyBracketOperator
-            do! typeKeyword
-            let! entityType = typeDecl parseExpr parseAllComplexTypeShapes
-            let! idType = typeDecl parseExpr parseAllComplexTypeShapes
-            let! searchBy = searchByKeyword |> parser.Try
+          let! searchBy =
+            parser {
+              match searchBy with
+              | Right _ -> return []
+              | Left() ->
+                do! openSquareBracketOperator
 
-            let! searchBy =
-              parser {
-                match searchBy with
-                | Right _ -> return []
-                | Left() ->
-                  do! openSquareBracketOperator
+                let! ids =
+                  parser.ManyIndex(fun i ->
+                    parser {
+                      if i > 0 then
+                        do! semicolonOperator
 
-                  let! ids =
-                    parser.ManyIndex(fun i ->
-                      parser {
-                        if i > 0 then
-                          do! semicolonOperator
+                      let! id, lookups = identifierWithLookups ()
+                      return { Identifier = id; Lookups = lookups }
+                    })
+                  |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
-                        let! id, lookups = identifierWithLookups ()
-                        return { Identifier = id; Lookups = lookups }
-                      })
+                do! closeSquareBracketOperator
+                return ids
+            }
 
-                  do! closeSquareBracketOperator
-                  return ids
-              }
-
-            let! properties =
-              parser.Many(
-                parser {
-                  do! propertyKeyword
+          let! properties =
+            parser.Many(
+              afterKeyword
+                propertyKeyword
+                (parser {
                   let! path = schemaPath ()
                   let! propertyName = singleIdentifier
                   do! colonOperator
@@ -338,20 +438,67 @@ module Type =
                       Path = path
                       Type = propertyType
                       Body = propertyBody }
+                })
+            )
+            |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+
+          let onHook (hookKeyword, hookKeywordParser) =
+            parser {
+              let! startsWithHookKeyword =
+                parser {
+                  do! letKeyword
+                  do! onKeyword
+                  do! hookKeywordParser
                 }
-              )
+                |> parser.Lookahead
+                |> parser.Try
 
-            do! closeCurlyBracketOperator
+              match startsWithHookKeyword with
+              | Right _ -> return! parser.Throw(Errors.Singleton Location.Unknown (fun () -> "No hook found"))
+              | Left _ ->
+                do! letKeyword
+                do! onKeyword
+                do! hookKeywordParser
+                do! equalsOperator
+                let! hookExpr = parseExpr
+                return hookKeyword, hookExpr
+            }
 
-            return
-              { SchemaEntityExpr.Name = { SchemaEntityName.Name = entityName }
-                Type = entityType
-                Id = idType
-                SearchBy = searchBy
-                Properties = properties }
-          }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
-      }
+          let! hooks =
+            [ (SchemaEntityHook.Creating, creatingKeyword) |> onHook
+              (SchemaEntityHook.Created, createdKeyword) |> onHook
+              (SchemaEntityHook.Updating, updatingKeyword) |> onHook
+              (SchemaEntityHook.Updated, updatedKeyword) |> onHook
+              (SchemaEntityHook.Deleting, deletingKeyword) |> onHook
+              (SchemaEntityHook.Deleted, deletedKeyword) |> onHook ]
+            |> parser.Any
+            |> parser.Many
+            |> parser.Map(Map.ofList)
+
+          let onCreating = hooks |> Map.tryFind SchemaEntityHook.Creating
+          let onCreated = hooks |> Map.tryFind SchemaEntityHook.Created
+          let onUpdating = hooks |> Map.tryFind SchemaEntityHook.Updating
+          let onUpdated = hooks |> Map.tryFind SchemaEntityHook.Updated
+          let onDeleting = hooks |> Map.tryFind SchemaEntityHook.Deleting
+          let onDeleted = hooks |> Map.tryFind SchemaEntityHook.Deleted
+
+
+          do! closeCurlyBracketOperator
+
+          return
+            { SchemaEntityExpr.Name = { SchemaEntityName.Name = entityName }
+              Type = entityType
+              Id = idType
+              SearchBy = searchBy
+              Properties = properties
+              OnCreating = onCreating
+              OnCreated = onCreated
+              OnUpdating = onUpdating
+              OnUpdated = onUpdated
+              OnDeleting = onDeleting
+              OnDeleted = onDeleted }
+        })
+
 
     let schema () =
       afterKeyword
@@ -362,6 +509,7 @@ module Type =
 
           let! entitiesAndRelations =
             parser.Many(parser.Any [ entity () |> parser.Map Sum.Left; relation () |> parser.Map Sum.Right ])
+            |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
           let entities =
             entitiesAndRelations
@@ -404,7 +552,7 @@ module Type =
                       let! typeDecl = typeDecl parseExpr parseAllComplexTypeShapes
                       return (id, typeDecl)
                     }
-                    |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+                    |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 })
 
             do! semicolonOperator |> parser.Try |> parser.Ignore
@@ -416,7 +564,7 @@ module Type =
                 |> List.map (fun (id, td) -> (id |> Identifier.LocalScope |> TypeExpr.Lookup, td))
               )
           }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.Medium)
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium))
 
       }
 
@@ -439,7 +587,7 @@ module Type =
                       let! typeDecl = typeDecl parseExpr parseAllComplexTypeShapes
                       return (id, typeDecl)
                     }
-                    |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+                    |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 }
               )
               |> parser.Map(NonEmptyList.ToList)
@@ -450,7 +598,7 @@ module Type =
                 |> List.map (fun (id, td) -> (id |> Identifier.LocalScope |> TypeExpr.Lookup, td))
               )
           }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     let scopedIdentifier () =
@@ -469,7 +617,7 @@ module Type =
 
             return ids |> ScopedIdentifier
           }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     let binaryExpressionChainTail () =
@@ -492,7 +640,7 @@ module Type =
 
             return fields |> ComplexType.BinaryExpressionChain
           }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     let recordDes () =
@@ -511,7 +659,7 @@ module Type =
 
             return fields |> ComplexType.RecordOrTupleDesChain
           }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
 
@@ -556,6 +704,9 @@ module Type =
         decimalTypeDecl ()
         stringTypeDecl ()
         guidTypeDecl ()
+        dateTimeTypeDecl ()
+        dateOnlyTypeDecl ()
+        timeSpanTypeDecl ()
         lookupTypeDecl () ]
 
     parser {
@@ -635,37 +786,54 @@ module Type =
                   let fields: List<BinaryOperatorsElement<TypeExpr<'valueExt>, BinaryTypeOperator>> =
                     fields
                     |> NonEmptyList.ToList
-                    |> Seq.collect (fun (op, e) -> [ op |> Precedence.Operator; e |> Precedence.Operand ])
+                    |> Seq.collect (fun (op, e) ->
+                      [ op |> Precedence.Operator; (e, NonMergeable) |> Precedence.Operand ])
                     |> List.ofSeq
 
-                  let chain = Operand acc :: fields
+                  let chain = Operand(acc, Mergeable) :: fields
 
                   let precedence: List<OperatorsPrecedence<BinaryTypeOperator>> =
                     [ { Operators = [ BinaryTypeOperator.SingleArrow ] |> Set.ofList
-                        Associativity = AssociateLeft }
+                        Associativity = AssociateRight }
                       { Operators = [ BinaryTypeOperator.Times ] |> Set.ofList
                         Associativity = AssociateLeft }
                       { Operators = [ BinaryTypeOperator.Plus ] |> Set.ofList
                         Associativity = AssociateLeft } ]
 
-                  return!
+                  // do Console.WriteLine $"Collapsing binary type expression chain: {chain.AsFSharpString}"
+                  // do Console.ReadLine() |> ignore
+
+                  let! collapsed_chain =
                     collapseBinaryOperatorsChain
                       { Compose =
-                          fun (e1, op, e2) ->
+                          fun (e1, src1, op, e2, src2) ->
                             match op with
                             | BinaryTypeOperator.Times ->
-                              match e1, e2 with
-                              | TypeExpr.Tuple l1, TypeExpr.Tuple l2 -> TypeExpr.Tuple(l1 @ l2)
-                              | TypeExpr.Tuple l1, _ -> TypeExpr.Tuple(l1 @ [ e2 ])
-                              | _, TypeExpr.Tuple l2 -> TypeExpr.Tuple(e1 :: l2)
-                              | _ -> TypeExpr.Tuple [ e1; e2 ]
+                              match e1, src1, e2, src2 with
+                              | TypeExpr.Tuple l1, Mergeable, TypeExpr.Tuple l2, Mergeable ->
+                                TypeExpr.Tuple(l1 @ l2), Mergeable
+                              | TypeExpr.Tuple l1, Mergeable, _, _ -> TypeExpr.Tuple(l1 @ [ e2 ]), Mergeable
+                              | _, _, TypeExpr.Tuple l2, Mergeable -> TypeExpr.Tuple(e1 :: l2), Mergeable
+                              | TypeExpr.Tuple _, _, TypeExpr.Tuple _, _ -> TypeExpr.Tuple [ e1; e2 ], NonMergeable
+                              | _ -> TypeExpr.Tuple [ e1; e2 ], Mergeable
                             | BinaryTypeOperator.Plus ->
-                              match e1, e2 with
-                              | TypeExpr.Sum l1, TypeExpr.Sum l2 -> TypeExpr.Sum(l1 @ l2)
-                              | TypeExpr.Sum l1, _ -> TypeExpr.Sum(l1 @ [ e2 ])
-                              | _, TypeExpr.Sum l2 -> TypeExpr.Sum(e1 :: l2)
-                              | _ -> TypeExpr.Sum [ e1; e2 ]
-                            | BinaryTypeOperator.SingleArrow -> TypeExpr.Arrow(e1, e2)
+                              // do Console.WriteLine $"Combining type expressions with + : {e1},{src1} + {e2},{src2}"
+                              // do Console.ReadLine() |> ignore
+
+                              let res =
+
+                                match e1, src1, e2, src2 with
+                                | TypeExpr.Sum l1, Mergeable, TypeExpr.Sum l2, Mergeable ->
+                                  TypeExpr.Sum(l1 @ l2), Mergeable
+                                | TypeExpr.Sum l1, Mergeable, _, _ -> TypeExpr.Sum(l1 @ [ e2 ]), Mergeable
+                                | _, _, TypeExpr.Sum l2, Mergeable -> TypeExpr.Sum(e1 :: l2), Mergeable
+                                | TypeExpr.Sum _, _, TypeExpr.Sum _, _ -> TypeExpr.Sum [ e1; e2 ], NonMergeable
+                                | _ -> TypeExpr.Sum [ e1; e2 ], Mergeable
+
+                              // do Console.WriteLine $"Resulting type expression: {res.AsFSharpString}"
+                              // do Console.ReadLine() |> ignore
+                              res
+                            | BinaryTypeOperator.SingleArrow -> TypeExpr.Arrow(e1, e2), NonMergeable
                         // | _ ->
                         //   TypeExpr.Apply(
                         //     TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope(op.ToString())), e1),
@@ -675,6 +843,11 @@ module Type =
                       loc
                       precedence
                       chain
+
+                  // do Console.WriteLine $"Collapsed binary type expression chain: {collapsed_chain.AsFSharpString}"
+                  // do Console.ReadLine() |> ignore
+
+                  return collapsed_chain
                 | ScopedIdentifier ids ->
                   match acc with
                   | TypeExpr.Lookup(Identifier.LocalScope id) ->
@@ -682,8 +855,8 @@ module Type =
                     return TypeExpr.Lookup(Identifier.FullyQualified(ids.Tail, ids.Head))
                   | _ ->
                     return!
-                      (loc, $"Error: cannot collapse scoped identifier chain on non-identifier")
-                      |> Errors.Singleton
+                      (fun () -> $"Error: cannot collapse scoped identifier chain on non-identifier")
+                      |> Errors.Singleton loc
                       |> sum.Throw
                 | ApplicationArguments args ->
                   return

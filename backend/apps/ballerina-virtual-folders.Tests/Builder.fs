@@ -1,5 +1,6 @@
-﻿module Ballerina.Data.Tests.VirtualFolders.Builder
+module Ballerina.Data.Tests.VirtualFolders.Builder
 
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.State.WithError
 open Ballerina.VirtualFolders
@@ -9,6 +10,7 @@ open Ballerina.VirtualFolders.Operations
 open Ballerina.VirtualFolders.Model
 open NUnit.Framework
 open FSharp.Data
+open Ballerina.Errors
 
 let root =
   Folder
@@ -186,7 +188,7 @@ let ``Up from root fails gracefully`` () =
   let program = folder { up }
 
   match State.Run ((), { VfsState.Root = initial; Path = [] }) program with
-  | Sum.Right(err, _) -> Assert.That(err.ToString(), Does.Contain("Already at root"))
+  | Sum.Right(err, _) -> Assert.That(Errors.ToString(err, "\n"), Does.Contain("Already at root"))
   | _ -> Assert.Fail("Expected an error when calling up from root")
 
 [<Test>]
@@ -222,5 +224,5 @@ let ``Move to non-existing folder throws error`` () =
   let program = folder { move [ "a"; "nonexistent" ] }
 
   match State.Run ((), { VfsState.Root = initial; Path = [] }) program with
-  | Sum.Right(err, _) -> Assert.That(err.ToString(), Does.Contain("Path not found"))
+  | Sum.Right(err, _) -> Assert.That(Errors.ToString(err, "\n"), Does.Contain("Path not found"))
   | _ -> Assert.Fail("Expected path-not-found error")

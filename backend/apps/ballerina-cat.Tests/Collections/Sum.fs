@@ -1,6 +1,7 @@
 module Ballerina.Tests.Collections.Sum
 
 open NUnit.Framework
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.Collections.NonEmptyList
 

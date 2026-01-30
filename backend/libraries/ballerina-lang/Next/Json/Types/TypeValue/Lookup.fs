@@ -1,9 +1,10 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
 
 [<AutoOpen>]
 module Lookup =
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.StdLib.Json.Sum
@@ -14,7 +15,7 @@ module Lookup =
   let private discriminator = "lookup"
 
   type TypeValue<'valueExt> with
-    static member FromJsonLookup: JsonValue -> Sum<TypeValue<'valueExt>, Errors> =
+    static member FromJsonLookup: JsonValue -> Sum<TypeValue<'valueExt>, Errors<_>> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun lookupFields ->
         sum {
           let! name = lookupFields |> JsonValue.AsString

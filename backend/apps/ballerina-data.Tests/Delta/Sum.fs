@@ -5,6 +5,7 @@ open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Terms.Model
 open Ballerina.Data.Delta.Model
 open Ballerina.Data.Delta.ToUpdater
+open Ballerina
 open Ballerina.Collections.Sum
 
 let deltaExt (_ext: unit) : Value<TypeValue<Unit>, Unit> -> Sum<Value<TypeValue<Unit>, Unit>, 'a> =

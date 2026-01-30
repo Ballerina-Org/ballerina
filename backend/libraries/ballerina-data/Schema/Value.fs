@@ -1,5 +1,6 @@
-﻿namespace Ballerina.Data.Schema
+namespace Ballerina.Data.Schema
 
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.Terms.Model
@@ -41,11 +42,11 @@ module Value =
     (value: Value<TypeValue<'valueExt>, 'valueExt>)
     (into: Value<TypeValue<'valueExt>, 'valueExt>)
     (path: List<UpdaterPathStep>)
-    : Sum<Value<TypeValue<'valueExt>, 'valueExt>, Errors> =
+    : Sum<Value<TypeValue<'valueExt>, 'valueExt>, Errors<unit>> =
 
     sum {
       match path with
-      | [] -> return! sum.Throw(Errors.Singleton "Empty path is invalid")
+      | [] -> return! sum.Throw(Errors.Singleton () (fun () -> "Empty path is invalid"))
       | [ lastStep ] ->
         match into, lastStep with
         | Value.Record r, UpdaterPathStep.Field f ->
@@ -59,7 +60,11 @@ module Value =
         | Value.Record r, UpdaterPathStep.Field f ->
           let! ts, v =
             r
-            |> Map.tryFindByWithError (fun (ts, _) -> ts.Name = f) "value insert" $"field '{f}' not present in record"
+            |> Map.tryFindByWithError
+              (fun (ts, _) -> ts.Name = f)
+              "value insert"
+              (fun () -> $"field '{f}' not present in record")
+              ()
 
           let! updated = insert value v rest
           let fields = Map.add ts updated r

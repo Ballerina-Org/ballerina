@@ -1,14 +1,16 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
 
 [<AutoOpen>]
 module Lambda =
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Json
+  open Ballerina
   open Ballerina.Collections.Sum.Operators
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Patterns
@@ -18,17 +20,20 @@ module Lambda =
 
   type TypeValue<'valueExt> with
     static member FromJsonLambda
-      (fromExpr: JsonValue -> Sum<TypeExpr<'valueExt>, Errors>)
-      : JsonValue -> Sum<TypeParameter * TypeExpr<'valueExt>, Errors> =
+      (fromExpr: JsonValue -> Sum<TypeExpr<'valueExt>, Errors<unit>>)
+      : JsonValue -> Sum<TypeParameter * TypeExpr<'valueExt>, Errors<unit>> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun lambdaFields ->
         sum {
           let! lambdaFields = lambdaFields |> JsonValue.AsRecordMap
 
           let! param =
             lambdaFields
-            |> (Map.tryFindWithError "param" "lambda" "param" >>= TypeParameter.FromJson)
+            |> (Map.tryFindWithError "param" "lambda" (fun () -> "param") ()
+                >>= TypeParameter.FromJson)
 
-          let! body = lambdaFields |> (Map.tryFindWithError "body" "lambda" "body" >>= fromExpr)
+          let! body =
+            lambdaFields
+            |> (Map.tryFindWithError "body" "lambda" (fun () -> "body") () >>= fromExpr)
 
           return param, body
         })

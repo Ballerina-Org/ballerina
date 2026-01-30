@@ -8,6 +8,7 @@ type internal EnumCaseFilters =
 [<AutoOpen>]
 module EnumCaseFilters =
   open Ballerina.Collections.NonEmptySet
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Patterns
@@ -22,11 +23,11 @@ module EnumCaseFilters =
         return!
           subjects
           |> NonEmptySet.TryOfSet
-          |> Sum.fromOption (fun () -> "Has to have at least one case defined!" |> Errors.Singleton)
+          |> Sum.fromOption (fun () -> (fun () -> "Has to have at least one case defined!") |> Errors.Singleton())
       else
         return!
-          $"Does not have {subjects - existingCases} cases defined"
-          |> Errors.Singleton
+          fun () -> $"Does not have {subjects - existingCases} cases defined"
+          |> Errors.Singleton()
           |> Right
     }
 
@@ -37,7 +38,9 @@ module EnumCaseFilters =
       return!
         unionCases.Keys
         |> NonEmptySet.TryOfSeq
-        |> Sum.fromOption (fun () -> $"Type {unionType} has to have at least one case defined" |> Errors.Singleton)
+        |> Sum.fromOption (fun () ->
+          (fun () -> $"Type {unionType} has to have at least one case defined")
+          |> Errors.Singleton())
     }
 
   let private getDuplicates (filters: List<_>) =
@@ -58,7 +61,7 @@ module EnumCaseFilters =
 
         let validateSubjectCases =
           validateSubjectCases existingCases
-          >> (sum.WithErrorContext $"...when validating type {unionType} cases")
+          >> (sum.WithErrorContext(fun () -> $"...when validating type {unionType} cases"))
 
         let! filters =
           seq {
@@ -73,7 +76,7 @@ module EnumCaseFilters =
           return { Filters = filters |> Set.ofList }
         else
           return!
-            $"Only a single filter can be applied to a field! Fields in breach: {duplicates |> Set.map _.CaseName}"
-            |> Errors.Singleton
-            |> Right
+            Errors.Singleton () (fun () ->
+              $"Only a single filter can be applied to a field! Fields in breach: {duplicates |> Set.map _.CaseName}")
+            |> sum.Throw
       }

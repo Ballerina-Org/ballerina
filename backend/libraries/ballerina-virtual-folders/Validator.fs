@@ -1,7 +1,8 @@
-﻿namespace Ballerina.VirtualFolders
+namespace Ballerina.VirtualFolders
 
 open System.Text.Json
 open System.Text.Json.Serialization
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Expr.Model
 open Ballerina.DSL.Expr.Types.Model
@@ -19,7 +20,7 @@ type Validator<'ExprExt, 'ValExt> =
         -> ParsedFormsContext<'ExprExt, 'ValExt>
         -> GeneratedLanguageSpecificConfig
         -> seq<FileContent>
-        -> Sum<JsonValue * ParsedFormsContext<'ExprExt, 'ValExt>, Errors> }
+        -> Sum<JsonValue * ParsedFormsContext<'ExprExt, 'ValExt>, Errors<unit>> }
 
 module Validator =
   let init (_vfs: VfsNode) =

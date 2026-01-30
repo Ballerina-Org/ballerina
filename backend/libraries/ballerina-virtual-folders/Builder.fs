@@ -11,27 +11,28 @@ module CE =
 
   type FolderBuilder() =
 
-    member _.Return(x: 'a) : State<'a, unit, VfsState, Errors> = state.Return x
+    member _.Return(x: 'a) : State<'a, unit, VfsState, Errors<unit>> = state.Return x
 
     member _.Bind
-      (p: State<'a, unit, VfsState, Errors>, f: 'a -> State<'b, unit, VfsState, Errors>)
-      : State<'b, unit, VfsState, Errors> =
+      (p: State<'a, unit, VfsState, Errors<unit>>, f: 'a -> State<'b, unit, VfsState, Errors<unit>>)
+      : State<'b, unit, VfsState, Errors<unit>> =
       state.Bind(p, f)
 
-    member _.Zero() : State<unit, unit, VfsState, Errors> = state.Zero()
+    member _.Zero() : State<unit, unit, VfsState, Errors<unit>> = state.Zero()
 
-    member _.Yield(x: 'a) : State<'a, unit, VfsState, Errors> = state.Yield x
+    member _.Yield(x: 'a) : State<'a, unit, VfsState, Errors<unit>> = state.Yield x
 
-    member _.YieldFrom(p: State<'a, unit, VfsState, Errors>) : State<'a, unit, VfsState, Errors> = p
+    member _.YieldFrom(p: State<'a, unit, VfsState, Errors<unit>>) : State<'a, unit, VfsState, Errors<unit>> = p
 
-    member _.ReturnFrom(p: State<'a, unit, VfsState, Errors>) : State<'a, unit, VfsState, Errors> = p
+    member _.ReturnFrom(p: State<'a, unit, VfsState, Errors<unit>>) : State<'a, unit, VfsState, Errors<unit>> = p
 
-    member _.Delay(f: unit -> State<'a, unit, VfsState, Errors>) : State<'a, unit, VfsState, Errors> = state.Delay f
+    member _.Delay(f: unit -> State<'a, unit, VfsState, Errors<unit>>) : State<'a, unit, VfsState, Errors<unit>> =
+      state.Delay f
 
     [<CustomOperation("insert")>]
     member _.Insert
-      (p: State<unit, unit, VfsState, Errors>, path: VirtualPath, content: FileContent)
-      : State<unit, unit, VfsState, Errors> =
+      (p: State<unit, unit, VfsState, Errors<unit>>, path: VirtualPath, content: FileContent)
+      : State<unit, unit, VfsState, Errors<unit>> =
       state {
         do! p
         let! s = state.GetState()
@@ -41,7 +42,9 @@ module CE =
       }
 
     [<CustomOperation("delete")>]
-    member _.Delete(p: State<unit, unit, VfsState, Errors>, path: VirtualPath) : State<unit, unit, VfsState, Errors> =
+    member _.Delete
+      (p: State<unit, unit, VfsState, Errors<unit>>, path: VirtualPath)
+      : State<unit, unit, VfsState, Errors<unit>> =
       state {
         do! p
         let! s = state.GetState()
@@ -52,8 +55,8 @@ module CE =
 
     [<CustomOperation("updateFile")>]
     member _.UpdateFile
-      (p: State<unit, unit, VfsState, Errors>, path: VirtualPath, f: FileContent -> FileContent)
-      : State<unit, unit, VfsState, Errors> =
+      (p: State<unit, unit, VfsState, Errors<unit>>, path: VirtualPath, f: FileContent -> FileContent)
+      : State<unit, unit, VfsState, Errors<unit>> =
       state {
         do! p
         let! s = state.GetState()
@@ -64,8 +67,8 @@ module CE =
 
     [<CustomOperation("read")>]
     member _.Read
-      (p: State<unit, unit, VfsState, Errors>, path: VirtualPath)
-      : State<FileContent option, unit, VfsState, Errors> =
+      (p: State<unit, unit, VfsState, Errors<unit>>, path: VirtualPath)
+      : State<FileContent option, unit, VfsState, Errors<unit>> =
       state {
         do! p
         let! s = state.GetState()
@@ -73,7 +76,7 @@ module CE =
       }
 
     [<CustomOperation("root")>]
-    member _.Root(p: State<unit, unit, VfsState, Errors>) : State<unit, unit, VfsState, Errors> =
+    member _.Root(p: State<unit, unit, VfsState, Errors<unit>>) : State<unit, unit, VfsState, Errors<unit>> =
       state {
         do! p
         let! s = state.GetState()
@@ -89,8 +92,8 @@ module CE =
 
         match tryFind next s.Root with
         | Some(Folder _) -> do! state.SetState(fun _ -> { s with Path = next })
-        | Some _ -> return! state.Throw(Errors.Singleton $"'{subdir}' is not a folder")
-        | None -> return! state.Throw(Errors.Singleton $"Folder '{subdir}' not found")
+        | Some _ -> return! state.Throw(Errors.Singleton () (fun () -> $"'{subdir}' is not a folder"))
+        | None -> return! state.Throw(Errors.Singleton () (fun () -> $"Folder '{subdir}' not found"))
       }
 
     [<CustomOperation("up")>]
@@ -100,14 +103,14 @@ module CE =
         let! s = state.GetState()
 
         match s.Path with
-        | [] -> return! state.Throw(Errors.Singleton "Already at root folder")
+        | [] -> return! state.Throw(Errors.Singleton () (fun () -> "Already at root folder"))
         | path ->
           let parent = path |> List.take (path.Length - 1)
           do! state.SetState(fun _ -> { s with Path = parent })
       }
 
     [<CustomOperation("move")>]
-    member _.Move(p, path: VirtualPath) =
+    member _.Move(p, path: VirtualPath) : State<unit, 'a, VfsState, Errors<unit>> =
       state {
         do! p
         let! s = state.GetState()
@@ -124,8 +127,9 @@ module CE =
 
         match tryFind normalized s.Root with
         | Some(Folder _) -> do! state.SetState(fun _ -> { s with Path = normalized })
-        | Some _ -> return! state.Throw(Errors.Singleton "Target is not a folder")
-        | None -> return! state.Throw(Errors.Singleton $"""Path not found: {String.concat "/" normalized}""")
+        | Some _ -> return! state.Throw(Errors.Singleton () (fun () -> "Target is not a folder"))
+        | None ->
+          return! state.Throw(Errors.Singleton () (fun () -> $"""Path not found: {String.concat "/" normalized}"""))
       }
 
   let folder = FolderBuilder()

@@ -10,6 +10,7 @@ module Transform =
   open Ballerina.DSL.FormEngine.Parser.Model
   open Ballerina.DSL.FormEngine.Parser.Runner
   open Ballerina.DSL.Parser.Expr
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
 
@@ -111,7 +112,7 @@ module Transform =
     (mergedJson: TopLevel)
     : Sum<
         (TopLevel * Option<ParsedFormsContext<'BLPExprExtension, 'BLPValueExtension>>),
-        (Errors * Option<ParsedFormsContext<'BLPExprExtension, 'BLPValueExtension>>)
+        (Errors<unit> * Option<ParsedFormsContext<'BLPExprExtension, 'BLPValueExtension>>)
        >
     =
     match
@@ -190,5 +191,9 @@ module Transform =
           [ initialJsonWithoutAllTranslations; rootJson ])
           .run (codegenConfig, initialContextWithoutOverrides)
       | _ ->
-        Right(Errors.Singleton "Error: translation override form is not an all translation overrides renderer", None)
+        Right(
+          Errors.Singleton () (fun () ->
+            "Error: translation override form is not an all translation overrides renderer"),
+          None
+        )
     | None -> Left(mergedJson, Some initialContext)

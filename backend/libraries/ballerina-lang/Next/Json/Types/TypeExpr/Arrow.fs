@@ -1,10 +1,11 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
 
 [<AutoOpen>]
 module ArrowTypeExpr =
   open FSharp.Data
   open Ballerina.Errors
   open Ballerina.StdLib.Json.Patterns
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json
@@ -14,7 +15,7 @@ module ArrowTypeExpr =
   let private discriminator = "arrow"
 
   type TypeExpr<'valueExt> with
-    static member FromJsonArrow(fromJsonRoot: JsonValue -> Sum<TypeExpr<'valueExt>, Errors>) =
+    static member FromJsonArrow(fromJsonRoot: JsonValue -> Sum<TypeExpr<'valueExt>, Errors<_>>) =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun arrowFields ->
         sum {
           let! (param, returnType) = arrowFields |> JsonValue.AsPair

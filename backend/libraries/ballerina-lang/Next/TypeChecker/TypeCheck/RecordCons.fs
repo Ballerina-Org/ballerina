@@ -2,10 +2,12 @@ namespace Ballerina.DSL.Next.Types.TypeChecker
 
 module RecordCons =
   open Ballerina.StdLib.String
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Collections.Option
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open System
   open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Types.Model
@@ -38,8 +40,8 @@ module RecordCons =
         let (!) = typeCheckExpr context_t
         let (=>) c e = typeCheckExpr c e
 
-        let ofSum (p: Sum<'a, Ballerina.Errors.Errors>) =
-          p |> Sum.mapRight (Errors.FromErrors loc0) |> state.OfSum
+        let ofSum (p: Sum<'a, Errors<Unit>>) =
+          p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
         state {
           let! ctx = state.GetContext()

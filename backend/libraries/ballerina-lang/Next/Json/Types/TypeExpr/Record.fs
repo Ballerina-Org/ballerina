@@ -1,14 +1,16 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
 
 [<AutoOpen>]
 module RecordTypeExpr =
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Json.Keys
+  open Ballerina.Errors
 
   let private discriminator = "record"
 
@@ -33,6 +35,7 @@ module RecordTypeExpr =
 
           let! wrappedRecord =
             AutomaticSymbolCreation.wrapWithLet (record, fieldTypes |> List.map fst, SymbolsKind.RecordFields)
+            |> sum.MapError(Errors.MapContext(replaceWith ()))
 
           return wrappedRecord
         })

@@ -1,9 +1,13 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
+
+open Ballerina.Errors
+open Ballerina.LocalizedErrors
 
 [<AutoOpen>]
 module UnionTypeExpr =
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json
@@ -33,6 +37,7 @@ module UnionTypeExpr =
 
           let! wrappedUnion =
             AutomaticSymbolCreation.wrapWithLet (union, caseTypes |> List.map fst, SymbolsKind.UnionConstructors)
+            |> sum.MapError(Errors.MapContext(replaceWith ()))
 
           return wrappedUnion
         })

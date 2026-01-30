@@ -1,5 +1,6 @@
-﻿module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Json.Expr_TypeExpr
+module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Json.Expr_TypeExpr
 
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.Reader.WithError
 open NUnit.Framework
@@ -29,7 +30,7 @@ let ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
 
     Assert.That(toStr json, Is.EqualTo(toStr expectedJson))
 
-    let parser: JsonValue -> Sum<Expr<TypeExpr<ValueExt>, Identifier, ValueExt>, Errors> =
+    let parser: JsonValue -> Sum<Expr<TypeExpr<ValueExt>, Identifier, ValueExt>, Errors<Unit>> =
       Expr.FromJson >> Reader.Run(TypeExpr.FromJson, Identifier.FromJson)
 
     let parsed = parser expectedJson

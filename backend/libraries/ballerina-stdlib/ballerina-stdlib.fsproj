@@ -13,7 +13,6 @@
         <Compile Include="Core\Core.fs" />
         <Compile Include="Errors\Model.fs" />
         <Compile Include="Errors\Localized\Model.fs" />
-        <Compile Include="Errors\Patterns.fs" />
         <Compile Include="Core\OrderedMap\Model.fs" />
         <Compile Include="Core\Json\Patterns.fs" />
         <Compile Include="Core\Json\Sum.fs" />

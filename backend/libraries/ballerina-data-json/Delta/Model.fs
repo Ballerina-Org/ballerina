@@ -1,9 +1,11 @@
-﻿namespace Ballerina.DSL.Next.Delta.Json
+namespace Ballerina.DSL.Next.Delta.Json
 
+open Ballerina
 open Ballerina.Collections.Sum
 
 [<AutoOpen>]
 module Model =
+  open Ballerina
   open Ballerina.StdLib.String
   open Ballerina.StdLib.Object
   open Ballerina.Reader.WithError
@@ -26,9 +28,9 @@ module Model =
                 Delta.FromJsonTuple Delta.FromJson json
                 Delta.FromJsonSum Delta.FromJson json
                 extParser json |> sum.Map Delta.Ext |> reader.OfSum
-                $"Unknown Delta JSON: {json.AsFSharpString.ReasonablyClamped}"
-                |> Errors.Singleton
-                |> Errors.WithPriority ErrorPriority.High
+                (fun () -> $"Unknown Delta JSON: {json.AsFSharpString.ReasonablyClamped}")
+                |> Errors.Singleton()
+                |> Errors.MapPriority(replaceWith ErrorPriority.High)
                 |> reader.Throw ]
             )
             |> reader.MapError(Errors.HighestPriority)

@@ -1,5 +1,7 @@
 namespace Ballerina.DSL.FormEngine.Parser.RendererDefinitions
 
+open Ballerina.LocalizedErrors
+
 module Many =
   open Ballerina.DSL.Parser.Patterns
 
@@ -8,6 +10,7 @@ module Many =
   open Ballerina.DSL.Expr.Model
   open Ballerina.DSL.Expr.Types.Model
   open System
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Errors
@@ -32,9 +35,15 @@ module Many =
 
     static member private ParseManyApi
       (parentJsonFields: (string * JsonValue)[])
-      : State<_, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors> =
+      : State<_, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors<unit>> =
       state {
-        let! apiRendererJson = parentJsonFields |> sum.TryFindField apiKeyword |> state.OfSum |> state.Catch
+        let! apiRendererJson =
+          parentJsonFields
+          |> sum.TryFindField apiKeyword
+          |> sum.MapError(Errors.MapContext(replaceWith ()))
+          |> state.OfSum
+          |> state.Catch
+
         let apiRendererJson = apiRendererJson |> Sum.toOption
 
         return!
@@ -50,7 +59,12 @@ module Many =
 
               let! (formsState: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
               let! apiType = formsState.TryFindType apiSourceTypeName |> state.OfSum
-              let! manyApi, _ = formsState.TryFindMany apiType.TypeId.VarName manyApiName |> state.OfSum
+
+              let! manyApi, _ =
+                formsState.TryFindMany apiType.TypeId.VarName manyApiName
+                |> sum.MapError(Errors.MapContext(replaceWith ()))
+                |> state.OfSum
+
               return apiType.TypeId, manyApi.TableName
             })
           |> state.RunOption
@@ -65,7 +79,7 @@ module Many =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -75,12 +89,17 @@ module Many =
 
           return!
             state {
-              let! itemRendererJson = parentJsonFields |> state.TryFindField ItemRendererKeyword
+              let! itemRendererJson =
+                parentJsonFields
+                |> state.TryFindField ItemRendererKeyword
+                |> state.MapError(Errors.MapContext(replaceWith ()))
 
               let! (itemRenderer: NestedRenderer<'ExprExtension, 'ValueExtension>) =
                 parseNestedRenderer itemRendererJson
 
-              let! manyApi = Renderer.ParseManyApi parentJsonFields
+              let! manyApi =
+                Renderer.ParseManyApi parentJsonFields
+                |> state.MapError(Errors.MapContext(replaceWith ()))
 
               return
                 ManyAllRenderer
@@ -91,9 +110,9 @@ module Many =
                 |> ManyRenderer
             }
 
-            |> state.MapError(Errors.WithPriority ErrorPriority.High)
+            |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
         else
-          return! state.Throw(Errors.Singleton $"Error: cannot parse many renderer from {name}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse many renderer from {name}"))
       }
 
     static member ParseManyItemRenderer
@@ -105,7 +124,7 @@ module Many =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -137,7 +156,8 @@ module Many =
                 |> ManyRenderer
             }
 
-            |> state.MapError(Errors.WithPriority ErrorPriority.High)
+            |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+            |> state.MapError(Errors.MapContext(replaceWith (())))
         else
-          return! state.Throw(Errors.Singleton $"Error: cannot parse many renderer from {name}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse many renderer from {name}"))
       }

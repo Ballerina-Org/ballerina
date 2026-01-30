@@ -3,6 +3,7 @@ namespace Ballerina.DSL.Next.Types.Json
 [<AutoOpen>]
 module PrimitiveType =
   open Ballerina.StdLib.Json.Sum
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.DSL.Next.Types.Model
@@ -14,40 +15,40 @@ module PrimitiveType =
 
   type PrimitiveType with
 
-    static member private FromJsonUnit: JsonValue -> Sum<PrimitiveType, Errors> =
+    static member private FromJsonUnit: JsonValue -> Sum<PrimitiveType, Errors<_>> =
       Sum.assertDiscriminatorAndContinue "unit" (fun _ -> sum { return PrimitiveType.Unit })
 
-    static member private FromJsonGuid: JsonValue -> Sum<PrimitiveType, Errors> =
+    static member private FromJsonGuid: JsonValue -> Sum<PrimitiveType, Errors<_>> =
       Sum.assertDiscriminatorAndContinue "guid" (fun _ -> sum { return PrimitiveType.Guid })
 
-    static member private FromJsonInt32: JsonValue -> Sum<PrimitiveType, Errors> =
+    static member private FromJsonInt32: JsonValue -> Sum<PrimitiveType, Errors<_>> =
       Sum.assertDiscriminatorAndContinue "int32" (fun _ -> sum { return PrimitiveType.Int32 })
 
-    static member private FromJsonInt64: JsonValue -> Sum<PrimitiveType, Errors> =
+    static member private FromJsonInt64: JsonValue -> Sum<PrimitiveType, Errors<_>> =
       Sum.assertDiscriminatorAndContinue "int64" (fun _ -> sum { return PrimitiveType.Int64 })
 
-    static member private FromJsonFloat32: JsonValue -> Sum<PrimitiveType, Errors> =
+    static member private FromJsonFloat32: JsonValue -> Sum<PrimitiveType, Errors<_>> =
       Sum.assertDiscriminatorAndContinue "float32" (fun _ -> sum { return PrimitiveType.Float32 })
 
-    static member private FromJsonFloat64: JsonValue -> Sum<PrimitiveType, Errors> =
+    static member private FromJsonFloat64: JsonValue -> Sum<PrimitiveType, Errors<_>> =
       Sum.assertDiscriminatorAndContinue "float64" (fun _ -> sum { return PrimitiveType.Float64 })
 
-    static member private FromJsonDecimal: JsonValue -> Sum<PrimitiveType, Errors> =
+    static member private FromJsonDecimal: JsonValue -> Sum<PrimitiveType, Errors<_>> =
       Sum.assertDiscriminatorAndContinue "decimal" (fun _ -> sum { return PrimitiveType.Decimal })
 
-    static member private FromJsonString: JsonValue -> Sum<PrimitiveType, Errors> =
+    static member private FromJsonString: JsonValue -> Sum<PrimitiveType, Errors<_>> =
       Sum.assertDiscriminatorAndContinue "string" (fun _ -> sum { return PrimitiveType.String })
 
-    static member private FromJsonBool: JsonValue -> Sum<PrimitiveType, Errors> =
+    static member private FromJsonBool: JsonValue -> Sum<PrimitiveType, Errors<_>> =
       Sum.assertDiscriminatorAndContinue "bool" (fun _ -> sum { return PrimitiveType.Bool })
 
-    static member private FromJsonDateTime: JsonValue -> Sum<PrimitiveType, Errors> =
+    static member private FromJsonDateTime: JsonValue -> Sum<PrimitiveType, Errors<_>> =
       Sum.assertDiscriminatorAndContinue "datetime" (fun _ -> sum { return PrimitiveType.DateTime })
 
-    static member private FromJsonDateOnly: JsonValue -> Sum<PrimitiveType, Errors> =
+    static member private FromJsonDateOnly: JsonValue -> Sum<PrimitiveType, Errors<_>> =
       Sum.assertDiscriminatorAndContinue "dateonly" (fun _ -> sum { return PrimitiveType.DateOnly })
 
-    static member FromJson(json: JsonValue) : Sum<PrimitiveType, Errors> =
+    static member FromJson(json: JsonValue) : Sum<PrimitiveType, Errors<_>> =
       sum.Any(
         PrimitiveType.FromJsonUnit(json),
         [ PrimitiveType.FromJsonGuid(json)

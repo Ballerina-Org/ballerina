@@ -7,7 +7,9 @@ module Model =
   open Ballerina.Lenses
   open Ballerina.Collections.NonEmptyList
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.DSL.Next.Types.TypeChecker.Model
+  open Ballerina.Cat.Collections.OrderedMap
 
   type LanguageContext<'ext when 'ext: comparison> =
     { TypeCheckContext: TypeCheckContext<'ext>
@@ -48,6 +50,24 @@ module Model =
           TypeOperationExtension<'ext, 'extConstructors, 'extValues, 'extOperations>
          > }
 
+    static member ToImportedTypeValue
+      (typeExt: TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations>)
+      : ImportedTypeValue<'ext> =
+      { Id = typeExt.TypeName |> fst
+        Sym = typeExt.TypeName |> snd
+        Parameters = typeExt.TypeVars |> List.map (fun (tv, k) -> TypeParameter.Create(tv.Name, k))
+        Arguments = []
+        UnionLike =
+          if typeExt.Cases |> Map.isEmpty then
+            None
+          else
+            typeExt.Cases
+            |> Map.toSeq
+            |> Seq.map (fun ((_, sym), caseExt) -> (sym, caseExt.CaseType))
+            |> OrderedMap.ofSeq
+            |> Some
+        RecordLike = None }
+
   and TypeOperationExtension<'ext, 'extConstructors, 'extValues, 'extOperations> =
     { Type: TypeValue<'ext> // "a => b => (a -> b) -> Option a -> Option b"
       Kind: Kind // * => * => *
@@ -73,6 +93,7 @@ module Model =
 
   and TypeLambdaExtension<'ext, 'extTypeLambda> =
     { ExtensionType: ResolvedIdentifier * TypeValue<'ext> * Kind
+      ExtraBindings: Map<ResolvedIdentifier, TypeValue<'ext> * Kind>
       Value: 'extTypeLambda // eval value bindings will contain an entry from the extension identifier to this value (modulo DU packaging)
       ValueLens: PartialLens<'ext, 'extTypeLambda> // lens to handle wrapping and upwrapping between the extension value and the core value
       EvalToTypeApplicable: ExtensionEvaluator<'ext> // implementation of what happens at runtime when the extension is type applied (instantiation)

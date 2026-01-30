@@ -1,6 +1,7 @@
 namespace Ballerina.StdLib.Algorithms
 
 module TopologicalSort =
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
 
@@ -13,9 +14,9 @@ module TopologicalSort =
 
     Invariant: the frontier always contains nodes without dependencies (i.e. ready to be output to the top sorted List)
     *)
-  let private filterM (predicate: 'a -> Sum<bool, Errors>) (xs: seq<'a>) : Sum<List<'a>, Errors> =
+  let private filterM (predicate: 'a -> Sum<bool, Errors<Unit>>) (xs: seq<'a>) : Sum<List<'a>, Errors<Unit>> =
 
-    let folder (x: 'a) (acc: Sum<List<'a>, Errors>) : Sum<List<'a>, Errors> =
+    let folder (x: 'a) (acc: Sum<List<'a>, Errors<Unit>>) : Sum<List<'a>, Errors<Unit>> =
       sum {
         let! acc = acc
         let! ok = predicate x
@@ -24,7 +25,7 @@ module TopologicalSort =
 
     List.foldBack folder (Seq.toList xs) (sum.Return([]: List<'a>))
 
-  let sort (graph: Map<'T, Set<'T>>) : Sum<List<'T>, Errors> when 'T: comparison =
+  let sort (graph: Map<'T, Set<'T>>) : Sum<List<'T>, Errors<Unit>> when 'T: comparison =
     let allNodes =
       graph
       |> Map.toSeq
@@ -35,21 +36,24 @@ module TopologicalSort =
         })
       |> Set.ofSeq
 
-    let noDependencies (visited: Set<'T>) : Sum<Set<'T>, Errors> =
+    let noDependencies (visited: Set<'T>) : Sum<Set<'T>, Errors<Unit>> =
       sum {
         let! result =
           allNodes
           |> Set.filter (fun n -> not (visited.Contains n))
           |> filterM (fun n ->
             sum {
-              let! dependencies = graph |> Map.tryFindWithError n "graph" (sprintf "cannot find node: %A" n)
+              let! dependencies =
+                graph
+                |> Map.tryFindWithError n "graph" (fun () -> sprintf "cannot find node: %A" n) ()
+
               return dependencies.IsSubsetOf visited // logV step
             })
 
         return result |> Set.ofSeq
       }
 
-    let rec loop (visited: Set<'T>) (frontier: Set<'T>) (acc: List<'T>) : Sum<List<'T>, Errors> =
+    let rec loop (visited: Set<'T>) (frontier: Set<'T>) (acc: List<'T>) : Sum<List<'T>, Errors<Unit>> =
       sum {
         if Set.isEmpty frontier then
           if visited = allNodes then
@@ -57,14 +61,13 @@ module TopologicalSort =
           else
             return!
               sum.Throw(
-                Errors.Singleton(
+                Errors.Singleton () (fun () ->
                   sprintf
                     "Cycle detected in graph: %s"
                     (Set.difference allNodes visited
                      |> Set.toList
                      |> List.map string
-                     |> String.concat ", ")
-                )
+                     |> String.concat ", "))
               )
         else
           let visited' = Set.union visited frontier

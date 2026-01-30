@@ -8,6 +8,7 @@ module OrderedMap =
     Complexity:
     - insert and lookup: same as Map
     *)
+  open Ballerina
   open Ballerina.Collections.Sum
 
   type OrderedMap<'K, 'V when 'K: comparison> =

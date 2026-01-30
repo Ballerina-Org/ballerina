@@ -2,10 +2,12 @@ namespace Ballerina.DSL.Next.Types.TypeChecker
 
 module TupleDes =
   open Ballerina.StdLib.String
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Collections.Option
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open System
   open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Types.Model
@@ -33,10 +35,10 @@ module TupleDes =
              Item = fieldName }) ->
         let (!) = typeCheckExpr context_t
 
-        let ofSum (p: Sum<'a, Ballerina.Errors.Errors>) =
-          p |> Sum.mapRight (Errors.FromErrors loc0) |> state.OfSum
+        let ofSum (p: Sum<'a, Errors<Unit>>) =
+          p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
-        let error e = Errors.Singleton(loc0, e)
+        let error e = Errors.Singleton loc0 e
 
         state {
           let! ctx = state.GetContext()
@@ -48,7 +50,10 @@ module TupleDes =
           let! t_field =
             t_fields
             |> List.tryItem (fieldName.Index - 1)
-            |> sum.OfOption($"Error: cannot find item {fieldName.Index} in tuple {fields}" |> error)
+            |> sum.OfOption(
+              (fun () -> $"Error: cannot find item {fieldName.Index} in tuple {fields}")
+              |> error
+            )
             |> state.OfSum
 
           return Expr.TupleDes(fields, fieldName, loc0, ctx.Scope), t_field, Kind.Star, ctx

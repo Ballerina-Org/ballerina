@@ -2,10 +2,12 @@ namespace Ballerina.DSL.Next.Types.TypeChecker
 
 module Lookup =
   open Ballerina.StdLib.String
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Collections.Option
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open System
   open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Types.Model
@@ -33,7 +35,7 @@ module Lookup =
 
           let id = ctx.Scope.Resolve id
 
-          let error e = Errors.Singleton(loc0, e)
+          let error e = Errors.Singleton loc0 e
 
           // do Console.WriteLine($"TypeCheckLookup: resolving identifier '{id}'")
           // do Console.WriteLine($"Current Scope: {ctx.Values.AsFSharpString}")
@@ -43,11 +45,11 @@ module Lookup =
             state.Either3
               (TypeCheckContext.TryFindVar(id, loc0))
               (TypeCheckState.TryFindType(id, loc0))
-              ($"Error: cannot resolve identifier '{id}'."
+              (fun () -> $"Error: cannot resolve identifier '{id}'."
                |> error
-               |> Errors.SetPriority(ErrorPriority.High)
+               |> Errors<_>.MapPriority(replaceWith ErrorPriority.High)
                |> state.Throw)
-            |> state.MapError(Errors.FilterHighestPriorityOnly)
+            |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
 
           return Expr.Lookup(id, loc0, ctx.Scope), t_id, id_k, ctx
         }

@@ -3,10 +3,12 @@ namespace Ballerina.DSL.Next.Types.TypeChecker
 [<AutoOpen>]
 module Expr =
   open Ballerina.StdLib.String
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Collections.Option
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open System
   open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Types.Model
@@ -49,10 +51,10 @@ module Expr =
         // let (!) = typeCheckExpr context_t
         // let (=>) c e = typeCheckExpr c e
 
-        // let ofSum (p: Sum<'a, Ballerina.Errors.Errors>) =
-        //   p |> Sum.mapRight (Errors.FromErrors loc0) |> state.OfSum
+        // let ofSum (p: Sum<'a, Errors<Unit>>) =
+        //   p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
-        // let error e = Errors.Singleton(loc0, e)
+        // let error e = Errors.Singleton loc0 e
 
         state {
           let! expr, typeValue, kind, ctx =
@@ -120,10 +122,8 @@ module Expr =
               | ExprRec.RelationsDes _
               | ExprRec.RelationLookupDes _ ->
                 return!
-                  Errors.Singleton(
-                    loc0,
-                    $"Error: unexpected expression pattern schema entity and entities (should not occur, are only constructed as record destructuring) "
-                  )
+                  Errors.Singleton loc0 (fun () ->
+                    $"Error: unexpected expression pattern schema entity and entities (should not occur, are only constructed as record destructuring) ")
                   |> state.Throw
             }
 

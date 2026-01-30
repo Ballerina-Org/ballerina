@@ -1,6 +1,7 @@
 module Ballerina.Cat.Tests.State
 
 open Ballerina.State.WithError
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.Errors
 open NUnit.Framework
@@ -27,13 +28,13 @@ type private OuterState =
 let ``Should correctly map state`` () =
   let value = "some value"
 
-  let withInnerState: State<string, unit, InnerState, Errors> =
+  let withInnerState: State<string, unit, InnerState, Errors<_>> =
     state {
       do! state.SetState(InnerState.Updaters.Age((+) 1))
       value
     }
 
-  let withOuterState: State<string, unit, OuterState, Errors> =
+  let withOuterState: State<string, unit, OuterState, Errors<_>> =
     withInnerState
     |> State.mapState (fst >> OuterState.Getters.Inner) (fst >> OuterState.Replacers.Inner)
 

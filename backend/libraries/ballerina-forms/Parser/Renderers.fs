@@ -1,5 +1,7 @@
 namespace Ballerina.DSL.FormEngine.Parser
 
+open Ballerina.LocalizedErrors
+
 module Renderers =
   open Ballerina.DSL.Parser.Patterns
   open Ballerina.DSL.Parser.Expr
@@ -10,6 +12,7 @@ module Renderers =
   open Ballerina.DSL.Expr.Types.Model
   open FormsPatterns
   open System
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Collections.Map
   open Ballerina.State.WithError
@@ -29,7 +32,7 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -43,7 +46,7 @@ module Renderers =
                 Label = label
                 Type = ExprType.PrimitiveType PrimitiveType.BoolType }
         else
-          return! state.Throw(Errors.Singleton $"Error: cannot parse bool renderer from {name}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse bool renderer from {name}"))
       }
 
   type Renderer<'ExprExtension, 'ValueExtension> with
@@ -55,7 +58,7 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -69,7 +72,7 @@ module Renderers =
                 Label = label
                 Type = ExprType.PrimitiveType PrimitiveType.DateOnlyType }
         else
-          return! state.Throw(Errors.Singleton $"Error: cannot parse date renderer from {name}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse date renderer from {name}"))
       }
 
 
@@ -82,7 +85,7 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -96,7 +99,7 @@ module Renderers =
                 Label = label
                 Type = ExprType.UnitType }
         else
-          return! state.Throw(Errors.Singleton $"Error: cannot parse unit renderer from {name}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse unit renderer from {name}"))
       }
 
   type Renderer<'ExprExtension, 'ValueExtension> with
@@ -108,7 +111,7 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -122,7 +125,7 @@ module Renderers =
                 Label = label
                 Type = ExprType.PrimitiveType PrimitiveType.GuidType }
         else
-          return! state.Throw(Errors.Singleton $"Error: cannot parse guid renderer from {name}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse guid renderer from {name}"))
       }
 
   type Renderer<'ExprExtension, 'ValueExtension> with
@@ -134,7 +137,7 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -148,7 +151,7 @@ module Renderers =
                 Label = label
                 Type = ExprType.PrimitiveType PrimitiveType.IntType }
         else
-          return! state.Throw(Errors.Singleton $"Error: cannot parse int renderer from {name}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse int renderer from {name}"))
       }
 
   type Renderer<'ExprExtension, 'ValueExtension> with
@@ -160,7 +163,7 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -174,7 +177,7 @@ module Renderers =
                 Label = label
                 Type = ExprType.PrimitiveType PrimitiveType.StringType }
         else
-          return! state.Throw(Errors.Singleton $"Error: cannot parse string renderer from {name}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse string renderer from {name}"))
       }
 
   type Renderer<'ExprExtension, 'ValueExtension> with
@@ -186,7 +189,7 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -212,9 +215,10 @@ module Renderers =
 
               return EnumRenderer(enum |> EnumApi.Id, label, rendererType, enum.TypeId, name)
             }
-            |> state.MapError(Errors.WithPriority ErrorPriority.High)
+            |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
         else
-          return! state.Throw(Errors.Singleton $"Error: cannot parse enum renderer from {name}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse enum renderer from {name}"))
+
       }
 
   type Renderer<'ExprExtension, 'ValueExtension> with
@@ -226,7 +230,7 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -257,7 +261,8 @@ module Renderers =
                         let! stream = formsState.TryFindStream streamName |> state.OfSum
                         return StreamRendererApi.Stream(StreamApi.Id stream), stream.TypeId
                       }
-                      |> state.MapError(Errors.WithPriority ErrorPriority.High)
+
+                      |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                   })
                   (state {
                     let! streamTypeName, streamName = streamNameJson |> JsonValue.AsPair |> state.OfSum
@@ -279,16 +284,16 @@ module Renderers =
                           ),
                           stream.TypeId
                       }
-                      |> state.MapError(Errors.WithPriority ErrorPriority.High)
+                      |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                   }))
                 |> state.MapError Errors.HighestPriority
 
 
               return StreamRenderer(stream, label, rendererType, streamTypeId, name)
             }
-            |> state.MapError(Errors.WithPriority ErrorPriority.High)
+            |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
         else
-          return! state.Throw(Errors.Singleton $"Error: cannot parse stream renderer from {name}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse stream renderer from {name}"))
       }
 
   type Renderer<'ExprExtension, 'ValueExtension> with
@@ -301,7 +306,7 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -325,9 +330,9 @@ module Renderers =
                     Key = keyRenderer
                     Value = valueRenderer }
             }
-            |> state.MapError(Errors.WithPriority ErrorPriority.High)
+            |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
         else
-          return! state.Throw(Errors.Singleton $"Error: cannot parse map renderer from {name}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse map renderer from {name}"))
       }
 
   type Renderer<'ExprExtension, 'ValueExtension> with
@@ -340,7 +345,7 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -364,9 +369,9 @@ module Renderers =
                     Left = leftRenderer
                     Right = rightRenderer }
             }
-            |> state.MapError(Errors.WithPriority ErrorPriority.High)
+            |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
         else
-          return! state.Throw(Errors.Singleton $"Error: cannot parse sum renderer from {name}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse sum renderer from {name}"))
       }
 
   type Renderer<'ExprExtension, 'ValueExtension> with
@@ -379,7 +384,7 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -403,9 +408,9 @@ module Renderers =
 
               return res
             }
-            |> state.MapError(Errors.WithPriority ErrorPriority.High)
+            |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
         else
-          return! state.Throw(Errors.Singleton $"Error: cannot parse option renderer from {name}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse option renderer from {name}"))
       }
 
   type Renderer<'ExprExtension, 'ValueExtension> with
@@ -418,7 +423,7 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -468,9 +473,9 @@ module Renderers =
                     Details = details
                     Preview = preview }
             }
-            |> state.MapError(Errors.WithPriority ErrorPriority.High)
+            |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
         else
-          return! state.Throw(Errors.Singleton $"Error: cannot parse one renderer from {name}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse one renderer from {name}"))
       }
 
   type Renderer<'ExprExtension, 'ValueExtension> with
@@ -483,7 +488,7 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -501,9 +506,9 @@ module Renderers =
                     Label = label
                     Value = valueRenderer }
             }
-            |> state.MapError(Errors.WithPriority ErrorPriority.High)
+            |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
         else
-          return! state.Throw(Errors.Singleton $"Error: cannot parse read only renderer from {name}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse read only renderer from {name}"))
       }
 
   type Renderer<'ExprExtension, 'ValueExtension> with
@@ -514,7 +519,7 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -535,20 +540,23 @@ module Renderers =
         let! formsState = state.GetState()
 
         if formsState.TryFindEnum options |> Sum.toOption |> Option.isNone then
-          return! state.Throw(Errors.Singleton $"Error: cannot find enum {options}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot find enum {options}"))
 
         if config.Record.SupportedRenderers.Keys |> Seq.contains name |> not then
-          return! state.Throw(Errors.Singleton $"Error: cannot parse record renderer from {name}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse record renderer from {name}"))
 
         if config.Map.SupportedRenderers |> Set.contains (RendererName mapRenderer) |> not then
-          return! state.Throw(Errors.Singleton $"Error: cannot parse map renderer from {mapRenderer}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse map renderer from {mapRenderer}"))
 
         let enumRenderers =
           Set.union config.Option.SupportedRenderers.Enum config.Set.SupportedRenderers.Enum
 
         if enumRenderers |> Set.contains (RendererName keyRenderer) |> not then
           return!
-            state.Throw(Errors.Singleton $"Error: cannot parse key renderer from {keyRenderer}, must be enum renderer")
+            state.Throw(
+              Errors.Singleton () (fun () ->
+                $"Error: cannot parse key renderer from {keyRenderer}, must be enum renderer")
+            )
 
         if
           config.String.SupportedRenderers
@@ -557,7 +565,8 @@ module Renderers =
         then
           return!
             state.Throw(
-              Errors.Singleton $"Error: cannot parse value renderer from {valueRenderer}, must be string renderer"
+              Errors.Singleton () (fun () ->
+                $"Error: cannot parse value renderer from {valueRenderer}, must be string renderer")
             )
 
         let! typeId =
@@ -572,8 +581,8 @@ module Renderers =
             | _ ->
               return!
                 state.Throw(
-                  Errors.Singleton
-                    $"Error: cannot parse AllTranslationOverrides renderer from {name} because type {typeName} is not AllTranslationOverrides"
+                  Errors.Singleton () (fun () ->
+                    $"Error: cannot parse AllTranslationOverrides renderer from {name} because type {typeName} is not AllTranslationOverrides")
                 )
           }
 
@@ -597,7 +606,7 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -627,9 +636,9 @@ module Renderers =
                     Element = elementRenderer
                     MethodLabels = actionLabels }
             }
-            |> state.MapError(Errors.WithPriority ErrorPriority.High)
+            |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
         else
-          return! state.Throw(Errors.Singleton $"Error: cannot parse list renderer from {name}")
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse list renderer from {name}"))
       }
 
   and Renderer<'ExprExtension, 'ValueExtension> with
@@ -642,7 +651,7 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -651,7 +660,7 @@ module Renderers =
         let! c =
           config.Custom
           |> Seq.tryFind (fun c -> c.Value.SupportedRenderers |> Set.contains name)
-          |> Sum.fromOption (fun () -> $"Error: cannot parse custom renderer {name}" |> Errors.Singleton)
+          |> Sum.fromOption (fun () -> (fun () -> $"Error: cannot parse custom renderer {name}") |> Errors.Singleton())
           |> state.OfSum
 
         return!
@@ -666,7 +675,7 @@ module Renderers =
                   Label = label
                   Type = t.Type }
           }
-          |> state.MapError(Errors.WithPriority ErrorPriority.High)
+          |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     static member private ParseGenericRenderer
@@ -676,14 +685,14 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
         let! { GenericRenderers = genericRenderers } = state.GetState()
 
         match genericRenderers with
-        | [] -> return! state.Throw(Errors.Singleton $"Error: cannot match empty generic renderers")
+        | [] -> return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot match empty generic renderers"))
         | g :: gs ->
           let genericRenderers = NonEmptyList.OfList(g, gs)
 
@@ -700,7 +709,7 @@ module Renderers =
                         Type = g.Type }
 
                 else
-                  return! state.Throw(Errors.Singleton $"Error: generic renderer {name} does not match")
+                  return! state.Throw(Errors.Singleton () (fun () -> $"Error: generic renderer {name} does not match"))
               })
             |> state.Any
       }
@@ -716,14 +725,15 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
         let! tupleConfig =
           config.Tuple
           |> List.tryFind (fun t -> t.SupportedRenderers.Contains name)
-          |> Sum.fromOption (fun () -> Errors.Singleton $"Error: cannot find tuple config for renderer {name}")
+          |> Sum.fromOption (fun () ->
+            Errors.Singleton () (fun () -> $"Error: cannot find tuple config for renderer {name}"))
           |> state.OfSum
 
         return!
@@ -740,8 +750,8 @@ module Renderers =
             if itemRenderers.Length <> tupleConfig.Ariety then
               return!
                 state.Throw(
-                  Errors.Singleton
-                    $"Error: mismatched tuple size. Expected {tupleConfig.Ariety}, found {itemRenderers.Length}."
+                  Errors.Singleton () (fun () ->
+                    $"Error: mismatched tuple size. Expected {tupleConfig.Ariety}, found {itemRenderers.Length}.")
                 )
             else
               return
@@ -750,7 +760,7 @@ module Renderers =
                     Tuple = name
                     Elements = itemRenderers }
           }
-          |> state.MapError(Errors.WithPriority ErrorPriority.High)
+          |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     static member ParseRecordRenderer
@@ -761,7 +771,7 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -782,6 +792,7 @@ module Renderers =
           { Renderer = renderer
             Fields = formFields }
       }
+      |> State.mapError (Errors.MapContext(replaceWith ()))
 
     static member ParseUnionRenderer
       (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
@@ -791,56 +802,56 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
         let! casesJson = fields |> state.TryFindField "cases"
 
-        return!
-          state {
-            let! casesJson = casesJson |> JsonValue.AsRecord |> state.OfSum
-            let! rendererJson = fields |> state.TryFindField "renderer"
-            let! renderer = JsonValue.AsString rendererJson |> state.OfSum |> state.Map RendererName
-            let! ctx = state.GetContext()
+        let! casesJson = casesJson |> JsonValue.AsRecord |> state.OfSum
+        let! rendererJson = fields |> state.TryFindField "renderer"
+        let! renderer = JsonValue.AsString rendererJson |> state.OfSum |> state.Map RendererName
+        let! ctx = state.GetContext()
 
-            let! _ =
-              fields
-              |> state.TryFindField "containerRenderer"
-              |> state.Catch
-              |> state.Map(Sum.toOption)
+        let! _ =
+          fields
+          |> state.TryFindField "containerRenderer"
+          |> state.Catch
+          |> state.Map(Sum.toOption)
 
-            if ctx.Union.SupportedRenderers |> Set.contains renderer |> not then
-              return! state.Throw(Errors.Singleton $"Error: cannot find union renderer {renderer}")
-            else
-              let! cases =
-                casesJson
-                |> Seq.map (fun (caseName, caseJson) ->
-                  state.Either
-                    (state {
-                      let! caseBody = Renderer.Parse primitivesExt exprParser [| "renderer", caseJson |]
+        if ctx.Union.SupportedRenderers |> Set.contains renderer |> not then
+          return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot find union renderer {renderer}"))
+        else
+          let! cases =
+            casesJson
+            |> Seq.map (fun (caseName, caseJson) ->
+              state.Either
+                (state {
+                  let! caseBody = Renderer.Parse primitivesExt exprParser [| "renderer", caseJson |]
 
-                      return
-                        caseName,
-                        { Label = None
-                          Tooltip = None
-                          Details = None
-                          Renderer = caseBody }
-                    })
-                    (state {
-                      let! caseBody = NestedRenderer.Parse primitivesExt exprParser caseJson
+                  return
+                    caseName,
+                    { Label = None
+                      Tooltip = None
+                      Details = None
+                      Renderer = caseBody }
+                })
+                (state {
+                  let! caseBody = NestedRenderer.Parse primitivesExt exprParser caseJson
 
-                      return caseName, caseBody
-                    })
-                  |> state.MapError(Errors.Map(String.appendNewline $"\n...when parsing form case {caseName}")))
-                |> state.All
-                |> state.Map(Map.ofSeq)
+                  return caseName, caseBody
+                })
+              |> state.MapError(Errors.Map(String.appendNewline $"\n...when parsing form case {caseName}")))
+            |> state.All
+            |> state.Map(Map.ofSeq)
 
 
-              Renderer.UnionRenderer { Renderer = renderer; Cases = cases }
-          }
-          |> state.MapError(Errors.WithPriority ErrorPriority.High)
+          Renderer.UnionRenderer { Renderer = renderer; Cases = cases }
+
+
       }
+      |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+      |> State.mapError (Errors.MapContext(replaceWith ()))
 
   and FormBody<'ExprExtension, 'ValueExtension> with
     static member ParseTableRenderer
@@ -852,7 +863,7 @@ module Renderers =
           FormBody<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -905,7 +916,7 @@ module Renderers =
             //   |> state.RunOption
 
             if config.Table.SupportedRenderers |> Set.contains renderer |> not then
-              return! state.Throw(Errors.Singleton $"Error: cannot find table renderer {renderer}")
+              return! state.Throw(Errors.Singleton () (fun () -> $"Error: cannot find table renderer {renderer}"))
             else
               let! columns =
                 columnsJson
@@ -981,7 +992,7 @@ module Renderers =
                    DataContextColumns = dataContextColumns |}
                 |> FormBody.Table
           }
-          |> state.MapError(Errors.WithPriority ErrorPriority.High)
+          |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
   and FormBody<'ExprExtension, 'ValueExtension> with
@@ -994,7 +1005,7 @@ module Renderers =
           FormBody<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       let parseAnnotatedRenderer
@@ -1002,7 +1013,7 @@ module Renderers =
             FormBody<'ExprExtension, 'ValueExtension>,
             CodeGenConfig,
             ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-            Errors
+            Errors<unit>
            > =
         state {
           let! renderer = Renderer.Parse primitivesExt exprParser fields
@@ -1038,7 +1049,7 @@ module Renderers =
                               "duplicate", TableMethod.Duplicate
                               "actionOnAll", TableMethod.ActionOnAll
                               "move", TableMethod.Move ]
-                          |> Map.tryFindWithError k "TableMethod" k
+                          |> Map.tryFindWithError k "TableMethod" (fun () -> k) ()
                           |> sum.MapError(Errors.Map(String.appendNewline $"...when parsing actionLabels"))
                           |> state.OfSum
                       }
@@ -1062,7 +1073,7 @@ module Renderers =
           Renderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state.Either3
@@ -1156,11 +1167,11 @@ module Renderers =
                                   tableApi |> fst |> TableApi.Id
                                 )
                             }
-                            |> state.MapError(Errors.WithPriority ErrorPriority.High)
+                            |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                         }
                         state.Throw(
-                          Errors.Singleton $"Error: cannot resolve field renderer {name}."
-                          |> Errors.WithPriority ErrorPriority.High
+                          Errors.Singleton () (fun () -> $"Error: cannot resolve field renderer {name}.")
+                          |> Errors.MapPriority(replaceWith ErrorPriority.High)
                         ) ]
                     )
                   ) ]
@@ -1190,7 +1201,7 @@ module Renderers =
 
               return Renderer.InlineFormRenderer formBody
             }
-            |> state.MapError(Errors.WithPriority ErrorPriority.High)
+            |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
         })
       |> state.MapError(Errors.HighestPriority)
   // |> state.WithErrorContext $"...when parsing renderer {json.ToString().ReasonablyClamped}"
@@ -1204,7 +1215,7 @@ module Renderers =
           NestedRenderer<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -1239,7 +1250,7 @@ module Renderers =
             Details = details
             Renderer = renderer }
       }
-      |> state.WithErrorContext $"...when parsing (nested) renderer {json.ToString().ReasonablyClamped}"
+      |> state.WithErrorContext(fun () -> $"...when parsing (nested) renderer {json.ToString().ReasonablyClamped}")
 
   and FieldConfig<'ExprExtension, 'ValueExtension> with
     static member Parse
@@ -1251,7 +1262,7 @@ module Renderers =
           FieldConfig<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -1284,7 +1295,10 @@ module Renderers =
         // FIXME: This replicas a shortcoming of the frontend parser, can be removed once fixed
         | Renderer.RecordRenderer _ ->
           return!
-            state.Throw(Errors.Singleton """For record fields, record renderers must be wrapped in {"renderer": ...}""")
+            state.Throw(
+              Errors.Singleton () (fun () ->
+                """For record fields, record renderers must be wrapped in {"renderer": ...}""")
+            )
         | _ ->
 
           let fc =
@@ -1297,7 +1311,7 @@ module Renderers =
 
           fc
       }
-      |> state.WithErrorContext $"...when parsing field {fieldName}"
+      |> state.WithErrorContext(fun () -> $"...when parsing field {fieldName}")
 
   and FormFields<'ExprExtension, 'ValueExtension> with
     static member Parse
@@ -1347,7 +1361,7 @@ module Renderers =
 
                   return fieldName, parsedField
                 })
-              |> state.All<_, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors>
+              |> state.All<_, CodeGenConfig, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors<unit>>
 
             let fieldConfigs = fieldConfigs |> Map.ofSeq
             let fieldConfigs = Map.mergeMany (fun x _ -> x) (fieldConfigs :: extendedFields)
@@ -1381,7 +1395,7 @@ module Renderers =
                 FormFields.DataContextFields = dataContextFields
                 FormFields.Tabs = tabs }
           }
-          |> state.MapError(Errors.WithPriority ErrorPriority.High)
+          |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
   and FormBody<'ExprExtension, 'ValueExtension> with
@@ -1394,7 +1408,7 @@ module Renderers =
           FormTabs<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -1414,7 +1428,7 @@ module Renderers =
 
         return { FormTabs = tabs }
       }
-      |> state.WithErrorContext $"...when parsing tabs"
+      |> state.WithErrorContext(fun () -> $"...when parsing tabs")
 
     static member ParseFieldList
       (_: ExprType)
@@ -1423,7 +1437,7 @@ module Renderers =
           FormGroup<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -1473,7 +1487,7 @@ module Renderers =
           FormGroup<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state.Either
@@ -1489,20 +1503,20 @@ module Renderers =
 
                     return!
                       fieldConfigs
-                      |> Map.tryFindWithError fieldName "field name" fieldName
+                      |> Map.tryFindWithError fieldName "field name" (fun () -> fieldName) ()
                       |> Sum.map (FieldConfig.Id)
                       |> state.OfSum
                   }
             }
             |> state.All
             |> state.Map(FormGroup.Inlined)
-            |> state.MapError(Errors.WithPriority ErrorPriority.High)
+            |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
         })
         (state {
           let! expr = json |> exprParser |> state.OfSum
           return FormGroup.Computed expr
         })
-      |> state.WithErrorContext $"...when parsing group {groupName}"
+      |> state.WithErrorContext(fun () -> $"...when parsing group {groupName}")
 
     static member ParseColumn
       (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
@@ -1514,7 +1528,7 @@ module Renderers =
           FormGroups<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -1537,11 +1551,11 @@ module Renderers =
           return { FormGroups = groups }
         | _ ->
           return!
-            $"Error: cannot parse groups. Expected a single field 'groups', instead found {json}"
-            |> Errors.Singleton
+            fun () -> $"Error: cannot parse groups. Expected a single field 'groups', instead found {json}"
+            |> Errors.Singleton()
             |> state.Throw
       }
-      |> state.WithErrorContext $"...when parsing column {columnName}"
+      |> state.WithErrorContext(fun () -> $"...when parsing column {columnName}")
 
     static member ParseTab
       (primitivesExt: FormParserPrimitivesExtension<'ExprExtension, 'ValueExtension>)
@@ -1553,7 +1567,7 @@ module Renderers =
           FormColumns<'ExprExtension, 'ValueExtension>,
           CodeGenConfig,
           ParsedFormsContext<'ExprExtension, 'ValueExtension>,
-          Errors
+          Errors<unit>
          >
       =
       state {
@@ -1576,8 +1590,8 @@ module Renderers =
           return { FormColumns = columns }
         | _ ->
           return!
-            $"Error: cannot parse columns. Expected a single field 'columns', instead found {json}"
-            |> Errors.Singleton
+            fun () -> $"Error: cannot parse columns. Expected a single field 'columns', instead found {json}"
+            |> Errors.Singleton()
             |> state.Throw
       }
-      |> state.WithErrorContext $"...when parsing tab {tabName}"
+      |> state.WithErrorContext(fun () -> $"...when parsing tab {tabName}")

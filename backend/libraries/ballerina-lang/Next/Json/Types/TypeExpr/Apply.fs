@@ -1,4 +1,4 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
 
 open Ballerina.DSL.Next.Types.Model
 
@@ -6,6 +6,7 @@ open Ballerina.DSL.Next.Types.Model
 module Apply =
   open FSharp.Data
   open Ballerina.StdLib.Json.Patterns
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json

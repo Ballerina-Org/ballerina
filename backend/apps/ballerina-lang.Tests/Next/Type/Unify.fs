@@ -1,10 +1,12 @@
 module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Type.Unify
 
 open System
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.StdLib.Extensions
 open NUnit.Framework
 open Ballerina.LocalizedErrors
+open Ballerina.Errors
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.DSL.Next.EquivalenceClasses
@@ -22,8 +24,8 @@ let private valueOperations =
     equalize =
       (fun (v1, v2) ->
         if v1 <> v2 then
-          (Location.Unknown, $"Error: cannot unify {v1} and {v2}")
-          |> Errors.Singleton
+          (fun () -> $"Error: cannot unify {v1} and {v2}")
+          |> Errors.Singleton Location.Unknown
           |> state.Throw
         else
           state { return () }) }
@@ -31,7 +33,7 @@ let private valueOperations =
 [<Test>]
 let ``LangNext-Unify binding trivial equivalence classes over primitives succeeds`` () =
 
-  let program: State<unit, _, EquivalenceClasses<string, PrimitiveType>, Errors> =
+  let program: State<unit, _, EquivalenceClasses<string, PrimitiveType>, Errors<Location>> =
     state {
       do! EquivalenceClasses.Bind("v1", PrimitiveType.Int32 |> Right, Location.Unknown)
       do! EquivalenceClasses.Bind("v2", PrimitiveType.String |> Right, Location.Unknown)
@@ -58,7 +60,7 @@ let ``LangNext-Unify binding trivial equivalence classes over primitives succeed
 [<Test>]
 let ``LangNext-Unify binding equivalence classes over variables and primitives or variables succeeds`` () =
 
-  let program: State<unit, _, EquivalenceClasses<string, PrimitiveType>, Errors> =
+  let program: State<unit, _, EquivalenceClasses<string, PrimitiveType>, Errors<Location>> =
     state {
       do! EquivalenceClasses.Bind("v1", PrimitiveType.Int32 |> Right, Location.Unknown)
       do! EquivalenceClasses.Bind("v2", PrimitiveType.String |> Right, Location.Unknown)
@@ -84,7 +86,7 @@ let ``LangNext-Unify binding equivalence classes over variables and primitives o
 
 [<Test>]
 let ``LangNext-Unify binding equivalence classes over variables and primitives or variables fails`` () =
-  let program: State<unit, _, EquivalenceClasses<string, PrimitiveType>, Errors> =
+  let program: State<unit, _, EquivalenceClasses<string, PrimitiveType>, Errors<Location>> =
     state {
       do! EquivalenceClasses.Bind("v1", PrimitiveType.Int32 |> Right, Location.Unknown)
       do! EquivalenceClasses.Bind("v2", PrimitiveType.String |> Right, Location.Unknown)
@@ -102,7 +104,7 @@ let ``LangNext-Unify binding equivalence classes over variables and primitives o
 
 [<Test>]
 let ``LangNext-Unify binding equivalence classes over variables and primitives or variables in a chain succeeds`` () =
-  let program: State<unit, _, EquivalenceClasses<string, PrimitiveType>, Errors> =
+  let program: State<unit, _, EquivalenceClasses<string, PrimitiveType>, Errors<Location>> =
     state {
       do! EquivalenceClasses.Bind("v1", PrimitiveType.Int32 |> Right, Location.Unknown)
       do! EquivalenceClasses.Bind("v2", PrimitiveType.String |> Right, Location.Unknown)
@@ -570,7 +572,7 @@ let ``LangNext-Unify unifies fails on different transitively unified generic arg
   let b = TypeVar.Create("b")
   let c = TypeVar.Create("c")
 
-  let program: State<unit, UnificationContext<ValueExt>, UnificationState<ValueExt>, Errors> =
+  let program: State<unit, UnificationContext<ValueExt>, UnificationState<ValueExt>, Errors<Location>> =
     state {
       do! EquivalenceClasses.Bind(b, PrimitiveType.Int32 |> TypeValue.CreatePrimitive |> Right, Location.Unknown)
       do! EquivalenceClasses.Bind(c, PrimitiveType.String |> TypeValue.CreatePrimitive |> Right, Location.Unknown)
@@ -596,7 +598,7 @@ let ``LangNext-Unify unifies fails on different transitively unified generic arg
   let b = TypeVar.Create("b")
   let c = TypeVar.Create("c")
 
-  let program: State<unit, UnificationContext<ValueExt>, UnificationState<ValueExt>, Errors> =
+  let program: State<unit, UnificationContext<ValueExt>, UnificationState<ValueExt>, Errors<Location>> =
     state {
       do! EquivalenceClasses.Bind(c, PrimitiveType.Int32 |> TypeValue.CreatePrimitive |> Right, Location.Unknown)
       do! EquivalenceClasses.Bind(b, c |> Left, Location.Unknown)

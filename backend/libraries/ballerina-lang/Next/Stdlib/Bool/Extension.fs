@@ -2,9 +2,11 @@ namespace Ballerina.DSL.Next.StdLib.Bool
 
 [<AutoOpen>]
 module Extension =
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.Model
@@ -41,20 +43,26 @@ module Extension =
               let! op =
                 op
                 |> BoolOperations.AsAnd
-                |> sum.MapError(Errors.FromErrors loc)
+                |> sum.MapError(Errors.MapContext(replaceWith loc))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsBool
-                |> sum.MapError(Errors.FromErrors loc)
+                |> sum.MapError(Errors.MapContext(replaceWith loc))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return BoolOperations.And({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (BoolOperations.And({| v1 = Some v |}) |> operationLens.Set, Some boolAndId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure && v))
@@ -82,20 +90,26 @@ module Extension =
               let! op =
                 op
                 |> BoolOperations.AsOr
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsBool
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return BoolOperations.Or({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (BoolOperations.Or({| v1 = Some v |}) |> operationLens.Set, Some boolOrId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure || v))
@@ -118,12 +132,16 @@ module Extension =
         Apply =
           fun loc0 _rest (_, v) ->
             reader {
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsBool
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(not v))

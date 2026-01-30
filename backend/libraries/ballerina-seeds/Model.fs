@@ -1,12 +1,14 @@
-﻿namespace Ballerina.Data.Seeds
+namespace Ballerina.Data.Seeds
 
 open System
 open System.Collections.Generic
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.Terms.Model
 open Ballerina.Data.Schema.Model
 open Ballerina.LocalizedErrors
+open Ballerina.Errors
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.Data.Arity.Model
 open Ballerina.Seeds
@@ -61,7 +63,7 @@ module EntityDescriptor =
   let seed
     (en: EntityName)
     (e: EntityDescriptor<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt>)
-    : State<Map<Guid, Value<TypeValue<ValueExt>, ValueExt>>, SeedingContext, SeedingState, Errors> =
+    : State<Map<Guid, Value<TypeValue<ValueExt>, ValueExt>>, SeedingContext, SeedingState, Errors<unit>> =
     state {
       let! ctx = state.GetContext()
       let itemsToSeed = ctx.WantedCount |> Option.defaultValue (Random().Next() % 50 + 50)
@@ -85,7 +87,7 @@ module LookupDescriptor =
   let seed
     (entities: Map<EntityName, Map<Guid, Value<TypeValue<ValueExt>, ValueExt>>>)
     (descriptor: LookupDescriptor)
-    : Sum<Map<Guid, Set<Guid>>, Errors> =
+    : Sum<Map<Guid, Set<Guid>>, Errors<unit>> =
 
     sum {
       let! sources =
@@ -93,16 +95,16 @@ module LookupDescriptor =
         |> Map.tryFindWithError
           descriptor.Source
           descriptor.Source.EntityName
-          "while seed lookup source descriptor"
-          Location.Unknown
+          (fun () -> "while seed lookup source descriptor")
+          ()
 
       let! targets =
         entities
         |> Map.tryFindWithError
           descriptor.Target
           descriptor.Target.EntityName
-          "while seed lookup source descriptor"
-          Location.Unknown
+          (fun () -> "while seed lookup source descriptor")
+          ()
 
       let sourceKeys = sources |> Map.toList |> List.map fst
       let targetKeys = targets |> Map.toList |> List.map fst
@@ -125,7 +127,7 @@ module LookupDescriptor =
   let tryFlip
     (descriptor: LookupDescriptor)
     (lookup: Map<Guid, Set<Guid>>)
-    : Sum<Option<LookupName * Map<Guid, Set<Guid>>>, Errors> =
+    : Sum<Option<LookupName * Map<Guid, Set<Guid>>>, Errors<unit>> =
     sum {
       match descriptor.Backward with
       | None -> return None

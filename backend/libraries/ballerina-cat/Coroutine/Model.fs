@@ -1,7 +1,8 @@
-﻿namespace Ballerina.Coroutines
+namespace Ballerina.Coroutines
 
 module Model =
   open Ballerina.Fun
+  open Ballerina
   open Ballerina.Collections.Sum
   open System
   open System.Threading.Tasks
