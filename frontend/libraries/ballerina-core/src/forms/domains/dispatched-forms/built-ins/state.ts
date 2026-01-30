@@ -1496,7 +1496,9 @@ export const dispatchFromAPIRawValue =
       if (t.kind == "table") {
         // move to the converter
         if (typeof raw != "object") {
-          console.error(`when parsing table for type ${JSON.stringify(t)}, object expected but got ${JSON.stringify(raw)}`);
+          console.error(
+            `when parsing table for type ${JSON.stringify(t)}, object expected but got ${JSON.stringify(raw)}`,
+          );
           return ValueOrErrors.Default.throwOne(
             `object expected but got ${JSON.stringify(raw)}`,
           );
@@ -1579,7 +1581,9 @@ export const dispatchFromAPIRawValue =
         const converterResult = converters["Record"].fromAPIRawValue(raw);
 
         if (typeof converterResult !== "object") {
-          console.error(`when parsing record for type ${JSON.stringify(t)}, object expected but got ${JSON.stringify(converterResult)}`);
+          console.error(
+            `when parsing record for type ${JSON.stringify(t)}, object expected but got ${JSON.stringify(converterResult)}`,
+          );
           return ValueOrErrors.Default.throwOne(
             `object expected but got ${JSON.stringify(converterResult)}`,
           );
