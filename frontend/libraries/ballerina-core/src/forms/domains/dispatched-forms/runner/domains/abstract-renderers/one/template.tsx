@@ -510,6 +510,17 @@ export const OneAbstractRenderer = <
                       delta,
                     );
               },
+              reinitializeStream: () =>
+                props.setState(
+                  OneAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                    replaceWith(
+                      Sum.Default.right<
+                        ValueInfiniteStreamState,
+                        "not initialized"
+                      >("not initialized"),
+                    ),
+                  ),
+                ),
             }}
             DetailsRenderer={
               value.kind === "unit" || value.isSome

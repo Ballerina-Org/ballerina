@@ -192,6 +192,7 @@ export type OneAbstractRendererViewForeignMutationsExpected<Flags = BaseFlags> =
     delete?: VoidCallbackWithOptionalFlags<Flags>;
     clear?: SimpleCallback<void>;
     loadMore: SimpleCallback<void>;
+    reinitializeStream: SimpleCallback<void>;
   };
 
 export type OneAbstractRendererView<
