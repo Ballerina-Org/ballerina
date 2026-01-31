@@ -2,6 +2,7 @@ module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Integration
 
 open NUnit.Framework
 open Ballerina.StdLib.Object
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.Reader.WithError
 open Ballerina.DSL.Next.Terms.Model
@@ -34,7 +35,9 @@ let private run (program: string) =
 
     let evalContext =
       { evalContext with
-          Symbols = ExprEvalContextSymbols.Append evalContext.Symbols typeCheckedSymbols
+          Scope =
+            { evalContext.Scope with
+                Symbols = ExprEvalContextSymbols.Append evalContext.Scope.Symbols typeCheckedSymbols }
       // Values: Map<Identifier, Value<TypeValue, 'valueExtension>>
       // Values =
       //   ((evalContext.Values |> Map.toList)
@@ -459,7 +462,7 @@ in f true, f false
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Tuple [ Ext(ValueExt(Choice1Of6(_v1))); Ext(ValueExt(Choice1Of6(_v2))) ] -> Assert.Pass()
+    | Tuple [ Ext(ValueExt(Choice1Of6(_v1)), None); Ext(ValueExt(Choice1Of6(_v2)), None) ] -> Assert.Pass()
     | _ -> Assert.Fail($"Expected a tuple of two list values, got {value.AsFSharpString}")
 
   | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
@@ -484,12 +487,15 @@ in l,l1,l2,l3,l4
     match value with
     | Tuple [ Ext(ValueExt(Choice1Of6(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
                                                                                              Value.Primitive(Int32 -2)
-                                                                                             Value.Primitive(Int32 3) ]))))
+                                                                                             Value.Primitive(Int32 3) ]))),
+                  _)
               Ext(ValueExt(Choice1Of6(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Bool true)
                                                                                              Value.Primitive(Bool false)
-                                                                                             Value.Primitive(Bool true) ]))))
+                                                                                             Value.Primitive(Bool true) ]))),
+                  _)
               Ext(ValueExt(Choice1Of6(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
-                                                                                             Value.Primitive(Int32 3) ]))))
+                                                                                             Value.Primitive(Int32 3) ]))),
+                  _)
               Value.Primitive(Int32 2)
               Value.Primitive(Bool false) ] -> Assert.Pass()
     | _ -> Assert.Fail($"Expected a tuple of two list values, got {value}")
@@ -572,8 +578,8 @@ in List::append [string] l1 l2
                                                                               Value.Primitive(String "world")
                                                                               Value.Primitive(String "bonjour")
                                                                               Value.Primitive(String " ")
-                                                                              Value.Primitive(String "monde") ])))) ->
-      Assert.Pass()
+                                                                              Value.Primitive(String "monde") ]))),
+          None) -> Assert.Pass()
     | _ -> Assert.Fail($"Expected a list with the appended values, got {value}")
 
   | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
@@ -782,7 +788,7 @@ let ``LangNext-Integration DateOnly constructor builds a DateOnly value`` () =
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Sum({ Case = 0; Count = 1 }, Value.Primitive(PrimitiveValue.Date(d))) when d = System.DateOnly(2021, 2, 1) ->
+    | Value.Sum({ Case = 2; Count = 2 }, Value.Primitive(PrimitiveValue.Date(d))) when d = System.DateOnly(2021, 2, 1) ->
       Assert.Pass $"Correctly evaluated to 2021-02-01"
     | _ -> Assert.Fail $"Expected 2021-02-01, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
@@ -823,7 +829,7 @@ let ``LangNext-Integration DateOnly constructor fails with an error if the strin
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
+    | Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
     | _ -> Assert.Fail $"Expected an error, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
@@ -892,7 +898,7 @@ let ``LangNext-Integration Guid constructor builds a Guid value`` () =
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Sum({ Case = 0; Count = 1 }, Value.Primitive(PrimitiveValue.Guid(g))) when
+    | Value.Sum({ Case = 2; Count = 2 }, Value.Primitive(PrimitiveValue.Guid(g))) when
       g = System.Guid "123e4567-e89b-12d3-a456-426614174000"
       ->
       Assert.Pass $"Correctly evaluated to 123e4567-e89b-12d3-a456-426614174000"
@@ -922,7 +928,7 @@ let ``LangNext-Integration Guid constructor fails with an error if the string is
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
+    | Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
     | _ -> Assert.Fail $"Expected an error, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
@@ -935,7 +941,7 @@ let ``LangNext-Integration TimeSpan constructor builds a TimeSpan value from "02
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Sum({ Case = 0; Count = 1 }, Value.Primitive(PrimitiveValue.TimeSpan(t))) when
+    | Value.Sum({ Case = 2; Count = 2 }, Value.Primitive(PrimitiveValue.TimeSpan(t))) when
       t = System.TimeSpan(0, 2, 0, 0)
       ->
       Assert.Pass $"Correctly evaluated to 02:00:00"
@@ -951,7 +957,7 @@ let ``LangNext-Integration TimeSpan constructor builds a TimeSpan value from "6"
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Sum({ Case = 0; Count = 1 }, Value.Primitive(PrimitiveValue.TimeSpan(t))) when
+    | Value.Sum({ Case = 2; Count = 2 }, Value.Primitive(PrimitiveValue.TimeSpan(t))) when
       t = System.TimeSpan(6, 0, 0, 0)
       ->
       Assert.Pass $"Correctly evaluated to 6.00:00:00"
@@ -981,7 +987,7 @@ let ``LangNext-Integration TimeSpan constructor fails with an error if the strin
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
+    | Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
     | _ -> Assert.Fail $"Expected an error, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
@@ -994,7 +1000,7 @@ let ``LangNext-Integration TimeSpan constructor fails with an error if the parse
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
+    | Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
     | _ -> Assert.Fail $"Expected an error, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
@@ -1007,7 +1013,7 @@ let ``LangNext-Integration TimeSpan constructor fails with an error if value has
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
+    | Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
     | _ -> Assert.Fail $"Expected an error, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
@@ -1034,7 +1040,7 @@ in match _ with
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Record _ ]))))) ->
+    | Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Record _ ])))), None) ->
       Assert.Pass $"Correctly evaluated to a record"
     | _ -> Assert.Fail $"Expected a record, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
@@ -1063,7 +1069,7 @@ in match _ with
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Record _ ]))))) ->
+    | Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Record _ ])))), None) ->
       Assert.Pass $"Correctly evaluated to a record"
     | _ -> Assert.Fail $"Expected a record, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
@@ -1159,9 +1165,10 @@ in singleton [int32] 10, singleton [bool] true
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Tuple [ Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Int32 10) ])))))
-                    Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ]))))) ] ->
-      Assert.Pass $"Correctly evaluated to (10, true)"
+    | Value.Tuple [ Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Int32 10) ])))),
+                              None)
+                    Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ])))),
+                              None) ] -> Assert.Pass $"Correctly evaluated to (10, true)"
     | _ -> Assert.Fail $"Expected a record, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
@@ -1181,9 +1188,10 @@ in singleton 10, singleton true
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Tuple [ Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Int32 10) ])))))
-                    Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ]))))) ] ->
-      Assert.Pass $"Correctly evaluated to (10, true)"
+    | Value.Tuple [ Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Int32 10) ])))),
+                              None)
+                    Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ])))),
+                              None) ] -> Assert.Pass $"Correctly evaluated to (10, true)"
     | _ -> Assert.Fail $"Expected a record, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
@@ -1306,7 +1314,7 @@ in Map::map (fun (v:int32) -> v + 100) n
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Ext(ValueExt.ValueExt(Choice6Of6(MapExt.MapValues(MapValues.Map(map))))) ->
+    | Value.Ext(ValueExt.ValueExt(Choice6Of6(MapExt.MapValues(MapValues.Map(map)))), _) ->
       let mapList = map |> Map.toList
 
       match mapList with
@@ -1332,7 +1340,7 @@ in Map::maptoList [string][int32] m
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List(listValues))))) ->
+    | Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List(listValues)))), None) ->
       let tuple1 =
         Value.Tuple
           [ Value.Primitive(PrimitiveValue.String "key1")

@@ -1,4 +1,4 @@
-﻿namespace Ballerina.DSL.Next.StdLib.List.Json
+namespace Ballerina.DSL.Next.StdLib.List.Json
 
 [<AutoOpen>]
 module Extension =
@@ -7,6 +7,7 @@ module Extension =
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Types
   open FSharp.Data
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Json
@@ -15,6 +16,7 @@ module Extension =
   open Ballerina.DSL.Next.StdLib.List.Model
   open Ballerina.Lenses
   open Ballerina.StdLib.Json.Patterns
+  open Ballerina.Errors
 
   let parser
     (lens: PartialLens<'ext, ListValues<'ext>>)
@@ -26,7 +28,7 @@ module Extension =
         let! elements = elementsJson |> JsonValue.AsArray |> reader.OfSum
 
         let! elements = elements |> Seq.map rootValueParser |> reader.All
-        return ListValues.List elements |> lens.Set |> Ext
+        return (ListValues.List elements |> lens.Set, None) |> Ext
       })
 
   let encoder
@@ -36,11 +38,11 @@ module Extension =
     : ValueEncoderReader<TypeValue<'ext>, 'ext> =
 
     reader {
-      let! v = Value.AsExt v |> reader.OfSum
+      let! v, _ = Value.AsExt v |> reader.OfSum
 
       let! v =
         lens.Get v
-        |> sum.OfOption("cannot get list value" |> Ballerina.Errors.Errors.Singleton)
+        |> sum.OfOption((fun () -> "cannot get list value") |> Errors<Unit>.Singleton())
         |> reader.OfSum
 
       let! v = v |> ListValues.AsList |> reader.OfSum

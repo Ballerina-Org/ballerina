@@ -2,6 +2,7 @@ namespace Ballerina.StdLib.Tests.Algorithms
 
 open NUnit.Framework
 open Ballerina.StdLib.Algorithms
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.Errors
 
@@ -29,7 +30,7 @@ module TopologicalSort =
 
     match result with
     | Left _ -> Assert.Fail "Expected error due to cycle, but got successful result"
-    | Right errors -> Assert.That(errors.Errors.Head.Message, Does.Contain "Cycle detected")
+    | Right errors -> Assert.That((errors.Errors()).Head.Message, Does.Contain "Cycle detected")
 
   [<Test>]
   let ``Should fail if dependency node not actually in graph`` () =
@@ -38,4 +39,4 @@ module TopologicalSort =
 
     match result with
     | Left _ -> Assert.Fail "Expected error due to missing node, but got successful result"
-    | Right errors -> Assert.That(errors.Errors.Head.Message, Does.Contain "cannot find node")
+    | Right errors -> Assert.That((errors.Errors()).Head.Message, Does.Contain "cannot find node")

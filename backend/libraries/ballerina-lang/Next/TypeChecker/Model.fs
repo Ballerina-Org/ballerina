@@ -3,11 +3,14 @@ namespace Ballerina.DSL.Next.Types.TypeChecker
 [<AutoOpen>]
 module Model =
   open Ballerina.Fun
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Object
   open Ballerina.State.WithError
   open Ballerina.Reader.WithError
+  open Ballerina.Errors
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open System
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
@@ -65,13 +68,13 @@ module Model =
     Option<ExprTypeLetBindingName>
       -> Location
       -> TypeValue<'valueExt>
-      -> State<Kind, KindEvalContext, TypeCheckState<'valueExt>, Errors>
+      -> State<Kind, KindEvalContext, TypeCheckState<'valueExt>, Errors<Location>>
 
   type TypeExprKindEval<'valueExt when 'valueExt: comparison> =
     Option<ExprTypeLetBindingName>
       -> Location
       -> TypeExpr<'valueExt>
-      -> State<Kind, KindEvalContext, TypeCheckState<'valueExt>, Errors>
+      -> State<Kind, KindEvalContext, TypeCheckState<'valueExt>, Errors<Location>>
 
   type UnificationContext<'valueExt when 'valueExt: comparison> =
     { EvalState: TypeCheckState<'valueExt>
@@ -79,7 +82,7 @@ module Model =
       Scope: TypeCheckScope }
 
   type TypeCheckerResult<'r, 'valueExt when 'valueExt: comparison> =
-    State<'r, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors>
+    State<'r, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>>
 
   type TypeChecker<'input, 'valueExt when 'valueExt: comparison> =
     Option<TypeValue<'valueExt>>
@@ -103,7 +106,7 @@ module Model =
       Values: Map<ResolvedIdentifier, TypeValue<'valueExt> * Kind> }
 
   type TypeExprEvalResult<'valueExt when 'valueExt: comparison> =
-    State<TypeValue<'valueExt> * Kind, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors>
+    State<TypeValue<'valueExt> * Kind, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>>
 
   type TypeExprEvalPlain<'valueExt when 'valueExt: comparison> =
     Option<ExprTypeLetBindingName> -> Location -> TypeExpr<'valueExt> -> TypeExprEvalResult<'valueExt>
@@ -116,7 +119,7 @@ module Model =
       -> TypeExprEvalResult<'valueExt>
 
   type TypeExprSymbolEvalResult<'valueExt when 'valueExt: comparison> =
-    State<TypeSymbol, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors>
+    State<TypeSymbol, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>>
 
   type TypeExprSymbolEval<'valueExt when 'valueExt: comparison> =
     TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt>

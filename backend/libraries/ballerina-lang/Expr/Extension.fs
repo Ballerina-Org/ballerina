@@ -3,19 +3,20 @@ namespace Ballerina.DSL.Expr
 module Extension =
   open Ballerina.DSL.Expr.Model
   open FSharp.Data
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.DSL.Expr.Types.Model
   open Ballerina.Coroutines.Model
   open Ballerina.DSL.Expr.Eval
 
-  type Parse<'ExprExtension, 'ValueExtension> = JsonValue -> Sum<Expr<'ExprExtension, 'ValueExtension>, Errors>
+  type Parse<'ExprExtension, 'ValueExtension> = JsonValue -> Sum<Expr<'ExprExtension, 'ValueExtension>, Errors<unit>>
 
   type ParserExtension<'ExprExtension, 'ValueExtension> =
     { parseExtension: Parse<'ExprExtension, 'ValueExtension> -> Parse<'ExprExtension, 'ValueExtension> }
 
   type TypeCheck<'ExprExtension, 'ValueExtension> =
-    (TypeBindings) -> (VarTypes) -> (Expr<'ExprExtension, 'ValueExtension>) -> Sum<ExprType, Errors>
+    (TypeBindings) -> (VarTypes) -> (Expr<'ExprExtension, 'ValueExtension>) -> Sum<ExprType, Errors<unit>>
 
   type TypeCheckerExtension<'ExprExtension, 'ValueExtension> =
     { typeCheck: TypeCheck<'ExprExtension, 'ValueExtension> -> TypeCheck<'ExprExtension, 'ValueExtension> }
@@ -27,7 +28,7 @@ module Extension =
         ExprEvalState,
         ExprEvalContext<'ExprExtension, 'ValueExtension>,
         Unit,
-        Errors
+        Errors<unit>
        >
 
   type EvaluatorExtension<'ExprExtension, 'ValueExtension> =

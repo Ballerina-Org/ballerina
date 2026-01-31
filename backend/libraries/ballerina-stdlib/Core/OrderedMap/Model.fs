@@ -9,13 +9,15 @@ module OrderPreservingMap =
     - insert and lookup: same as Map
     *)
   open Ballerina.Errors
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.State.WithError
   open Ballerina.Reader.WithError
+  open Ballerina
 
-  let private withError (e: string) (o: Option<'res>) : Sum<'res, Errors> =
-    o |> Sum.fromOption<'res, Errors> (fun () -> Errors.Singleton e)
+  let private withError (e: unit -> string) (o: Option<'res>) : Sum<'res, Errors<Unit>> =
+    o |> Sum.fromOption<'res, Errors<Unit>> (fun () -> Errors.Singleton () e)
 
   type OrderedMap<'K, 'V when 'K: comparison> with
     static member tryFindWithError
@@ -23,22 +25,22 @@ module OrderPreservingMap =
       (k_category: string)
       (k_error: string)
       (m: OrderedMap<'K, 'V>)
-      : Sum<'V, Errors> =
+      : Sum<'V, Errors<Unit>> =
       OrderedMap.tryFind k m
-      |> withError (sprintf "Cannot find %s '%s'" k_category k_error)
+      |> withError (fun () -> sprintf "Cannot find %s '%s'" k_category k_error)
 
     static member tryFindByWithError
       (predicate: 'K * 'V -> bool)
       (k_category: string)
       (k_error: string)
       (m: OrderedMap<'K, 'V>)
-      : Sum<'K * 'V, Errors> =
+      : Sum<'K * 'V, Errors<Unit>> =
       OrderedMap.toSeq m
       |> Seq.map (fun (k, v) -> k, v)
       |> Seq.tryFind predicate
-      |> withError (sprintf "Cannot find %s '%s'" k_category k_error)
+      |> withError (fun () -> sprintf "Cannot find %s '%s'" k_category k_error)
     // new methods
-    static member ofListIfNoDuplicates(kvs: List<'K * 'V>) : Sum<OrderedMap<'K, 'V>, Errors> =
+    static member ofListIfNoDuplicates(kvs: List<'K * 'V>) : Sum<OrderedMap<'K, 'V>, Errors<Unit>> =
       let duplicateKeys =
         kvs
         |> List.groupBy fst
@@ -48,21 +50,24 @@ module OrderPreservingMap =
       if duplicateKeys.IsEmpty then
         OrderedMap.ofList kvs |> Left
       else
-        Errors.Singleton(sprintf "Duplicate keys: %A" duplicateKeys)
-        |> Errors.WithPriority ErrorPriority.Medium
+        Errors.Singleton () (fun () -> sprintf "Duplicate keys: %A" duplicateKeys)
+        |> Errors.MapPriority(replaceWith ErrorPriority.Medium)
         |> Right
 
     static member mergeSecondAfterFirstIfNoDuplicates
       (om1: OrderedMap<'K, 'V>)
       (om2: OrderedMap<'K, 'V>)
-      : Sum<OrderedMap<'K, 'V>, Errors> =
+      : Sum<OrderedMap<'K, 'V>, Errors<Unit>> =
       let conflicts = om2.reverseOrder |> List.filter (fun k -> om1.data.ContainsKey k)
 
       if conflicts.IsEmpty then
         OrderedMap.mergeSecondAfterFirst om1 om2 |> Left
       else
         let errorMsg = sprintf "Key conflicts during merge: %A" conflicts
-        Errors.Singleton errorMsg |> Errors.WithPriority ErrorPriority.Medium |> Right
+
+        Errors.Singleton () (fun () -> errorMsg)
+        |> Errors.MapPriority(replaceWith ErrorPriority.Medium)
+        |> Right
 
   type StateBuilder with
     member inline state.AllMapOrdered<'k, 'a, 'c, 's, 'e

@@ -1,9 +1,13 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
+
+open Ballerina.LocalizedErrors
 
 [<AutoOpen>]
 module TypeVar =
 
+  open Ballerina
   open Ballerina.Collections.Sum
+  open Ballerina
   open Ballerina.Collections.Sum.Operators
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.Errors
@@ -12,13 +16,19 @@ module TypeVar =
   open FSharp.Data
 
   type TypeVar with
-    static member FromJson(json: JsonValue) : Sum<TypeVar, Errors> =
+    static member FromJson(json: JsonValue) : Sum<TypeVar, Errors<unit>> =
       sum {
         let! fields = json |> JsonValue.AsRecordMap
 
-        let! name = fields |> (Map.tryFindWithError "name" "TypeVar" "name" >>= JsonValue.AsString)
+        let! name =
+          fields
+          |> (Map.tryFindWithError "name" "TypeVar" (fun () -> "name") ()
+              >>= JsonValue.AsString)
 
-        let! guid = fields |> (Map.tryFindWithError "guid" "TypeVar" "guid" >>= JsonValue.AsString)
+        let! guid =
+          fields
+          |> (Map.tryFindWithError "guid" "TypeVar" (fun () -> "guid") ()
+              >>= JsonValue.AsString)
 
         match Guid.TryParse(guid) with
         | true, parsedGuid ->
@@ -27,10 +37,7 @@ module TypeVar =
               Guid = parsedGuid
               Synthetic = false }
         | false, _ ->
-          return!
-            $"Error: Invalid GUID format '{guid}' in 'TypeVar'."
-            |> Errors.Singleton
-            |> sum.Throw
+          return! sum.Throw(Errors.Singleton () (fun () -> $"Error: Invalid GUID format '{guid}' in 'TypeVar'."))
       }
 
     static member ToJson(t: TypeVar) : JsonValue =

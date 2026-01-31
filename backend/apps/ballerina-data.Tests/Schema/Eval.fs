@@ -3,6 +3,7 @@ module Ballerina.Data.Tests.Schema.Eval
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.Data.Schema.Model
 open Ballerina.State.WithError
+open Ballerina
 open Ballerina.Collections.Sum
 open NUnit.Framework
 open Ballerina.DSL.Next.Types.Model

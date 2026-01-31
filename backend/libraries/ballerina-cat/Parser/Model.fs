@@ -3,6 +3,7 @@ namespace Ballerina.Parser
 [<AutoOpen>]
 module Model =
   open Ballerina.Fun
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Collections
   open Ballerina.Collections.NonEmptyList

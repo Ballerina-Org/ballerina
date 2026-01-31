@@ -1,6 +1,7 @@
-﻿namespace Ballerina.Data.Schema
+namespace Ballerina.Data.Schema
 
 open System
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.FormEngine.Model
 open Ballerina.DSL.Next.StdLib.Extensions
@@ -57,7 +58,7 @@ module Entity =
   let insertLookupValues
     (sourceValue: Value<TypeValue<'valueExt>, 'valueExt>)
     (lookupValues: LookupValue<'valueExt> seq)
-    : Sum<Value<TypeValue<'valueExt>, 'valueExt>, Errors> =
+    : Sum<Value<TypeValue<'valueExt>, 'valueExt>, Errors<unit>> =
     lookupValues
     |> Seq.fold
       (fun acc lookupValue ->

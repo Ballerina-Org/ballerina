@@ -6,6 +6,7 @@ open Ballerina.DSL.Next.Types.Model
 open Ballerina.Data.Delta.Model
 open Ballerina.Data.Delta.Extensions
 open Ballerina.Data.Delta
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.StdLib.List.Model
@@ -17,7 +18,7 @@ let ``Delta extensions, list update string element at`` () =
     Value<TypeValue<ValueExt>, ValueExt>.Primitive(PrimitiveValue.String v)
 
   let list =
-    ValueExt(Choice1Of6(ListExt.ListValues(List [ str "a"; str "b"; str "c" ])))
+    (ValueExt(Choice1Of6(ListExt.ListValues(List [ str "a"; str "b"; str "c" ]))), None)
     |> Value<TypeValue<ValueExt>, ValueExt>.Ext
 
   let delta =
@@ -31,7 +32,7 @@ let ``Delta extensions, list update string element at`` () =
       Assert.That(
         result,
         Is.EqualTo(
-          ValueExt(Choice1Of6(ListExt.ListValues(List [ str "a"; str "-"; str "c" ])))
+          (ValueExt(Choice1Of6(ListExt.ListValues(List [ str "a"; str "-"; str "c" ]))), None)
           |> Value<TypeValue<ValueExt>, ValueExt>.Ext
         )
       )
@@ -47,7 +48,7 @@ let ``Delta extensions, list update complex value at`` () =
     Value<TypeValue<ValueExt>, ValueExt>.Sum({ Case = i; Count = length }, str $"{i}/{length}")
 
   let list =
-    ValueExt(Choice1Of6(ListExt.ListValues(List [ sum 0 3; sum 1 3; sum 2 3 ])))
+    (ValueExt(Choice1Of6(ListExt.ListValues(List [ sum 0 3; sum 1 3; sum 2 3 ]))), None)
     |> Value<TypeValue<ValueExt>, ValueExt>.Ext
 
   let delta =
@@ -61,7 +62,7 @@ let ``Delta extensions, list update complex value at`` () =
       Assert.That(
         result,
         Is.EqualTo(
-          ValueExt(Choice1Of6(ListExt.ListValues(List [ sum 0 3; sum 4 4; sum 2 3 ])))
+          (ValueExt(Choice1Of6(ListExt.ListValues(List [ sum 0 3; sum 4 4; sum 2 3 ]))), None)
           |> Value<TypeValue<ValueExt>, ValueExt>.Ext
         )
       )
@@ -75,7 +76,7 @@ let ``Delta extensions, list append element`` () =
     Value<TypeValue<ValueExt>, ValueExt>.Primitive(PrimitiveValue.String v)
 
   let list =
-    ValueExt(Choice1Of6(ListExt.ListValues(List [ str "a"; str "b"; str "c" ])))
+    (ValueExt(Choice1Of6(ListExt.ListValues(List [ str "a"; str "b"; str "c" ]))), None)
     |> Value<TypeValue<ValueExt>, ValueExt>.Ext
 
   let delta =
@@ -89,7 +90,7 @@ let ``Delta extensions, list append element`` () =
       Assert.That(
         result,
         Is.EqualTo(
-          ValueExt(Choice1Of6(ListExt.ListValues(List [ str "a"; str "b"; str "c"; str "d" ])))
+          (ValueExt(Choice1Of6(ListExt.ListValues(List [ str "a"; str "b"; str "c"; str "d" ]))), None)
           |> Value<TypeValue<ValueExt>, ValueExt>.Ext
         )
       )
@@ -103,7 +104,7 @@ let ``Delta extensions, list remove element`` () =
     Value<TypeValue<ValueExt>, ValueExt>.Primitive(PrimitiveValue.String v)
 
   let list =
-    ValueExt(Choice1Of6(ListExt.ListValues(List [ str "a"; str "b"; str "c" ])))
+    (ValueExt(Choice1Of6(ListExt.ListValues(List [ str "a"; str "b"; str "c" ]))), None)
     |> Value<TypeValue<ValueExt>, ValueExt>.Ext
 
   let delta = Delta.Ext(DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.RemoveElement(1))))
@@ -116,7 +117,7 @@ let ``Delta extensions, list remove element`` () =
       Assert.That(
         result,
         Is.EqualTo(
-          ValueExt(Choice1Of6(ListExt.ListValues(List [ str "a"; str "c" ])))
+          (ValueExt(Choice1Of6(ListExt.ListValues(List [ str "a"; str "c" ]))), None)
           |> Value<TypeValue<ValueExt>, ValueExt>.Ext
         )
       )

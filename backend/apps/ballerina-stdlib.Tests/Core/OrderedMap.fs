@@ -3,6 +3,7 @@ namespace Ballerina.StdLib.Tests.Core
 open NUnit.Framework
 open Ballerina.StdLib.OrderPreservingMap
 open Ballerina.Cat.Collections.OrderedMap
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.Errors
 
@@ -122,7 +123,7 @@ module OrderedMap =
 
     match result with
     | Left _ -> Assert.Fail("Should have failed")
-    | Right errors -> Assert.That(errors.Errors.Head.Message.Contains("Duplicate keys: [1; 2]"), Is.True)
+    | Right errors -> Assert.That((errors.Errors()).Head.Message.Contains("Duplicate keys: [1; 2]"), Is.True)
 
   [<Test>]
   let ``ContainsKey should work correctly`` () =
@@ -178,8 +179,8 @@ module OrderedMap =
     match result with
     | Left _ -> Assert.Fail("Should have failed")
     | Right errors ->
-      Assert.That(errors.Errors.Head.Message.Contains("Key conflicts during merge"), Is.True)
-      Assert.That(errors.Errors.Head.Message.Contains("2"), Is.True)
+      Assert.That((errors.Errors()).Head.Message.Contains("Key conflicts during merge"), Is.True)
+      Assert.That((errors.Errors()).Head.Message.Contains("2"), Is.True)
 
   [<Test>]
   let ``mergeSecondAfterFirstDuplicatesOk should merge with om1 values taking precedence`` () =
@@ -238,7 +239,7 @@ module OrderedMap =
 
     match result with
     | Left _ -> Assert.Fail("Should have failed")
-    | Right errors -> Assert.That(errors.Errors.Head.Message, Is.EqualTo("Cannot find key '3'"))
+    | Right errors -> Assert.That((errors.Errors()).Head.Message, Is.EqualTo("Cannot find key '3'"))
 
   [<Test>]
   let ``tryFindByWithError should return first matching key-value pair`` () =
@@ -263,7 +264,7 @@ module OrderedMap =
 
     match result with
     | Left _ -> Assert.Fail("Should have failed")
-    | Right errors -> Assert.That(errors.Errors.Head.Message, Is.EqualTo("Cannot find item 'matching'"))
+    | Right errors -> Assert.That((errors.Errors()).Head.Message, Is.EqualTo("Cannot find item 'matching'"))
 
   [<Test>]
   let ``filter should keep only matching items`` () =

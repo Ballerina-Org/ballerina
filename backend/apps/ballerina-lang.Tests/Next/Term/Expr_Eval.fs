@@ -4,6 +4,7 @@ open NUnit.Framework
 open FSharp.Data
 open Ballerina.StdLib.Object
 open Ballerina.StdLib.String
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.Coroutines.Model
 open Ballerina.Reader.WithError
@@ -76,7 +77,7 @@ let ``LangNext-ExprEval (generic) Apply of custom Option type succeeds`` () =
     let actual = eval program
 
     let expected: Value<TypeValue<ValueExt>, ValueExt> =
-      Choice2Of6(OptionConstructors Option_Some) |> ValueExt |> Ext
+      (Choice2Of6(OptionConstructors Option_Some) |> ValueExt, None) |> Ext
 
     match actual with
     | Sum.Left actual -> Assert.That(actual, Is.EqualTo(expected))
@@ -103,8 +104,9 @@ let ``LangNext-ExprEval construction of custom Option.Some succeeds`` () =
     let actual = eval program
 
     let expected: Value<TypeValue<ValueExt>, ValueExt> =
-      Choice2Of6(OptionValues(Option(Some(Value.Primitive(PrimitiveValue.Int32 100)))))
-      |> ValueExt
+      (Choice2Of6(OptionValues(Option(Some(Value.Primitive(PrimitiveValue.Int32 100)))))
+       |> ValueExt,
+       None)
       |> Ext
 
     match actual with
@@ -132,7 +134,7 @@ let ``LangNext-ExprEval construction of custom Option.None succeeds`` () =
     let actual = eval program
 
     let expected: Value<TypeValue<ValueExt>, ValueExt> =
-      Choice2Of6(OptionValues(Option None)) |> ValueExt |> Ext
+      (Choice2Of6(OptionValues(Option None)) |> ValueExt, None) |> Ext
 
     match actual with
     | Sum.Left actual -> Assert.That(actual, Is.EqualTo(expected))

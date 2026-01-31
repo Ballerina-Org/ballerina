@@ -1,9 +1,11 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
 
 [<AutoOpen>]
 module SetTypeExpr =
   open FSharp.Data
+  open Ballerina
   open Ballerina.Collections.Sum
+  open Ballerina
   open Ballerina.Collections.Sum.Operators
   open Ballerina.StdLib.Json.Sum
   open Ballerina.DSL.Next.Json

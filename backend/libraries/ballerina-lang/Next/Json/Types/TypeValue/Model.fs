@@ -5,16 +5,17 @@ module TypeValue =
   open FSharp.Data
   open Ballerina.StdLib.String
   open Ballerina.StdLib.Object
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Json
 
   type TypeValue<'valueExt> with
-    static member FromJson(json: JsonValue) : Sum<TypeValue<'valueExt>, Errors> =
+    static member FromJson(json: JsonValue) : Sum<TypeValue<'valueExt>, Errors<_>> =
 
       let inline parse
-        (fromJson: (JsonValue -> Sum<TypeValue<'valueExt>, Errors>) -> JsonValue -> Sum<'v, Errors>)
+        (fromJson: (JsonValue -> Sum<TypeValue<'valueExt>, Errors<_>>) -> JsonValue -> Sum<'v, Errors<_>>)
         (ctor: WithSourceMapping<'v, 'valueExt> -> TypeValue<'valueExt>)
         json
         =
@@ -36,9 +37,9 @@ module TypeValue =
           parse TypeValue.FromJsonSet TypeValue.Set json
           parse TypeValue.FromJsonMap TypeValue.Map json
           TypeValue.FromJsonImported TypeValue.FromJson json
-          $"Unknown TypeValue JSON: {json.AsFSharpString.ReasonablyClamped}"
-          |> Errors.Singleton
-          |> Errors.WithPriority ErrorPriority.Medium
+          (fun () -> $"Unknown TypeValue JSON: {json.AsFSharpString.ReasonablyClamped}")
+          |> Errors.Singleton()
+          |> Errors.MapPriority(replaceWith ErrorPriority.Medium)
           |> sum.Throw ]
       )
       |> sum.MapError(Errors.HighestPriority)

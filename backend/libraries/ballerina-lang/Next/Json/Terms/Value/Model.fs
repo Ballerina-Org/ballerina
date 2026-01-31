@@ -1,5 +1,6 @@
 ﻿namespace Ballerina.DSL.Next.Terms.Json
 
+open Ballerina
 open Ballerina.DSL.Next.Json
 
 [<AutoOpen>]
@@ -27,9 +28,9 @@ module Value =
           Value.FromJsonVar json
           Value.FromJsonLambda json
           Value.FromJsonTypeLambda json
-          $"Unknown Value JSON: {json.AsFSharpString.ReasonablyClamped}"
-          |> Errors.Singleton
-          |> Errors.WithPriority ErrorPriority.Medium
+          fun () -> $"Unknown Value JSON: {json.AsFSharpString.ReasonablyClamped}"
+          |> Errors.Singleton()
+          |> Errors.MapPriority(replaceWith ErrorPriority.Medium)
           |> reader.Throw ]
       )
       |> reader.MapError(Errors.HighestPriority)
@@ -49,4 +50,4 @@ module Value =
       | Value.Var v -> Value.ToJsonVar v |> reader.Return
       | Value.Lambda(a, b, _closure, _) -> Value.ToJsonLambda a b
       | Value.TypeLambda(a, b) -> Value.ToJsonTypeLambda a b
-      | Value.Ext e -> reader.Throw(Errors.Singleton $"Extension parsing not yet implemented: {e}")
+      | Value.Ext(e, _) -> reader.Throw(Errors.Singleton () (fun () -> $"Extension parsing not yet implemented: {e}"))

@@ -7,11 +7,13 @@ module Expr =
   open Ballerina.Collections.Option
   open Ballerina.Parser
   open Ballerina.Collections.NonEmptyList
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.DSL.Next.Types
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Terms.Patterns
@@ -20,6 +22,7 @@ module Expr =
   open Precedence
   open Type
   open Ballerina.DSL.Next.Syntax
+  open Ballerina
 
   type ComplexExpressionKind =
     | ScopedIdentifier
@@ -48,7 +51,7 @@ module Expr =
   let rec expr
     (depth: int)
     (parseComplexShapes: Set<ComplexExpressionKind>)
-    : Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors> =
+    : Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
 
     let expr = expr (depth + 1)
 
@@ -174,8 +177,8 @@ module Expr =
 
             if unionCases.Length > 0 && sumCases.Length > 0 then
               return!
-                (loc, "Error: cannot mix union cases and sum cases in match expression")
-                |> Errors.Singleton
+                (fun () -> "Error: cannot mix union cases and sum cases in match expression")
+                |> Errors.Singleton loc
                 |> parser.Throw
             else if unionCases.Length > 0 then
               let unionCases = Map.ofList unionCases
@@ -194,7 +197,7 @@ module Expr =
                 Expr.Apply(Expr.SumDes(sumCases, loc, TypeCheckScope.Empty), matchedExpr, loc, TypeCheckScope.Empty)
 
           }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     let termParam =
@@ -239,7 +242,7 @@ module Expr =
                 pars
           // Expr.Lambda(Var.Create paramName, paramType, body, loc, TypeCheckScope.Empty)
           }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
       }
 
@@ -263,7 +266,7 @@ module Expr =
                         do! closeRoundBracketOperator
                         return paramName, typeDecl |> Some
                       }
-                      |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+                      |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                   }
                   parser {
                     let! paramName = singleIdentifier
@@ -278,7 +281,7 @@ module Expr =
                                 let! typeDecl = typeDecl parseAllComplexTypeShapes
                                 return typeDecl |> Some
                               }
-                              |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+                              |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                           }
                           parser { return None } ]
 
@@ -291,7 +294,7 @@ module Expr =
             let! body = expr parseAllComplexShapes
             return Expr.Let(paramName |> Var.Create, paramType, value, body, loc, TypeCheckScope.Empty)
           }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     let exprConditional () =
@@ -308,7 +311,7 @@ module Expr =
             let! elseBranch = expr parseAllComplexShapes
             return Expr.If(cond, thenBranch, elseBranch, loc, TypeCheckScope.Empty)
           }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     let recordCons () =
@@ -333,7 +336,7 @@ module Expr =
                         let! e =
                           e
                           |> Expr.AsLookup
-                          |> sum.MapError(Errors.FromErrors(e.Location))
+                          |> sum.MapError(Errors.MapContext(replaceWith e.Location))
                           |> parser.OfSum
 
                         do! equalsOperator |> parser.Ignore
@@ -362,7 +365,7 @@ module Expr =
             | Sum.Left({ Id = f }, v) -> return Expr.RecordCons((f, v) :: fields, loc, TypeCheckScope.Empty)
             | Sum.Right e -> return Expr.RecordWith(e, fields, loc, TypeCheckScope.Empty)
           }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     let tupleConsTail () =
@@ -382,7 +385,7 @@ module Expr =
 
             return fields |> ComplexExpression.TupleCons
           }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     let recordDes () =
@@ -401,7 +404,7 @@ module Expr =
 
             return fields |> ComplexExpression.RecordOrTupleDesChain
           }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     let typeLet () =
@@ -444,7 +447,7 @@ module Expr =
 
             return Expr.TypeLet(id, typeDecl, body, loc, TypeCheckScope.Empty)
           }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     let unaryOperatorIdentifier () =
@@ -483,7 +486,7 @@ module Expr =
 
             return ids |> ScopedIdentifier
           }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     let binaryExpressionChainTail () =
@@ -503,7 +506,7 @@ module Expr =
 
             return fields |> ComplexExpression.BinaryExpressionChain
           }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     let argExpr () =
@@ -520,7 +523,7 @@ module Expr =
 
             return res
           }
-          |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     let application () =
@@ -620,7 +623,7 @@ module Expr =
         // do Console.ReadLine() |> ignore
         let! loc = parser.Location
 
-        let res =
+        let res: Sum<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, Errors<Location>> =
           res
           |> List.fold
             (fun acc e ->
@@ -632,10 +635,11 @@ module Expr =
                   let fields: List<BinaryOperatorsElement<Expr<_, _, _>, BinaryExprOperator>> =
                     fields
                     |> NonEmptyList.ToList
-                    |> Seq.collect (fun (op, e) -> [ op |> Precedence.Operator; e |> Precedence.Operand ])
+                    |> Seq.collect (fun (op, e) ->
+                      [ op |> Precedence.Operator; (e, NonMergeable) |> Precedence.Operand ])
                     |> List.ofSeq
 
-                  let chain = Operand acc :: fields
+                  let chain = Operand(acc, Mergeable) :: fields
 
                   let precedence: List<OperatorsPrecedence<BinaryExprOperator>> =
                     [ { Operators =
@@ -663,7 +667,7 @@ module Expr =
                   return!
                     collapseBinaryOperatorsChain
                       { Compose =
-                          fun (e1, op, e2) ->
+                          fun (e1, _src1, op, e2, _src2) ->
                             match op with
                             | BinaryExprOperator.DoubleGreaterThan ->
                               // Expr.Apply(Expr.Apply(Expr.Lookup(Identifier.LocalScope(">>"), loc), e1, loc), e2, loc)
@@ -683,8 +687,10 @@ module Expr =
                                 ),
                                 loc,
                                 TypeCheckScope.Empty
-                              )
-                            | BinaryExprOperator.PipeGreaterThan -> Expr.Apply(e2, e1, loc, TypeCheckScope.Empty)
+                              ),
+                              NonMergeable
+                            | BinaryExprOperator.PipeGreaterThan ->
+                              Expr.Apply(e2, e1, loc, TypeCheckScope.Empty), NonMergeable
                             | _ ->
                               Expr.Apply(
                                 Expr.Apply(
@@ -696,7 +702,8 @@ module Expr =
                                 e2,
                                 loc,
                                 TypeCheckScope.Empty
-                              )
+                              ),
+                              NonMergeable
                         ToExpr = id }
                       loc
                       precedence
@@ -708,8 +715,8 @@ module Expr =
                     return Expr.Lookup(Identifier.FullyQualified(ids.Tail, ids.Head), loc, TypeCheckScope.Empty)
                   | _ ->
                     return!
-                      (loc, $"Error: cannot collapse scoped identifier chain on non-identifier")
-                      |> Errors.Singleton
+                      (fun () -> $"Error: cannot collapse scoped identifier chain on non-identifier")
+                      |> Errors.Singleton loc
                       |> sum.Throw
                 | RecordOrTupleDesChain ids ->
                   return

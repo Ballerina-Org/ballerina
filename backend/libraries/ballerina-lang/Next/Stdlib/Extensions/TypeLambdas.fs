@@ -11,6 +11,7 @@ module TypeLambdas =
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Types
   open Ballerina.Collections.NonEmptyList
+  open Ballerina.Collections.Map
 
   type TypeLambdaExtension<'e, 'extTypeLambda> with
     static member RegisterTypeCheckContext<'ext when 'ext: comparison>
@@ -26,6 +27,13 @@ module TypeLambdas =
             Values = values }
 
 
+    static member RegisterTypeCheckState<'ext when 'ext: comparison>
+      (ext: TypeLambdaExtension<'ext, 'extTypeLambda>)
+      : Updater<TypeCheckState<'ext>> =
+      fun typeCheckState ->
+        { typeCheckState with
+            Bindings = typeCheckState.Bindings |> Map.merge (fun _ -> id) ext.ExtraBindings }
+
     static member RegisterExprEvalContext<'ext when 'ext: comparison>
       (ext: TypeLambdaExtension<'ext, 'extTypeLambda>)
       : Updater<ExprEvalContext<'ext>> =
@@ -40,8 +48,12 @@ module TypeLambdas =
         let id, _, _ = ext.ExtensionType
 
         { evalContext with
-            Values = Map.add id (ext.Value |> ext.ValueLens.Set |> Ext) evalContext.Values
-            ExtensionOps = { Eval = ops } }
+            Scope =
+              { evalContext.Scope with
+                  Values = Map.add id ((ext.Value |> ext.ValueLens.Set, None) |> Ext) evalContext.Scope.Values }
+            ExtensionOps =
+              { Eval = ops
+                Applicables = evalContext.ExtensionOps.Applicables } }
 
     static member RegisterLanguageContext<'ext when 'ext: comparison>
       (ext: TypeLambdaExtension<'ext, 'extTypeLambda>)
@@ -50,6 +62,6 @@ module TypeLambdas =
         { TypeCheckContext =
             langCtx.TypeCheckContext
             |> (ext |> TypeLambdaExtension.RegisterTypeCheckContext)
-          TypeCheckState = langCtx.TypeCheckState
           ExprEvalContext = langCtx.ExprEvalContext |> (ext |> TypeLambdaExtension.RegisterExprEvalContext)
-          TypeCheckedPreludes = langCtx.TypeCheckedPreludes }
+          TypeCheckedPreludes = langCtx.TypeCheckedPreludes
+          TypeCheckState = langCtx.TypeCheckState |> (ext |> TypeLambdaExtension.RegisterTypeCheckState) }

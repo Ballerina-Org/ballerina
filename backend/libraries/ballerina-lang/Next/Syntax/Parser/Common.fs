@@ -7,13 +7,16 @@ module Common =
   open Ballerina.Collections.Option
   open Ballerina.Parser
   open Ballerina.Collections.NonEmptyList
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Syntax
   open Model
+  open Ballerina
 
   let parseOperator op =
     parser.Exactly(fun t ->
@@ -164,6 +167,14 @@ module Common =
   let relationKeyword = softKeyword "relation"
   let searchByKeyword = softKeyword "searchBy"
   let propertyKeyword = parseKeyword Keyword.Property
+  let onKeyword = softKeyword "on"
+  let creatingKeyword = softKeyword "creating"
+  let updatingKeyword = softKeyword "updating"
+  let deletingKeyword = softKeyword "deleting"
+  let createdKeyword = softKeyword "created"
+  let updatedKeyword = softKeyword "updated"
+  let deletedKeyword = softKeyword "deleted"
+
   let fromKeyword = softKeyword "from"
   let toKeyword = softKeyword "to"
   let cardinalityKeyword = softKeyword "cardinality"
@@ -187,7 +198,7 @@ module Common =
                   let! ids = identifiersMatch () |> parser.Map(NonEmptyList.ToList)
                   return NonEmptyList.OfList(id, ids)
                 }
-                |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+                |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
             }
             parser { return NonEmptyList.OfList(id, []) } ]
     }
@@ -233,7 +244,7 @@ module Common =
           do! closeRoundBracketOperator
           return res
         }
-        |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+        |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
 
   let betweenSquareBrackets p =
@@ -246,14 +257,15 @@ module Common =
           do! closeSquareBracketOperator
           return res
         }
-        |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+        |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
 
   let afterKeyword k p =
     parser {
       do! k
-      return! p |> parser.MapError(Errors.SetPriority ErrorPriority.High)
+      return! p |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
+    |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
   let intLiteralToken () =
     parser.Exactly(fun t ->

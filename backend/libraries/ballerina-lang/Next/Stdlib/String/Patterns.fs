@@ -2,48 +2,53 @@ namespace Ballerina.DSL.Next.StdLib.String
 
 [<AutoOpen>]
 module Patterns =
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Types
 
   type StringOperations<'ext> with
-    static member AsLength(op: StringOperations<'ext>) : Sum<Unit, Errors> =
+    static member AsLength(op: StringOperations<'ext>) : Sum<Unit, Errors<Unit>> =
       match op with
       | StringOperations.Length -> sum.Return()
-      | _ -> failwith "Expected Length operation"
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected Length operation")
 
-    static member AsConcat(op: StringOperations<'ext>) : Sum<Option<string>, Errors> =
+    static member AsConcat(op: StringOperations<'ext>) : Sum<Option<string>, Errors<Unit>> =
       match op with
       | StringOperations.Concat v -> v.v1 |> sum.Return
-      | _ -> failwith "Expected Concat operation"
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected Concat operation")
 
-    static member AsEqual(op: StringOperations<'ext>) : Sum<Option<string>, Errors> =
+    static member AsEqual(op: StringOperations<'ext>) : Sum<Option<string>, Errors<Unit>> =
       match op with
       | StringOperations.Equal v -> v.v1 |> sum.Return
-      | _ -> failwith "Expected Equal operation"
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected Equal operation")
 
-    static member AsNotEqual(op: StringOperations<'ext>) : Sum<Option<string>, Errors> =
+    static member AsNotEqual(op: StringOperations<'ext>) : Sum<Option<string>, Errors<Unit>> =
       match op with
       | StringOperations.NotEqual v -> v.v1 |> sum.Return
-      | _ -> failwith "Expected NotEqual operation"
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected NotEqual operation")
 
-    static member AsGreaterThan(op: StringOperations<'ext>) : Sum<Option<string>, Errors> =
+    static member AsGreaterThan(op: StringOperations<'ext>) : Sum<Option<string>, Errors<Unit>> =
       match op with
       | StringOperations.GreaterThan v -> v.v1 |> sum.Return
-      | _ -> failwith "Expected GreaterThan operation"
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected GreaterThan operation")
 
-    static member AsGreaterThanOrEqual(op: StringOperations<'ext>) : Sum<Option<string>, Errors> =
+    static member AsGreaterThanOrEqual(op: StringOperations<'ext>) : Sum<Option<string>, Errors<Unit>> =
       match op with
       | StringOperations.GreaterThanOrEqual v -> v.v1 |> sum.Return
-      | _ -> failwith "Expected GreaterThanOrEqual operation"
+      | _ ->
+        sum.Throw
+        <| Errors.Singleton () (fun () -> "Expected GreaterThanOrEqual operation")
 
-    static member AsLessThan(op: StringOperations<'ext>) : Sum<Option<string>, Errors> =
+    static member AsLessThan(op: StringOperations<'ext>) : Sum<Option<string>, Errors<Unit>> =
       match op with
       | StringOperations.LessThan v -> v.v1 |> sum.Return
-      | _ -> failwith "Expected LessThan operation"
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected LessThan operation")
 
-    static member AsLessThanOrEqual(op: StringOperations<'ext>) : Sum<Option<string>, Errors> =
+    static member AsLessThanOrEqual(op: StringOperations<'ext>) : Sum<Option<string>, Errors<Unit>> =
       match op with
       | StringOperations.LessThanOrEqual v -> v.v1 |> sum.Return
-      | _ -> failwith "Expected LessThanOrEqual operation"
+      | _ ->
+        sum.Throw
+        <| Errors.Singleton () (fun () -> "Expected LessThanOrEqual operation")

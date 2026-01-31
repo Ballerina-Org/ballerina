@@ -1,8 +1,9 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
 
 [<AutoOpen>]
 module Var =
   open FSharp.Data
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.StdLib.Json.Sum
@@ -13,7 +14,7 @@ module Var =
   let private discriminator = "var"
 
   type TypeValue<'valueExt> with
-    static member FromJsonVar: JsonValue -> Sum<TypeValue<'valueExt>, Errors> =
+    static member FromJsonVar: JsonValue -> Sum<TypeValue<'valueExt>, Errors<_>> =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (TypeVar.FromJson >> sum.Map TypeValue.Var)
 
     static member ToJsonVar: TypeVar -> JsonValue =

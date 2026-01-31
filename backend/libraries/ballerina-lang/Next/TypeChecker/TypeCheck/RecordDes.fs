@@ -2,10 +2,12 @@ namespace Ballerina.DSL.Next.Types.TypeChecker
 
 module RecordDes =
   open Ballerina.StdLib.String
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Collections.Option
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open System
   open Ballerina.StdLib.Object
   open Ballerina.DSL.Next.Types.Model
@@ -33,8 +35,8 @@ module RecordDes =
              Field = fieldName }) ->
         let (!) = typeCheckExpr context_t
 
-        let ofSum (p: Sum<'a, Ballerina.Errors.Errors>) =
-          p |> Sum.mapRight (Errors.FromErrors loc0) |> state.OfSum
+        let ofSum (p: Sum<'a, Errors<Unit>>) =
+          p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
         state {
           let! ctx = state.GetContext()
@@ -53,8 +55,8 @@ module RecordDes =
                       |> Seq.map (fun (k, v) -> (k, v))
                       |> Seq.tryFind (fun (k, _v) -> k.Name.LocalName = fieldName.LocalName)
                       |> sum.OfOption(
-                        $"Error: cannot find field {fieldName} in record {record_v}"
-                        |> Ballerina.Errors.Errors.Singleton
+                        (fun () -> $"Error: cannot find field {fieldName} in record {record_v}")
+                        |> Errors<Unit>.Singleton()
                       )
                       |> ofSum
 
@@ -65,7 +67,7 @@ module RecordDes =
 
                     return Expr.RecordDes(record_v, fieldName, loc0, ctx.Scope), field_t, field_k, ctx
                   }
-                  |> state.MapError(Errors.SetPriority ErrorPriority.High)
+                  |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
 
                 return!
@@ -82,11 +84,11 @@ module RecordDes =
                       do!
                         TypeValue.Unify(loc0, record_t, expected_record_t)
                         |> Expr.liftUnification
-                        |> state.MapError(Errors.SetPriority ErrorPriority.High)
+                        |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
                       return! resolve_lookup fields_t
                     })
-                  |> state.MapError Errors.FilterHighestPriorityOnly
+                  |> state.MapError Errors<_>.FilterHighestPriorityOnly
 
               })
               (state {
@@ -109,10 +111,10 @@ module RecordDes =
                     else
 
                       return!
-                        Errors.Singleton(loc0, $"Error: cannot find field {fieldName} in schema {schema_v}")
+                        Errors.Singleton loc0 (fun () -> $"Error: cannot find field {fieldName} in schema {schema_v}")
                         |> state.Throw
                   }
-                  |> state.MapError(Errors.SetPriority ErrorPriority.High)
+                  |> state.MapError(Errors<_>.MapPriority(replaceWith ErrorPriority.High))
               })
               (state {
                 do! record_k |> Kind.AsStar |> ofSum |> state.Ignore
@@ -135,7 +137,7 @@ module RecordDes =
                       Kind.Star,
                       ctx
                   }
-                  |> state.MapError(Errors.SetPriority ErrorPriority.High)
+                  |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
               })
               (state {
                 do! record_k |> Kind.AsStar |> ofSum |> state.Ignore
@@ -184,7 +186,7 @@ module RecordDes =
                       Kind.Star,
                       ctx
                   }
-                  |> state.MapError(Errors.SetPriority ErrorPriority.High)
+                  |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
               })
               (state {
                 do! record_k |> Kind.AsStar |> ofSum |> state.Ignore
@@ -194,7 +196,7 @@ module RecordDes =
 
                 let! cardinality =
                   cardinality
-                  |> sum.OfOption("Error: relation cardinality is missing" |> Ballerina.Errors.Errors.Singleton)
+                  |> sum.OfOption((fun () -> "Error: relation cardinality is missing") |> Errors<Unit>.Singleton())
                   |> ofSum
 
                 return!
@@ -207,7 +209,8 @@ module RecordDes =
                           return true
                         else
                           return!
-                            Errors.Singleton(loc0, $"Error: cannot find field {fieldName} in relation {record_v}")
+                            Errors.Singleton loc0 (fun () ->
+                              $"Error: cannot find field {fieldName} in relation {record_v}")
                             |> state.Throw
                       }
 
@@ -237,8 +240,8 @@ module RecordDes =
                     | Cardinality.Many ->
                       return result, TypeValue.RelationLookupMany(schema_t, source_id, target'), Kind.Star, ctx
                   }
-                  |> state.MapError(Errors.SetPriority ErrorPriority.High)
+                  |> state.MapError(Errors<_>.MapPriority(replaceWith ErrorPriority.High))
               })
-            |> state.MapError Errors.FilterHighestPriorityOnly
+            |> state.MapError Errors<_>.FilterHighestPriorityOnly
 
         }

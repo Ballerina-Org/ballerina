@@ -1,5 +1,6 @@
 module Ballerina.Cat.Tests.BusinessRuleEngine.Parser.Common
 
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Parser.Patterns
 open NUnit.Framework

@@ -3,6 +3,7 @@ namespace Ballerina.State
 module Seq =
 
   open Ballerina.Fun
+  open Ballerina
   open Ballerina.Collections.Sum
 
   type SeqState<'a, 'c, 's, 'e> =

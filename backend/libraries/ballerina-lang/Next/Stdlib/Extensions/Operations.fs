@@ -3,9 +3,12 @@ namespace Ballerina.DSL.Next.Extensions
 [<AutoOpen>]
 module Operations =
   open Ballerina
+  open Ballerina
   open Ballerina.Collections.Sum
+  open Ballerina.Collections.Map
   open Ballerina.Reader.WithError
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Types.TypeChecker.Expr
   open Ballerina.DSL.Next.Types.TypeChecker.Model
@@ -54,7 +57,10 @@ module Operations =
                   reader {
                     let! v =
                       caseExt.OperationsLens.Get v
-                      |> sum.OfOption((loc0, $"Error: cannot extra constructor from extension") |> Errors.Singleton)
+                      |> sum.OfOption(
+                        (fun () -> $"Error: cannot extra constructor from extension")
+                        |> Errors.Singleton loc0
+                      )
                       |> reader.OfSum
 
                     return Applicable(fun arg -> caseExt.Apply loc0 rest (v, arg))
@@ -63,7 +69,7 @@ module Operations =
                 ))
             ops
 
-        let values = evalContext.Values
+        let values = evalContext.Scope.Values
 
         let values =
           opsExt.Operations
@@ -74,12 +80,35 @@ module Operations =
               | None -> acc
               | Some(_, _, publicIdentifiers) ->
                 acc
-                |> Map.add caseId (publicIdentifiers |> caseExt.OperationsLens.Set |> Value.Ext))
+                |> Map.add caseId ((publicIdentifiers |> caseExt.OperationsLens.Set, Some caseId) |> Value.Ext))
             values
 
+        let applicables: Map<ResolvedIdentifier, ApplicableExtEvalResult<'ext>> =
+          opsExt.Operations
+          |> Map.map (fun (_k: ResolvedIdentifier) (op: OperationExtension<'ext, 'extOperations>) ->
+            fun loc0 rest f v ->
+              reader {
+                let! f =
+                  op.OperationsLens.Get f
+                  |> sum.OfOption(
+                    (fun () -> $"Error: cannot extract constructor from extension")
+                    |> Errors.Singleton loc0
+                  )
+                  |> reader.OfSum
+
+                return! op.Apply loc0 rest (f, v)
+              })
+
+        let applicables =
+          Map.merge (fun _ -> id) evalContext.ExtensionOps.Applicables applicables
+
         { evalContext with
-            Values = values
-            ExtensionOps = { Eval = ops } }
+            Scope =
+              { evalContext.Scope with
+                  Values = values }
+            ExtensionOps =
+              { Eval = ops
+                Applicables = applicables } }
 
     static member RegisterLanguageContext
       (opsExt: OperationsExtension<'ext, 'extOperations>)

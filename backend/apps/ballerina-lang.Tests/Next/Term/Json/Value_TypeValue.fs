@@ -1,8 +1,9 @@
-﻿module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Json.Value_TypeValue
+module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Json.Value_TypeValue
 
 open NUnit.Framework
 open FSharp.Data
 
+open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.Reader.WithError
 
@@ -115,16 +116,18 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
                   PrimitiveValue.Int32 2 |> Value.Primitive ]
             )
           )
-        )
+        ),
+        None
       )
       """{"discriminator": "option", "value":{"discriminator":"int32","value":"1"}}""",
       Value.Ext(
         ValueExt(
           Choice2Of6(OptionValues(Option.Model.OptionValues.Option(PrimitiveValue.Int32 1 |> Value.Primitive |> Some)))
-        )
+        ),
+        None
       )
       """{"discriminator": "option", "value":null}""",
-      Value.Ext(ValueExt(Choice2Of6(OptionValues(Option.Model.OptionValues.Option None)))) ]
+      Value.Ext(ValueExt(Choice2Of6(OptionValues(Option.Model.OptionValues.Option None))), None) ]
 
   for json, expected in testCases do
     (expected, JsonValue.Parse json)

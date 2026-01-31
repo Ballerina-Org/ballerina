@@ -1,11 +1,12 @@
 namespace Ballerina.DSL.Next
 
 module EquivalenceClasses =
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Collections.NonEmptyList
   open Ballerina.State.WithError
   open Ballerina.Reader.WithError
-  open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open System
   open Ballerina.Fun
   open Ballerina.StdLib.Object
@@ -51,10 +52,16 @@ module EquivalenceClasses =
         { Representative = rep
           Variables = vars }
 
-  and EquivalenceClassValueOperations<'var, 'value when 'var: comparison and 'value: comparison> =
+  and EquivalenceClassValueOperations<'var, 'value, 'context
+    when 'var: comparison and 'value: comparison and 'context: comparison> =
     { equalize:
         'value * 'value
-          -> State<unit, EquivalenceClassValueOperations<'var, 'value>, EquivalenceClasses<'var, 'value>, Errors>
+          -> State<
+            unit,
+            EquivalenceClassValueOperations<'var, 'value, 'context>,
+            EquivalenceClasses<'var, 'value>,
+            Errors<'context>
+           >
       tryCompare: 'value * 'value -> Option<'value> }
 
   and EquivalenceClasses<'var, 'value when 'var: comparison and 'value: comparison> =
@@ -87,23 +94,23 @@ module EquivalenceClasses =
         |> (EquivalenceClasses.Updaters.Variables(Map.add var $"{var}")
             >> EquivalenceClasses.Updaters.Classes(Map.add $"{var}" (EquivalenceClass.FromVariable var)))
 
-    static member private tryGetKey(var: 'var, loc0: Location) =
+    static member private tryGetKey(var: 'var, loc0: 'context) =
       state {
         let! (classes: EquivalenceClasses<'var, 'value>) = state.GetState()
 
         return!
           classes.Variables
-          |> Map.tryFindWithError var "var" (var.ToString()) loc0
+          |> Map.tryFindWithError var "var" (fun () -> var.ToString()) loc0
           |> state.OfSum
       }
 
-    static member tryFind(var: 'var, loc0: Location) =
+    static member tryFind(var: 'var, loc0: 'context) =
       state {
         let! key = EquivalenceClasses<'var, 'value>.tryGetKey (var, loc0)
         return! EquivalenceClasses.tryGetVarClass (key, loc0)
       }
 
-    static member private getKey(var: 'var, loc0: Location) =
+    static member private getKey(var: 'var, loc0: 'context) =
       state {
         let! key = EquivalenceClasses<'var, 'value>.tryGetKey (var, loc0) |> state.Catch
 
@@ -117,18 +124,24 @@ module EquivalenceClasses =
     static member private bindKeyVar
       (key: string)
       (var: 'var)
-      : State<unit, EquivalenceClassValueOperations<'var, 'value>, EquivalenceClasses<'var, 'value>, Errors> =
+      : State<
+          unit,
+          EquivalenceClassValueOperations<'var, 'value, 'context>,
+          EquivalenceClasses<'var, 'value>,
+          Errors<'context>
+         >
+      =
       state.SetState(fun classes ->
         { classes with
             Variables = classes.Variables |> Map.add var key })
 
     static member private tryGetVarClass
-      (key: string, loc0: Location)
+      (key: string, loc0: 'context)
       : State<
           EquivalenceClass<'var, 'value>,
-          EquivalenceClassValueOperations<'var, 'value>,
+          EquivalenceClassValueOperations<'var, 'value, 'context>,
           EquivalenceClasses<'var, 'value>,
-          Errors
+          Errors<'context>
          >
       =
       state {
@@ -136,19 +149,19 @@ module EquivalenceClasses =
 
         return!
           classes.Classes
-          |> Map.tryFindWithError key "classes" (key.ToString()) loc0
+          |> Map.tryFindWithError key "classes" (fun () -> key.ToString()) loc0
           |> state.OfSum
       }
 
     static member private getVarClass
-      (loc0: Location)
+      (loc0: 'context)
       (key: string)
       (var: 'var)
       : State<
           EquivalenceClass<'var, 'value>,
-          EquivalenceClassValueOperations<'var, 'value>,
+          EquivalenceClassValueOperations<'var, 'value, 'context>,
           EquivalenceClasses<'var, 'value>,
-          Errors
+          Errors<'context>
          >
       =
       state {
@@ -164,8 +177,14 @@ module EquivalenceClasses =
       }
 
     static member TryDeleteFreeVariable
-      (var: 'var, loc0: Location)
-      : State<Unit, EquivalenceClassValueOperations<'var, 'value>, EquivalenceClasses<'var, 'value>, Errors> =
+      (var: 'var, loc0: 'context)
+      : State<
+          Unit,
+          EquivalenceClassValueOperations<'var, 'value, 'context>,
+          EquivalenceClasses<'var, 'value>,
+          Errors<'context>
+         >
+      =
       state {
         let! classes = state.GetState()
 
@@ -178,24 +197,30 @@ module EquivalenceClasses =
           match var_class.Representative with
           | Some representative ->
             return!
-              (loc0,
-               $"Error: cannot remove variable {var.ToString()} because it is not free - it has a representative {representative.AsFSharpString}")
-              |> Errors.Singleton
+              (fun () ->
+                $"Error: cannot remove variable {var.ToString()} because it is not free - it has a representative {representative.AsFSharpString}")
+              |> Errors.Singleton loc0
               |> state.Throw
           | None ->
             if var_class.Variables.Count = 1 then
               do! state.SetState(EquivalenceClasses.Updaters.Classes(Map.remove var_key))
             else
               return!
-                (loc0,
-                 $"Error: cannot remove variable {var.ToString()} because it is bound to other variables {var_class.Variables.AsFSharpString}")
-                |> Errors.Singleton
+                (fun () ->
+                  $"Error: cannot remove variable {var.ToString()} because it is bound to other variables {var_class.Variables.AsFSharpString}")
+                |> Errors.Singleton loc0
                 |> state.Throw
       }
 
     static member DeleteVariable
-      (var: 'var, loc0: Location)
-      : State<Unit, EquivalenceClassValueOperations<'var, 'value>, EquivalenceClasses<'var, 'value>, Errors> =
+      (var: 'var, loc0: 'context)
+      : State<
+          Unit,
+          EquivalenceClassValueOperations<'var, 'value, 'context>,
+          EquivalenceClasses<'var, 'value>,
+          Errors<'context>
+         >
+      =
       state {
         let! classes = state.GetState()
 
@@ -223,14 +248,14 @@ module EquivalenceClasses =
       }
 
     static member private mergeRepresentative
-      (loc0: Location)
+      (loc0: 'context)
       (eqClass: EquivalenceClass<'var, 'value>)
       (value: 'value)
       : State<
           EquivalenceClass<'var, 'value>,
-          EquivalenceClassValueOperations<'var, 'value>,
+          EquivalenceClassValueOperations<'var, 'value, 'context>,
           EquivalenceClasses<'var, 'value>,
-          Errors
+          Errors<'context>
          >
       =
       state {
@@ -246,7 +271,10 @@ module EquivalenceClasses =
 
           let! winner =
             valueOperations.tryCompare (currentValue, value)
-            |> sum.OfOption((loc0, $"Error: cannot compare {value} and {currentValue}") |> Errors.Singleton)
+            |> sum.OfOption(
+              (fun () -> $"Error: cannot compare {value} and {currentValue}")
+              |> Errors.Singleton loc0
+            )
             |> state.OfSum
 
           return
@@ -260,14 +288,20 @@ module EquivalenceClasses =
     //             | Some c -> c |> u |> Some
     //             | None -> EquivalenceClass.Empty |> u |> Some) })
 
-    static member private deleteVarClass key : State<unit, _, EquivalenceClasses<'var, 'value>, Errors> =
+    static member private deleteVarClass key : State<unit, _, EquivalenceClasses<'var, 'value>, Errors<'context>> =
       state.SetState(fun (classes: EquivalenceClasses<'var, 'value>) ->
         { classes with
             Classes = classes.Classes |> Map.remove key })
 
     static member Bind
-      (var: 'var, varOrvalue: Sum<'var, 'value>, loc0: Location)
-      : State<unit, EquivalenceClassValueOperations<'var, 'value>, EquivalenceClasses<'var, 'value>, Errors> =
+      (var: 'var, varOrvalue: Sum<'var, 'value>, loc0: 'context)
+      : State<
+          unit,
+          EquivalenceClassValueOperations<'var, 'value, 'context>,
+          EquivalenceClasses<'var, 'value>,
+          Errors<'context>
+         >
+      =
       state {
         let! key = EquivalenceClasses.getKey (var, loc0) // get the key associated with var or create a fresh key
         do! EquivalenceClasses.bindKeyVar key var // bind the key and the var (needed if the key is fresh)

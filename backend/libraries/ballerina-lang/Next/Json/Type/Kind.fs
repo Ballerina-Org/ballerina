@@ -1,9 +1,11 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
 
 [<AutoOpen>]
 module Kind =
   open Ballerina.StdLib.Json.Sum
+  open Ballerina
   open Ballerina.Collections.Sum
+  open Ballerina
   open Ballerina.Collections.Sum.Operators
   open Ballerina.StdLib.Json.Patterns
   open Ballerina.Errors
@@ -16,19 +18,19 @@ module Kind =
   let kindKey = "kind"
 
   type Kind with
-    static member private FromJsonSymbol: JsonValue -> Sum<Kind, Errors> =
+    static member private FromJsonSymbol: JsonValue -> Sum<Kind, Errors<_>> =
       Sum.assertDiscriminatorAndContinue "symbol" (fun _ -> sum { return Kind.Symbol })
 
     static member private ToJsonSymbol: JsonValue =
       JsonValue.Record([| discriminatorKey, JsonValue.String "symbol" |])
 
-    static member private FromJsonStar: JsonValue -> Sum<Kind, Errors> =
+    static member private FromJsonStar: JsonValue -> Sum<Kind, Errors<_>> =
       Sum.assertDiscriminatorAndContinue "star" (fun _ -> sum { return Kind.Star })
 
     static member private ToJsonStar: JsonValue =
       JsonValue.Record([| discriminatorKey, JsonValue.String "star" |])
 
-    static member private FromJsonSchema: JsonValue -> Sum<Kind, Errors> =
+    static member private FromJsonSchema: JsonValue -> Sum<Kind, Errors<_>> =
       Sum.assertDiscriminatorAndContinue "schema" (fun _ -> sum { return Kind.Schema })
 
     static member private ToJsonSchema: JsonValue =
@@ -38,11 +40,15 @@ module Kind =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun arrowFields ->
         sum {
           let! arrowFields = arrowFields |> JsonValue.AsRecordMap
-          let! param = arrowFields |> (Map.tryFindWithError "param" "arrow" "param" >>= Kind.FromJson)
+
+          let! param =
+            arrowFields
+            |> (Map.tryFindWithError "param" "arrow" (fun () -> "param") () >>= Kind.FromJson)
 
           let! returnType =
             arrowFields
-            |> (Map.tryFindWithError "returnType" "arrow" "returnType" >>= Kind.FromJson)
+            |> (Map.tryFindWithError "returnType" "arrow" (fun () -> "returnType") ()
+                >>= Kind.FromJson)
 
           return Kind.Arrow(param, returnType)
         })
@@ -52,7 +58,7 @@ module Kind =
         [| discriminatorKey, JsonValue.String discriminator
            valueKey, JsonValue.Record [| "param", Kind.ToJson param; "returnType", Kind.ToJson returnType |] |]
 
-    static member FromJson(json: JsonValue) : Sum<Kind, Errors> =
+    static member FromJson(json: JsonValue) : Sum<Kind, Errors<_>> =
       sum.Any(
         Kind.FromJsonStar(json),
         [ Kind.FromJsonSymbol(json)

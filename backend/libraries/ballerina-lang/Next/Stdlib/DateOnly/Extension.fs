@@ -3,9 +3,11 @@ namespace Ballerina.DSL.Next.StdLib.DateOnly
 [<AutoOpen>]
 module Extension =
   open Ballerina.StdLib.Object
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.Model
@@ -13,11 +15,12 @@ module Extension =
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
   open System
+  open Ballerina
+  open Ballerina.StdLib.Formats
 
   let DateOnlyExtension<'ext>
-    (consLens: PartialLens<'ext, DateOnlyConstructors>)
     (operationLens: PartialLens<'ext, DateOnlyOperations<'ext>>)
-    : TypeExtension<'ext, DateOnlyConstructors, PrimitiveValue, DateOnlyOperations<'ext>> =
+    : OperationsExtension<'ext, DateOnlyOperations<'ext>> =
 
     let dateTimeTypeValue = TypeValue.CreateDateTime()
     let dateOnlyTypeValue = TypeValue.CreateDateOnly()
@@ -25,22 +28,17 @@ module Extension =
     let boolTypeValue = TypeValue.CreateBool()
     let int32TypeValue = TypeValue.CreateInt32()
 
-    let dateOnlyId = Identifier.LocalScope "dateOnly"
-    let dateOnlySymbolId = dateOnlyId |> TypeSymbol.Create
-    let dateOnlyId = dateOnlyId |> TypeCheckScope.Empty.Resolve
-
-    let dateOnlyConstructors = DateOnlyConstructorsExtension<'ext> consLens
-
     let dateOnlyDiffId =
       Identifier.FullyQualified([ "dateOnly" ], "-") |> TypeCheckScope.Empty.Resolve
 
-    let diffOperation
-      : ResolvedIdentifier *
-        TypeOperationExtension<'ext, DateOnlyConstructors, PrimitiveValue, DateOnlyOperations<'ext>> =
+    let diffOperation: ResolvedIdentifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyDiffId,
-      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, timeSpanTypeValue))
-        Kind = Kind.Star
-        Operation = DateOnlyOperations.Diff {| v1 = None |}
+      { PublicIdentifiers =
+          Some(
+            TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, timeSpanTypeValue)),
+            Kind.Star,
+            DateOnlyOperations.Diff {| v1 = None |}
+          )
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -52,20 +50,26 @@ module Extension =
               let! op =
                 op
                 |> DateOnlyOperations.AsDiff
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDate
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return DateOnlyOperations.Diff({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (DateOnlyOperations.Diff({| v1 = Some v |}) |> operationLens.Set, Some dateOnlyDiffId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
                 let dateTime1 = DateTime(vClosure.Year, vClosure.Month, vClosure.Day)
                 let dateTime2 = DateTime(v.Year, v.Month, v.Day)
@@ -76,13 +80,14 @@ module Extension =
     let dateOnlyEqualId =
       Identifier.FullyQualified([ "dateOnly" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation
-      : ResolvedIdentifier *
-        TypeOperationExtension<'ext, DateOnlyConstructors, PrimitiveValue, DateOnlyOperations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyEqualId,
-      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = DateOnlyOperations.Equal {| v1 = None |}
+      { PublicIdentifiers =
+          Some(
+            TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, boolTypeValue)),
+            Kind.Star,
+            DateOnlyOperations.Equal {| v1 = None |}
+          )
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -94,20 +99,26 @@ module Extension =
               let! op =
                 op
                 |> DateOnlyOperations.AsEqual
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDate
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return DateOnlyOperations.Equal({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (DateOnlyOperations.Equal({| v1 = Some v |}) |> operationLens.Set, Some dateOnlyEqualId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
@@ -116,13 +127,14 @@ module Extension =
     let dateOnlyNotEqualId =
       Identifier.FullyQualified([ "dateOnly" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation
-      : ResolvedIdentifier *
-        TypeOperationExtension<'ext, DateOnlyConstructors, PrimitiveValue, DateOnlyOperations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyNotEqualId,
-      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = DateOnlyOperations.NotEqual {| v1 = None |}
+      { PublicIdentifiers =
+          Some(
+            TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, boolTypeValue)),
+            Kind.Star,
+            DateOnlyOperations.NotEqual {| v1 = None |}
+          )
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -134,20 +146,26 @@ module Extension =
               let! op =
                 op
                 |> DateOnlyOperations.AsNotEqual
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDate
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return DateOnlyOperations.NotEqual({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (DateOnlyOperations.NotEqual({| v1 = Some v |}) |> operationLens.Set, Some dateOnlyNotEqualId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
@@ -156,13 +174,14 @@ module Extension =
     let dateOnlyGreaterThanId =
       Identifier.FullyQualified([ "dateOnly" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation
-      : ResolvedIdentifier *
-        TypeOperationExtension<'ext, DateOnlyConstructors, PrimitiveValue, DateOnlyOperations<'ext>> =
+    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyGreaterThanId,
-      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = DateOnlyOperations.GreaterThan {| v1 = None |}
+      { PublicIdentifiers =
+          Some(
+            TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, boolTypeValue)),
+            Kind.Star,
+            DateOnlyOperations.GreaterThan {| v1 = None |}
+          )
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -174,20 +193,26 @@ module Extension =
               let! op =
                 op
                 |> DateOnlyOperations.AsGreaterThan
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDate
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return DateOnlyOperations.GreaterThan({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (DateOnlyOperations.GreaterThan({| v1 = Some v |}) |> operationLens.Set, Some dateOnlyGreaterThanId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
@@ -196,13 +221,14 @@ module Extension =
     let dateOnlyGreaterThanOrEqualId =
       Identifier.FullyQualified([ "dateOnly" ], ">=") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOrEqualOperation
-      : ResolvedIdentifier *
-        TypeOperationExtension<'ext, DateOnlyConstructors, PrimitiveValue, DateOnlyOperations<'ext>> =
+    let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyGreaterThanOrEqualId,
-      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = DateOnlyOperations.GreaterThanOrEqual {| v1 = None |}
+      { PublicIdentifiers =
+          Some(
+            TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, boolTypeValue)),
+            Kind.Star,
+            DateOnlyOperations.GreaterThanOrEqual {| v1 = None |}
+          )
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -214,22 +240,26 @@ module Extension =
               let! op =
                 op
                 |> DateOnlyOperations.AsGreaterThanOrEqual
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDate
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  DateOnlyOperations.GreaterThanOrEqual({| v1 = Some v |})
-                  |> operationLens.Set
+                  (DateOnlyOperations.GreaterThanOrEqual({| v1 = Some v |}) |> operationLens.Set,
+                   Some dateOnlyGreaterThanOrEqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
@@ -239,13 +269,14 @@ module Extension =
     let dateOnlyLessThanId =
       Identifier.FullyQualified([ "dateOnly" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation
-      : ResolvedIdentifier *
-        TypeOperationExtension<'ext, DateOnlyConstructors, PrimitiveValue, DateOnlyOperations<'ext>> =
+    let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyLessThanId,
-      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = DateOnlyOperations.LessThan {| v1 = None |}
+      { PublicIdentifiers =
+          Some(
+            TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, boolTypeValue)),
+            Kind.Star,
+            DateOnlyOperations.LessThan {| v1 = None |}
+          )
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -257,20 +288,26 @@ module Extension =
               let! op =
                 op
                 |> DateOnlyOperations.AsLessThan
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDate
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
-                return DateOnlyOperations.LessThan({| v1 = Some v |}) |> operationLens.Set |> Ext
+                return
+                  (DateOnlyOperations.LessThan({| v1 = Some v |}) |> operationLens.Set, Some dateOnlyLessThanId)
+                  |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
                 return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
@@ -279,13 +316,14 @@ module Extension =
     let dateOnlyLessThanOrEqualId =
       Identifier.FullyQualified([ "dateOnly" ], "<=") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOrEqualOperation
-      : ResolvedIdentifier *
-        TypeOperationExtension<'ext, DateOnlyConstructors, PrimitiveValue, DateOnlyOperations<'ext>> =
+    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyLessThanOrEqualId,
-      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, boolTypeValue))
-        Kind = Kind.Star
-        Operation = DateOnlyOperations.LessThanOrEqual {| v1 = None |}
+      { PublicIdentifiers =
+          Some(
+            TypeValue.CreateArrow(dateOnlyTypeValue, TypeValue.CreateArrow(dateOnlyTypeValue, boolTypeValue)),
+            Kind.Star,
+            DateOnlyOperations.LessThanOrEqual {| v1 = None |}
+          )
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -297,22 +335,26 @@ module Extension =
               let! op =
                 op
                 |> DateOnlyOperations.AsLessThanOrEqual
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDate
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  DateOnlyOperations.LessThanOrEqual({| v1 = Some v |})
-                  |> operationLens.Set
+                  (DateOnlyOperations.LessThanOrEqual({| v1 = Some v |}) |> operationLens.Set,
+                   Some dateOnlyLessThanOrEqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
@@ -324,20 +366,20 @@ module Extension =
       Identifier.FullyQualified([ "dateOnly" ], "toDateTime")
       |> TypeCheckScope.Empty.Resolve
 
-    let toDateTimeOperation
-      : ResolvedIdentifier *
-        TypeOperationExtension<'ext, DateOnlyConstructors, PrimitiveValue, DateOnlyOperations<'ext>> =
+    let toDateTimeOperation: ResolvedIdentifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyToDateTimeId,
-      { Type =
-          TypeValue.CreateArrow(
-            dateOnlyTypeValue,
+      { PublicIdentifiers =
+          Some(
             TypeValue.CreateArrow(
-              TypeValue.CreateTuple [ int32TypeValue; int32TypeValue; int32TypeValue ],
-              dateTimeTypeValue
-            )
+              dateOnlyTypeValue,
+              TypeValue.CreateArrow(
+                TypeValue.CreateTuple [ int32TypeValue; int32TypeValue; int32TypeValue ],
+                dateTimeTypeValue
+              )
+            ),
+            Kind.Star,
+            DateOnlyOperations.ToDateTime {| v1 = None |}
           )
-        Kind = Kind.Star
-        Operation = DateOnlyOperations.ToDateTime {| v1 = None |}
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -349,16 +391,22 @@ module Extension =
               let! op =
                 op
                 |> DateOnlyOperations.AsToDateTime
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op, v with
               | None, Value.Primitive(PrimitiveValue.Date v) -> // the closure is empty - first step in the application
-                return DateOnlyOperations.ToDateTime {| v1 = Some(v) |} |> operationLens.Set |> Ext
+                return
+                  (DateOnlyOperations.ToDateTime {| v1 = Some(v) |} |> operationLens.Set, Some dateOnlyToDateTimeId)
+                  |> Ext
               | Some(vClosure), Value.Tuple v -> // the closure has the first operand - second step in the application
                 let! v =
                   v
-                  |> List.map (fun v -> v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum)
+                  |> List.map (fun v ->
+                    v
+                    |> Value.AsPrimitive
+                    |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                    |> reader.OfSum)
                   |> reader.All
 
                 let! v =
@@ -366,7 +414,7 @@ module Extension =
                   |> List.map (fun v ->
                     v
                     |> PrimitiveValue.AsInt32
-                    |> sum.MapError(Errors.FromErrors loc0)
+                    |> sum.MapError(Errors.MapContext(replaceWith loc0))
                     |> reader.OfSum)
                   |> reader.All
 
@@ -378,22 +426,22 @@ module Extension =
                   return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.DateTime(dateTime))
                 | _ ->
                   return!
-                    sum.Throw(Errors.Singleton(loc0, "Expected a tuple of 3 int32s"))
+                    sum.Throw(Errors.Singleton loc0 (fun () -> "Expected a tuple of 3 int32s"))
                     |> reader.OfSum
-              | _ -> return! sum.Throw(Errors.Singleton(loc0, "Expected a tuple or date")) |> reader.OfSum
+              | _ ->
+                return!
+                  sum.Throw(Errors.Singleton loc0 (fun () -> "Expected a tuple or date"))
+                  |> reader.OfSum
             } }
 
     let dateOnlyYearId =
       Identifier.FullyQualified([ "dateOnly" ], "getYear")
       |> TypeCheckScope.Empty.Resolve
 
-    let yearOperation
-      : ResolvedIdentifier *
-        TypeOperationExtension<'ext, DateOnlyConstructors, PrimitiveValue, DateOnlyOperations<'ext>> =
+    let yearOperation: ResolvedIdentifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyYearId,
-      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue)
-        Kind = Kind.Star
-        Operation = DateOnlyOperations.Year
+      { PublicIdentifiers =
+          Some(TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue), Kind.Star, DateOnlyOperations.Year)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -402,12 +450,16 @@ module Extension =
         Apply =
           fun loc0 _rest (_, v) ->
             reader {
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDate
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.Year))
@@ -417,13 +469,10 @@ module Extension =
       Identifier.FullyQualified([ "dateOnly" ], "getMonth")
       |> TypeCheckScope.Empty.Resolve
 
-    let monthOperation
-      : ResolvedIdentifier *
-        TypeOperationExtension<'ext, DateOnlyConstructors, PrimitiveValue, DateOnlyOperations<'ext>> =
+    let monthOperation: ResolvedIdentifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyMonthId,
-      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue)
-        Kind = Kind.Star
-        Operation = DateOnlyOperations.Month
+      { PublicIdentifiers =
+          Some(TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue), Kind.Star, DateOnlyOperations.Month)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -432,12 +481,16 @@ module Extension =
         Apply =
           fun loc0 _rest (_, v) ->
             reader {
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDate
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.Month))
@@ -447,13 +500,10 @@ module Extension =
       Identifier.FullyQualified([ "dateOnly" ], "getDay")
       |> TypeCheckScope.Empty.Resolve
 
-    let dayOperation
-      : ResolvedIdentifier *
-        TypeOperationExtension<'ext, DateOnlyConstructors, PrimitiveValue, DateOnlyOperations<'ext>> =
+    let dayOperation: ResolvedIdentifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyDayId,
-      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue)
-        Kind = Kind.Star
-        Operation = DateOnlyOperations.Day
+      { PublicIdentifiers =
+          Some(TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue), Kind.Star, DateOnlyOperations.Day)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -462,12 +512,16 @@ module Extension =
         Apply =
           fun loc0 _rest (_, v) ->
             reader {
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDate
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.Day))
@@ -477,13 +531,10 @@ module Extension =
       Identifier.FullyQualified([ "dateOnly" ], "getDayOfWeek")
       |> TypeCheckScope.Empty.Resolve
 
-    let dayOfWeekOperation
-      : ResolvedIdentifier *
-        TypeOperationExtension<'ext, DateOnlyConstructors, PrimitiveValue, DateOnlyOperations<'ext>> =
+    let dayOfWeekOperation: ResolvedIdentifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyDayOfWeekId,
-      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue)
-        Kind = Kind.Star
-        Operation = DateOnlyOperations.DayOfWeek
+      { PublicIdentifiers =
+          Some(TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue), Kind.Star, DateOnlyOperations.DayOfWeek)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -492,12 +543,16 @@ module Extension =
         Apply =
           fun loc0 _rest (_, v) ->
             reader {
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDate
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.DayOfWeek |> int))
@@ -507,13 +562,10 @@ module Extension =
       Identifier.FullyQualified([ "dateOnly" ], "getDayOfYear")
       |> TypeCheckScope.Empty.Resolve
 
-    let dayOfYearOperation
-      : ResolvedIdentifier *
-        TypeOperationExtension<'ext, DateOnlyConstructors, PrimitiveValue, DateOnlyOperations<'ext>> =
+    let dayOfYearOperation: ResolvedIdentifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
       dateOnlyDayOfYearId,
-      { Type = TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue)
-        Kind = Kind.Star
-        Operation = DateOnlyOperations.DayOfYear
+      { PublicIdentifiers =
+          Some(TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue), Kind.Star, DateOnlyOperations.DayOfYear)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -522,34 +574,135 @@ module Extension =
         Apply =
           fun loc0 _rest (_, v) ->
             reader {
-              let! v = v |> Value.AsPrimitive |> sum.MapError(Errors.FromErrors loc0) |> reader.OfSum
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
               let! v =
                 v
                 |> PrimitiveValue.AsDate
-                |> sum.MapError(Errors.FromErrors loc0)
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.DayOfYear))
             } }
 
-    { TypeName = dateOnlyId, dateOnlySymbolId
-      TypeVars = []
-      Cases = dateOnlyConstructors |> Map.ofList
-      // WrapTypeVars =
-      //   fun t ->
-      //     match t with
-      //     | TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.String, _) ->
-      //       TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateSum [ dateOnlyTypeValue; unitTypeValue ])
-      //     | TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, _) ->
-      //       TypeValue.CreateArrow(unitTypeValue, dateOnlyTypeValue)
-      //     | TypeExpr.FromTypeValue(TypeValue.Imported _) -> dateOnlyTypeValue
-      //     | _ -> failwith $"Expected a Arrow or Imported, got {t}"
-      Deconstruct =
-        fun (v) ->
-          match v with
-          | PrimitiveValue.Date v -> Value.Primitive(PrimitiveValue.Date v)
-          | _ -> Value.Primitive(PrimitiveValue.Unit)
+    let dateOnlyNewId =
+      Identifier.FullyQualified([ "dateOnly" ], "new") |> TypeCheckScope.Empty.Resolve
+
+    let newOperation: ResolvedIdentifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
+      dateOnlyNewId,
+      { PublicIdentifiers =
+          Some(
+            TypeValue.CreateArrow(
+              TypeValue.CreatePrimitive PrimitiveType.String,
+              TypeValue.CreateSum [ TypeValue.CreatePrimitive PrimitiveType.Unit; dateOnlyTypeValue ]
+            ),
+            Kind.Star,
+            DateOnlyOperations.DateOnly_New
+          )
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | DateOnlyOperations.DateOnly_New -> Some(DateOnlyOperations.DateOnly_New)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (_, v) ->
+            reader {
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return
+                match Iso8601.DateOnly.tryParse v with
+                | Some date -> Value.Sum({ Case = 2; Count = 2 }, date |> PrimitiveValue.Date |> Value.Primitive)
+                | None -> Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit))
+            } }
+
+    let dateOnlyNowId =
+      Identifier.FullyQualified([ "dateOnly" ], "now") |> TypeCheckScope.Empty.Resolve
+
+    let nowOperation: ResolvedIdentifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
+      dateOnlyNowId,
+      { PublicIdentifiers =
+          Some(
+            TypeValue.CreateArrow(TypeValue.CreatePrimitive PrimitiveType.Unit, dateOnlyTypeValue),
+            Kind.Star,
+            DateOnlyOperations.DateOnly_Now
+          )
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | DateOnlyOperations.DateOnly_Now -> Some(DateOnlyOperations.DateOnly_Now)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (_, v) ->
+            reader {
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! _ =
+                v
+                |> PrimitiveValue.AsUnit
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let date = System.DateTime.Now
+              let dateOnly = System.DateOnly(date.Year, date.Month, date.Day)
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Date dateOnly)
+            } }
+
+    let dateOnlyUTCNowId =
+      Identifier.FullyQualified([ "dateOnly" ], "utcNow")
+      |> TypeCheckScope.Empty.Resolve
+
+    let utcNowOperation: ResolvedIdentifier * OperationExtension<'ext, DateOnlyOperations<'ext>> =
+      dateOnlyUTCNowId,
+      { PublicIdentifiers =
+          Some(
+            TypeValue.CreateArrow(TypeValue.CreatePrimitive PrimitiveType.Unit, dateOnlyTypeValue),
+            Kind.Star,
+            DateOnlyOperations.DateOnly_UTCNow
+          )
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | DateOnlyOperations.DateOnly_UTCNow -> Some(DateOnlyOperations.DateOnly_UTCNow)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (_, v) ->
+            reader {
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! _ =
+                v
+                |> PrimitiveValue.AsUnit
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let date = System.DateTime.UtcNow
+              let dateOnly = System.DateOnly(date.Year, date.Month, date.Day)
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Date dateOnly)
+            } }
+
+    { TypeVars = []
       Operations =
         [ diffOperation
           equalOperation
@@ -563,5 +716,8 @@ module Extension =
           monthOperation
           dayOperation
           dayOfWeekOperation
-          dayOfYearOperation ]
+          dayOfYearOperation
+          newOperation
+          nowOperation
+          utcNowOperation ]
         |> Map.ofList }

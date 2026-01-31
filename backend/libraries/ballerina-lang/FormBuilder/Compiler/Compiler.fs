@@ -1,14 +1,14 @@
-﻿namespace Ballerina.DSL.FormBuilder.Compiler
+namespace Ballerina.DSL.FormBuilder.Compiler
 
 module FormCompiler =
   open Ballerina.LocalizedErrors
+  open Ballerina.Errors
+  open Ballerina
   open Ballerina.Collections.Sum
-  open Ballerina.StdLib.Object
   open Ballerina.Parser
   open Ballerina.DSL.FormBuilder.Syntax.Parser
   open Ballerina.DSL.Next.StdLib.Extensions
   open Ballerina.DSL.Next.Runners
-  open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Types
   open Ballerina.DSL.FormBuilder.Types.TypeChecker
   open Ballerina.State.WithError
@@ -34,8 +34,8 @@ module FormCompiler =
         | _ ->
           return!
             Right(
-              Errors.Singleton(Location.Unknown, $"Expected type let but {expr.Expr} was given")
-              |> Errors.SetPriority ErrorPriority.High
+              Errors.Singleton Location.Unknown (fun () -> $"Expected type let but {expr.Expr} was given")
+              |> Errors.MapPriority(replaceWith ErrorPriority.High)
             )
       }
 
@@ -48,34 +48,42 @@ module FormCompiler =
   let compileForms<'valueExt when 'valueExt: comparison>
     (input: FormCompilerInput<'valueExt>)
     (languageContext: LanguageContext<'valueExt>)
+    (stdExtensions: StdExtensions<'valueExt>)
     =
     sum {
       let formsInitialLocation = Location.Initial input.Forms.Source
 
-      let! types, _, typeCheckState =
-        Expr.TypeCheckString languageContext input.Types.Program
-        |> Sum.mapRight (fun errors -> errors.AsFSharpString)
+      // Append "in ()" if the types program doesn't already end with it
+      let typesProgram =
+        let trimmed = input.Types.Program.TrimEnd()
+
+        if trimmed.EndsWith("in ()") || trimmed.EndsWith("in()") then
+          input.Types.Program
+        else
+          $"{input.Types.Program}\nin ()"
+
+      let! types, _, typeCheckState = Expr.TypeCheckString languageContext typesProgram |> Sum.mapRight _.ToString()
 
       let! ParserResult(formTokens, _) =
         Ballerina.DSL.FormBuilder.Syntax.Lexer.tokens
         |> Parser.Run(input.Forms.Program |> Seq.toList, formsInitialLocation)
-        |> Sum.mapRight (fun errors -> errors.AsFSharpString)
+        |> Sum.mapRight _.ToString()
 
       let! ParserResult(formDefinitions, _) =
         parseFormSpec ()
         |> Parser.Run(formTokens, formsInitialLocation)
-        |> Sum.mapRight (fun errors -> errors.AsFSharpString)
+        |> Sum.mapRight _.ToString()
 
-      let! memoizedTypes = memoizeTypes types |> Sum.mapRight (fun errors -> errors.AsFSharpString)
+      let! memoizedTypes = memoizeTypes types |> Sum.mapRight _.ToString()
       let formTypeCheckState = FormTypeCheckerState<'valueExt>.Init typeCheckState
 
       let formTypeCheckContext =
         FormTypeCheckingContext<ValueExt>.Init memoizedTypes languageContext.TypeCheckContext input.ApiTypes
 
       let! typeCheckedFormDefinitions, _ =
-        checkFormDefinitions formDefinitions
+        checkFormDefinitions formDefinitions stdExtensions
         |> State.Run(formTypeCheckContext, formTypeCheckState)
-        |> Sum.mapRight (fun (errors, _) -> errors.AsFSharpString)
+        |> Sum.mapRight (fun (errors, _) -> Errors.ToString(errors, "\n"))
 
       return typeCheckedFormDefinitions
     }

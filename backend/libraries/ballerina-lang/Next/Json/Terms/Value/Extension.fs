@@ -1,5 +1,6 @@
 namespace Ballerina.DSL.Next.Terms.Json
 
+open Ballerina
 open Ballerina.DSL.Next.Json
 
 [<AutoOpen>]
@@ -22,9 +23,9 @@ module Extensions =
       reader.Any(
         listFromJson json,
         [ optionFromJson json
-          $"FromJsonExt: Unknown Value JSON: {json.AsFSharpString.ReasonablyClamped}"
-          |> Errors.Singleton
-          |> Errors.WithPriority ErrorPriority.Medium
+          fun () -> $"FromJsonExt: Unknown Value JSON: {json.AsFSharpString.ReasonablyClamped}"
+          |> Errors.Singleton()
+          |> Errors.MapPriority(replaceWith ErrorPriority.Medium)
           |> reader.Throw ]
       )
       |> reader.MapError(Errors.HighestPriority)
@@ -37,9 +38,9 @@ module Extensions =
       reader.Any(
         listToJson value,
         [ optionToJson value
-          $"ToJsonExt: Unknown Value: {value.AsFSharpString.ReasonablyClamped}"
-          |> Errors.Singleton
-          |> Errors.WithPriority ErrorPriority.Medium
+          fun () -> $"ToJsonExt: Unknown Value: {value.AsFSharpString.ReasonablyClamped}"
+          |> Errors.Singleton()
+          |> Errors.MapPriority(replaceWith ErrorPriority.Medium)
           |> reader.Throw ]
       )
       |> reader.MapError(Errors.HighestPriority)

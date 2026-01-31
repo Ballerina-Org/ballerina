@@ -2,6 +2,7 @@ namespace Ballerina.DSL.Next.Types.TypeChecker
 
 module AdHocPolymorphicOperators =
   open Ballerina.StdLib.String
+  open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Collections.Option

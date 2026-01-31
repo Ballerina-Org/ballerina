@@ -1,6 +1,7 @@
-﻿namespace Ballerina.VirtualFolders
+namespace Ballerina.VirtualFolders
 
 open Ballerina.Errors
+open Ballerina
 open Ballerina.Collections.Sum
 open FSharp.Data
 
