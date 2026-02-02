@@ -492,9 +492,10 @@ module Extension =
           consOperation
           nilOperation ]
         |> Map.ofList
-      Deconstruct =
-        fun (v: ListValues<'ext>) ->
-          match v with
-          | ListValues.List(v :: vs) ->
-            Value<TypeValue<'ext>, 'ext>.Tuple([ v; (vs |> ListValues.List |> valueLens.Set, None) |> Ext ])
-          | _ -> Value<TypeValue<'ext>, 'ext>.Primitive PrimitiveValue.Unit }
+    // Deconstruct =
+    //   fun (v: ListValues<'ext>) ->
+    //     match v with
+    //     | ListValues.List(v :: vs) ->
+    //       Value<TypeValue<'ext>, 'ext>.Tuple([ v; (vs |> ListValues.List |> valueLens.Set, None) |> Ext ])
+    //     | _ -> Value<TypeValue<'ext>, 'ext>.Primitive PrimitiveValue.Unit
+    }

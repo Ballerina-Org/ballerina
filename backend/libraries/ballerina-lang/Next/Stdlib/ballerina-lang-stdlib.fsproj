@@ -65,6 +65,14 @@
         <Compile Include="MemoryDB/CUD/DeleteMany.fs" />
         <Compile Include="MemoryDB/CUD/Link.fs" />
         <Compile Include="MemoryDB/CUD/Unlink.fs" />
+        <Compile Include="MemoryDB/Query/FromEntity.fs" />
+        <Compile Include="MemoryDB/Query/FromRelation.fs" />
+        <Compile Include="MemoryDB/Query/Select.fs" />
+        <Compile Include="MemoryDB/Query/OrderBy.fs" />
+        <Compile Include="MemoryDB/Query/Where.fs" />
+        <Compile Include="MemoryDB/Query/Cross.fs" />
+        <Compile Include="MemoryDB/Query/Expand.fs" />
+        <Compile Include="MemoryDB/Query/Run.fs" />
         <Compile Include="MemoryDB/Lookups.fs" />
         <Compile Include="MemoryDB/Extension.fs" />
         <Compile Include="DateTime/Model.fs" />

@@ -137,7 +137,7 @@ module CommonHelpers =
   /// Add a link to a relation in the database
   let addRelationLink<'ext when 'ext: comparison>
     (db: MutableMemoryDB<'ext>)
-    (relation: SchemaRelation)
+    (relation: SchemaRelation<'ext>)
     (fromId: Value<TypeValue<'ext>, 'ext>)
     (toId: Value<TypeValue<'ext>, 'ext>)
     : unit =
@@ -164,7 +164,7 @@ module CommonHelpers =
   /// Remove a link from a relation in the database
   let removeRelationLink<'ext when 'ext: comparison>
     (db: MutableMemoryDB<'ext>)
-    (relation: SchemaRelation)
+    (relation: SchemaRelation<'ext>)
     (fromId: Value<TypeValue<'ext>, 'ext>)
     (toId: Value<TypeValue<'ext>, 'ext>)
     : unit =

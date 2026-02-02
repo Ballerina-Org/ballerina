@@ -278,11 +278,12 @@ module Extension =
       TypeVars = [ (kVar, kKind); (vVar, vKind) ]
       Cases = Map.empty
       Operations = [ setOperation; emptyOperation; mapOperation; maptolistOperation ] |> Map.ofList
-      Deconstruct =
-        fun (v: MapValues<'ext>) ->
-          match v with
-          | MapValues.Map map when not (Map.isEmpty map) ->
-            let (firstKey, firstValue) = map |> Map.toList |> List.head
-            let rest = map |> Map.remove firstKey |> MapValues.Map
-            Value<TypeValue<'ext>, 'ext>.Tuple([ firstKey; firstValue; (rest |> valueLens.Set, None) |> Ext ])
-          | _ -> Value<TypeValue<'ext>, 'ext>.Primitive PrimitiveValue.Unit }
+    // Deconstruct =
+    //   fun (v: MapValues<'ext>) ->
+    //     match v with
+    //     | MapValues.Map map when not (Map.isEmpty map) ->
+    //       let (firstKey, firstValue) = map |> Map.toList |> List.head
+    //       let rest = map |> Map.remove firstKey |> MapValues.Map
+    //       Value<TypeValue<'ext>, 'ext>.Tuple([ firstKey; firstValue; (rest |> valueLens.Set, None) |> Ext ])
+    //     | _ -> Value<TypeValue<'ext>, 'ext>.Primitive PrimitiveValue.Unit
+    }

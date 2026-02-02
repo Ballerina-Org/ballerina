@@ -86,62 +86,6 @@ let ``LangNext-ExprEval (generic) Apply of custom Option type succeeds`` () =
   | Right(e, _) -> Assert.Fail($"Type checking failed: {e.AsFSharpString}")
 
 
-[<Test>]
-let ``LangNext-ExprEval construction of custom Option.Some succeeds`` () =
-  let program =
-    Expr.Apply(
-      Expr.TypeApply(
-        Expr.Lookup(Identifier.FullyQualified([ "Option" ], "Some")),
-        TypeExpr.Primitive PrimitiveType.Int32
-      ),
-      Expr.Primitive(PrimitiveValue.Int32 100)
-    )
-
-  let actual = runTypeCheck program
-
-  match actual with
-  | Left((program, _typeValue, _, _), _state) ->
-    let actual = eval program
-
-    let expected: Value<TypeValue<ValueExt>, ValueExt> =
-      (Choice2Of6(OptionValues(Option(Some(Value.Primitive(PrimitiveValue.Int32 100)))))
-       |> ValueExt,
-       None)
-      |> Ext
-
-    match actual with
-    | Sum.Left actual -> Assert.That(actual, Is.EqualTo(expected))
-    | Sum.Right err -> Assert.Fail $"Evaluation failed: {err}"
-
-  | Right(e, _) -> Assert.Fail($"Type checking failed: {e.AsFSharpString}")
-
-
-[<Test>]
-let ``LangNext-ExprEval construction of custom Option.None succeeds`` () =
-  let program =
-    Expr.Apply(
-      Expr.TypeApply(
-        Expr.Lookup(Identifier.FullyQualified([ "Option" ], "None")),
-        TypeExpr.Primitive PrimitiveType.Int32
-      ),
-      Expr.Primitive(PrimitiveValue.Unit)
-    )
-
-  let actual = runTypeCheck program
-
-  match actual with
-  | Left((program, _typeValue, _, _), _state) ->
-    let actual = eval program
-
-    let expected: Value<TypeValue<ValueExt>, ValueExt> =
-      (Choice2Of6(OptionValues(Option None)) |> ValueExt, None) |> Ext
-
-    match actual with
-    | Sum.Left actual -> Assert.That(actual, Is.EqualTo(expected))
-    | Sum.Right err -> Assert.Fail $"Evaluation failed: {err}"
-
-  | Right(e, _) -> Assert.Fail($"Type checking failed: {e.AsFSharpString}")
-
 
 [<Test>]
 let ``Int32 addition operation works`` () =

@@ -69,3 +69,5 @@ module NonEmptyList =
       match l with
       | [] -> NonEmptyList(head, tail)
       | listHead :: listTail -> NonEmptyList.OfList(listHead, listTail @ [ head ] @ tail)
+
+    static member length(NonEmptyList(_, t): NonEmptyList<'e>) = t.Length + 1
