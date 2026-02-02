@@ -169,10 +169,20 @@ let stdExtensions =
 
   let memoryDBCUDExtension =
     MemoryDB.Extension.CUD.MemoryDBCUDExtension<ValueExt>
-      (fun values ->
-        ListExt.ListValues(List.Model.ListValues.List values)
-        |> Choice1Of6
-        |> ValueExt.ValueExt)
+      // (fun values ->
+      //   ListExt.ListValues(List.Model.ListValues.List values)
+      //   |> Choice1Of6
+      //   |> ValueExt.ValueExt)
+      { Get =
+          ValueExt.Getters.ValueExt
+          >> (function
+          | Choice1Of6(ListExt.ListValues(List.Model.ListValues.List values)) -> Some values
+          | _ -> None)
+        Set =
+          List.Model.ListValues.List
+          >> ListExt.ListValues
+          >> Choice1Of6
+          >> ValueExt.ValueExt }
       { Get =
           ValueExt.Getters.ValueExt
           >> (function

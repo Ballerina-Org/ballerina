@@ -172,17 +172,30 @@ module RecordDes =
 
                     return
                       Expr.RelationDes(schema_v, fieldName, loc0, ctx.Scope),
-                      TypeValue.CreateRelation(
-                        schema_t,
-                        fieldName,
-                        relation.Cardinality,
-                        from.TypeOriginal,
-                        from.TypeWithProps,
-                        from.Id,
-                        to_.TypeOriginal,
-                        to_.TypeWithProps,
-                        to_.Id
-                      ),
+                      (match relation.Cardinality with
+                       | None ->
+                         TypeValue.CreateForeignKeyRelation(
+                           schema_t,
+                           fieldName,
+                           from.TypeOriginal,
+                           from.TypeWithProps,
+                           from.Id,
+                           to_.TypeOriginal,
+                           to_.TypeWithProps,
+                           to_.Id
+                         )
+                       | Some _ ->
+                         TypeValue.CreateRelation(
+                           schema_t,
+                           fieldName,
+                           relation.Cardinality,
+                           from.TypeOriginal,
+                           from.TypeWithProps,
+                           from.Id,
+                           to_.TypeOriginal,
+                           to_.TypeWithProps,
+                           to_.Id
+                         )),
                       Kind.Star,
                       ctx
                   }

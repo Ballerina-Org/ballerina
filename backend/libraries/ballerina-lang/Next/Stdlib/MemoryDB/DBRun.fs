@@ -46,24 +46,7 @@ module DBRun =
               |> OrderedMap.tryFind (v.To.LocalName |> SchemaEntityName.Create)
               |> sum.OfOption(Errors.Singleton () (fun () -> $"Entity {v.To.LocalName} not found in schema"))
 
-            return
-              k.Name |> ResolvedIdentifier.Create,
-              Value.Record(
-                [ "Relation" |> ResolvedIdentifier.Create,
-                  (MemoryDBValues.RelationRef(schema, db, v, from, to_) |> valueLens.Set, None)
-                  |> Ext
-                  "From" |> ResolvedIdentifier.Create,
-                  (MemoryDBValues.RelationLookupRef(schema, db, RelationLookupDirection.FromTo, v, from, to_)
-                   |> valueLens.Set,
-                   None)
-                  |> Ext
-                  "To" |> ResolvedIdentifier.Create,
-                  (MemoryDBValues.RelationLookupRef(schema, db, RelationLookupDirection.ToFrom, v, from, to_)
-                   |> valueLens.Set,
-                   None)
-                  |> Ext ]
-                |> Map.ofList
-              )
+            return k.Name |> ResolvedIdentifier.Create, (v, from, to_)
           })
         |> sum.All
 
@@ -78,7 +61,31 @@ module DBRun =
               |> Ext)
             |> Map.ofSeq
           )
-          "Relations" |> ResolvedIdentifier.Create, Value.Record(relation_values |> Map.ofSeq) ]
+          "Relations" |> ResolvedIdentifier.Create,
+          Value.Record(
+            relation_values
+            |> Seq.map (fun (k, (v, from, to_)) ->
+              k,
+              Value.Record(
+                [ "Relation" |> ResolvedIdentifier.Create,
+                  (MemoryDBValues.RelationRef(schema, db, v, from, to_, { Value = lazy res })
+                   |> valueLens.Set,
+                   None)
+                  |> Ext
+                  "From" |> ResolvedIdentifier.Create,
+                  (MemoryDBValues.RelationLookupRef(schema, db, RelationLookupDirection.FromTo, v, from, to_)
+                   |> valueLens.Set,
+                   None)
+                  |> Ext
+                  "To" |> ResolvedIdentifier.Create,
+                  (MemoryDBValues.RelationLookupRef(schema, db, RelationLookupDirection.ToFrom, v, from, to_)
+                   |> valueLens.Set,
+                   None)
+                  |> Ext ]
+                |> Map.ofList
+              ))
+            |> Map.ofSeq
+          ) ]
         |> Map.ofList
         |> Value.Record
 

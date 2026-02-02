@@ -8,28 +8,28 @@ module CUD =
   open Ballerina.DSL.Next.StdLib.MemoryDB
 
   let MemoryDBCUDExtension<'ext when 'ext: comparison>
-    (listSet: List<Value<TypeValue<'ext>, 'ext>> -> 'ext)
+    (listLens: PartialLens<'ext, List<Value<TypeValue<'ext>, 'ext>>>)
     (mapLens: PartialLens<'ext, Map<Value<TypeValue<'ext>, 'ext>, Value<TypeValue<'ext>, 'ext>>>)
     (valueLens: PartialLens<'ext, MemoryDBValues<'ext>>)
     : OperationsExtension<'ext, MemoryDBValues<'ext>> =
 
     let memoryDBCalculatePropertyId, CalculatePropertyOperation, calculateProps =
-      MemoryDBCalculatePropertyExtension listSet valueLens
+      MemoryDBCalculatePropertyExtension listLens.Set valueLens
 
     let memoryDBStripPropertyId, StripPropertyOperation, stripProps =
-      MemoryDBStripPropertiesExtension listSet valueLens
+      MemoryDBStripPropertiesExtension listLens.Set valueLens
 
     let memoryDBCreateId, CreateOperation =
-      MemoryDBCreateExtension calculateProps listSet valueLens
+      MemoryDBCreateExtension calculateProps listLens.Set valueLens
 
     let memoryDBUpdateId, UpdateOperation =
-      MemoryDBUpdateExtension (calculateProps, stripProps) listSet valueLens
+      MemoryDBUpdateExtension (calculateProps, stripProps) listLens.Set valueLens
 
     let memoryDBUpsertId, UpsertOperation =
-      MemoryDBUpsertExtension (calculateProps, stripProps) listSet valueLens
+      MemoryDBUpsertExtension (calculateProps, stripProps) listLens.Set valueLens
 
-
-    let memoryDBDeleteId, DeleteOperation = MemoryDBDeleteExtension listSet valueLens
+    let memoryDBDeleteId, DeleteOperation =
+      MemoryDBDeleteExtension listLens.Set valueLens
 
     let memoryDBUpsertManyId, UpsertManyOperation =
       MemoryDBUpsertManyExtension (calculateProps, stripProps) mapLens valueLens
@@ -40,9 +40,16 @@ module CUD =
     let memoryDBDeleteManyId, DeleteManyOperation =
       MemoryDBDeleteManyExtension mapLens valueLens
 
-    let memoryDBLinkId, LinkOperation = MemoryDBLinkExtension listSet valueLens
+    let memoryDBLinkId, LinkOperation = MemoryDBLinkExtension listLens.Set valueLens
 
-    let memoryDBUnlinkId, UnlinkOperation = MemoryDBUnlinkExtension listSet valueLens
+    let memoryDBLinkManyId, LinkManyOperation =
+      MemoryDBLinkManyExtension listLens valueLens
+
+    let memoryDBUnlinkId, UnlinkOperation =
+      MemoryDBUnlinkExtension listLens.Set valueLens
+
+    let memoryDBUnlinkManyId, UnlinkManyOperation =
+      MemoryDBUnlinkManyExtension listLens valueLens
 
 
     { TypeVars = []
@@ -55,7 +62,9 @@ module CUD =
           (memoryDBUpsertManyId, UpsertManyOperation)
           (memoryDBUpdateManyId, UpdateManyOperation)
           (memoryDBLinkId, LinkOperation)
+          (memoryDBLinkManyId, LinkManyOperation)
           (memoryDBUnlinkId, UnlinkOperation)
+          (memoryDBUnlinkManyId, UnlinkManyOperation)
           (memoryDBDeleteId, DeleteOperation)
           (memoryDBDeleteManyId, DeleteManyOperation) ]
         |> Map.ofList }

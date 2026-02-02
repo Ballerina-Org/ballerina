@@ -178,9 +178,9 @@ module Eval =
             let! a_schema = s |> TypeValue.AsSchema |> ofSum
 
             return TypeValue.CreateRelationLookupMany(a_schema, t', f_id), Kind.Star
-          | TypeExpr.Schema schema ->
+          | TypeExpr.Schema parsed_schema ->
             let repeatedEntityNames =
-              schema.Entities
+              parsed_schema.Entities
               |> List.map (fun e -> e.Name)
               |> List.groupBy id
               |> List.filter (fun (_, l) -> List.length l > 1)
@@ -195,7 +195,7 @@ module Eval =
                 |> state.Throw
             else
               let! entities =
-                schema.Entities
+                parsed_schema.Entities
                 |> List.map (fun e ->
                   e.Name,
                   state {
@@ -534,7 +534,7 @@ module Eval =
                 |> state.AllMapOrdered
 
               let repeatedRelationNames =
-                schema.Relations
+                parsed_schema.Relations
                 |> List.map (fun r -> r.Name)
                 |> List.groupBy id
                 |> List.filter (fun (_, l) -> List.length l > 1)
@@ -658,7 +658,7 @@ module Eval =
                   }
 
                 let! relations =
-                  schema.Relations
+                  parsed_schema.Relations
                   |> List.map (fun r ->
                     r.Name,
                     state {
@@ -693,7 +693,11 @@ module Eval =
                         { Name = r.Name
                           From = r.From |> fst
                           To = r.To |> fst
-                          Cardinality = r.Cardinality }
+                          Cardinality = r.Cardinality
+                          OnLinking = None
+                          OnLinked = None
+                          OnUnlinking = None
+                          OnUnlinked = None }
                     })
                   |> OrderedMap.ofList
                   |> state.AllMapOrdered
@@ -726,7 +730,7 @@ module Eval =
                   |> state.Ignore
 
                 let! entities_with_hooks =
-                  schema.Entities
+                  parsed_schema.Entities
                   |> Seq.map (fun e_parsed ->
                     state {
                       let! e_typechecked =
@@ -955,13 +959,145 @@ module Eval =
                     )
                   )
 
-                do! state.SetState(state_to_restore |> replaceWith)
-
                 let entities_with_hooks = entities_with_hooks |> OrderedMap.ofList
+
+                let! relations_with_hooks =
+                  parsed_schema.Relations
+                  |> Seq.map (fun r_parsed ->
+                    state {
+                      let! r_typechecked =
+                        resulting_schema_without_hooks.Relations
+                        |> OrderedMap.tryFind (r_parsed.Name.Name |> SchemaRelationName.Create)
+                        |> Sum.fromOption (fun () ->
+                          (fun () -> $"Error: cannot find typechecked relation for parsed relation {r_parsed.Name}")
+                          |> Errors.Singleton loc0)
+                        |> state.OfSum
+
+                      let! from_e =
+                        entities_with_hooks
+                        |> OrderedMap.tryFind ((r_parsed.From |> fst).LocalName |> SchemaEntityName.Create)
+                        |> Sum.fromOption (fun () ->
+                          (fun () -> $"Error: cannot find entity {r_parsed.From} for relation {r_parsed.Name}")
+                          |> Errors.Singleton loc0)
+                        |> state.OfSum
+
+                      let! to_e =
+                        entities_with_hooks
+                        |> OrderedMap.tryFind ((r_parsed.To |> fst).LocalName |> SchemaEntityName.Create)
+                        |> Sum.fromOption (fun () ->
+                          (fun () -> $"Error: cannot find entity {r_parsed.To} for relation {r_parsed.Name}")
+                          |> Errors.Singleton loc0)
+                        |> state.OfSum
+
+                      let relation_hook_type =
+                        TypeValue.CreateArrow(
+                          TypeValue.Schema resulting_schema_without_hooks,
+                          TypeValue.CreateArrow(
+                            from_e.Id,
+                            TypeValue.CreateArrow(
+                              to_e.Id,
+                              TypeValue.CreateSum
+                                [ TypeValue.CreateUnit(); TypeValue.Lookup(Identifier.LocalScope "Error") ]
+                            )
+                          )
+                        )
+
+                      let assert_no_cardinality =
+                        match r_parsed.Cardinality with
+                        | None ->
+                          (fun () ->
+                            $"Error: cannot define hooks on relation {r_parsed.Name} with cardinality constraints")
+                          |> Errors.Singleton loc0
+                          |> state.Throw
+                        | Some _ -> state { return () }
+
+                      let! e_typechecked =
+                        state {
+                          match r_parsed.OnLinking with
+                          | None -> return { r_typechecked with OnLinking = None }
+                          | Some on_linking ->
+                            do! assert_no_cardinality
+                            let! on_linking_expr, on_linking_t, on_linking_k, _ = typeCheckExpr None on_linking
+                            do! on_linking_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                            do! TypeValue.Unify(loc0, on_linking_t, relation_hook_type) |> Expr.liftUnification
+
+                            return
+                              { r_typechecked with
+                                  OnLinking = Some on_linking_expr }
+                        }
+
+                      let! e_typechecked =
+                        state {
+                          match r_parsed.OnLinked with
+                          | None -> return { e_typechecked with OnLinked = None }
+                          | Some on_linked ->
+                            do! assert_no_cardinality
+                            let! on_linked_expr, on_linked_t, on_linked_k, _ = typeCheckExpr None on_linked
+                            do! on_linked_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                            do! TypeValue.Unify(loc0, on_linked_t, relation_hook_type) |> Expr.liftUnification
+
+                            return
+                              { e_typechecked with
+                                  OnLinked = Some on_linked_expr }
+                        }
+
+                      let! e_typechecked =
+                        state {
+                          match r_parsed.OnUnlinking with
+                          | None ->
+                            return
+                              { e_typechecked with
+                                  OnUnlinking = None }
+                          | Some on_unlinking ->
+                            do! assert_no_cardinality
+                            let! on_unlinking_expr, on_unlinking_t, on_unlinking_k, _ = typeCheckExpr None on_unlinking
+                            do! on_unlinking_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                            do!
+                              TypeValue.Unify(loc0, on_unlinking_t, relation_hook_type)
+                              |> Expr.liftUnification
+
+                            return
+                              { e_typechecked with
+                                  OnUnlinking = Some on_unlinking_expr }
+                        }
+
+                      let! e_typechecked =
+                        state {
+                          match r_parsed.OnUnlinked with
+                          | None -> return { e_typechecked with OnUnlinked = None }
+                          | Some on_unlinked ->
+                            do! assert_no_cardinality
+                            let! on_unlinked_expr, on_unlinked_t, on_unlinked_k, _ = typeCheckExpr None on_unlinked
+                            do! on_unlinked_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                            do! TypeValue.Unify(loc0, on_unlinked_t, relation_hook_type) |> Expr.liftUnification
+
+                            return
+                              { e_typechecked with
+                                  OnUnlinked = Some on_unlinked_expr }
+                        }
+
+                      return r_parsed.Name, e_typechecked
+                    })
+                  |> state.All
+                  |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+                  |> state.MapContext(
+                    TypeCheckContext.Updaters.TypeVariables(
+                      Map.add "Schema" (TypeValue.Schema resulting_schema_without_hooks, Kind.Schema)
+                    )
+                  )
+
+                let relations_with_hooks = relations_with_hooks |> OrderedMap.ofList
+
+                do! state.SetState(state_to_restore |> replaceWith)
 
                 let resulting_schema =
                   { resulting_schema_without_hooks with
-                      Entities = entities_with_hooks }
+                      Entities = entities_with_hooks
+                      Relations = relations_with_hooks }
 
                 return TypeValue.Schema resulting_schema, Kind.Schema
           | TypeExpr.FromTypeValue tv ->

@@ -23,9 +23,6 @@ module Model =
       Path: SchemaPath<'ext>
       Body: Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext> }
 
-  type RelationRef<'ext when 'ext: comparison> =
-    Schema<'ext> * MutableMemoryDB<'ext> * SchemaRelation * SchemaEntity<'ext> * SchemaEntity<'ext>
-
   [<CustomEquality; CustomComparison>]
   type SchemaAsValue<'ext when 'ext: comparison> =
     { Value: Lazy<Value<TypeValue<'ext>, 'ext>> }
@@ -49,11 +46,19 @@ module Model =
   type EntityRef<'ext when 'ext: comparison> =
     Schema<'ext> * MutableMemoryDB<'ext> * SchemaEntity<'ext> * SchemaAsValue<'ext>
 
+  type RelationRef<'ext when 'ext: comparison> =
+    Schema<'ext> *
+    MutableMemoryDB<'ext> *
+    SchemaRelation<'ext> *
+    SchemaEntity<'ext> *
+    SchemaEntity<'ext> *
+    SchemaAsValue<'ext>
+
   type RelationLookupRef<'ext when 'ext: comparison> =
     Schema<'ext> *
     MutableMemoryDB<'ext> *
     RelationLookupDirection *
-    SchemaRelation *
+    SchemaRelation<'ext> *
     SchemaEntity<'ext> *
     SchemaEntity<'ext>
 
@@ -89,9 +94,11 @@ module Model =
 
   type MemoryDBValues<'ext when 'ext: comparison> =
     | EntityRef of EntityRef<'ext>
-    | RelationRef of Schema<'ext> * MutableMemoryDB<'ext> * SchemaRelation * SchemaEntity<'ext> * SchemaEntity<'ext>
+    | RelationRef of RelationRef<'ext>
     | Link of {| RelationRef: Option<RelationRef<'ext>> |}
     | Unlink of {| RelationRef: Option<RelationRef<'ext>> |}
+    | LinkMany of {| RelationRef: Option<RelationRef<'ext>> |}
+    | UnlinkMany of {| RelationRef: Option<RelationRef<'ext>> |}
     | LookupOne of {| RelationRef: Option<RelationLookupRef<'ext>> |}
     | LookupOption of {| RelationRef: Option<RelationLookupRef<'ext>> |}
     | LookupMany of
@@ -116,12 +123,12 @@ module Model =
     override this.ToString() =
       match this with
       | EntityRef(_, _, entity, _) -> $"EntityRef({entity.Name})"
-      | RelationRef(_, _, relation, fromEntity, toEntity) ->
+      | RelationRef(_, _, relation, fromEntity, toEntity, _) ->
         $"RelationRef({relation.Name}, from: {fromEntity.Name}, to: {toEntity.Name})"
       | Link link ->
         let relationStr =
           match link.RelationRef with
-          | Some(_, _, relation, fromEntity, toEntity) ->
+          | Some(_, _, relation, fromEntity, toEntity, _) ->
             $"RelationRef({relation.Name}, from: {fromEntity.Name}, to: {toEntity.Name})"
           | None -> "None"
 
@@ -129,11 +136,27 @@ module Model =
       | Unlink unlink ->
         let relationStr =
           match unlink.RelationRef with
-          | Some(_, _, relation, fromEntity, toEntity) ->
+          | Some(_, _, relation, fromEntity, toEntity, _) ->
             $"RelationRef({relation.Name}, from: {fromEntity.Name}, to: {toEntity.Name})"
           | None -> "None"
 
         $"Unlink(Relation: {relationStr})"
+      | LinkMany linkMany ->
+        let relationStr =
+          match linkMany.RelationRef with
+          | Some(_, _, relation, fromEntity, toEntity, _) ->
+            $"RelationRef({relation.Name}, from: {fromEntity.Name}, to: {toEntity.Name})"
+          | None -> "None"
+
+        $"LinkMany(Relation: {relationStr})"
+      | UnlinkMany unlinkMany ->
+        let relationStr =
+          match unlinkMany.RelationRef with
+          | Some(_, _, relation, fromEntity, toEntity, _) ->
+            $"RelationRef({relation.Name}, from: {fromEntity.Name}, to: {toEntity.Name})"
+          | None -> "None"
+
+        $"UnlinkMany(Relation: {relationStr})"
       | LookupOne lookupOne ->
         let relationStr =
           match lookupOne.RelationRef with

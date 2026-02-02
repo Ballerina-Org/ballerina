@@ -255,6 +255,9 @@ module Patterns =
     static member CreateRelation(s, rn: SchemaRelationName, c, f, f', f_id, t, t', t_id) : TypeValue<'valueExt> =
       TypeValue.Relation(s, rn, c, f, f', f_id, t, t', t_id)
 
+    static member CreateForeignKeyRelation(s, rn: SchemaRelationName, f, f', f_id, t, t', t_id) : TypeValue<'valueExt> =
+      TypeValue.ForeignKeyRelation(s, rn, f, f', f_id, t, t', t_id)
+
     static member CreateRelationLookupOne
       (schema: Schema<'valueExt>, target': TypeValue<'valueExt>, source_id)
       : TypeValue<'valueExt> =
@@ -383,6 +386,17 @@ module Patterns =
         | _ ->
           return!
             (fun () -> $"Error: expected relation type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
+      }
+
+    static member AsForeignKeyRelation(t: TypeValue<'valueExt>) =
+      sum {
+        match t with
+        | TypeValue.ForeignKeyRelation(s, rn, f, f', f_id, t, t', t_id) -> return (s, rn, f, f', f_id, t, t', t_id)
+        | _ ->
+          return!
+            (fun () -> $"Error: expected foreign key relation type, got {t})")
             |> Errors.Singleton()
             |> sum.Throw
       }
@@ -567,6 +581,8 @@ module Patterns =
       | TypeValue.RelationLookupOption(s, f', t_id) -> TypeValue.CreateLookupMaybe(s, f', t_id)
       | TypeValue.RelationLookupOne(s, f', t_id) -> TypeValue.CreateLookupOne(s, f', t_id)
       | TypeValue.RelationLookupMany(s, f', t_id) -> TypeValue.CreateLookupMany(s, f', t_id)
+      | TypeValue.ForeignKeyRelation(s, rn, f, f', f_id, t, t', t_id) ->
+        TypeValue.CreateForeignKeyRelation(s, rn, f, f', f_id, t, t', t_id)
 
     static member SetSourceMapping(t: TypeValue<'valueExt>, source: TypeExprSourceMapping<'valueExt>) =
       match t with
@@ -591,7 +607,8 @@ module Patterns =
       | TypeValue.RelationLookupOption _
       | TypeValue.RelationLookupOne _
       | TypeValue.RelationLookupMany _
-      | TypeValue.Relation _ -> t
+      | TypeValue.Relation _
+      | TypeValue.ForeignKeyRelation _ -> t
 
   type TypeValue<'valueExt> with
     member t.AsExpr: TypeExpr<'valueExt> = TypeExpr.FromTypeValue t

@@ -86,16 +86,9 @@ module Patterns =
       | MemoryDBValues.EntityRef e -> e |> sum.Return
       | _ -> Errors.Singleton () (fun () -> "Expected EntityRef operation") |> sum.Throw
 
-
-    static member AsRelationRef
-      (op: MemoryDBValues<'ext>)
-      : Sum<
-          Schema<'ext> * MutableMemoryDB<'ext> * SchemaRelation * SchemaEntity<'ext> * SchemaEntity<'ext>,
-          Errors<Unit>
-         >
-      =
+    static member AsRelationRef(op: MemoryDBValues<'ext>) : Sum<RelationRef<'ext>, Errors<Unit>> =
       match op with
-      | MemoryDBValues.RelationRef(s, db, r, f, t) -> (s, db, r, f, t) |> sum.Return
+      | MemoryDBValues.RelationRef(s, db, r, f, t, sv) -> (s, db, r, f, t, sv) |> sum.Return
       | _ -> Errors.Singleton () (fun () -> "Expected RelationRef operation") |> sum.Throw
 
     static member AsRelationLookupRef
@@ -104,7 +97,7 @@ module Patterns =
           Schema<'ext> *
           MutableMemoryDB<'ext> *
           RelationLookupDirection *
-          SchemaRelation *
+          SchemaRelation<'ext> *
           SchemaEntity<'ext> *
           SchemaEntity<'ext>,
           Errors<Unit>
@@ -117,31 +110,29 @@ module Patterns =
         |> sum.Throw
 
 
-    static member AsLink
-      (op: MemoryDBValues<'ext>)
-      : Sum<
-          {| RelationRef:
-               Option<Schema<'ext> * MutableMemoryDB<'ext> * SchemaRelation * SchemaEntity<'ext> * SchemaEntity<'ext>> |},
-          Errors<Unit>
-         >
-      =
+    static member AsLink(op: MemoryDBValues<'ext>) : Sum<{| RelationRef: Option<RelationRef<'ext>> |}, Errors<Unit>> =
       match op with
       | MemoryDBValues.Link link -> link |> sum.Return
       | _ -> Errors.Singleton () (fun () -> "Expected Link operation") |> sum.Throw
 
-
-    static member AsUnlink
-      (op: MemoryDBValues<'ext>)
-      : Sum<
-          {| RelationRef:
-               Option<Schema<'ext> * MutableMemoryDB<'ext> * SchemaRelation * SchemaEntity<'ext> * SchemaEntity<'ext>> |},
-          Errors<Unit>
-         >
-      =
+    static member AsUnlink(op: MemoryDBValues<'ext>) : Sum<{| RelationRef: Option<RelationRef<'ext>> |}, Errors<Unit>> =
       match op with
       | MemoryDBValues.Unlink unlink -> unlink |> sum.Return
       | _ -> Errors.Singleton () (fun () -> "Expected Unlink operation") |> sum.Throw
 
+    static member AsLinkMany
+      (op: MemoryDBValues<'ext>)
+      : Sum<{| RelationRef: Option<RelationRef<'ext>> |}, Errors<Unit>> =
+      match op with
+      | MemoryDBValues.LinkMany linkMany -> linkMany |> sum.Return
+      | _ -> Errors.Singleton () (fun () -> "Expected LinkMany operation") |> sum.Throw
+
+    static member AsUnlinkMany
+      (op: MemoryDBValues<'ext>)
+      : Sum<{| RelationRef: Option<RelationRef<'ext>> |}, Errors<Unit>> =
+      match op with
+      | MemoryDBValues.UnlinkMany unlinkMany -> unlinkMany |> sum.Return
+      | _ -> Errors.Singleton () (fun () -> "Expected UnlinkMany operation") |> sum.Throw
 
     static member AsLookupOne
       (op: MemoryDBValues<'ext>)
@@ -150,14 +141,12 @@ module Patterns =
       | MemoryDBValues.LookupOne lookupOne -> lookupOne |> sum.Return
       | _ -> Errors.Singleton () (fun () -> "Expected LookupOne operation") |> sum.Throw
 
-
     static member AsLookupOption
       (op: MemoryDBValues<'ext>)
       : Sum<{| RelationRef: Option<RelationLookupRef<'ext>> |}, Errors<Unit>> =
       match op with
       | MemoryDBValues.LookupOption lookupOption -> lookupOption |> sum.Return
       | _ -> Errors.Singleton () (fun () -> "Expected LookupOption operation") |> sum.Throw
-
 
     static member AsLookupMany
       (op: MemoryDBValues<'ext>)
@@ -170,7 +159,6 @@ module Patterns =
       match op with
       | MemoryDBValues.LookupMany lookupMany -> lookupMany |> sum.Return
       | _ -> Errors.Singleton () (fun () -> "Expected LookupMany operation") |> sum.Throw
-
 
     static member AsDBIO(op: MemoryDBValues<'ext>) : Sum<MemoryDBIO<'ext>, Errors<Unit>> =
       match op with
