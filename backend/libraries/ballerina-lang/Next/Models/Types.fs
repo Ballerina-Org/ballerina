@@ -270,16 +270,26 @@ module Model =
   and SchemaPathSegmentExpr = Option<LocalIdentifier> * SchemaPathTypeDecompositionExpr
   and SchemaPathExpr = List<SchemaPathSegmentExpr>
 
-  and SchemaRelationExpr =
+  and SchemaRelationHook =
+    | Linking
+    | Unlinking
+    | Linked
+    | Unlinked
+
+  and SchemaRelationExpr<'valueExt> =
     { Name: SchemaRelationName
       From: Identifier * Option<SchemaPathExpr>
       To: Identifier * Option<SchemaPathExpr>
-      Cardinality: Option<SchemaRelationCardinality> }
+      Cardinality: Option<SchemaRelationCardinality>
+      OnLinking: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
+      OnUnlinking: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
+      OnLinked: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
+      OnUnlinked: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>> }
 
   and SchemaExpr<'valueExt> =
     { DeclaredAtForNominalEquality: Location
       Entities: List<SchemaEntityExpr<'valueExt>>
-      Relations: List<SchemaRelationExpr> }
+      Relations: List<SchemaRelationExpr<'valueExt>> }
 
   and TypeExpr<'valueExt> =
     | FromTypeValue of TypeValue<'valueExt>
@@ -430,11 +440,15 @@ module Model =
     override entity.ToString() =
       $"{entity.Name.Name} (Id: {entity.Id}): {entity.TypeOriginal} -> {entity.TypeWithProps}"
 
-  and SchemaRelation =
+  and SchemaRelation<'valueExt> =
     { Name: SchemaRelationName
       From: Identifier
       To: Identifier
-      Cardinality: Option<SchemaRelationCardinality> }
+      Cardinality: Option<SchemaRelationCardinality>
+      OnLinking: Option<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>>
+      OnUnlinking: Option<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>>
+      OnLinked: Option<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>>
+      OnUnlinked: Option<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> }
 
     override r.ToString() =
       let cardStr =
@@ -447,7 +461,7 @@ module Model =
   and Schema<'valueExt> =
     { DeclaredAtForNominalEquality: Location
       Entities: OrderedMap<SchemaEntityName, SchemaEntity<'valueExt>>
-      Relations: OrderedMap<SchemaRelationName, SchemaRelation> }
+      Relations: OrderedMap<SchemaRelationName, SchemaRelation<'valueExt>> }
 
     override s.ToString() =
       let entities =
@@ -496,6 +510,15 @@ module Model =
     | RelationLookupOption of Schema<'valueExt> * source_id: TypeValue<'valueExt> * target': TypeValue<'valueExt>
     | RelationLookupOne of Schema<'valueExt> * source_id: TypeValue<'valueExt> * target': TypeValue<'valueExt>
     | RelationLookupMany of Schema<'valueExt> * source_id: TypeValue<'valueExt> * target': TypeValue<'valueExt>
+    | ForeignKeyRelation of
+      Schema<'valueExt> *
+      rn: SchemaRelationName *
+      f: TypeValue<'valueExt> *
+      f': TypeValue<'valueExt> *
+      f_id: TypeValue<'valueExt> *
+      t: TypeValue<'valueExt> *
+      t': TypeValue<'valueExt> *
+      t_id: TypeValue<'valueExt>
 
     override self.ToString() =
       match self with
@@ -551,6 +574,8 @@ module Model =
         $"SchemaLookupMany[Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]][{f'}][{t_id}]"
       | Relation(s, rn, _c, f, f', f_id, t, t', t_id) ->
         $"SchemaRelation[{rn.Name} Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]][{f}][{f'}][{f_id}][{t}][{t'}][{t_id}]"
+      | ForeignKeyRelation(s, rn, f, f', f_id, t, t', t_id) ->
+        $"SchemaForeignKeyRelation[{rn.Name} Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]][{f}][{f'}][{f_id}][{t}][{t'}][{t_id}]"
 
 
   and ExprTypeLetBindingName =
