@@ -228,6 +228,8 @@ module Traverser =
           return! state.Throw(Errors.Singleton () (fun () -> "Schema LookupOne seeds not implemented yet"))
         | TypeValue.RelationLookupMany _ ->
           return! state.Throw(Errors.Singleton () (fun () -> "Schema LookupMany seeds not implemented yet"))
+        | TypeValue.ForeignKeyRelation _ ->
+          return! state.Throw(Errors.Singleton () (fun () -> "Schema ForeignKeyRelation seeds not implemented yet"))
       }
 
 type SeedingContext with
