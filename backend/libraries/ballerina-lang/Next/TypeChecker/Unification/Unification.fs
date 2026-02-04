@@ -185,7 +185,8 @@ module Unification =
           let! eVars = TypeValue.FreeVariables e
           let! idVars = TypeValue.FreeVariables id
           return Set.unionMany [ sVars; eVars; idVars ]
-        | TypeValue.Relation _ -> return Set.empty
+        | TypeValue.Relation _
+        | TypeValue.ForeignKeyRelation _ -> return Set.empty
         | TypeValue.Var v ->
 
           if ctx.EvalState.Bindings.ContainsKey !v.Name then
@@ -557,7 +558,9 @@ module Unification =
           do! e1with_props == e2with_props
           do! eid1 == eid2
         | TypeValue.Relation(s1, _, _, f1, f1with_props, fid1, t1, t1with_props, tid1),
-          TypeValue.Relation(s2, _, _, f2, f2with_props, fid2, t2, t2with_props, tid2) ->
+          TypeValue.Relation(s2, _, _, f2, f2with_props, fid2, t2, t2with_props, tid2)
+        | TypeValue.ForeignKeyRelation(s1, _, f1, f1with_props, fid1, t1, t1with_props, tid1),
+          TypeValue.ForeignKeyRelation(s2, _, f2, f2with_props, fid2, t2, t2with_props, tid2) ->
           do! unifySchemas s1 s2
           do! f1 == f2
           do! f1with_props == f2with_props
@@ -705,6 +708,27 @@ module Unification =
                 schema,
                 relation_name,
                 cardinality,
+                fromType,
+                fromTypeWithProps,
+                fromId,
+                toType,
+                toTypeWithProps,
+                toId
+              )
+          | TypeValue.ForeignKeyRelation(schema, relation_name, from, fromWithProps, fromId, to_, toWithProps, toId) ->
+            let! schema = instantiateSchema schema
+
+            let! fromType = TypeValue.Instantiate () typeEval loc0 from
+            let! fromTypeWithProps = TypeValue.Instantiate () typeEval loc0 fromWithProps
+            let! fromId = TypeValue.Instantiate () typeEval loc0 fromId
+            let! toType = TypeValue.Instantiate () typeEval loc0 to_
+            let! toTypeWithProps = TypeValue.Instantiate () typeEval loc0 toWithProps
+            let! toId = TypeValue.Instantiate () typeEval loc0 toId
+
+            return
+              TypeValue.ForeignKeyRelation(
+                schema,
+                relation_name,
                 fromType,
                 fromTypeWithProps,
                 fromId,

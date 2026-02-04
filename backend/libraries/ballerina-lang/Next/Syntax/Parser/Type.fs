@@ -379,13 +379,53 @@ module Type =
                   )
               }
 
+          let onHook (hookKeyword, hookKeywordParser) =
+            parser {
+              let! startsWithHookKeyword =
+                parser {
+                  do! letKeyword
+                  do! onKeyword
+                  do! hookKeywordParser
+                }
+                |> parser.Lookahead
+                |> parser.Try
+
+              match startsWithHookKeyword with
+              | Right _ -> return! parser.Throw(Errors.Singleton Location.Unknown (fun () -> "No hook found"))
+              | Left _ ->
+                do! letKeyword
+                do! onKeyword
+                do! hookKeywordParser
+                do! equalsOperator
+                let! hookExpr = parseExpr
+                return hookKeyword, hookExpr
+            }
+
+          let! hooks =
+            [ (SchemaRelationHook.Linking, linkingKeyword) |> onHook
+              (SchemaRelationHook.Linked, linkedKeyword) |> onHook
+              (SchemaRelationHook.Unlinking, unlinkingKeyword) |> onHook
+              (SchemaRelationHook.Unlinked, unlinkedKeyword) |> onHook ]
+            |> parser.Any
+            |> parser.Many
+            |> parser.Map(Map.ofList)
+
+          let onLinking = hooks |> Map.tryFind SchemaRelationHook.Linking
+          let onLinked = hooks |> Map.tryFind SchemaRelationHook.Linked
+          let onUnlinking = hooks |> Map.tryFind SchemaRelationHook.Unlinking
+          let onUnlinked = hooks |> Map.tryFind SchemaRelationHook.Unlinked
+
           do! closeCurlyBracketOperator
 
           return
             { SchemaRelationExpr.Name = { SchemaRelationName.Name = relationName }
               From = (fromEntity, fromPath)
               To = (toEntity, toPath)
-              Cardinality = cardinality }
+              Cardinality = cardinality
+              OnLinking = onLinking
+              OnLinked = onLinked
+              OnUnlinking = onUnlinking
+              OnUnlinked = onUnlinked }
         })
 
     let entity () =
@@ -423,22 +463,22 @@ module Type =
 
           let! properties =
             parser.Many(
-              afterKeyword
-                propertyKeyword
-                (parser {
-                  let! path = schemaPath ()
-                  let! propertyName = singleIdentifier
-                  do! colonOperator
-                  let! propertyType = typeDecl parseExpr parseAllComplexTypeShapes
-                  do! equalsOperator
-                  let! propertyBody = parseExpr
+              parser {
+                do! letKeyword
+                do! propertyKeyword
+                let! path = schemaPath ()
+                let! propertyName = singleIdentifier
+                do! colonOperator
+                let! propertyType = typeDecl parseExpr parseAllComplexTypeShapes
+                do! equalsOperator
+                let! propertyBody = parseExpr
 
-                  return
-                    { SchemaEntityPropertyExpr.Name = LocalIdentifier.Create propertyName
-                      Path = path
-                      Type = propertyType
-                      Body = propertyBody }
-                })
+                return
+                  { SchemaEntityPropertyExpr.Name = LocalIdentifier.Create propertyName
+                    Path = path
+                    Type = propertyType
+                    Body = propertyBody }
+              }
             )
             |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 

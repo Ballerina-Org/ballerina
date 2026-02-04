@@ -38,7 +38,7 @@ module Model =
   and TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations> =
     { TypeName: ResolvedIdentifier * TypeSymbol // example: "Option"
       TypeVars: List<TypeVar * Kind> // example: [ ("a", Star) ]
-      Deconstruct: 'extValues -> Value<TypeValue<'ext>, 'ext> // function to extract the underlying value from a value
+      // Deconstruct: 'extValues -> Value<TypeValue<'ext>, 'ext> // function to extract the underlying value from a value
       Cases:
         Map<
           ResolvedIdentifier * TypeSymbol,  // example: ("Option.Some", "OptionSome")

@@ -70,66 +70,68 @@ module Types =
       (typeExt: TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations>)
       : Updater<ExprEvalContext<'ext>> =
       fun evalContext ->
-        let ops =
-          typeExt.Cases
-          |> Map.toSeq
-          |> Seq.fold
-            (fun
-                 (acc:
-                   Location
-                     -> List<Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext>>
-                     -> 'ext
-                     -> ExprEvaluator<'ext, ExtEvalResult<'ext>>)
-                 ((caseId, _), caseExt) ->
-              fun loc0 rest v ->
-                reader.Any(
-                  reader {
-                    let! v =
-                      caseExt.ValueLens.Get v
-                      |> sum.OfOption((fun () -> $"Error: cannot get value from extension") |> Errors.Singleton loc0)
-                      |> reader.OfSum
+        // let ops =
+        //   typeExt.Cases
+        //   |> Map.toSeq
+        //   |> Seq.fold
+        //     (fun
+        //          (acc:
+        //            Location
+        //              -> List<Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext>>
+        //              -> 'ext
+        //              -> ExprEvaluator<'ext, ExtEvalResult<'ext>>)
+        //          ((caseId, _), caseExt) ->
+        //       fun loc0 rest v ->
+        //         reader.Any(
+        //           reader {
+        //             // let! v =
+        //             //   caseExt.ValueLens.Get v
+        //             //   |> sum.OfOption((fun () -> $"Error: cannot get value from extension") |> Errors.Singleton loc0)
+        //             //   |> reader.OfSum
 
-                    let v = typeExt.Deconstruct v
+        //             // let v = typeExt.Deconstruct v
 
-                    return
-                      Matchable(fun handlers ->
-                        reader {
-                          let! handlerVar, handlerBody =
-                            handlers
-                            |> Map.tryFindWithError caseId "handlers" (fun () -> "Option.Some") loc0
-                            |> reader.OfSum
+        //             return
+        //               Matchable(fun handlers ->
+        //                 reader {
+        //                   let! handlerVar, handlerBody =
+        //                     handlers
+        //                     |> Map.tryFindWithError caseId "handlers" (fun () -> "Option.Some") loc0
+        //                     |> reader.OfSum
 
 
-                          return!
-                            handlerBody
-                            |> NonEmptyList.One
-                            |> Expr.Eval
-                            |> reader.MapContext(
-                              ExprEvalContext.Updaters.Values(
-                                Map.add (handlerVar.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) v
-                              )
-                            )
-                        })
-                  },
-                  [ (reader {
-                      let! v =
-                        caseExt.ConsLens.Get v
-                        |> sum.OfOption(
-                          (fun () -> $"Error: cannot extra constructor from extension")
-                          |> Errors.Singleton loc0
-                        )
-                        |> reader.OfSum
+        //                   return!
+        //                     handlerBody
+        //                     |> NonEmptyList.One
+        //                     |> Expr.Eval
+        //                     |> reader.MapContext(
+        //                       ExprEvalContext.Updaters.Values(
+        //                         Map.add
+        //                           (handlerVar.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
+        //                           (Ext(v, None))
+        //                       )
+        //                     )
+        //                 })
+        //           },
+        //           [ (reader {
+        //               let! v =
+        //                 caseExt.ConsLens.Get v
+        //                 |> sum.OfOption(
+        //                   (fun () -> $"Error: cannot extra constructor from extension")
+        //                   |> Errors.Singleton loc0
+        //                 )
+        //                 |> reader.OfSum
 
-                      return
-                        Applicable(fun arg ->
-                          reader {
-                            let! constructed = caseExt.Apply loc0 rest (v, arg)
-                            return constructed
-                          })
-                    })
-                    acc loc0 rest v ]
-                ))
-            evalContext.ExtensionOps.Eval
+        //               return
+        //                 Applicable(fun arg ->
+        //                   reader {
+        //                     let! constructed = caseExt.Apply loc0 rest (v, arg)
+        //                     return constructed
+        //                   })
+        //             })
+        //             acc loc0 rest v ]
+        //         ))
+        //     evalContext.ExtensionOps.Eval
 
         let ops =
           typeExt.Operations
@@ -162,7 +164,7 @@ module Types =
                   },
                   [ acc loc0 rest v ]
                 ))
-            ops
+            evalContext.ExtensionOps.Eval
 
         let values =
           typeExt.Cases

@@ -165,8 +165,9 @@ module Extension =
       TypeVars = [ (aVar, aKind) ]
       Cases = [ someCase; noneCase ] |> Map.ofList
       Operations = [ mapOperation ] |> Map.ofList
-      Deconstruct =
-        fun (v: OptionValues<'ext>) ->
-          match v with
-          | OptionValues.Option(Some v) -> v
-          | _ -> Value<TypeValue<'ext>, 'ext>.Primitive PrimitiveValue.Unit }
+    // Deconstruct =
+    //   fun (v: OptionValues<'ext>) ->
+    //     match v with
+    //     | OptionValues.Option(Some v) -> v
+    //     | _ -> Value<TypeValue<'ext>, 'ext>.Primitive PrimitiveValue.Unit
+    }

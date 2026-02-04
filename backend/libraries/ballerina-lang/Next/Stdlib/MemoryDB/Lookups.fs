@@ -34,7 +34,7 @@ module Lookups =
         _schema: Schema<'ext>,
         _db: MutableMemoryDB<'ext>,
         _dir,
-        _relation: SchemaRelation,
+        _relation: SchemaRelation<'ext>,
         _from: SchemaEntity<'ext>,
         _to: SchemaEntity<'ext>
       )

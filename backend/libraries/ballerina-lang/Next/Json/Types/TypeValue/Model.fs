@@ -74,3 +74,4 @@ module TypeValue =
       | TypeValue.RelationLookupOption _ -> failwith "Schema LookupMaybe ToJson not implemented"
       | TypeValue.RelationLookupOne _ -> failwith "Schema LookupOne ToJson not implemented"
       | TypeValue.RelationLookupMany _ -> failwith "Schema LookupMany ToJson not implemented"
+      | TypeValue.ForeignKeyRelation _ -> failwith "Schema ForeignKeyRelation ToJson not implemented"
