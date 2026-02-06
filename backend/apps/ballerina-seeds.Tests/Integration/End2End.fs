@@ -41,11 +41,7 @@ let private rootExprEncoder =
 
 let valueEncoderRoot =
   Json.buildRootEncoder<TypeValue<ValueExt>, ValueExt> (
-    NonEmptyList.OfList(
-      Value.ToJson,
-      [ List.Json.Extension.encoder ListExt.ValueLens
-        Option.Json.Extension.encoder OptionExt.ValueLens ]
-    )
+    NonEmptyList.OfList(Value.ToJson, [ List.Json.Extension.encoder ListExt.ValueLens ])
   )
 
 let encoder = valueEncoderRoot >> Reader.Run(rootExprEncoder, TypeValue.ToJson)

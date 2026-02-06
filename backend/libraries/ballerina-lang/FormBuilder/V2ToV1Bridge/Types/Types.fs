@@ -21,11 +21,11 @@ module Types =
       | PrimitiveRendererKind.Float -> JsonValue.String "Float64"
       | PrimitiveRendererKind.Bool -> JsonValue.String "boolean"
       | PrimitiveRendererKind.String -> JsonValue.String "string"
-      | PrimitiveRendererKind.Date -> JsonValue.String "datetime"
-      | PrimitiveRendererKind.DateOnly -> JsonValue.String "dateonly"
+      | PrimitiveRendererKind.Date -> JsonValue.String "Date"
+      | PrimitiveRendererKind.DateOnly -> failwith $"DateOnly is not supported in the bridge, use Datetime"
       | PrimitiveRendererKind.StringId -> JsonValue.String "string"
-      | PrimitiveRendererKind.Base64 -> JsonValue.String "base64"
-      | PrimitiveRendererKind.Secret -> JsonValue.String "secret"
+      | PrimitiveRendererKind.Base64 -> failwith $"Base64 is not supported in the bridge"
+      | PrimitiveRendererKind.Secret -> failwith $"Secret is not supported in the bridge"
     | RendererExpression.List { Element = element } ->
       JsonValue.Record
         [| "fun", JsonValue.String "List"

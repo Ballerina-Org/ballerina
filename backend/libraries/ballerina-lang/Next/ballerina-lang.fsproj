@@ -11,8 +11,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="Runners/TypeCheck.fs" />
         <Compile Include="Runners/Project.fs" />
+        <Compile Include="Runners/TypeCheck.fs" />
     </ItemGroup>
 
 </Project>

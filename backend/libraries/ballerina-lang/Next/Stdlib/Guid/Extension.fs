@@ -16,7 +16,7 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open FSharp.Data
 
-  let GuidExtension<'ext>
+  let GuidExtension<'ext, 'extDTO when 'extDTO: not null and 'extDTO: not struct>
     (operationLens: PartialLens<'ext, GuidOperations<'ext>>)
     // : TypeExtension<'ext, GuidConstructors, PrimitiveValue, GuidOperations<'ext>> =
     : OperationsExtension<'ext, GuidOperations<'ext>> =

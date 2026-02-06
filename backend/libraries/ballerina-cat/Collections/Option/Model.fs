@@ -47,3 +47,5 @@ module Option =
           })
         options
         (Some [])
+
+    static member OfTryPattern(flag, item) = if flag then Some item else None

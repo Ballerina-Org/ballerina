@@ -1,4 +1,4 @@
-﻿module Ballerina.DSL.Next.StdLib.Extensions
+module Ballerina.DSL.Next.StdLib.Extensions
 
 open Ballerina.DSL.Next.StdLib.TimeSpan
 open Ballerina.Lenses
@@ -6,7 +6,7 @@ open Ballerina.DSL.Next.Extensions
 open Ballerina.DSL.Next.StdLib
 
 type ValueExt =
-  | ValueExt of Choice<ListExt, OptionExt, PrimitiveExt, CompositeTypeExt, MemoryDBExt, MapExt>
+  | ValueExt of Choice<ListExt, Unit, PrimitiveExt, CompositeTypeExt, MemoryDBExt, MapExt>
 
   override self.ToString() =
     match self with
@@ -20,6 +20,20 @@ type ValueExt =
   static member Getters = {| ValueExt = fun (ValueExt e) -> e |}
 
   static member Updaters = {| ValueExt = fun u (ValueExt e) -> ValueExt(u e) |}
+
+and ValueExtDTOKind =
+  | List = 1
+  | Map = 2
+
+and ValueExtDTO =
+  { Kind: ValueExtDTOKind
+    List: List.Model.ListValueDTO<ValueExtDTO> | null
+    Map: Map.Model.MapValueDTO<ValueExtDTO> | null }
+
+  static member Empty =
+    { Kind = ValueExtDTOKind.List
+      List = null
+      Map = null }
 
 and MemoryDBExt =
   | MemoryDBValues of MemoryDB.Model.MemoryDBValues<ValueExt>
@@ -55,17 +69,6 @@ and ListExt =
     match self with
     | ListOperations ops -> ops.ToString()
     | ListValues vals -> vals.ToString()
-
-and OptionExt =
-  | OptionOperations of Option.Model.OptionOperations<ValueExt>
-  | OptionValues of Option.Model.OptionValues<ValueExt>
-  | OptionConstructors of Option.Model.OptionConstructors
-
-  override self.ToString() : string =
-    match self with
-    | OptionOperations ops -> ops.ToString()
-    | OptionValues vals -> vals.ToString()
-    | OptionConstructors cons -> cons.ToString()
 
 and DateOnlyExt =
   | DateOnlyOperations of DateOnly.Model.DateOnlyOperations<ValueExt>
@@ -114,8 +117,16 @@ and PrimitiveExt =
     | DecimalOperations ops -> ops.ToString()
     | StringOperations ops -> ops.ToString()
 
-type StdExtensions<'valueExt when 'valueExt: comparison> =
-  { List: TypeExtension<'valueExt, Unit, List.Model.ListValues<'valueExt>, List.Model.ListOperations<'valueExt>>
+type StdExtensions<'valueExt, 'valueExtDTO
+  when 'valueExt: comparison and 'valueExtDTO: not null and 'valueExtDTO: not struct> =
+  { List:
+      TypeExtension<
+        'valueExt,
+        'valueExtDTO,
+        Unit,
+        List.Model.ListValues<'valueExt>,
+        List.Model.ListOperations<'valueExt>
+       >
     Bool: OperationsExtension<'valueExt, Bool.Model.BoolOperations<'valueExt>>
     Int32: OperationsExtension<'valueExt, Int32.Model.Int32Operations<'valueExt>>
     Int64: OperationsExtension<'valueExt, Int64.Model.Int64Operations<'valueExt>>
@@ -127,7 +138,8 @@ type StdExtensions<'valueExt when 'valueExt: comparison> =
     String: OperationsExtension<'valueExt, String.Model.StringOperations<'valueExt>>
     Guid: OperationsExtension<'valueExt, Guid.Model.GuidOperations<'valueExt>>
     TimeSpan: OperationsExtension<'valueExt, TimeSpan.Model.TimeSpanOperations<'valueExt>>
-    Map: TypeExtension<'valueExt, Unit, Map.Model.MapValues<'valueExt>, Map.Model.MapOperations<'valueExt>> }
+    Map:
+      TypeExtension<'valueExt, 'valueExtDTO, Unit, Map.Model.MapValues<'valueExt>, Map.Model.MapOperations<'valueExt>> }
 
 type ListExt with
   static member ValueLens =
@@ -138,6 +150,18 @@ type ListExt with
         | _ -> None)
       Set = ListValues >> Choice1Of6 >> ValueExt.ValueExt }
 
+  static member ValueDTOLens =
+    { Get =
+        fun valueExtDTO ->
+          match valueExtDTO.Kind with
+          | ValueExtDTOKind.List -> Some valueExtDTO.List
+          | _ -> None
+      Set =
+        fun valueExtDTO ->
+          { ValueExtDTO.Empty with
+              Kind = ValueExtDTOKind.List
+              List = valueExtDTO } }
+
 type MemoryDBExt with
   static member ValueLens =
     { Get =
@@ -146,15 +170,6 @@ type MemoryDBExt with
         | Choice5Of6(MemoryDBExt.MemoryDBValues x) -> Some x
         | _ -> None)
       Set = MemoryDBExt.MemoryDBValues >> Choice5Of6 >> ValueExt.ValueExt }
-
-type OptionExt with
-  static member ValueLens =
-    { Get =
-        ValueExt.Getters.ValueExt
-        >> (function
-        | Choice2Of6(OptionValues x) -> Some x
-        | _ -> None)
-      Set = OptionValues >> Choice2Of6 >> ValueExt.ValueExt }
 
 type MapExt with
   static member ValueLens =
@@ -165,24 +180,36 @@ type MapExt with
         | _ -> None)
       Set = MapValues >> Choice6Of6 >> ValueExt.ValueExt }
 
+  static member ValueDTOLens =
+    { Get =
+        fun valueExtDTO ->
+          match valueExtDTO.Kind with
+          | ValueExtDTOKind.Map -> Some valueExtDTO.Map
+          | _ -> None
+      Set =
+        fun mapValueDTO ->
+          { ValueExtDTO.Empty with
+              Kind = ValueExtDTOKind.Map
+              Map = mapValueDTO } }
+
 let stdExtensions =
 
   let memoryDBRunQueryExtension =
-    MemoryDB.Extension.QueryRunner.MemoryDBQueryRunnerExtension<ValueExt>
-      // { Get =
-      //     ValueExt.Getters.ValueExt
-      //     >> (function
-      //     | Choice1Of6(ListExt.ListValues(List.Model.ListValues.List values)) -> Some values
-      //     | _ -> None)
-      //   Set =
-      //     List.Model.ListValues.List
-      //     >> ListExt.ListValues
-      //     >> Choice1Of6
-      //     >> ValueExt.ValueExt }
+    MemoryDB.Extension.QueryRunner.MemoryDBQueryRunnerExtension<ValueExt, ValueExtDTO>
+      { Get =
+          ValueExt.Getters.ValueExt
+          >> (function
+          | Choice1Of6(ListExt.ListValues(List.Model.ListValues.List values)) -> Some values
+          | _ -> None)
+        Set =
+          List.Model.ListValues.List
+          >> ListExt.ListValues
+          >> Choice1Of6
+          >> ValueExt.ValueExt }
       MemoryDBExt.ValueLens
 
   let memoryDBCUDExtension =
-    MemoryDB.Extension.CUD.MemoryDBCUDExtension<ValueExt>
+    MemoryDB.Extension.CUD.MemoryDBCUDExtension<ValueExt, ValueExtDTO>
       // (fun values ->
       //   ListExt.ListValues(List.Model.ListValues.List values)
       //   |> Choice1Of6
@@ -207,7 +234,7 @@ let stdExtensions =
       MemoryDBExt.ValueLens
 
   let memoryDBRunExtension =
-    MemoryDB.Extension.DBRun.MemoryDBRunExtension<ValueExt> MemoryDBExt.ValueLens
+    MemoryDB.Extension.DBRun.MemoryDBRunExtension<ValueExt, ValueExtDTO> MemoryDBExt.ValueLens
 
   let memoryDBGetByIdExtension =
     MemoryDB.Extension.GetById.MemoryDBGetByIdExtension<ValueExt> MemoryDBExt.ValueLens
@@ -229,7 +256,7 @@ let stdExtensions =
       MemoryDBExt.ValueLens
 
   let listExtension =
-    List.Extension.ListExtension<ValueExt>
+    List.Extension.ListExtension<ValueExt, ValueExtDTO>
       ListExt.ValueLens
       { Get =
           ValueExt.Getters.ValueExt
@@ -237,25 +264,10 @@ let stdExtensions =
           | Choice1Of6(ListOperations x) -> Some x
           | _ -> None)
         Set = ListOperations >> Choice1Of6 >> ValueExt.ValueExt }
-
-  let optionExtension =
-    Option.Extension.OptionExtension<ValueExt>
-      OptionExt.ValueLens
-      { Get =
-          ValueExt.Getters.ValueExt
-          >> (function
-          | Choice2Of6(OptionConstructors x) -> Some x
-          | _ -> None)
-        Set = OptionConstructors >> Choice2Of6 >> ValueExt.ValueExt }
-      { Get =
-          ValueExt.Getters.ValueExt
-          >> (function
-          | Choice2Of6(OptionOperations x) -> Some x
-          | _ -> None)
-        Set = OptionOperations >> Choice2Of6 >> ValueExt.ValueExt }
+      ListExt.ValueDTOLens
 
   let dateOnlyExtension =
-    DateOnly.Extension.DateOnlyExtension<ValueExt>
+    DateOnly.Extension.DateOnlyExtension<ValueExt, ValueExtDTO>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
@@ -323,7 +335,7 @@ let stdExtensions =
         Set = DecimalOperations >> Choice3Of6 >> ValueExt.ValueExt }
 
   let dateTimeExtension =
-    DateTime.Extension.DateTimeExtension<ValueExt>
+    DateTime.Extension.DateTimeExtension<ValueExt, ValueExtDTO>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
@@ -337,7 +349,7 @@ let stdExtensions =
           >> ValueExt.ValueExt }
 
   let timeSpanExtension =
-    TimeSpanExtension<ValueExt>
+    TimeSpanExtension<ValueExt, ValueExtDTO>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
@@ -360,7 +372,7 @@ let stdExtensions =
         Set = StringOperations >> Choice3Of6 >> ValueExt.ValueExt }
 
   let guidExtension =
-    Guid.Extension.GuidExtension<ValueExt>
+    Guid.Extension.GuidExtension<ValueExt, ValueExtDTO>
       { Get =
           ValueExt.Getters.ValueExt
           >> (function
@@ -369,7 +381,7 @@ let stdExtensions =
         Set = GuidOperations >> Choice3Of4 >> CompositeType >> Choice4Of6 >> ValueExt.ValueExt }
 
   let mapExtension =
-    Map.Extension.MapExtension<ValueExt>
+    Map.Extension.MapExtension<ValueExt, ValueExtDTO>
       MapExt.ValueLens
       { Get =
           ValueExt.Getters.ValueExt
@@ -378,9 +390,10 @@ let stdExtensions =
           | _ -> None)
         Set = MapOperations >> Choice6Of6 >> ValueExt.ValueExt }
       (Some ListExt.ValueLens)
+      MapExt.ValueDTOLens
 
   let context =
-    LanguageContext<ValueExt>.Empty
+    LanguageContext<ValueExt, ValueExtDTO>.Empty
     |> (memoryDBRunQueryExtension |> TypeExtension.RegisterLanguageContext)
     |> (memoryDBRunExtension |> TypeLambdaExtension.RegisterLanguageContext)
     |> (memoryDBGetByIdExtension |> OperationsExtension.RegisterLanguageContext)
@@ -388,7 +401,6 @@ let stdExtensions =
     |> (memoryDBCUDExtension |> OperationsExtension.RegisterLanguageContext)
     |> (memoryDBLookupsExtension |> OperationsExtension.RegisterLanguageContext)
     |> (listExtension |> TypeExtension.RegisterLanguageContext)
-    |> (optionExtension |> TypeExtension.RegisterLanguageContext)
     |> (dateOnlyExtension |> OperationsExtension.RegisterLanguageContext)
     |> (dateTimeExtension |> OperationsExtension.RegisterLanguageContext)
     |> (guidExtension |> OperationsExtension.RegisterLanguageContext)

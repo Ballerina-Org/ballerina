@@ -15,7 +15,7 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open Ballerina.StdLib.Formats
 
-  let DateTimeExtension<'ext>
+  let DateTimeExtension<'ext, 'extDTO when 'extDTO: not null and 'extDTO: not struct>
     (operationLens: PartialLens<'ext, DateTimeOperations<'ext>>)
     : OperationsExtension<'ext, DateTimeOperations<'ext>> =
 
