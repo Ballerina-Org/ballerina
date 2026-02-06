@@ -14,18 +14,13 @@ module Extension =
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.List.Model
-  open Ballerina.DSL.Next.Serialization.PocoObjects
-  open Ballerina.DSL.Next.Serialization
-  open Ballerina.DSL.Next.Serialization.ValueSerializer
-  open Ballerina.DSL.Next.Serialization.ValueDeserializer
-  open Ballerina.DSL.Next.StdLib
 
-  let ListExtension<'ext, 'extDTO when 'ext: comparison and 'extDTO: not null and 'extDTO: not struct>
+
+  let ListExtension<'ext>
     (valueLens: PartialLens<'ext, ListValues<'ext>>)
     // (consLens: PartialLens<'ext, ListConstructors<'ext>>)
     (operationLens: PartialLens<'ext, ListOperations<'ext>>)
-    (valueDTOLens: PartialLens<'extDTO, ListValueDTO<'extDTO>>)
-    : TypeExtension<'ext, 'extDTO, Unit, ListValues<'ext>, ListOperations<'ext>> =
+    : TypeExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
     let listId = Identifier.LocalScope "List"
     let listSymbolId = listId |> TypeSymbol.Create
     let aVar, aKind = TypeVar.Create("a"), Kind.Star
@@ -38,8 +33,8 @@ module Extension =
     //     Sym = listSymbolId
     //     Parameters = []
     //     Arguments = [ TypeValue.Lookup(Identifier.LocalScope argName) ]
-    //
-    //      }
+    //     UnionLike = None
+    //     RecordLike = None }
     // )
 
     let listFoldId =
@@ -54,9 +49,6 @@ module Extension =
     let listMapId =
       Identifier.FullyQualified([ "List" ], "map") |> TypeCheckScope.Empty.Resolve
 
-    let listOrderById =
-      Identifier.FullyQualified([ "List" ], "orderBy") |> TypeCheckScope.Empty.Resolve
-
     let listAppendId =
       Identifier.FullyQualified([ "List" ], "append") |> TypeCheckScope.Empty.Resolve
 
@@ -65,10 +57,6 @@ module Extension =
 
     let listNilId =
       Identifier.FullyQualified([ "List" ], "Nil") |> TypeCheckScope.Empty.Resolve
-
-    let listDecomposeId =
-      Identifier.FullyQualified([ "List" ], "decompose")
-      |> TypeCheckScope.Empty.Resolve
 
     let getValueAsList (v: Value<TypeValue<'ext>, 'ext>) : Sum<List<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
       sum {
@@ -492,158 +480,6 @@ module Extension =
             } //: 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
-    let decomposeOperation
-      : ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
-      listDecomposeId,
-      { Type =
-          TypeValue.CreateLambda(
-            TypeParameter.Create("a", aKind),
-            TypeExpr.Arrow(
-              listOf "a",
-              TypeExpr.Sum(
-                [ TypeExpr.Primitive PrimitiveType.Unit
-                  TypeExpr.Tuple([ TypeExpr.Lookup(Identifier.LocalScope "a"); listOf "a" ]) ]
-              )
-            )
-
-          )
-        Kind = Kind.Arrow(Kind.Star, Kind.Star)
-        Operation = List_Decompose
-        OperationsLens =
-          operationLens
-          |> PartialLens.BindGet (function
-            | List_Decompose -> Some List_Decompose
-            | _ -> None)
-        Apply =
-          fun loc0 _rest (op, v) ->
-            reader {
-              do!
-                op
-                |> ListOperations.AsDecompose
-                |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                |> reader.OfSum
-
-              let! v =
-                v
-                |> getValueAsList
-                |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                |> reader.OfSum
-
-              match v with
-              | head :: tail ->
-                let tailAsValue = (ListValues.List tail |> valueLens.Set, None) |> Ext
-                return Value.Sum({ Case = 2; Count = 2 }, Value.Tuple([ head; tailAsValue ]))
-              | [] -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
-            } }
-
-
-    //'ext :: ValueExt Choice1of6 ListValue ...
-    let listToDTO
-      (value: 'ext)
-      (applicableId: Option<ResolvedIdentifierDTO>)
-      : Reader<ValueDTO<'extDTO>, SerializationContext<'ext, 'extDTO>, Ballerina.Errors.Errors<unit>> =
-      reader {
-        let! List listValue =
-          value
-          |> valueLens.Get
-          |> sum.OfOption(Ballerina.Errors.Errors.Singleton () (fun _ -> "Expected list value in listToDTO."))
-          |> reader.OfSum
-
-        if listValue.Length = 0 then
-          return ListValueDTO.CreateEmpty |> valueDTOLens.Set |> ValueDTO.CreateExt applicableId
-        else
-          let! listElementsDTO = listValue |> List.map valueToDTO |> reader.All
-
-          return
-            ListValueDTO.CreateList listElementsDTO
-            |> valueDTOLens.Set
-            |> ValueDTO.CreateExt applicableId
-      }
-
-    let DTOToList
-      (valueDTO: 'extDTO)
-      (applicableId: Option<ResolvedIdentifier>)
-      : Reader<Value<TypeValue<'ext>, 'ext>, SerializationContext<'ext, 'extDTO>, Ballerina.Errors.Errors<unit>> =
-      reader {
-        let! listValueDTO =
-          valueDTO
-          |> valueDTOLens.Get
-          |> sum.OfOption(Ballerina.Errors.Errors.Singleton () (fun _ -> "Expected list value DTO in DTOToList."))
-          |> reader.OfSum
-
-
-
-        match listValueDTO.Kind with
-        | ListKind.Empty -> return Ext(ListValues.List [] |> valueLens.Set, applicableId)
-        | ListKind.Cons when isNull listValueDTO.List |> not && listValueDTO.List.Length > 0 ->
-          let! listElements = listValueDTO.List |> Array.map valueFromDTO |> reader.All
-
-          return Ext(ListValues.List listElements |> valueLens.Set, applicableId)
-        | _ ->
-          return!
-            reader.Throw(
-              Ballerina.Errors.Errors.Singleton () (fun _ ->
-                "Non empty list DTO was given but the data is null or empty.")
-            )
-      }
-
-    let orderByOperation
-      : ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
-      listOrderById,
-      { Type =
-          TypeValue.CreateLambda(
-            TypeParameter.Create("a", aKind),
-            TypeExpr.Lambda(
-              TypeParameter.Create("b", Kind.Star),
-              TypeExpr.Arrow(
-                TypeExpr.Arrow(TypeExpr.Lookup(Identifier.LocalScope "a"), TypeExpr.Lookup(Identifier.LocalScope "b")),
-                TypeExpr.Arrow(listOf "a", listOf "a")
-              )
-            )
-          )
-        Kind = Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
-        Operation = List_OrderBy {| f = None |}
-        OperationsLens =
-          operationLens
-          |> PartialLens.BindGet (function
-            | List_OrderBy v -> Some(List_OrderBy v)
-            | _ -> None)
-        Apply =
-          fun loc0 _rest (op, v) ->
-            reader {
-              let! op =
-                op
-                |> ListOperations.AsOrderBy
-                |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                |> reader.OfSum
-
-              match op with
-              | None -> // the closure is empty - first step in the application
-                return
-                  (ListOperations.List_OrderBy({| f = Some v |}) |> operationLens.Set, Some listOrderById)
-                  |> Ext
-              | Some f -> // the closure has the function - second step in the application
-                let! v =
-                  getValueAsList v
-                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                  |> reader.OfSum
-
-                let! v' =
-                  v
-                  |> List.map (fun v ->
-                    reader {
-                      let! sortKey = Expr.EvalApply loc0 [] (f, v)
-                      return sortKey, v
-                    })
-                  |> reader.All
-
-                let v' = v' |> List.sortBy fst |> List.map snd
-
-                return (ListValues.List v' |> valueLens.Set, None) |> Ext
-            } //: 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'ext, 'extValues> }
-      }
-
-
     { TypeName = listId, listSymbolId
       TypeVars = [ (aVar, aKind) ]
       Cases = Map.empty
@@ -652,19 +488,14 @@ module Extension =
           foldOperation
           filterOperation
           mapOperation
-          orderByOperation
           appendOperation
           consOperation
-          nilOperation
-          decomposeOperation ]
+          nilOperation ]
         |> Map.ofList
-      // Deconstruct =
-      //   fun (v: ListValues<'ext>) ->
-      //     match v with
-      //     | ListValues.List(v :: vs) ->
-      //       Value<TypeValue<'ext>, 'ext>.Tuple([ v; (vs |> ListValues.List |> valueLens.Set, None) |> Ext ])
-      //     | _ -> Value<TypeValue<'ext>, 'ext>.Primitive PrimitiveValue.Unit
-      Serialization =
-        Some
-          { ToDTO = listToDTO
-            FromDTO = DTOToList } }
+    // Deconstruct =
+    //   fun (v: ListValues<'ext>) ->
+    //     match v with
+    //     | ListValues.List(v :: vs) ->
+    //       Value<TypeValue<'ext>, 'ext>.Tuple([ v; (vs |> ListValues.List |> valueLens.Set, None) |> Ext ])
+    //     | _ -> Value<TypeValue<'ext>, 'ext>.Primitive PrimitiveValue.Unit
+    }

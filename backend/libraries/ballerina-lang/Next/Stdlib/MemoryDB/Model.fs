@@ -91,26 +91,6 @@ module Model =
         | :? MemoryDBIO<'ext> as y -> compare (x.Schema, x.SchemaAsValue, x.Main) (y.Schema, y.SchemaAsValue, y.Main)
         | _ -> invalidArg "yobj" "cannot compare values of different types"
 
-  [<CustomEquality; CustomComparison>]
-  type VectorEmbedding =
-    { Vector: SmartComponents.LocalEmbeddings.EmbeddingF32 }
-
-
-    override x.ToString() = $"MemoryDBVector(Vector:\n{x.Vector})"
-
-    override x.Equals(yobj) =
-      match yobj with
-      | :? VectorEmbedding as y -> (x.Vector = y.Vector)
-      | _ -> false
-
-    override x.GetHashCode() = hash x.Vector
-
-    interface System.IComparable with
-      member x.CompareTo yobj =
-        match yobj with
-        | :? VectorEmbedding as y -> compare (x.Vector.Buffer.ToArray()) (y.Vector.Buffer.ToArray())
-        | _ -> invalidArg "yobj" "cannot compare values of different types"
-
 
   type MemoryDBValues<'ext when 'ext: comparison> =
     | EntityRef of EntityRef<'ext>
@@ -135,21 +115,10 @@ module Model =
     | DeleteMany of {| EntityRef: Option<EntityRef<'ext>> |}
     | Delete of {| EntityRef: Option<EntityRef<'ext>> |}
     | GetById of {| EntityRef: Option<EntityRef<'ext>> |}
-    | EmbedStringToVector of Unit
-    | VectorToVectorSimilarity of {| Vector1: Option<VectorEmbedding> |}
     | GetMany of {| EntityRef: Option<EntityRef<'ext>> |}
     | Run
     | DBIO of MemoryDBIO<'ext>
     | TypeAppliedRun of Schema<'ext> * MutableMemoryDB<'ext>
-    | VectorEmbedding of VectorEmbedding
-    | QueryFromEntity of Unit
-    | QueryFromRelation of Unit
-    | QueryCross of {| Query1: Option<List<Value<TypeValue<'ext>, 'ext>>> |}
-    | QueryExpand of {| Query1: Option<List<Value<TypeValue<'ext>, 'ext>>> |}
-    | QuerySelect of Unit
-    | QueryWhere of Unit
-    | QueryToList of Unit
-    | QueryRun of {| Range: Option<int * int> |}
 
     override this.ToString() =
       match this with
@@ -224,18 +193,7 @@ module Model =
       | DeleteMany _ -> "DeleteMany"
       | Delete _ -> "Delete"
       | GetById _ -> "GetById"
-      | EmbedStringToVector _ -> "EmbedStringToVector"
       | GetMany _ -> "GetMany"
       | Run -> "Run"
       | DBIO dbio -> $"DBIO({dbio})"
       | TypeAppliedRun(_schema, _) -> $"TypeAppliedRun)"
-      | VectorEmbedding _ -> "VectorEmbedding"
-      | VectorToVectorSimilarity _ -> "VectorToVectorSimilarity"
-      | QueryFromEntity _ -> "QueryFromEntity"
-      | QueryFromRelation _ -> "QueryFromRelation"
-      | QueryCross _ -> "QueryCross"
-      | QueryExpand _ -> "QueryExpand"
-      | QuerySelect _ -> "QuerySelect"
-      | QueryWhere _ -> "QueryWhere"
-      | QueryToList _ -> "QueryToList"
-      | QueryRun _ -> "QueryRun"

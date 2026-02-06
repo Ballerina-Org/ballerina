@@ -15,7 +15,6 @@ module Operations =
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.Types
   open Ballerina.DSL.Next.Terms
-  open Ballerina.DSL.Next.Serialization
 
   type OperationsExtension<'e, 'extOperations> with
     static member RegisterTypeCheckContext<'ext when 'ext: comparison>
@@ -113,7 +112,7 @@ module Operations =
 
     static member RegisterLanguageContext
       (opsExt: OperationsExtension<'ext, 'extOperations>)
-      : Updater<LanguageContext<'ext, 'extDTO>> =
+      : Updater<LanguageContext<'ext>> =
       fun langCtx ->
         { TypeCheckContext =
             langCtx.TypeCheckContext
@@ -122,5 +121,4 @@ module Operations =
           ExprEvalContext =
             langCtx.ExprEvalContext
             |> (opsExt |> OperationsExtension.RegisterExprEvalContext)
-          TypeCheckedPreludes = langCtx.TypeCheckedPreludes
-          SerializationContext = langCtx.SerializationContext }
+          TypeCheckedPreludes = langCtx.TypeCheckedPreludes }

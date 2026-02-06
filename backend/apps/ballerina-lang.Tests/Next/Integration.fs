@@ -1493,7 +1493,7 @@ Time taken: 00:01:57.1312520
 
 [<Test>]
 let ``StackOverflow`` () =
-  let expectedLength = 250
+  let expectedLength = 300
 
   let listProgram =
     [ 1..expectedLength ]

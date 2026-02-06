@@ -9,18 +9,13 @@ module Model =
   open Ballerina.LocalizedErrors
   open Ballerina.Errors
   open Ballerina.DSL.Next.Types.TypeChecker.Model
-  open Ballerina.Reader.WithError
-  open Ballerina.DSL.Next.Serialization
-  open Ballerina.DSL.Next.Serialization.PocoObjects
   open Ballerina.Cat.Collections.OrderedMap
 
-
-  type LanguageContext<'ext, 'extDTO when 'ext: comparison and 'extDTO: not null and 'extDTO: not struct> =
+  type LanguageContext<'ext when 'ext: comparison> =
     { TypeCheckContext: TypeCheckContext<'ext>
       TypeCheckState: TypeCheckState<'ext>
       ExprEvalContext: ExprEvalContext<'ext>
-      TypeCheckedPreludes: List<Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext>>
-      SerializationContext: SerializationContext<'ext, 'extDTO> }
+      TypeCheckedPreludes: List<Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext>> }
 
   type OperationsExtension<'ext, 'extOperations> =
     { TypeVars: List<TypeVar * Kind> // example: [ ("a", Star) ]
@@ -40,8 +35,7 @@ module Model =
           -> 'extOperations * Value<TypeValue<'ext>, 'ext>
           -> ExprEvaluator<'ext, Value<TypeValue<'ext>, 'ext>> }
 
-  and TypeExtension<'ext, 'extDTO, 'extConstructors, 'extValues, 'extOperations
-    when 'extDTO: not struct and 'extDTO: not null> =
+  and TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations> =
     { TypeName: ResolvedIdentifier * TypeSymbol // example: "Option"
       TypeVars: List<TypeVar * Kind> // example: [ ("a", Star) ]
       // Deconstruct: 'extValues -> Value<TypeValue<'ext>, 'ext> // function to extract the underlying value from a value
@@ -54,16 +48,25 @@ module Model =
         Map<
           ResolvedIdentifier,  // example: ("Option.Some", "OptionSome")
           TypeOperationExtension<'ext, 'extConstructors, 'extValues, 'extOperations>
-         >
-      Serialization: Option<SerializationContext<'ext, 'extDTO>> }
+         > }
 
     static member ToImportedTypeValue
-      (typeExt: TypeExtension<'ext, 'extDTO, 'extConstructors, 'extValues, 'extOperations>)
+      (typeExt: TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations>)
       : ImportedTypeValue<'ext> =
       { Id = typeExt.TypeName |> fst
         Sym = typeExt.TypeName |> snd
         Parameters = typeExt.TypeVars |> List.map (fun (tv, k) -> TypeParameter.Create(tv.Name, k))
-        Arguments = [] }
+        Arguments = []
+        UnionLike =
+          if typeExt.Cases |> Map.isEmpty then
+            None
+          else
+            typeExt.Cases
+            |> Map.toSeq
+            |> Seq.map (fun ((_, sym), caseExt) -> (sym, caseExt.CaseType))
+            |> OrderedMap.ofSeq
+            |> Some
+        RecordLike = None }
 
   and TypeOperationExtension<'ext, 'extConstructors, 'extValues, 'extOperations> =
     { Type: TypeValue<'ext> // "a => b => (a -> b) -> Option a -> Option b"
@@ -88,7 +91,7 @@ module Model =
           -> 'extConstructors * Value<TypeValue<'ext>, 'ext>
           -> ExprEvaluator<'ext, Value<TypeValue<'ext>, 'ext>> }
 
-  and TypeLambdaExtension<'ext, 'extDTO, 'extTypeLambda when 'extDTO: not null and 'extDTO: not struct> =
+  and TypeLambdaExtension<'ext, 'extTypeLambda> =
     { ExtensionType: ResolvedIdentifier * TypeValue<'ext> * Kind
       ExtraBindings: Map<ResolvedIdentifier, TypeValue<'ext> * Kind>
       Value: 'extTypeLambda // eval value bindings will contain an entry from the extension identifier to this value (modulo DU packaging)

@@ -13,25 +13,26 @@
 
   <ItemGroup>
     <Compile Include="Arity\Model.fs" />
-    <Compile Include="Schema\Model.fs" />
-    <Compile Include="Schema\Spec.fs" />
-    <Compile Include="Schema\TypeEval.fs" />
-    <Compile Include="Schema\Patterns.fs" />
-    <Compile Include="Schema\ActivePatterns.fs" />
-    <Compile Include="Schema\Value.fs" />
-    <Compile Include="Schema\Expand\Entity.fs" />
+      <Compile Include="Schema\Model.fs" />
+      <Compile Include="Schema\Spec.fs" />
+      <Compile Include="Schema\TypeEval.fs" />
+      <Compile Include="Schema\Patterns.fs" />
+      <Compile Include="Schema\ActivePatterns.fs" />
+      <Compile Include="Schema\Value.fs" />
+      <Compile Include="Schema\Expand\Entity.fs" />
     <Compile Include="Delta\Model.fs" />
     <Compile Include="Delta\ToUpdater.fs" />
     <Compile Include="Delta\Patterns.fs" />
-    <Compile Include="Delta\Extensions.fs" />
-    <Compile Include="Patch\Model.fs" />
-    <Compile Include="Patch\Patterns.fs" />
-    <Compile Include="Store\Api.fs" />
+      <Compile Include="Delta\Extensions.fs" />
+      <Compile Include="Patch\Model.fs" />
+      <Compile Include="Patch\Patterns.fs" />
+      <Compile Include="Store\Api.fs" />
     <Compile Include="Store\Model.fs" />
     <Compile Include="Store\Updaters.fs" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="9.0.303" />
     <PackageReference Include="MathNet.Numerics" Version="6.0.0-beta2" />
   </ItemGroup>
 

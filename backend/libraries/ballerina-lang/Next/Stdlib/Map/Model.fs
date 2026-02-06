@@ -2,7 +2,6 @@ namespace Ballerina.DSL.Next.StdLib.Map
 
 module Model =
   open Ballerina.DSL.Next.Types
-  open Ballerina.DSL.Next.Serialization.PocoObjects
 
   type MapOperations<'ext> =
     | Map_Set of Option<Value<TypeValue<'ext>, 'ext> * Value<TypeValue<'ext>, 'ext>>
@@ -17,6 +16,8 @@ module Model =
       | Map_Map _ -> "Map::map"
       | Map_MapToList -> "Map::maptolist"
 
+  // map and maptolist of list
+
   type MapValues<'ext when 'ext: comparison> =
     | Map of Map<Value<TypeValue<'ext>, 'ext>, Value<TypeValue<'ext>, 'ext>>
 
@@ -30,12 +31,3 @@ module Model =
           |> String.concat ", "
 
         $"{{{keyValueStr}}}"
-
-  type MapKind =
-    | Map = 1
-
-  type MapValueDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct> =
-    { Kind: MapKind
-      Map: (ValueDTO<'extDTO> * ValueDTO<'extDTO>) list }
-
-    static member CreateMapFromList l : MapValueDTO<'extDTO> = { Kind = MapKind.Map; Map = l }

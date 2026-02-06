@@ -3,15 +3,10 @@ namespace Ballerina.StdLib
 module String =
 
   open System
-  open System.Text
   open System.Text.RegularExpressions
-  open System.Security.Cryptography
 
   // let private join (c:string) (s:string seq) = String.Join(c,s)
   let private join' (c: char) (s: string seq) = String.Join(c, s)
-
-  let hashSha256 (input: string) =
-    input |> Encoding.UTF8.GetBytes |> SHA256.HashData |> Convert.ToHexString
 
   type String with
     member self.ReasonablyClamped =
@@ -35,18 +30,3 @@ module String =
     static member ToFirstUpper(self: String) = self.ToFirstUpper
     static member JoinSeq (separator: char) (self: string seq) = join' separator self
     static member join (separator: string) (self: string seq) = String.Join(separator, self)
-
-  type NonEmptyString =
-    private
-    | NonEmptyString of string
-
-    static member TryCreate(s: string) =
-      match s with
-      | "" -> None
-      | _ -> NonEmptyString s |> Some
-
-    static member Create (head: char) (tail: string) = NonEmptyString(string head + tail)
-
-    static member AsString(NonEmptyString s) = s
-
-  let (|NonEmptyString|) (NonEmptyString string) = string

@@ -36,8 +36,7 @@ module Lambda =
           ({ Param = x
              ParamType = t
              Body = body }) ->
-        // let (!) = typeCheckExpr context_t
-        let (=>) c e = typeCheckExpr c e
+        let (!) = typeCheckExpr context_t
 
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
@@ -56,43 +55,30 @@ module Lambda =
           // (p: State<'a, UnificationContext, UnificationState, Errors>)
           // : State<'a, TypeCheckContext, TypeCheckState, Errors> =
 
-          // do Console.WriteLine($"Typechecking lambda parameter {x.Name} with context {context_t}")
-          // do Console.ReadLine() |> ignore
+          let guid = Guid.CreateVersion7()
 
-          let! var_type =
-            match t, context_t with
-            | Some t, _ -> state { t }
-            | _, Some(TypeValue.Arrow({ value = input, _ })) -> state { input, Kind.Star }
-            | _ ->
-              state {
-                let guid = Guid.CreateVersion7()
+          let freshVar =
+            { TypeVar.Name = x.Name + "_lambda_" + guid.ToString()
+              Synthetic = true
+              Guid = guid }
 
-                let freshVar =
-                  { TypeVar.Name = x.Name + "_lambda_" + guid.ToString()
-                    Synthetic = true
-                    Guid = guid }
+          let freshVarType =
+            Option.defaultWith (fun () -> freshVar |> TypeValue.Var, Kind.Star) t
 
-                do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists freshVar))
-                freshVar |> TypeValue.Var, Kind.Star
-              }
-
-          let body_constraint_t =
-            match context_t with
-            | Some(TypeValue.Arrow({ value = _, TypeValue.Var v })) when v.Synthetic -> None
-            | Some(TypeValue.Arrow({ value = _, ret_t })) -> Some ret_t
-            | _ -> None
-
+          do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists freshVar))
 
           let! body, t_body, body_k, _ =
-            body_constraint_t => body
+            !body
             |> state.MapContext(
-              TypeCheckContext.Updaters.Values(Map.add (x.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) var_type)
+              TypeCheckContext.Updaters.Values(
+                Map.add (x.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) freshVarType
+              )
             )
 
           do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
 
           let! t_x =
-            var_type
+            freshVarType
             |> fst
             |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
             |> Expr<'T, 'Id, 'valueExt>.liftInstantiation

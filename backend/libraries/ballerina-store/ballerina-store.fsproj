@@ -4,6 +4,7 @@
     <RootNamespace>Ballerina.Store</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="9.0.303" />
     <PackageReference Include="FSharp.SystemTextJson" Version="1.4.36" />
   </ItemGroup>
   <ItemGroup>

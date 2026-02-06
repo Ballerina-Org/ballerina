@@ -125,7 +125,7 @@ List::filter[{CasesTypeName}]
           (fun () -> $"Enum filtering build errors:\n{errors}")
           |> Errors.Singleton()
           |> Right
-      | Left(exprs, _, _, st) -> return EnumCaseFilterExpr.Filter(exprs |> NonEmptyList.ToList, st)
+      | Left(exprs, _, st) -> return EnumCaseFilterExpr.Filter(exprs |> NonEmptyList.ToList, st)
     }
 
   let internal buildFilteringExpr enumName { Filters = filters } typeContext =
