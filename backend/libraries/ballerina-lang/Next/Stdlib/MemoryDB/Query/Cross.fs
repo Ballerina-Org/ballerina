@@ -23,10 +23,7 @@ module QueryCross =
   open Ballerina
   open Ballerina.DSL.Next.StdLib.MemoryDB
 
-  let MemoryDBQueryCrossExtension<'ext when 'ext: comparison>
-    (listLens: PartialLens<'ext, List<Value<TypeValue<'ext>, 'ext>>>)
-    (valueLens: PartialLens<'ext, MemoryDBValues<'ext>>)
-    =
+  let MemoryDBQueryCrossExtension<'ext when 'ext: comparison> (valueLens: PartialLens<'ext, MemoryDBValues<'ext>>) =
 
     let memoryDBQueryCrossId =
       Identifier.FullyQualified([ "MemoryDB" ], "queryCross")
@@ -77,59 +74,62 @@ module QueryCross =
     let queryCrossOperation: OperationExtension<_, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBQueryCrossType, memoryDBQueryCrossKind, MemoryDBValues.QueryCross {| Query1 = None |})
+          <| (memoryDBQueryCrossType, memoryDBQueryCrossKind, MemoryDBValues.GetById {| EntityRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
-            | MemoryDBValues.QueryCross v -> Some(MemoryDBValues.QueryCross v)
+            | MemoryDBValues.GetById v -> Some(MemoryDBValues.GetById v)
             | _ -> None)
         Apply =
-          fun loc0 _rest (op, v) ->
+          fun _loc0 _rest (_op, _v) ->
             reader {
-              let! op =
-                op
-                |> MemoryDBValues.AsQueryCross
-                |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                |> reader.OfSum
+              return
+                Value.Lambda(
+                  Var.Create "placeholder",
+                  Expr.Primitive PrimitiveValue.Unit,
+                  Map.empty,
+                  TypeCheckScope.Empty
+                )
+            // let! op =
+            //   op
+            //   |> MemoryDBValues.AsGetById
+            //   |> sum.MapError(Errors.MapContext(replaceWith loc0))
+            //   |> reader.OfSum
 
-              match op with
-              | None -> // the closure is empty - first step in the application
-                let! v, _ =
-                  v
-                  |> Value.AsExt
-                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                  |> reader.OfSum
+            // match op with
+            // | None -> // the closure is empty - first step in the application
+            //   let! v, _ =
+            //     v
+            //     |> Value.AsExt
+            //     |> sum.MapError(Errors.MapContext(replaceWith loc0))
+            //     |> reader.OfSum
 
-                let! query1 =
-                  v
-                  |> listLens.Get
-                  |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
-                  |> reader.OfSum
+            //   let! v =
+            //     v
+            //     |> valueLens.Get
+            //     |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
+            //     |> reader.OfSum
 
-                return
-                  (MemoryDBValues.QueryCross({| Query1 = Some query1 |}) |> valueLens.Set, Some memoryDBQueryCrossId)
-                  |> Ext
-              | Some(query1) ->
-                let! v, _ =
-                  v
-                  |> Value.AsExt
-                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                  |> reader.OfSum
+            //   let! v =
+            //     v
+            //     |> MemoryDBValues.AsEntityRef
+            //     |> sum.MapError(Errors.MapContext(replaceWith loc0))
+            //     |> reader.OfSum
 
-                let! query2 =
-                  v
-                  |> listLens.Get
-                  |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
-                  |> reader.OfSum
+            //   return
+            //     (MemoryDBValues.GetById({| EntityRef = Some v |}) |> valueLens.Set, Some memoryDBQueryFromEntityId)
+            //     |> Ext
+            // | Some(_schema, _db, _entity, _schema_as_value) -> // the closure has the first operand - second step in the application
+            //   let v =
+            //     option {
+            //       let! entity = _db.entities |> Map.tryFind _entity.Name
+            //       let! value = entity |> Map.tryFind v
+            //       return value
+            //     }
 
-                return
-                  Ext(
-                    listLens.Set
-                      [ for e1 in query1 do
-                          for e2 in query2 do
-                            Value.Tuple [ e1; e2 ] ],
-                    None
-                  )
+            //   match v with
+            //   | None -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+            //   | Some value -> return Value.Sum({ Case = 2; Count = 2 }, value)
             } }
 
     memoryDBQueryCrossId, queryCrossOperation

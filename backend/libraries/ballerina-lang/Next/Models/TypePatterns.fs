@@ -445,6 +445,19 @@ module Patterns =
             |> sum.Throw
       }
 
+    static member AsImportedUnionLike(t: TypeValue<'valueExt>) =
+      sum {
+        match t with
+        | TypeValue.Imported { Sym = _
+                               UnionLike = Some u
+                               RecordLike = _ } -> return u
+        | _ ->
+          return!
+            (fun () -> $"Error: expected imported type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
+      }
+
     static member AsMap(t: TypeValue<'valueExt>) =
       sum {
         match t with

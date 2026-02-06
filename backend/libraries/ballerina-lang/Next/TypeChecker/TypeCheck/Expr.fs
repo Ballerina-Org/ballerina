@@ -48,12 +48,6 @@ module Expr =
       fun context_t t ->
         let loc0 = t.Location
 
-        let context_t =
-          match context_t with
-          | Some(TypeValue.Var v) when v.Synthetic -> None
-          | Some ctx -> Some ctx
-          | None -> None
-
         // let (!) = typeCheckExpr context_t
         // let (=>) c e = typeCheckExpr c e
 

@@ -6,9 +6,8 @@ module CUD =
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.MemoryDB
-  open System
 
-  let MemoryDBCUDExtension<'ext, 'extDTO when 'ext: comparison and 'extDTO: not null and 'extDTO: not struct>
+  let MemoryDBCUDExtension<'ext when 'ext: comparison>
     (listLens: PartialLens<'ext, List<Value<TypeValue<'ext>, 'ext>>>)
     (mapLens: PartialLens<'ext, Map<Value<TypeValue<'ext>, 'ext>, Value<TypeValue<'ext>, 'ext>>>)
     (valueLens: PartialLens<'ext, MemoryDBValues<'ext>>)
@@ -53,10 +52,10 @@ module CUD =
       MemoryDBUnlinkManyExtension listLens valueLens
 
     let memoryDBQueryFromEntityId, QueryFromEntityOperation =
-      MemoryDBQueryFromEntityExtension listLens valueLens
+      MemoryDBQueryFromEntityExtension valueLens
 
     let memoryDBQueryFromRelationId, QueryFromRelationOperation =
-      MemoryDBQueryFromRelationExtension listLens valueLens
+      MemoryDBQueryFromRelationExtension valueLens
 
     let memoryDBQuerySelectId, QuerySelectOperation =
       MemoryDBQuerySelectExtension valueLens
@@ -65,19 +64,13 @@ module CUD =
       MemoryDBQueryWhereExtension valueLens
 
     let memoryDBQueryCrossId, QueryCrossOperation =
-      MemoryDBQueryCrossExtension listLens valueLens
+      MemoryDBQueryCrossExtension valueLens
 
     let memoryDBQueryOrderById, QueryOrderByOperation =
       MemoryDBQueryOrderByExtension valueLens
 
     let memoryDBQueryExpandId, QueryExpandOperation =
-      MemoryDBQueryExpandExtension listLens valueLens
-
-    let memoryDBQueryVectorEmbedId, QueryVectorEmbedOperation =
-      MemoryDBQueryVectorEmbedExtension valueLens
-
-    let memoryDBQueryVectorSimilarityId, QueryVectorSimilarityOperation =
-      MemoryDBQueryVectorSimilarityExtension valueLens
+      MemoryDBQueryExpandExtension valueLens
 
     { TypeVars = []
       Operations =
@@ -100,7 +93,5 @@ module CUD =
           (memoryDBQueryWhereId, QueryWhereOperation)
           (memoryDBQueryCrossId, QueryCrossOperation)
           (memoryDBQueryOrderById, QueryOrderByOperation)
-          (memoryDBQueryExpandId, QueryExpandOperation)
-          (memoryDBQueryVectorEmbedId, QueryVectorEmbedOperation)
-          (memoryDBQueryVectorSimilarityId, QueryVectorSimilarityOperation) ]
+          (memoryDBQueryExpandId, QueryExpandOperation) ]
         |> Map.ofList }

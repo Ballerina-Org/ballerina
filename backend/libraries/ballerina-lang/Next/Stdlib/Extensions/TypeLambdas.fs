@@ -11,12 +11,11 @@ module TypeLambdas =
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Types
   open Ballerina.Collections.NonEmptyList
-  open Ballerina.DSL.Next.Serialization
   open Ballerina.Collections.Map
 
-  type TypeLambdaExtension<'e, 'extDTO, 'extTypeLambda when 'extDTO: not null and 'extDTO: not struct> with
+  type TypeLambdaExtension<'e, 'extTypeLambda> with
     static member RegisterTypeCheckContext<'ext when 'ext: comparison>
-      (ext: TypeLambdaExtension<'ext, 'extDTO, 'extTypeLambda>)
+      (ext: TypeLambdaExtension<'ext, 'extTypeLambda>)
       : Updater<TypeCheckContext<'ext>> =
       fun typeCheckContext ->
         let values = typeCheckContext.Values
@@ -29,14 +28,14 @@ module TypeLambdas =
 
 
     static member RegisterTypeCheckState<'ext when 'ext: comparison>
-      (ext: TypeLambdaExtension<'ext, 'extDTO, 'extTypeLambda>)
+      (ext: TypeLambdaExtension<'ext, 'extTypeLambda>)
       : Updater<TypeCheckState<'ext>> =
       fun typeCheckState ->
         { typeCheckState with
             Bindings = typeCheckState.Bindings |> Map.merge (fun _ -> id) ext.ExtraBindings }
 
     static member RegisterExprEvalContext<'ext when 'ext: comparison>
-      (ext: TypeLambdaExtension<'ext, 'extDTO, 'extTypeLambda>)
+      (ext: TypeLambdaExtension<'ext, 'extTypeLambda>)
       : Updater<ExprEvalContext<'ext>> =
       fun evalContext ->
         let ops = evalContext.ExtensionOps.Eval
@@ -56,14 +55,13 @@ module TypeLambdas =
               { Eval = ops
                 Applicables = evalContext.ExtensionOps.Applicables } }
 
-    static member RegisterLanguageContext<'ext, 'extDTO when 'ext: comparison>
-      (ext: TypeLambdaExtension<'ext, 'extDTO, 'extTypeLambda>)
-      : Updater<LanguageContext<'ext, 'extDTO>> =
+    static member RegisterLanguageContext<'ext when 'ext: comparison>
+      (ext: TypeLambdaExtension<'ext, 'extTypeLambda>)
+      : Updater<LanguageContext<'ext>> =
       fun langCtx ->
         { TypeCheckContext =
             langCtx.TypeCheckContext
             |> (ext |> TypeLambdaExtension.RegisterTypeCheckContext)
           ExprEvalContext = langCtx.ExprEvalContext |> (ext |> TypeLambdaExtension.RegisterExprEvalContext)
           TypeCheckedPreludes = langCtx.TypeCheckedPreludes
-          TypeCheckState = langCtx.TypeCheckState |> (ext |> TypeLambdaExtension.RegisterTypeCheckState)
-          SerializationContext = langCtx.SerializationContext }
+          TypeCheckState = langCtx.TypeCheckState |> (ext |> TypeLambdaExtension.RegisterTypeCheckState) }

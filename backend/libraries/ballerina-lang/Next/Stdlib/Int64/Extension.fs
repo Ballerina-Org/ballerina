@@ -13,6 +13,7 @@ module Extension =
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
+  open Ballerina.DSL.Next.StdLib.Option
 
   let Int64Extension<'ext>
     (operationLens: PartialLens<'ext, Int64Operations<'ext>>)

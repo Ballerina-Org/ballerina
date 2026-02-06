@@ -16,18 +16,13 @@ module Extension =
   open Ballerina.LocalizedErrors
   open Ballerina.Errors
   open Ballerina
-  open Ballerina.DSL.Next.Serialization.PocoObjects
-  open Ballerina.DSL.Next.Serialization
-  open Ballerina.DSL.Next.Serialization.ValueSerializer
-  open Ballerina.DSL.Next.Serialization.ValueDeserializer
 
 
-  let MapExtension<'ext, 'extDTO when 'ext: comparison and 'extDTO: not null and 'extDTO: not struct>
+  let MapExtension<'ext when 'ext: comparison>
     (valueLens: PartialLens<'ext, MapValues<'ext>>)
     (operationLens: PartialLens<'ext, MapOperations<'ext>>)
     (listValueLens: Option<PartialLens<'ext, ListValues<'ext>>>)
-    (valueDTOLens: PartialLens<'extDTO, MapValueDTO<'extDTO>>)
-    : TypeExtension<'ext, 'extDTO, Unit, MapValues<'ext>, MapOperations<'ext>> =
+    : TypeExtension<'ext, Unit, MapValues<'ext>, MapOperations<'ext>> =
     let mapId = Identifier.LocalScope "Map"
     let mapSymbolId = mapId |> TypeSymbol.Create
     let kVar, kKind = TypeVar.Create("k"), Kind.Star
@@ -123,7 +118,7 @@ module Extension =
                     })
                   |> reader.All
 
-                return (MapValues.Map(Map.ofList newMap) |> valueLens.Set, None) |> Ext
+                return (MapValues.Map(Map.ofList newMap) |> valueLens.Set, Some mapMapId) |> Ext
             } }
 
     let setOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, MapValues<'ext>, MapOperations<'ext>> =
@@ -195,7 +190,7 @@ module Extension =
                   |> sum.MapError(Errors.MapContext(replaceWith loc0))
                   |> reader.OfSum
 
-                return (MapValues.Map(Map.add key value map) |> valueLens.Set, None) |> Ext
+                return (MapValues.Map(Map.add key value map) |> valueLens.Set, Some mapSetId) |> Ext
             } }
 
     let emptyOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, MapValues<'ext>, MapOperations<'ext>> =
@@ -224,7 +219,7 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return (MapValues.Map(Map.empty) |> valueLens.Set, None) |> Ext
+              return (MapValues.Map(Map.empty) |> valueLens.Set, Some mapEmptyId) |> Ext
             } }
 
     let maptolistOperation
@@ -279,68 +274,16 @@ module Extension =
                   |> reader.Throw
             } }
 
-    let mapToDTO
-      (value: 'ext)
-      (applicableId: Option<ResolvedIdentifierDTO>)
-      : Reader<ValueDTO<'extDTO>, SerializationContext<'ext, 'extDTO>, Ballerina.Errors.Errors<unit>> =
-      reader {
-        let! Map mapValue =
-          value
-          |> valueLens.Get
-          |> sum.OfOption(Ballerina.Errors.Errors.Singleton () (fun _ -> "Expected map value in mapToDTO."))
-          |> reader.OfSum
-
-        let! pairs =
-          mapValue
-          |> Map.toList
-          |> List.map (fun (k, v) ->
-            reader {
-              let! kDTO = valueToDTO k
-              let! vDTO = valueToDTO v
-              return (kDTO, vDTO)
-            })
-          |> reader.All
-
-        return
-          MapValueDTO.CreateMapFromList pairs
-          |> valueDTOLens.Set
-          |> ValueDTO.CreateExt applicableId
-      }
-
-    let DTOToMap
-      (valueDTO: 'extDTO)
-      (applicableId: Option<ResolvedIdentifier>)
-      : Reader<Value<TypeValue<'ext>, 'ext>, SerializationContext<'ext, 'extDTO>, Ballerina.Errors.Errors<unit>> =
-      reader {
-        let! mapValueDTO =
-          valueDTO
-          |> valueDTOLens.Get
-          |> sum.OfOption(Ballerina.Errors.Errors.Singleton () (fun _ -> "Expected map value DTO in DTOToMap."))
-          |> reader.OfSum
-
-        let! mapElements =
-          mapValueDTO.Map
-          |> List.map (fun (kDTO, vDTO) ->
-            reader {
-              let! k = valueFromDTO kDTO
-              let! v = valueFromDTO vDTO
-              return (k, v)
-            })
-          |> reader.All
-
-        return Ext(MapValues.Map(mapElements |> Map.ofList) |> valueLens.Set, applicableId)
-      }
-
     { TypeName = mapId, mapSymbolId
       TypeVars = [ (kVar, kKind); (vVar, vKind) ]
       Cases = Map.empty
       Operations = [ setOperation; emptyOperation; mapOperation; maptolistOperation ] |> Map.ofList
-      // Deconstruct =
-      //   fun (v: MapValues<'ext>) ->
-      //     match v with
-      //     | MapValues.Map map when not (Map.isEmpty map) ->
-      //       let (firstKey, firstValue) = map |> Map.toList |> List.head
-      //       let rest = map |> Map.remove firstKey |> MapValues.Map
-      //       Value<TypeValue<'ext>, 'ext>.Tuple([ firstKey; firstValue; (rest |> valueLens.Set, None) |> Ext ])
-      //     | _ -> Value<TypeValue<'ext>, 'ext>.Primitive PrimitiveValue.Unit
-      Serialization = Some { ToDTO = mapToDTO; FromDTO = DTOToMap } }
+    // Deconstruct =
+    //   fun (v: MapValues<'ext>) ->
+    //     match v with
+    //     | MapValues.Map map when not (Map.isEmpty map) ->
+    //       let (firstKey, firstValue) = map |> Map.toList |> List.head
+    //       let rest = map |> Map.remove firstKey |> MapValues.Map
+    //       Value<TypeValue<'ext>, 'ext>.Tuple([ firstKey; firstValue; (rest |> valueLens.Set, None) |> Ext ])
+    //     | _ -> Value<TypeValue<'ext>, 'ext>.Primitive PrimitiveValue.Unit
+    }

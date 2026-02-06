@@ -11,6 +11,10 @@
         <Compile Include="Extensions/Operations.fs" />
         <Compile Include="Extensions/TypeLambdas.fs" />
 
+        <Compile Include="Option/Model.fs" />
+        <Compile Include="Option/Patterns.fs" />
+        <Compile Include="Option/Extension.fs" />
+
         <Compile Include="List/Model.fs" />
         <Compile Include="List/Patterns.fs" />
         <Compile Include="List/Extension.fs" />
@@ -69,7 +73,6 @@
         <Compile Include="MemoryDB/Query/Cross.fs" />
         <Compile Include="MemoryDB/Query/Expand.fs" />
         <Compile Include="MemoryDB/Query/Run.fs" />
-        <Compile Include="MemoryDB/Query/Vector/Embed.fs" />
         <Compile Include="MemoryDB/Lookups.fs" />
         <Compile Include="MemoryDB/Extension.fs" />
         <Compile Include="DateTime/Model.fs" />
@@ -83,19 +86,18 @@
         <Compile Include="TimeSpan/Extension.fs" />
         <Compile Include="StdExtensions.fs" />
     </ItemGroup>
-
     <ItemGroup>
+        <!--
+        https://fsharp.github.io/fsharp-compiler-docs/fsharp-core-notes.html#How-to-explicitly-reference-FSharp-Core -->
+        <PackageReference Update="FSharp.Core" Version="9.0.303" />
         <PackageReference Include="FSharp.Data" Version="6.6.0" />
     </ItemGroup>
-    <Import Project="./SmartComponents/SmartComponents.LocalEmbeddings/build/SmartComponents.LocalEmbeddings.targets" />
     <ItemGroup>
         <ProjectReference Include="..\..\..\ballerina-cat\ballerina-cat.fsproj" />
         <ProjectReference Include="..\..\..\ballerina-stdlib\ballerina-stdlib.fsproj" />
         <ProjectReference Include="..\Models\ballerina-lang-models.fsproj" />
         <ProjectReference Include="..\TypeChecker\ballerina-lang-typecheck.fsproj" />
         <ProjectReference Include="..\Eval\ballerina-lang-eval.fsproj" />
-        <ProjectReference Include="./SmartComponents/SmartComponents.LocalEmbeddings/SmartComponents.LocalEmbeddings.csproj" />
-        <ProjectReference Include="..\Serialization\ballerina-lang-serialization.fsproj" />
     </ItemGroup>
 
 

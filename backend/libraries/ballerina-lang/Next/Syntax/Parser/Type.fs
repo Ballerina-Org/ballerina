@@ -819,7 +819,7 @@ module Type =
           |> List.fold
             (fun acc e ->
               sum {
-                let! (acc, merge_status) = acc
+                let! acc = acc
 
                 match e with
                 | BinaryExpressionChain fields ->
@@ -830,7 +830,7 @@ module Type =
                       [ op |> Precedence.Operator; (e, NonMergeable) |> Precedence.Operand ])
                     |> List.ofSeq
 
-                  let chain = Operand(acc, merge_status) :: fields
+                  let chain = Operand(acc, Mergeable) :: fields
 
                   let precedence: List<OperatorsPrecedence<BinaryTypeOperator>> =
                     [ { Operators = [ BinaryTypeOperator.SingleArrow ] |> Set.ofList
@@ -887,12 +887,12 @@ module Type =
                   // do Console.WriteLine $"Collapsed binary type expression chain: {collapsed_chain.AsFSharpString}"
                   // do Console.ReadLine() |> ignore
 
-                  return collapsed_chain, Mergeable
+                  return collapsed_chain
                 | ScopedIdentifier ids ->
                   match acc with
                   | TypeExpr.Lookup(Identifier.LocalScope id) ->
                     let ids = (id :: (ids |> NonEmptyList.ToList)) |> List.rev
-                    return (TypeExpr.Lookup(Identifier.FullyQualified(ids.Tail, ids.Head))), Mergeable
+                    return TypeExpr.Lookup(Identifier.FullyQualified(ids.Tail, ids.Head))
                   | _ ->
                     return!
                       (fun () -> $"Error: cannot collapse scoped identifier chain on non-identifier")
@@ -900,23 +900,21 @@ module Type =
                       |> sum.Throw
                 | ApplicationArguments args ->
                   return
-                    (args
-                     |> NonEmptyList.ToList
-                     |> List.fold (fun acc e -> TypeExpr.Apply(acc, e)) acc),
-                    Mergeable
+                    args
+                    |> NonEmptyList.ToList
+                    |> List.fold (fun acc e -> TypeExpr.Apply(acc, e)) acc
                 | RecordOrTupleDesChain segments ->
                   return
-                    (segments
-                     |> NonEmptyList.ToList
-                     |> List.fold
-                       (fun acc e ->
-                         match e with
-                         | Left field_name -> TypeExpr.RecordDes(acc, Sum.Left(LocalIdentifier.Create field_name))
-                         | Right index -> TypeExpr.RecordDes(acc, Sum.Right index))
-                       acc),
-                    Mergeable
+                    segments
+                    |> NonEmptyList.ToList
+                    |> List.fold
+                      (fun acc e ->
+                        match e with
+                        | Left field_name -> TypeExpr.RecordDes(acc, Sum.Left(LocalIdentifier.Create field_name))
+                        | Right index -> TypeExpr.RecordDes(acc, Sum.Right index))
+                      acc
               })
-            (Sum.Left(e, NonMergeable))
+            (Sum.Left e)
 
         // let! s = parser.Stream
 
@@ -927,5 +925,5 @@ module Type =
 
         match res with
         | Sum.Right e -> return! e |> parser.Throw
-        | Sum.Left(res, _) -> return res
+        | Sum.Left res -> return res
     }

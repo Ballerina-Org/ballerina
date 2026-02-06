@@ -8,8 +8,6 @@ open Ballerina.DSL.Next.StdLib.Extensions
 open System.Text.Json
 open Ballerina.DSL.FormBuilder.Model.FormAST
 open Ballerina.DSL.FormBuilder.V2ToV1Bridge.ToV1JSON
-open Ballerina.Collections.NonEmptyList
-open Ballerina.DSL.Next.Runners.Project
 
 [<Test>]
 let ``Compiled forms from types and forms strings transform correctly`` () =
@@ -72,7 +70,7 @@ in ()"""
 
   let compilerInput: FormCompiler.FormCompilerInput<Ballerina.DSL.Next.StdLib.Extensions.ValueExt> =
     { Types =
-        { Preludes = NonEmptyList.One(typesString)
+        { Program = typesString
           Source = "test.types" }
       ApiTypes = Map.empty
       Forms =
@@ -81,10 +79,7 @@ in ()"""
 
   let languageContext = stdExtensions |> snd
 
-  let cache =
-    memcache (languageContext.TypeCheckContext, languageContext.TypeCheckState)
-
-  match FormCompiler.compileForms compilerInput cache languageContext (stdExtensions |> fst) with
+  match FormCompiler.compileForms compilerInput languageContext (stdExtensions |> fst) with
   | Right errors -> Assert.Fail($"Compilation failed: {errors}")
   | Left formDefinitions ->
     let result = FormDefinitions.toV1Json formDefinitions

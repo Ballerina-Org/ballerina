@@ -1,18 +1,18 @@
 {
   "version": 1,
   "dependencies": {
-    "net10.0": {
+    "net9.0": {
       "FSharp.Core": {
         "type": "Direct",
-        "requested": "[10.0.102, )",
-        "resolved": "10.0.102",
-        "contentHash": "v91pt3B1ohyxAS0JaxbfsysORgddi2Um+d1M8nfdxzuh5VmGosW2pw6O8ykKatbcL2GjIDSw1aVnAOQ/y3UPew=="
+        "requested": "[9.0.303, )",
+        "resolved": "9.0.303",
+        "contentHash": "6JlV8aD8qQvcmfoe/PMOxCHXc0uX4lR23u0fAyQtnVQxYULLoTZgwgZHSnRcuUHOvS3wULFWcwdnP1iwslH60g=="
       }
     },
-    "net10.0/linux-arm64": {},
-    "net10.0/linux-x64": {},
-    "net10.0/osx-arm64": {},
-    "net10.0/osx-x64": {},
-    "net10.0/win-x64": {}
+    "net9.0/linux-arm64": {},
+    "net9.0/linux-x64": {},
+    "net9.0/osx-arm64": {},
+    "net9.0/osx-x64": {},
+    "net9.0/win-x64": {}
   }
 }

@@ -11,8 +11,6 @@ open Ballerina.DSL.Next.Terms
 open Ballerina.DSL.Next.Runners.Project
 open Ballerina.Collections.NonEmptyList
 open Ballerina.Errors
-open Ballerina.DSL.Next.StdLib.Extensions
-
 
 
 let private fileFromNameAndContent (name: string) (content: string) : FileBuildConfiguration =
@@ -20,9 +18,7 @@ let private fileFromNameAndContent (name: string) (content: string) : FileBuildC
     Content = fun () -> content
     Checksum = Checksum.Compute content }
 
-let private buildAndEval
-  (files: NonEmptyList<string * string>)
-  : Sum<Value<TypeValue<ValueExt>, ValueExt> * TypeValue<ValueExt> * int, string> =
+let private buildAndEval (files: NonEmptyList<string * string>) =
   let project: ProjectBuildConfiguration =
     { Files =
         files
@@ -34,7 +30,7 @@ let private buildAndEval
   let buildResult = ProjectBuildConfiguration.BuildCached cache project
 
   match buildResult with
-  | Left(exprs, typeValue, _, finalState) ->
+  | Left(exprs, _, finalState) ->
     let evalContext =
       ExprEvalContext.WithTypeCheckingSymbols context.ExprEvalContext finalState.Symbols
 
@@ -43,7 +39,7 @@ let private buildAndEval
       |> Reader.Run evalContext
 
     match evalResult with
-    | Left value -> Left(value, typeValue, NonEmptyList.ToList exprs |> List.length)
+    | Left value -> Left(value, NonEmptyList.ToList exprs |> List.length)
     | Right(e: Errors.Errors<Patterns.Location>) ->
       let errString = Errors.ToString(e, "\n")
       Right(sprintf "Evaluation failed: %s" errString)
@@ -81,17 +77,12 @@ in tri.A.X + tri.B.X + tri.C.X
   let result = buildAndEval (NonEmptyList.OfList(file1, [ file2; file3 ]))
 
   match result with
-  | Left(value, typeValue, exprCount) ->
+  | Left(value, exprCount) ->
     Assert.That(exprCount, Is.EqualTo(3), "Should have 3 expressions")
 
     match value with
-    | Value.Primitive(Int32 15) ->
-      match typeValue with
-      | TypeValue.Primitive({ value = PrimitiveType.Int32 }) -> Assert.Pass "Correctly evaluated to 15 (0 + 10 + 5)"
-      | _ -> Assert.Fail $"Expected Int32 type, got {typeValue.AsFSharpString}"
+    | Value.Primitive(Int32 15) -> Assert.Pass "Correctly evaluated to 15 (0 + 10 + 5)"
     | _ -> Assert.Fail $"Expected 15, got {value}"
-
-
   | Right e -> Assert.Fail e
 
 
@@ -137,5 +128,5 @@ x * 2
   let result = buildAndEval (NonEmptyList.OfList(wrongPrelude, [ program ]))
 
   match result with
-  | Left(value, _, _) -> Assert.Fail $"Expected evaluation to fail, got {value}"
+  | Left(value, _) -> Assert.Fail $"Expected evaluation to fail, got {value}"
   | Right e -> Assert.That(e, Does.Contain("x"), "Error should mention missing x variable")

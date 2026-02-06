@@ -24,7 +24,6 @@ module QueryFromEntity =
   open Ballerina.DSL.Next.StdLib.MemoryDB
 
   let MemoryDBQueryFromEntityExtension<'ext when 'ext: comparison>
-    (listLens: PartialLens<'ext, List<Value<TypeValue<'ext>, 'ext>>>)
     (valueLens: PartialLens<'ext, MemoryDBValues<'ext>>)
     =
 
@@ -78,49 +77,56 @@ module QueryFromEntity =
     let queryFromEntityOperation: OperationExtension<_, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBQueryFromEntityType, memoryDBQueryFromEntityKind, MemoryDBValues.QueryFromEntity())
+          <| (memoryDBQueryFromEntityType, memoryDBQueryFromEntityKind, MemoryDBValues.GetById {| EntityRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
-            | MemoryDBValues.QueryFromEntity() -> Some(MemoryDBValues.QueryFromEntity())
+            | MemoryDBValues.GetById v -> Some(MemoryDBValues.GetById v)
             | _ -> None)
         Apply =
-          fun loc0 _rest (op, v) ->
+          fun _loc0 _rest (_op, _v) ->
             reader {
-              do!
-                op
-                |> MemoryDBValues.AsQueryFromEntity
-                |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                |> reader.OfSum
+              return Value.Primitive(PrimitiveValue.Unit)
+            // let! op =
+            //   op
+            //   |> MemoryDBValues.AsGetById
+            //   |> sum.MapError(Errors.MapContext(replaceWith loc0))
+            //   |> reader.OfSum
 
-              let! v, _ =
-                v
-                |> Value.AsExt
-                |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                |> reader.OfSum
+            // match op with
+            // | None -> // the closure is empty - first step in the application
+            //   let! v, _ =
+            //     v
+            //     |> Value.AsExt
+            //     |> sum.MapError(Errors.MapContext(replaceWith loc0))
+            //     |> reader.OfSum
 
-              let! v =
-                v
-                |> valueLens.Get
-                |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
-                |> reader.OfSum
+            //   let! v =
+            //     v
+            //     |> valueLens.Get
+            //     |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
+            //     |> reader.OfSum
 
-              let! (_, db, schema_entity, _) =
-                v
-                |> MemoryDBValues.AsEntityRef
-                |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                |> reader.OfSum
+            //   let! v =
+            //     v
+            //     |> MemoryDBValues.AsEntityRef
+            //     |> sum.MapError(Errors.MapContext(replaceWith loc0))
+            //     |> reader.OfSum
 
-              let entity_table =
-                db.entities |> Map.tryFind schema_entity.Name |> Option.defaultValue Map.empty
+            //   return
+            //     (MemoryDBValues.GetById({| EntityRef = Some v |}) |> valueLens.Set, Some memoryDBQueryFromEntityId)
+            //     |> Ext
+            // | Some(_schema, _db, _entity, _schema_as_value) -> // the closure has the first operand - second step in the application
+            //   let v =
+            //     option {
+            //       let! entity = _db.entities |> Map.tryFind _entity.Name
+            //       let! value = entity |> Map.tryFind v
+            //       return value
+            //     }
 
-              let result =
-                entity_table
-                |> Map.toSeq
-                |> Seq.map (fun (entityId, entityValue) -> Value.Tuple [ entityId; entityValue ])
-                |> Seq.toList
-
-              return Value.Ext(listLens.Set result, None)
+            //   match v with
+            //   | None -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+            //   | Some value -> return Value.Sum({ Case = 2; Count = 2 }, value)
             } }
 
     memoryDBQueryFromEntityId, queryFromEntityOperation
