@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <!--
+            Can't support netstandard2.0 because FastBertTokenizer currently requires net6.0 or newer.
+            See https://github.com/georg-jung/FastBertTokenizer/issues/23
+        -->
+        <LangVersion>latest</LangVersion>
+        <IsPackable>true</IsPackable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Nullable>enable</Nullable>
+
+        <!-- Suppress "Opt in to preview features before using them" because of false positives -->
+        <!-- See note in https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2252#when-to-suppress-warnings -->
+        <NoWarn>CS0618;CS1573;CS1572;CS1591;CS1734;CA2252;SKEXP0001;SKEXP0070;$(NoWarn)</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Bcl.Numerics" Version="10.0.2" />
+        <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="10.0.2" />
+        <PackageReference Include="System.Numerics.Tensors" Version="10.0.2" />
+        <PackageReference Include="System.Runtime.Caching" Version="10.0.2" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.Onnx" Version="1.70.0-alpha" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\SmartComponents.Inference\SmartComponents.Inference.csproj" />
+    </ItemGroup>
+
+    <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
+        <ItemGroup>
+            <_PackageFiles Include="build\**" BuildAction="Content" PackagePath="build" />
+        </ItemGroup>
+    </Target>
+
+</Project>

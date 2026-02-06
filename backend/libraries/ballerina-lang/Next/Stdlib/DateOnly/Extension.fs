@@ -18,7 +18,7 @@ module Extension =
   open Ballerina
   open Ballerina.StdLib.Formats
 
-  let DateOnlyExtension<'ext>
+  let DateOnlyExtension<'ext, 'extDTO when 'extDTO: not null and 'extDTO: not struct>
     (operationLens: PartialLens<'ext, DateOnlyOperations<'ext>>)
     : OperationsExtension<'ext, DateOnlyOperations<'ext>> =
 

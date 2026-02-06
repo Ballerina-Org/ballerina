@@ -15,9 +15,6 @@
 
     </ItemGroup>
     <ItemGroup>
-        <!--
-        https://fsharp.github.io/fsharp-compiler-docs/fsharp-core-notes.html#How-to-explicitly-reference-FSharp-Core -->
-        <PackageReference Update="FSharp.Core" Version="9.0.303" />
         <PackageReference Include="FSharp.Data" Version="6.6.0" />
     </ItemGroup>
     <ItemGroup>
