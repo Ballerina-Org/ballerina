@@ -23,9 +23,10 @@ module QueryRunner =
   open Ballerina
   open Ballerina.DSL.Next.StdLib.MemoryDB
 
-  let MemoryDBQueryRunnerExtension<'ext when 'ext: comparison>
+  let MemoryDBQueryRunnerExtension<'ext, 'extDTO when 'ext: comparison and 'extDTO: not null and 'extDTO: not struct>
+    (listLens: PartialLens<'ext, List<Value<TypeValue<'ext>, 'ext>>>)
     (valueLens: PartialLens<'ext, MemoryDBValues<'ext>>)
-    : TypeExtension<'ext, Unit, Unit, MemoryDBValues<'ext>> =
+    : TypeExtension<'ext, 'extDTO, Unit, Unit, MemoryDBValues<'ext>> =
     let queryId = Identifier.LocalScope "Query"
     let querySymbolId = queryId |> TypeSymbol.Create
     let schemaVar, schemaKind = TypeVar.Create("s"), Kind.Schema
@@ -42,17 +43,17 @@ module QueryRunner =
         TypeExpr.Lambda(
           TypeParameter.Create("a", Kind.Star),
           TypeExpr.Arrow(
-            TypeExpr.Apply(
-              TypeExpr.Apply(
-                TypeExpr.Lookup("Query" |> Identifier.LocalScope),
-                TypeExpr.Lookup("schema" |> Identifier.LocalScope)
-              ),
-              TypeExpr.Lookup("a" |> Identifier.LocalScope)
-            ),
+            TypeExpr.Tuple
+              [ TypeExpr.Primitive PrimitiveType.Int32
+                TypeExpr.Primitive PrimitiveType.Int32 ],
             TypeExpr.Arrow(
-              TypeExpr.Tuple
-                [ TypeExpr.Primitive PrimitiveType.Int32
-                  TypeExpr.Primitive PrimitiveType.Int32 ],
+              TypeExpr.Apply(
+                TypeExpr.Apply(
+                  TypeExpr.Lookup("Query" |> Identifier.LocalScope),
+                  TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+                ),
+                TypeExpr.Lookup("a" |> Identifier.LocalScope)
+              ),
               TypeExpr.Apply(
                 TypeExpr.Lookup("List" |> Identifier.LocalScope),
                 TypeExpr.Lookup("a" |> Identifier.LocalScope)
@@ -67,55 +68,71 @@ module QueryRunner =
     let runQueryOperation: TypeOperationExtension<'ext, Unit, Unit, MemoryDBValues<'ext>> =
       { Type = memoryDBRunQueryType
         Kind = memoryDBRunQueryKind
-        Operation = MemoryDBValues.GetById {| EntityRef = None |}
+        Operation = MemoryDBValues.QueryRun {| Range = None |}
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
-            | MemoryDBValues.GetById v -> Some(MemoryDBValues.GetById v)
+            | MemoryDBValues.QueryRun v -> Some(MemoryDBValues.QueryRun v)
             | _ -> None)
         Apply =
           fun loc0 _rest (op, v) ->
             reader {
               let! op =
                 op
-                |> MemoryDBValues.AsGetById
+                |> MemoryDBValues.AsQueryRun
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
               match op with
               | None -> // the closure is empty - first step in the application
+                let! (skip, take) =
+                  v
+                  |> Value.AsTuple2
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
+
+                let! skip =
+                  skip
+                  |> Value.AsPrimitive
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
+
+                let! skip =
+                  skip
+                  |> PrimitiveValue.AsInt32
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
+
+                let! take =
+                  take
+                  |> Value.AsPrimitive
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
+
+                let! take =
+                  take
+                  |> PrimitiveValue.AsInt32
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
+
+                return
+                  (MemoryDBValues.QueryRun {| Range = Some(skip, take) |} |> valueLens.Set, Some memoryDBRunQueryId)
+                  |> Ext
+              | Some(skip, take) -> // the closure has the first operand - second step in the application
                 let! v, _ =
                   v
                   |> Value.AsExt
                   |> sum.MapError(Errors.MapContext(replaceWith loc0))
                   |> reader.OfSum
 
-                let! v =
+                let! query =
                   v
-                  |> valueLens.Get
+                  |> listLens.Get
                   |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
                   |> reader.OfSum
 
-                let! v =
-                  v
-                  |> MemoryDBValues.AsEntityRef
-                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                  |> reader.OfSum
-
-                return
-                  (MemoryDBValues.GetById({| EntityRef = Some v |}) |> valueLens.Set, Some memoryDBRunQueryId)
-                  |> Ext
-              | Some(_schema, _db, _entity, _schema_as_value) -> // the closure has the first operand - second step in the application
-                let v =
-                  option {
-                    let! entity = _db.entities |> Map.tryFind _entity.Name
-                    let! value = entity |> Map.tryFind v
-                    return value
-                  }
-
-                match v with
-                | None -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
-                | Some value -> return Value.Sum({ Case = 2; Count = 2 }, value)
+                let query = query |> List.skip skip |> List.truncate take
+                return Ext(listLens.Set query, None)
             } }
 
     let memoryDBQueryToListId =
@@ -149,60 +166,29 @@ module QueryRunner =
     let queryToListOperation: TypeOperationExtension<'ext, Unit, Unit, MemoryDBValues<'ext>> =
       { Type = memoryDBQueryToListType
         Kind = memoryDBQueryToListKind
-        Operation = MemoryDBValues.GetById {| EntityRef = None |}
+        Operation = MemoryDBValues.QueryToList()
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
-            | MemoryDBValues.GetById v -> Some(MemoryDBValues.GetById v)
+            | MemoryDBValues.QueryToList() -> Some(MemoryDBValues.QueryToList())
             | _ -> None)
         Apply =
           fun loc0 _rest (op, v) ->
             reader {
-              let! op =
+              do!
                 op
-                |> MemoryDBValues.AsGetById
+                |> MemoryDBValues.AsQueryToList
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              match op with
-              | None -> // the closure is empty - first step in the application
-                let! v, _ =
-                  v
-                  |> Value.AsExt
-                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                  |> reader.OfSum
 
-                let! v =
-                  v
-                  |> valueLens.Get
-                  |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
-                  |> reader.OfSum
-
-                let! v =
-                  v
-                  |> MemoryDBValues.AsEntityRef
-                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                  |> reader.OfSum
-
-                return
-                  (MemoryDBValues.GetById({| EntityRef = Some v |}) |> valueLens.Set, Some memoryDBRunQueryId)
-                  |> Ext
-              | Some(_schema, _db, _entity, _schema_as_value) -> // the closure has the first operand - second step in the application
-                let v =
-                  option {
-                    let! entity = _db.entities |> Map.tryFind _entity.Name
-                    let! value = entity |> Map.tryFind v
-                    return value
-                  }
-
-                match v with
-                | None -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
-                | Some value -> return Value.Sum({ Case = 2; Count = 2 }, value)
+              return v
             } }
 
     { TypeName = queryId, querySymbolId
       TypeVars = [ (aVar, aKind); (schemaVar, schemaKind) ]
       Cases = Map.empty
+      Serialization = None
       Operations =
         [ memoryDBRunQueryId, runQueryOperation
           memoryDBQueryToListId, queryToListOperation ]

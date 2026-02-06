@@ -1,7 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>form_builder_model.fsproj</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- Explicitly exclude obsolete warnings as errors -->

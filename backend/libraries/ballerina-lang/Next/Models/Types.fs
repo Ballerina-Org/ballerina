@@ -600,9 +600,7 @@ module Model =
     { Id: ResolvedIdentifier
       Sym: TypeSymbol
       Parameters: List<TypeParameter>
-      Arguments: List<TypeValue<'valueExt>>
-      UnionLike: Option<OrderedMap<TypeSymbol, TypeExpr<'valueExt>>>
-      RecordLike: Option<OrderedMap<TypeSymbol, TypeExpr<'valueExt>>> }
+      Arguments: List<TypeValue<'valueExt>> }
 
     override self.ToString() =
       // let pars = String.Join(" ", self.Parameters |> List.map (fun a -> $"{a} => "))

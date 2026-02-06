@@ -36,7 +36,13 @@ module ToV1JSON =
       let rootJson =
         JsonValue.Record
           [| ("types", typesJson)
-             ("apis", JsonValue.Record [||])
+             ("apis",
+              JsonValue.Record
+                [| "entities", JsonValue.Record [||]
+                   "streams", JsonValue.Record [||]
+                   "enums", JsonValue.Record [||]
+                   "tables", JsonValue.Record [||]
+                   "lookups", JsonValue.Record [||] |])
              ("forms", formsJson)
              ("launchers", launchersJson) |]
 

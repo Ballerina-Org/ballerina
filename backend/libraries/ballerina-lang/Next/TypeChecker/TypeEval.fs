@@ -533,6 +533,46 @@ module Eval =
                 |> OrderedMap.ofList
                 |> state.AllMapOrdered
 
+              let! all_id_name_and_types =
+                entities
+                |> OrderedMap.values
+                |> Seq.map (fun e ->
+                  state {
+                    let! id_fields = e.Id |> TypeValue.AsRecord |> ofSum
+
+                    let id_fields =
+                      id_fields
+                      |> OrderedMap.toSeq
+                      |> Seq.map (fun (k, (t, _)) -> (k.Name.LocalName, t))
+                      |> Seq.toList
+
+                    match id_fields with
+                    | [ field_name, field_type ] ->
+                      match field_type with
+                      | TypeValue.Primitive _ -> return field_name, field_type
+                      | _ ->
+                        return!
+                          (fun () -> $"Error: entity id field type must be a primitive type, got {field_type}")
+                          |> error
+                          |> state.Throw
+                    | _ ->
+                      return!
+                        (fun () -> $"Error: entity id must be a single field record, got {e.Id}")
+                        |> error
+                        |> state.Throw
+                  })
+                |> state.All
+
+              let all_id_names = all_id_name_and_types |> List.map fst |> Set.ofList
+
+              if Set.count all_id_names <> List.length all_id_name_and_types then
+                return!
+                  (fun () -> $"Error: entity id fields must have unique names.")
+                  |> error
+                  |> state.Throw
+              else
+                ()
+
               let repeatedRelationNames =
                 parsed_schema.Relations
                 |> List.map (fun r -> r.Name)

@@ -76,6 +76,28 @@ module Patterns =
       | MemoryDBValues.GetById v -> v.EntityRef |> sum.Return
       | _ -> Errors.Singleton () (fun () -> "Expected GetById operation") |> sum.Throw
 
+    static member AsEmbedStringToVector(op: MemoryDBValues<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | MemoryDBValues.EmbedStringToVector() -> () |> sum.Return
+      | _ ->
+        Errors.Singleton () (fun () -> "Expected EmbedStringToVector operation")
+        |> sum.Throw
+
+
+    static member AsVectorEmbedding(op: MemoryDBValues<'ext>) : Sum<VectorEmbedding, Errors<Unit>> =
+      match op with
+      | MemoryDBValues.VectorEmbedding v -> v |> sum.Return
+      | _ ->
+        Errors.Singleton () (fun () -> "Expected VectorEmbedding operation")
+        |> sum.Throw
+
+    static member AsVectorToVectorSimilarity(op: MemoryDBValues<'ext>) : Sum<Option<VectorEmbedding>, Errors<Unit>> =
+      match op with
+      | MemoryDBValues.VectorToVectorSimilarity v -> v.Vector1 |> sum.Return
+      | _ ->
+        Errors.Singleton () (fun () -> "Expected VectorToVectorSimilarity operation")
+        |> sum.Throw
+
     static member AsGetMany(op: MemoryDBValues<'ext>) : Sum<Option<EntityRef<'ext>>, Errors<Unit>> =
       match op with
       | MemoryDBValues.GetMany v -> v.EntityRef |> sum.Return
@@ -164,3 +186,41 @@ module Patterns =
       match op with
       | MemoryDBValues.DBIO dbio -> dbio |> sum.Return
       | _ -> Errors.Singleton () (fun () -> "Expected DBIO operation") |> sum.Throw
+
+    static member AsQueryFromEntity(op: MemoryDBValues<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | MemoryDBValues.QueryFromEntity() -> () |> sum.Return
+      | _ ->
+        Errors.Singleton () (fun () -> "Expected QueryFromEntity operation")
+        |> sum.Throw
+
+    static member AsQueryFromRelation(op: MemoryDBValues<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | MemoryDBValues.QueryFromRelation() -> () |> sum.Return
+      | _ ->
+        Errors.Singleton () (fun () -> "Expected QueryFromRelation operation")
+        |> sum.Throw
+
+    static member AsQueryCross
+      (op: MemoryDBValues<'ext>)
+      : Sum<Option<List<Value<TypeValue<'ext>, 'ext>>>, Errors<Unit>> =
+      match op with
+      | MemoryDBValues.QueryCross queryCross -> queryCross.Query1 |> sum.Return
+      | _ -> Errors.Singleton () (fun () -> "Expected QueryCross operation") |> sum.Throw
+
+    static member AsQueryExpand
+      (op: MemoryDBValues<'ext>)
+      : Sum<Option<List<Value<TypeValue<'ext>, 'ext>>>, Errors<Unit>> =
+      match op with
+      | MemoryDBValues.QueryExpand queryExpand -> queryExpand.Query1 |> sum.Return
+      | _ -> Errors.Singleton () (fun () -> "Expected QueryExpand operation") |> sum.Throw
+
+    static member AsQueryToList(op: MemoryDBValues<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | MemoryDBValues.QueryToList() -> () |> sum.Return
+      | _ -> Errors.Singleton () (fun () -> "Expected QueryToList operation") |> sum.Throw
+
+    static member AsQueryRun(op: MemoryDBValues<'ext>) : Sum<Option<int * int>, Errors<Unit>> =
+      match op with
+      | MemoryDBValues.QueryRun q -> q.Range |> sum.Return
+      | _ -> Errors.Singleton () (fun () -> "Expected QueryRun operation") |> sum.Throw
