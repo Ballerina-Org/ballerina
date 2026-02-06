@@ -9,7 +9,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/backend/apps/ballerina-runtime/bin/Debug/net9.0/ballerina-runtime.dll",
+      "program": "${workspaceFolder}/backend/apps/ballerina-runtime/bin/Debug/net10.0/ballerina-runtime.dll",
       "args": ["mode=abcdjobs"],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
