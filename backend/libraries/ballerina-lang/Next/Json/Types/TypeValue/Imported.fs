@@ -37,8 +37,8 @@ module TypeValueImported =
                 Sym = sym
                 Parameters = pars
                 Arguments = args
-                UnionLike = None
-                RecordLike = None }
+
+              }
             )
         })
 

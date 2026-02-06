@@ -1,7 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <RootNamespace>ballerina_lang_stdlib_json</RootNamespace>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
@@ -12,20 +12,16 @@
         <Compile Include="DateOnly.fs" />
         <Compile Include="DateTime.fs" />
         <Compile Include="Guid.fs" />
-        <Compile Include="Option.fs" />
     </ItemGroup>
     <ItemGroup>
-        <!--
-        https://fsharp.github.io/fsharp-compiler-docs/fsharp-core-notes.html#How-to-explicitly-reference-FSharp-Core -->
-        <PackageReference Update="FSharp.Core" Version="9.0.303" />
         <PackageReference Include="FSharp.Data" Version="6.6.0" />
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\ballerina-cat\ballerina-cat.fsproj" />
-      <ProjectReference Include="..\ballerina-lang\Next\Json\ballerina-lang-json.fsproj" />
-      <ProjectReference Include="..\ballerina-lang\Next\Models\ballerina-lang-models.fsproj" />
-      <ProjectReference Include="..\ballerina-lang\Next\Stdlib\ballerina-lang-stdlib.fsproj" />
-      <ProjectReference Include="..\ballerina-stdlib\ballerina-stdlib.fsproj" />
+        <ProjectReference Include="..\ballerina-cat\ballerina-cat.fsproj" />
+        <ProjectReference Include="..\ballerina-lang\Next\Json\ballerina-lang-json.fsproj" />
+        <ProjectReference Include="..\ballerina-lang\Next\Models\ballerina-lang-models.fsproj" />
+        <ProjectReference Include="..\ballerina-lang\Next\Stdlib\ballerina-lang-stdlib.fsproj" />
+        <ProjectReference Include="..\ballerina-stdlib\ballerina-stdlib.fsproj" />
     </ItemGroup>
 
 </Project>

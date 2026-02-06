@@ -47,13 +47,13 @@ module Project =
         NonEmptyList<FileBuildConfiguration>
           -> (FileBuildConfiguration * int
             -> State<
-              Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>,
+              Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeValue<'valueExt>,
               Unit,
               TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
               Errors<Location>
              >)
           -> Sum<
-            NonEmptyList<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> *
+            NonEmptyList<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeValue<'valueExt>> *
             TypeCheckContext<'valueExt> *
             TypeCheckState<'valueExt>,
             Errors<Location>
@@ -70,6 +70,7 @@ module Project =
             Checksum *
             List<Checksum> *
             Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
+            TypeValue<'valueExt> *
             TypeCheckContext<'valueExt> *
             TypeCheckState<'valueExt>
            >
@@ -79,6 +80,7 @@ module Project =
             Checksum *
             List<Checksum> *
             Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
+            TypeValue<'valueExt> *
             TypeCheckContext<'valueExt> *
             TypeCheckState<'valueExt>,
             Unit
@@ -92,7 +94,7 @@ module Project =
       (typeCheck:
         FileBuildConfiguration * int
           -> State<
-            Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>,
+            Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeValue<'valueExt>,
             Unit,
             TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
             Errors<Location>
@@ -102,7 +104,7 @@ module Project =
       (st: TypeCheckState<'valueExt>)
       (file: FileBuildConfiguration, index: int)
       : Sum<
-          Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
+          (Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeValue<'valueExt>) *
           TypeCheckContext<'valueExt> *
           TypeCheckState<'valueExt>,
           Errors<Location>
@@ -111,20 +113,20 @@ module Project =
       let cached_entry = cache.TryGet file.FileName
 
       match cached_entry with
-      | Some(checksum, checksums, expr, ctx', st') when checksum = file.Checksum && prevChecksums = checksums ->
+      | Some(checksum, checksums, expr, typeValue, ctx', st') when checksum = file.Checksum && prevChecksums = checksums ->
         Console.WriteLine $"Cache hit for {file.FileName.Path}"
-        Left(expr, ctx', st')
+        Left((expr, typeValue), ctx', st')
       | _ ->
         sum {
-          let! expr, st_ctx' = typeCheck (file, index) |> State.Run((), (ctx, st)) |> sum.MapError fst
+          let! (expr, typeValue), st_ctx' = typeCheck (file, index) |> State.Run((), (ctx, st)) |> sum.MapError fst
           let ctx', st' = st_ctx' |> Option.defaultValue (ctx, st)
-          do cache.Set file.FileName (file.Checksum, prevChecksums, expr, ctx', st')
+          do cache.Set file.FileName (file.Checksum, prevChecksums, expr, typeValue, ctx', st')
 
           // do Console.WriteLine $"Cache miss for {file.FileName.Path}"
           // do Console.WriteLine $"Updated cache size: {cache.Count}"
           // do Console.WriteLine $"Updated cache keys: {cache.Keys.AsFSharpString}"
 
-          expr, ctx', st'
+          (expr, typeValue), ctx', st'
         }
 
     { Fold =
@@ -133,7 +135,7 @@ module Project =
             (typeCheck:
               FileBuildConfiguration * int
                 -> State<
-                  Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>,
+                  Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeValue<'valueExt>,
                   Unit,
                   TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
                   Errors<Location>
@@ -144,7 +146,7 @@ module Project =
             (fun
                  (acc:
                    Sum<
-                     NonEmptyList<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> *
+                     NonEmptyList<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeValue<'valueExt>> *
                      List<Checksum> *
                      TypeCheckContext<'valueExt> *
                      TypeCheckState<'valueExt>,
@@ -153,13 +155,17 @@ module Project =
                  ((file, index): FileBuildConfiguration * int) ->
               sum {
                 let! prevExprs, prevChecksums, ctx, st = acc
-                let! expr, ctx', st' = processFile typeCheck prevChecksums ctx st (file, index)
-                NonEmptyList.OfList(expr, NonEmptyList.ToList prevExprs), file.Checksum :: prevChecksums, ctx', st'
+                let! exprWithType, ctx', st' = processFile typeCheck prevChecksums ctx st (file, index)
+
+                NonEmptyList.OfList(exprWithType, NonEmptyList.ToList prevExprs),
+                file.Checksum :: prevChecksums,
+                ctx',
+                st'
               })
             (fun (file, index) ->
               sum {
-                let! expr, ctx', st' = processFile typeCheck [] ctx0 st0 (file, index)
-                NonEmptyList.One expr, [ file.Checksum ], ctx', st'
+                let! exprWithType, ctx', st' = processFile typeCheck [] ctx0 st0 (file, index)
+                NonEmptyList.One exprWithType, [ file.Checksum ], ctx', st'
               })
           |> sum.Map(fun (exprs, _, ctx, st) -> exprs, ctx, st) }
 
@@ -173,6 +179,7 @@ module Project =
             Checksum *
             List<Checksum> *
             Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
+            TypeValue<'valueExt> *
             TypeCheckContext<'valueExt> *
             TypeCheckState<'valueExt>
            > =
@@ -191,17 +198,19 @@ module Project =
     { Checksum: Checksum
       PrevFilesChecksums: Checksum array
       Expr: Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>
+      TypeValue: TypeValue<'valueExt>
       Context: TypeCheckContext<'valueExt>
       State: TypeCheckState<'valueExt> }
 
     member this.ToDomain() =
-      (this.Checksum, this.PrevFilesChecksums |> List.ofArray, this.Expr, this.Context, this.State)
+      (this.Checksum, this.PrevFilesChecksums |> List.ofArray, this.Expr, this.TypeValue, this.Context, this.State)
 
     // Type check context and state are huge when serialized (~22k lines rn), so they are skipped
-    static member FromDomain(checksum, prevFilesChecksums, expr, context, state) =
+    static member FromDomain(checksum, prevFilesChecksums, expr, typeValue, context, state) =
       { Checksum = checksum
         PrevFilesChecksums = prevFilesChecksums |> Array.ofList
         Expr = expr
+        TypeValue = typeValue
         Context = context
         State = state }
 
@@ -290,6 +299,7 @@ It could be because the cache structure is outdated, and is expected in such cas
       (project: ProjectBuildConfiguration)
       : Sum<
           NonEmptyList<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> *
+          TypeValue<'valueExt> *
           TypeCheckContext<'valueExt> *
           TypeCheckState<'valueExt>,
           Errors<Location>
@@ -297,7 +307,7 @@ It could be because the cache structure is outdated, and is expected in such cas
       =
 
       sum {
-        let! expressions, finalContext, finalState =
+        let! expressionsWithTypes, finalContext, finalState =
           cache.Fold project.Files (fun (file, index) ->
             state {
               let! ParserResult(program, _) = file |> ProjectBuildConfiguration.ParseFile |> state.OfSum
@@ -327,8 +337,13 @@ It could be because the cache structure is outdated, and is expected in such cas
                   |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
                   |> state.OfSum
 
-              return typeCheckedExpr
+              typeCheckedExpr, typeValue
             })
 
-        return expressions |> NonEmptyList.rev, finalContext, finalState
+        let expressionsWithTypesReversed = expressionsWithTypes |> NonEmptyList.rev
+        let expressions = expressionsWithTypesReversed |> NonEmptyList.map fst
+
+        let lastTypeValue = expressionsWithTypes.Head |> snd
+
+        expressions, lastTypeValue, finalContext, finalState
       }

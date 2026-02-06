@@ -21,7 +21,8 @@ open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.FormEngine.Model
 
 module Extract =
-  let _stdExtensions, (langContext: LanguageContext<ValueExt>) = stdExtensions
+  let _stdExtensions, (langContext: LanguageContext<ValueExt, ValueExtDTO>) =
+    stdExtensions
 
   let private entityNameFromLauncher (launcherName: LauncherName) (context: ParsedFormsContext<_, _>) =
     let launcher = context.Launchers |> Map.find launcherName

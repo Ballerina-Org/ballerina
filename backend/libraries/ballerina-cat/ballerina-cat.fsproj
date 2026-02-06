@@ -27,10 +27,5 @@
         <Compile Include="Parser/Model.fs" />
 
     </ItemGroup>
-    <ItemGroup>
-        <!--
-        https://fsharp.github.io/fsharp-compiler-docs/fsharp-core-notes.html#How-to-explicitly-reference-FSharp-Core -->
-        <PackageReference Update="FSharp.Core" Version="9.0.303" />
-    </ItemGroup>
 
 </Project>

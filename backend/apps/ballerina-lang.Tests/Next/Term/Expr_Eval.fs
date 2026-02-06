@@ -22,7 +22,6 @@ open Ballerina.DSL.Next.Types.TypeChecker.Model
 open Ballerina.DSL.Next.Types.TypeChecker
 open Ballerina.DSL.Next.Terms
 open Ballerina.State.WithError
-open Ballerina.DSL.Next.StdLib.Option
 open Ballerina.DSL.Next.StdLib.Int32
 open Ballerina.DSL.Next.Extensions
 open Ballerina.DSL.Next.StdLib.DateOnly
@@ -64,27 +63,6 @@ let private runTypeCheck (program: Expr<TypeExpr<ValueExt>, Identifier, ValueExt
 let private eval (program: Expr<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt>) =
   Expr.Eval(NonEmptyList.prependList context.TypeCheckedPreludes (NonEmptyList.One program))
   |> Reader.Run context.ExprEvalContext
-
-[<Test>]
-let ``LangNext-ExprEval (generic) Apply of custom Option type succeeds`` () =
-  let program =
-    Expr.TypeApply(Expr.Lookup(Identifier.FullyQualified([ "Option" ], "Some")), TypeExpr.Primitive PrimitiveType.Int32)
-
-  let actual = runTypeCheck program
-
-  match actual with
-  | Left((program, _typeValue, _, _), _state) ->
-    let actual = eval program
-
-    let expected: Value<TypeValue<ValueExt>, ValueExt> =
-      (Choice2Of6(OptionConstructors Option_Some) |> ValueExt, None) |> Ext
-
-    match actual with
-    | Sum.Left actual -> Assert.That(actual, Is.EqualTo(expected))
-    | Sum.Right err -> Assert.Fail $"Evaluation failed: {err}"
-
-  | Right(e, _) -> Assert.Fail($"Type checking failed: {e.AsFSharpString}")
-
 
 
 [<Test>]
