@@ -145,39 +145,45 @@ module Eval =
                 t_id
               ),
               Kind.Star
-          | TypeExpr.RelationLookupOne(s, t', f_id) ->
+          | TypeExpr.RelationLookupOne(s, t', t_id, f_id) ->
             let! s, s_k = !s
             do! s_k |> Kind.AsSchema |> ofSum |> state.Ignore
             let! t', t'_k = !t'
             do! t'_k |> Kind.AsStar |> ofSum |> state.Ignore
             let! f_id, f_id_k = !f_id
             do! f_id_k |> Kind.AsStar |> ofSum |> state.Ignore
+            let! t_id, t_id_k = !t_id
+            do! t_id_k |> Kind.AsStar |> ofSum |> state.Ignore
 
             let! a_schema = s |> TypeValue.AsSchema |> ofSum
 
-            return TypeValue.CreateRelationLookupOne(a_schema, t', f_id), Kind.Star
-          | TypeExpr.RelationLookupOption(s, t', f_id) ->
+            return TypeValue.CreateRelationLookupOne(a_schema, t', f_id, t_id), Kind.Star
+          | TypeExpr.RelationLookupOption(s, t', t_id, f_id) ->
             let! s, s_k = !s
             do! s_k |> Kind.AsSchema |> ofSum |> state.Ignore
             let! t', t'_k = !t'
             do! t'_k |> Kind.AsStar |> ofSum |> state.Ignore
             let! f_id, f_id_k = !f_id
             do! f_id_k |> Kind.AsStar |> ofSum |> state.Ignore
+            let! t_id, t_id_k = !t_id
+            do! t_id_k |> Kind.AsStar |> ofSum |> state.Ignore
 
             let! a_schema = s |> TypeValue.AsSchema |> ofSum
 
-            return TypeValue.CreateRelationLookupOption(a_schema, t', f_id), Kind.Star
-          | TypeExpr.RelationLookupMany(s, t', f_id) ->
+            return TypeValue.CreateRelationLookupOption(a_schema, t', f_id, t_id), Kind.Star
+          | TypeExpr.RelationLookupMany(s, t', t_id, f_id) ->
             let! s, s_k = !s
             do! s_k |> Kind.AsSchema |> ofSum |> state.Ignore
             let! t', t'_k = !t'
             do! t'_k |> Kind.AsStar |> ofSum |> state.Ignore
             let! f_id, f_id_k = !f_id
             do! f_id_k |> Kind.AsStar |> ofSum |> state.Ignore
+            let! t_id, t_id_k = !t_id
+            do! t_id_k |> Kind.AsStar |> ofSum |> state.Ignore
 
             let! a_schema = s |> TypeValue.AsSchema |> ofSum
 
-            return TypeValue.CreateRelationLookupMany(a_schema, t', f_id), Kind.Star
+            return TypeValue.CreateRelationLookupMany(a_schema, t', f_id, t_id), Kind.Star
           | TypeExpr.Schema parsed_schema ->
             let repeatedEntityNames =
               parsed_schema.Entities
@@ -1268,16 +1274,23 @@ module Eval =
                             TypeExpr.Lambda(
                               TypeParameter.Create("f_id", Kind.Star),
                               TypeExpr.Lambda(
-                                TypeParameter.Create("t_with_props", Kind.Star),
-                                TypeExpr.RelationLookupOne(
-                                  TypeExpr.Lookup(Identifier.LocalScope "s"),
-                                  TypeExpr.Lookup(Identifier.LocalScope "f_id"),
-                                  TypeExpr.Lookup(Identifier.LocalScope "t_with_props")
+                                TypeParameter.Create("t_id", Kind.Star),
+                                TypeExpr.Lambda(
+                                  TypeParameter.Create("t_with_props", Kind.Star),
+                                  TypeExpr.RelationLookupOne(
+                                    TypeExpr.Lookup(Identifier.LocalScope "s"),
+                                    TypeExpr.Lookup(Identifier.LocalScope "f_id"),
+                                    TypeExpr.Lookup(Identifier.LocalScope "t_id"),
+                                    TypeExpr.Lookup(Identifier.LocalScope "t_with_props")
+                                  )
                                 )
                               )
                             )
                           ),
-                          Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
+                          Kind.Arrow(
+                            Kind.Schema,
+                            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
+                          )
                       | Identifier.LocalScope "SchemaLookupOption" ->
                         return
                           TypeValue.CreateLambda(
@@ -1285,16 +1298,23 @@ module Eval =
                             TypeExpr.Lambda(
                               TypeParameter.Create("f_id", Kind.Star),
                               TypeExpr.Lambda(
-                                TypeParameter.Create("t_with_props", Kind.Star),
-                                TypeExpr.RelationLookupOption(
-                                  TypeExpr.Lookup(Identifier.LocalScope "s"),
-                                  TypeExpr.Lookup(Identifier.LocalScope "f_id"),
-                                  TypeExpr.Lookup(Identifier.LocalScope "t_with_props")
+                                TypeParameter.Create("t_id", Kind.Star),
+                                TypeExpr.Lambda(
+                                  TypeParameter.Create("t_with_props", Kind.Star),
+                                  TypeExpr.RelationLookupOption(
+                                    TypeExpr.Lookup(Identifier.LocalScope "s"),
+                                    TypeExpr.Lookup(Identifier.LocalScope "f_id"),
+                                    TypeExpr.Lookup(Identifier.LocalScope "t_id"),
+                                    TypeExpr.Lookup(Identifier.LocalScope "t_with_props")
+                                  )
                                 )
                               )
                             )
                           ),
-                          Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
+                          Kind.Arrow(
+                            Kind.Schema,
+                            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
+                          )
                       | Identifier.LocalScope "SchemaLookupMany" ->
                         return
                           TypeValue.CreateLambda(
@@ -1302,16 +1322,23 @@ module Eval =
                             TypeExpr.Lambda(
                               TypeParameter.Create("f_id", Kind.Star),
                               TypeExpr.Lambda(
-                                TypeParameter.Create("t_with_props", Kind.Star),
-                                TypeExpr.RelationLookupMany(
-                                  TypeExpr.Lookup(Identifier.LocalScope "s"),
-                                  TypeExpr.Lookup(Identifier.LocalScope "f_id"),
-                                  TypeExpr.Lookup(Identifier.LocalScope "t_with_props")
+                                TypeParameter.Create("t_id", Kind.Star),
+                                TypeExpr.Lambda(
+                                  TypeParameter.Create("t_with_props", Kind.Star),
+                                  TypeExpr.RelationLookupMany(
+                                    TypeExpr.Lookup(Identifier.LocalScope "s"),
+                                    TypeExpr.Lookup(Identifier.LocalScope "f_id"),
+                                    TypeExpr.Lookup(Identifier.LocalScope "t_id"),
+                                    TypeExpr.Lookup(Identifier.LocalScope "t_with_props")
+                                  )
                                 )
                               )
                             )
                           ),
-                          Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
+                          Kind.Arrow(
+                            Kind.Schema,
+                            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
+                          )
                       | _ ->
                         let! c = state.GetContext()
 

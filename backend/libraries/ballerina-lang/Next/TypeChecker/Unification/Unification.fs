@@ -50,22 +50,25 @@ module Unification =
           let! tVars = TypeExpr.FreeVariables t
           let! tWithPropsVars = TypeExpr.FreeVariables t_with_props
           let! tIdVars = TypeExpr.FreeVariables t_id
-          return Set.unionMany [ sVars; fVars; fWithPropsVars; fIdVars; tVars; tWithPropsVars; tIdVars ]
-        | TypeExpr.RelationLookupOne(s, t', f_id) ->
+          return Set.unionMany [ sVars; fVars; fWithPropsVars; tVars; tWithPropsVars; fIdVars; tIdVars ]
+        | TypeExpr.RelationLookupOne(s, t', f_id, t_id) ->
           let! sVars = TypeExpr.FreeVariables s
           let! tVars = TypeExpr.FreeVariables t'
           let! fIdVars = TypeExpr.FreeVariables f_id
-          return Set.unionMany [ sVars; tVars; fIdVars ]
-        | TypeExpr.RelationLookupOption(s, t', f_id) ->
+          let! tIdVars = TypeExpr.FreeVariables t_id
+          return Set.unionMany [ sVars; tVars; fIdVars; tIdVars ]
+        | TypeExpr.RelationLookupOption(s, t', f_id, t_id) ->
           let! sVars = TypeExpr.FreeVariables s
           let! tVars = TypeExpr.FreeVariables t'
           let! fIdVars = TypeExpr.FreeVariables f_id
-          return Set.unionMany [ sVars; tVars; fIdVars ]
-        | TypeExpr.RelationLookupMany(s, t', f_id) ->
+          let! tIdVars = TypeExpr.FreeVariables t_id
+          return Set.unionMany [ sVars; tVars; fIdVars; tIdVars ]
+        | TypeExpr.RelationLookupMany(s, t', f_id, t_id) ->
           let! sVars = TypeExpr.FreeVariables s
           let! tVars = TypeExpr.FreeVariables t'
           let! fIdVars = TypeExpr.FreeVariables f_id
-          return Set.unionMany [ sVars; tVars; fIdVars ]
+          let! tIdVars = TypeExpr.FreeVariables t_id
+          return Set.unionMany [ sVars; tVars; fIdVars; tIdVars ]
         | TypeExpr.Schema s ->
           return!
             s.Entities
@@ -178,13 +181,14 @@ module Unification =
           return Set.unionMany [ sVars; tVars; tWithPropsVars; idVars ]
         | TypeValue.Entities s -> return! schema_free_vars s
         | TypeValue.Relations s -> return! schema_free_vars s
-        | TypeValue.RelationLookupOption(s, e, id)
-        | TypeValue.RelationLookupOne(s, e, id)
-        | TypeValue.RelationLookupMany(s, e, id) ->
+        | TypeValue.RelationLookupOption(s, e, id, t_id)
+        | TypeValue.RelationLookupOne(s, e, id, t_id)
+        | TypeValue.RelationLookupMany(s, e, id, t_id) ->
           let! sVars = schema_free_vars s
           let! eVars = TypeValue.FreeVariables e
           let! idVars = TypeValue.FreeVariables id
-          return Set.unionMany [ sVars; eVars; idVars ]
+          let! tIdVars = TypeValue.FreeVariables t_id
+          return Set.unionMany [ sVars; eVars; idVars; tIdVars ]
         | TypeValue.Relation _
         | TypeValue.ForeignKeyRelation _ -> return Set.empty
         | TypeValue.Var v ->
@@ -568,18 +572,21 @@ module Unification =
           do! t1 == t2
           do! t1with_props == t2with_props
           do! tid1 == tid2
-        | TypeValue.RelationLookupOption(s1, e1, id1), TypeValue.RelationLookupOption(s2, e2, id2) ->
+        | TypeValue.RelationLookupOption(s1, e1, id1, tId1), TypeValue.RelationLookupOption(s2, e2, id2, tId2) ->
           do! unifySchemas s1 s2
           do! e1 == e2
           do! id1 == id2
-        | TypeValue.RelationLookupOne(s1, e1, id1), TypeValue.RelationLookupOne(s2, e2, id2) ->
+          do! tId1 == tId2
+        | TypeValue.RelationLookupOne(s1, e1, id1, tId1), TypeValue.RelationLookupOne(s2, e2, id2, tId2) ->
           do! unifySchemas s1 s2
           do! e1 == e2
           do! id1 == id2
-        | TypeValue.RelationLookupMany(s1, e1, id1), TypeValue.RelationLookupMany(s2, e2, id2) ->
+          do! tId1 == tId2
+        | TypeValue.RelationLookupMany(s1, e1, id1, tId1), TypeValue.RelationLookupMany(s2, e2, id2, tId2) ->
           do! unifySchemas s1 s2
           do! e1 == e2
           do! id1 == id2
+          do! tId1 == tId2
         | _ -> return! (fun () -> $"Cannot unify types: {left} and {right}") |> error |> state.Throw
       }
 
@@ -736,23 +743,26 @@ module Unification =
                 toTypeWithProps,
                 toId
               )
-          | TypeValue.RelationLookupOption(schema, elementType, elementId) ->
+          | TypeValue.RelationLookupOption(schema, elementType, elementId, t_id) ->
             let! schema = instantiateSchema schema
 
             let! elementType = TypeValue.Instantiate () typeEval loc0 elementType
             let! elementId = TypeValue.Instantiate () typeEval loc0 elementId
+            let! tId = TypeValue.Instantiate () typeEval loc0 t_id
 
-            return TypeValue.RelationLookupOption(schema, elementType, elementId)
-          | TypeValue.RelationLookupOne(schema, elementType, elementId) ->
+            return TypeValue.RelationLookupOption(schema, elementType, elementId, tId)
+          | TypeValue.RelationLookupOne(schema, elementType, elementId, t_id) ->
             let! schema = instantiateSchema schema
             let! elementType = TypeValue.Instantiate () typeEval loc0 elementType
             let! elementId = TypeValue.Instantiate () typeEval loc0 elementId
-            return TypeValue.RelationLookupOne(schema, elementType, elementId)
-          | TypeValue.RelationLookupMany(schema, elementType, elementId) ->
+            let! tId = TypeValue.Instantiate () typeEval loc0 t_id
+            return TypeValue.RelationLookupOne(schema, elementType, elementId, tId)
+          | TypeValue.RelationLookupMany(schema, elementType, elementId, t_id) ->
             let! schema = instantiateSchema schema
             let! elementType = TypeValue.Instantiate () typeEval loc0 elementType
             let! elementId = TypeValue.Instantiate () typeEval loc0 elementId
-            return TypeValue.RelationLookupMany(schema, elementType, elementId)
+            let! tId = TypeValue.Instantiate () typeEval loc0 t_id
+            return TypeValue.RelationLookupMany(schema, elementType, elementId, tId)
           | TypeValue.Imported({ Arguments = arguments } as t) ->
             // do Console.WriteLine $"Instantiating imported type {t}"
             // do Console.WriteLine $"Arguments: {arguments |> Seq.map (fun a -> a.ToFSharpString) |> Seq.toList}"

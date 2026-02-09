@@ -146,8 +146,8 @@ module Lexer =
       | Pipe -> "|"
       | Semicolon -> ";"
       | Arrow -> "->"
-      | Choice1 -> "1of2"
-      | Choice2 -> "2of2"
+      | Choice1 -> "1Of2"
+      | Choice2 -> "2Of2"
       | Dot -> "."
 
   type Token =
@@ -262,7 +262,7 @@ module Lexer =
 
       do!
         tokenizer.Lookahead(
-          tokenizer.Exactly((fun c -> c |> Char.IsLetter || c = '_') >> not)
+          tokenizer.Exactly((fun c -> c |> Char.IsLetterOrDigit || c = '_') >> not)
           |> tokenizer.Ignore
         )
 
