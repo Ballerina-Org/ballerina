@@ -87,7 +87,7 @@ module Lookups =
                 |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Target ID not found"))
                 |> reader.OfSum
 
-              return target_v
+              return Value.Tuple [ target_id; target_v ]
             })
           |> reader.All
       }
@@ -102,23 +102,30 @@ module Lookups =
         TypeExpr.Lambda(
           TypeParameter.Create("from_id", Kind.Star),
           TypeExpr.Lambda(
-            TypeParameter.Create("to_with_props", Kind.Star),
-            TypeExpr.Arrow(
-              TypeExpr.Apply(
+            TypeParameter.Create("to_id", Kind.Star),
+            TypeExpr.Lambda(
+              TypeParameter.Create("to_with_props", Kind.Star),
+              TypeExpr.Arrow(
                 TypeExpr.Apply(
                   TypeExpr.Apply(
-                    TypeExpr.Lookup("SchemaLookupOne" |> Identifier.LocalScope),
-                    TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+                    TypeExpr.Apply(
+                      TypeExpr.Apply(
+                        TypeExpr.Lookup("SchemaLookupOne" |> Identifier.LocalScope),
+                        TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+                      ),
+                      TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                    ),
+                    TypeExpr.Lookup("to_id" |> Identifier.LocalScope)
                   ),
-                  TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                  TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
                 ),
-                TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
-              ),
-              TypeExpr.Arrow(
-                TypeExpr.Lookup("from_id" |> Identifier.LocalScope),
-                TypeExpr.Sum
-                  [ TypeExpr.Primitive PrimitiveType.Unit
-                    TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope) ]
+                TypeExpr.Arrow(
+                  TypeExpr.Lookup("from_id" |> Identifier.LocalScope),
+                  TypeExpr.Sum
+                    [ TypeExpr.Primitive PrimitiveType.Unit
+                      TypeExpr.Tuple[TypeExpr.Lookup("to_id" |> Identifier.LocalScope)
+                                     TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)] ]
+                )
               )
             )
           )
@@ -126,7 +133,7 @@ module Lookups =
       )
 
     let memoryDBLookupOneKind =
-      Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
+      Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))))
 
 
     let LookupOneOperation: OperationExtension<_, _> =
@@ -192,25 +199,32 @@ module Lookups =
         TypeExpr.Lambda(
           TypeParameter.Create("from_id", Kind.Star),
           TypeExpr.Lambda(
-            TypeParameter.Create("to_with_props", Kind.Star),
-            TypeExpr.Arrow(
-              TypeExpr.Apply(
+            TypeParameter.Create("to_id", Kind.Star),
+            TypeExpr.Lambda(
+              TypeParameter.Create("to_with_props", Kind.Star),
+              TypeExpr.Arrow(
                 TypeExpr.Apply(
                   TypeExpr.Apply(
-                    TypeExpr.Lookup("SchemaLookupOption" |> Identifier.LocalScope),
-                    TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+                    TypeExpr.Apply(
+                      TypeExpr.Apply(
+                        TypeExpr.Lookup("SchemaLookupOption" |> Identifier.LocalScope),
+                        TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+                      ),
+                      TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                    ),
+                    TypeExpr.Lookup("to_id" |> Identifier.LocalScope)
                   ),
-                  TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                  TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
                 ),
-                TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
-              ),
-              TypeExpr.Arrow(
-                TypeExpr.Lookup("from_id" |> Identifier.LocalScope),
-                TypeExpr.Sum
-                  [ TypeExpr.Primitive PrimitiveType.Unit
-                    TypeExpr.Sum
-                      [ TypeExpr.Primitive PrimitiveType.Unit
-                        TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope) ] ]
+                TypeExpr.Arrow(
+                  TypeExpr.Lookup("from_id" |> Identifier.LocalScope),
+                  TypeExpr.Sum
+                    [ TypeExpr.Primitive PrimitiveType.Unit
+                      TypeExpr.Sum
+                        [ TypeExpr.Primitive PrimitiveType.Unit
+                          TypeExpr.Tuple[TypeExpr.Lookup("to_id" |> Identifier.LocalScope)
+                                         TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)] ] ]
+                )
               )
             )
           )
@@ -218,7 +232,7 @@ module Lookups =
       )
 
     let memoryDBLookupOptionKind =
-      Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
+      Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))))
 
     let LookupOptionOperation: OperationExtension<_, _> =
       { PublicIdentifiers =
@@ -288,30 +302,37 @@ module Lookups =
         TypeExpr.Lambda(
           TypeParameter.Create("from_id", Kind.Star),
           TypeExpr.Lambda(
-            TypeParameter.Create("to_with_props", Kind.Star),
-            TypeExpr.Arrow(
-              TypeExpr.Apply(
+            TypeParameter.Create("to_id", Kind.Star),
+            TypeExpr.Lambda(
+              TypeParameter.Create("to_with_props", Kind.Star),
+              TypeExpr.Arrow(
                 TypeExpr.Apply(
                   TypeExpr.Apply(
-                    TypeExpr.Lookup("SchemaLookupMany" |> Identifier.LocalScope),
-                    TypeExpr.Lookup("schema" |> Identifier.LocalScope)
-                  ),
-                  TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
-                ),
-                TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
-              ),
-              TypeExpr.Arrow(
-                TypeExpr.Lookup("from_id" |> Identifier.LocalScope),
-                TypeExpr.Arrow(
-                  TypeExpr.Tuple
-                    [ TypeExpr.Primitive PrimitiveType.Int32
-                      TypeExpr.Primitive PrimitiveType.Int32 ],
-                  TypeExpr.Sum
-                    [ TypeExpr.Primitive PrimitiveType.Unit
+                    TypeExpr.Apply(
                       TypeExpr.Apply(
-                        TypeExpr.Lookup("List" |> Identifier.LocalScope),
-                        TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
-                      ) ]
+                        TypeExpr.Lookup("SchemaLookupMany" |> Identifier.LocalScope),
+                        TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+                      ),
+                      TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                    ),
+                    TypeExpr.Lookup("to_id" |> Identifier.LocalScope)
+                  ),
+                  TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
+                ),
+                TypeExpr.Arrow(
+                  TypeExpr.Lookup("from_id" |> Identifier.LocalScope),
+                  TypeExpr.Arrow(
+                    TypeExpr.Tuple
+                      [ TypeExpr.Primitive PrimitiveType.Int32
+                        TypeExpr.Primitive PrimitiveType.Int32 ],
+                    TypeExpr.Sum
+                      [ TypeExpr.Primitive PrimitiveType.Unit
+                        TypeExpr.Apply(
+                          TypeExpr.Lookup("List" |> Identifier.LocalScope),
+                          TypeExpr.Tuple[TypeExpr.Lookup("to_id" |> Identifier.LocalScope)
+                                         TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)]
+                        ) ]
+                  )
                 )
               )
             )
@@ -320,7 +341,7 @@ module Lookups =
       )
 
     let memoryDBLookupManyKind =
-      Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
+      Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))))
 
     let LookupManyOperation: OperationExtension<_, _> =
       { PublicIdentifiers =
