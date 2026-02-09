@@ -39,17 +39,17 @@ tuple(rid) (rexp1, rexp2, ..., rexpn) => Tuple<T1, T2, ..., Tn>
 rexp1 => unit
 rexp2 => T2
 --------------------------------------------------------------
-option(rid) with | 1of2 -> rexp1 | 2of2 => rexp2 => Option<T2>
+option(rid) with | 1Of2 -> rexp1 | 2Of2 => rexp2 => Option<T2>
 
 rexp1 => T1
 rexp2 => unit
 --------------------------------------------------------------
-option(rid) with | 1of2 -> rexp1 | 2of2 => rexp2 => Option<T1>
+option(rid) with | 1Of2 -> rexp1 | 2Of2 => rexp2 => Option<T1>
 
 rexp1 => T1
 rexp2 => T2
 --------------------------------------------------------------
-sum(rid) with | 1of2 -> rexp1 | 2of2 -> rexp2 => Sum<T1, T2>
+sum(rid) with | 1Of2 -> rexp1 | 2Of2 -> rexp2 => Sum<T1, T2>
 
 
 rexp => T

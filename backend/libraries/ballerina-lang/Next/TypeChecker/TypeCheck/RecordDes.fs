@@ -227,11 +227,11 @@ module RecordDes =
                             |> state.Throw
                       }
 
-                    let source_id, target', target_cardinality =
+                    let source_id, target', target_id, target_cardinality =
                       if flipped then
-                        to_id, from', cardinality.From
+                        to_id, from', from_id, cardinality.From
                       else
-                        from_id, to', cardinality.To
+                        from_id, to', to_id, cardinality.To
 
                     let result =
                       Expr.RelationLookupDes(
@@ -247,11 +247,14 @@ module RecordDes =
 
                     match target_cardinality with
                     | Cardinality.Zero ->
-                      return result, TypeValue.RelationLookupOption(schema_t, source_id, target'), Kind.Star, ctx
+                      return
+                        result, TypeValue.RelationLookupOption(schema_t, source_id, target', target_id), Kind.Star, ctx
                     | Cardinality.One ->
-                      return result, TypeValue.RelationLookupOne(schema_t, source_id, target'), Kind.Star, ctx
+                      return
+                        result, TypeValue.RelationLookupOne(schema_t, source_id, target', target_id), Kind.Star, ctx
                     | Cardinality.Many ->
-                      return result, TypeValue.RelationLookupMany(schema_t, source_id, target'), Kind.Star, ctx
+                      return
+                        result, TypeValue.RelationLookupMany(schema_t, source_id, target', target_id), Kind.Star, ctx
                   }
                   |> state.MapError(Errors<_>.MapPriority(replaceWith ErrorPriority.High))
               })
