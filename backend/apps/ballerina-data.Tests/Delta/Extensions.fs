@@ -4,7 +4,6 @@ open NUnit.Framework
 open Ballerina.DSL.Next.Terms.Model
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.Data.Delta.Model
-open Ballerina.Data.Delta.Extensions
 open Ballerina.Data.Delta
 open Ballerina
 open Ballerina.Collections.Sum
@@ -15,14 +14,14 @@ open Ballerina.DSL.Next.StdLib.List.Model
 let ``Delta extensions, list update string element at`` () =
 
   let str v =
-    Value<TypeValue<ValueExt>, ValueExt>.Primitive(PrimitiveValue.String v)
+    Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>.Primitive(PrimitiveValue.String v)
 
   let list =
-    (ValueExt(Choice1Of6(ListExt.ListValues(List [ str "a"; str "b"; str "c" ]))), None)
-    |> Value<TypeValue<ValueExt>, ValueExt>.Ext
+    (ValueExt(Choice1Of7(ListExt.ListValues(List [ str "a"; str "b"; str "c" ]))), None)
+    |> Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>.Ext
 
   let delta =
-    Delta.Ext(DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.UpdateElement(1, str "-"))))
+    Delta.Ext(DeltaExt.DeltaExtension(Choice1Of3(ListDeltaExt.UpdateElement(1, str "-"))))
 
   match Delta.ToUpdater DeltaExt.ToUpdater delta with
   | Sum.Left updater ->
@@ -32,8 +31,8 @@ let ``Delta extensions, list update string element at`` () =
       Assert.That(
         result,
         Is.EqualTo(
-          (ValueExt(Choice1Of6(ListExt.ListValues(List [ str "a"; str "-"; str "c" ]))), None)
-          |> Value<TypeValue<ValueExt>, ValueExt>.Ext
+          (ValueExt(Choice1Of7(ListExt.ListValues(List [ str "a"; str "-"; str "c" ]))), None)
+          |> Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>.Ext
         )
       )
     | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"
@@ -42,17 +41,17 @@ let ``Delta extensions, list update string element at`` () =
 [<Test>]
 let ``Delta extensions, list update complex value at`` () =
   let str v =
-    Value<TypeValue<ValueExt>, ValueExt>.Primitive(PrimitiveValue.String v)
+    Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>.Primitive(PrimitiveValue.String v)
 
   let sum i length =
-    Value<TypeValue<ValueExt>, ValueExt>.Sum({ Case = i; Count = length }, str $"{i}/{length}")
+    Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>.Sum({ Case = i; Count = length }, str $"{i}/{length}")
 
   let list =
-    (ValueExt(Choice1Of6(ListExt.ListValues(List [ sum 0 3; sum 1 3; sum 2 3 ]))), None)
-    |> Value<TypeValue<ValueExt>, ValueExt>.Ext
+    (ValueExt(Choice1Of7(ListExt.ListValues(List [ sum 0 3; sum 1 3; sum 2 3 ]))), None)
+    |> Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>.Ext
 
   let delta =
-    Delta.Ext(DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.UpdateElement(1, sum 4 4))))
+    Delta.Ext(DeltaExt.DeltaExtension(Choice1Of3(ListDeltaExt.UpdateElement(1, sum 4 4))))
 
   match Delta.ToUpdater DeltaExt.ToUpdater delta with
   | Sum.Left updater ->
@@ -62,8 +61,8 @@ let ``Delta extensions, list update complex value at`` () =
       Assert.That(
         result,
         Is.EqualTo(
-          (ValueExt(Choice1Of6(ListExt.ListValues(List [ sum 0 3; sum 4 4; sum 2 3 ]))), None)
-          |> Value<TypeValue<ValueExt>, ValueExt>.Ext
+          (ValueExt(Choice1Of7(ListExt.ListValues(List [ sum 0 3; sum 4 4; sum 2 3 ]))), None)
+          |> Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>.Ext
         )
       )
     | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"
@@ -73,14 +72,14 @@ let ``Delta extensions, list update complex value at`` () =
 let ``Delta extensions, list append element`` () =
 
   let str v =
-    Value<TypeValue<ValueExt>, ValueExt>.Primitive(PrimitiveValue.String v)
+    Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>.Primitive(PrimitiveValue.String v)
 
   let list =
-    (ValueExt(Choice1Of6(ListExt.ListValues(List [ str "a"; str "b"; str "c" ]))), None)
-    |> Value<TypeValue<ValueExt>, ValueExt>.Ext
+    (ValueExt(Choice1Of7(ListExt.ListValues(List [ str "a"; str "b"; str "c" ]))), None)
+    |> Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>.Ext
 
   let delta =
-    Delta.Ext(DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.AppendElement(str "d"))))
+    Delta.Ext(DeltaExt.DeltaExtension(Choice1Of3(ListDeltaExt.AppendElement(str "d"))))
 
   match Delta.ToUpdater DeltaExt.ToUpdater delta with
   | Sum.Left updater ->
@@ -90,8 +89,8 @@ let ``Delta extensions, list append element`` () =
       Assert.That(
         result,
         Is.EqualTo(
-          (ValueExt(Choice1Of6(ListExt.ListValues(List [ str "a"; str "b"; str "c"; str "d" ]))), None)
-          |> Value<TypeValue<ValueExt>, ValueExt>.Ext
+          (ValueExt(Choice1Of7(ListExt.ListValues(List [ str "a"; str "b"; str "c"; str "d" ]))), None)
+          |> Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>.Ext
         )
       )
     | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"
@@ -101,13 +100,14 @@ let ``Delta extensions, list append element`` () =
 let ``Delta extensions, list remove element`` () =
 
   let str v =
-    Value<TypeValue<ValueExt>, ValueExt>.Primitive(PrimitiveValue.String v)
+    Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>.Primitive(PrimitiveValue.String v)
 
   let list =
-    (ValueExt(Choice1Of6(ListExt.ListValues(List [ str "a"; str "b"; str "c" ]))), None)
-    |> Value<TypeValue<ValueExt>, ValueExt>.Ext
+    (ValueExt(Choice1Of7(ListExt.ListValues(List [ str "a"; str "b"; str "c" ]))), None)
+    |> Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>.Ext
 
-  let delta = Delta.Ext(DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.RemoveElement(1))))
+  let delta =
+    Delta.Ext(DeltaExt.DeltaExtension(Choice1Of3(ListDeltaExt.RemoveElement(1))))
 
   match Delta.ToUpdater DeltaExt.ToUpdater delta with
   | Sum.Left updater ->
@@ -117,8 +117,8 @@ let ``Delta extensions, list remove element`` () =
       Assert.That(
         result,
         Is.EqualTo(
-          (ValueExt(Choice1Of6(ListExt.ListValues(List [ str "a"; str "c" ]))), None)
-          |> Value<TypeValue<ValueExt>, ValueExt>.Ext
+          (ValueExt(Choice1Of7(ListExt.ListValues(List [ str "a"; str "c" ]))), None)
+          |> Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>.Ext
         )
       )
     | Sum.Right err -> Assert.Fail $"Unexpected error: {err}"

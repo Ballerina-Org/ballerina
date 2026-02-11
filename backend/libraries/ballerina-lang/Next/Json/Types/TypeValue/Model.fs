@@ -35,7 +35,6 @@ module TypeValue =
           parse TypeValue.FromJsonUnion TypeValue.Union json
           parse TypeValue.FromJsonSum TypeValue.Sum json
           parse TypeValue.FromJsonSet TypeValue.Set json
-          parse TypeValue.FromJsonMap TypeValue.Map json
           TypeValue.FromJsonImported TypeValue.FromJson json
           (fun () -> $"Unknown TypeValue JSON: {json.AsFSharpString.ReasonablyClamped}")
           |> Errors.Singleton()
@@ -64,7 +63,6 @@ module TypeValue =
       | TypeValue.Union mapping -> serialize TypeValue.ToJsonUnion mapping
       | TypeValue.Sum mapping -> serialize TypeValue.ToJsonSum mapping
       | TypeValue.Set mapping -> serialize TypeValue.ToJsonSet mapping
-      | TypeValue.Map mapping -> serialize TypeValue.ToJsonMap mapping
       | TypeValue.Imported i -> TypeValue.ToJsonImported TypeValue.ToJson i
       | TypeValue.Schema _ -> failwith "Schema ToJson not implemented"
       | TypeValue.Entity _ -> failwith "Schema Entity ToJson not implemented"

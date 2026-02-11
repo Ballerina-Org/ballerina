@@ -40,7 +40,7 @@ let private rootExprEncoder =
   Expr.ToJson >> Reader.Run(TypeValue.ToJson, ResolvedIdentifier.ToJson)
 
 let valueEncoderRoot =
-  Json.buildRootEncoder<TypeValue<ValueExt>, ValueExt> (
+  Json.buildRootEncoder<TypeValue<ValueExt<unit>>, ValueExt<unit>> (
     NonEmptyList.OfList(Value.ToJson, [ List.Json.Extension.encoder ListExt.ValueLens ])
   )
 
@@ -216,11 +216,11 @@ let ``Seeds: List extension`` () =
         let field = companyRec |> Map.find fieldKey
 
         let! ext, _ = field |> Value.AsExt
-        let choice = ValueExt.Getters.ValueExt ext
+        let (ValueExt choice) = ext
 
         let! listValues =
           match choice with
-          | Choice1Of6(ListExt.ListValues v) -> sum.Return v
+          | Choice1Of7(ListExt.ListValues v) -> sum.Return v
           | _ -> sum.Throw(Errors<Unit>.Singleton () (fun () -> "Expected List, got other ext"))
 
         let (List.Model.ListValues.List values) = listValues
@@ -248,8 +248,8 @@ let analyze (data: Map<Guid, Set<Guid>>) =
 let insert
   (ctx: SeedingContext)
   : Sum<
-      Value<TypeValue<ValueExt>, ValueExt> * Option<TypeCheckState<ValueExt>>,
-      Errors<_> * Option<TypeCheckState<ValueExt>>
+      Value<TypeValue<ValueExt<unit>>, ValueExt<unit>> * Option<TypeCheckState<ValueExt<unit>>>,
+      Errors<_> * Option<TypeCheckState<ValueExt<unit>>>
      >
   =
   let json = SampleData.Specs.PersonGenders |> JsonValue.Parse
@@ -300,8 +300,12 @@ let insert
   |> State.Run(languageContext.TypeCheckContext, languageContext.TypeCheckState)
 
 let private tryExtractGender
-  (value: Value<TypeValue<ValueExt>, ValueExt>)
-  : Sum<option<ResolvedIdentifier> * Map<ResolvedIdentifier, Value<TypeValue<ValueExt>, ValueExt>>, Errors<_>> =
+  (value: Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>)
+  : Sum<
+      option<ResolvedIdentifier> * Map<ResolvedIdentifier, Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>>,
+      Errors<_>
+     >
+  =
   sum {
     let! record =
       Value.AsRecord value

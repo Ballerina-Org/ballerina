@@ -489,7 +489,7 @@ module PocoObjects =
       UnionCase: UnionCaseDTO<'valueExt> | null
       RecordDes: ResolvedIdentifierDTO | null
       UnionCons: ResolvedIdentifierDTO | null
-      Tuple: ValueDTO<'valueExt>[]
+      Tuple: ValueDTO<'valueExt>[] | null
       Sum: SumDTO<'valueExt> | null
       Primitive: PrimitiveValueDTO | null
       Var: Var | null

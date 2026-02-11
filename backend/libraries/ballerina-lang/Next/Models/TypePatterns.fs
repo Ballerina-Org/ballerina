@@ -220,13 +220,6 @@ module Patterns =
           typeExprSource = NoSourceMapping "Set"
           typeCheckScopeSource = TypeCheckScope.Empty }
 
-    static member CreateMap(v: TypeValue<'valueExt> * TypeValue<'valueExt>) : TypeValue<'valueExt> =
-      TypeValue.Map
-        { value = v
-          typeExprSource = NoSourceMapping "Map"
-          typeCheckScopeSource = TypeCheckScope.Empty }
-
-
     static member CreateSchema(v: Schema<'valueExt>) : TypeValue<'valueExt> = TypeValue.Schema v
 
     static member CreateEntities(s: Schema<'valueExt>) : TypeValue<'valueExt> = TypeValue.Entities s
@@ -445,17 +438,6 @@ module Patterns =
             |> sum.Throw
       }
 
-    static member AsMap(t: TypeValue<'valueExt>) =
-      sum {
-        match t with
-        | TypeValue.Map v -> return v
-        | _ ->
-          return!
-            (fun () -> $"Error: expected map type (ie generic), got {t})")
-            |> Errors.Singleton()
-            |> sum.Throw
-      }
-
     static member AsSet(t: TypeValue<'valueExt>) =
       sum {
         match t with
@@ -558,7 +540,6 @@ module Patterns =
       | TypeValue.Union v -> TypeValue.CreateUnion v.value
       | TypeValue.Sum v -> TypeValue.CreateSum v.value
       | TypeValue.Set v -> TypeValue.CreateSet v.value
-      | TypeValue.Map v -> TypeValue.CreateMap v.value
       | TypeValue.Schema v -> TypeValue.CreateSchema v
       | TypeValue.Entities v -> TypeValue.CreateEntities v
       | TypeValue.Relations v -> TypeValue.CreateRelations v
@@ -586,7 +567,6 @@ module Patterns =
       | TypeValue.Union v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Union
       | TypeValue.Sum v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Sum
       | TypeValue.Set v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Set
-      | TypeValue.Map v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Map
       | TypeValue.Schema _
       | TypeValue.Entities _
       | TypeValue.Relations _
@@ -667,10 +647,6 @@ module Patterns =
         | TypeExpr.Sum(fields) ->
           let! variants = fields |> List.map (!) |> sum.All
           return TypeValue.CreateSum variants
-        | TypeExpr.Map(key, value) ->
-          let! key = !key
-          let! value = !value
-          return TypeValue.CreateMap(key, value)
         | TypeExpr.Set(element) ->
           let! element = !element
           return TypeValue.CreateSet element
@@ -744,17 +720,6 @@ module Patterns =
         | _ ->
           return!
             (fun () -> $"Error: expected arrow type, got {t}")
-            |> Errors.Singleton()
-            |> sum.Throw
-      }
-
-    static member AsMap(t: TypeExpr<'valueExt>) =
-      sum {
-        match t with
-        | TypeExpr.Map(key, value) -> return (key, value)
-        | _ ->
-          return!
-            (fun () -> $"Error: expected map type, got {t}")
             |> Errors.Singleton()
             |> sum.Throw
       }

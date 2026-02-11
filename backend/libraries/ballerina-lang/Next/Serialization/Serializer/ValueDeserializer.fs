@@ -13,15 +13,13 @@ module ValueDeserializer =
   let nullableToOption (value: 'T | null) : Option<'T> =
     if isNull value then None else Some value
 
-  let assertValue (value: 'T | null) : Reader<'T, SerializationContext<'valueExt, 'valueExtDTO>, Errors<unit>> =
+  let assertValue (value: 'T | null) : Reader<'T, 'context, Errors<unit>> =
     if isNull value then
       reader.Throw(Errors.Singleton () (fun _ -> "Expected non nullable value"))
     else
       reader.Return value
 
-  let assertNonNullable
-    (nullable: Nullable<'T>)
-    : Reader<Nullable<'T>, SerializationContext<'valueExt, 'valueExtDTO>, Errors<unit>> =
+  let assertNonNullable (nullable: Nullable<'T>) : Reader<Nullable<'T>, 'context, Errors<unit>> =
     if nullable.HasValue |> not then
       reader.Throw(Errors.Singleton () (fun _ -> "Expected non nullable value"))
     else
@@ -38,8 +36,8 @@ module ValueDeserializer =
     (dto: 'valueDTO)
     (kindExtractor: 'valueDTO -> 'kind)
     (valueExtractor: 'valueDTO -> 'dtoValue)
-    (assertion: 'dtoValue -> Reader<'dtoValue, SerializationContext<'valueExt, 'valueExtDTO>, Errors<unit>>)
-    : Reader<'dtoValue, SerializationContext<'valueExt, 'valueExtDTO>, Errors<unit>> =
+    (assertion: 'dtoValue -> Reader<'dtoValue, 'context, Errors<unit>>)
+    : Reader<'dtoValue, 'context, Errors<unit>> =
     reader {
       let kind = kindExtractor dto
 

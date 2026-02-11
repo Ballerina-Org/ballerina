@@ -25,7 +25,6 @@
         <Compile Include="Types\TypeExpr\Record.fs" />
         <Compile Include="Types\TypeExpr\Primitive.fs" />
 
-        <Compile Include="Types\TypeExpr\Map.fs" />
         <Compile Include="Types\TypeExpr\Lookup.fs" />
         <Compile Include="Types\TypeExpr\Lambda.fs" />
         <Compile Include="Types\TypeExpr\KeyOf.fs" />
@@ -43,7 +42,6 @@
         <Compile Include="Types\TypeValue\Set.fs" />
         <Compile Include="Types\TypeValue\Record.fs" />
         <Compile Include="Types\TypeValue\Primitive.fs" />
-        <Compile Include="Types\TypeValue\Map.fs" />
         <Compile Include="Types\TypeValue\Lookup.fs" />
         <Compile Include="Types\TypeValue\Lambda.fs" />
         <Compile Include="Types\TypeValue\Arrow.fs" />

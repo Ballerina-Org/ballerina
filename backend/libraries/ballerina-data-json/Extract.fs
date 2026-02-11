@@ -21,7 +21,7 @@ open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.FormEngine.Model
 
 module Extract =
-  let _stdExtensions, (langContext: LanguageContext<ValueExt, ValueExtDTO>) =
+  let _stdExtensions, (langContext: LanguageContext<ValueExt<unit>, ValueExtDTO, DeltaExt<unit>, DeltaExtDTO>) =
     stdExtensions
 
   let private entityNameFromLauncher (launcherName: LauncherName) (context: ParsedFormsContext<_, _>) =

@@ -4,6 +4,7 @@ module Model =
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Types
   open Ballerina.DSL.Next.Serialization.PocoObjects
+  open System
 
   // type ListConstructors<'ext> =
   //   | List_Cons of {| Closure: Option<Value<TypeValue<'ext>, 'ext>> |}
@@ -56,3 +57,44 @@ module Model =
     static member CreateList l : ListValueDTO<'extDTO> =
       { Kind = ListKind.Cons
         List = l |> List.toArray }
+
+  type ListDeltaExt<'valueExt> =
+    | UpdateElement of index: int * value: Model.Value<Model.TypeValue<'valueExt>, 'valueExt>
+    | AppendElement of value: Model.Value<Model.TypeValue<'valueExt>, 'valueExt>
+    | RemoveElement of index: int
+
+
+  type ListDeltaExtDiscriminator =
+    | UpdateElement = 1
+    | AppendElement = 2
+    | RemoveElement = 3
+
+  type UpdateElementDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct> =
+    { Index: int; Value: ValueDTO<'extDTO> }
+
+  type ListDeltaExtDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct> =
+    { Discriminator: ListDeltaExtDiscriminator
+      UpdateElement: UpdateElementDTO<'extDTO> | null
+      AppendElement: ValueDTO<'extDTO> | null
+      RemoveElement: Nullable<int> }
+
+    static member Empty =
+      { Discriminator = ListDeltaExtDiscriminator.UpdateElement
+        UpdateElement = null
+        AppendElement = null
+        RemoveElement = Nullable() }
+
+    static member CreateUpdate index value : ListDeltaExtDTO<'extDTO> =
+      { ListDeltaExtDTO<'extDTO>.Empty with
+          Discriminator = ListDeltaExtDiscriminator.UpdateElement
+          UpdateElement = { Index = index; Value = value } }
+
+    static member CreateAppend value : ListDeltaExtDTO<'extDTO> =
+      { ListDeltaExtDTO<'extDTO>.Empty with
+          Discriminator = ListDeltaExtDiscriminator.AppendElement
+          AppendElement = value }
+
+    static member CreateRemove(index: int) : ListDeltaExtDTO<'extDTO> =
+      { ListDeltaExtDTO<'extDTO>.Empty with
+          Discriminator = ListDeltaExtDiscriminator.RemoveElement
+          RemoveElement = Nullable index }

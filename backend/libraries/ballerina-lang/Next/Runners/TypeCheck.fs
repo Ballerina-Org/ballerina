@@ -12,10 +12,14 @@ module TypeCheck =
   open Ballerina.DSL.Next.Types.TypeChecker.Model
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
-    static member TypeCheckString<'valueExt, 'valueExtDTO
-      when 'valueExt: comparison and 'valueExtDTO: not null and 'valueExtDTO: not struct>
+    static member TypeCheckString<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO
+      when 'valueExt: comparison
+      and 'valueExtDTO: not null
+      and 'valueExtDTO: not struct
+      and 'deltaExtDTO: not null
+      and 'deltaExtDTO: not struct>
       ({ TypeCheckContext = typeCheckContext
-         TypeCheckState = typeCheckState }: LanguageContext<'valueExt, 'valueExtDTO>)
+         TypeCheckState = typeCheckState }: LanguageContext<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
       (program: string)
       : Sum<
           Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeValue<'valueExt> * TypeCheckState<'valueExt>,

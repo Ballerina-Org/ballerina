@@ -22,12 +22,17 @@ module Extension =
   open Ballerina.DSL.Next.Serialization.ValueDeserializer
 
 
-  let MapExtension<'ext, 'extDTO when 'ext: comparison and 'extDTO: not null and 'extDTO: not struct>
+  let MapExtension<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO
+    when 'ext: comparison
+    and 'extDTO: not null
+    and 'extDTO: not struct
+    and 'deltaExtDTO: not null
+    and 'deltaExtDTO: not struct>
     (valueLens: PartialLens<'ext, MapValues<'ext>>)
     (operationLens: PartialLens<'ext, MapOperations<'ext>>)
     (listValueLens: Option<PartialLens<'ext, ListValues<'ext>>>)
     (valueDTOLens: PartialLens<'extDTO, MapValueDTO<'extDTO>>)
-    : TypeExtension<'ext, 'extDTO, Unit, MapValues<'ext>, MapOperations<'ext>> =
+    : TypeExtension<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO, Unit, MapValues<'ext>, MapOperations<'ext>> =
     let mapId = Identifier.LocalScope "Map"
     let mapSymbolId = mapId |> TypeSymbol.Create
     let kVar, kKind = TypeVar.Create("k"), Kind.Star
@@ -343,4 +348,9 @@ module Extension =
       //       let rest = map |> Map.remove firstKey |> MapValues.Map
       //       Value<TypeValue<'ext>, 'ext>.Tuple([ firstKey; firstValue; (rest |> valueLens.Set, None) |> Ext ])
       //     | _ -> Value<TypeValue<'ext>, 'ext>.Primitive PrimitiveValue.Unit
-      Serialization = Some { ToDTO = mapToDTO; FromDTO = DTOToMap } }
+      Serialization =
+        Some
+          { SerializationContext = { ToDTO = mapToDTO; FromDTO = DTOToMap }
+            ToDTO = fun _ -> reader.Throw(Errors.Singleton () (fun _ -> "Unsupported delta conversion to DTO for Map."))
+            FromDTO =
+              fun _ -> reader.Throw(Errors.Singleton () (fun _ -> "Unsupported delta conversion from DTO for Map.")) } }

@@ -306,7 +306,6 @@ module Model =
     | Tuple of List<TypeExpr<'valueExt>>
     | Union of List<TypeExpr<'valueExt> * TypeExpr<'valueExt>>
     | Set of TypeExpr<'valueExt>
-    | Map of TypeExpr<'valueExt> * TypeExpr<'valueExt>
     | KeyOf of TypeExpr<'valueExt>
     | Sum of List<TypeExpr<'valueExt>>
     | Flatten of TypeExpr<'valueExt> * TypeExpr<'valueExt>
@@ -370,7 +369,6 @@ module Model =
         let typeStrs = types |> List.map (fun (name, typ) -> $"{name}: {typ}")
         $"({String.Join(comma, typeStrs)})"
       | Set t -> $"Set[{t}]"
-      | Map(k, v) -> $"Map[{k}, {v}]"
       | KeyOf t -> $"KeyOf[{t}]"
       | Sum types ->
         let comma = " + "
@@ -503,7 +501,6 @@ module Model =
     | Union of WithSourceMapping<OrderedMap<TypeSymbol, TypeValue<'valueExt>>, 'valueExt>
     | Sum of WithSourceMapping<List<TypeValue<'valueExt>>, 'valueExt>
     | Set of WithSourceMapping<TypeValue<'valueExt>, 'valueExt>
-    | Map of WithSourceMapping<TypeValue<'valueExt> * TypeValue<'valueExt>, 'valueExt>
     | Imported of ImportedTypeValue<'valueExt> // FIXME: This should also have an orig name, implement once the extension is implemented completely
     | Schema of Schema<'valueExt>
     | Entities of Schema<'valueExt>
@@ -581,7 +578,6 @@ module Model =
 
         $"({String.Join(comma, typeStrs)})"
       | Set t -> $"Set[{t}]"
-      | Map({ value = (k, v) }) -> $"Map[{k}, {v}]"
       | Sum({ value = types }) ->
         let comma = " + "
         $"({String.Join(comma, types)})"

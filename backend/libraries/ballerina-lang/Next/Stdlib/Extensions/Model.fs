@@ -13,14 +13,20 @@ module Model =
   open Ballerina.DSL.Next.Serialization
   open Ballerina.DSL.Next.Serialization.PocoObjects
   open Ballerina.Cat.Collections.OrderedMap
+  open Ballerina.Data.Delta.Serialization
 
 
-  type LanguageContext<'ext, 'extDTO when 'ext: comparison and 'extDTO: not null and 'extDTO: not struct> =
+  type LanguageContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO
+    when 'ext: comparison
+    and 'extDTO: not null
+    and 'extDTO: not struct
+    and 'deltaExtDTO: not null
+    and 'deltaExtDTO: not struct> =
     { TypeCheckContext: TypeCheckContext<'ext>
       TypeCheckState: TypeCheckState<'ext>
       ExprEvalContext: ExprEvalContext<'ext>
       TypeCheckedPreludes: List<Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext>>
-      SerializationContext: SerializationContext<'ext, 'extDTO> }
+      SerializationContext: DeltaSerializationContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO> }
 
   type OperationsExtension<'ext, 'extOperations> =
     { TypeVars: List<TypeVar * Kind> // example: [ ("a", Star) ]
@@ -40,8 +46,8 @@ module Model =
           -> 'extOperations * Value<TypeValue<'ext>, 'ext>
           -> ExprEvaluator<'ext, Value<TypeValue<'ext>, 'ext>> }
 
-  and TypeExtension<'ext, 'extDTO, 'extConstructors, 'extValues, 'extOperations
-    when 'extDTO: not struct and 'extDTO: not null> =
+  and TypeExtension<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO, 'extConstructors, 'extValues, 'extOperations
+    when 'extDTO: not struct and 'extDTO: not null and 'deltaExtDTO: not null and 'deltaExtDTO: not struct> =
     { TypeName: ResolvedIdentifier * TypeSymbol // example: "Option"
       TypeVars: List<TypeVar * Kind> // example: [ ("a", Star) ]
       // Deconstruct: 'extValues -> Value<TypeValue<'ext>, 'ext> // function to extract the underlying value from a value
@@ -55,10 +61,10 @@ module Model =
           ResolvedIdentifier,  // example: ("Option.Some", "OptionSome")
           TypeOperationExtension<'ext, 'extConstructors, 'extValues, 'extOperations>
          >
-      Serialization: Option<SerializationContext<'ext, 'extDTO>> }
+      Serialization: Option<DeltaSerializationContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>> }
 
     static member ToImportedTypeValue
-      (typeExt: TypeExtension<'ext, 'extDTO, 'extConstructors, 'extValues, 'extOperations>)
+      (typeExt: TypeExtension<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO, 'extConstructors, 'extValues, 'extOperations>)
       : ImportedTypeValue<'ext> =
       { Id = typeExt.TypeName |> fst
         Sym = typeExt.TypeName |> snd

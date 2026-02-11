@@ -1633,18 +1633,6 @@ module Eval =
                   typeExprSource = source
                   typeCheckScopeSource = ctx.Scope },
               Kind.Star
-          | TypeExpr.Map(key, value) ->
-            let! key, key_k = !key
-            let! value, value_k = !value
-            do! key_k |> Kind.AsStar |> ofSum |> state.Ignore
-            do! value_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-            return
-              TypeValue.Map
-                { value = (key, value)
-                  typeExprSource = source
-                  typeCheckScopeSource = ctx.Scope },
-              Kind.Star
           | TypeExpr.KeyOf(arg) ->
             let! arg, arg_k = !arg
             do! arg_k |> Kind.AsStar |> ofSum |> state.Ignore

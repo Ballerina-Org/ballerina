@@ -64,7 +64,7 @@ module Model =
       Many: CodegenConfigManyDef
       ReadOnly: CodegenConfigReadOnlyDef
       Map: CodegenConfigMapDef
-      Sum: CodegenConfigSumDef
+      Sum: List<CodegenConfigSumDef>
       Tuple: List<TupleCodegenConfigTypeDef>
       Union: CodegenConfigUnionDef
       Record: CodegenConfigRecordDef
@@ -99,7 +99,7 @@ module Model =
       RequiredImport: Option<GoImport> }
 
   and TupleCodegenConfigTypeDef =
-    { Ariety: int
+    { Arity: int
       GeneratedTypeName: string
       DeltaTypeName: string
       SupportedRenderers: Set<RendererName>
@@ -112,8 +112,9 @@ module Model =
       (arity: int)
       : Sum<TupleCodegenConfigTypeDef, Errors<unit>> =
       config
-      |> List.tryFind (fun c -> c.Ariety = arity)
-      |> Sum.fromOption (fun () -> Errors.Singleton () (fun () -> $"Error: missing tuple config for arity {arity}"))
+      |> List.tryFind (fun c -> c.Arity = arity)
+      |> Sum.fromOption (fun () ->
+        Errors.Singleton () (fun () -> sprintf "Error: missing tuple config for arity %d" arity))
 
 
   and CodegenConfigUnionDef =
@@ -179,13 +180,21 @@ module Model =
       SupportedRenderers: Set<RendererName> }
 
   and CodegenConfigSumDef =
-    { GeneratedTypeName: string
+    { Arity: int
+      GeneratedTypeName: string
       RequiredImport: Option<GoImport>
       DeltaTypeName: string
       LeftConstructor: string
       RightConstructor: string
       SupportedRenderers: Set<RendererName>
       Serialization: Serialization }
+
+    static member FindArity (config: List<CodegenConfigSumDef>) (arity: int) : Sum<CodegenConfigSumDef, Errors<unit>> =
+      config
+      |> List.tryFind (fun c -> c.Arity = arity)
+      |> Sum.fromOption (fun () ->
+        Errors.Singleton () (fun () -> sprintf "Error: missing sum config for arity %d" arity))
+
 
   and CodegenConfigTypeDef =
     { GeneratedTypeName: string
@@ -262,7 +271,9 @@ module Model =
          TableApi: TableApiId |}
 
   and EnumCaseFilterExpr =
-    | Filter of Expr<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt> list * TypeCheckState<ValueExt>
+    | Filter of
+      Expr<TypeValue<ValueExt<unit>>, ResolvedIdentifier, ValueExt<unit>> list *
+      TypeCheckState<ValueExt<unit>>
     | PassAll
 
   and EnumApiId = { EnumName: string }

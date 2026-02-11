@@ -25,17 +25,19 @@ let ``SpecNext-Schema evaluates`` () =
                Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters =
                  [ { Updater.Path = []
-                     Condition = Expr<TypeExpr<ValueExt>, Identifier, Unit>.Primitive(PrimitiveValue.Bool true)
-                     Expr = Expr<TypeExpr<ValueExt>, Identifier, Unit>.Primitive(PrimitiveValue.Int32 42) } ]
+                     Condition = Expr<TypeExpr<ValueExt<unit>>, Identifier, Unit>.Primitive(PrimitiveValue.Bool true)
+                     Expr = Expr<TypeExpr<ValueExt<unit>>, Identifier, Unit>.Primitive(PrimitiveValue.Int32 42) } ]
                Predicates =
-                 [ ("SomePredicate", Expr<TypeExpr<ValueExt>, Identifier, Unit>.Primitive(PrimitiveValue.Bool false)) ]
+                 [ ("SomePredicate",
+                    Expr<TypeExpr<ValueExt<unit>>, Identifier, Unit>.Primitive(PrimitiveValue.Bool false)) ]
                  |> Map.ofList })
             ({ EntityName = "TargetTable" },
              { Type = "AnotherType" |> Identifier.LocalScope |> TypeExpr.Lookup
                Methods = Set.ofList [ Get; GetMany; Create; Delete ]
                Updaters = []
                Predicates =
-                 [ ("AnotherPredicate", Expr<TypeExpr<ValueExt>, Identifier, Unit>.Primitive(PrimitiveValue.Bool true)) ]
+                 [ ("AnotherPredicate",
+                    Expr<TypeExpr<ValueExt<unit>>, Identifier, Unit>.Primitive(PrimitiveValue.Bool true)) ]
                  |> Map.ofList }) ]
       Lookups = Map.empty }
 

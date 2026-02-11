@@ -131,11 +131,6 @@ let testCases guid : TypeValueTestCase list =
         """{"discriminator":"set","value":{"discriminator":"string"}}"""
         |> toScopedJson "Set"
       Expected = TypeValue<Unit>.CreateSet(TypeValue<Unit>.CreateString()) }
-    { Name = "Map"
-      Json =
-        """{"discriminator":"map","value":[{"discriminator":"bool"}, {"discriminator":"int32"}]}"""
-        |> toScopedJson "Map"
-      Expected = TypeValue<Unit>.CreateMap(TypeValue<Unit>.CreateBool(), TypeValue<Unit>.CreateInt32()) }
     { Name = "Record"
       Json =
         """{
