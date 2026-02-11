@@ -14,37 +14,37 @@ module Model =
   open Ballerina.Data.Schema.Model
   open Ballerina.DSL.Next.StdLib.Extensions
   open Ballerina.DSL.Next.Types
-  open Ballerina.Data.Delta.Extensions
   open Ballerina.VirtualFolders.Model
 
   type TenantId = TenantId of Guid
 
-  type Seeder =
-    Schema<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt>
-      -> Sum<SpecData<TypeValue<ValueExt>, ValueExt>, Errors<unit>>
+  type Seeder<'ext when 'ext: comparison> =
+    Schema<TypeValue<ValueExt<'ext>>, ResolvedIdentifier, ValueExt<'ext>>
+      -> Sum<SpecData<TypeValue<ValueExt<'ext>>, ValueExt<'ext>>, Errors<unit>>
 
   type TenantStore = { ListTenants: unit -> TenantId list }
 
-  type SpecsStore =
-    { GetSpecApi: TenantId -> Sum<SpecApi<TypeValue<ValueExt>, ValueExt>, Errors<unit>>
-      GetDataApi: TenantId -> SpecName -> VirtualPath option -> Sum<SpecDataApi<ValueExt, DeltaExt>, Errors<unit>> }
+  type SpecsStore<'ext when 'ext: comparison> =
+    { GetSpecApi: TenantId -> Sum<SpecApi<TypeValue<ValueExt<'ext>>, ValueExt<'ext>>, Errors<unit>>
+      GetDataApi:
+        TenantId -> SpecName -> VirtualPath option -> Sum<SpecDataApi<ValueExt<'ext>, DeltaExt<'ext>>, Errors<unit>> }
 
-  type Workspace =
+  type Workspace<'ext when 'ext: comparison> =
     { SeedSpecEval:
         TenantId
           -> SpecName
-          -> Seeder
+          -> Seeder<'ext>
           -> VirtualPath option
           -> State<
-            SpecData<TypeValue<ValueExt>, ValueExt>,
-            TypeCheckContext<ValueExt>,
-            TypeCheckState<ValueExt>,
+            SpecData<TypeValue<ValueExt<'ext>>, ValueExt<'ext>>,
+            TypeCheckContext<ValueExt<'ext>>,
+            TypeCheckState<ValueExt<'ext>>,
             Errors<unit>
            >
-      SeedSpec: TenantId * SpecName * SpecData<TypeValue<ValueExt>, ValueExt> -> Sum<unit, Errors<unit>>
-      GetSeeds: TenantId -> SpecName -> Sum<SpecData<TypeValue<ValueExt>, ValueExt>, Errors<unit>> }
+      SeedSpec: TenantId * SpecName * SpecData<TypeValue<ValueExt<'ext>>, ValueExt<'ext>> -> Sum<unit, Errors<unit>>
+      GetSeeds: TenantId -> SpecName -> Sum<SpecData<TypeValue<ValueExt<'ext>>, ValueExt<'ext>>, Errors<unit>> }
 
-  and Store =
-    { Specs: SpecsStore
+  and Store<'ext when 'ext: comparison> =
+    { Specs: SpecsStore<'ext>
       Tenants: TenantStore
-      Workspace: Workspace }
+      Workspace: Workspace<'ext> }

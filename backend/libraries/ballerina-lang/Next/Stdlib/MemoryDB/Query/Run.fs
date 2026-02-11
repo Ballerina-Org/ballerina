@@ -23,10 +23,15 @@ module QueryRunner =
   open Ballerina
   open Ballerina.DSL.Next.StdLib.MemoryDB
 
-  let MemoryDBQueryRunnerExtension<'ext, 'extDTO when 'ext: comparison and 'extDTO: not null and 'extDTO: not struct>
+  let MemoryDBQueryRunnerExtension<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO
+    when 'ext: comparison
+    and 'extDTO: not null
+    and 'extDTO: not struct
+    and 'deltaExtDTO: not null
+    and 'deltaExtDTO: not struct>
     (listLens: PartialLens<'ext, List<Value<TypeValue<'ext>, 'ext>>>)
     (valueLens: PartialLens<'ext, MemoryDBValues<'ext>>)
-    : TypeExtension<'ext, 'extDTO, Unit, Unit, MemoryDBValues<'ext>> =
+    : TypeExtension<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO, Unit, Unit, MemoryDBValues<'ext>> =
     let queryId = Identifier.LocalScope "Query"
     let querySymbolId = queryId |> TypeSymbol.Create
     let schemaVar, schemaKind = TypeVar.Create("s"), Kind.Schema

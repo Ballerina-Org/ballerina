@@ -25,7 +25,6 @@ module TypeExpr =
           TypeExpr.FromJsonUnion TypeExpr.FromJson json
           TypeExpr.FromJsonSum TypeExpr.FromJson json
           TypeExpr.FromJsonSet TypeExpr.FromJson json
-          TypeExpr.FromJsonMap TypeExpr.FromJson json
           TypeExpr.FromJsonKeyOf TypeExpr.FromJson json
           TypeExpr.FromJsonFlatten TypeExpr.FromJson json
           TypeExpr.FromJsonExclude TypeExpr.FromJson json
@@ -50,7 +49,6 @@ module TypeExpr =
         | TypeExpr.Union u -> TypeExpr.ToJsonUnion TypeExpr.ToJson u
         | TypeExpr.Sum s -> TypeExpr.ToJsonSum TypeExpr.ToJson s
         | TypeExpr.Set s -> TypeExpr.ToJsonSet TypeExpr.ToJson s
-        | TypeExpr.Map(a, b) -> TypeExpr.ToJsonMap TypeExpr.ToJson (a, b)
         | TypeExpr.KeyOf k -> TypeExpr.ToJsonKeyOf TypeExpr.ToJson k
         | TypeExpr.Flatten(a, b) -> TypeExpr.ToJsonFlatten TypeExpr.ToJson (a, b)
         | TypeExpr.Exclude(a, b) -> TypeExpr.ToJsonExclude TypeExpr.ToJson (a, b)

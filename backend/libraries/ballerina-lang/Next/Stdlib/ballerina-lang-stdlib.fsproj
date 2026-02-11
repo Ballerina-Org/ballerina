@@ -96,6 +96,7 @@
         <ProjectReference Include="..\Eval\ballerina-lang-eval.fsproj" />
         <ProjectReference Include="./SmartComponents/SmartComponents.LocalEmbeddings/SmartComponents.LocalEmbeddings.csproj" />
         <ProjectReference Include="..\Serialization\ballerina-lang-serialization.fsproj" />
+        <ProjectReference Include="..\DeltaSerialization\ballerina-delta-serialization.fsproj" />
     </ItemGroup>
 
 

@@ -22,7 +22,7 @@ open Ballerina.DSL.Next.StdLib.Extensions
 let stdExtensions, languageContext = stdExtensions
 
 let ``Assert Value<TypeValue> -> ToJson -> FromJson -> Value<TypeValue>``
-  (expression: Value<TypeValue<ValueExt>, ValueExt>)
+  (expression: Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>)
   (expectedJson: JsonValue)
   =
   let toStr (j: JsonValue) =
@@ -32,7 +32,7 @@ let ``Assert Value<TypeValue> -> ToJson -> FromJson -> Value<TypeValue>``
     Expr.ToJson >> Reader.Run(TypeValue.ToJson, ResolvedIdentifier.ToJson)
 
   let rootToJson =
-    Json.buildRootEncoder<TypeValue<ValueExt>, ValueExt> (
+    Json.buildRootEncoder<TypeValue<ValueExt<unit>>, ValueExt<unit>> (
       NonEmptyList.OfList(Value.ToJson, [ List.Json.Extension.encoder ListExt.ValueLens ])
     )
 
@@ -47,7 +47,7 @@ let ``Assert Value<TypeValue> -> ToJson -> FromJson -> Value<TypeValue>``
       Expr.FromJson >> Reader.Run(TypeValue.FromJson, ResolvedIdentifier.FromJson)
 
     let rootFromJson =
-      Json.buildRootParser<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt> (
+      Json.buildRootParser<TypeValue<ValueExt<unit>>, ResolvedIdentifier, ValueExt<unit>> (
         NonEmptyList.OfList(Value.FromJson, [ List.Json.Extension.parser ListExt.ValueLens ])
       )
 
@@ -71,7 +71,7 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
     { TypeSymbol.Name = "bar" |> Identifier.LocalScope
       TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") }
 
-  let testCases: List<string * Value<TypeValue<ValueExt>, ValueExt>> =
+  let testCases: List<string * Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>> =
     [ """{"discriminator": "var", "value":"myVar"}""", Var.Create "myVar" |> Value.Var
       """{"discriminator": "int32", "value":"123"}""", PrimitiveValue.Int32 123 |> Value.Primitive
       """{"discriminator": "decimal", "value":"123.456"}""", PrimitiveValue.Decimal 123.456M |> Value.Primitive
@@ -79,7 +79,7 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
       """{"discriminator": "record", "value":[[{"discriminator":"id","value":["","",null,"bar"]}, {"discriminator":"string","value":"baz"}],
       [{"discriminator":"id","value":["","",null,"foo"]}, {"discriminator":"int32","value":"42"}]
         ]}""",
-      Value<TypeValue<ValueExt>, ValueExt>
+      Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>
         .Record(
           Map.ofList
             [ foo.Name |> TypeCheckScope.Empty.Resolve, PrimitiveValue.Int32 42 |> Value.Primitive
@@ -101,7 +101,7 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
       """{"discriminator": "list", "value":[{"discriminator":"int32","value":"1"},{"discriminator":"int32","value":"2"}]}""",
       Value.Ext(
         ValueExt(
-          Choice1Of6(
+          Choice1Of7(
             ListValues(
               List.Model.ListValues.List
                 [ PrimitiveValue.Int32 1 |> Value.Primitive

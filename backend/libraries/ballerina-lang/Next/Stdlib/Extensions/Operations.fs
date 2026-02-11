@@ -113,7 +113,7 @@ module Operations =
 
     static member RegisterLanguageContext
       (opsExt: OperationsExtension<'ext, 'extOperations>)
-      : Updater<LanguageContext<'ext, 'extDTO>> =
+      : Updater<LanguageContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>> =
       fun langCtx ->
         { TypeCheckContext =
             langCtx.TypeCheckContext

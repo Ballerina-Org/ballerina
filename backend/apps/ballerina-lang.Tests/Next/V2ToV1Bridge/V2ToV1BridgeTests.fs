@@ -134,7 +134,7 @@ entrypoint view aStringRecord : StringRecord {
       group main with A, B, C, D, E, F, G, H, I, J, K
 }"""
 
-  let compilerInput: FormCompiler.FormCompilerInput<Ballerina.DSL.Next.StdLib.Extensions.ValueExt> =
+  let compilerInput: FormCompiler.FormCompilerInput<Ballerina.DSL.Next.StdLib.Extensions.ValueExt<unit>> =
     { Types =
         { Preludes = NonEmptyList.One(typesString)
           Source = "test.types" }

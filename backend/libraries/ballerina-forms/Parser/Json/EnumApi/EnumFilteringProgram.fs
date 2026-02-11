@@ -17,7 +17,7 @@ open Ballerina.Errors
 open Ballerina.StdLib
 open Ballerina.Collections.NonEmptyList
 
-type private Value = Value<TypeValue<ValueExt>, ValueExt>
+type private Value = Value<TypeValue<ValueExt<unit>>, ValueExt<unit>>
 
 module EnumFilteringProgram =
   [<Literal>]
