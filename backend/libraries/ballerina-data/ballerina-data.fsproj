@@ -9,6 +9,9 @@
     <ProjectReference Include="..\ballerina-lang\Next\ballerina-lang.fsproj" />
     <ProjectReference Include="..\ballerina-lang\Next\Models\ballerina-lang-models.fsproj" />
     <ProjectReference Include="..\ballerina-virtual-folders\ballerina-virtual-folders.fsproj" />
+    <ProjectReference Include="..\ballerina-lang\Next\Serialization\ballerina-lang-serialization.fsproj" />
+    <ProjectReference Include="..\ballerina-stdlib\ballerina-stdlib.fsproj" />
+    <ProjectReference Include="..\ballerina-delta\ballerina-delta.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -20,10 +23,6 @@
     <Compile Include="Schema\ActivePatterns.fs" />
     <Compile Include="Schema\Value.fs" />
     <Compile Include="Schema\Expand\Entity.fs" />
-    <Compile Include="Delta\Model.fs" />
-    <Compile Include="Delta\ToUpdater.fs" />
-    <Compile Include="Delta\Patterns.fs" />
-    <Compile Include="Delta\Extensions.fs" />
     <Compile Include="Patch\Model.fs" />
     <Compile Include="Patch\Patterns.fs" />
     <Compile Include="Store\Api.fs" />

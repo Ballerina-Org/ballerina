@@ -56,9 +56,10 @@ module TypeLambdas =
               { Eval = ops
                 Applicables = evalContext.ExtensionOps.Applicables } }
 
-    static member RegisterLanguageContext<'ext, 'extDTO when 'ext: comparison>
+    static member RegisterLanguageContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO
+      when 'ext: comparison and 'deltaExtDTO: not null and 'deltaExtDTO: not struct>
       (ext: TypeLambdaExtension<'ext, 'extDTO, 'extTypeLambda>)
-      : Updater<LanguageContext<'ext, 'extDTO>> =
+      : Updater<LanguageContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>> =
       fun langCtx ->
         { TypeCheckContext =
             langCtx.TypeCheckContext

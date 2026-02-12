@@ -22,7 +22,7 @@ let private fileFromNameAndContent (name: string) (content: string) : FileBuildC
 
 let private buildAndEval
   (files: NonEmptyList<string * string>)
-  : Sum<Value<TypeValue<ValueExt>, ValueExt> * TypeValue<ValueExt> * int, string> =
+  : Sum<Value<TypeValue<ValueExt<unit>>, ValueExt<unit>> * TypeValue<ValueExt<unit>> * int, string> =
   let project: ProjectBuildConfiguration =
     { Files =
         files

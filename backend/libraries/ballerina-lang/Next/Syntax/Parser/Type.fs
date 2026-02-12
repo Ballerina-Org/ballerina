@@ -604,9 +604,10 @@ module Type =
                 |> List.map (fun (id, td) -> (id |> Identifier.LocalScope |> TypeExpr.Lookup, td))
               )
           }
-          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium))
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
       }
+      |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
     let unionTypeDecl () =
       parser {
@@ -640,6 +641,7 @@ module Type =
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
+      |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
     let scopedIdentifier () =
       parser {
@@ -659,6 +661,7 @@ module Type =
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
+      |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
     let binaryExpressionChainTail () =
       parser {
@@ -682,6 +685,7 @@ module Type =
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
+      |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
     let recordDes () =
       parser {
@@ -701,6 +705,7 @@ module Type =
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
+      |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
 
     let application () =
@@ -760,7 +765,10 @@ module Type =
       // do Console.ReadLine() |> ignore
 
       if parseComplexShapes |> Set.isEmpty then
-        return! simpleShapes |> parser.Any
+        return!
+          simpleShapes
+          |> parser.Any
+          |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
       else
         // let! s = parser.Stream
 

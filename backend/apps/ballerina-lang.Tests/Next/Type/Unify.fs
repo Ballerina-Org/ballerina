@@ -144,7 +144,6 @@ let ``LangNext-Unify unifies types without variables`` () =
     [ TypeValue.CreateInt32()
       TypeValue.CreateArrow(TypeValue.CreateInt32(), TypeValue.CreateString())
       TypeValue.CreateSet(TypeValue.CreateInt32())
-      TypeValue.CreateMap(TypeValue.CreateInt32(), TypeValue.CreateString())
       TypeValue.CreateTuple([ TypeValue.CreateInt32(); TypeValue.CreateString() ])
       TypeValue.CreateSum([ TypeValue.CreateInt32(); TypeValue.CreateString() ])
       TypeValue.CreateRecord(
@@ -163,7 +162,7 @@ let ``LangNext-Unify unifies types without variables`` () =
     |> List.map (fun input ->
       TypeValue.Unify(Location.Unknown, input, input).run (UnificationContext.Empty, UnificationState.Empty))
 
-  let expected: EquivalenceClasses<TypeVar, TypeValue<ValueExt>> =
+  let expected: EquivalenceClasses<TypeVar, TypeValue<ValueExt<'customExtension>>> =
     { Classes = Map.empty
       Variables = Map.empty }
 
@@ -572,7 +571,7 @@ let ``LangNext-Unify unifies fails on different transitively unified generic arg
   let b = TypeVar.Create("b")
   let c = TypeVar.Create("c")
 
-  let program: State<unit, UnificationContext<ValueExt>, UnificationState<ValueExt>, Errors<Location>> =
+  let program: State<unit, UnificationContext<ValueExt<unit>>, UnificationState<ValueExt<unit>>, Errors<Location>> =
     state {
       do! EquivalenceClasses.Bind(b, PrimitiveType.Int32 |> TypeValue.CreatePrimitive |> Right, Location.Unknown)
       do! EquivalenceClasses.Bind(c, PrimitiveType.String |> TypeValue.CreatePrimitive |> Right, Location.Unknown)
@@ -598,7 +597,7 @@ let ``LangNext-Unify unifies fails on different transitively unified generic arg
   let b = TypeVar.Create("b")
   let c = TypeVar.Create("c")
 
-  let program: State<unit, UnificationContext<ValueExt>, UnificationState<ValueExt>, Errors<Location>> =
+  let program: State<unit, UnificationContext<ValueExt<unit>>, UnificationState<ValueExt<unit>>, Errors<Location>> =
     state {
       do! EquivalenceClasses.Bind(c, PrimitiveType.Int32 |> TypeValue.CreatePrimitive |> Right, Location.Unknown)
       do! EquivalenceClasses.Bind(b, c |> Left, Location.Unknown)

@@ -51,12 +51,18 @@ module FormCompiler =
     if File.Exists file then
       File.Delete file
 
-  let compileForms<'valueExt, 'valueExtDTO
-    when 'valueExt: comparison and 'valueExtDTO: not null and 'valueExtDTO: not struct>
+  let compileForms<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO, 'customExtension
+    when 'valueExt: comparison
+    and 'valueExtDTO: not null
+    and 'valueExtDTO: not struct
+    and 'deltaExt: comparison
+    and 'customExtension: comparison
+    and 'deltaExtDTO: not null
+    and 'deltaExtDTO: not struct>
     (input: FormCompilerInput<'valueExt>)
     (cache: ProjectCache<'valueExt>)
-    (languageContext: LanguageContext<'valueExt, 'valueExtDTO>)
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (languageContext: LanguageContext<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     =
     sum {
       let formsInitialLocation = Location.Initial input.Forms.Source
@@ -92,7 +98,10 @@ module FormCompiler =
       let formTypeCheckState = FormTypeCheckerState<'valueExt>.Init typeCheckState
 
       let formTypeCheckContext =
-        FormTypeCheckingContext<ValueExt>.Init memoizedTypes languageContext.TypeCheckContext input.ApiTypes
+        FormTypeCheckingContext<ValueExt<'customExtension>>.Init
+          memoizedTypes
+          languageContext.TypeCheckContext
+          input.ApiTypes
 
       let! typeCheckedFormDefinitions, _ =
         checkFormDefinitions formDefinitions stdExtensions

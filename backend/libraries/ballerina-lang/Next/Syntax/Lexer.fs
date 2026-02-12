@@ -30,6 +30,9 @@ module Lexer =
     | If
     | Then
     | Else
+    | Schema
+    | Entity
+    | Relation
 
     override this.ToString() =
       match this with
@@ -44,6 +47,9 @@ module Lexer =
       | If -> "if"
       | Then -> "then"
       | Else -> "else"
+      | Schema -> "schema"
+      | Entity -> "entity"
+      | Relation -> "relation"
 
   type Operator =
     | Equals
@@ -149,6 +155,8 @@ module Lexer =
   type LocalizedToken =
     { Token: Token
       Location: Location }
+
+    override this.ToString() = this.Token.ToString()
 
     static member FromKeyword keyword location =
       { Token = keyword |> Token.Keyword
@@ -257,6 +265,12 @@ module Lexer =
             |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.Then)
             word (Keyword.Else.ToString())
             |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.Else)
+            word (Keyword.Schema.ToString())
+            |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.Schema)
+            word (Keyword.Entity.ToString())
+            |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.Entity)
+            word (Keyword.Relation.ToString())
+            |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.Relation)
             word "true" |> tokenizer.Map(LocalizedToken.FromBoolLiteral true)
             word "false" |> tokenizer.Map(LocalizedToken.FromBoolLiteral false) ]
 
@@ -340,8 +354,14 @@ module Lexer =
   let stringLiteral =
     tokenizer {
       do! tokenizer.Exactly '\"' |> tokenizer.Ignore
-      let! literal = tokenizer.Many(tokenizer.Exactly(fun c -> c <> '\"'))
+      let! literal = tokenizer.Many(tokenizer.Exactly(fun c -> c <> '\"' && c <> '\n'))
       do! tokenizer.Exactly '\"' |> tokenizer.Ignore
+
+      do!
+        tokenizer.Lookahead(
+          tokenizer.Exactly((fun c -> c |> Char.IsLetter || c = '_') >> not)
+          |> tokenizer.Ignore
+        )
 
       let! loc = tokenizer.Location
       return LocalizedToken.FromStringLiteral (String.Concat(literal)) loc

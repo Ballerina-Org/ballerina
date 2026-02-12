@@ -95,8 +95,7 @@ module Unification =
         | TypeExpr.Flatten(l, r)
         | TypeExpr.Let(_, l, r)
         | TypeExpr.Apply(l, r)
-        | TypeExpr.Arrow(l, r)
-        | TypeExpr.Map(l, r) ->
+        | TypeExpr.Arrow(l, r) ->
           let! lVars = TypeExpr.FreeVariables l
           let! rVars = TypeExpr.FreeVariables r
           return Set.union lVars rVars
@@ -212,10 +211,6 @@ module Unification =
           let! lVars = TypeValue.FreeVariables l
           let! rVars = TypeValue.FreeVariables r
           return Set.union lVars rVars
-        | TypeValue.Map { value = l, r } ->
-          let! lVars = TypeValue.FreeVariables l
-          let! rVars = TypeValue.FreeVariables r
-          return Set.union lVars rVars
         // | TypeValue.Apply { value = _, e }
         | TypeValue.Set { value = e } -> return! TypeValue.FreeVariables e
         | TypeValue.Tuple { value = es }
@@ -271,13 +266,9 @@ module Unification =
         | TypeValue.Var _, t
         | t, TypeValue.Var _ -> return t
         | Arrow { value = l1, l2 }, Arrow { value = r1, r2 } ->
-          let! l = l1 == l2
-          let! r = r1 == r2
-          return TypeValue.CreateArrow(l, r)
-        | TypeValue.Map { value = (l1, r1) }, TypeValue.Map { value = (l2, r2) } ->
-          let! l = l1 == l2
-          let! r = r1 == r2
-          return TypeValue.CreateMap(l, r)
+          let! i = l1 == r1
+          let! o = l2 == r2
+          return TypeValue.CreateArrow(i, o)
         | TypeValue.Set e1, TypeValue.Set e2 ->
           let! e = e1.value == e2.value
           return TypeValue.CreateSet e
@@ -325,6 +316,8 @@ module Unification =
 
           return TypeValue.CreateUnion items
         | _ ->
+          do Console.WriteLine($"Cannot determine most specific type between {t1} and {t2}")
+
           return!
             (fun () -> $"Cannot determine most specific type between {t1} and {t2}")
             |> error
@@ -532,8 +525,7 @@ module Unification =
 
             do! v1 == v2 |> state.MapContext(replaceWith ctx)
             do! state.SetState(replaceWith s)
-        | Arrow { value = l1, r1 }, Arrow { value = l2, r2 }
-        | Map { value = l1, r1 }, Map { value = l2, r2 } ->
+        | Arrow { value = l1, r1 }, Arrow { value = l2, r2 } ->
           do! l1 == l2
           do! r1 == r2
         // | TypeValue.Apply { value = v1, a1 }, TypeValue.Apply { value = v2, a2 } ->
@@ -882,17 +874,6 @@ module Unification =
           // | TypeValue.Apply { value = var, arg; source = n } ->
           //   let! arg' = TypeValue.Instantiate () (TypeExpr.Eval ()) loc0 arg
           //   return TypeValue.Apply { value = var, arg'; source = n }
-          | TypeValue.Map { value = l, r
-                            typeExprSource = n
-                            typeCheckScopeSource = scope } ->
-            let! l' = TypeValue.Instantiate () typeEval loc0 l
-            let! r' = TypeValue.Instantiate () typeEval loc0 r
-
-            return
-              TypeValue.Map
-                { value = l', r'
-                  typeExprSource = n
-                  typeCheckScopeSource = scope }
           | TypeValue.Set { value = v
                             typeExprSource = n
                             typeCheckScopeSource = scope } ->

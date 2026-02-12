@@ -54,6 +54,7 @@ module Expr =
     : Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
 
     let expr = expr (depth + 1)
+    let singleIdentifier = singleTermIdentifier
 
     let typeDecl v = typeDecl (expr parseAllComplexShapes) v
     // let indent = "--"
@@ -416,7 +417,10 @@ module Expr =
           parser {
             let! id = singleIdentifier
             do! equalsOperator
+
             let! typeDecl = typeDecl parseAllComplexTypeShapes
+            // |> parser.DebugErrors "typeDecl in type-let" (fun e -> e.Errors().AsFSharpString)
+
             do! inKeyword
             let! body = expr parseAllComplexShapes
 
@@ -449,6 +453,7 @@ module Expr =
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
+      |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
     let unaryOperatorIdentifier () =
       let singleOperator op =
@@ -464,7 +469,13 @@ module Expr =
 
     let identifierLookup () =
       parser {
-        let! id = singleIdentifier
+        let! id =
+          parser.Any
+            [ singleIdentifier
+              schemaKeyword |> parser.Map(replaceWith "schema")
+              entityKeyword |> parser.Map(replaceWith "entity")
+              relationKeyword |> parser.Map(replaceWith "relation") ]
+
         let! loc = parser.Location
         // do Console.WriteLine($"{String.replicate (depth * 2) indent}> Parsed identifier: {id.ToFSharpString}")
         return Expr.Lookup(Identifier.LocalScope id, loc, TypeCheckScope.Empty)
@@ -520,11 +531,13 @@ module Expr =
                   (fun () -> typeDecl parseAllComplexTypeShapes)
                   |> betweenSquareBrackets
                   |> parser.Map(Sum.Right) ]
+              |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
             return res
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
+      |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
     let application () =
       parser {
@@ -563,7 +576,10 @@ module Expr =
       // do Console.ReadLine() |> ignore
 
       if parseComplexShapes |> Set.isEmpty then
-        return! simpleShapes |> parser.Any
+        return!
+          simpleShapes
+          |> parser.Any
+          |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
       else
         // let! s = parser.Stream
 

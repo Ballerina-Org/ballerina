@@ -72,8 +72,6 @@ let ``Dsl:Type:TypeExpr json round-trip`` () =
       """{ "discriminator": "lookup", "value": "MyType" }""", TypeExpr.Lookup("MyType" |> Identifier.LocalScope)
       """{ "discriminator": "set", "value": {"discriminator": "string"} }""",
       TypeExpr.Set(TypeExpr.Primitive PrimitiveType.String)
-      """{ "discriminator": "map", "value": [{"discriminator": "bool"}, {"discriminator": "int32"}] }""",
-      TypeExpr.Map(TypeExpr.Primitive PrimitiveType.Bool, TypeExpr.Primitive PrimitiveType.Int32)
       """{ "discriminator": "keyOf", "value": {"discriminator": "record", "value": [[{"discriminator": "lookup", "value": "foo"}, {"discriminator": "int32"}]]} }""",
       TypeExpr.KeyOf(
         TypeExpr.LetSymbols(

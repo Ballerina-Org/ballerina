@@ -9,11 +9,17 @@ module Patterns =
   open Ballerina.Reader.WithError
   open Ballerina.Errors
   open Ballerina.DSL.Next.Serialization
+  open Ballerina.Data.Delta.Serialization
 
-  type LanguageContext<'ext, 'extDTO when 'ext: comparison and 'extDTO: not null and 'extDTO: not struct> with
-    static member Empty: LanguageContext<'ext, 'extDTO> =
+  type LanguageContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO
+    when 'ext: comparison
+    and 'extDTO: not null
+    and 'extDTO: not struct
+    and 'deltaExtDTO: not null
+    and 'deltaExtDTO: not struct> with
+    static member Empty: LanguageContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO> =
       { TypeCheckContext = TypeCheckContext.Empty("", "")
         TypeCheckState = TypeCheckState.Empty
         ExprEvalContext = ExprEvalContext.Empty
         TypeCheckedPreludes = []
-        SerializationContext = SerializationContext.Empty }
+        SerializationContext = DeltaSerializationContext.Create SerializationContext.Empty }

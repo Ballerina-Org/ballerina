@@ -350,8 +350,9 @@ module Renderers =
       =
       state {
         let! config = state.GetContext()
+        let! sumConfig = CodegenConfigSumDef.FindArity config.Sum 2 |> state.OfSum
 
-        if config.Sum.SupportedRenderers |> Set.contains name then
+        if sumConfig.SupportedRenderers |> Set.contains name then
           return!
             state {
               let! (leftRendererJson, rightRendererJson) =
@@ -747,11 +748,11 @@ module Renderers =
               |> Seq.map (NestedRenderer.Parse primitivesExt exprParser)
               |> state.All
 
-            if itemRenderers.Length <> tupleConfig.Ariety then
+            if itemRenderers.Length <> tupleConfig.Arity then
               return!
                 state.Throw(
                   Errors.Singleton () (fun () ->
-                    $"Error: mismatched tuple size. Expected {tupleConfig.Ariety}, found {itemRenderers.Length}.")
+                    $"Error: mismatched tuple size. Expected {tupleConfig.Arity}, found {itemRenderers.Length}.")
                 )
             else
               return

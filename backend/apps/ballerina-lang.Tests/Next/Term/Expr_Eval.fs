@@ -41,10 +41,10 @@ open Ballerina.Collections.NonEmptyList
 let private (!) = Identifier.LocalScope
 let private (=>) t f = Identifier.FullyQualified([ t ], f)
 
-let private (!!): string -> TypeExpr<ValueExt> =
+let private (!!): string -> TypeExpr<ValueExt<unit>> =
   Identifier.LocalScope >> TypeExpr.Lookup
 
-let private (=>>): List<string> * string -> TypeExpr<ValueExt> =
+let private (=>>): List<string> * string -> TypeExpr<ValueExt<unit>> =
   Identifier.FullyQualified >> TypeExpr.Lookup
 
 do ignore (!)
@@ -56,11 +56,11 @@ let ops, context = stdExtensions
 
 let typeCheck = Expr.TypeCheck()
 
-let private runTypeCheck (program: Expr<TypeExpr<ValueExt>, Identifier, ValueExt>) =
+let private runTypeCheck (program: Expr<TypeExpr<ValueExt<unit>>, Identifier, ValueExt<unit>>) =
   typeCheck None program
   |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
-let private eval (program: Expr<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt>) =
+let private eval (program: Expr<TypeValue<ValueExt<unit>>, ResolvedIdentifier, ValueExt<unit>>) =
   Expr.Eval(NonEmptyList.prependList context.TypeCheckedPreludes (NonEmptyList.One program))
   |> Reader.Run context.ExprEvalContext
 
@@ -77,7 +77,7 @@ let ``Int32 addition operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateInt32()))
 
     let evalResult = eval typedProgram
 
@@ -101,7 +101,7 @@ let ``Int32 multiplication operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateInt32()))
 
     let evalResult = eval typedProgram
 
@@ -125,7 +125,7 @@ let ``Int32 subtraction operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateInt32()))
 
     let evalResult = eval typedProgram
 
@@ -149,7 +149,7 @@ let ``Int32 equal operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -173,7 +173,7 @@ let ``Int32 not equal operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -197,7 +197,7 @@ let ``Int32 greater than operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -221,7 +221,7 @@ let ``Int32 greater than or equal operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -245,7 +245,7 @@ let ``Int64 power operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt64()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateInt64()))
 
     let evalResult = eval typedProgram
 
@@ -269,7 +269,7 @@ let ``Int64 mod operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt64()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateInt64()))
 
     let evalResult = eval typedProgram
 
@@ -294,7 +294,7 @@ let ``Float32 plus operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateFloat32()))
 
     let evalResult = eval typedProgram
 
@@ -318,7 +318,7 @@ let ``Float32 minus operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateFloat32()))
 
     let evalResult = eval typedProgram
 
@@ -342,7 +342,7 @@ let ``Float32 divide operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateFloat32()))
 
     let evalResult = eval typedProgram
 
@@ -366,7 +366,7 @@ let ``Float32 power operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateFloat32()))
 
     let evalResult = eval typedProgram
 
@@ -390,7 +390,7 @@ let ``Float32 mod operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateFloat32()))
 
     let evalResult = eval typedProgram
 
@@ -414,7 +414,7 @@ let ``Float32 equal operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -438,7 +438,7 @@ let ``Float32 not equal operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -462,7 +462,7 @@ let ``Float32 greater than operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -486,7 +486,7 @@ let ``Float32 greater than or equal operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -509,7 +509,7 @@ let ``Decimal equal operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -533,7 +533,7 @@ let ``Decimal not equal operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -557,7 +557,7 @@ let ``Decimal greater than operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -581,7 +581,7 @@ let ``Decimal greater than or equal operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -605,7 +605,7 @@ let ``Decimal power operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateDecimal()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateDecimal()))
 
     let evalResult = eval typedProgram
 
@@ -628,7 +628,7 @@ let ``String concatenation operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateString()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateString()))
 
     let evalResult = eval typedProgram
 
@@ -652,7 +652,7 @@ let ``String equal operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -676,7 +676,7 @@ let ``String not equal operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -700,7 +700,7 @@ let ``String greater than operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -724,7 +724,7 @@ let ``String greater than or equal operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -748,7 +748,7 @@ let ``Bool and operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -772,7 +772,7 @@ let ``Bool or operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -793,7 +793,7 @@ let ``Bool not operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -820,7 +820,7 @@ let ``Guid equal operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -847,7 +847,7 @@ let ``Guid not equal operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -871,7 +871,7 @@ let ``DateOnly diff operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateTimeSpan()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateTimeSpan()))
 
     let evalResult = eval typedProgram
 
@@ -901,7 +901,7 @@ let ``DateOnly toDateTime operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateDateTime()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateDateTime()))
 
     let evalResult = eval typedProgram
 
@@ -925,7 +925,7 @@ let ``DateOnly getYear operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateInt32()))
 
     let evalResult = eval typedProgram
 
@@ -949,7 +949,7 @@ let ``DateOnly getMonth operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateInt32()))
 
     let evalResult = eval typedProgram
 
@@ -973,7 +973,7 @@ let ``DateOnly getDay operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateInt32()))
 
     let evalResult = eval typedProgram
 
@@ -997,7 +997,7 @@ let ``DateOnly getDayOfWeek operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateInt32()))
 
     let evalResult = eval typedProgram
 
@@ -1021,7 +1021,7 @@ let ``DateOnly getDayOfYear operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateInt32()))
 
     let evalResult = eval typedProgram
 
@@ -1045,7 +1045,7 @@ let ``DateTime toDateOnly operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateDateOnly()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateDateOnly()))
 
     let evalResult = eval typedProgram
 
@@ -1072,7 +1072,7 @@ let ``TimeSpan equal operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -1100,7 +1100,7 @@ let ``TimeSpan not equal operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 
@@ -1127,7 +1127,7 @@ let ``TimeSpan greater than operation works`` () =
 
   match typeCheckResult with
   | Left((typedProgram, typeValue, _, _), _) ->
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt<unit>>>(TypeValue.CreateBool()))
 
     let evalResult = eval typedProgram
 

@@ -144,6 +144,15 @@ module Common =
   let thenKeyword = parseKeyword Keyword.Then
   let elseKeyword = parseKeyword Keyword.Else
 
+  let singleTermIdentifier =
+    parser.Exactly(fun t ->
+      match t.Token with
+      | Token.Identifier id -> Some id
+      | Token.Keyword(Keyword.Schema) -> Some "schema"
+      | Token.Keyword(Keyword.Entity) -> Some "entity"
+      | Token.Keyword(Keyword.Relation) -> Some "relation"
+      | _ -> None)
+
   let singleIdentifier =
     parser.Exactly(fun t ->
       match t.Token with
@@ -162,9 +171,9 @@ module Common =
       | Token.Identifier id when k = id -> Some()
       | _ -> None)
 
-  let schemaKeyword = softKeyword "schema"
-  let entityKeyword = softKeyword "entity"
-  let relationKeyword = softKeyword "relation"
+  let schemaKeyword = parseKeyword Keyword.Schema
+  let entityKeyword = parseKeyword Keyword.Entity
+  let relationKeyword = parseKeyword Keyword.Relation
   let searchByKeyword = softKeyword "searchBy"
   let propertyKeyword = softKeyword "property"
   let onKeyword = softKeyword "on"

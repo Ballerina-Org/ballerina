@@ -33,6 +33,7 @@
         <Compile Include="TypeCheck/TypeLet.fs" />
         <Compile Include="TypeCheck/TypeApply.fs" />
         <Compile Include="TypeCheck/Expr.fs" />
+        <Compile Include="TypeCheck/Value.fs" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="FSharp.Data" Version="6.6.0" />

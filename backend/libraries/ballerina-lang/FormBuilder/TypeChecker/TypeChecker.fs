@@ -18,7 +18,10 @@ module TypeChecker =
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.List.Model
 
-  let makeListType (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>) (typeArgument: TypeValue<'valueExt>) =
+  let makeListType
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
+    (typeArgument: TypeValue<'valueExt>)
+    =
     { ImportedTypeValue.Id = stdExtensions.List.TypeName |> fst
       Sym = stdExtensions.List.TypeName |> snd
       Parameters =
@@ -29,7 +32,7 @@ module TypeChecker =
     }
 
   let makeMapType
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (keyType: TypeValue<'valueExt>)
     (valueType: TypeValue<'valueExt>)
     =
@@ -47,7 +50,10 @@ module TypeChecker =
     |> state.OfSum
     |> State.mapError (Errors.MapContext(replaceWith Location.Unknown))
 
-  let assertList (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>) (targetType: TypeValue<'valueExt>) =
+  let assertList
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
+    (targetType: TypeValue<'valueExt>)
+    =
     state {
       let! importedType = assertType TypeValue.AsImported targetType
 
@@ -69,7 +75,10 @@ module TypeChecker =
           )
     }
 
-  let assertMap (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>) (targetType: TypeValue<'valueExt>) =
+  let assertMap
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
+    (targetType: TypeValue<'valueExt>)
+    =
     state {
       let! importedType = assertType TypeValue.AsImported targetType
 
@@ -173,7 +182,7 @@ module TypeChecker =
     }
 
   let rec checkTuple
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (tupleRenderer: TupleRenderer<Unchecked>)
     =
@@ -215,7 +224,7 @@ module TypeChecker =
     )
 
   and checkSum
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (sumRenderer: SumRenderer<Unchecked>)
     =
@@ -244,7 +253,7 @@ module TypeChecker =
     }
 
   and checkUnion
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (unionRenderer: UnionRenderer<Unchecked>)
     =
@@ -347,7 +356,7 @@ module TypeChecker =
     }
 
   and checkOne
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (oneRenderer: OneRenderer<Unchecked>)
     : State<
@@ -379,7 +388,7 @@ module TypeChecker =
     }
 
   and checkMany
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (manyRenderer: ManyRenderer<Unchecked>)
     =
@@ -424,7 +433,7 @@ module TypeChecker =
     the type of the renderer expression and unify it with the target type.
   *)
   and checkList
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (listRenderer: ListRenderer<Unchecked>)
     =
@@ -448,7 +457,7 @@ module TypeChecker =
     }
 
   and checkMap
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (mapRenderer: MapRenderer<Unchecked>)
     =
@@ -474,7 +483,7 @@ module TypeChecker =
     }
 
   and checkReadonly
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (readonlyRenderer: ReadonlyRenderer<Unchecked>)
     =
@@ -535,7 +544,7 @@ module TypeChecker =
     }
 
   and checkField
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (formIdentifier: FormIdentifier)
     (fieldTypes: OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>)
     (field: Field<Unchecked>)
@@ -578,7 +587,7 @@ module TypeChecker =
     checkAllTabFields |> state.All |> state.Ignore
 
   and checkMembers
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (formIdentifier: FormIdentifier)
     (fieldTypes: OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>)
     (members: Members<Unchecked>)
@@ -625,7 +634,7 @@ module TypeChecker =
     |> state.Ignore
 
   and checkFormBody
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (formId: FormIdentifier)
     (fieldTypes: OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>)
     (formBody: FormBody<Unchecked>)
@@ -663,7 +672,7 @@ module TypeChecker =
     )
 
   and checkRecord
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (recordRenderer: RecordRenderer<Unchecked>)
     =
@@ -681,7 +690,7 @@ module TypeChecker =
     }
 
   and checkInlineForm
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (inlineFormRenderer: InlineFormRenderer<Unchecked>)
     =
@@ -698,7 +707,7 @@ module TypeChecker =
 
 
   and checkRenderer
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (renderer: RendererExpression<Unchecked>)
     : State<
@@ -751,7 +760,7 @@ module TypeChecker =
 
   let checkForm
     (form: Form<Unchecked>)
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     : State<
         Form<TypeValue<'valueExt>>,
         FormTypeCheckingContext<'valueExt>,
@@ -794,7 +803,7 @@ module TypeChecker =
 
   let checkFormDefinitions
     (formDefinition: FormDefinitions<Unchecked>)
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     =
     state {
       let! checkedForms =

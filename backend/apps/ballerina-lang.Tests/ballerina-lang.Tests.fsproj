@@ -25,6 +25,8 @@
     <Compile Include="Next\Project.fs" />
     <Compile Include="Next\Integration.fs" />
     <Compile Include="Next\V2ToV1Bridge\V2ToV1BridgeTests.fs" />
+    <Compile Include="Next\SyntheticData\ImportedTypesConfig.fs" />
+    <Compile Include="Next\SyntheticData\Generator.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
@@ -50,6 +52,7 @@
       Include="..\..\libraries\ballerina-lang\FormBuilder\V2ToV1Bridge\v2-to-v1-bridge.fsproj" />
     <ProjectReference
       Include="..\..\libraries\ballerina-lang\FormBuilder\Compiler\form-builder-lang-compiler.fsproj" />
+    <ProjectReference Include="..\..\libraries\ballerina-lang-synthetic-data\ballerina-lang-synthetic-data.fsproj" />
   </ItemGroup>
 
 </Project>

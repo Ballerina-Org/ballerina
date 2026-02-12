@@ -15,4 +15,8 @@
         <Compile Include="Runners/TypeCheck.fs" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="DeltaSerialization\ballerina-delta-serialization.fsproj" />
+    </ItemGroup>
+
 </Project>
