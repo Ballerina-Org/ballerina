@@ -75,7 +75,6 @@ export const BallerinaDeltaTransfer = {
           ],
           string
         > = (() => {
-          // done
           if (delta.kind == "StringReplace") {
             return toRawObject(delta.replace, delta.type, delta.state).Then(
               (value) =>
@@ -462,7 +461,6 @@ export const BallerinaDeltaTransfer = {
               ]),
             );
           }
-          // extensions - pending
           if (delta.kind == "ArrayReplace") {
             return toRawObject(delta.replace, delta.type, delta.state).Then(
               (value) =>
@@ -475,7 +473,7 @@ export const BallerinaDeltaTransfer = {
                   string
                 >([
                   {
-                    Discriminator: "ArrayReplace",
+                    Discriminator: 2,
                     Replace: value,
                   },
                   "[ArrayReplace]",
@@ -497,10 +495,16 @@ export const BallerinaDeltaTransfer = {
                 string
               >([
                 {
-                  Discriminator: "ArrayValue",
-                  Value: {
-                    Item1: delta.value[0],
-                    Item2: value[0],
+                  Discriminator: 7,
+                  Ext: {
+                    Discriminator: 1,
+                    ListDelta: {
+                      Discriminator: 1,
+                      UpdateElement: {
+                        Index: delta.value[0],
+                        Value: value[0],
+                      },
+                    },
                   },
                 },
                 `[ArrayValue][${delta.value[0]}]${value[1]}`,
@@ -530,8 +534,14 @@ export const BallerinaDeltaTransfer = {
                 string
               >([
                 {
-                  Discriminator: "ArrayValueAll",
-                  ValueAll: value[0],
+                  Discriminator: 7,
+                  Ext: {
+                    Discriminator: 1,
+                    ListDelta: {
+                      Discriminator: 6,
+                      SetAllElements: value[0],
+                    },
+                  },
                 },
                 `[ArrayValueAll]${value[1]}`,
                 delta.flags
@@ -552,8 +562,14 @@ export const BallerinaDeltaTransfer = {
                   string
                 >([
                   {
-                    Discriminator: "ArrayAdd",
-                    Add: value,
+                    Discriminator: 7,
+                    Ext: {
+                      Discriminator: 1,
+                      ListDelta: {
+                        Discriminator: 2,
+                        AppendElement: value,
+                      },
+                    },
                   },
                   "[ArrayAdd]",
                   delta.flags ? [[delta.flags, "[ArrayAdd]"]] : [],
@@ -575,8 +591,17 @@ export const BallerinaDeltaTransfer = {
                 string
               >([
                 {
-                  Discriminator: "ArrayAddAt",
-                  AddAt: { Item1: delta.value[0], Item2: element },
+                  Discriminator: 7,
+                  Ext: {
+                    Discriminator: 1,
+                    ListDelta: {
+                      Discriminator: 4,
+                      InsertElement: {
+                        Index: delta.value[0],
+                        Value: element,
+                      },
+                    },
+                  },
                 },
                 `[ArrayAddAt][${delta.value[0]}]`,
                 delta.flags
@@ -595,8 +620,14 @@ export const BallerinaDeltaTransfer = {
               string
             >([
               {
-                Discriminator: "ArrayRemoveAt",
-                RemoveAt: delta.index,
+                Discriminator: 7,
+                Ext: {
+                  Discriminator: 1,
+                  ListDelta: {
+                    Discriminator: 3,
+                    RemoveElement: delta.index,
+                  },
+                },
               },
               `[ArrayRemoveAt]`,
               delta.flags ? [[delta.flags, "[ArrayRemoveAt]"]] : [],
@@ -612,8 +643,14 @@ export const BallerinaDeltaTransfer = {
               string
             >([
               {
-                Discriminator: "ArrayRemoveAll",
-                RemoveAll: unit,
+                Discriminator: 7,
+                Ext: {
+                  Discriminator: 1,
+                  ListDelta: {
+                    Discriminator: 7,
+                    RemoveAllElements: true,
+                  },
+                },
               },
               `[ArrayRemoveAll]`,
               delta.flags ? [[delta.flags, "[ArrayRemoveAll]"]] : [],
@@ -629,8 +666,14 @@ export const BallerinaDeltaTransfer = {
               string
             >([
               {
-                Discriminator: "ArrayMoveFromTo",
-                MoveFromTo: { Item1: delta.from, Item2: delta.to },
+                Discriminator: 7,
+                Ext: {
+                  Discriminator: 1,
+                  ListDelta: {
+                    Discriminator: 8,
+                    MoveElement: { From: delta.from, To: delta.to },
+                  },
+                },
               },
               `[ArrayMoveFromTo]`,
               delta.flags ? [[delta.flags, "[ArrayMoveFromTo]"]] : [],
@@ -646,8 +689,14 @@ export const BallerinaDeltaTransfer = {
               string
             >([
               {
-                Discriminator: "ArrayDuplicateAt",
-                DuplicateAt: delta.index,
+                Discriminator: 7,
+                Ext: {
+                  Discriminator: 1,
+                  ListDelta: {
+                    Discriminator: 5,
+                    DuplicateElement: { Index: delta.index },
+                  },
+                },
               },
               `[ArrayDuplicateAt]`,
               delta.flags ? [[delta.flags, "[ArrayDuplicateAt]"]] : [],
@@ -665,7 +714,7 @@ export const BallerinaDeltaTransfer = {
                   string
                 >([
                   {
-                    Discriminator: "MapReplace",
+                    Discriminator: 2,
                     Replace: value,
                   },
                   "[MapReplace]",
@@ -687,8 +736,17 @@ export const BallerinaDeltaTransfer = {
                 string
               >([
                 {
-                  Discriminator: "MapKey",
-                  Key: { Item1: delta.value[0], Item2: value[0] },
+                  Discriminator: 7,
+                  Ext: {
+                    Discriminator: 2,
+                    MapDelta: {
+                      Discriminator: 1,
+                      UpdateKey: {
+                        OldKey: delta.ballerinaValue.oldKey,
+                        NewKey: delta.ballerinaValue.newKey,
+                      },
+                    },
+                  },
                 },
                 `[MapKey][${delta.value[0]}]${value[1]}`,
                 delta.flags
@@ -714,8 +772,17 @@ export const BallerinaDeltaTransfer = {
                 string
               >([
                 {
-                  Discriminator: "MapValue",
-                  Value: { Item1: delta.value[0], Item2: value[0] },
+                  Discriminator: 7,
+                  Ext: {
+                    Discriminator: 2,
+                    MapDelta: {
+                      Discriminator: 2,
+                      UpdateValue: {
+                        Key: delta.ballerinaValue.key,
+                        Value: delta.ballerinaValue.value,
+                      },
+                    },
+                  },
                 },
                 `[MapValue][${delta.value[0]}]${value[1]}`,
                 delta.flags
@@ -747,8 +814,17 @@ export const BallerinaDeltaTransfer = {
                   string
                 >([
                   {
-                    Discriminator: "MapAdd",
-                    Add: { Item1: key, Item2: value },
+                    Discriminator: 7,
+                    Ext: {
+                      Discriminator: 2,
+                      MapDelta: {
+                        Discriminator: 3,
+                        AddItem: {
+                          Key: key,
+                          Value: value,
+                        },
+                      },
+                    },
                   },
                   `[MapAdd]`,
                   delta.flags ? [[delta.flags, "[MapAdd]"]] : [],
@@ -766,8 +842,14 @@ export const BallerinaDeltaTransfer = {
               string
             >([
               {
-                Discriminator: "MapRemove",
-                Remove: delta.index,
+                Discriminator: 7,
+                Ext: {
+                  Discriminator: 2,
+                  MapDelta: {
+                    Discriminator: 4,
+                    RemoveItem: delta.ballerinaValue.key,
+                  },
+                },
               },
               `[MapRemove]`,
               delta.flags ? [[delta.flags, "[MapRemove]"]] : [],

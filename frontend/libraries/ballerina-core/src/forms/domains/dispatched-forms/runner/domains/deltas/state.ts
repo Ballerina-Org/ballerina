@@ -217,12 +217,20 @@ export type DispatchDeltaMap<T = Unit> =
   | {
       kind: "MapKey";
       value: [number, DispatchDelta<T>];
+      ballerinaValue: {
+        oldKey: PredicateValue;
+        newKey: PredicateValue;
+      };
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
     }
   | {
       kind: "MapValue";
       value: [number, DispatchDelta<T>];
+      ballerinaValue: {
+        key: PredicateValue;
+        value: PredicateValue;
+      };
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
     }
@@ -239,6 +247,9 @@ export type DispatchDeltaMap<T = Unit> =
   | {
       kind: "MapRemove";
       index: number;
+      ballerinaValue: {
+        key: PredicateValue;
+      };
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
     };
