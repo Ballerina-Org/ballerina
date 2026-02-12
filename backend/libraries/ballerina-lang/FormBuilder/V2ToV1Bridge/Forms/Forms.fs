@@ -33,14 +33,20 @@ module Forms =
         ) ]
     | RendererExpression.Union { Union = RendererIdentifier id
                                  Cases = cases } ->
-      [ "renderer", JsonValue.String id
-        "cases",
+      [ "renderer",
         JsonValue.Record(
-          Array.ofSeq (
-            cases
-            |> Map.toSeq
-            |> Seq.map (fun ((CaseIdentifier caseName), renderer) ->
-              caseName, JsonValue.Record(Array.ofList (generateRendererJson renderer)))
+          Array.ofList (
+            ([ "renderer", JsonValue.String id
+               "cases",
+               JsonValue.Record(
+                 Array.ofSeq (
+                   cases
+                   |> Map.toSeq
+                   |> Seq.map (fun ((CaseIdentifier caseName), renderer) ->
+                     caseName, JsonValue.Record(Array.ofList (generateRendererJson renderer)))
+                 )
+               )
+               "type", JsonValue.String(renderer.Type.ToString()) ])
           )
         ) ]
     | RendererExpression.Form(FormIdentifier formName, _) -> [ "renderer", JsonValue.String formName ]
