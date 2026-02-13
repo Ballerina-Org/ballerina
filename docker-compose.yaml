@@ -84,7 +84,7 @@ services:
     volumes:
       - .:/app:ro
       - ./frontend/libraries/ballerina-core/bin:/app/frontend/libraries/ballerina-core/bin
-    command: yarn tsc -w
+    command: yarn tsc -w --preserveWatchOutput
     cap_drop:
       - ALL
     security_opt:
