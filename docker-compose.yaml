@@ -132,6 +132,19 @@ services:
   #     - .:/app
   #   user: ${CURRENT_UID}
 
+  web:
+    build: 
+      dockerfile: docker/Dockerfile.web
+      target: build-web
+    ports:
+      - "5001:5001"
+    volumes:
+      - .:/app
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
 volumes:
   pgdata:
   pgadmin-data:
