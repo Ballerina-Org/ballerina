@@ -7,14 +7,16 @@ import {
   DispatchPrimitiveType,
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererViewOnlyReadonlyContext,
+  ValueUnit,
 } from "../../../../../../../../main";
+
 
 export type StringAbstractRendererReadonlyContext<
   CustomPresentationContext = Unit,
   ExtraContext = Unit,
 > = CommonAbstractRendererReadonlyContext<
   DispatchPrimitiveType<any>,
-  string,
+  string | ValueUnit,
   CustomPresentationContext,
   ExtraContext
 >;
