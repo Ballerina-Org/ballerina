@@ -7,13 +7,14 @@ services:
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     networks:
       - blp_network
     cap_drop:
       - ALL
     security_opt:
       - no-new-privileges:true
+    user: postgres
     # logging:
     #   driver: none
 
@@ -83,7 +84,7 @@ services:
     volumes:
       - .:/app:ro
       - ./frontend/libraries/ballerina-core/bin:/app/frontend/libraries/ballerina-core/bin
-    command: yarn tsc -w
+    command: yarn tsc -w --preserveWatchOutput
     cap_drop:
       - ALL
     security_opt:
@@ -130,6 +131,19 @@ services:
   #   volumes:
   #     - .:/app
   #   user: ${CURRENT_UID}
+
+  web:
+    build: 
+      dockerfile: docker/Dockerfile.web
+      target: build-web
+    ports:
+      - "5001:5001"
+    volumes:
+      - .:/app
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
 
 volumes:
   pgdata:
