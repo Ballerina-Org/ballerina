@@ -69,6 +69,21 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
+    static member AsDecompose(op: ListOperations<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | List_Decompose -> () |> sum.Return
+      | _ ->
+        (fun () -> $"Error: Expected List_Decompose, found {op}")
+        |> Errors.Singleton()
+        |> sum.Throw
+
+    static member AsOrderBy(op: ListOperations<'ext>) : Sum<Option<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
+      match op with
+      | List_OrderBy v -> v.f |> sum.Return
+      | _ ->
+        (fun () -> $"Error: Expected List_OrderBy, found {op}")
+        |> Errors.Singleton()
+        |> sum.Throw
 
   type ListValues<'ext> with
     static member AsList(op: ListValues<'ext>) : Sum<List<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =

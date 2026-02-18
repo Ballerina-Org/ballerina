@@ -135,8 +135,8 @@ entrypoint form(personDetails) Person : Person = {
   Birthday tooltip "happy Birthday!" date(defaultDate);
   FavoriteColor enum(defaultEnum) single from colors;
   Gender as "Gender" sum(defaultSum) with
-  | 1of2 -> unit(defaultUnit)
-  | 2of2 -> enum(defaultGender) single from genders;
+  | 1Of2 -> unit(defaultUnit)
+  | 2Of2 -> enum(defaultGender) single from genders;
 
   Dependants as "Dependants" tooltip "someone who depends on you" map(defaultMap)
     string(defaultString),
@@ -150,20 +150,20 @@ entrypoint form(personDetails) Person : Person = {
   Departments stream(defaultInfiniteStreamMultiselect) from departments;
   SchoolAddress as "school address" form(address);
   MainAddress as "main address" sum(defaultSum) with
-  | 1of2 -> string(defaultString)
-  | 2of2 -> tuple(defaultTuple2) (form(Address), form(PlotInfo));
+  | 1Of2 -> string(defaultString)
+  | 2Of2 -> tuple(defaultTuple2) (form(Address), form(PlotInfo));
   AddressesBy as "addresses by" sum(defaultSum) with
-  | 1of2 -> map(defaultMap)
+  | 1Of2 -> map(defaultMap)
       enum(defaultEnum) single from colors,
       form(address)
-  | 2of2 -> map(defaultMap) string(defaultString), form(address);
+  | 2Of2 -> map(defaultMap) string(defaultString), form(address);
   ImportantDate as "important date" option(maybeDate) with
-  | 2of2 -> date(defaultDate)
-  | 1of2 -> unit(defaultUnit);
+  | 2Of2 -> date(defaultDate)
+  | 1Of2 -> unit(defaultUnit);
   CutOffDates as "cut off dates" list(defaultList) 
     option maybeDate with
-    | 2of2 -> date(defaultDate)
-    | 1of2 -> unit(defaultUnit);
+    | 2Of2 -> date(defaultDate)
+    | 1Of2 -> unit(defaultUnit);
   Emails as "Emails" list(defaultList) string(defaultString);
   AddressesAndAddressesWithLabel as "other addresses" tuple(defaultTuple2) (
     list(defaultList) form(address),

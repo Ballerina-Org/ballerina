@@ -13,7 +13,6 @@ module Extension =
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
-  open Ballerina.DSL.Next.StdLib.Option
   open Ballerina
 
   let StringExtension<'ext>

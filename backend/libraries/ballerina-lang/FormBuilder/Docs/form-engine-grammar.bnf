@@ -53,16 +53,16 @@ tupleItems ::= pair {"," tupleSeq}
 tuple ::= "tuple" rendererDef "(" tupleItems ")"
 
 optionCase ::=
-  "|" "1of2" "->" nestedRenderer
-  "|" "2of2" "->" nestedRenderer 
+  "|" "1Of2" "->" nestedRenderer
+  "|" "2Of2" "->" nestedRenderer
 option ::= "option" rendererDef "with" optionCase
 
 list ::= "list" rendererDef nestedRenderer
 readonly ::= "readonly" rendererDef nestedRenderer
 
 sumCase ::=
-| "|" "1of2" "->" nestedRenderer
-| "|" "2of2" "->" nestedRenderer
+| "|" "1Of2" "->" nestedRenderer
+| "|" "2Of2" "->" nestedRenderer
 sum ::= "sum" rendererDef "with" sumCase
 
 enum ::= "enum" rendererDef [cardinality] "from" id

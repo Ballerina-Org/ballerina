@@ -15,10 +15,12 @@ module Types =
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.Terms
   open Ballerina.Collections.NonEmptyList
+  open Ballerina.DSL.Next.Serialization
 
-  type TypeExtension<'e, 'extConstructors, 'extValues, 'extOperations> with
+  type TypeExtension<'e, 'extDTO, 'extConstructors, 'extValues, 'extOperations
+    when 'extDTO: not struct and 'extDTO: not null> with
     static member RegisterTypeCheckContext<'ext when 'ext: comparison>
-      (typeExt: TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations>)
+      (typeExt: TypeExtension<'ext, 'extDTO, 'extConstructors, 'extValues, 'extOperations>)
       : Updater<TypeCheckContext<'ext>> =
       fun typeCheckContext ->
         let kind =
@@ -42,7 +44,7 @@ module Types =
             Values = values }
 
     static member RegisterTypeCheckState<'ext when 'ext: comparison>
-      (typeExt: TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations>)
+      (typeExt: TypeExtension<'ext, 'extDTO, 'extConstructors, 'extValues, 'extOperations>)
       : Updater<TypeCheckState<'ext>> =
       fun typeCheckState ->
         let kind =
@@ -67,7 +69,7 @@ module Types =
                     |> Seq.fold (fun acc (id, sym) -> acc |> Map.add id sym) typeCheckState.Symbols.UnionCases } }
 
     static member RegisterExprEvalContext<'ext when 'ext: comparison>
-      (typeExt: TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations>)
+      (typeExt: TypeExtension<'ext, 'extDTO, 'extConstructors, 'extValues, 'extOperations>)
       : Updater<ExprEvalContext<'ext>> =
       fun evalContext ->
         // let ops =
@@ -214,11 +216,53 @@ module Types =
               { Eval = ops
                 Applicables = applicables } }
 
+    static member RegisterSerializationContext<'ext when 'ext: comparison>
+      (typeExt: TypeExtension<'ext, 'extDTO, 'extConstructors, 'extValues, 'extOperations>)
+      : Updater<SerializationContext<'ext, 'extDTO>> =
+      fun serializationContext ->
+        let toDTO =
+          fun ext resolvedIdentifier ->
+            reader.Any2
+              (serializationContext.ToDTO ext resolvedIdentifier)
+              (reader {
+                let! dtoConversion =
+                  typeExt.Serialization
+                  |> Option.map (fun s -> s.ToDTO)
+                  |> sum.OfOption(
+                    Ballerina.Errors.Errors.Singleton () (fun _ -> $"Undefined conversion to DTO for ${ext}")
+                  )
+                  |> reader.OfSum
+
+                return! dtoConversion ext resolvedIdentifier
+              })
+
+        let fromDTO =
+          fun extDTO resolvedIdentifier ->
+            reader.Any2
+              (serializationContext.FromDTO extDTO resolvedIdentifier)
+              (reader {
+                let! fromDTOConversion =
+                  typeExt.Serialization
+                  |> Option.map (fun s -> s.FromDTO)
+                  |> sum.OfOption(
+                    Ballerina.Errors.Errors.Singleton () (fun _ -> $"Undefined conversion from DTO for ${extDTO}")
+                  )
+                  |> reader.OfSum
+
+                return! fromDTOConversion extDTO resolvedIdentifier
+              })
+
+        { FromDTO = fromDTO; ToDTO = toDTO }
+
+
     static member RegisterLanguageContext
-      (typeExt: TypeExtension<'ext, 'extConstructors, 'extValues, 'extOperations>)
-      : Updater<LanguageContext<'ext>> =
+      (typeExt: TypeExtension<'ext, 'extDTO, 'extConstructors, 'extValues, 'extOperations>)
+      : Updater<LanguageContext<'ext, 'extDTO>> =
       fun langCtx ->
         { TypeCheckContext = langCtx.TypeCheckContext |> (typeExt |> TypeExtension.RegisterTypeCheckContext)
           TypeCheckState = langCtx.TypeCheckState |> (typeExt |> TypeExtension.RegisterTypeCheckState)
           ExprEvalContext = langCtx.ExprEvalContext |> (typeExt |> TypeExtension.RegisterExprEvalContext)
-          TypeCheckedPreludes = langCtx.TypeCheckedPreludes }
+          TypeCheckedPreludes = langCtx.TypeCheckedPreludes
+          SerializationContext =
+            langCtx.SerializationContext
+            |> (typeExt |> TypeExtension.RegisterSerializationContext) }

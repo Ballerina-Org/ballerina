@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>Library</OutputType>
@@ -24,8 +24,7 @@
         <Compile Include="Formats\Iso8601.fs" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="9.0.303" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.2" />
         <PackageReference Include="FSharp.Data" Version="6.6.0" />
     </ItemGroup>
     <ItemGroup>
