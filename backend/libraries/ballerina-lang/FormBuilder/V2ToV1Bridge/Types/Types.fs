@@ -11,6 +11,9 @@ module Types =
     (renderer: RendererExpression<'typeValue>)
     : JsonValue =
     match renderer with
+    | RendererExpression.Pinco(pinco) ->
+      match pinco with
+      | _ -> JsonValue.String "Int32"
     | RendererExpression.Primitive(primitive) ->
       match primitive.Renderer with
       | PrimitiveRendererKind.Unit -> JsonValue.String "unit"

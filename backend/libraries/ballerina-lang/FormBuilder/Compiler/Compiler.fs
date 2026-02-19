@@ -1,6 +1,7 @@
 namespace Ballerina.DSL.FormBuilder.Compiler
 
 module FormCompiler =
+  open System
   open Ballerina.LocalizedErrors
   open Ballerina.Errors
   open Ballerina
@@ -64,16 +65,21 @@ module FormCompiler =
 
       let! types, _, typeCheckState = Expr.TypeCheckString languageContext typesProgram |> Sum.mapRight _.ToString()
 
+// lexing
       let! ParserResult(formTokens, _) =
         Ballerina.DSL.FormBuilder.Syntax.Lexer.tokens
         |> Parser.Run(input.Forms.Program |> Seq.toList, formsInitialLocation)
         |> Sum.mapRight _.ToString()
 
+// parsing
       let! ParserResult(formDefinitions, _) =
         parseFormSpec ()
         |> Parser.Run(formTokens, formsInitialLocation)
         |> Sum.mapRight _.ToString()
 
+// to check if it has parsed correctly:   
+      Console.WriteLine("Parsed form definitions: " + formDefinitions.ToString())
+ 
       let! memoizedTypes = memoizeTypes types |> Sum.mapRight _.ToString()
       let formTypeCheckState = FormTypeCheckerState<'valueExt>.Init typeCheckState
 

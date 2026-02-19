@@ -5,6 +5,8 @@ module FormAST =
   open Ballerina.Cat.Collections.OrderedMap
   open System
 
+  type EntityName = { EntityName: string }
+
   type Unchecked = | Unchecked
 
   type FormIdentifier = FormIdentifier of string
@@ -75,10 +77,31 @@ module FormAST =
       Items: List<RendererExpression<'typeValue>>
       Type: 'typeValue }
 
-  and ListRenderer<'typeValue> =
-    { List: RendererIdentifier
-      Element: RendererExpression<'typeValue>
-      Type: 'typeValue }
+  and ListRenderer<'typeValue> =                     
+    { List: RendererIdentifier                      // nome di una funzione nei renderer che é capace di renderizzare una lista di oggetti (senza sapere come renderizzare i singoli elementi), esempio listAsTable/readOnlyList
+      Element: RendererExpression<'typeValue>       // renderer dell'elemento della lista che verrá invocato N volte; nel reference ce ne saranno due, uno per la preview(es.: dropdown) e uno per l'oggetto vero e proprio (es.: address)
+      Type: 'typeValue }                            // tipo dell'elemento della lista
+
+  and ReferenceOneRenderer<'typeValue> = 
+    { ReferenceOne: RendererIdentifier 
+      Preview: RendererExpression<'typeValue> 
+      CurrentElement: RendererExpression<'typeValue> 
+      SchemaEntityName: EntityName
+      Type: 'typeValue
+      TypeID: 'typeValue } // per reference servono due tipi, uno é quello dell'id e uno é quello dell'oggetto (esempio: addressID e address) 
+  // Esempio di forms: ContactNumbers list(readonlyList) string(print);
+  // readOnlyList = RendererIdentifier
+  // string(print) = RendererExpression<'typeValue> 
+  // 'typeValue = string, perché ContactNumbers nei types é List[string]
+  // Per il nuovo ReferenceRendererOne:
+  // Nel file forms: AddressID referenceone(referenceAsCard/referenceWithDropdown/etc... = modo di mostrare una reference) view(Address) guid(print) entitáNelloSchema 
+  // (entitáNelloSchema = "Addresses" assumendo ci sia nello schema una tabella che si chiama cosí);
+  // Campi del record ReferenceOneRenderer quindi sono: 
+  // Reference(RendererIdentifier)
+  // Preview(renderedExpr)
+  // CurrentElement(rendererExpr) 
+  // EntityName(stringa tipata, esiste giá: EntityName) 
+  // e poi nel record ci sono anche il tipo dell'id e tipo dell'elemento (che vengono implicati, non passati direttamente)
 
   and ReadonlyRenderer<'typeValue> =
     { Readonly: RendererIdentifier
@@ -139,6 +162,11 @@ module FormAST =
       Body: ManyRendererDefinition<'typeValue>
       Type: 'typeValue }
 
+  and PincoRenderer<'typevalue> = 
+    { Pinco: RendererIdentifier
+      Type: 'typevalue }
+
+
   and RendererExpression<'typeValue> =
     | Primitive of PrimitiveRenderer<'typeValue>
     | Map of MapRenderer<'typeValue>
@@ -155,6 +183,8 @@ module FormAST =
     | InlineForm of InlineFormRenderer<'typeValue>
     | One of OneRenderer<'typeValue>
     | Many of ManyRenderer<'typeValue>
+    | Pinco of PincoRenderer<'typeValue>
+    | ReferenceOne of ReferenceOneRenderer<'typeValue>
 
     member this.Type =
       match this with
@@ -173,6 +203,8 @@ module FormAST =
       | InlineForm i -> i.Type
       | One o -> o.Type
       | Many m -> m.Type
+      | Pinco p -> p.Type
+      | ReferenceOne r -> r.Type
 
   and Field<'typeValue> =
     { Name: FieldIdentifier
