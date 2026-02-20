@@ -39,15 +39,18 @@ export const StringAbstractRenderer = <
     const legacy_domNodeId =
       props.context.legacy_domNodeAncestorPath + "[string]";
 
-    if (!PredicateValue.Operations.IsString(props.context.value)) {
+    if (
+      !PredicateValue.Operations.IsString(props.context.value) &&
+      !PredicateValue.Operations.IsUnit(props.context.value)
+    ) {
       console.error(
-        `String expected but got: ${JSON.stringify(
+        `String or unit value expected but got: ${JSON.stringify(
           props.context.value,
         )}\n...When rendering \n...${domNodeId}`,
       );
       return (
         <ErrorRenderer
-          message={`${domNodeId}: String value expected but got ${JSON.stringify(
+          message={`${domNodeId}: String or unit value expected but got ${JSON.stringify(
             props.context.value,
           )}`}
         />

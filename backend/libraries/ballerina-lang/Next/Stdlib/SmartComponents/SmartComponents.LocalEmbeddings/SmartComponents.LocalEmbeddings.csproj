@@ -20,7 +20,7 @@
         <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="10.0.2" />
         <PackageReference Include="System.Numerics.Tensors" Version="10.0.2" />
         <PackageReference Include="System.Runtime.Caching" Version="10.0.2" />
-        <PackageReference Include="Microsoft.SemanticKernel.Connectors.Onnx" Version="1.70.0-alpha" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.Onnx" Version="1.71.0-alpha" />
     </ItemGroup>
 
     <ItemGroup>
