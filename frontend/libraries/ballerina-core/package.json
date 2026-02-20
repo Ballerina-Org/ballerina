@@ -2,7 +2,7 @@
   "name": "ballerina-core",
   "author": "Dr. Giuseppe Maggiore",
   "private": false,
-  "version": "1.0.286",
+  "version": "1.0.287",
   "main": "bin/main.js",
   "module": "bin/main.js",
   "types": "bin/main.d.ts",
