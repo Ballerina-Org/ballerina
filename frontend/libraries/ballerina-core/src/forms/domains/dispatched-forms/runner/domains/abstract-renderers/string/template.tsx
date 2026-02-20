@@ -39,8 +39,10 @@ export const StringAbstractRenderer = <
     const legacy_domNodeId =
       props.context.legacy_domNodeAncestorPath + "[string]";
 
-    if (!PredicateValue.Operations.IsString(props.context.value) &&
-    !PredicateValue.Operations.IsUnit(props.context.value)) {
+    if (
+      !PredicateValue.Operations.IsString(props.context.value) &&
+      !PredicateValue.Operations.IsUnit(props.context.value)
+    ) {
       console.error(
         `String or unit value expected but got: ${JSON.stringify(
           props.context.value,

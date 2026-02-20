@@ -10,7 +10,6 @@ import {
   ValueUnit,
 } from "../../../../../../../../main";
 
-
 export type StringAbstractRendererReadonlyContext<
   CustomPresentationContext = Unit,
   ExtraContext = Unit,
