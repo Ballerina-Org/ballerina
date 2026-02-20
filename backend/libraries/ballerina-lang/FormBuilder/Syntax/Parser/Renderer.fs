@@ -37,7 +37,6 @@ module Parser =
 
   let identifier () =
     parser.Exactly(fun t ->
-      //Console.WriteLine("Trying to parse identifier from token: " + t.Token.ToString())
       match t.Token with
       | Token.Identifier id -> Some id
       | Token.Keyword k -> k.ToString() |> Some
@@ -71,7 +70,6 @@ module Parser =
     parser {
       do! operator (RoundBracket Open)
       let! rendererName = identifier ()
-      //Console.WriteLine("Parsing " + rendererName)
       do! operator (RoundBracket Close)
       return rendererName
     }
@@ -254,15 +252,10 @@ module Parser =
   and parseReferenceOne () =
     parser {
       do! keyword ReferenceOne
-      //Console.WriteLine("Parsing reference one renderer")
       let! rendererName = parseRendererDef ()
-      //Console.WriteLine("Parsing reference one renderer" + rendererName)
       let! elementRenderer = parseRenderer ()
-      //Console.WriteLine("Parsing reference one renderer" + elementRenderer.ToString())
       let! previewRenderer = parseRenderer ()
-      //Console.WriteLine("Parsing reference one renderer" + previewRenderer.ToString())
       let! schemaEntityName = identifier()  
-      //Console.WriteLine("Parsing reference one renderer" + schemaEntityName)
 
       return
         { ReferenceOne = RendererIdentifier rendererName
@@ -709,16 +702,6 @@ module Parser =
           Type = Unchecked }
     }
 
-  and parsePinco() = 
-    parser {
-      do! keyword Pinco
-      let! rendererName = parseRendererDef ()
-      
-      return 
-        { Pinco = RendererIdentifier rendererName
-          Type = Unchecked }
-    }
-
   and parseRenderer () =
     parser.Any(
       [ parsePrimitive () |> parser.Map RendererExpression.Primitive
@@ -736,7 +719,6 @@ module Parser =
         parseRecord () |> parser.Map RendererExpression.Record
         parseOne () |> parser.Map RendererExpression.One
         parseMany () |> parser.Map RendererExpression.Many 
-        parsePinco () |> parser.Map RendererExpression.Pinco
         parseReferenceOne () |> parser.Map RendererExpression.ReferenceOne ]
     )
 

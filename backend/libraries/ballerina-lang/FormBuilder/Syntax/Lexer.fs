@@ -64,7 +64,6 @@ module Lexer =
     | Linked
     | Unlinked
     | Element
-    | Pinco
     | ReferenceOne
 
     override this.ToString() : string =
@@ -119,7 +118,6 @@ module Lexer =
       | Linked -> "linked"
       | Unlinked -> "unlinked"
       | Element -> "element"
-      | Pinco -> "pinco"
       | ReferenceOne -> "referenceOne"
 
   type Operator =
@@ -263,7 +261,6 @@ module Lexer =
             word (Linked.ToString()) |> tokenizer.Map(LocalizedToken.FromKeyword Linked)
             word (Unlinked.ToString()) |> tokenizer.Map(LocalizedToken.FromKeyword Unlinked)
             word (Element.ToString()) |> tokenizer.Map(LocalizedToken.FromKeyword Element)
-            word (Pinco.ToString()) |> tokenizer.Map(LocalizedToken.FromKeyword Pinco) 
             word (ReferenceOne.ToString()) |> tokenizer.Map(LocalizedToken.FromKeyword ReferenceOne) ]
 
       do!

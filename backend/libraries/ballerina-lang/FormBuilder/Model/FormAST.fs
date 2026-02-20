@@ -162,11 +162,6 @@ module FormAST =
       Body: ManyRendererDefinition<'typeValue>
       Type: 'typeValue }
 
-  and PincoRenderer<'typevalue> = 
-    { Pinco: RendererIdentifier
-      Type: 'typevalue }
-
-
   and RendererExpression<'typeValue> =
     | Primitive of PrimitiveRenderer<'typeValue>
     | Map of MapRenderer<'typeValue>
@@ -183,7 +178,6 @@ module FormAST =
     | InlineForm of InlineFormRenderer<'typeValue>
     | One of OneRenderer<'typeValue>
     | Many of ManyRenderer<'typeValue>
-    | Pinco of PincoRenderer<'typeValue>
     | ReferenceOne of ReferenceOneRenderer<'typeValue>
 
     member this.Type =
@@ -203,7 +197,6 @@ module FormAST =
       | InlineForm i -> i.Type
       | One o -> o.Type
       | Many m -> m.Type
-      | Pinco p -> p.Type
       | ReferenceOne r -> r.Type
 
   and Field<'typeValue> =

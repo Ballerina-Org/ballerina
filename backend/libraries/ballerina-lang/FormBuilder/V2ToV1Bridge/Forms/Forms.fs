@@ -10,7 +10,6 @@ module Forms =
     (renderer: RendererExpression<'typeValue>)
     : list<string * JsonValue> =
     match renderer with
-    | RendererExpression.Pinco(_) -> [ "renderer", JsonValue.String "Int32" ]
     | RendererExpression.Primitive { Primitive = RendererIdentifier id } -> [ "renderer", JsonValue.String id ]
     | RendererExpression.List { List = RendererIdentifier id
                                 Element = element } ->

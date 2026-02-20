@@ -171,14 +171,6 @@ module TypeChecker =
       | PrimitiveRendererKind.Guid -> return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.Guid)
       | PrimitiveRendererKind.Unit -> return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.Unit)
     }
-  let checkPinco (targetType: TypeValue<'valueExt>) (pincoRenderer: PincoRenderer<Unchecked>) =
-    state {
-      return!
-        unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.Int32)
-        |> State.map (fun _ ->
-          { Pinco = pincoRenderer.Pinco
-            Type = targetType })
-    }
 
   let rec checkTuple
     (stdExtensions: StdExtensions<'valueExt>)
@@ -754,7 +746,6 @@ module TypeChecker =
             )
         | Some formType -> return Form(formId, formType)
       | InlineForm inlineform -> return! checkInlineForm stdExtensions targetType inlineform |> state.Map InlineForm
-      | RendererExpression.Pinco pinco -> return! checkPinco targetType pinco |> state.Map RendererExpression.Pinco
       | _ -> return! state.Throw(Errors.Singleton Location.Unknown (fun () -> $"Unsupported renderer {renderer}."))
     }
 
