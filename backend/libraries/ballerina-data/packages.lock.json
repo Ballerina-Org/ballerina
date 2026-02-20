@@ -279,8 +279,8 @@
       },
       "Microsoft.SemanticKernel.Abstractions": {
         "type": "Transitive",
-        "resolved": "1.70.0",
-        "contentHash": "bHIxvKGPK6C1mT4ynxwLXIuTuhYq6nVrtBEYw/BWK9inaeNCirlronhweM8zB+l5W+pdNbvAd+YPdMUk5Bp5FQ==",
+        "resolved": "1.71.0",
+        "contentHash": "TcnfCMqFkUO/erduz6SD06sqMLc5brA520kbKuZ/eUTnDY8r88/Zom4yC1j3YAVLRFVyegPIePKCdyjsIUgLOg==",
         "dependencies": {
           "Microsoft.Bcl.HashCode": "1.1.1",
           "Microsoft.Extensions.AI": "10.2.0",
@@ -289,22 +289,22 @@
       },
       "Microsoft.SemanticKernel.Connectors.Onnx": {
         "type": "Transitive",
-        "resolved": "1.70.0-alpha",
-        "contentHash": "7gLIzoiNpiW/jKv21GVGLonzhgKjBJbMXPmErT0P4n8V/rCUHlbfjJx+cQ0lmALcSqUdrsHOOAI46eOESdCD0Q==",
+        "resolved": "1.71.0-alpha",
+        "contentHash": "n0SlQJ7jt5KvjfOgFBaeTn688OIggAKBHEI0o7+Eee9gMTq28fetD0BLhVNKV3hjddjD6CXjiYD76VbBYvjTWA==",
         "dependencies": {
           "FastBertTokenizer": "1.0.28",
           "Microsoft.ML.OnnxRuntime": "1.23.2",
           "Microsoft.ML.OnnxRuntimeGenAI": "0.11.4",
-          "Microsoft.SemanticKernel.Core": "1.70.0"
+          "Microsoft.SemanticKernel.Core": "1.71.0"
         }
       },
       "Microsoft.SemanticKernel.Core": {
         "type": "Transitive",
-        "resolved": "1.70.0",
-        "contentHash": "FRax0YvIfnhPtcQhwqZZWhgqM4cFM8ByfNfo6TfYhBkTBwh+ybvZ2Ga6sjJ4Xa+ZjZEXKS3Mfq8fZKfcwa6MjQ==",
+        "resolved": "1.71.0",
+        "contentHash": "z3yTf23PhJhEASnT57JQMt7AM+DpnSST4i+2Q59uk2CVZAFotiLJtI2MHyo3P+MegNy++Zf5gmBi31Ymq6pI/Q==",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection": "10.0.2",
-          "Microsoft.SemanticKernel.Abstractions": "1.70.0",
+          "Microsoft.SemanticKernel.Abstractions": "1.71.0",
           "System.Numerics.Tensors": "10.0.2"
         }
       },
@@ -478,7 +478,7 @@
         "dependencies": {
           "Microsoft.Bcl.Numerics": "[10.0.2, )",
           "Microsoft.Extensions.ObjectPool": "[10.0.2, )",
-          "Microsoft.SemanticKernel.Connectors.Onnx": "[1.70.0-alpha, )",
+          "Microsoft.SemanticKernel.Connectors.Onnx": "[1.71.0-alpha, )",
           "SmartComponents.Inference": "[1.0.0, )",
           "System.Numerics.Tensors": "[10.0.2, )",
           "System.Runtime.Caching": "[10.0.2, )"
