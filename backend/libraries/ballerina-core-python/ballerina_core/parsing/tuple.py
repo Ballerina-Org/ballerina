@@ -47,7 +47,7 @@ def tuple_2_from_json(a_parser: FromJson[_A], b_parser: FromJson[_B]) -> FromJso
 def tuple_2_to_json(a_to_json: ToJson[_A], b_to_json: ToJson[_B]) -> ToJson[tuple[_A, _B]]:
     def to_json(value: tuple[_A, _B]) -> Json:
         a, b = value
-        return {DISCRIMINATOR_KEY: "tuple", VALUE_KEY: [a_to_json(a), b_to_json(b)]}
+        return {DISCRIMINATOR_KEY: "tuple-cons", VALUE_KEY: [a_to_json(a), b_to_json(b)]}
 
     return to_json
 
