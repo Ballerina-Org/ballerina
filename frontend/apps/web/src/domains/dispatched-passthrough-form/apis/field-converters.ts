@@ -18,12 +18,18 @@ import {
   ValueFilterStartsWith,
   ValueOption,
   ValueSumN,
+  unit,
+  Unit,
 } from "ballerina-core";
 import { List, OrderedMap, Map } from "immutable";
 import { DispatchPassthroughFormInjectedTypes } from "../injected-forms/category";
 
 export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthroughFormInjectedTypes> =
   {
+    unit: {
+      fromAPIRawValue: (_: any) => unit,
+      toAPIRawValue: ([_, __]: [Unit, boolean]) => unit,
+    },
     injectedCategory: {
       fromAPIRawValue: (_) => {
         if (_ == undefined) {
