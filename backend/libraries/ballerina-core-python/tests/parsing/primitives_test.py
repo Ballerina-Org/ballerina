@@ -45,11 +45,11 @@ class TestPrimitivesSerializer:
 
     @staticmethod
     def test_unit_to_json() -> None:
-        assert unit_to_json(unit) == {DISCRIMINATOR_KEY: "unit"}
+        assert unit_to_json(unit) == {DISCRIMINATOR_KEY: "unit", VALUE_KEY: "()"}
 
     @staticmethod
     def test_unit_from_json() -> None:
-        serialized: Json = {DISCRIMINATOR_KEY: "unit"}
+        serialized: Json = {DISCRIMINATOR_KEY: "unit", VALUE_KEY: "()"}
         assert unit_from_json(serialized) == Sum.right(unit)
 
     @staticmethod

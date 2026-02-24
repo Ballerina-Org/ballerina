@@ -8,6 +8,8 @@ from ballerina_core.parsing.parsing_types import Json, ParsingError
 from ballerina_core.sum import Sum
 from ballerina_core.unit import Unit, unit
 
+UNIT_VALUE = "()"
+
 
 def string_to_json(value: str) -> Json:
     return {DISCRIMINATOR_KEY: "string", VALUE_KEY: value}
@@ -42,12 +44,12 @@ def int32_from_json(value: Json) -> Sum[ParsingError, int]:
 
 
 def unit_to_json(_: Unit) -> Json:
-    return {DISCRIMINATOR_KEY: "unit"}
+    return {DISCRIMINATOR_KEY: "unit", VALUE_KEY: UNIT_VALUE}
 
 
 def unit_from_json(value: Json) -> Sum[ParsingError, Unit]:
     match value:
-        case {"discriminator": "unit"}:
+        case {"discriminator": "unit", "value": unit_value} if unit_value == UNIT_VALUE:
             return Sum.right(unit)
         case _:
             return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
