@@ -1,6 +1,6 @@
 from typing import TypeVar
 
-from ballerina_core.parsing.keys import DISCRIMINATOR_KEY, VALUE_KEY
+from ballerina_core.parsing.discriminated import discriminated_to_json, discriminated_value_from_json
 from ballerina_core.parsing.parsing_types import FromJson, Json, ParsingError, ToJson
 from ballerina_core.sum import Sum
 
@@ -16,30 +16,36 @@ _I = TypeVar("_I")
 _J = TypeVar("_J")
 
 
+def _tuple_elements_from_json(value: Json, /, *, invalid_structure_prefix: str) -> Sum[ParsingError, list[Json]]:
+    return discriminated_value_from_json(value, "tuple", invalid_structure_prefix=invalid_structure_prefix).flat_map(
+        lambda elements: (
+            Sum.right(elements)
+            if isinstance(elements, list)
+            else Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
+        )
+    )
+
+
 def tuple_2_from_json(a_parser: FromJson[_A], b_parser: FromJson[_B]) -> FromJson[tuple[_A, _B]]:
     def from_json(value: Json) -> Sum[ParsingError, tuple[_A, _B]]:
         length = 2
-        match value:
-            case {"discriminator": "tuple", "value": elements}:
-                match elements:
-                    case list():
-                        if len(elements) == length:
-                            return (
-                                a_parser(elements[0])
-                                .map_left(ParsingError.with_context(f"parsing element 1 of {length}:"))
-                                .flat_map(
-                                    lambda a: (
-                                        b_parser(elements[1])
-                                        .map_left(ParsingError.with_context(f"parsing element 2 of {length}:"))
-                                        .map_right(lambda b: (a, b))
-                                    )
-                                )
-                            )
-                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
-                    case _:
-                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
-            case _:
-                return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
+
+        def parse_elements(elements: list[Json]) -> Sum[ParsingError, tuple[_A, _B]]:
+            if len(elements) == length:
+                return (
+                    a_parser(elements[0])
+                    .map_left(ParsingError.with_context(f"parsing element 1 of {length}:"))
+                    .flat_map(
+                        lambda a: (
+                            b_parser(elements[1])
+                            .map_left(ParsingError.with_context(f"parsing element 2 of {length}:"))
+                            .map_right(lambda b: (a, b))
+                        )
+                    )
+                )
+            return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
+
+        return _tuple_elements_from_json(value, invalid_structure_prefix="Invalid structure").flat_map(parse_elements)
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
@@ -47,7 +53,7 @@ def tuple_2_from_json(a_parser: FromJson[_A], b_parser: FromJson[_B]) -> FromJso
 def tuple_2_to_json(a_to_json: ToJson[_A], b_to_json: ToJson[_B]) -> ToJson[tuple[_A, _B]]:
     def to_json(value: tuple[_A, _B]) -> Json:
         a, b = value
-        return {DISCRIMINATOR_KEY: "tuple", VALUE_KEY: [a_to_json(a), b_to_json(b)]}
+        return discriminated_to_json("tuple", [a_to_json(a), b_to_json(b)])
 
     return to_json
 
@@ -57,33 +63,29 @@ def tuple_3_from_json(
 ) -> FromJson[tuple[_A, _B, _C]]:
     def from_json(value: Json) -> Sum[ParsingError, tuple[_A, _B, _C]]:
         length = 3
-        match value:
-            case {"discriminator": "tuple", "value": elements}:
-                match elements:
-                    case list():
-                        if len(elements) == length:
-                            return (
-                                a_parser(elements[0])
-                                .map_left(ParsingError.with_context(f"parsing element 1 of {length}:"))
-                                .flat_map(
-                                    lambda a: (
-                                        b_parser(elements[1])
-                                        .map_left(ParsingError.with_context(f"parsing element 2 of {length}:"))
-                                        .flat_map(
-                                            lambda b: (
-                                                c_parser(elements[2])
-                                                .map_left(ParsingError.with_context(f"parsing element 3 of {length}:"))
-                                                .map_right(lambda c: (a, b, c))
-                                            )
-                                        )
-                                    )
+
+        def parse_elements(elements: list[Json]) -> Sum[ParsingError, tuple[_A, _B, _C]]:
+            if len(elements) == length:
+                return (
+                    a_parser(elements[0])
+                    .map_left(ParsingError.with_context(f"parsing element 1 of {length}:"))
+                    .flat_map(
+                        lambda a: (
+                            b_parser(elements[1])
+                            .map_left(ParsingError.with_context(f"parsing element 2 of {length}:"))
+                            .flat_map(
+                                lambda b: (
+                                    c_parser(elements[2])
+                                    .map_left(ParsingError.with_context(f"parsing element 3 of {length}:"))
+                                    .map_right(lambda c: (a, b, c))
                                 )
                             )
-                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
-                    case _:
-                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
-            case _:
-                return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
+                        )
+                    )
+                )
+            return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
+
+        return _tuple_elements_from_json(value, invalid_structure_prefix="Not a tuple").flat_map(parse_elements)
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
@@ -91,7 +93,7 @@ def tuple_3_from_json(
 def tuple_3_to_json(a_to_json: ToJson[_A], b_to_json: ToJson[_B], c_to_json: ToJson[_C]) -> ToJson[tuple[_A, _B, _C]]:
     def to_json(value: tuple[_A, _B, _C]) -> Json:
         a, b, c = value
-        return {DISCRIMINATOR_KEY: "tuple", VALUE_KEY: [a_to_json(a), b_to_json(b), c_to_json(c)]}
+        return discriminated_to_json("tuple", [a_to_json(a), b_to_json(b), c_to_json(c)])
 
     return to_json
 
@@ -101,41 +103,35 @@ def tuple_4_from_json(
 ) -> FromJson[tuple[_A, _B, _C, _D]]:
     def from_json(value: Json) -> Sum[ParsingError, tuple[_A, _B, _C, _D]]:
         length = 4
-        match value:
-            case {"discriminator": "tuple", "value": elements}:
-                match elements:
-                    case list():
-                        if len(elements) == length:
-                            return (
-                                a_parser(elements[0])
-                                .map_left(ParsingError.with_context(f"parsing element 1 of {length}:"))
-                                .flat_map(
-                                    lambda a: (
-                                        b_parser(elements[1])
-                                        .map_left(ParsingError.with_context(f"parsing element 2 of {length}:"))
-                                        .flat_map(
-                                            lambda b: (
-                                                c_parser(elements[2])
-                                                .map_left(ParsingError.with_context(f"parsing element 3 of {length}:"))
-                                                .flat_map(
-                                                    lambda c: (
-                                                        d_parser(elements[3])
-                                                        .map_left(
-                                                            ParsingError.with_context(f"parsing element 4 of {length}:")
-                                                        )
-                                                        .map_right(lambda d: (a, b, c, d))
-                                                    )
-                                                )
-                                            )
+
+        def parse_elements(elements: list[Json]) -> Sum[ParsingError, tuple[_A, _B, _C, _D]]:
+            if len(elements) == length:
+                return (
+                    a_parser(elements[0])
+                    .map_left(ParsingError.with_context(f"parsing element 1 of {length}:"))
+                    .flat_map(
+                        lambda a: (
+                            b_parser(elements[1])
+                            .map_left(ParsingError.with_context(f"parsing element 2 of {length}:"))
+                            .flat_map(
+                                lambda b: (
+                                    c_parser(elements[2])
+                                    .map_left(ParsingError.with_context(f"parsing element 3 of {length}:"))
+                                    .flat_map(
+                                        lambda c: (
+                                            d_parser(elements[3])
+                                            .map_left(ParsingError.with_context(f"parsing element 4 of {length}:"))
+                                            .map_right(lambda d: (a, b, c, d))
                                         )
                                     )
                                 )
                             )
-                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
-                    case _:
-                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
-            case _:
-                return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
+                        )
+                    )
+                )
+            return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
+
+        return _tuple_elements_from_json(value, invalid_structure_prefix="Not a tuple").flat_map(parse_elements)
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
@@ -145,7 +141,7 @@ def tuple_4_to_json(
 ) -> ToJson[tuple[_A, _B, _C, _D]]:
     def to_json(value: tuple[_A, _B, _C, _D]) -> Json:
         a, b, c, d = value
-        return {DISCRIMINATOR_KEY: "tuple", VALUE_KEY: [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d)]}
+        return discriminated_to_json("tuple", [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d)])
 
     return to_json
 
@@ -159,51 +155,41 @@ def tuple_5_from_json(
 ) -> FromJson[tuple[_A, _B, _C, _D, _E]]:
     def from_json(value: Json) -> Sum[ParsingError, tuple[_A, _B, _C, _D, _E]]:
         length = 5
-        match value:
-            case {"discriminator": "tuple", "value": elements}:
-                match elements:
-                    case list():
-                        if len(elements) == length:
-                            return (
-                                a_parser(elements[0])
-                                .map_left(ParsingError.with_context(f"parsing element 1 of {length}:"))
-                                .flat_map(
-                                    lambda a: (
-                                        b_parser(elements[1])
-                                        .map_left(ParsingError.with_context(f"parsing element 2 of {length}:"))
-                                        .flat_map(
-                                            lambda b: (
-                                                c_parser(elements[2])
-                                                .map_left(ParsingError.with_context(f"parsing element 3 of {length}:"))
-                                                .flat_map(
-                                                    lambda c: (
-                                                        d_parser(elements[3])
-                                                        .map_left(
-                                                            ParsingError.with_context(f"parsing element 4 of {length}:")
-                                                        )
-                                                        .flat_map(
-                                                            lambda d: (
-                                                                e_parser(elements[4])
-                                                                .map_left(
-                                                                    ParsingError.with_context(
-                                                                        f"parsing element 5 of {length}:"
-                                                                    )
-                                                                )
-                                                                .map_right(lambda e: (a, b, c, d, e))
-                                                            )
-                                                        )
-                                                    )
+
+        def parse_elements(elements: list[Json]) -> Sum[ParsingError, tuple[_A, _B, _C, _D, _E]]:
+            if len(elements) == length:
+                return (
+                    a_parser(elements[0])
+                    .map_left(ParsingError.with_context(f"parsing element 1 of {length}:"))
+                    .flat_map(
+                        lambda a: (
+                            b_parser(elements[1])
+                            .map_left(ParsingError.with_context(f"parsing element 2 of {length}:"))
+                            .flat_map(
+                                lambda b: (
+                                    c_parser(elements[2])
+                                    .map_left(ParsingError.with_context(f"parsing element 3 of {length}:"))
+                                    .flat_map(
+                                        lambda c: (
+                                            d_parser(elements[3])
+                                            .map_left(ParsingError.with_context(f"parsing element 4 of {length}:"))
+                                            .flat_map(
+                                                lambda d: (
+                                                    e_parser(elements[4])
+                                                    .map_left(ParsingError.with_context(f"parsing element 5 of {length}:"))
+                                                    .map_right(lambda e: (a, b, c, d, e))
                                                 )
                                             )
                                         )
                                     )
                                 )
                             )
-                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
-                    case _:
-                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
-            case _:
-                return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
+                        )
+                    )
+                )
+            return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
+
+        return _tuple_elements_from_json(value, invalid_structure_prefix="Not a tuple").flat_map(parse_elements)
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
@@ -213,10 +199,7 @@ def tuple_5_to_json(
 ) -> ToJson[tuple[_A, _B, _C, _D, _E]]:
     def to_json(value: tuple[_A, _B, _C, _D, _E]) -> Json:
         a, b, c, d, e = value
-        return {
-            DISCRIMINATOR_KEY: "tuple",
-            VALUE_KEY: [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e)],
-        }
+        return discriminated_to_json("tuple", [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e)])
 
     return to_json
 
@@ -231,48 +214,35 @@ def tuple_6_from_json(  # noqa: PLR0917,PLR0913
 ) -> FromJson[tuple[_A, _B, _C, _D, _E, _F]]:
     def from_json(value: Json) -> Sum[ParsingError, tuple[_A, _B, _C, _D, _E, _F]]:
         length = 6
-        match value:
-            case {"discriminator": "tuple", "value": elements}:
-                match elements:
-                    case list():
-                        if len(elements) == length:
-                            return (
-                                a_parser(elements[0])
-                                .map_left(ParsingError.with_context(f"parsing element 1 of {length}:"))
-                                .flat_map(
-                                    lambda a: (
-                                        b_parser(elements[1])
-                                        .map_left(ParsingError.with_context(f"parsing element 2 of {length}:"))
-                                        .flat_map(
-                                            lambda b: (
-                                                c_parser(elements[2])
-                                                .map_left(ParsingError.with_context(f"parsing element 3 of {length}:"))
-                                                .flat_map(
-                                                    lambda c: (
-                                                        d_parser(elements[3])
-                                                        .map_left(
-                                                            ParsingError.with_context(f"parsing element 4 of {length}:")
-                                                        )
-                                                        .flat_map(
-                                                            lambda d: (
-                                                                e_parser(elements[4])
-                                                                .map_left(
-                                                                    ParsingError.with_context(
-                                                                        f"parsing element 5 of {length}:"
-                                                                    )
-                                                                )
-                                                                .flat_map(
-                                                                    lambda e: (
-                                                                        f_parser(elements[5])
-                                                                        .map_left(
-                                                                            ParsingError.with_context(
-                                                                                f"parsing element 6 of {length}:"
-                                                                            )
-                                                                        )
-                                                                        .map_right(lambda f: (a, b, c, d, e, f))
-                                                                    )
-                                                                )
+
+        def parse_elements(elements: list[Json]) -> Sum[ParsingError, tuple[_A, _B, _C, _D, _E, _F]]:
+            if len(elements) == length:
+                return (
+                    a_parser(elements[0])
+                    .map_left(ParsingError.with_context(f"parsing element 1 of {length}:"))
+                    .flat_map(
+                        lambda a: (
+                            b_parser(elements[1])
+                            .map_left(ParsingError.with_context(f"parsing element 2 of {length}:"))
+                            .flat_map(
+                                lambda b: (
+                                    c_parser(elements[2])
+                                    .map_left(ParsingError.with_context(f"parsing element 3 of {length}:"))
+                                    .flat_map(
+                                        lambda c: (
+                                            d_parser(elements[3])
+                                            .map_left(ParsingError.with_context(f"parsing element 4 of {length}:"))
+                                            .flat_map(
+                                                lambda d: (
+                                                    e_parser(elements[4])
+                                                    .map_left(ParsingError.with_context(f"parsing element 5 of {length}:"))
+                                                    .flat_map(
+                                                        lambda e: (
+                                                            f_parser(elements[5])
+                                                            .map_left(
+                                                                ParsingError.with_context(f"parsing element 6 of {length}:")
                                                             )
+                                                            .map_right(lambda f: (a, b, c, d, e, f))
                                                         )
                                                     )
                                                 )
@@ -281,11 +251,12 @@ def tuple_6_from_json(  # noqa: PLR0917,PLR0913
                                     )
                                 )
                             )
-                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
-                    case _:
-                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
-            case _:
-                return Sum.left(ParsingError.single(f"Not a tuple: {value}"))
+                        )
+                    )
+                )
+            return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
+
+        return _tuple_elements_from_json(value, invalid_structure_prefix="Not a tuple").flat_map(parse_elements)
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
@@ -300,10 +271,9 @@ def tuple_6_to_json(  # noqa: PLR0917,PLR0913
 ) -> ToJson[tuple[_A, _B, _C, _D, _E, _F]]:
     def to_json(value: tuple[_A, _B, _C, _D, _E, _F]) -> Json:
         a, b, c, d, e, f = value
-        return {
-            DISCRIMINATOR_KEY: "tuple",
-            VALUE_KEY: [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e), f_to_json(f)],
-        }
+        return discriminated_to_json(
+            "tuple", [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e), f_to_json(f)]
+        )
 
     return to_json
 
@@ -319,58 +289,43 @@ def tuple_7_from_json(  # noqa: PLR0917,PLR0913
 ) -> FromJson[tuple[_A, _B, _C, _D, _E, _F, _G]]:
     def from_json(value: Json) -> Sum[ParsingError, tuple[_A, _B, _C, _D, _E, _F, _G]]:
         length = 7
-        match value:
-            case {"discriminator": "tuple", "value": elements}:
-                match elements:
-                    case list():
-                        if len(elements) == length:
-                            return (
-                                a_parser(elements[0])
-                                .map_left(ParsingError.with_context(f"parsing element 1 of {length}:"))
-                                .flat_map(
-                                    lambda a: (
-                                        b_parser(elements[1])
-                                        .map_left(ParsingError.with_context(f"parsing element 2 of {length}:"))
-                                        .flat_map(
-                                            lambda b: (
-                                                c_parser(elements[2])
-                                                .map_left(ParsingError.with_context(f"parsing element 3 of {length}:"))
-                                                .flat_map(
-                                                    lambda c: (
-                                                        d_parser(elements[3])
-                                                        .map_left(
-                                                            ParsingError.with_context(f"parsing element 4 of {length}:")
-                                                        )
-                                                        .flat_map(
-                                                            lambda d: (
-                                                                e_parser(elements[4])
-                                                                .map_left(
-                                                                    ParsingError.with_context(
-                                                                        f"parsing element 5 of {length}:"
-                                                                    )
-                                                                )
-                                                                .flat_map(
-                                                                    lambda e: (
-                                                                        f_parser(elements[5])
-                                                                        .map_left(
-                                                                            ParsingError.with_context(
-                                                                                f"parsing element 6 of {length}:"
-                                                                            )
-                                                                        )
-                                                                        .flat_map(
-                                                                            lambda f: (
-                                                                                g_parser(elements[6])
-                                                                                .map_left(
-                                                                                    ParsingError.with_context(
-                                                                                        f"parsing element 7 of {length}:"
-                                                                                    )
-                                                                                )
-                                                                                .map_right(
-                                                                                    lambda g: (a, b, c, d, e, f, g)
-                                                                                )
-                                                                            )
+
+        def parse_elements(elements: list[Json]) -> Sum[ParsingError, tuple[_A, _B, _C, _D, _E, _F, _G]]:
+            if len(elements) == length:
+                return (
+                    a_parser(elements[0])
+                    .map_left(ParsingError.with_context(f"parsing element 1 of {length}:"))
+                    .flat_map(
+                        lambda a: (
+                            b_parser(elements[1])
+                            .map_left(ParsingError.with_context(f"parsing element 2 of {length}:"))
+                            .flat_map(
+                                lambda b: (
+                                    c_parser(elements[2])
+                                    .map_left(ParsingError.with_context(f"parsing element 3 of {length}:"))
+                                    .flat_map(
+                                        lambda c: (
+                                            d_parser(elements[3])
+                                            .map_left(ParsingError.with_context(f"parsing element 4 of {length}:"))
+                                            .flat_map(
+                                                lambda d: (
+                                                    e_parser(elements[4])
+                                                    .map_left(ParsingError.with_context(f"parsing element 5 of {length}:"))
+                                                    .flat_map(
+                                                        lambda e: (
+                                                            f_parser(elements[5])
+                                                            .map_left(
+                                                                ParsingError.with_context(f"parsing element 6 of {length}:")
+                                                            )
+                                                            .flat_map(
+                                                                lambda f: (
+                                                                    g_parser(elements[6])
+                                                                    .map_left(
+                                                                        ParsingError.with_context(
+                                                                            f"parsing element 7 of {length}:"
                                                                         )
                                                                     )
+                                                                    .map_right(lambda g: (a, b, c, d, e, f, g))
                                                                 )
                                                             )
                                                         )
@@ -381,11 +336,12 @@ def tuple_7_from_json(  # noqa: PLR0917,PLR0913
                                     )
                                 )
                             )
-                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
-                    case _:
-                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
-            case _:
-                return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
+                        )
+                    )
+                )
+            return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
+
+        return _tuple_elements_from_json(value, invalid_structure_prefix="Invalid structure").flat_map(parse_elements)
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
@@ -401,18 +357,7 @@ def tuple_7_to_json(  # noqa: PLR0917,PLR0913
 ) -> ToJson[tuple[_A, _B, _C, _D, _E, _F, _G]]:
     def to_json(value: tuple[_A, _B, _C, _D, _E, _F, _G]) -> Json:
         a, b, c, d, e, f, g = value
-        return {
-            DISCRIMINATOR_KEY: "tuple",
-            VALUE_KEY: [
-                a_to_json(a),
-                b_to_json(b),
-                c_to_json(c),
-                d_to_json(d),
-                e_to_json(e),
-                f_to_json(f),
-                g_to_json(g),
-            ],
-        }
+        return discriminated_to_json("tuple", [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e), f_to_json(f), g_to_json(g)])
 
     return to_json
 
@@ -429,75 +374,51 @@ def tuple_8_from_json(  # noqa: PLR0917,PLR0913
 ) -> FromJson[tuple[_A, _B, _C, _D, _E, _F, _G, _H]]:
     def from_json(value: Json) -> Sum[ParsingError, tuple[_A, _B, _C, _D, _E, _F, _G, _H]]:
         length = 8
-        match value:
-            case {"discriminator": "tuple", "value": elements}:
-                match elements:
-                    case list():
-                        if len(elements) == length:
-                            return (
-                                a_parser(elements[0])
-                                .map_left(ParsingError.with_context(f"parsing element 1 of {length}:"))
-                                .flat_map(
-                                    lambda a: (
-                                        b_parser(elements[1])
-                                        .map_left(ParsingError.with_context(f"parsing element 2 of {length}:"))
-                                        .flat_map(
-                                            lambda b: (
-                                                c_parser(elements[2])
-                                                .map_left(ParsingError.with_context(f"parsing element 3 of {length}:"))
-                                                .flat_map(
-                                                    lambda c: (
-                                                        d_parser(elements[3])
-                                                        .map_left(
-                                                            ParsingError.with_context(f"parsing element 4 of {length}:")
-                                                        )
-                                                        .flat_map(
-                                                            lambda d: (
-                                                                e_parser(elements[4])
-                                                                .map_left(
-                                                                    ParsingError.with_context(
-                                                                        f"parsing element 5 of {length}:"
-                                                                    )
-                                                                )
-                                                                .flat_map(
-                                                                    lambda e: (
-                                                                        f_parser(elements[5])
-                                                                        .map_left(
-                                                                            ParsingError.with_context(
-                                                                                f"parsing element 6 of {length}:"
-                                                                            )
+
+        def parse_elements(elements: list[Json]) -> Sum[ParsingError, tuple[_A, _B, _C, _D, _E, _F, _G, _H]]:
+            if len(elements) == length:
+                return (
+                    a_parser(elements[0])
+                    .map_left(ParsingError.with_context(f"parsing element 1 of {length}:"))
+                    .flat_map(
+                        lambda a: (
+                            b_parser(elements[1])
+                            .map_left(ParsingError.with_context(f"parsing element 2 of {length}:"))
+                            .flat_map(
+                                lambda b: (
+                                    c_parser(elements[2])
+                                    .map_left(ParsingError.with_context(f"parsing element 3 of {length}:"))
+                                    .flat_map(
+                                        lambda c: (
+                                            d_parser(elements[3])
+                                            .map_left(ParsingError.with_context(f"parsing element 4 of {length}:"))
+                                            .flat_map(
+                                                lambda d: (
+                                                    e_parser(elements[4])
+                                                    .map_left(ParsingError.with_context(f"parsing element 5 of {length}:"))
+                                                    .flat_map(
+                                                        lambda e: (
+                                                            f_parser(elements[5])
+                                                            .map_left(
+                                                                ParsingError.with_context(f"parsing element 6 of {length}:")
+                                                            )
+                                                            .flat_map(
+                                                                lambda f: (
+                                                                    g_parser(elements[6])
+                                                                    .map_left(
+                                                                        ParsingError.with_context(
+                                                                            f"parsing element 7 of {length}:"
                                                                         )
-                                                                        .flat_map(
-                                                                            lambda f: (
-                                                                                g_parser(elements[6])
-                                                                                .map_left(
-                                                                                    ParsingError.with_context(
-                                                                                        f"parsing element 7 of {length}:"
-                                                                                    )
-                                                                                )
-                                                                                .flat_map(
-                                                                                    lambda g: (
-                                                                                        h_parser(elements[7])
-                                                                                        .map_left(
-                                                                                            ParsingError.with_context(
-                                                                                                f"parsing element 8 of {length}:"
-                                                                                            )
-                                                                                        )
-                                                                                        .map_right(
-                                                                                            lambda h: (
-                                                                                                a,
-                                                                                                b,
-                                                                                                c,
-                                                                                                d,
-                                                                                                e,
-                                                                                                f,
-                                                                                                g,
-                                                                                                h,
-                                                                                            )
-                                                                                        )
-                                                                                    )
+                                                                    )
+                                                                    .flat_map(
+                                                                        lambda g: (
+                                                                            h_parser(elements[7])
+                                                                            .map_left(
+                                                                                ParsingError.with_context(
+                                                                                    f"parsing element 8 of {length}:"
                                                                                 )
                                                                             )
+                                                                            .map_right(lambda h: (a, b, c, d, e, f, g, h))
                                                                         )
                                                                     )
                                                                 )
@@ -510,11 +431,12 @@ def tuple_8_from_json(  # noqa: PLR0917,PLR0913
                                     )
                                 )
                             )
-                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
-                    case _:
-                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
-            case _:
-                return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
+                        )
+                    )
+                )
+            return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
+
+        return _tuple_elements_from_json(value, invalid_structure_prefix="Invalid structure").flat_map(parse_elements)
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
@@ -531,19 +453,9 @@ def tuple_8_to_json(  # noqa: PLR0917,PLR0913
 ) -> ToJson[tuple[_A, _B, _C, _D, _E, _F, _G, _H]]:
     def to_json(value: tuple[_A, _B, _C, _D, _E, _F, _G, _H]) -> Json:
         a, b, c, d, e, f, g, h = value
-        return {
-            DISCRIMINATOR_KEY: "tuple",
-            VALUE_KEY: [
-                a_to_json(a),
-                b_to_json(b),
-                c_to_json(c),
-                d_to_json(d),
-                e_to_json(e),
-                f_to_json(f),
-                g_to_json(g),
-                h_to_json(h),
-            ],
-        }
+        return discriminated_to_json(
+            "tuple", [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e), f_to_json(f), g_to_json(g), h_to_json(h)]
+        )
 
     return to_json
 
@@ -561,83 +473,60 @@ def tuple_9_from_json(  # noqa: PLR0917,PLR0913
 ) -> FromJson[tuple[_A, _B, _C, _D, _E, _F, _G, _H, _I]]:
     def from_json(value: Json) -> Sum[ParsingError, tuple[_A, _B, _C, _D, _E, _F, _G, _H, _I]]:
         length = 9
-        match value:
-            case {"discriminator": "tuple", "value": elements}:
-                match elements:
-                    case list():
-                        if len(elements) == length:
-                            return (
-                                a_parser(elements[0])
-                                .map_left(ParsingError.with_context(f"parsing element 1 of {length}:"))
-                                .flat_map(
-                                    lambda a: (
-                                        b_parser(elements[1])
-                                        .map_left(ParsingError.with_context(f"parsing element 2 of {length}:"))
-                                        .flat_map(
-                                            lambda b: (
-                                                c_parser(elements[2])
-                                                .map_left(ParsingError.with_context(f"parsing element 3 of {length}:"))
-                                                .flat_map(
-                                                    lambda c: (
-                                                        d_parser(elements[3])
-                                                        .map_left(
-                                                            ParsingError.with_context(f"parsing element 4 of {length}:")
-                                                        )
-                                                        .flat_map(
-                                                            lambda d: (
-                                                                e_parser(elements[4])
-                                                                .map_left(
-                                                                    ParsingError.with_context(
-                                                                        f"parsing element 5 of {length}:"
-                                                                    )
-                                                                )
-                                                                .flat_map(
-                                                                    lambda e: (
-                                                                        f_parser(elements[5])
-                                                                        .map_left(
-                                                                            ParsingError.with_context(
-                                                                                f"parsing element 6 of {length}:"
-                                                                            )
+
+        def parse_elements(elements: list[Json]) -> Sum[ParsingError, tuple[_A, _B, _C, _D, _E, _F, _G, _H, _I]]:
+            if len(elements) == length:
+                return (
+                    a_parser(elements[0])
+                    .map_left(ParsingError.with_context(f"parsing element 1 of {length}:"))
+                    .flat_map(
+                        lambda a: (
+                            b_parser(elements[1])
+                            .map_left(ParsingError.with_context(f"parsing element 2 of {length}:"))
+                            .flat_map(
+                                lambda b: (
+                                    c_parser(elements[2])
+                                    .map_left(ParsingError.with_context(f"parsing element 3 of {length}:"))
+                                    .flat_map(
+                                        lambda c: (
+                                            d_parser(elements[3])
+                                            .map_left(ParsingError.with_context(f"parsing element 4 of {length}:"))
+                                            .flat_map(
+                                                lambda d: (
+                                                    e_parser(elements[4])
+                                                    .map_left(ParsingError.with_context(f"parsing element 5 of {length}:"))
+                                                    .flat_map(
+                                                        lambda e: (
+                                                            f_parser(elements[5])
+                                                            .map_left(
+                                                                ParsingError.with_context(f"parsing element 6 of {length}:")
+                                                            )
+                                                            .flat_map(
+                                                                lambda f: (
+                                                                    g_parser(elements[6])
+                                                                    .map_left(
+                                                                        ParsingError.with_context(
+                                                                            f"parsing element 7 of {length}:"
                                                                         )
-                                                                        .flat_map(
-                                                                            lambda f: (
-                                                                                g_parser(elements[6])
-                                                                                .map_left(
-                                                                                    ParsingError.with_context(
-                                                                                        f"parsing element 7 of {length}:"
-                                                                                    )
+                                                                    )
+                                                                    .flat_map(
+                                                                        lambda g: (
+                                                                            h_parser(elements[7])
+                                                                            .map_left(
+                                                                                ParsingError.with_context(
+                                                                                    f"parsing element 8 of {length}:"
                                                                                 )
-                                                                                .flat_map(
-                                                                                    lambda g: (
-                                                                                        h_parser(elements[7])
-                                                                                        .map_left(
-                                                                                            ParsingError.with_context(
-                                                                                                f"parsing element 8 of {length}:"
-                                                                                            )
+                                                                            )
+                                                                            .flat_map(
+                                                                                lambda h: (
+                                                                                    i_parser(elements[8])
+                                                                                    .map_left(
+                                                                                        ParsingError.with_context(
+                                                                                            f"parsing element 9 of {length}:"
                                                                                         )
-                                                                                        .flat_map(
-                                                                                            lambda h: (
-                                                                                                i_parser(elements[8])
-                                                                                                .map_left(
-                                                                                                    ParsingError.with_context(
-                                                                                                        f"parsing element 9 of {length}:"
-                                                                                                    )
-                                                                                                )
-                                                                                                .map_right(
-                                                                                                    lambda i: (
-                                                                                                        a,
-                                                                                                        b,
-                                                                                                        c,
-                                                                                                        d,
-                                                                                                        e,
-                                                                                                        f,
-                                                                                                        g,
-                                                                                                        h,
-                                                                                                        i,
-                                                                                                    )
-                                                                                                )
-                                                                                            )
-                                                                                        )
+                                                                                    )
+                                                                                    .map_right(
+                                                                                        lambda i: (a, b, c, d, e, f, g, h, i)
                                                                                     )
                                                                                 )
                                                                             )
@@ -653,11 +542,12 @@ def tuple_9_from_json(  # noqa: PLR0917,PLR0913
                                     )
                                 )
                             )
-                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
-                    case _:
-                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
-            case _:
-                return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
+                        )
+                    )
+                )
+            return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
+
+        return _tuple_elements_from_json(value, invalid_structure_prefix="Invalid structure").flat_map(parse_elements)
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
@@ -675,20 +565,10 @@ def tuple_9_to_json(  # noqa: PLR0917,PLR0913
 ) -> ToJson[tuple[_A, _B, _C, _D, _E, _F, _G, _H, _I]]:
     def to_json(value: tuple[_A, _B, _C, _D, _E, _F, _G, _H, _I]) -> Json:
         a, b, c, d, e, f, g, h, i = value
-        return {
-            DISCRIMINATOR_KEY: "tuple",
-            VALUE_KEY: [
-                a_to_json(a),
-                b_to_json(b),
-                c_to_json(c),
-                d_to_json(d),
-                e_to_json(e),
-                f_to_json(f),
-                g_to_json(g),
-                h_to_json(h),
-                i_to_json(i),
-            ],
-        }
+        return discriminated_to_json(
+            "tuple",
+            [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e), f_to_json(f), g_to_json(g), h_to_json(h), i_to_json(i)],
+        )
 
     return to_json
 
@@ -707,94 +587,68 @@ def tuple_10_from_json(  # noqa: PLR0917,PLR0913
 ) -> FromJson[tuple[_A, _B, _C, _D, _E, _F, _G, _H, _I, _J]]:
     def from_json(value: Json) -> Sum[ParsingError, tuple[_A, _B, _C, _D, _E, _F, _G, _H, _I, _J]]:
         length = 10
-        match value:
-            case {"discriminator": "tuple", "value": elements}:
-                match elements:
-                    case list():
-                        if len(elements) == length:
-                            return (
-                                a_parser(elements[0])
-                                .map_left(ParsingError.with_context(f"parsing element 1 of {length}:"))
-                                .flat_map(
-                                    lambda a: (
-                                        b_parser(elements[1])
-                                        .map_left(ParsingError.with_context(f"parsing element 2 of {length}:"))
-                                        .flat_map(
-                                            lambda b: (
-                                                c_parser(elements[2])
-                                                .map_left(ParsingError.with_context(f"parsing element 3 of {length}:"))
-                                                .flat_map(
-                                                    lambda c: (
-                                                        d_parser(elements[3])
-                                                        .map_left(
-                                                            ParsingError.with_context(f"parsing element 4 of {length}:")
-                                                        )
-                                                        .flat_map(
-                                                            lambda d: (
-                                                                e_parser(elements[4])
-                                                                .map_left(
-                                                                    ParsingError.with_context(
-                                                                        f"parsing element 5 of {length}:"
-                                                                    )
-                                                                )
-                                                                .flat_map(
-                                                                    lambda e: (
-                                                                        f_parser(elements[5])
-                                                                        .map_left(
-                                                                            ParsingError.with_context(
-                                                                                f"parsing element 6 of {length}:"
-                                                                            )
+
+        def parse_elements(elements: list[Json]) -> Sum[ParsingError, tuple[_A, _B, _C, _D, _E, _F, _G, _H, _I, _J]]:
+            if len(elements) == length:
+                return (
+                    a_parser(elements[0])
+                    .map_left(ParsingError.with_context(f"parsing element 1 of {length}:"))
+                    .flat_map(
+                        lambda a: (
+                            b_parser(elements[1])
+                            .map_left(ParsingError.with_context(f"parsing element 2 of {length}:"))
+                            .flat_map(
+                                lambda b: (
+                                    c_parser(elements[2])
+                                    .map_left(ParsingError.with_context(f"parsing element 3 of {length}:"))
+                                    .flat_map(
+                                        lambda c: (
+                                            d_parser(elements[3])
+                                            .map_left(ParsingError.with_context(f"parsing element 4 of {length}:"))
+                                            .flat_map(
+                                                lambda d: (
+                                                    e_parser(elements[4])
+                                                    .map_left(ParsingError.with_context(f"parsing element 5 of {length}:"))
+                                                    .flat_map(
+                                                        lambda e: (
+                                                            f_parser(elements[5])
+                                                            .map_left(
+                                                                ParsingError.with_context(f"parsing element 6 of {length}:")
+                                                            )
+                                                            .flat_map(
+                                                                lambda f: (
+                                                                    g_parser(elements[6])
+                                                                    .map_left(
+                                                                        ParsingError.with_context(
+                                                                            f"parsing element 7 of {length}:"
                                                                         )
-                                                                        .flat_map(
-                                                                            lambda f: (
-                                                                                g_parser(elements[6])
-                                                                                .map_left(
-                                                                                    ParsingError.with_context(
-                                                                                        f"parsing element 7 of {length}:"
-                                                                                    )
+                                                                    )
+                                                                    .flat_map(
+                                                                        lambda g: (
+                                                                            h_parser(elements[7])
+                                                                            .map_left(
+                                                                                ParsingError.with_context(
+                                                                                    f"parsing element 8 of {length}:"
                                                                                 )
-                                                                                .flat_map(
-                                                                                    lambda g: (
-                                                                                        h_parser(elements[7])
-                                                                                        .map_left(
-                                                                                            ParsingError.with_context(
-                                                                                                f"parsing element 8 of {length}:"
-                                                                                            )
+                                                                            )
+                                                                            .flat_map(
+                                                                                lambda h: (
+                                                                                    i_parser(elements[8])
+                                                                                    .map_left(
+                                                                                        ParsingError.with_context(
+                                                                                            f"parsing element 9 of {length}:"
                                                                                         )
-                                                                                        .flat_map(
-                                                                                            lambda h: (
-                                                                                                i_parser(elements[8])
-                                                                                                .map_left(
-                                                                                                    ParsingError.with_context(
-                                                                                                        f"parsing element 9 of {length}:"
-                                                                                                    )
+                                                                                    )
+                                                                                    .flat_map(
+                                                                                        lambda i: (
+                                                                                            j_parser(elements[9])
+                                                                                            .map_left(
+                                                                                                ParsingError.with_context(
+                                                                                                    f"parsing element 10 of {length}:"
                                                                                                 )
-                                                                                                .flat_map(
-                                                                                                    lambda i: (
-                                                                                                        j_parser(
-                                                                                                            elements[9]
-                                                                                                        )
-                                                                                                        .map_left(
-                                                                                                            ParsingError.with_context(
-                                                                                                                f"parsing element 10 of {length}:"
-                                                                                                            )
-                                                                                                        )
-                                                                                                        .map_right(
-                                                                                                            lambda j: (
-                                                                                                                a,
-                                                                                                                b,
-                                                                                                                c,
-                                                                                                                d,
-                                                                                                                e,
-                                                                                                                f,
-                                                                                                                g,
-                                                                                                                h,
-                                                                                                                i,
-                                                                                                                j,
-                                                                                                            )
-                                                                                                        )
-                                                                                                    )
-                                                                                                )
+                                                                                            )
+                                                                                            .map_right(
+                                                                                                lambda j: (a, b, c, d, e, f, g, h, i, j)
                                                                                             )
                                                                                         )
                                                                                     )
@@ -812,11 +666,12 @@ def tuple_10_from_json(  # noqa: PLR0917,PLR0913
                                     )
                                 )
                             )
-                        return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
-                    case _:
-                        return Sum.left(ParsingError.single(f"Invalid structure of elements: {elements}"))
-            case _:
-                return Sum.left(ParsingError.single(f"Invalid structure: {value}"))
+                        )
+                    )
+                )
+            return Sum.left(ParsingError.single(f"Expected {length} elements in tuple, got {elements}"))
+
+        return _tuple_elements_from_json(value, invalid_structure_prefix="Invalid structure").flat_map(parse_elements)
 
     return lambda value: from_json(value).map_left(ParsingError.with_context("Parsing tuple:"))
 
@@ -835,9 +690,9 @@ def tuple_10_to_json(  # noqa: PLR0917,PLR0913
 ) -> ToJson[tuple[_A, _B, _C, _D, _E, _F, _G, _H, _I, _J]]:
     def to_json(value: tuple[_A, _B, _C, _D, _E, _F, _G, _H, _I, _J]) -> Json:
         a, b, c, d, e, f, g, h, i, j = value
-        return {
-            DISCRIMINATOR_KEY: "tuple",
-            VALUE_KEY: [
+        return discriminated_to_json(
+            "tuple",
+            [
                 a_to_json(a),
                 b_to_json(b),
                 c_to_json(c),
@@ -849,6 +704,6 @@ def tuple_10_to_json(  # noqa: PLR0917,PLR0913
                 i_to_json(i),
                 j_to_json(j),
             ],
-        }
+        )
 
     return to_json
