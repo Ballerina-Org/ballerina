@@ -38,10 +38,7 @@ def _case_from_json(case_payload: Json) -> Sum[ParsingError, tuple[int, Json]]:
 def sum_2_to_json(left_to_json: ToJson[_SumL], right_to_json: ToJson[_SumR], /) -> ToJson[Sum[_SumL, _SumR]]:
     def to_json(value: Sum[_SumL, _SumR]) -> Json:
         return discriminated_to_json(
-            "sum",
-            value.fold(
-                lambda a: _case_to_json(1, left_to_json(a)), lambda b: _case_to_json(2, right_to_json(b))
-            ),
+            "sum", value.fold(lambda a: _case_to_json(1, left_to_json(a)), lambda b: _case_to_json(2, right_to_json(b)))
         )
 
     return to_json
@@ -72,7 +69,9 @@ def sum_2_from_json(
     left_from_json: FromJson[_SumL], right_from_json: FromJson[_SumR], /
 ) -> FromJson[Sum[_SumL, _SumR]]:
     def from_json(value: Json) -> Sum[ParsingError, Sum[_SumL, _SumR]]:
-        return discriminated_value_from_json(value, "sum", invalid_structure_prefix="Sum2 got invalid structure").flat_map(
+        return discriminated_value_from_json(
+            value, "sum", invalid_structure_prefix="Sum2 got invalid structure"
+        ).flat_map(
             lambda case_payload: _case_from_json(case_payload).flat_map(
                 lambda case_tuple: _handle_case_tuple(case_tuple, left_from_json, right_from_json)
             )
@@ -131,7 +130,9 @@ def sum_3_from_json(
     a_from_json: FromJson[_Sum3A], b_from_json: FromJson[_Sum3B], c_from_json: FromJson[_Sum3C], /
 ) -> FromJson[Sum3[_Sum3A, _Sum3B, _Sum3C]]:
     def from_json(value: Json) -> Sum[ParsingError, Sum3[_Sum3A, _Sum3B, _Sum3C]]:
-        return discriminated_value_from_json(value, "sum", invalid_structure_prefix="Sum3 got invalid structure").flat_map(
+        return discriminated_value_from_json(
+            value, "sum", invalid_structure_prefix="Sum3 got invalid structure"
+        ).flat_map(
             lambda case_payload: _case_from_json(case_payload).flat_map(
                 lambda case_tuple: _handle_case_tuple_3(case_tuple, a_from_json, b_from_json, c_from_json)
             )
@@ -202,7 +203,9 @@ def sum_4_from_json(
     /,
 ) -> FromJson[Sum4[_Sum4A, _Sum4B, _Sum4C, _Sum4D]]:
     def from_json(value: Json) -> Sum[ParsingError, Sum4[_Sum4A, _Sum4B, _Sum4C, _Sum4D]]:
-        return discriminated_value_from_json(value, "sum", invalid_structure_prefix="Sum4 got invalid structure").flat_map(
+        return discriminated_value_from_json(
+            value, "sum", invalid_structure_prefix="Sum4 got invalid structure"
+        ).flat_map(
             lambda case_payload: _case_from_json(case_payload).flat_map(
                 lambda case_tuple: _handle_case_tuple_4(case_tuple, a_from_json, b_from_json, c_from_json, d_from_json)
             )

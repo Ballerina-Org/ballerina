@@ -176,7 +176,9 @@ def tuple_5_from_json(
                                             .flat_map(
                                                 lambda d: (
                                                     e_parser(elements[4])
-                                                    .map_left(ParsingError.with_context(f"parsing element 5 of {length}:"))
+                                                    .map_left(
+                                                        ParsingError.with_context(f"parsing element 5 of {length}:")
+                                                    )
                                                     .map_right(lambda e: (a, b, c, d, e))
                                                 )
                                             )
@@ -235,12 +237,16 @@ def tuple_6_from_json(  # noqa: PLR0917,PLR0913
                                             .flat_map(
                                                 lambda d: (
                                                     e_parser(elements[4])
-                                                    .map_left(ParsingError.with_context(f"parsing element 5 of {length}:"))
+                                                    .map_left(
+                                                        ParsingError.with_context(f"parsing element 5 of {length}:")
+                                                    )
                                                     .flat_map(
                                                         lambda e: (
                                                             f_parser(elements[5])
                                                             .map_left(
-                                                                ParsingError.with_context(f"parsing element 6 of {length}:")
+                                                                ParsingError.with_context(
+                                                                    f"parsing element 6 of {length}:"
+                                                                )
                                                             )
                                                             .map_right(lambda f: (a, b, c, d, e, f))
                                                         )
@@ -310,12 +316,16 @@ def tuple_7_from_json(  # noqa: PLR0917,PLR0913
                                             .flat_map(
                                                 lambda d: (
                                                     e_parser(elements[4])
-                                                    .map_left(ParsingError.with_context(f"parsing element 5 of {length}:"))
+                                                    .map_left(
+                                                        ParsingError.with_context(f"parsing element 5 of {length}:")
+                                                    )
                                                     .flat_map(
                                                         lambda e: (
                                                             f_parser(elements[5])
                                                             .map_left(
-                                                                ParsingError.with_context(f"parsing element 6 of {length}:")
+                                                                ParsingError.with_context(
+                                                                    f"parsing element 6 of {length}:"
+                                                                )
                                                             )
                                                             .flat_map(
                                                                 lambda f: (
@@ -357,7 +367,9 @@ def tuple_7_to_json(  # noqa: PLR0917,PLR0913
 ) -> ToJson[tuple[_A, _B, _C, _D, _E, _F, _G]]:
     def to_json(value: tuple[_A, _B, _C, _D, _E, _F, _G]) -> Json:
         a, b, c, d, e, f, g = value
-        return discriminated_to_json("tuple", [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e), f_to_json(f), g_to_json(g)])
+        return discriminated_to_json(
+            "tuple", [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e), f_to_json(f), g_to_json(g)]
+        )
 
     return to_json
 
@@ -395,12 +407,16 @@ def tuple_8_from_json(  # noqa: PLR0917,PLR0913
                                             .flat_map(
                                                 lambda d: (
                                                     e_parser(elements[4])
-                                                    .map_left(ParsingError.with_context(f"parsing element 5 of {length}:"))
+                                                    .map_left(
+                                                        ParsingError.with_context(f"parsing element 5 of {length}:")
+                                                    )
                                                     .flat_map(
                                                         lambda e: (
                                                             f_parser(elements[5])
                                                             .map_left(
-                                                                ParsingError.with_context(f"parsing element 6 of {length}:")
+                                                                ParsingError.with_context(
+                                                                    f"parsing element 6 of {length}:"
+                                                                )
                                                             )
                                                             .flat_map(
                                                                 lambda f: (
@@ -418,7 +434,9 @@ def tuple_8_from_json(  # noqa: PLR0917,PLR0913
                                                                                     f"parsing element 8 of {length}:"
                                                                                 )
                                                                             )
-                                                                            .map_right(lambda h: (a, b, c, d, e, f, g, h))
+                                                                            .map_right(
+                                                                                lambda h: (a, b, c, d, e, f, g, h)
+                                                                            )
                                                                         )
                                                                     )
                                                                 )
@@ -454,7 +472,17 @@ def tuple_8_to_json(  # noqa: PLR0917,PLR0913
     def to_json(value: tuple[_A, _B, _C, _D, _E, _F, _G, _H]) -> Json:
         a, b, c, d, e, f, g, h = value
         return discriminated_to_json(
-            "tuple", [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e), f_to_json(f), g_to_json(g), h_to_json(h)]
+            "tuple",
+            [
+                a_to_json(a),
+                b_to_json(b),
+                c_to_json(c),
+                d_to_json(d),
+                e_to_json(e),
+                f_to_json(f),
+                g_to_json(g),
+                h_to_json(h),
+            ],
         )
 
     return to_json
@@ -494,12 +522,16 @@ def tuple_9_from_json(  # noqa: PLR0917,PLR0913
                                             .flat_map(
                                                 lambda d: (
                                                     e_parser(elements[4])
-                                                    .map_left(ParsingError.with_context(f"parsing element 5 of {length}:"))
+                                                    .map_left(
+                                                        ParsingError.with_context(f"parsing element 5 of {length}:")
+                                                    )
                                                     .flat_map(
                                                         lambda e: (
                                                             f_parser(elements[5])
                                                             .map_left(
-                                                                ParsingError.with_context(f"parsing element 6 of {length}:")
+                                                                ParsingError.with_context(
+                                                                    f"parsing element 6 of {length}:"
+                                                                )
                                                             )
                                                             .flat_map(
                                                                 lambda f: (
@@ -526,7 +558,17 @@ def tuple_9_from_json(  # noqa: PLR0917,PLR0913
                                                                                         )
                                                                                     )
                                                                                     .map_right(
-                                                                                        lambda i: (a, b, c, d, e, f, g, h, i)
+                                                                                        lambda i: (
+                                                                                            a,
+                                                                                            b,
+                                                                                            c,
+                                                                                            d,
+                                                                                            e,
+                                                                                            f,
+                                                                                            g,
+                                                                                            h,
+                                                                                            i,
+                                                                                        )
                                                                                     )
                                                                                 )
                                                                             )
@@ -567,7 +609,17 @@ def tuple_9_to_json(  # noqa: PLR0917,PLR0913
         a, b, c, d, e, f, g, h, i = value
         return discriminated_to_json(
             "tuple",
-            [a_to_json(a), b_to_json(b), c_to_json(c), d_to_json(d), e_to_json(e), f_to_json(f), g_to_json(g), h_to_json(h), i_to_json(i)],
+            [
+                a_to_json(a),
+                b_to_json(b),
+                c_to_json(c),
+                d_to_json(d),
+                e_to_json(e),
+                f_to_json(f),
+                g_to_json(g),
+                h_to_json(h),
+                i_to_json(i),
+            ],
         )
 
     return to_json
@@ -608,12 +660,16 @@ def tuple_10_from_json(  # noqa: PLR0917,PLR0913
                                             .flat_map(
                                                 lambda d: (
                                                     e_parser(elements[4])
-                                                    .map_left(ParsingError.with_context(f"parsing element 5 of {length}:"))
+                                                    .map_left(
+                                                        ParsingError.with_context(f"parsing element 5 of {length}:")
+                                                    )
                                                     .flat_map(
                                                         lambda e: (
                                                             f_parser(elements[5])
                                                             .map_left(
-                                                                ParsingError.with_context(f"parsing element 6 of {length}:")
+                                                                ParsingError.with_context(
+                                                                    f"parsing element 6 of {length}:"
+                                                                )
                                                             )
                                                             .flat_map(
                                                                 lambda f: (
@@ -648,7 +704,18 @@ def tuple_10_from_json(  # noqa: PLR0917,PLR0913
                                                                                                 )
                                                                                             )
                                                                                             .map_right(
-                                                                                                lambda j: (a, b, c, d, e, f, g, h, i, j)
+                                                                                                lambda j: (
+                                                                                                    a,
+                                                                                                    b,
+                                                                                                    c,
+                                                                                                    d,
+                                                                                                    e,
+                                                                                                    f,
+                                                                                                    g,
+                                                                                                    h,
+                                                                                                    i,
+                                                                                                    j,
+                                                                                                )
                                                                                             )
                                                                                         )
                                                                                     )

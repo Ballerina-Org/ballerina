@@ -16,9 +16,7 @@ def option_to_json(some_to_json: ToJson[_Option], unit_to_json: ToJson[Unit], /)
     def to_json(value: Option[_Option]) -> Json:
         return discriminated_to_json(
             "union",
-            value.fold(
-                lambda: [_OPTION_NONE_CASE, unit_to_json(unit)], lambda a: [_OPTION_SOME_CASE, some_to_json(a)]
-            ),
+            value.fold(lambda: [_OPTION_NONE_CASE, unit_to_json(unit)], lambda a: [_OPTION_SOME_CASE, some_to_json(a)]),
         )
 
     return to_json
