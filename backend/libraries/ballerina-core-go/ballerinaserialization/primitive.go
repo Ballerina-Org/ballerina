@@ -14,19 +14,15 @@ const unitDiscriminator = "unit"
 
 type _unitForSerialization struct {
 	Discriminator string `json:"discriminator"`
-	Value         string `json:"value"`
 }
 
 var UnitSerializer Serializer[ballerina.Unit] = WithContext(fmt.Sprintf("on %s", unitDiscriminator), func(value ballerina.Unit) ballerina.Sum[error, json.RawMessage] {
-	return WrappedMarshal(_unitForSerialization{Discriminator: unitDiscriminator, Value: "()"})
+	return WrappedMarshal(_unitForSerialization{Discriminator: unitDiscriminator})
 })
 
 var UnitDeserializer Deserializer[ballerina.Unit] = unmarshalWithContext(fmt.Sprintf("on %s", unitDiscriminator), func(unitForSerialization _unitForSerialization) ballerina.Sum[error, ballerina.Unit] {
 	if unitForSerialization.Discriminator != unitDiscriminator {
 		return ballerina.Left[error, ballerina.Unit](fmt.Errorf("expected discriminator to be '%s', got '%s'", unitDiscriminator, unitForSerialization.Discriminator))
-	}
-	if unitForSerialization.Value != "()" {
-		return ballerina.Left[error, ballerina.Unit](fmt.Errorf("expected unit value to be '()', got '%s'", unitForSerialization.Value))
 	}
 	return ballerina.Right[error, ballerina.Unit](ballerina.Unit{})
 })
