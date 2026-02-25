@@ -23,7 +23,10 @@ module QueryExpand =
   open Ballerina
   open Ballerina.DSL.Next.StdLib.MemoryDB
 
-  let MemoryDBQueryExpandExtension<'ext when 'ext: comparison> (valueLens: PartialLens<'ext, MemoryDBValues<'ext>>) =
+  let MemoryDBQueryExpandExtension<'ext when 'ext: comparison>
+    (listLens: PartialLens<'ext, List<Value<TypeValue<'ext>, 'ext>>>)
+    (valueLens: PartialLens<'ext, MemoryDBValues<'ext>>)
+    =
 
     let memoryDBQueryExpandId =
       Identifier.FullyQualified([ "MemoryDB" ], "queryExpand")
@@ -79,62 +82,46 @@ module QueryExpand =
     let queryExpandOperation: OperationExtension<_, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBQueryExpandType, memoryDBQueryExpandKind, MemoryDBValues.GetById {| EntityRef = None |})
+          <| (memoryDBQueryExpandType, memoryDBQueryExpandKind, MemoryDBValues.QueryExpand {| Query1 = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
-            | MemoryDBValues.GetById v -> Some(MemoryDBValues.GetById v)
+            | MemoryDBValues.QueryExpand v -> Some(MemoryDBValues.QueryExpand v)
             | _ -> None)
         Apply =
-          fun _loc0 _rest (_op, _v) ->
+          fun loc0 _rest (op, v) ->
             reader {
-              return
-                Value.Lambda(
-                  Var.Create "placeholder",
-                  Expr.Primitive PrimitiveValue.Unit,
-                  Map.empty,
-                  TypeCheckScope.Empty
-                )
-            // let! op =
-            //   op
-            //   |> MemoryDBValues.AsGetById
-            //   |> sum.MapError(Errors.MapContext(replaceWith loc0))
-            //   |> reader.OfSum
+              let! op =
+                op
+                |> MemoryDBValues.AsQueryExpand
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
 
-            // match op with
-            // | None -> // the closure is empty - first step in the application
-            //   let! v, _ =
-            //     v
-            //     |> Value.AsExt
-            //     |> sum.MapError(Errors.MapContext(replaceWith loc0))
-            //     |> reader.OfSum
+              match op with
+              | None -> // the closure is empty - first step in the application
+                let! v, _ =
+                  v
+                  |> Value.AsExt
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
 
-            //   let! v =
-            //     v
-            //     |> valueLens.Get
-            //     |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
-            //     |> reader.OfSum
+                let! query1 =
+                  v
+                  |> listLens.Get
+                  |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
+                  |> reader.OfSum
 
-            //   let! v =
-            //     v
-            //     |> MemoryDBValues.AsEntityRef
-            //     |> sum.MapError(Errors.MapContext(replaceWith loc0))
-            //     |> reader.OfSum
-
-            //   return
-            //     (MemoryDBValues.GetById({| EntityRef = Some v |}) |> valueLens.Set, Some memoryDBQueryFromEntityId)
-            //     |> Ext
-            // | Some(_schema, _db, _entity, _schema_as_value) -> // the closure has the first operand - second step in the application
-            //   let v =
-            //     option {
-            //       let! entity = _db.entities |> Map.tryFind _entity.Name
-            //       let! value = entity |> Map.tryFind v
-            //       return value
-            //     }
-
-            //   match v with
-            //   | None -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
-            //   | Some value -> return Value.Sum({ Case = 2; Count = 2 }, value)
+                return
+                  (MemoryDBValues.QueryExpand({| Query1 = Some query1 |}) |> valueLens.Set, Some memoryDBQueryExpandId)
+                  |> Ext
+              | Some(query1) ->
+                return
+                  Ext(
+                    listLens.Set
+                      [ for e1 in query1 do
+                          Value.Tuple [ e1; v ] ],
+                    None
+                  )
             } }
 
     memoryDBQueryExpandId, queryExpandOperation

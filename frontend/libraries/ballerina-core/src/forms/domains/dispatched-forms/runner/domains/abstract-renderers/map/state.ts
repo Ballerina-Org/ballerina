@@ -14,6 +14,8 @@ import {
   CommonAbstractRendererState,
   MapType,
   CommonAbstractRendererViewOnlyReadonlyContext,
+  ValueOrErrors,
+  PredicateValue,
 } from "../../../../../../../../main";
 
 export type MapAbstractRendererReadonlyContext<
@@ -93,6 +95,48 @@ export const MapAbstractRendererState = {
             }),
           ),
         ),
+    },
+  },
+  Operations: {
+    ExtractKeyValuePairFromTuple: (
+      tuple: ValueTuple,
+      elementIndex: number,
+      domNodeAncestorPath: string,
+    ): ValueOrErrors<
+      { key: PredicateValue; value: PredicateValue },
+      string
+    > => {
+      const keyValuePair = tuple.values.get(elementIndex);
+      if (keyValuePair == undefined) {
+        return ValueOrErrors.Default.throwOne(
+          `Could not find key value pair for element at index ${elementIndex} in tuple ${JSON.stringify(tuple)}
+          \n...When sending onchange value delta
+          \n...When rendering
+          \n...${domNodeAncestorPath}`,
+        );
+      }
+      if (!PredicateValue.Operations.IsTuple(keyValuePair)) {
+        return ValueOrErrors.Default.throwOne(
+          `Tuple expected but got: ${JSON.stringify(keyValuePair)}
+          \n...When sending onchange value delta
+          \n...When rendering
+          \n...${domNodeAncestorPath}`,
+        );
+      }
+      const key = keyValuePair.values.get(0);
+      const value = keyValuePair.values.get(1);
+      if (key == undefined || value == undefined) {
+        return ValueOrErrors.Default.throwOne(
+          `Could not find key or value for element at index ${elementIndex} in tuple ${JSON.stringify(tuple)}
+          \n...When sending onchange value delta
+          \n...When rendering
+          \n...${domNodeAncestorPath}`,
+        );
+      }
+      return ValueOrErrors.Default.return({
+        key,
+        value,
+      });
     },
   },
 };

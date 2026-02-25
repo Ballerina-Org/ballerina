@@ -15,7 +15,7 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open System.Globalization
 
-  let TimeSpanExtension<'ext>
+  let TimeSpanExtension<'ext, 'extDTO when 'extDTO: not null and 'extDTO: not struct>
     (operationLens: PartialLens<'ext, TimeSpanOperations<'ext>>)
     : OperationsExtension<'ext, TimeSpanOperations<'ext>> =
 

@@ -208,4 +208,4 @@ let ``Move file to own folder`` () =
     | Left vfs ->
       let found = tryFindFileByName "x" vfs
       Assert.That(found.IsSome, Is.True)
-      Assert.That(found.Value.Path, Is.EqualTo [ "root"; "a"; "b2"; "x"; "x" ])
+      Assert.That(found.Value.Path, Is.EqualTo<List<string>> [ "root"; "a"; "b2"; "x"; "x" ])

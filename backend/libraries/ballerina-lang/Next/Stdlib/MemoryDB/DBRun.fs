@@ -93,9 +93,9 @@ module DBRun =
     }
 
 
-  let MemoryDBRunExtension<'ext when 'ext: comparison>
+  let MemoryDBRunExtension<'ext, 'extDTO when 'ext: comparison and 'extDTO: not null and 'extDTO: not struct>
     (valueLens: PartialLens<'ext, MemoryDBValues<'ext>>)
-    : TypeLambdaExtension<'ext, MemoryDBValues<'ext>> =
+    : TypeLambdaExtension<'ext, 'extDTO, MemoryDBValues<'ext>> =
 
     let dbIOId = Identifier.LocalScope "DBIO"
     let dbIOResolvedId = dbIOId |> TypeCheckScope.Empty.Resolve
@@ -109,10 +109,25 @@ module DBRun =
             [ TypeParameter.Create("schema", Kind.Schema)
               TypeParameter.Create("result", Kind.Star) ]
           Arguments = []
-          UnionLike = None
-          RecordLike = None }
+
+        }
 
     let dbIOKind = Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Star))
+
+    let dbVectorId = Identifier.FullyQualified([ "MemoryDB" ], "Vector")
+    let dbVectorResolvedId = dbVectorId |> TypeCheckScope.Empty.Resolve
+    let dbVectorSymbol = dbVectorId |> TypeSymbol.Create
+
+    let dbVectorType: TypeValue<'ext> =
+      TypeValue.Imported
+        { Id = dbVectorResolvedId
+          Sym = dbVectorSymbol
+          Parameters = []
+          Arguments = []
+
+        }
+
+    let dbVectorKind = Kind.Star
 
 
     let memoryDBRunId =
@@ -233,7 +248,10 @@ module DBRun =
       }
 
     { ExtensionType = memoryDBRunId, memoryDBRunType, memoryDBRunKind
-      ExtraBindings = Map.empty |> Map.add dbIOResolvedId (dbIOType, dbIOKind)
+      ExtraBindings =
+        [ (dbIOResolvedId, (dbIOType, dbIOKind))
+          (dbVectorResolvedId, (dbVectorType, dbVectorKind)) ]
+        |> Map.ofList
       Value = MemoryDBValues.Run
       ValueLens = valueLens
       EvalToTypeApplicable = evalToTypeApplicable

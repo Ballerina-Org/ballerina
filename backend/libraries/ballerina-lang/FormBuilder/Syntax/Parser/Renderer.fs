@@ -475,7 +475,11 @@ module Parser =
       do! keyword Column
       let! columnName = identifier ()
       do! keyword With
-      let! groups = parser.Many(parseGroup ()) |> parser.Map Map.ofList
+
+      let! groups =
+        parser.AtLeastOne(parseGroup ())
+        |> parser.Map(NonEmptyList.ToList >> Map.ofList)
+
       return ColumnIdentifier columnName, { Groups = groups }
     }
 
@@ -484,7 +488,11 @@ module Parser =
       do! keyword Keyword.Tab
       let! tabName = identifier ()
       do! keyword With
-      let! columns = parser.Many(parseColumn ()) |> parser.Map Map.ofList
+
+      let! columns =
+        parser.AtLeastOne(parseColumn ())
+        |> parser.Map(NonEmptyList.ToList >> Map.ofList)
+
       return TabIdentifier tabName, { Columns = columns }
     }
 
@@ -576,10 +584,39 @@ module Parser =
       return! parseRenderer ()
     }
 
+  and validateMembersExist
+    (loc: Location)
+    (fields: Map<FieldIdentifier, Field<Unchecked>>)
+    (tabs: Map<TabIdentifier, Tab>)
+    =
+    parser {
+      do!
+        match tabs.Count with
+        | 0 ->
+          parser.Throw(
+            Errors.Singleton loc (fun () -> "A record body must define at least one tab.")
+            |> Errors.MapPriority(replaceWith ErrorPriority.High)
+          )
+        | _ -> parser.Zero()
+
+      do!
+        match fields.Count with
+        | 0 ->
+          parser.Throw(
+            Errors.Singleton loc (fun () -> "A record body must define at least one field.")
+            |> Errors.MapPriority(replaceWith ErrorPriority.High)
+          )
+        | _ -> parser.Zero()
+    }
+
   and parseFormBody () =
     parser {
       do! operator (CurlyBracket Open)
+      let! loc = parser.Location
       let! fields, tabs = parseMembers Map.empty Map.empty
+
+      do! validateMembersExist loc fields tabs
+
       let! disabledFields = parser.Try(parseDisableBlock ()) |> parser.Map Sum.toOption
       let! detailsRenderer = parser.Try(parseDetailRenderer ()) |> parser.Map Sum.toOption
 
@@ -599,6 +636,8 @@ module Parser =
 
   and parseRecord () =
     parser {
+      let! loc = parser.Location
+
       do! keyword Record
 
       let! rendererId =
@@ -607,6 +646,9 @@ module Parser =
 
       do! operator (CurlyBracket Open)
       let! fields, tabs = parseMembers Map.empty Map.empty
+
+      do! validateMembersExist loc fields tabs
+
       let! disabledFields = parser.Try(parseDisableBlock ()) |> parser.Map Sum.toOption
       do! operator (CurlyBracket Close)
 

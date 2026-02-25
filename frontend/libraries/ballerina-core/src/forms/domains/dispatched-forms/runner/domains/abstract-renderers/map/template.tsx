@@ -132,9 +132,25 @@ export const MapAbstractRenderer = <
           MapAbstractRendererForeignMutationsExpected<Flags>
         >((props) => ({
           onChange: (elementUpdater, nestedDelta) => {
+            const keyValuePair =
+              MapAbstractRendererState.Operations.ExtractKeyValuePairFromTuple(
+                props.context.value,
+                elementIndex,
+                props.context.domNodeAncestorPath,
+              );
+            if (keyValuePair.kind == "errors") {
+              console.error(keyValuePair.errors.join("\n"));
+              return;
+            }
+            const { key } = keyValuePair.value;
             const delta: DispatchDelta<Flags> = {
               kind: "MapKey",
               value: [elementIndex, nestedDelta],
+              ballerinaValue: {
+                oldKey: key,
+                newKey:
+                  elementUpdater.kind == "l" ? key : elementUpdater.value(key),
+              },
               flags,
               sourceAncestorLookupTypeNames:
                 nestedDelta.sourceAncestorLookupTypeNames,
@@ -258,9 +274,24 @@ export const MapAbstractRenderer = <
             onChange: DispatchOnChange<PredicateValue, Flags>;
           } => ({
             onChange: (elementUpdater, nestedDelta) => {
+              const keyValuePair =
+                MapAbstractRendererState.Operations.ExtractKeyValuePairFromTuple(
+                  props.context.value,
+                  elementIndex,
+                  props.context.domNodeAncestorPath,
+                );
+              if (keyValuePair.kind == "errors") {
+                console.error(keyValuePair.errors.join("\n"));
+                return;
+              }
+              const { key, value } = keyValuePair.value;
               const delta: DispatchDelta<Flags> = {
                 kind: "MapValue",
                 value: [elementIndex, nestedDelta],
+                ballerinaValue: {
+                  key,
+                  value,
+                },
                 flags,
                 sourceAncestorLookupTypeNames:
                   nestedDelta.sourceAncestorLookupTypeNames,
@@ -359,6 +390,7 @@ export const MapAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
+              // TODO: this will not work for new ballerina deltas
               add: (flags) => {
                 const delta: DispatchDelta<Flags> = {
                   kind: "MapAdd",
@@ -400,9 +432,23 @@ export const MapAbstractRenderer = <
                 );
               },
               remove: (index, flags) => {
+                const keyValuePair =
+                  MapAbstractRendererState.Operations.ExtractKeyValuePairFromTuple(
+                    props.context.value,
+                    index,
+                    props.context.domNodeAncestorPath,
+                  );
+                if (keyValuePair.kind == "errors") {
+                  console.error(keyValuePair.errors.join("\n"));
+                  return;
+                }
+                const { key } = keyValuePair.value;
                 const delta: DispatchDelta<Flags> = {
                   kind: "MapRemove",
                   index,
+                  ballerinaValue: {
+                    key,
+                  },
                   flags,
                   sourceAncestorLookupTypeNames:
                     props.context.lookupTypeAncestorNames,

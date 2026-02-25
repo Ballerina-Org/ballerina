@@ -15,13 +15,19 @@ module FormCompiler =
   open Ballerina.State.WithError
   open System.IO
   open Ballerina.DSL.Next.Extensions
+  open Ballerina.Collections.NonEmptyList
+  open Ballerina.Collections.Map
 
-  type ProgramInput = { Program: string; Source: string }
+  type ProgramInput =
+    { Preludes: NonEmptyList<string>
+      Source: string }
+
+  type FormsInput = { Program: string; Source: string }
 
   type FormCompilerInput<'valueExt when 'valueExt: comparison> =
     { Types: ProgramInput
       ApiTypes: Map<TypeValue<'valueExt>, string * TypeValue<'valueExt>>
-      Forms: ProgramInput }
+      Forms: FormsInput }
 
   let memoizeTypes (expr: Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>) =
     let rec memoizeTypeRec
@@ -46,24 +52,25 @@ module FormCompiler =
     if File.Exists file then
       File.Delete file
 
-  let compileForms<'valueExt when 'valueExt: comparison>
+  let compileForms<'valueExt, 'valueExtDTO
+    when 'valueExt: comparison and 'valueExtDTO: not null and 'valueExtDTO: not struct>
     (input: FormCompilerInput<'valueExt>)
-    (languageContext: LanguageContext<'valueExt>)
-    (stdExtensions: StdExtensions<'valueExt>)
+    (cache: ProjectCache<'valueExt>)
+    (languageContext: LanguageContext<'valueExt, 'valueExtDTO>)
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
     =
     sum {
       let formsInitialLocation = Location.Initial input.Forms.Source
 
-      // Append "in ()" if the types program doesn't already end with it
-      let typesProgram =
-        let trimmed = input.Types.Program.TrimEnd()
 
-        if trimmed.EndsWith("in ()") || trimmed.EndsWith("in()") then
-          input.Types.Program
-        else
-          $"{input.Types.Program}\nin ()"
 
-      let! types, _, typeCheckState = Expr.TypeCheckString languageContext typesProgram |> Sum.mapRight _.ToString()
+      let! types, _, _, typeCheckState =
+        let project =
+          { Files =
+              input.Types.Preludes
+              |> NonEmptyList.mapi (fun i prelude -> FileBuildConfiguration.FromFile(sprintf "types_%i.bl" i, prelude)) }
+
+        ProjectBuildConfiguration.BuildCached cache project |> Sum.mapRight _.ToString()
 
       // lexing
       let! ParserResult(formTokens, _) =
@@ -77,10 +84,14 @@ module FormCompiler =
         |> Parser.Run(formTokens, formsInitialLocation)
         |> Sum.mapRight _.ToString()
 
-      // to check if it has parsed correctly:   
-      //Console.WriteLine("Parsed form definitions: " + formDefinitions.ToString())
- 
-      let! memoizedTypes = memoizeTypes types |> Sum.mapRight _.ToString()
+      let! memoizedTypes =
+        types
+        |> NonEmptyList.ToList
+        |> List.map memoizeTypes
+        |> sum.All
+        |> sum.Map(Map.mergeMany (fun _ v2 -> v2))
+        |> Sum.mapRight _.ToString()
+
       let formTypeCheckState = FormTypeCheckerState<'valueExt>.Init typeCheckState
 
       let formTypeCheckContext =

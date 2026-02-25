@@ -177,6 +177,7 @@ export const DispatchGenericTypes = [
 export type DispatchGenericType = (typeof DispatchGenericTypes)[number];
 
 type BuiltInApiConverters = {
+  unit?: ApiConverter<Unit>;
   string: ApiConverter<string>;
   number: ApiConverter<number>;
   boolean: ApiConverter<boolean>;
@@ -1329,7 +1330,7 @@ export const dispatchFromAPIRawValue =
     const result: ValueOrErrors<PredicateValue, string> = (() => {
       if (t.kind == "primitive") {
         // unit is a special kind of primitive
-        if (t.name == "unit") {
+        if (t.name == "unit" && !converters[t.name]) {
           return ValueOrErrors.Default.return(PredicateValue.Default.unit());
         }
 
@@ -1765,7 +1766,7 @@ export const dispatchToAPIRawValue =
   (raw: PredicateValue, formState: any): ValueOrErrors<any, string> => {
     const result: ValueOrErrors<any, string> = (() => {
       if (t.kind == "primitive") {
-        if (t.name == "unit") {
+        if (t.name == "unit" && !converters[t.name]) {
           return ValueOrErrors.Default.return(unit);
         }
         return ValueOrErrors.Operations.Return(

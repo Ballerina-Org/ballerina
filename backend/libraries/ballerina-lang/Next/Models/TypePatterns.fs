@@ -238,19 +238,19 @@ module Patterns =
       TypeValue.Entity(s, e, e', id)
 
     static member CreateLookupMaybe
-      (s: Schema<'valueExt>, e: TypeValue<'valueExt>, id: TypeValue<'valueExt>)
+      (s: Schema<'valueExt>, e: TypeValue<'valueExt>, id: TypeValue<'valueExt>, target_id: TypeValue<'valueExt>)
       : TypeValue<'valueExt> =
-      TypeValue.RelationLookupOption(s, e, id)
+      TypeValue.RelationLookupOption(s, e, id, target_id)
 
     static member CreateLookupOne
-      (s: Schema<'valueExt>, e: TypeValue<'valueExt>, id: TypeValue<'valueExt>)
+      (s: Schema<'valueExt>, e: TypeValue<'valueExt>, id: TypeValue<'valueExt>, target_id: TypeValue<'valueExt>)
       : TypeValue<'valueExt> =
-      TypeValue.RelationLookupOne(s, e, id)
+      TypeValue.RelationLookupOne(s, e, id, target_id)
 
     static member CreateLookupMany
-      (s: Schema<'valueExt>, e: TypeValue<'valueExt>, id: TypeValue<'valueExt>)
+      (s: Schema<'valueExt>, e: TypeValue<'valueExt>, id: TypeValue<'valueExt>, target_id: TypeValue<'valueExt>)
       : TypeValue<'valueExt> =
-      TypeValue.RelationLookupMany(s, e, id)
+      TypeValue.RelationLookupMany(s, e, id, target_id)
 
     static member CreateRelation(s, rn: SchemaRelationName, c, f, f', f_id, t, t', t_id) : TypeValue<'valueExt> =
       TypeValue.Relation(s, rn, c, f, f', f_id, t, t', t_id)
@@ -259,20 +259,20 @@ module Patterns =
       TypeValue.ForeignKeyRelation(s, rn, f, f', f_id, t, t', t_id)
 
     static member CreateRelationLookupOne
-      (schema: Schema<'valueExt>, target': TypeValue<'valueExt>, source_id)
+      (schema: Schema<'valueExt>, target': TypeValue<'valueExt>, source_id, target_id)
       : TypeValue<'valueExt> =
-      TypeValue.RelationLookupOne(schema, target', source_id)
+      TypeValue.RelationLookupOne(schema, target', source_id, target_id)
 
     static member CreateRelationLookupOption
-      (schema: Schema<'valueExt>, target': TypeValue<'valueExt>, source_id)
+      (schema: Schema<'valueExt>, target': TypeValue<'valueExt>, source_id, target_id)
       : TypeValue<'valueExt> =
-      TypeValue.RelationLookupOption(schema, target', source_id)
+      TypeValue.RelationLookupOption(schema, target', source_id, target_id)
 
 
     static member CreateRelationLookupMany
-      (schema: Schema<'valueExt>, target': TypeValue<'valueExt>, source_id)
+      (schema: Schema<'valueExt>, target': TypeValue<'valueExt>, source_id, target_id)
       : TypeValue<'valueExt> =
-      TypeValue.RelationLookupMany(schema, target', source_id)
+      TypeValue.RelationLookupMany(schema, target', source_id, target_id)
 
     static member CreateVar(v: TypeVar) : TypeValue<'valueExt> = TypeValue.Var v
 
@@ -445,19 +445,6 @@ module Patterns =
             |> sum.Throw
       }
 
-    static member AsImportedUnionLike(t: TypeValue<'valueExt>) =
-      sum {
-        match t with
-        | TypeValue.Imported { Sym = _
-                               UnionLike = Some u
-                               RecordLike = _ } -> return u
-        | _ ->
-          return!
-            (fun () -> $"Error: expected imported type, got {t})")
-            |> Errors.Singleton()
-            |> sum.Throw
-      }
-
     static member AsMap(t: TypeValue<'valueExt>) =
       sum {
         match t with
@@ -527,7 +514,7 @@ module Patterns =
     static member AsLookupMaybe(t: TypeValue<'valueExt>) =
       sum {
         match t with
-        | TypeValue.RelationLookupOption(s, f', t_id) -> return (s, f', t_id)
+        | TypeValue.RelationLookupOption(s, f', t_id, target_id) -> return (s, f', t_id, target_id)
         | _ ->
           return!
             (fun () -> $"Error: expected lookup maybe type, got {t})")
@@ -538,7 +525,7 @@ module Patterns =
     static member AsLookupOne(t: TypeValue<'valueExt>) =
       sum {
         match t with
-        | TypeValue.RelationLookupOne(s, f', t_id) -> return (s, f', t_id)
+        | TypeValue.RelationLookupOne(s, f', t_id, target_id) -> return (s, f', t_id, target_id)
         | _ ->
           return!
             (fun () -> $"Error: expected lookup one type, got {t})")
@@ -549,7 +536,7 @@ module Patterns =
     static member AsLookupMany(t: TypeValue<'valueExt>) =
       sum {
         match t with
-        | TypeValue.RelationLookupMany(s, f', t_id) -> return (s, f', t_id)
+        | TypeValue.RelationLookupMany(s, f', t_id, target_id) -> return (s, f', t_id, target_id)
         | _ ->
           return!
             (fun () -> $"Error: expected lookup many type, got {t})")
@@ -578,9 +565,9 @@ module Patterns =
       | TypeValue.Entity(s, e, e', id) -> TypeValue.CreateEntity(s, e, e', id)
       | TypeValue.Relation(s, rn, c, f, f', f_id, t, t', t_id) ->
         TypeValue.CreateRelation(s, rn, c, f, f', f_id, t, t', t_id)
-      | TypeValue.RelationLookupOption(s, f', t_id) -> TypeValue.CreateLookupMaybe(s, f', t_id)
-      | TypeValue.RelationLookupOne(s, f', t_id) -> TypeValue.CreateLookupOne(s, f', t_id)
-      | TypeValue.RelationLookupMany(s, f', t_id) -> TypeValue.CreateLookupMany(s, f', t_id)
+      | TypeValue.RelationLookupOption(s, f', t_id, target_id) -> TypeValue.CreateLookupMaybe(s, f', t_id, target_id)
+      | TypeValue.RelationLookupOne(s, f', t_id, target_id) -> TypeValue.CreateLookupOne(s, f', t_id, target_id)
+      | TypeValue.RelationLookupMany(s, f', t_id, target_id) -> TypeValue.CreateLookupMany(s, f', t_id, target_id)
       | TypeValue.ForeignKeyRelation(s, rn, f, f', f_id, t, t', t_id) ->
         TypeValue.CreateForeignKeyRelation(s, rn, f, f', f_id, t, t', t_id)
 
