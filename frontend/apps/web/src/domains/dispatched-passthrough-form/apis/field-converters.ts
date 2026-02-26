@@ -220,6 +220,13 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
           : PredicateValue.Default.option(false, PredicateValue.Default.unit()),
       toAPIRawValue: ([_, __]) => _,
     },
+    Reference: {
+      fromAPIRawValue: (_) =>
+        _.isRight
+          ? PredicateValue.Default.option(true, _.right)
+          : PredicateValue.Default.option(false, PredicateValue.Default.unit()),
+      toAPIRawValue: ([_, __]) => _,
+    },
     ReadOnly: {
       fromAPIRawValue: (_) => {
         // Extract value from ReadOnly field structure

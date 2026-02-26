@@ -211,6 +211,9 @@ export * from "./src/forms/domains/dispatched-forms/deserializer/domains/specifi
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/one/template";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/one/state";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/one/coroutines/runner";
+export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/reference/template";
+export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/reference/state";
+export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/reference/coroutines/runner";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/readOnly/template";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/readOnly/state";
 export * from "./src/forms/domains/dispatched-forms/built-ins/state";

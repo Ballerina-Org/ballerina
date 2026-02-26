@@ -51,6 +51,8 @@ import {
   ValueFilterStartsWith,
   ValueSumN,
   ValueFilterNotEqualsTo,
+  ReferenceAbstractRendererView,
+  ReferenceAbstractRendererState,
 } from "../../../../../main";
 import {
   DispatchParsedType,
@@ -172,6 +174,7 @@ export const DispatchGenericTypes = [
   "KeyOf",
   "Table",
   "One",
+  "Reference",
   "ReadOnly",
 ] as const;
 export type DispatchGenericType = (typeof DispatchGenericTypes)[number];
@@ -199,6 +202,7 @@ type BuiltInApiConverters = {
   SumUnitDate: ApiConverter<Sum<Unit, Date>>;
   Table: ApiConverter<Table>;
   One: ApiConverter<ValueOption>;
+  Reference: ApiConverter<ValueOption>;
   ReadOnly: ApiConverter<any>;
   Contains: ApiConverter<ValueFilterContains>;
   "=": ApiConverter<ValueFilterEqualsTo>;
@@ -483,6 +487,17 @@ export type ConcreteRenderers<
           >
         >;
   };
+  reference: {
+    [_: string]: () =>
+      | ReferenceAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
+      | React.MemoExoticComponent<
+          ReferenceAbstractRendererView<
+            CustomPresentationContext,
+            Flags,
+            ExtraContext
+          >
+        >;
+  };
   readOnly: {
     [_: string]: () =>
       | ReadOnlyAbstractRendererView<
@@ -514,6 +529,7 @@ export type ConcreteRenderer<T> =
   | OneAbstractRendererView<any, any>
   | ReadOnlyAbstractRendererView<any, any>
   | RecordAbstractRendererView<any, any>
+  | ReferenceAbstractRendererView<any, any>
   | SearchableInfiniteStreamAbstractRendererView<any, any>
   | SearchableInfiniteStreamMultiselectAbstractRendererView<any, any>
   | SecretAbstractRendererView<any, any>
@@ -925,6 +941,66 @@ export const dispatchDefaultState =
                   )
             : ValueOrErrors.Default.return(
                 OneAbstractRendererState.Default(undefined),
+              );
+
+      //TODO Suzan: replace one lookup with reference
+      if (t.kind == "reference")
+        return renderer.kind != "referenceRenderer"
+          ? ValueOrErrors.Default.throwOne(
+              `received non reference renderer kind "${renderer.kind}" when resolving defaultState for reference`,
+            )
+          : specApis.lookups != undefined &&
+              specApis.lookups.get(renderer.api[0]) != undefined &&
+              specApis.lookups.get(renderer.api[0])?.one != undefined &&
+              specApis.lookups.get(renderer.api[0])?.one.get(renderer.api[1]) !=
+                undefined &&
+              specApis.lookups.get(renderer.api[0])?.one.get(renderer.api[1])
+                ?.methods.getManyUnlinked
+            ? lookupSources == undefined
+              ? ValueOrErrors.Default.throwOne(
+                  `lookup sources referenced but no lookup sources are provided`,
+                )
+              : lookupSources(renderer.api[0]) == undefined
+                ? ValueOrErrors.Default.throwOne(
+                    `cannot find lookup source for ${renderer.api[0]}`,
+                  )
+                : lookupSources(renderer.api[0]).Then((lookupSource) =>
+                    lookupSource.one == undefined
+                      ? ValueOrErrors.Default.throwOne(
+                          `reference source not provided for ${renderer.api[0]}`,
+                        )
+                      : lookupSource.one!(renderer.api[1]) // safe because we check for undefined above but type system doesn't know that
+                          .Then((referenceSource) =>
+                            referenceSource.getManyUnlinked == undefined
+                              ? ValueOrErrors.Default.throwOne(
+                                  `getManyUnlinked not provided for ${renderer.api[0]}-${renderer.api[1]}`,
+                                )
+                              : MapRepo.Operations.tryFindWithError(
+                                  t.arg.name,
+                                  types,
+                                  () =>
+                                    `cannot find lookup type ${JSON.stringify(
+                                      t.arg.name,
+                                    )} in ${JSON.stringify(t)}`,
+                                ).Then((lookupType) =>
+                                  ValueOrErrors.Default.return(
+                                    OneAbstractRendererState.Default(
+                                      referenceSource.getManyUnlinked!(
+                                        // safe because we check for undefined above but type system doesn't know that
+                                        dispatchFromAPIRawValue(
+                                          lookupType,
+                                          types,
+                                          converters,
+                                          injectedPrimitives,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                          ),
+                  )
+            : ValueOrErrors.Default.return(
+                ReferenceAbstractRendererState.Default(undefined),
               );
 
       if (t.kind == "readOnly")
@@ -1550,6 +1626,23 @@ export const dispatchFromAPIRawValue =
 
       if (t.kind == "one") {
         const result = converters["One"].fromAPIRawValue(raw);
+        if (!result.isSome) {
+          return ValueOrErrors.Default.return(result);
+        }
+        return dispatchFromAPIRawValue(
+          t.arg,
+          types,
+          converters,
+          injectedPrimitives,
+        )(result.value).Then((value) =>
+          ValueOrErrors.Default.return(
+            PredicateValue.Default.option(true, value),
+          ),
+        );
+      }
+
+      if (t.kind == "reference") {
+        const result = converters["Reference"].fromAPIRawValue(raw);
         if (!result.isSome) {
           return ValueOrErrors.Default.return(result);
         }

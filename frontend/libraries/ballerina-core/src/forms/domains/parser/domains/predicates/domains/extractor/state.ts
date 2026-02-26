@@ -297,6 +297,29 @@ export const PredicateValueExtractor = {
                     ]),
                   );
         }
+        case "reference": {
+          const traverseValue: TypeInstancesExtractor = self(
+            lookupName,
+            typesMap,
+            t.arg,
+            debugPath.concat("reference"),
+          );
+          return (v): ExtractedTypeInstances =>
+            PredicateValue.Operations.IsOption(v)
+              ? v.isSome
+                ? traverseValue(v.value)
+                : ValueOrErrors.Default.return([])
+              : PredicateValue.Operations.IsSum(v)
+                ? v.value.kind == "r"
+                  ? traverseValue(v.value.value)
+                  : ValueOrErrors.Default.return([])
+                : ValueOrErrors.Default.throwOne(
+                    Errors.Default.singleton([
+                      "not a Reference/Option or Reference/Sum (from reference)",
+                      JSON.stringify(v),
+                    ]),
+                  );
+        }
         case "list": {
           const traverseListField = self(
             lookupName,

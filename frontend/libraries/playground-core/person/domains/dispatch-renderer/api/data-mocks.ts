@@ -13,6 +13,7 @@ import {
   ValueStreamPosition,
   DispatchTableApiSources,
   DispatchOneSource,
+  DispatchReferenceSource,
   DispatchLookupSources,
   TableAbstractRendererState,
   DispatchTableFiltersAndSorting,
@@ -622,6 +623,81 @@ const lazyReadonlyOne: DispatchOneSource = {
   getManyUnlinked: undefined,
 };
 
+const eagerEditableReference: DispatchReferenceSource = {
+  get: undefined,
+  getManyUnlinked:
+    (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
+    (id: Guid) =>
+    (streamParams: Map<string, string>) =>
+    ([streamPosition]: [ValueStreamPosition]) => {
+      return PromiseRepo.Default.mock(() => ({
+        Values: Range(1, 5)
+          .map((_) => ({
+            Id: v4(),
+            Name: faker.person.firstName(),
+            Surname: faker.person.lastName(),
+            Birthday: faker.date.birthdate().toISOString(),
+            Email: faker.internet.email(),
+            SubscribeToNewsletter: faker.datatype.boolean(),
+            FavoriteColor: {
+              Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+              IsSome: true,
+            },
+            Friends: {
+              From: 0,
+              To: 0,
+              HasMore: true,
+              Values: {},
+            },
+          }))
+          .reduce((acc, curr) => {
+            acc[curr.Id] = curr;
+            return acc;
+          }, {} as any),
+        HasMore: false,
+        From: 1,
+        To: 5,
+      })).then((res) => ({
+        hasMoreValues: res.HasMore,
+        to: res.To,
+        from: res.From,
+        data: TableAbstractRendererState.Operations.tableValuesToValueRecord(
+          res.Values,
+          fromApiRaw,
+        ),
+      }));
+    },
+};
+
+const lazyReadonlyReference: DispatchReferenceSource = {
+  get: (id: Guid) => {
+    return PromiseRepo.Default.mock(
+      () => ({
+        Id: v4(),
+        Name: "Tim",
+        Surname: "Pool",
+        Birthday: "1990-01-01",
+        Email: "tim.pool@example.com",
+        SubscribeToNewsletter: true,
+        FavoriteColor: {
+          Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
+          IsSome: true,
+        },
+        Friends: {
+          From: 0,
+          To: 0,
+          HasMore: true,
+          Values: {},
+        },
+      }),
+      undefined,
+      undefined,
+      1,
+    );
+  },
+  getManyUnlinked: undefined,
+};
+
 const lookupSources: DispatchLookupSources = (typeName: string) =>
   typeName == "User"
     ? ValueOrErrors.Default.return({
@@ -632,9 +708,13 @@ const lookupSources: DispatchLookupSources = (typeName: string) =>
               ? ValueOrErrors.Default.return(eagerEditableOne)
               : apiName == "LazyReadonlyOneApi"
                 ? ValueOrErrors.Default.return(lazyReadonlyOne)
-                : ValueOrErrors.Default.throwOne(
-                    `can't find api ${apiName} when getting lookup api sources`,
-                  ),
+                : apiName == "LazyReadonlyReferenceApi"
+                  ? ValueOrErrors.Default.return(lazyReadonlyReference)
+                  : apiName == "EagerEditableReferenceApi"
+                    ? ValueOrErrors.Default.return(eagerEditableReference)
+                    : ValueOrErrors.Default.throwOne(
+                        `can't find api ${apiName} when getting dispatch lookup api sources`,
+                      ),
       })
     : ValueOrErrors.Default.throwOne(
         `can't find type ${typeName} when getting lookup api source`,
@@ -760,6 +840,21 @@ const entityApis: EntityApis = {
               right: {},
             },
             EagerReadonlyOne: {
+              isRight: true,
+              right: {
+                Id: v4(),
+                Name: "John",
+                Surname: "Doe",
+                Birthday: "1990-01-01",
+                Email: "john.doe@example.com",
+                SubscribeToNewsletter: true,
+              },
+            },
+            LazyReadonlyReference: {
+              isRight: false,
+              right: {},
+            },
+            EagerEditableReference: {
               isRight: true,
               right: {
                 Id: v4(),
@@ -1336,6 +1431,21 @@ const entityApis: EntityApis = {
                 right: {},
               },
               EagerReadonlyOne: {
+                isRight: true,
+                right: {
+                  Id: v4(),
+                  Name: "John",
+                  Surname: "Doe",
+                  Birthday: "1990-01-01",
+                  Email: "john.doe@example.com",
+                  SubscribeToNewsletter: true,
+                },
+              },
+              LazyReadonlyReference: {
+                isRight: false,
+                right: {},
+              },
+              EagerEditableReference: {
                 isRight: true,
                 right: {
                   Id: v4(),

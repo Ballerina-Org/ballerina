@@ -24,7 +24,9 @@ export type DispatchDelta<T = Unit> =
   | DispatchDeltaCustom<T>
   | DispatchDeltaUnit<T>
   | DispatchDeltaTable<T>
-  | DispatchDeltaOne<T>;
+  | DispatchDeltaOne<T>
+  | DispatchDeltaReference<T>;
+
 export type DispatchDeltaPrimitive<T = Unit> =
   | {
       kind: "NumberReplace";
@@ -384,6 +386,33 @@ export type DispatchDeltaOne<T = Unit> =
       sourceAncestorLookupTypeNames: string[];
     };
 
+export type DispatchDeltaReference<T = Unit> =
+  | {
+      kind: "ReferenceReplace";
+      replace: PredicateValue;
+      type: DispatchParsedType<any>;
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    }
+  | {
+      kind: "ReferenceValue";
+      nestedDelta: DispatchDelta<T>;
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    }
+  | {
+      kind: "ReferenceCreateValue";
+      value: PredicateValue;
+      type: DispatchParsedType<any>;
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    }
+  | {
+      kind: "ReferenceDeleteValue";
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+    };
+
 export type DispatchDeltaCustom<T = Unit> = {
   kind: "CustomDelta";
   value: {
@@ -519,6 +548,18 @@ export type DispatchDeltaTransferOne<DispatchDeltaTransferCustom> =
       DeleteValue: Unit;
     };
 
+export type DispatchDeltaTransferReference<DispatchDeltaTransferCustom> =
+  | {
+      Discriminator: "ReferenceValue";
+      Value: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
+    }
+  | { Discriminator: "ReferenceReplace"; Replace: any }
+  | { Discriminator: "ReferenceCreateValue"; CreateValue: any }
+  | {
+      Discriminator: "ReferenceDeleteValue";
+      DeleteValue: Unit;
+    };
+
 export type DispatchDeltaTransfer<DispatchDeltaTransferCustom> =
   | DispatchDeltaTransferPrimitive
   | DispatchDeltaTransferUnit
@@ -532,6 +573,7 @@ export type DispatchDeltaTransfer<DispatchDeltaTransferCustom> =
   | DispatchDeltaTransferTuple<DispatchDeltaTransferCustom>
   | DispatchDeltaTransferTable<DispatchDeltaTransferCustom>
   | DispatchDeltaTransferOne<DispatchDeltaTransferCustom>
+  | DispatchDeltaTransferReference<DispatchDeltaTransferCustom>
   | DispatchDeltaTransferCustom;
 
 export type DispatchDeltaTransferComparand = string;
@@ -1668,6 +1710,118 @@ export const DispatchDeltaTransfer = {
               },
               `[OneDeleteValue]`,
               delta.flags ? [[delta.flags, `[OneDeleteValue]`]] : [],
+            ]);
+          }
+          if (delta.kind == "ReferenceValue") {
+            return DispatchDeltaTransfer.Default.FromDelta(
+              toRawObject,
+              parseCustomDelta,
+            )(delta.nestedDelta).Then((value) =>
+              ValueOrErrors.Default.return<
+                [
+                  DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                  DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>,
+                ],
+                string
+              >([
+                {
+                  Discriminator: "ReferenceValue",
+                  Value: value[0],
+                },
+                `[ReferenceValue]${value[1]}`,
+                delta.flags
+                  ? [[delta.flags, `[ReferenceValue]${value[1]}`], ...value[2]]
+                  : value[2],
+              ]),
+            );
+          }
+          if (delta.kind == "ReferenceReplace") {
+            if (delta.type.kind != "reference") {
+              return ValueOrErrors.Default.throwOne<
+                [
+                  DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                  DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>,
+                ],
+                string
+              >(
+                `Error: reference expected but received ${JSON.stringify(
+                  delta.type,
+                )} in ReferenceReplace.`,
+              );
+            }
+            return toRawObject(delta.replace, delta.type.arg, unit).Then(
+              (value) => {
+                return ValueOrErrors.Default.return<
+                  [
+                    DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                    DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>,
+                  ],
+                  string
+                >([
+                  {
+                    Discriminator: "ReferenceReplace",
+                    Replace: value,
+                  },
+                  `[ReferenceReplace]`,
+                  delta.flags ? [[delta.flags, `[ReferenceReplace]`]] : [],
+                ]);
+              },
+            );
+          }
+          if (delta.kind == "ReferenceCreateValue") {
+            if (delta.type.kind != "reference") {
+              return ValueOrErrors.Default.throwOne<
+                [
+                  DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                  DispatchDeltaTransferComparand,
+                  AggregatedFlags<Flags>,
+                ],
+                string
+              >(
+                `Error: reference expected but received ${JSON.stringify(
+                  delta.type,
+                )} in ReferenceCreateValue.`,
+              );
+            }
+
+            return toRawObject(delta.value, delta.type.arg, unit).Then(
+              (value) =>
+                ValueOrErrors.Default.return<
+                  [
+                    DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                    DispatchDeltaTransferComparand,
+                    AggregatedFlags<Flags>,
+                  ],
+                  string
+                >([
+                  {
+                    Discriminator: "ReferenceCreateValue",
+                    CreateValue: value,
+                  },
+                  `[ReferenceCreateValue]`,
+                  delta.flags ? [[delta.flags, `[ReferenceCreateValue]`]] : [],
+                ]),
+            );
+          }
+          // TODO -- suspicious
+          if (delta.kind == "ReferenceDeleteValue") {
+            return ValueOrErrors.Default.return<
+              [
+                DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>,
+              ],
+              string
+            >([
+              {
+                Discriminator: "ReferenceDeleteValue",
+                DeleteValue: unit,
+              },
+              `[ReferenceDeleteValue]`,
+              delta.flags ? [[delta.flags, `[ReferenceDeleteValue]`]] : [],
             ]);
           }
           if (delta.kind == "CustomDelta") {

@@ -279,6 +279,21 @@ export type DispatchOneSource = {
     | undefined;
 };
 
+export type DispatchReferenceSource = {
+  get: BasicFun<Guid, Promise<any>> | undefined;
+  getManyUnlinked:
+    | BasicFun<
+        BasicFun<any, ValueOrErrors<PredicateValue, string>>,
+        BasicFun<
+          Guid,
+          BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
+        >
+      >
+    | undefined;
+};
+
+// TODO Suzan: add Dispatch Sources for references
+
 export type DispatchLookupSources = (typeName: string) => ValueOrErrors<
   {
     one?: BasicFun<DispatchApiName, ValueOrErrors<DispatchOneSource, string>>;

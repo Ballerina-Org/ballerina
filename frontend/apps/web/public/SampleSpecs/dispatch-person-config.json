@@ -605,6 +605,14 @@
         "EagerEditableOne": {
           "fun": "One",
           "args": ["User"]
+        },
+        "LazyReadonlyReference": {
+          "fun": "Reference",
+          "args": ["User"]
+        },
+        "EagerEditableReference": {
+          "fun": "Reference",
+          "args": ["User"]
         }
       }
     }
@@ -628,6 +636,14 @@
           "LazyReadonlyOneApi": {
             "type": "User",
             "methods": ["get"]
+          },
+          "LazyReadonlyReferenceApi": {
+            "type": "User",
+            "methods": ["get"]
+          },
+          "EagerEditableReferenceApi": {
+            "type": "User",
+            "methods": ["getManyUnlinked"]
           }
         }
       }
@@ -2033,6 +2049,112 @@
           },
           "api": ["User", "LazyReadonlyOneApi"]
         },
+        "LazyReadonlyReference": {
+          "label": "Lazy Readonly Reference",
+          "renderer": "lazyReadonlyReference",
+          "previewRenderer": {
+            "renderer": {
+              "type": "User",
+              "fields": {
+                "Name": {
+                  "renderer": "defaultString"
+                },
+                "Surname": {
+                  "renderer": "defaultString"
+                },
+                "Email": {
+                  "renderer": "defaultString"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Name", "Surname", "Email"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "detailsRenderer": {
+            "renderer": {
+              "type": "User",
+              "fields": {
+                "Name": {
+                  "renderer": "defaultString"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Name"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "api": ["User", "LazyReadonlyReferenceApi"]
+        },
+        "EagerEditableReference": {
+          "label": "Eager Editable Reference",
+          "renderer": "eagerEditableReference",
+          "previewRenderer": {
+            "renderer": {
+              "type": "User",
+              "fields": {
+                "Name": {
+                  "renderer": "defaultString"
+                },
+                "Surname": {
+                  "renderer": "defaultString"
+                },
+                "Email": {
+                  "renderer": "defaultString"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Name", "Surname", "Email"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "detailsRenderer": {
+            "renderer": {
+              "type": "User",
+              "fields": {
+                "Name": {
+                  "renderer": "defaultString"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Name"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "api": ["User", "EagerEditableReferenceApi"]
+        },
         "EagerReadonlyOne": {
           "label": "Eager Readonly One",
           "renderer": "eagerReadonlyOne",
@@ -2120,8 +2242,10 @@
                 "main": [
                   "BestFriend",
                   "EagerEditableOne",
+                  "EagerEditableReference",
                   "LazyReadonlyOne",
                   "EagerReadonlyOne",
+                  "LazyReadonlyReference",
                   "Friends",
                   "Children",
                   "Job",

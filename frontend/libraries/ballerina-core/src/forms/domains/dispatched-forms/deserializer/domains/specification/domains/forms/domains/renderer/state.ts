@@ -11,6 +11,10 @@ import { LookupRenderer, SerializedLookup } from "./domains/lookup/state";
 import { MapRenderer, SerializedMapRenderer } from "./domains/map/state";
 import { OneRenderer, SerializedOneRenderer } from "./domains/one/state";
 import {
+  ReferenceRenderer,
+  SerializedReferenceRenderer,
+} from "./domains/reference/state";
+import {
   ReadOnlyRenderer,
   SerializedReadOnlyRenderer,
 } from "./domains/readOnly/state";
@@ -48,6 +52,7 @@ export type SerializedRenderer =
   | SerializedListRenderer
   | SerializedMapRenderer
   | SerializedOneRenderer
+  | SerializedReferenceRenderer
   | SerializedReadOnlyRenderer
   | SerializedStreamRenderer
   | SerializedSumRenderer
@@ -64,6 +69,7 @@ export type Renderer<T> =
   | ListRenderer<T>
   | MapRenderer<T>
   | OneRenderer<T>
+  | ReferenceRenderer<T>
   | ReadOnlyRenderer<T>
   | StreamRenderer<T>
   | SumRenderer<T>
@@ -348,14 +354,23 @@ export const Renderer = {
                                         forms,
                                         alreadyParsedForms,
                                       )
-                                    : ValueOrErrors.Default.throwOne<
-                                        [Renderer<T>, Map<string, Renderer<T>>],
-                                        string
-                                      >(
-                                        `Unknown renderer ${JSON.stringify(serialized, null, 2)} and type of kind ${
-                                          type.kind
-                                        }`,
-                                      );
+                                    : type.kind == "reference"
+                                      ? ReferenceRenderer.Operations.Deserialize(
+                                          type,
+                                          serialized,
+                                          concreteRenderers,
+                                          types,
+                                          forms,
+                                          alreadyParsedForms,
+                                        )
+                                      : ValueOrErrors.Default.throwOne<
+                                          [Renderer<T>, Map<string, Renderer<T>>],
+                                          string
+                                        >(
+                                          `Unknown renderer ${JSON.stringify(serialized, null, 2)} and type of kind ${
+                                            type.kind
+                                          }`,
+                                        );
       },
   },
 };

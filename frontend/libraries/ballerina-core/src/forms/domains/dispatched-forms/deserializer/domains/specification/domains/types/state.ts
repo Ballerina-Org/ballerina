@@ -208,6 +208,10 @@ export const SerializedType = {
     _: SerializedType<T>,
   ): _ is { fun: "One"; args: Array<SerializedType<T>> } =>
     SerializedType.isApplication(_) && _.fun == "One" && _.args.length == 1,
+  isReference: <T>(
+    _: SerializedType<T>,
+  ): _ is { fun: "Reference"; args: Array<SerializedType<T>> } =>
+    SerializedType.isApplication(_) && _.fun == "Reference" && _.args.length == 1,
   isReadOnly: <T>(
     _: SerializedType<T>,
   ): _ is { fun: "ReadOnly"; args: Array<SerializedType<T>> } =>
@@ -426,6 +430,20 @@ export const OneType = {
   },
 };
 
+export type ReferenceType<T> = {
+  kind: "reference";
+  arg: LookupType;
+  // asString: () => StringSerializedType;
+};
+
+export const ReferenceType = {
+  SerializeToString: (
+    serializedArg: StringSerializedType,
+  ): StringSerializedType => {
+    return `[reference; arg: ${serializedArg}]`;
+  },
+};
+
 // Filters
 export type FilterContainsType<T> = {
   kind: "contains";
@@ -602,6 +620,7 @@ export type DispatchParsedType<T> =
   | MapType<T>
   | TableType<T>
   | OneType<T>
+  | ReferenceType<T>
   | ReadOnlyType<T>
   | FilterType<T>;
 
@@ -673,6 +692,10 @@ export const DispatchParsedType = {
       kind: "one",
       arg,
     }),
+    reference: <T>(arg: LookupType): ReferenceType<T> => ({
+      kind: "reference",
+      arg,
+    }),
     filterContains: <T>(
       contains: DispatchParsedType<T>,
     ): FilterContainsType<T> => ({
@@ -741,6 +764,10 @@ export const DispatchParsedType = {
           );
         case "one":
           return OneType.SerializeToString(
+            DispatchParsedType.Operations.AsString(type.arg),
+          );
+        case "reference":
+          return ReferenceType.SerializeToString(
             DispatchParsedType.Operations.AsString(type.arg),
           );
         case "singleSelection":
@@ -977,6 +1004,10 @@ export const DispatchParsedType = {
           );
         case "one":
           return OneType.SerializeToString(
+            DispatchParsedType.Operations.SerializeToString(type.arg),
+          );
+        case "reference":
+          return ReferenceType.SerializeToString(
             DispatchParsedType.Operations.SerializeToString(type.arg),
           );
         case "singleSelection":
@@ -1735,6 +1766,24 @@ export const DispatchParsedType = {
                 )
               : ValueOrErrors.Default.return([
                   DispatchParsedType.Default.one(parsedArg),
+                  newAlreadyParsedTypes,
+                ]),
+          );
+        }
+        if (SerializedType.isReference(rawType)) {
+          return DispatchParsedType.Operations.ParseRawType(
+            rawType.args[0] as string,
+            rawType.args[0],
+            serializedTypes,
+            alreadyParsedTypes,
+            injectedPrimitives,
+          ).Then(([parsedArg, newAlreadyParsedTypes]) =>
+            parsedArg.kind != "lookup"
+              ? ValueOrErrors.Default.throwOne(
+                  `reference content type ${JSON.stringify(parsedArg)} is not a lookup type`,
+                )
+              : ValueOrErrors.Default.return([
+                  DispatchParsedType.Default.reference(parsedArg),
                   newAlreadyParsedTypes,
                 ]),
           );
