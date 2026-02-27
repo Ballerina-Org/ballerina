@@ -19,8 +19,9 @@ export const ValueInfiniteStreamLoader = (maxRetries = 3) => {
     ValueInfiniteStreamWritableState,
     Unit
   > =>
-    Co.GetState().then((current) =>
-      current.loadingMore.kind === "loaded"
+    Co.GetState().then((current) => {
+      console.debug("attempting to load infinite stream");
+      return current.loadingMore.kind === "loaded"
         ? Co.Return(true)
         : Co.Await(
             () => current.getChunk([current.position]),
@@ -66,8 +67,8 @@ export const ValueInfiniteStreamLoader = (maxRetries = 3) => {
                   ? Co.Wait(500).then(() => attemptLoad(retryCount + 1))
                   : Co.Return(false);
             });
-          }),
-    );
+          });
+    });
 
   return Co.Seq([
     Co.SetState(
