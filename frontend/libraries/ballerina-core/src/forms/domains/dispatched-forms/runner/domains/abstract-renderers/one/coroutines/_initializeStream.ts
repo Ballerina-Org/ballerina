@@ -10,6 +10,13 @@ export const initializeStream = <
   Co<CustomPresentationContext, ExtraContext>()
     .GetState()
     .then((current) => {
+      if (current.type.arg.name == "InvoicePositionAccountingRows") {
+        console.group("InvoicePositionAccountingRows initializing stream");
+        console.debug("InvoicePositionAccountingRows");
+        console.groupEnd();
+      }
+      console.debug("initializing stream", current.domNodeAncestorPath);
+
       const InstantiatedCo = Co<CustomPresentationContext, ExtraContext>();
       const maybeId = OneAbstractRendererState.Operations.GetIdFromContext(
         current,
