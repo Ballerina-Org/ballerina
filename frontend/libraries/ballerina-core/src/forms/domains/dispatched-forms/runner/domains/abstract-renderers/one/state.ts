@@ -48,8 +48,16 @@ export type OneAbstractRendererReadonlyContext<
   remoteEntityVersionIdentifier: string;
 };
 
+export type OneReinitilizationState = {
+  status: "reinitializing";
+  postprocessAction: SimpleCallback<void>;
+} | {
+  status: "idle";
+}
+
 export type OneAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
+    reinitializing: OneReinitilizationState;
     detailsState: RecordAbstractRendererState;
     previewStates: Map<string, RecordAbstractRendererState>;
     streamParams: Debounced<Value<[Map<string, string>, boolean]>>;
@@ -81,6 +89,9 @@ export const OneAbstractRendererState = {
       status: "closed",
       getChunkWithParams: getChunk,
       stream: Sum.Default.right("not initialized"),
+      reinitializing: {
+        status: "idle",
+      },
     },
   }),
   Updaters: {
@@ -100,6 +111,9 @@ export const OneAbstractRendererState = {
         ),
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "previewStates",
+        ),
+        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
+          "reinitializing",
         ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<OneAbstractRendererState>()({
@@ -193,6 +207,7 @@ export type OneAbstractRendererViewForeignMutationsExpected<Flags = BaseFlags> =
     clear?: SimpleCallback<void>;
     loadMore: SimpleCallback<void>;
     reinitializeStream: SimpleCallback<void>;
+    reinitializeOne: SimpleCallback<SimpleCallback<void>>;
   };
 
 export type OneAbstractRendererView<

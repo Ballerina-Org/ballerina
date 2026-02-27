@@ -33,6 +33,7 @@ import {
   RecordAbstractRendererReadonlyContext,
   RecordAbstractRendererForeignMutationsExpected,
   NestedRenderer,
+  SimpleCallback,
 } from "../../../../../../../../main";
 import {
   OneAbstractRendererForeignMutationsExpected,
@@ -40,6 +41,7 @@ import {
   OneAbstractRendererState,
   OneAbstractRendererView,
   OneAbstractRendererViewForeignMutationsExpected,
+  OneReinitilizationState,
 } from "./state";
 import {
   initializeOneRunner,
@@ -352,6 +354,12 @@ export const OneAbstractRenderer = <
     const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[one]";
     const value = props.context.value;
 
+    // if (domNodeId.includes("InvoicePositionAccountingRows")) {
+    //   console.group("InvoicePositionAccountingRows");
+    //   console.debug(props);
+    //   console.groupEnd();
+    // }
+
     if (
       !PredicateValue.Operations.IsUnit(value) &&
       (!PredicateValue.Operations.IsOption(value) ||
@@ -523,6 +531,15 @@ export const OneAbstractRenderer = <
                         "not initialized"
                       >("not initialized"),
                     ),
+                  ),
+                ),
+              reinitializeOne: (postprocessAction) =>
+                props.setState(
+                  OneAbstractRendererState.Updaters.Core.customFormState.children.reinitializing(
+                    replaceWith<OneReinitilizationState>({
+                      status: "reinitializing",
+                      postprocessAction,
+                    }),
                   ),
                 ),
             }}

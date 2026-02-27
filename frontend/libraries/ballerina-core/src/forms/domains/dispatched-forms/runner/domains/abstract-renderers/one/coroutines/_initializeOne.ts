@@ -12,16 +12,21 @@ import {
   ValueOrErrors,
   ValueUnit,
   Option,
+  OneReinitilizationState,
 } from "../../../../../../../../../main";
 import { InitializeCo } from "./builder";
 
 export const initializeOne = <
   CustomPresentationContext = Unit,
   ExtraContext = Unit,
->() =>
-  InitializeCo<CustomPresentationContext, ExtraContext>()
+>() => {
+  console.debug("initializeOne");
+
+  return InitializeCo<CustomPresentationContext, ExtraContext>()
     .GetState()
     .then((current) => {
+      console.debug("initializing one", current.domNodeAncestorPath);
+
       const maybeId = OneAbstractRendererState.Operations.GetIdFromContext(
         current,
       ).MapErrors((_) =>
@@ -46,6 +51,15 @@ export const initializeOne = <
             current
               .fromApiParser(value.value)
               .Then((result) => {
+                if (
+                  current.domNodeAncestorPath.includes(
+                    "InvoicePositionAccountingRows",
+                  )
+                ) {
+                  console.group("InvoicePositionAccountingRows");
+                  console.debug("one content", result);
+                  console.groupEnd();
+                }
                 const updater = replaceWith<ValueOption | ValueUnit>(
                   ValueOption.Default.some(result),
                 );
@@ -61,6 +75,11 @@ export const initializeOne = <
                 };
                 current.onChange(Option.Default.some(updater), delta);
 
+                if (current.customFormState.reinitializing.status === "reinitializing") {
+                  // always true when running this coroutine
+                  current.customFormState.reinitializing.postprocessAction();
+                }
+
                 return ValueOrErrors.Default.return(result);
               })
               .MapErrors((_) => {
@@ -68,5 +87,15 @@ export const initializeOne = <
                 return _;
               });
           }),
+        )
+        .then(() =>
+          InitializeCo<CustomPresentationContext, ExtraContext>().SetState(
+            OneAbstractRendererState.Updaters.Core.customFormState.children.reinitializing(
+              replaceWith<OneReinitilizationState>({
+                status: "idle",
+              }),
+            ),
+          ),
         );
     });
+};
