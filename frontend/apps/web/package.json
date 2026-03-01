@@ -18,7 +18,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "@rspack/cli": "0.5.5",
+    "@rspack/cli": "1.7.6",
     "@rspack/core": "0.5.5",
     "@rspack/plugin-react-refresh": "1.0.1",
     "@types/react": "^18.2.48",
