@@ -47,18 +47,21 @@ export type OneAbstractRendererReadonlyContext<
   remoteEntityVersionIdentifier: string;
 };
 
-export type OneReinitilizationState =
+export type InitializationStatus =
   | {
-      status: "reinitializing";
-      afterReinitializationAction: SimpleCallback<void>;
+      kind: "not initialized";
     }
   | {
-      status: "idle";
+      kind: "initialized";
+    }
+  | {
+      kind: "reinitializing";
+      afterReinitializationAction: SimpleCallback<void>;
     };
 
 export type OneAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
-    reinitializing: OneReinitilizationState;
+    initializationStatus: InitializationStatus;
     detailsState: RecordAbstractRendererState;
     previewStates: Map<string, RecordAbstractRendererState>;
     streamParams: Debounced<Value<[Map<string, string>, boolean]>>;
@@ -90,8 +93,8 @@ export const OneAbstractRendererState = {
       status: "closed",
       getChunkWithParams: getChunk,
       stream: Sum.Default.right("not initialized"),
-      reinitializing: {
-        status: "idle",
+      initializationStatus: {
+        kind: "not initialized",
       },
     },
   }),
@@ -114,7 +117,7 @@ export const OneAbstractRendererState = {
           "previewStates",
         ),
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
-          "reinitializing",
+          "initializationStatus",
         ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<OneAbstractRendererState>()({
@@ -180,6 +183,24 @@ export const OneAbstractRendererState = {
 
       return ValueOrErrors.Default.return(id);
     },
+    ShouldRunInitialization: <
+      CustomPresentationContext = Unit,
+      ExtraContext = Unit,
+    >(
+      ctx: OneAbstractRendererReadonlyContext<
+        CustomPresentationContext,
+        ExtraContext
+      > &
+        OneAbstractRendererState,
+    ): boolean =>
+      // if the value is some, we already have something to pass to the renderers
+      // -> we don't have to run the initialization coroutine
+      // if the inner value is unit, we are rendering a partial one
+      (ctx.customFormState.initializationStatus.kind === "not initialized" ||
+        ctx.customFormState.initializationStatus.kind === "reinitializing") &&
+      ctx.getApi != undefined &&
+      ctx.value.kind === "option" &&
+      !ctx.value.isSome,
   },
 };
 

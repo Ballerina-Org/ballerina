@@ -36,8 +36,8 @@ import {
   OneAbstractRendererReadonlyContext,
   OneAbstractRendererState,
   OneAbstractRendererView,
+  InitializationStatus,
   OneAbstractRendererViewForeignMutationsExpected,
-  OneReinitilizationState,
 } from "./state";
 import {
   initializeOneRunner,
@@ -533,9 +533,9 @@ export const OneAbstractRenderer = <
                 ),
               reinitializeOne: (afterReinitializationAction) =>
                 props.setState(
-                  OneAbstractRendererState.Updaters.Core.customFormState.children.reinitializing(
-                    replaceWith<OneReinitilizationState>({
-                      status: "reinitializing",
+                  OneAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
+                    replaceWith<InitializationStatus>({
+                      kind: "reinitializing",
                       afterReinitializationAction,
                     }),
                   ),

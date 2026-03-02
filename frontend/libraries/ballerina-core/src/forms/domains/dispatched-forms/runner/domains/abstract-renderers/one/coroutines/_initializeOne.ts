@@ -8,7 +8,7 @@ import {
   ValueOrErrors,
   ValueUnit,
   Option,
-  OneReinitilizationState,
+  InitializationStatus,
 } from "../../../../../../../../../main";
 import { InitializeCo } from "./builder";
 import { DispatchDelta } from "../../../deltas/dispatch-delta/state";
@@ -45,55 +45,59 @@ export const initializeOne = <
           (_) => console.error("error while getting api value for the one", _),
         )
         .then((value) =>
-          InitializeCo<CustomPresentationContext, ExtraContext>().Do(() => {
-            current
-              .fromApiParser(value.value)
-              .Then((result) => {
-                if (
-                  current.domNodeAncestorPath.includes(
-                    "InvoicePositionAccountingRows",
-                  )
-                ) {
-                  console.group("InvoicePositionAccountingRows");
-                  console.debug("one content", result);
-                  console.groupEnd();
-                }
-                const updater = replaceWith<ValueOption | ValueUnit>(
-                  ValueOption.Default.some(result),
-                );
-                const delta: DispatchDelta<BaseFlags> = {
-                  kind: "OneReplace",
-                  replace: result,
-                  flags: {
-                    kind: "localOnly",
-                  },
-                  type: current.type,
-                  sourceAncestorLookupTypeNames:
-                    current.lookupTypeAncestorNames,
-                };
-                current.onChange(Option.Default.some(updater), delta);
+          InitializeCo<CustomPresentationContext, ExtraContext>()
+            .Do(() => {
+              current
+                .fromApiParser(value.value)
+                .Then((result) => {
+                  if (
+                    current.domNodeAncestorPath.includes(
+                      "InvoicePositionAccountingRows",
+                    )
+                  ) {
+                    console.group("InvoicePositionAccountingRows");
+                    console.debug("one content", result);
+                    console.groupEnd();
+                  }
+                  const updater = replaceWith<ValueOption | ValueUnit>(
+                    ValueOption.Default.some(result),
+                  );
+                  const delta: DispatchDelta<BaseFlags> = {
+                    kind: "OneReplace",
+                    replace: result,
+                    flags: {
+                      kind: "localOnly",
+                    },
+                    type: current.type,
+                    sourceAncestorLookupTypeNames:
+                      current.lookupTypeAncestorNames,
+                  };
+                  current.onChange(Option.Default.some(updater), delta);
 
+                  return ValueOrErrors.Default.return(result);
+                })
+                .MapErrors((_) => {
+                  console.error("error while parsing api value for the one", _);
+                  return _;
+                });
+            })
+            .then(() =>
+              InitializeCo<CustomPresentationContext, ExtraContext>().Do(() => {
                 if (
-                  current.customFormState.reinitializing.status ===
+                  current.customFormState.initializationStatus.kind ===
                   "reinitializing"
                 ) {
                   // always true when running this coroutine
-                  current.customFormState.reinitializing.afterReinitializationAction();
+                  current.customFormState.initializationStatus.afterReinitializationAction();
                 }
-
-                return ValueOrErrors.Default.return(result);
-              })
-              .MapErrors((_) => {
-                console.error("error while parsing api value for the one", _);
-                return _;
-              });
-          }),
+              }),
+            ),
         )
         .then(() =>
           InitializeCo<CustomPresentationContext, ExtraContext>().SetState(
-            OneAbstractRendererState.Updaters.Core.customFormState.children.reinitializing(
-              replaceWith<OneReinitilizationState>({
-                status: "idle",
+            OneAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
+              replaceWith<InitializationStatus>({
+                kind: "initialized",
               }),
             ),
           ),
