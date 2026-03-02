@@ -48,12 +48,14 @@ export type OneAbstractRendererReadonlyContext<
   remoteEntityVersionIdentifier: string;
 };
 
-export type OneReinitilizationState = {
-  status: "reinitializing";
-  postprocessAction: SimpleCallback<void>;
-} | {
-  status: "idle";
-}
+export type OneReinitilizationState =
+  | {
+      status: "reinitializing";
+      afterReinitializationAction: SimpleCallback<void>;
+    }
+  | {
+      status: "idle";
+    };
 
 export type OneAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
