@@ -531,12 +531,12 @@ export const OneAbstractRenderer = <
                     ),
                   ),
                 ),
-              reinitializeOne: (postprocessAction) =>
+              reinitializeOne: (afterReinitializationAction) =>
                 props.setState(
                   OneAbstractRendererState.Updaters.Core.customFormState.children.reinitializing(
                     replaceWith<OneReinitilizationState>({
                       status: "reinitializing",
-                      postprocessAction,
+                      afterReinitializationAction,
                     }),
                   ),
                 ),

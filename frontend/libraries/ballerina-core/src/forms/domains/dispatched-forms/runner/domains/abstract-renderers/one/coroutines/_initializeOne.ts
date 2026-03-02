@@ -73,9 +73,12 @@ export const initializeOne = <
                 };
                 current.onChange(Option.Default.some(updater), delta);
 
-                if (current.customFormState.reinitializing.status === "reinitializing") {
+                if (
+                  current.customFormState.reinitializing.status ===
+                  "reinitializing"
+                ) {
                   // always true when running this coroutine
-                  current.customFormState.reinitializing.postprocessAction();
+                  current.customFormState.reinitializing.afterReinitializationAction();
                 }
 
                 return ValueOrErrors.Default.return(result);
