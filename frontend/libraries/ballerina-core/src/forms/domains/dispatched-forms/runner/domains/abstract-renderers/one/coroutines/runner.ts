@@ -34,7 +34,8 @@ export const initializeOneRunner = <
       // -> we don't have to run the initialization coroutine
       // if the inner value is unit, we are rendering a partial one
       ((props.context.value.kind === "option" && !props.context.value.isSome) ||
-        props.context.customFormState.reinitializing.status === "reinitializing") &&
+        props.context.customFormState.reinitializing.status ===
+          "reinitializing") &&
       props.context.getApi != undefined,
   });
 
