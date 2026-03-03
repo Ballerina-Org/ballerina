@@ -9,14 +9,15 @@ import (
 )
 
 type Table[T any] struct {
-	Values    []T
-	IdToIndex map[uuid.UUID]int
-	From      int
-	To        int
-	HasMore   bool
+	Values     []T
+	IdToIndex  map[uuid.UUID]int
+	From       int
+	To         int
+	HasMore    bool
+	DefaultRow T
 }
 
-func NewTable[T any](values []T, getID func(T) uuid.UUID, from int, to int, hasMore bool) (Table[T], error) {
+func NewTable[T any](values []T, getID func(T) uuid.UUID, from int, to int, hasMore bool, defaultRow T) (Table[T], error) {
 	idToIndex := make(map[uuid.UUID]int)
 	for i, value := range values {
 		idToIndex[getID(value)] = i
@@ -25,11 +26,12 @@ func NewTable[T any](values []T, getID func(T) uuid.UUID, from int, to int, hasM
 		return Table[T]{}, fmt.Errorf("duplicate ids found")
 	}
 	return Table[T]{
-		Values:    values,
-		IdToIndex: idToIndex,
-		From:      from,
-		To:        to,
-		HasMore:   hasMore,
+		Values:     values,
+		IdToIndex:  idToIndex,
+		From:       from,
+		To:         to,
+		HasMore:    hasMore,
+		DefaultRow: defaultRow,
 	}, nil
 }
 
@@ -41,7 +43,7 @@ func makeRange(n int) []int {
 	return expected
 }
 
-func NewTableFromIdToIndex[T any](values []T, idToIndex map[uuid.UUID]int, from int, to int, hasMore bool) (Table[T], error) {
+func NewTableFromIdToIndex[T any](values []T, idToIndex map[uuid.UUID]int, from int, to int, hasMore bool, defaultRow T) (Table[T], error) {
 	n := len(values)
 	indices := slices.Sorted(maps.Values(idToIndex))
 
@@ -49,11 +51,12 @@ func NewTableFromIdToIndex[T any](values []T, idToIndex map[uuid.UUID]int, from 
 		return Table[T]{}, fmt.Errorf("idToIndex does not cover the exact range [0, %d), got %v", n, indices)
 	}
 	return Table[T]{
-		Values:    values,
-		IdToIndex: idToIndex,
-		From:      from,
-		To:        to,
-		HasMore:   hasMore,
+		Values:     values,
+		IdToIndex:  idToIndex,
+		From:       from,
+		To:         to,
+		HasMore:    hasMore,
+		DefaultRow: defaultRow,
 	}, nil
 }
 
@@ -62,5 +65,5 @@ func MapTable[T, U any](ts Table[T], f func(T) U) Table[U] {
 	for i := range ts.Values {
 		us[i] = f(ts.Values[i])
 	}
-	return Table[U]{Values: us, IdToIndex: ts.IdToIndex, HasMore: ts.HasMore}
+	return Table[U]{Values: us, IdToIndex: ts.IdToIndex, HasMore: ts.HasMore, DefaultRow: f(ts.DefaultRow)}
 }
