@@ -153,11 +153,12 @@ type RawUnion = {
   fields: Record<string, any>;
 };
 
-type Table = {
-  data: Map<string, Record<string, any>>;
+type Table<Row> = {
+  data: Map<string, Row>;
   hasMoreValues: boolean;
   from: number;
   to: number;
+  defaultRow: Row;
 };
 
 export const DispatchGenericTypes = [
@@ -197,7 +198,7 @@ type BuiltInApiConverters = {
   Sum: ApiConverter<Sum<any, any>>;
   SumN: ApiConverter<ValueSumN>;
   SumUnitDate: ApiConverter<Sum<Unit, Date>>;
-  Table: ApiConverter<Table>;
+  Table: ApiConverter<Table<any>>;
   One: ApiConverter<ValueOption>;
   ReadOnly: ApiConverter<any>;
   Contains: ApiConverter<ValueFilterContains>;
@@ -1300,7 +1301,13 @@ export const dispatchDefaultValue =
       if (t.kind == "table") {
         return renderer.kind == "tableRenderer"
           ? ValueOrErrors.Default.return(
-              PredicateValue.Default.table(0, 0, Map(), false),
+              PredicateValue.Default.table(
+                0,
+                0,
+                Map(),
+                false,
+                ValueRecord.Default.empty(),
+              ),
             )
           : ValueOrErrors.Default.throwOne(
               `received non table renderer kind "${renderer.kind}" when resolving defaultValue for table`,
@@ -1542,6 +1549,7 @@ export const dispatchFromAPIRawValue =
                 converterResult.to,
                 converterResult.hasMoreValues,
                 OrderedMap(values),
+                converterResult.defaultRow,
               ),
             ),
           ),
