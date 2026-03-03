@@ -1301,7 +1301,13 @@ export const dispatchDefaultValue =
       if (t.kind == "table") {
         return renderer.kind == "tableRenderer"
           ? ValueOrErrors.Default.return(
-              PredicateValue.Default.table(0, 0, Map(), false, ValueRecord.Default.empty()),
+              PredicateValue.Default.table(
+                0,
+                0,
+                Map(),
+                false,
+                ValueRecord.Default.empty(),
+              ),
             )
           : ValueOrErrors.Default.throwOne(
               `received non table renderer kind "${renderer.kind}" when resolving defaultValue for table`,
