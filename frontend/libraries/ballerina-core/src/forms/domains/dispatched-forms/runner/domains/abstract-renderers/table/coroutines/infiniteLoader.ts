@@ -47,6 +47,7 @@ export const TableInfiniteLoader = <
                       res.value.to,
                       res.value.hasMoreValues,
                       current.value.data.concat(res.value.data),
+                      res.value.defaultRow,
                     ),
                   );
                   // Only needed as a delta is mandatory for onchange but it is ignored upstream

@@ -72,6 +72,7 @@ export const InitialiseTable = <
                           res.value.to,
                           res.value.hasMoreValues,
                           res.value.data,
+                          res.value.defaultRow,
                         ),
                       );
                       // Only needed as a delta is mandatory for onchange but it is ignored upstream
