@@ -38,14 +38,25 @@ import {
   DispatchTableApiSource,
   ValueUnit,
   NestedRenderer,
+  TableAbstractRendererForeignMutationsExposed,
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import {
+  ApplyEditsRunner,
   TableInfiniteLoaderRunner,
   TableInitialiseFiltersAndSortingRunner,
   TableInitialiseTableRunner,
 } from "./coroutines/runner";
 import { TableCellRenderer } from "../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/table/domains/tableCellRenderer/state";
+import { v4 } from "uuid";
+import { AbstractTableRendererValueTable } from "./domains/extra-data/state";
+import { TableAbstractRendererPendingOps } from "./domains/pending-operation/state";
+import {
+  PendingAddOperationId,
+  TableAbstractRendererPendingAddOperation,
+  TableAbstractRendererPendingAddOps,
+} from "./domains/pending-operation/add/state";
 
 export const TableAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -148,6 +159,10 @@ export const TableAbstractRenderer = <
     CustomPresentationContext,
     ExtraContext
   >(tableApiSource, fromTableApiParser);
+  const InstantiatedApplyEditsRunner = ApplyEditsRunner<
+    CustomPresentationContext,
+    ExtraContext
+  >();
 
   const embedCellTemplate =
     (
@@ -167,6 +182,12 @@ export const TableAbstractRenderer = <
     (idx: number) =>
     (value: PredicateValue) =>
     (disabled: boolean) =>
+    (
+      onChange: (
+        idx: number,
+        valueRecordUpdater: Updater<ValueRecord>,
+      ) => DispatchOnChange<ValueTable, Flags>,
+    ) =>
     (flags: Flags | undefined) =>
       cellTemplate
         .mapContext<
@@ -304,22 +325,22 @@ export const TableAbstractRenderer = <
                 nestedDelta.sourceAncestorLookupTypeNames,
             };
 
+            const valueRecordUpdater = ValueRecord.Updaters.update(
+              column,
+              nestedUpdater.kind == "r" ? nestedUpdater.value : id,
+            );
             const updater =
               nestedUpdater.kind == "l"
                 ? nestedUpdater
                 : Option.Default.some(
                     ValueTable.Updaters.data(
-                      MapRepo.Updaters.update(
-                        rowId,
-                        ValueRecord.Updaters.update(
-                          column,
-                          nestedUpdater.kind == "r" ? nestedUpdater.value : id,
-                        ),
-                      ),
+                      MapRepo.Updaters.update(rowId, valueRecordUpdater),
                     ),
                   );
 
-            props.foreignMutations.onChange(updater, delta);
+            // need to call the custom onChange function provided by the abstract table renderer
+            // to hande updated on "fake" rows (rows that have been optimisticaly added to the table)
+            onChange(idx, valueRecordUpdater)(updater, delta);
           },
         }));
 
@@ -500,7 +521,12 @@ export const TableAbstractRenderer = <
                           ),
                         );
 
-                  props.foreignMutations.onChange(updater, delta);
+                  const idx = tableData.keySeq().indexOf(selectedDetailRow);
+                  // TODO: handle the case where the selected detail row is not in the table data (unlikely?)
+                  props.foreignMutations.onChange(
+                    updater,
+                    delta,
+                  );
                 }
               },
             }))
@@ -657,10 +683,16 @@ export const TableAbstractRenderer = <
       ),
     ).toArray();
 
+    // append the "fake" rows to the table data
+    const valueTable = AbstractTableRendererValueTable.Operations.withExtraData(
+      props.context.value,
+      props.context.customFormState.pendingOps,
+    );
+
     const embeddedTableData =
       props.context.customFormState.loadingState != "loaded"
         ? OrderedMap<string, OrderedMap<string, any>>()
-        : props.context.value.data.mapEntries(([rowId, rowData], idx) => [
+        : valueTable.data.mapEntries(([rowId, rowData], idx) => [
             rowId,
             rowData.fields
               .filter((_, column) => validVisibleColumns.includes(column))
@@ -674,7 +706,7 @@ export const TableAbstractRenderer = <
     const embeddedUnfilteredTableData =
       props.context.customFormState.loadingState != "loaded"
         ? OrderedMap<string, OrderedMap<string, any>>()
-        : props.context.value.data.mapEntries(([rowId, rowData], idx) => [
+        : valueTable.data.mapEntries(([rowId, rowData], idx) => [
             rowId,
             rowData.fields
               .filter((_, column) => validColumns.includes(column))
@@ -717,6 +749,7 @@ export const TableAbstractRenderer = <
                   ? props.context.customFormState.selectedDetailRow
                   : undefined,
               },
+              value: valueTable,
               domNodeId,
               legacy_domNodeId,
               tableHeaders: validVisibleColumns,
@@ -726,6 +759,17 @@ export const TableAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
+              // onChange: (updater, delta) => {
+              //   if (props.context.customFormState.pendingOps.kind == "add") {
+              //     props.foreignMutations.onChange(updater, {
+              //       ...delta,
+              //       flags: { kind: "localOnly" } as Flags,
+              //     });
+              //     return;
+              //   }
+
+              //   props.foreignMutations.onChange(updater, delta);
+              // },
               loadMore: () => {
                 if (props.context.customFormState.isFilteringInitialized) {
                   props.setState(
@@ -813,22 +857,75 @@ export const TableAbstractRenderer = <
               add: !props.context.apiMethods.includes("add")
                 ? undefined
                 : (flags: Flags | undefined) => {
+                    if (
+                      !TableAbstractRendererPendingOps.Operations.canEnqueueAddOperation(
+                        props.context.customFormState.pendingOps,
+                      )
+                    ) {
+                      console.warn("Cannot enqueue add operation");
+                      console.debug(
+                        "pending ops:",
+                        props.context.customFormState.pendingOps,
+                      );
+                      return;
+                    }
+
+                    // index of the new "fake" row in the table
+                    const newPendingRowIndex =
+                      props.context.value.data.size +
+                      (props.context.customFormState.pendingOps.kind == "add"
+                        ? props.context.customFormState.pendingOps.pending.size
+                        : 0);
+
                     const delta: DispatchDelta<Flags> = {
                       kind: "TableAddEmpty",
                       flags,
+                      newIndex: newPendingRowIndex,
+                      uniqueTableIdentifier: domNodeId,
                       sourceAncestorLookupTypeNames:
                         props.context.lookupTypeAncestorNames,
                     };
+                    const tempId =
+                      `placeholder-${v4()}` as PendingAddOperationId;
+
+                    // no need to apply the updater to the table here
+                    // the fake row will be added later to the list of extra data
+                    // so we just send the delta
                     props.foreignMutations.onChange(
                       Option.Default.none(),
                       delta,
                     );
-                    props.setState(
+
+                    const setModifiedByUser =
                       TableAbstractRendererState.Updaters.Core.commonFormState(
                         DispatchCommonFormState.Updaters.modifiedByUser(
                           replaceWith(true),
                         ),
-                      ),
+                      );
+
+                    const enqueuePendingAddOperation =
+                      TableAbstractRendererState.Updaters.Core.customFormState.children.pendingOps(
+                        (_) =>
+                          TableAbstractRendererPendingOps.Updaters.Core.pendingAddOperations(
+                            List([
+                              TableAbstractRendererPendingAddOperation.Default(
+                                // index will be used to match the correct row once we have it in the data
+                                props.context.value.data.size +
+                                  (_.kind == "add" ? _.pending.size : 0),
+                                tempId,
+                                // TODO: use props.context.value.defaultRow
+                                ValueRecord.Default.fromMap(
+                                  CellTemplates.map((c) =>
+                                    c.GetDefaultValue(),
+                                  ).concat([["Id", tempId]]),
+                                ),
+                              ),
+                            ]),
+                          )(_),
+                      );
+
+                    props.setState(
+                      setModifiedByUser.then(enqueuePendingAddOperation),
                     );
                   },
               remove: !props.context.apiMethods.includes("remove")
@@ -842,6 +939,7 @@ export const TableAbstractRenderer = <
                         props.context.lookupTypeAncestorNames,
                     };
                     props.foreignMutations.onChange(
+                      // TODO: handle remove delta
                       Option.Default.none(),
                       delta,
                     );
@@ -970,8 +1068,81 @@ export const TableAbstractRenderer = <
                 );
               },
             }}
+            // TODO: handle details renderer for "fake" rows (?)
             DetailsRenderer={embedDetailsRenderer?.(embeddedTableData)}
-            TableData={embeddedTableData}
+            TableData={embeddedTableData.map((_) =>
+              _.map((_) =>
+                _(
+                  (idx: number, valueRecordUpdater: Updater<ValueRecord>) =>
+                    (
+                      updater: Option<BasicUpdater<ValueTable>>,
+                      delta: DispatchDelta<Flags>,
+                    ) => {
+                      // custom onChange function provided to the cell templates to handle updates on "fake" rows
+                      if (
+                        props.context.customFormState.pendingOps.kind == "add"
+                      ) {
+                        // if the index is part of the extra data
+                        // apply the updater to the extra data
+
+                        const extraDataIdx =
+                          idx -
+                          props.context.customFormState.pendingOps.pending.first()!
+                            .idx;
+
+                        if (
+                          extraDataIdx >= 0 &&
+                          extraDataIdx <
+                            props.context.customFormState.pendingOps.pending
+                              .size
+                        ) {
+                          const addEditToApplyUpd =
+                            TableAbstractRendererState.Updaters.Core.customFormState.children.pendingOps(
+                              TableAbstractRendererPendingOps.Updaters.Core.add(
+                                TableAbstractRendererPendingAddOps.Updaters.Core.pending(
+                                  ListRepo.Updaters.update(
+                                    extraDataIdx,
+                                    Updater<TableAbstractRendererPendingAddOperation>(
+                                      (_) => ({
+                                        ..._,
+                                        // update the record with the new value
+                                        record: valueRecordUpdater(_.record),
+                                        // store information about the edit to apply it later
+                                        // once the real row is added to the table
+                                        editsToApply: _.editsToApply.push({
+                                          recordUpdater: valueRecordUpdater,
+                                          updater:
+                                            updater.kind == "l"
+                                              ? Updater(id)
+                                              : Updater(updater.value),
+                                          delta,
+                                        }),
+                                      }),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+
+                          props.setState(addEditToApplyUpd);
+                        } else {
+                          // index referes to a row in the table data
+                          // so we can apply the updater to the row directly
+                          // but only locally
+                          props.foreignMutations.onChange(updater, {
+                            ...delta,
+                            flags: { kind: "localOnly" } as Flags,
+                          });
+                        }
+
+                        return;
+                      }
+
+                      props.foreignMutations.onChange(updater, delta);
+                    },
+                ),
+              ),
+            )}
             UnfilteredTableData_Dangerous={embeddedUnfilteredTableData}
             AllowedFilters={EmbeddedAllowedFilters}
             AllowedSorting={props.context.sorting}
@@ -990,6 +1161,10 @@ export const TableAbstractRenderer = <
     })),
     InstantiatedInitialiseFiltersAndSortingRunner,
     InstantiatedInitialiseTableRunner.mapContextFromProps((props) => ({
+      ...props.context,
+      onChange: props.foreignMutations.onChange,
+    })),
+    InstantiatedApplyEditsRunner.mapContextFromProps((props) => ({
       ...props.context,
       onChange: props.foreignMutations.onChange,
     })),

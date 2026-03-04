@@ -326,6 +326,10 @@ export type DispatchDeltaTable<T = Unit> =
       kind: "TableAddEmpty";
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
+      // needed to create a different comparand
+      // so that each operation of this kind can be uniquely identified
+      newIndex: number;
+      uniqueTableIdentifier: string;
     }
   | {
       kind: "TableRemove";
@@ -1460,8 +1464,15 @@ export const DispatchDeltaTransfer = {
               {
                 Discriminator: "TableAddEmpty",
               },
-              `[TableAddEmpty]`,
-              delta.flags ? [[delta.flags, "[TableAddEmpty]"]] : [],
+              `[TableAddEmpty][${delta.uniqueTableIdentifier}][${delta.newIndex}]`,
+              delta.flags
+                ? [
+                    [
+                      delta.flags,
+                      `[TableAddEmpty][${delta.uniqueTableIdentifier}][${delta.newIndex}]`,
+                    ],
+                  ]
+                : [],
             ]);
           }
           if (delta.kind == "TableRemove") {
