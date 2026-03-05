@@ -20,7 +20,10 @@ import {
   TableAbstractRendererPendingAddOps,
 } from "./add/state";
 import { TableAbstractRendererNoPendingOps } from "./empty/state";
-import { TableAbstractRendererPendingRemoveOperation, TableAbstractRendererPendingRemoveOps } from "./remove/state";
+import {
+  TableAbstractRendererPendingRemoveOperation,
+  TableAbstractRendererPendingRemoveOps,
+} from "./remove/state";
 
 export type TableAbstractRendererPendingOps =
   | TableAbstractRendererNoPendingOps
@@ -95,7 +98,12 @@ export const TableAbstractRendererPendingOps = {
           _.kind == "remove"
             ? _.pending.size <= operationIds.size
               ? TableAbstractRendererPendingOps.Default.empty()
-              : { ..._, pending: _.pending.filterNot((_) => operationIds.some((o) => o.id == _.id)) }
+              : {
+                  ..._,
+                  pending: _.pending.filterNot((_) =>
+                    operationIds.some((o) => o.id == _.id),
+                  ),
+                }
             : _,
         ),
       enqueuePendingRemoveOperation: (

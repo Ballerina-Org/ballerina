@@ -13,22 +13,31 @@ export const DequeueRemoveOps = <
   CustomPresentationContext = Unit,
   ExtraContext = Unit,
 >() =>
-  Co<CustomPresentationContext, ExtraContext>().Seq([
+  Co<CustomPresentationContext, ExtraContext>().While(
+    ([current]) =>
+      TableAbstractRendererPendingOps.Operations.dataHasBeenRemoved(
+        current.value.data,
+        current.customFormState.pendingOps,
+      ),
     Co<CustomPresentationContext, ExtraContext>()
-      .GetState()
-      .then((current) => {
-        const completedRemoveOps =
-          TableAbstractRendererPendingOps.Operations.getCompletedRemoveOps(
-            current.value.data,
-            current.customFormState.pendingOps,
-          );
+      .Wait(15)
+      .then(() =>
+        Co<CustomPresentationContext, ExtraContext>()
+          .GetState()
+          .then((current) => {
+            const completedRemoveOps =
+              TableAbstractRendererPendingOps.Operations.getCompletedRemoveOps(
+                current.value.data,
+                current.customFormState.pendingOps,
+              );
 
-        return Co<CustomPresentationContext, ExtraContext>().SetState(
-          TableAbstractRendererState.Updaters.Core.customFormState.children.pendingOps(
-            TableAbstractRendererPendingOps.Updaters.Template.dequeuePendingRemoveOperations(
-              completedRemoveOps,
-            ),
-          ),
-        );
-      }),
-  ]);
+            return Co<CustomPresentationContext, ExtraContext>().SetState(
+              TableAbstractRendererState.Updaters.Core.customFormState.children.pendingOps(
+                TableAbstractRendererPendingOps.Updaters.Template.dequeuePendingRemoveOperations(
+                  completedRemoveOps,
+                ),
+              ),
+            );
+          }),
+      ),
+  );

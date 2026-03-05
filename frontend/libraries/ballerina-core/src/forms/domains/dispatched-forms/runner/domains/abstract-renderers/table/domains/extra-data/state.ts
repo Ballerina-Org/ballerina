@@ -17,10 +17,10 @@ export const AbstractTableRendererValueTable = {
                 .map((p) => [p.id, p.record]),
             )
           : pendingOps.kind == "remove"
-              ? value.data.filterNot((_, k) =>
-                  pendingOps.pending.some((p) => p.id == k),
-                )
-              : value.data,
+            ? value.data.filterNot((_, k) =>
+                pendingOps.pending.some((p) => p.id == k),
+              )
+            : value.data,
     }),
   },
 };
