@@ -44,6 +44,7 @@ import {
 import { Template } from "../../../../../../../template/state";
 import {
   ApplyEditsRunner,
+  DequeueRemoveOpsRunner,
   TableInfiniteLoaderRunner,
   TableInitialiseFiltersAndSortingRunner,
   TableInitialiseTableRunner,
@@ -55,8 +56,8 @@ import { TableAbstractRendererPendingOps } from "./domains/pending-operation/sta
 import {
   PendingAddOperationId,
   TableAbstractRendererPendingAddOperation,
-  TableAbstractRendererPendingAddOps,
 } from "./domains/pending-operation/add/state";
+import { TableAbstractRendererPendingRemoveOperation } from "./domains/pending-operation/remove/state";
 
 export const TableAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -160,6 +161,10 @@ export const TableAbstractRenderer = <
     ExtraContext
   >(tableApiSource, fromTableApiParser);
   const InstantiatedApplyEditsRunner = ApplyEditsRunner<
+    CustomPresentationContext,
+    ExtraContext
+  >();
+  const InstantiatedDequeueRemoveOpsRunner = DequeueRemoveOpsRunner<
     CustomPresentationContext,
     ExtraContext
   >();
@@ -928,6 +933,19 @@ export const TableAbstractRenderer = <
               remove: !props.context.apiMethods.includes("remove")
                 ? undefined
                 : (k: string, flags: Flags | undefined) => {
+                    if (
+                      !TableAbstractRendererPendingOps.Operations.canEnqueueRemoveOperation(
+                        props.context.customFormState.pendingOps,
+                      )
+                    ) {
+                      console.warn("Cannot enqueue remove operation");
+                      console.debug(
+                        "pending ops:",
+                        props.context.customFormState.pendingOps,
+                      );
+                      return;
+                    }
+
                     const delta: DispatchDelta<Flags> = {
                       kind: "TableRemove",
                       id: k,
@@ -936,16 +954,29 @@ export const TableAbstractRenderer = <
                         props.context.lookupTypeAncestorNames,
                     };
                     props.foreignMutations.onChange(
-                      // TODO: handle remove delta
                       Option.Default.none(),
                       delta,
                     );
-                    props.setState(
+
+                    const setModifiedByUser =
                       TableAbstractRendererState.Updaters.Core.commonFormState(
                         DispatchCommonFormState.Updaters.modifiedByUser(
                           replaceWith(true),
                         ),
-                      ),
+                      );
+                    const enqueueRemoveOperation =
+                      TableAbstractRendererState.Updaters.Core.customFormState.children.pendingOps(
+                        TableAbstractRendererPendingOps.Updaters.Core.pendingRemoveOperations(
+                          List([
+                            TableAbstractRendererPendingRemoveOperation.Default(
+                              k,
+                            ),
+                          ]),
+                        ),
+                      );
+
+                    props.setState(
+                      setModifiedByUser.then(enqueueRemoveOperation),
                     );
                   },
               moveTo: !props.context.apiMethods.includes("move")
@@ -1105,6 +1136,10 @@ export const TableAbstractRenderer = <
       onChange: props.foreignMutations.onChange,
     })),
     InstantiatedApplyEditsRunner.mapContextFromProps((props) => ({
+      ...props.context,
+      onChange: props.foreignMutations.onChange,
+    })),
+    InstantiatedDequeueRemoveOpsRunner.mapContextFromProps((props) => ({
       ...props.context,
       onChange: props.foreignMutations.onChange,
     })),

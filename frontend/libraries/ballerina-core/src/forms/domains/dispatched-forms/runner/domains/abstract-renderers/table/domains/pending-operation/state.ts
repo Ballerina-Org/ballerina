@@ -20,7 +20,10 @@ import {
   TableAbstractRendererPendingAddOps,
 } from "./add/state";
 import { TableAbstractRendererNoPendingOps } from "./empty/state";
-import { TableAbstractRendererPendingRemoveOps } from "./remove/state";
+import {
+  TableAbstractRendererPendingRemoveOperation,
+  TableAbstractRendererPendingRemoveOps,
+} from "./remove/state";
 
 export type TableAbstractRendererPendingOps =
   | TableAbstractRendererNoPendingOps
@@ -89,13 +92,18 @@ export const TableAbstractRendererPendingOps = {
             : _,
         ),
       dequeuePendingRemoveOperations: (
-        count: number,
+        operationIds: TableAbstractRendererPendingRemoveOps["pending"],
       ): Updater<TableAbstractRendererPendingOps> =>
         Updater((_) =>
           _.kind == "remove"
-            ? _.pending.size <= count
+            ? _.pending.size <= operationIds.size
               ? TableAbstractRendererPendingOps.Default.empty()
-              : { ..._, pending: _.pending.skip(count) }
+              : {
+                  ..._,
+                  pending: _.pending.filterNot((_) =>
+                    operationIds.some((o) => o.id == _.id),
+                  ),
+                }
             : _,
         ),
       enqueuePendingRemoveOperation: (
@@ -131,6 +139,19 @@ export const TableAbstractRendererPendingOps = {
             List(pendingOps.pending.takeWhile((_) => data.size > _.idx)),
           )
         : Option.Default.none(),
+    dataHasBeenRemoved: (
+      data: OrderedMap<string, ValueRecord>,
+      pendingOps: TableAbstractRendererPendingOps,
+    ): boolean =>
+      pendingOps.kind == "remove" &&
+      pendingOps.pending.some((_) => !data.has(_.id)),
+    getCompletedRemoveOps: (
+      data: OrderedMap<string, ValueRecord>,
+      pendingOps: TableAbstractRendererPendingOps,
+    ): List<TableAbstractRendererPendingRemoveOperation> =>
+      pendingOps.kind == "remove"
+        ? pendingOps.pending.filterNot((_) => data.has(_.id))
+        : List(),
     optimisticUpdate:
       <
         CusomtPresentationContext = Unit,
@@ -211,9 +232,15 @@ export const TableAbstractRendererPendingOps = {
 
 export const PendingOps = {
   Operations: {
-    getPendingAddIds: (pendingOps: TableAbstractRendererPendingOps): List<string> =>
+    getPendingAddIds: (
+      pendingOps: TableAbstractRendererPendingOps,
+    ): List<string> =>
       pendingOps.kind == "add" ? pendingOps.pending.map((_) => _.id) : List(),
-    getPendingRemoveIds: (pendingOps: TableAbstractRendererPendingOps): List<string> =>
-      pendingOps.kind == "remove" ? pendingOps.pending.map((_) => _.id) : List(),
+    getPendingRemoveIds: (
+      pendingOps: TableAbstractRendererPendingOps,
+    ): List<string> =>
+      pendingOps.kind == "remove"
+        ? pendingOps.pending.map((_) => _.id)
+        : List(),
   },
-}
+};

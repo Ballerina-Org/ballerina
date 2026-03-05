@@ -9,12 +9,13 @@ import {
   Unit,
   ValueOrErrors,
 } from "../../../../../../../../../main";
-import { ApplyEditsCo, Co, InfiniteLoaderCo } from "./builder";
+import { PendingOperationsCo, Co, InfiniteLoaderCo } from "./builder";
 import {} from "./initialiseFiltersAndSorting";
 import { InitialiseFiltersAndSorting } from "./initialiseFiltersAndSorting";
 import { TableInfiniteLoader } from "./infiniteLoader";
 import { InitialiseTable } from "./initialiseTable";
 import { ApplyEdits } from "./applyEdits";
+import { DequeueRemoveOps } from "./dequeueRemoveOps";
 import { TableAbstractRendererPendingOps } from "../domains/pending-operation/state";
 
 export const TableInitialiseFiltersAndSortingRunner = <
@@ -93,12 +94,28 @@ export const ApplyEditsRunner = <
   CustomPresentationContext = Unit,
   ExtraContext = Unit,
 >() =>
-  ApplyEditsCo<CustomPresentationContext, ExtraContext>().Template<any>(
+  PendingOperationsCo<CustomPresentationContext, ExtraContext>().Template<any>(
     ApplyEdits<CustomPresentationContext, ExtraContext>(),
     {
       interval: 15,
       runFilter: (props) =>
         TableAbstractRendererPendingOps.Operations.hasNewData(
+          props.context.value.data,
+          props.context.customFormState.pendingOps,
+        ),
+    },
+  );
+
+export const DequeueRemoveOpsRunner = <
+  CustomPresentationContext = Unit,
+  ExtraContext = Unit,
+>() =>
+  PendingOperationsCo<CustomPresentationContext, ExtraContext>().Template<any>(
+    DequeueRemoveOps<CustomPresentationContext, ExtraContext>(),
+    {
+      interval: 15,
+      runFilter: (props) =>
+        TableAbstractRendererPendingOps.Operations.dataHasBeenRemoved(
           props.context.value.data,
           props.context.customFormState.pendingOps,
         ),

@@ -5,7 +5,7 @@ import {
   MapRepo,
   unit,
 } from "../../../../../../../../../main";
-import { ApplyEditsCo as Co } from "./builder";
+import { PendingOperationsCo as Co } from "./builder";
 import { TableAbstractRendererPendingOps } from "../domains/pending-operation/state";
 import { TableAbstractRendererState } from "../state";
 
