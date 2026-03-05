@@ -9,13 +9,18 @@ export const AbstractTableRendererValueTable = {
       pendingOps: TableAbstractRendererPendingOps,
     ): ValueTable => ({
       ...value,
-      data: value.data.concat(
+      data:
         pendingOps.kind == "add"
-          ? pendingOps.pending
-              .skipWhile((p) => p.idx < value.data.size)
-              .map((p) => [p.id, p.record])
-          : OrderedMap(),
-      ),
+          ? value.data.concat(
+              pendingOps.pending
+                .skipWhile((p) => p.idx < value.data.size)
+                .map((p) => [p.id, p.record]),
+            )
+          : pendingOps.kind == "remove"
+              ? value.data.filterNot((_, k) =>
+                  pendingOps.pending.some((p) => p.id == k),
+                )
+              : value.data,
     }),
   },
 };

@@ -30,7 +30,7 @@ export const InfiniteLoaderCo = <
     TableAbstractRendererState
   >();
 
-export const ApplyEditsCo = <
+export const PendingOperationsCo = <
   CustomPresentationContext = Unit,
   ExtraContext = Unit,
 >() =>
