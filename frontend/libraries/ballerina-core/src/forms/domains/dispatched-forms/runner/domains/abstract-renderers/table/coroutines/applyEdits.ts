@@ -13,7 +13,13 @@ export const ApplyEdits = <
   CustomPresentationContext = Unit,
   ExtraContext = Unit,
 >() =>
-  Co<CustomPresentationContext, ExtraContext>().Seq([
+  Co<CustomPresentationContext, ExtraContext>().While(
+    ([current]) =>
+      TableAbstractRendererPendingOps.Operations.hasNewData(
+        current.value.data,
+        current.customFormState.pendingOps,
+      ),
+
     Co<CustomPresentationContext, ExtraContext>()
       .GetState()
       .then((current) => {
@@ -63,4 +69,4 @@ export const ApplyEdits = <
 
         return Co<CustomPresentationContext, ExtraContext>().Return<Unit>(unit);
       }),
-  ]);
+  );

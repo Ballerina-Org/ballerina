@@ -52,7 +52,10 @@ import {
 import { TableCellRenderer } from "../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/table/domains/tableCellRenderer/state";
 import { v4 } from "uuid";
 import { AbstractTableRendererValueTable } from "./domains/extra-data/state";
-import { TableAbstractRendererPendingOps } from "./domains/pending-operation/state";
+import {
+  PendingOps,
+  TableAbstractRendererPendingOps,
+} from "./domains/pending-operation/state";
 import {
   PendingAddOperationId,
   TableAbstractRendererPendingAddOperation,
@@ -1121,6 +1124,12 @@ export const TableAbstractRenderer = <
             isFilteringSortAndLoadingEnabled={
               props.context.customFormState.isFilteringInitialized
             }
+            hasPendingRemoveOps={PendingOps.Operations.hasPendingRemoveOps(
+              props.context.customFormState.pendingOps,
+            )}
+            hasPendingAddOps={PendingOps.Operations.hasPendingAddOps(
+              props.context.customFormState.pendingOps,
+            )}
           />
         </IdProvider>
       </>

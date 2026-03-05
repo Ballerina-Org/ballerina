@@ -232,6 +232,11 @@ export const TableAbstractRendererPendingOps = {
 
 export const PendingOps = {
   Operations: {
+    hasPendingRemoveOps: (
+      pendingOps: TableAbstractRendererPendingOps,
+    ): boolean => pendingOps.kind == "remove",
+    hasPendingAddOps: (pendingOps: TableAbstractRendererPendingOps): boolean =>
+      pendingOps.kind == "add",
     getPendingAddIds: (
       pendingOps: TableAbstractRendererPendingOps,
     ): List<string> =>

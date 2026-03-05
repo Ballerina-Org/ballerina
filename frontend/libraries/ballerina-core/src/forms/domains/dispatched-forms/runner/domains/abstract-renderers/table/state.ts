@@ -579,5 +579,7 @@ export type TableAbstractRendererView<
     AllowedSorting: Array<string>;
     HighlightedFilters: Array<string>;
     isFilteringSortAndLoadingEnabled: boolean;
+    hasPendingRemoveOps: boolean;
+    hasPendingAddOps: boolean;
   }
 >;
