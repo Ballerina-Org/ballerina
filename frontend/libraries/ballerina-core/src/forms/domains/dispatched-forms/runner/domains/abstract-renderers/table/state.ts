@@ -34,6 +34,7 @@ import {
   DispatchDelta,
 } from "../../../../../../../../main";
 import { Template, View } from "../../../../../../../template/state";
+import { TableAbstractRendererPendingOps } from "./domains/pending-operation/state";
 
 export type TableAbstractRendererReadonlyContext<
   CustomPresentationContext = Unit,
@@ -96,6 +97,7 @@ export type TableAbstractRendererState = CommonAbstractRendererState & {
     filterAndSortParam: string;
     filterStates: Map<string, List<any>>;
     applyToAll: boolean;
+    pendingOps: TableAbstractRendererPendingOps;
   };
 };
 export const TableAbstractRendererState = {
@@ -115,6 +117,7 @@ export const TableAbstractRendererState = {
       sorting: Map(),
       filterStates: Map(),
       applyToAll: false,
+      pendingOps: TableAbstractRendererPendingOps.Default.empty(),
     },
   }),
   Updaters: {
@@ -152,6 +155,9 @@ export const TableAbstractRendererState = {
         ),
         ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
           "applyToAll",
+        ),
+        ...simpleUpdater<TableAbstractRendererState["customFormState"]>()(
+          "pendingOps",
         ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<TableAbstractRendererState>()({
@@ -442,6 +448,13 @@ export const TableAbstractRendererState = {
   },
 };
 
+export type TableAbstractRendererForeignMutationsExposed<Flags = Unit> = {
+  onChange: (
+    rowIndex: number,
+    recordUpdater: Updater<ValueRecord>,
+  ) => TableAbstractRendererForeignMutationsExpected<Flags>["onChange"];
+};
+
 export type TableAbstractRendererForeignMutationsExpected<Flags = Unit> = {
   onChange: DispatchOnChange<ValueTable, Flags>;
 };
@@ -566,5 +579,7 @@ export type TableAbstractRendererView<
     AllowedSorting: Array<string>;
     HighlightedFilters: Array<string>;
     isFilteringSortAndLoadingEnabled: boolean;
+    hasPendingRemoveOps: boolean;
+    hasPendingAddOps: boolean;
   }
 >;

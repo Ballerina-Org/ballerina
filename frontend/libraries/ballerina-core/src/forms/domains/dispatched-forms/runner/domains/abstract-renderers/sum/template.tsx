@@ -100,6 +100,7 @@ export const SumAbstractRenderer = <
                   preprocessedSpecContext: _.preprocessedSpecContext,
                   labelContext,
                   usePreprocessor: _.usePreprocessor,
+                  preventOneInitialization: _.preventOneInitialization,
                 };
               },
             )
@@ -202,6 +203,7 @@ export const SumAbstractRenderer = <
                   preprocessedSpecContext: _.preprocessedSpecContext,
                   labelContext,
                   usePreprocessor: _.usePreprocessor,
+                  preventOneInitialization: _.preventOneInitialization,
                 };
               },
             )

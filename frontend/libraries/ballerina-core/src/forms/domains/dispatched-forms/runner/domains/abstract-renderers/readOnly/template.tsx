@@ -89,6 +89,7 @@ export const ReadOnlyAbstractRenderer = <
           preprocessedSpecContext: _.preprocessedSpecContext,
           labelContext,
           usePreprocessor: _.usePreprocessor,
+          preventOneInitialization: _.preventOneInitialization,
         };
       },
     )
