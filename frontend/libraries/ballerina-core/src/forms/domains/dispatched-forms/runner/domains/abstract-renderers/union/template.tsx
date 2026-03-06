@@ -99,6 +99,7 @@ export const UnionAbstractRenderer = <
               preprocessedSpecContext: _.preprocessedSpecContext,
               labelContext,
               usePreprocessor: _.usePreprocessor,
+              preventOneInitialization: _.preventOneInitialization,
             };
           },
         )

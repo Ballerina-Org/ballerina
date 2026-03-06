@@ -152,6 +152,12 @@ export const TableAbstractRendererPendingOps = {
       pendingOps.kind == "remove"
         ? pendingOps.pending.filterNot((_) => data.has(_.id))
         : List(),
+    hasPendingAddOperation:
+      (pendingOps: TableAbstractRendererPendingOps) =>
+      (rowId: string): boolean =>
+        PendingOps.Operations.hasPendingAddOps(pendingOps)
+          ? pendingOps.pending.some((_) => _.id == rowId)
+          : false,
     optimisticUpdate:
       <
         CusomtPresentationContext = Unit,
@@ -234,8 +240,11 @@ export const PendingOps = {
   Operations: {
     hasPendingRemoveOps: (
       pendingOps: TableAbstractRendererPendingOps,
-    ): boolean => pendingOps.kind == "remove",
-    hasPendingAddOps: (pendingOps: TableAbstractRendererPendingOps): boolean =>
+    ): pendingOps is TableAbstractRendererPendingRemoveOps =>
+      pendingOps.kind == "remove",
+    hasPendingAddOps: (
+      pendingOps: TableAbstractRendererPendingOps,
+    ): pendingOps is TableAbstractRendererPendingAddOps =>
       pendingOps.kind == "add",
     getPendingAddIds: (
       pendingOps: TableAbstractRendererPendingOps,

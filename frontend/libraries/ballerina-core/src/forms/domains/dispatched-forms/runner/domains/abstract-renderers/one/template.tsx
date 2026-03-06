@@ -171,6 +171,9 @@ export const OneAbstractRenderer = <
         preprocessedSpecContext: _.preprocessedSpecContext,
         labelContext,
         usePreprocessor: _.usePreprocessor,
+        // we do not want to propagate this flag to all the ones in the hierarchy
+        // stop as soon as we reach the first one
+        preventOneInitialization: false,
       };
     })
       .mapState(
@@ -272,6 +275,7 @@ export const OneAbstractRenderer = <
               preprocessedSpecContext: _.preprocessedSpecContext,
               labelContext,
               usePreprocessor: _.usePreprocessor,
+              preventOneInitialization: false,
             };
           })
             .mapState(

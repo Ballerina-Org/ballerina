@@ -190,6 +190,7 @@ export const TableAbstractRenderer = <
     (idx: number) =>
     (value: PredicateValue) =>
     (disabled: boolean) =>
+    (isFakeRow: (_: string) => boolean) =>
     (
       onChange: (
         idx: number,
@@ -256,6 +257,7 @@ export const TableAbstractRenderer = <
             preprocessedSpecContext: _.preprocessedSpecContext,
             labelContext,
             usePreprocessor: _.usePreprocessor,
+            preventOneInitialization: isFakeRow(rowId),
           };
         })
 
@@ -355,6 +357,7 @@ export const TableAbstractRenderer = <
   const embedDetailsRenderer =
     DetailsRenderer && DetailsRendererRaw
       ? (tableData: OrderedMap<string, any>) =>
+          (isFakeRow: (_: string) => boolean) =>
           (
             onChange: (
               idx: number,
@@ -452,6 +455,11 @@ export const TableAbstractRenderer = <
                 preprocessedSpecContext: _.preprocessedSpecContext,
                 labelContext,
                 usePreprocessor: _.usePreprocessor,
+                preventOneInitialization: PredicateValue.Operations.IsString(
+                  selectedDetailRow,
+                )
+                  ? isFakeRow(selectedDetailRow)
+                  : false,
               };
             })
               .mapStateFromProps<TableAbstractRendererState>(
@@ -1100,6 +1108,10 @@ export const TableAbstractRenderer = <
               },
             }}
             DetailsRenderer={embedDetailsRenderer?.(embeddedTableData)(
+              TableAbstractRendererPendingOps.Operations.hasPendingAddOperation(
+                props.context.customFormState.pendingOps,
+              ),
+            )(
               TableAbstractRendererPendingOps.Operations.optimisticUpdate<
                 CustomPresentationContext,
                 Flags,
@@ -1107,8 +1119,12 @@ export const TableAbstractRenderer = <
               >(props),
             )}
             TableData={embeddedTableData.map((_) =>
-              _.map((_) =>
-                _(
+              _.map((row) =>
+                row(
+                  TableAbstractRendererPendingOps.Operations.hasPendingAddOperation(
+                    props.context.customFormState.pendingOps,
+                  ),
+                )(
                   TableAbstractRendererPendingOps.Operations.optimisticUpdate<
                     CustomPresentationContext,
                     Flags,
