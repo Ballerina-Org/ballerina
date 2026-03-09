@@ -72,6 +72,11 @@ module WithError =
       : Reader<List<'a>, 'c, 'e> =
       Reader(fun (c: 'c) -> sum.All(readers |> Seq.map (fun (Reader r) -> r c)))
 
+    member inline _.AllNonEmpty<'c, 'a, 'e when 'e: (static member Concat: 'e * 'e -> 'e)>
+      (readers: NonEmptyList<Reader<'a, 'c, 'e>>)
+      : Reader<NonEmptyList<'a>, 'c, 'e> =
+      Reader(fun (c: 'c) -> sum.AllNonEmpty(readers |> NonEmptyList.map (fun (Reader r) -> r c)))
+
     member inline _.Any<'c, 'a, 'e when 'e: (static member Concat: 'e * 'e -> 'e)>
       (readers: NonEmptyList<Reader<'a, 'c, 'e>>)
       : Reader<'a, 'c, 'e> =

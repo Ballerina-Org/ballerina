@@ -66,3 +66,8 @@ type TypeValue<'valueExt> with
         { value = v
           typeExprSource = TypeExprSourceMapping.OriginTypeExpr(TypeExpr.Primitive PrimitiveType.TimeSpan)
           typeCheckScopeSource = TypeCheckScope.Empty }
+    | PrimitiveType.Vector ->
+      TypeValue.Primitive
+        { value = v
+          typeExprSource = TypeExprSourceMapping.OriginTypeExpr(TypeExpr.Primitive PrimitiveType.Vector)
+          typeCheckScopeSource = TypeCheckScope.Empty }

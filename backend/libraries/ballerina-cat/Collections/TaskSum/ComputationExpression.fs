@@ -50,6 +50,8 @@ type TaskSumBuilder() =
       return sum |> Sum.mapRight f
     }
 
+  member inline _.OfSum(sum: Sum<'a, 'b>) = task { return sum }
+
 [<AutoOpen>]
 module ComputationExpression =
   let taskSum = TaskSumBuilder()

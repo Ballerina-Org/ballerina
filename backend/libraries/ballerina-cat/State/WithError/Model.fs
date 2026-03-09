@@ -216,6 +216,17 @@ module WithError =
     member inline state.Either5 p1 p2 p3 p4 p5 =
       state.Either p1 (state.Either p2 (state.Either p3 (state.Either p4 p5)))
 
+    member inline state.Either6 p1 p2 p3 p4 p5 p6 =
+      state.Either p1 (state.Either p2 (state.Either p3 (state.Either p4 (state.Either p5 p6))))
+
+    member inline state.Either7 p1 p2 p3 p4 p5 p6 p7 =
+      state.Either p1 (state.Either p2 (state.Either p3 (state.Either p4 (state.Either p5 (state.Either p6 p7)))))
+
+    member inline state.Either8 p1 p2 p3 p4 p5 p6 p7 p8 =
+      state.Either
+        p1
+        (state.Either p2 (state.Either p3 (state.Either p4 (state.Either p5 (state.Either p6 (state.Either p7 p8))))))
+
     member state.RunOption(p: Option<State<'a, 'c, 's, 'e>>) =
       state {
         match p with

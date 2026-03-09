@@ -18,8 +18,13 @@ open Ballerina.DSL.Next.StdLib
 open Ballerina.Collections.NonEmptyList
 open Ballerina.DSL.Next.Terms.Json
 open Ballerina.DSL.Next.StdLib.Extensions
+open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 
-let stdExtensions, languageContext = stdExtensions
+
+type private ValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
+
+let stdExtensions, languageContext, _db_query_sym, _make_db_query_type =
+  db_ops () |> stdExtensions<Unit, _>
 
 let ``Assert Value<TypeValue> -> ToJson -> FromJson -> Value<TypeValue>``
   (expression: Value<TypeValue<ValueExt>, ValueExt>)
@@ -101,7 +106,7 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
       """{"discriminator": "list", "value":[{"discriminator":"int32","value":"1"},{"discriminator":"int32","value":"2"}]}""",
       Value.Ext(
         ValueExt(
-          Choice1Of6(
+          Choice1Of7(
             ListValues(
               List.Model.ListValues.List
                 [ PrimitiveValue.Int32 1 |> Value.Primitive

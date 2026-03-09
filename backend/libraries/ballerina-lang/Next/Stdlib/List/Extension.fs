@@ -11,6 +11,7 @@ module Extension =
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types
   open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.DSL.Next.Types.TypeChecker
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.List.Model
@@ -19,13 +20,34 @@ module Extension =
   open Ballerina.DSL.Next.Serialization.ValueSerializer
   open Ballerina.DSL.Next.Serialization.ValueDeserializer
   open Ballerina.DSL.Next.StdLib
+  open Ballerina.Data.Delta.Serialization.DeltaDTO
+  open Ballerina.Data.Delta.Serialization
+  open Ballerina.Data.Delta.Serialization.DeltaSerializer
+  open Ballerina.Data.Delta.Serialization.DeltaDeserializer
 
-  let ListExtension<'ext, 'extDTO when 'ext: comparison and 'extDTO: not null and 'extDTO: not struct>
+  let ListExtension<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO
+    when 'ext: comparison
+    and 'extDTO: not null
+    and 'extDTO: not struct
+    and 'deltaExtDTO: not null
+    and 'deltaExtDTO: not struct>
     (valueLens: PartialLens<'ext, ListValues<'ext>>)
     // (consLens: PartialLens<'ext, ListConstructors<'ext>>)
     (operationLens: PartialLens<'ext, ListOperations<'ext>>)
     (valueDTOLens: PartialLens<'extDTO, ListValueDTO<'extDTO>>)
-    : TypeExtension<'ext, 'extDTO, Unit, ListValues<'ext>, ListOperations<'ext>> =
+    (deltaLens: PartialLens<'deltaExt, ListDeltaExt<'ext, 'deltaExt>>)
+    (deltaDTOLens: PartialLens<'deltaExtDTO, ListDeltaExtDTO<'extDTO, 'deltaExtDTO>>)
+    : TypeExtension<
+        'runtimeContext,
+        'ext,
+        'extDTO,
+        'deltaExt,
+        'deltaExtDTO,
+        Unit,
+        ListValues<'ext>,
+        ListOperations<'ext>
+       >
+    =
     let listId = Identifier.LocalScope "List"
     let listSymbolId = listId |> TypeSymbol.Create
     let aVar, aKind = TypeVar.Create("a"), Kind.Star
@@ -85,7 +107,8 @@ module Extension =
     let _toValueFromList (v: List<Value<TypeValue<'ext>, 'ext>>) : Value<TypeValue<'ext>, 'ext> =
       (ListValues.List v |> valueLens.Set, None) |> Ext
 
-    let lengthOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+    let lengthOperation
+      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listLengthId,
       { Type =
           TypeValue.CreateLambda(
@@ -132,7 +155,8 @@ module Extension =
             } //: 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
-    let foldOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+    let foldOperation
+      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listFoldId,
       { Type =
           TypeValue.CreateLambda(
@@ -220,7 +244,8 @@ module Extension =
             } //: 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
-    let filterOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+    let filterOperation
+      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listFilterId,
       { Type =
           TypeValue.CreateLambda(
@@ -303,10 +328,11 @@ module Extension =
                 return
                   (v' |> List.filter snd |> List.map fst |> ListValues.List |> valueLens.Set, Some listFilterId)
                   |> Ext
-            } //: 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'ext, 'extValues> }
+            } //: 'runtimeContext * 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'runtimeContext, 'ext, 'extValues> }
       }
 
-    let mapOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+    let mapOperation
+      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listMapId,
       { Type =
           TypeValue.CreateLambda(
@@ -349,10 +375,11 @@ module Extension =
                 let! v' = v |> List.map (fun v -> Expr.EvalApply loc0 [] (f, v)) |> reader.All
 
                 return (ListValues.List v' |> valueLens.Set, None) |> Ext
-            } //: 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'ext, 'extValues> }
+            } //: 'runtimeContext * 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'runtimeContext, 'ext, 'extValues> }
       }
 
-    let appendOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+    let appendOperation
+      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listAppendId,
       { Type =
           TypeValue.CreateLambda(
@@ -411,7 +438,8 @@ module Extension =
             } //: 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
-    let consOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+    let consOperation
+      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listConsId,
       { Type =
           TypeValue.CreateLambda(
@@ -462,10 +490,11 @@ module Extension =
 
                 return (ListValues.List(head :: tail) |> valueLens.Set, None) |> Ext
               | _ -> return! (fun () -> "Error: expected pair") |> Errors.Singleton loc0 |> reader.Throw
-            } //: 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'ext, 'extValues> }
+            } //: 'runtimeContext * 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'runtimeContext, 'ext, 'extValues> }
       }
 
-    let nilOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+    let nilOperation
+      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listNilId,
       { Type =
           TypeValue.CreateLambda(
@@ -493,7 +522,7 @@ module Extension =
       }
 
     let decomposeOperation
-      : ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listDecomposeId,
       { Type =
           TypeValue.CreateLambda(
@@ -550,14 +579,17 @@ module Extension =
           |> reader.OfSum
 
         if listValue.Length = 0 then
-          return ListValueDTO.CreateEmpty |> valueDTOLens.Set |> ValueDTO.CreateExt applicableId
+          return
+            ListValueDTO.CreateEmpty
+            |> valueDTOLens.Set
+            |> fun ext -> new ValueDTO<'extDTO>(applicableId, ext)
         else
           let! listElementsDTO = listValue |> List.map valueToDTO |> reader.All
 
           return
             ListValueDTO.CreateList listElementsDTO
             |> valueDTOLens.Set
-            |> ValueDTO.CreateExt applicableId
+            |> fun ext -> new ValueDTO<'extDTO>(applicableId, ext)
       }
 
     let DTOToList
@@ -587,8 +619,140 @@ module Extension =
             )
       }
 
+    let listDeltaToDTO
+      (delta: 'deltaExt)
+      : Reader<
+          DeltaDTO<'extDTO, 'deltaExtDTO>,
+          DeltaSerializationContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>,
+          Errors<unit>
+         >
+      =
+      reader {
+        let! listDelta =
+          delta
+          |> deltaLens.Get
+          |> sum.OfOption(Errors.Singleton () (fun _ -> "Expected list delta extension in listDeltaToDTO."))
+          |> reader.OfSum
+
+        match listDelta with
+        | UpdateElement(i, delta) ->
+          let! deltaDTO = deltaToDTO delta
+
+          return
+            ListDeltaExtDTO.CreateUpdate i deltaDTO
+            |> deltaDTOLens.Set
+            |> DeltaDTO.CreateExtension
+        | AppendElement v ->
+          let! valueDTO = valueToDTO v |> reader.MapContext(fun context -> context.SerializationContext)
+
+          return
+            ListDeltaExtDTO.CreateAppend valueDTO
+            |> deltaDTOLens.Set
+            |> DeltaDTO.CreateExtension
+        | RemoveElement index ->
+          return
+            ListDeltaExtDTO.CreateRemove index
+            |> deltaDTOLens.Set
+            |> DeltaDTO.CreateExtension
+        | InsertElement(index, v) ->
+          let! valueDTO = valueToDTO v |> reader.MapContext(fun context -> context.SerializationContext)
+
+          return
+            ListDeltaExtDTO.CreateInsert index valueDTO
+            |> deltaDTOLens.Set
+            |> DeltaDTO.CreateExtension
+        | DuplicateElement index ->
+          return
+            ListDeltaExtDTO.CreateDuplicate index
+            |> deltaDTOLens.Set
+            |> DeltaDTO.CreateExtension
+        | SetAllElements value ->
+          let! valueDTO =
+            valueToDTO value
+            |> reader.MapContext(fun context -> context.SerializationContext)
+
+          return
+            ListDeltaExtDTO.CreateSetAllElements valueDTO
+            |> deltaDTOLens.Set
+            |> DeltaDTO.CreateExtension
+        | RemoveAllElements ->
+          return
+            ListDeltaExtDTO.CreateRemoveAllElements
+            |> deltaDTOLens.Set
+            |> DeltaDTO.CreateExtension
+        | MoveElement(fromIndex, toIndex) ->
+          return
+            ListDeltaExtDTO.CreateMoveElement fromIndex toIndex
+            |> deltaDTOLens.Set
+            |> DeltaDTO.CreateExtension
+      }
+
+    let listDeltaFromDTO
+      (deltaDTO: 'deltaExtDTO)
+      : Reader<
+          Ballerina.Data.Delta.Model.Delta<'ext, 'deltaExt>,
+          DeltaSerializationContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>,
+          Errors<unit>
+         >
+      =
+      reader {
+        let! listDeltaDTO =
+          deltaDTO
+          |> deltaDTOLens.Get
+          |> sum.OfOption(Errors.Singleton () (fun _ -> "Expected list delta DTO extension in listDeltaToDTO."))
+          |> reader.OfSum
+
+        match listDeltaDTO.Discriminator with
+        | ListDeltaExtDiscriminator.UpdateElement when isNull listDeltaDTO.UpdateElement |> not ->
+          let! delta = deltaFromDTO listDeltaDTO.UpdateElement.Value
+
+          return
+            UpdateElement(listDeltaDTO.UpdateElement.Index, delta)
+            |> deltaLens.Set
+            |> Data.Delta.Model.Delta.Ext
+        | ListDeltaExtDiscriminator.AppendElement when isNull listDeltaDTO.AppendElement |> not ->
+          let! value =
+            valueFromDTO listDeltaDTO.AppendElement
+            |> reader.MapContext(fun context -> context.SerializationContext)
+
+          return AppendElement value |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
+        | ListDeltaExtDiscriminator.RemoveElement when listDeltaDTO.RemoveElement.HasValue ->
+          return
+            RemoveElement listDeltaDTO.RemoveElement.Value
+            |> deltaLens.Set
+            |> Data.Delta.Model.Delta.Ext
+        | ListDeltaExtDiscriminator.InsertElement when isNull listDeltaDTO.InsertElement |> not ->
+          let! value =
+            valueFromDTO listDeltaDTO.InsertElement.Value
+            |> reader.MapContext(fun context -> context.SerializationContext)
+
+          return
+            InsertElement(listDeltaDTO.InsertElement.Index, value)
+            |> deltaLens.Set
+            |> Data.Delta.Model.Delta.Ext
+        | ListDeltaExtDiscriminator.DuplicateElement when isNull listDeltaDTO.DuplicateElement |> not ->
+          return
+            DuplicateElement listDeltaDTO.DuplicateElement.Index
+            |> deltaLens.Set
+            |> Data.Delta.Model.Delta.Ext
+        | ListDeltaExtDiscriminator.SetAllElements when isNull listDeltaDTO.SetAllElements |> not ->
+          let! value =
+            valueFromDTO listDeltaDTO.SetAllElements
+            |> reader.MapContext(fun context -> context.SerializationContext)
+
+          return SetAllElements value |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
+        | ListDeltaExtDiscriminator.RemoveAllElements when listDeltaDTO.RemoveAllElements.HasValue ->
+          return RemoveAllElements |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
+        | ListDeltaExtDiscriminator.MoveElement when isNull listDeltaDTO.MoveElement |> not ->
+          return
+            MoveElement(listDeltaDTO.MoveElement.From, listDeltaDTO.MoveElement.To)
+            |> deltaLens.Set
+            |> Data.Delta.Model.Delta.Ext
+        | _ -> return! reader.Throw(Errors.Singleton () (fun _ -> "Malformed list delta DTO."))
+      }
+
     let orderByOperation
-      : ResolvedIdentifier * TypeOperationExtension<'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
       listOrderById,
       { Type =
           TypeValue.CreateLambda(
@@ -643,6 +807,29 @@ module Extension =
             } //: 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'ext, 'extValues> }
       }
 
+    let isListInstanceOf: IsExtInstanceOf<'ext> =
+      fun (f: IsValueInstanceOf<'ext>) v t ->
+        reader {
+          let! l =
+            v
+            |> valueLens.Get
+            |> sum.OfOption(Errors.Singleton () (fun _ -> "Expected list value in isListInstanceOf."))
+            |> reader.OfSum
+
+          match l, t with
+          | ListValues.List l, TypeValue.Imported i when i.Id = listId ->
+            let! arg_t =
+              i.Arguments
+              |> Seq.tryHead
+              |> sum.OfOption(Errors.Singleton () (fun _ -> "Expected type argument in isListInstanceOf."))
+              |> reader.OfSum
+
+            return! l |> Seq.map (fun v -> f (v, arg_t)) |> reader.All |> reader.Ignore
+          | _ ->
+            return!
+              Errors.Singleton () (fun _ -> "Expected list value in isListInstanceOf.")
+              |> reader.Throw
+        }
 
     { TypeName = listId, listSymbolId
       TypeVars = [ (aVar, aKind) ]
@@ -666,5 +853,9 @@ module Extension =
       //     | _ -> Value<TypeValue<'ext>, 'ext>.Primitive PrimitiveValue.Unit
       Serialization =
         Some
-          { ToDTO = listToDTO
-            FromDTO = DTOToList } }
+          { SerializationContext =
+              { ToDTO = listToDTO
+                FromDTO = DTOToList }
+            ToDTO = listDeltaToDTO
+            FromDTO = listDeltaFromDTO }
+      ExtTypeChecker = isListInstanceOf |> Some }

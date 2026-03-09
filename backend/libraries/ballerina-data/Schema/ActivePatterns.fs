@@ -5,9 +5,16 @@ open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.Types
 open Ballerina.DSL.Next.Terms
 open Ballerina.DSL.Next.Types.Patterns
+open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 
 module ActivePatterns =
-  let (|CollectionReference|_|) (m: WithSourceMapping<OrderedMap<TypeSymbol, TypeValue<ValueExt> * Kind>, ValueExt>) =
+  let (|CollectionReference|_|)
+    (m:
+      WithSourceMapping<
+        OrderedMap<TypeSymbol, TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>> * Kind>,
+        ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
+       >)
+    =
     match OrderedMap.toList m.value with
     | [ (k, _); (k2, _) ] when k.Name.LocalName = "DisplayValue" && k2.Name.LocalName = "Id" ->
       Some(CollectionReference m.value)

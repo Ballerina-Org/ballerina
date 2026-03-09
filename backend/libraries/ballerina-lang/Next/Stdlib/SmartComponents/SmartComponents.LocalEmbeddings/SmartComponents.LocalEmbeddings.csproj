@@ -11,7 +11,8 @@
         <Nullable>enable</Nullable>
 
         <!-- Suppress "Opt in to preview features before using them" because of false positives -->
-        <!-- See note in https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2252#when-to-suppress-warnings -->
+        <!-- See note in
+        https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2252#when-to-suppress-warnings -->
         <NoWarn>CS0618;CS1573;CS1572;CS1591;CS1734;CA2252;SKEXP0001;SKEXP0070;$(NoWarn)</NoWarn>
     </PropertyGroup>
 
@@ -24,7 +25,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\SmartComponents.Inference\SmartComponents.Inference.csproj" />
+        <ProjectReference Include="..\SmartComponents.Inference\SmartComponents.Inference.csproj" />
     </ItemGroup>
 
     <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">

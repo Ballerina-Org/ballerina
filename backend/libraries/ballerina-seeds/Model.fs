@@ -60,10 +60,29 @@ module Arity =
         Some(source, selected))
 
 module EntityDescriptor =
+  open Ballerina.DSL.Next.StdLib.MutableMemoryDB
+
   let seed
     (en: EntityName)
-    (e: EntityDescriptor<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt>)
-    : State<Map<Guid, Value<TypeValue<ValueExt>, ValueExt>>, SeedingContext, SeedingState, Errors<unit>> =
+    (e:
+      EntityDescriptor<
+        TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>,
+        ResolvedIdentifier,
+        ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
+       >)
+    : State<
+        Map<
+          Guid,
+          Value<
+            TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>,
+            ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
+           >
+         >,
+        SeedingContext,
+        SeedingState,
+        Errors<unit>
+       >
+    =
     state {
       let! ctx = state.GetContext()
       let itemsToSeed = ctx.WantedCount |> Option.defaultValue (Random().Next() % 50 + 50)
@@ -84,8 +103,21 @@ module EntityDescriptor =
     }
 
 module LookupDescriptor =
-  let seed
-    (entities: Map<EntityName, Map<Guid, Value<TypeValue<ValueExt>, ValueExt>>>)
+  open Ballerina.DSL.Next.StdLib.DB
+  open Ballerina.DSL.Next.StdLib.MutableMemoryDB
+
+  let seed<'runtimeContext, 'customExtension when 'customExtension: comparison>
+    (entities:
+      Map<
+        EntityName,
+        Map<
+          Guid,
+          Value<
+            TypeValue<ValueExt<'runtimeContext, MutableMemoryDB<'runtimeContext, 'customExtension>, 'customExtension>>,
+            ValueExt<'runtimeContext, MutableMemoryDB<'runtimeContext, 'customExtension>, 'customExtension>
+           >
+         >
+       >)
     (descriptor: LookupDescriptor)
     : Sum<Map<Guid, Set<Guid>>, Errors<unit>> =
 

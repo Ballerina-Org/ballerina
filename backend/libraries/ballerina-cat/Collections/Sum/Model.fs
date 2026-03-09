@@ -3,6 +3,7 @@
 [<AutoOpen>]
 module Model =
   open Ballerina.Collections.NonEmptyList
+  open System
 
   type Sum<'a, 'b> =
     | Left of 'a
@@ -74,6 +75,30 @@ module Model =
     member _.Bind(p, k) = Sum.bind k p
     member _.Combine(p, k) = Sum.bind (fun _ -> k) p
     member _.OfOption (b: 'b) (p: Option<'a>) = Sum.fromOption (fun () -> b) p
+
+    // Required to use a try-with block in computation expressions. It is mandatory to define Using.
+    member _.TryWith(p: unit -> Sum<'a, 'b>, handler: exn -> Sum<'a, 'b>) : Sum<'a, 'b> =
+      try
+        p ()
+      with exc ->
+        handler exc
+
+    member _.TryFinally(p: unit -> Sum<'a, 'b>, handler: unit -> unit) : Sum<'a, 'b> =
+      try
+        p ()
+      finally
+        handler ()
+
+    (* 
+      Required to write use blocks in the computation expression. Necessary when dealing with disposable objects 
+      such as the scope provider in ASP.NET
+    *)
+    member _.Using(disposable: #IDisposable, body: #IDisposable -> Sum<'a, 'b>) : Sum<'a, 'b> =
+      try
+        body disposable
+      finally
+        if not (obj.ReferenceEquals(box disposable, null)) then
+          disposable.Dispose()
 
     member inline _.Any<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>(ps: NonEmptyList<Sum<'a, 'b>>) =
       let merge: Sum<'a, 'b> -> Sum<'a, 'b> -> Sum<'a, 'b> =
@@ -190,6 +215,8 @@ module Model =
 // [<AutoOpen>]
 module Operators =
   let (>>=) f g = fun x -> sum.Bind(f x, g)
+
+  let (<!>) = Sum.map
 
   /// Alternative operator (Any for 2 cases)
   let inline (<|>) (lhs: Sum<'a, 'b>) (rhs: Sum<'a, 'b>) : Sum<'a, 'b> =

@@ -333,6 +333,23 @@
           "FSharp.Core": "[10.0.102, )"
         }
       },
+      "ballerina-delta": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.0.102, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-lang-models": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-delta-serialization": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.0.102, )",
+          "ballerina-delta": "[1.0.0, )",
+          "ballerina-lang-serialization": "[1.0.0, )"
+        }
+      },
       "ballerina-lang-eval": {
         "type": "Project",
         "dependencies": {
@@ -379,6 +396,7 @@
           "FSharp.Data": "[6.6.0, )",
           "SmartComponents.LocalEmbeddings": "[1.0.0, )",
           "ballerina-cat": "[1.0.0, )",
+          "ballerina-delta-serialization": "[1.0.0, )",
           "ballerina-lang-eval": "[1.0.0, )",
           "ballerina-lang-models": "[1.0.0, )",
           "ballerina-lang-serialization": "[1.0.0, )",

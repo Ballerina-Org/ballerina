@@ -3,7 +3,7 @@ namespace Ballerina.Data.Store.InMemory
 open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.StdLib.Extensions
-open Ballerina.Data.Delta.Extensions
+open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 open Ballerina.Data.Store.InMemory.Backend
 open Ballerina.Data.Store.Model
 open Ballerina.LocalizedErrors
@@ -15,8 +15,15 @@ module Store =
   let create
     (initialTenantIds: TenantId list)
     (onDeltaExt:
-      DeltaExt -> Value<TypeValue<ValueExt>, ValueExt> -> Sum<Value<TypeValue<ValueExt>, ValueExt>, Errors<Unit>>)
-    : Store =
+      DeltaExt<'runtimeContext, 'db, 'ext>
+        -> Value<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>
+        -> Sum<
+          Value<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>,
+          Errors<Unit>
+         >)
+    _db_query_sym
+    _make_db_query_type
+    : Store<'runtimeContext, 'db, 'ext> =
 
     let store = ConcurrentStore.initStore initialTenantIds
 
@@ -51,7 +58,7 @@ module Store =
         { SeedSpecEval =
             fun tenantId specName seeder path ->
               let specState = store.Tenants[tenantId]
-              ConcurrentStore.seed specState seeder specName path
+              ConcurrentStore.seed specState seeder specName path _db_query_sym _make_db_query_type
           SeedSpec =
             fun (tenantId, specName, seeds) -> ConcurrentStore.seedWith (store.Tenants[tenantId]) specName seeds
           GetSeeds = fun tenantId -> ConcurrentStore.getSeeds (store.Tenants[tenantId]) }

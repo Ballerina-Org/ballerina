@@ -10,6 +10,9 @@ open Ballerina.DSL.FormBuilder.Model.FormAST
 open Ballerina.DSL.FormBuilder.V2ToV1Bridge.ToV1JSON
 open Ballerina.Collections.NonEmptyList
 open Ballerina.DSL.Next.Runners.Project
+open Ballerina.DSL.Next.StdLib.MutableMemoryDB
+
+type private ValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
 
 [<Test>]
 let ``Compiled forms from types and forms strings transform correctly`` () =
@@ -55,6 +58,7 @@ in type DRecord = {
   G: AUnion;
   H: StringRecord;
   I: AUnion;
+  L: List[guid];
 }
 
 in ()"""
@@ -129,26 +133,28 @@ entrypoint view aStringRecord : StringRecord {
     | AB -> unit(unit);
   J view(cRecord);
   K view(cRecord);
+  L list(list2) with add remove clear move duplicate guid(readonlyGuid);
   tab main with
     column main with
-      group main with A, B, C, D, E, F, G, H, I, J, K
+      group main with A, B, C, D, E, F, G, H, I, J, K, L
 }"""
 
-  let compilerInput: FormCompiler.FormCompilerInput<Ballerina.DSL.Next.StdLib.Extensions.ValueExt> =
+  let compilerInput: FormCompiler.FormCompilerInput<ValueExt> =
     { Types =
-        { Preludes = NonEmptyList.One(typesString)
+        { Preludes = NonEmptyList.One(FileBuildConfiguration.FromFile("test.bl", typesString))
           Source = "test.types" }
       ApiTypes = Map.empty
       Forms =
         { Program = formsString
           Source = "test.forms" } }
 
-  let languageContext = stdExtensions |> snd
+  let extensions, languageContext, _db_query_sym, _make_db_query_type =
+    db_ops () |> stdExtensions
 
   let cache =
     memcache (languageContext.TypeCheckContext, languageContext.TypeCheckState)
 
-  match FormCompiler.compileForms compilerInput cache languageContext (stdExtensions |> fst) with
+  match FormCompiler.compileForms compilerInput cache languageContext extensions _db_query_sym _make_db_query_type with
   | Right errors -> Assert.Fail($"Compilation failed: {errors}")
   | Left formDefinitions ->
     let result = FormDefinitions.toV1Json formDefinitions
@@ -255,7 +261,13 @@ entrypoint view aStringRecord : StringRecord {
         },
         "I": "AUnion",
         "J": "CRecord",
-        "K": "CRecord"
+        "K": "CRecord",
+        "L": {
+          "fun": "List",
+          "args": [
+            "guid"
+          ]
+        }
       }
     }
   },
@@ -526,6 +538,20 @@ entrypoint view aStringRecord : StringRecord {
         "K": {
           "type": "K",
           "renderer": "cRecord"
+        },
+        "L": {
+          "type": "L",
+          "renderer": "list2",
+          "elementRenderer": {
+            "renderer": "readonlyGuid"
+          },
+          "actions": {
+            "add": "list.actions.add",
+            "remove": "list.actions.remove",
+            "clear": "list.actions.clear",
+            "move": "list.actions.move",
+            "duplicate": "list.actions.duplicate"
+          }
         }
       },
       "disabledFields": [],
@@ -545,7 +571,8 @@ entrypoint view aStringRecord : StringRecord {
                   "H",
                   "I",
                   "J",
-                  "K"
+                  "K",
+                  "L"
                 ]
               }
             }
@@ -569,3 +596,53 @@ entrypoint view aStringRecord : StringRecord {
 }"""
 
     Assert.That(jsonString, Is.EqualTo(expectedJson))
+
+
+[<Test>]
+let ``Compiled forms from types with let bindings skip let expressions`` () =
+  let typesString =
+    """
+type LetTestRecord = {
+  Name: string;
+  Value: int32;
+}
+
+in let _ = ()
+
+in ()"""
+
+  let formsString =
+    """
+entrypoint view letTestRecord : LetTestRecord {
+  Name string(print);
+  Value int32(readonlyInt32);
+  tab main with
+    column main with
+      group main with Name, Value
+}"""
+
+  let compilerInput: FormCompiler.FormCompilerInput<ValueExt> =
+    { Types =
+        { Preludes = NonEmptyList.One(FileBuildConfiguration.FromFile("test.bl", typesString))
+          Source = "test.types" }
+      ApiTypes = Map.empty
+      Forms =
+        { Program = formsString
+          Source = "test.forms" } }
+
+  let extensions, languageContext, _db_query_sym, _make_db_query_type =
+    db_ops () |> stdExtensions
+
+  let cache =
+    memcache (languageContext.TypeCheckContext, languageContext.TypeCheckState)
+
+  match FormCompiler.compileForms compilerInput cache languageContext extensions _db_query_sym _make_db_query_type with
+  | Right errors -> Assert.Fail($"Compilation failed: {errors}")
+  | Left formDefinitions ->
+    let result = FormDefinitions.toV1Json formDefinitions
+
+    let jsonOptions = JsonSerializerOptions(WriteIndented = true)
+    let jsonString = JsonSerializer.Serialize(result, jsonOptions)
+
+    Assert.That(jsonString, Does.Contain("LetTestRecord"))
+    Assert.That(jsonString, Does.Contain("letTestRecord"))

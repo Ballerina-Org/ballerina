@@ -625,6 +625,8 @@ module Runner =
           let formName = FormName formName
           let! formType = FormConfig.ParseFromType formJson
 
+          let! nextId = state.NextId()
+
           do!
             state.SetState(
               ParsedFormsContext.Updaters.Forms(
@@ -638,7 +640,7 @@ module Runner =
                               { Cases = Map.empty
                                 Renderer = RendererName "" } |}
 
-                    FormId = Guid.CreateVersion7()
+                    FormId = nextId
                     FormName = formName }
               )
             )
@@ -660,13 +662,15 @@ module Runner =
           let launcherName = LauncherName launcherName
           let! mode, formId = FormLauncher.Parse launcherName launcherJson
 
+          let! nextId = state.NextId()
+
           do!
             state.SetState(
               ParsedFormsContext.Updaters.Launchers(
                 Map.add
                   launcherName
                   { LauncherName = launcherName
-                    LauncherId = Guid.CreateVersion7()
+                    LauncherId = nextId
                     Mode = mode
                     Form = formId }
               )

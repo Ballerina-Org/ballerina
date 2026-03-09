@@ -77,7 +77,10 @@ module TypeApply =
               |> TypeExpr.Eval () typeCheckExpr None loc0
               |> Expr.liftTypeEval
 
-            // let! f_res = f_res |> TypeValue.Instantiate () (TypeExpr.Eval ()) loc0 |> Expr.liftInstantiation
+            // let! f_res =
+            //   f_res
+            //   |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+            //   |> Expr.liftInstantiation
 
             // do Console.WriteLine($"TypeApply: f_res = {f_res}")
 

@@ -43,10 +43,12 @@ module TypeEval =
           match expr.Expr with
           | ExprRec.Lambda({ Param = var
                              ParamType = t
-                             Body = body }) ->
+                             Body = body
+                             BodyType = bt }) ->
             let! bodyType = !body
             let! t = t |> Option.map (!!) |> state.RunOption
-            return Expr.Lambda(var, t, bodyType, expr.Location, ctx.Scope)
+            let! bt = bt |> Option.map (!!) |> state.RunOption
+            return Expr.Lambda(var, t, bodyType, bt, expr.Location, ctx.Scope)
           | ExprRec.Apply({ F = func; Arg = arg }) ->
             let! funcType = !func
             let! argType = !arg
@@ -169,4 +171,8 @@ module TypeEval =
                                         Direction = direction }) ->
             let! recordType = !record_v
             return Expr.RelationLookupDes(recordType, relation_name, direction, expr.Location, ctx.Scope)
+          | ExprRec.Query _q ->
+            return!
+              Errors.Singleton loc0 (fun () -> $"Error (typecheck): not yet implemented expression pattern query")
+              |> state.Throw
         }

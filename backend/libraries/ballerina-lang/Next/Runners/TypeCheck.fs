@@ -12,10 +12,19 @@ module TypeCheck =
   open Ballerina.DSL.Next.Types.TypeChecker.Model
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
-    static member TypeCheckString<'valueExt, 'valueExtDTO
-      when 'valueExt: comparison and 'valueExtDTO: not null and 'valueExtDTO: not struct>
-      ({ TypeCheckContext = typeCheckContext
-         TypeCheckState = typeCheckState }: LanguageContext<'valueExt, 'valueExtDTO>)
+    static member TypeCheckString<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO
+      when 'valueExt: comparison
+      and 'valueExtDTO: not null
+      and 'valueExtDTO: not struct
+      and 'deltaExtDTO: not null
+      and 'deltaExtDTO: not struct>
+      (
+        { TypeCheckContext = typeCheckContext
+          TypeCheckState = typeCheckState }:
+          LanguageContext<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>,
+        _db_query_sym,
+        _make_db_query_type
+      )
       (program: string)
       : Sum<
           Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeValue<'valueExt> * TypeCheckState<'valueExt>,
@@ -30,7 +39,8 @@ module TypeCheck =
       let project = { Files = files }
 
       sum {
-        let! typeCheckedExprs, programType, _, typeCheckState = ProjectBuildConfiguration.BuildCached cache project
+        let! typeCheckedExprs, programType, _, typeCheckState =
+          ProjectBuildConfiguration.BuildCached _db_query_sym _make_db_query_type cache project
 
         match typeCheckedExprs with
         | NonEmptyList(expr, []) -> expr, programType, typeCheckState

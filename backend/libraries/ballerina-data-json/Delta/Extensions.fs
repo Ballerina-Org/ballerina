@@ -12,12 +12,21 @@ module DeltaExt =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Json
   open Ballerina.StdLib.Json.Patterns
-  open Ballerina.Data.Delta.Extensions
+  open Ballerina.DSL.Next.StdLib.List.Model
+  open Ballerina.Data.Delta
 
-  type DeltaExt with
+  type DeltaExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> with
     static member FromJson
-      (valueParser: JsonValue -> Sum<Value<TypeValue<ValueExt>, ValueExt>, Errors<unit>>)
-      : JsonParser<DeltaExt> =
+      (valueParser:
+        JsonValue
+          -> Sum<
+            Value<
+              TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
+              ValueExt<'runtimeContext, 'db, 'customExtension>
+             >,
+            Errors<unit>
+           >)
+      : JsonParser<DeltaExt<'runtimeContext, 'db, 'customExtension>> =
       fun json ->
         Sum.assertDiscriminatorAndContinueWithValue
           "deltaExt"
@@ -83,7 +92,7 @@ module DeltaExt =
                               ()
 
                           let! value = valueParser value
-                          return DeltaExt.DeltaExt(Choice1Of3(UpdateElement(int index, value)))
+                          return DeltaExt.DeltaExtension(Choice1Of4(UpdateElement(int index, Delta.Replace value)))
                         }
                       | "appendElement" ->
                         sum {
@@ -98,7 +107,7 @@ module DeltaExt =
                               ()
 
                           let! value = valueParser value
-                          return DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.AppendElement(value)))
+                          return DeltaExt.DeltaExtension(Choice1Of4(ListDeltaExt.AppendElement(value)))
                         }
                       | "removeElementAt" ->
                         sum {
@@ -113,7 +122,7 @@ module DeltaExt =
                               ()
                             |> Sum.bind JsonValue.AsNumber
 
-                          return DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.RemoveElement(int index)))
+                          return DeltaExt.DeltaExtension(Choice1Of4(ListDeltaExt.RemoveElement(int index)))
                         }
                       | other ->
                         sum.Throw(
@@ -130,46 +139,18 @@ module DeltaExt =
           json
 
     static member ToJson
-      (valueEncoder: JsonEncoderWithError<Value<TypeValue<ValueExt>, ValueExt>>)
-      (deltaExt: DeltaExt)
+      (_valueEncoder:
+        JsonEncoderWithError<
+          Value<
+            TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
+            ValueExt<'runtimeContext, 'db, 'customExtension>
+           >
+         >)
+      (_deltaExt: DeltaExt<'runtimeContext, 'db, 'customExtension>)
       : Sum<JsonValue, Errors<unit>> =
       sum {
 
-        let! value =
-          match deltaExt with
-          | DeltaExt.DeltaExt(Choice1Of3(UpdateElement(i, v))) ->
-            sum {
-              let! value = valueEncoder v
-
-              return
-                JsonValue.Record
-                  [| "discriminator", JsonValue.String "list"
-                     "value",
-                     JsonValue.Record
-                       [| "discriminator", JsonValue.String "updateElementAt"
-                          "value", JsonValue.Record [| "index", JsonValue.Number(decimal i); "value", value |] |] |]
-            }
-          | DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.AppendElement(v))) ->
-            sum {
-              let! value = valueEncoder v
-
-              return
-                JsonValue.Record
-                  [| "discriminator", JsonValue.String "list"
-                     "value", JsonValue.Record [| "discriminator", JsonValue.String "appendElement"; "value", value |] |]
-            }
-          | DeltaExt.DeltaExt(Choice1Of3(ListDeltaExt.RemoveElement(i))) ->
-            JsonValue.Record
-              [| "discriminator", JsonValue.String "list"
-                 "value",
-                 JsonValue.Record
-                   [| "discriminator", JsonValue.String "removeElementAt"
-                      "index", JsonValue.Number(decimal i) |] |]
-            |> sum.Return
-          | DeltaExt.DeltaExt(Choice2Of3 _) ->
-            sum.Throw(Errors.Singleton () (fun () -> "Option in Delta extensions serializers not yet implemented"))
-          | DeltaExt.DeltaExt(Choice3Of3(OptionDeltaExt)) ->
-            sum.Throw(Errors.Singleton () (fun () -> "Option in Delta extensions serializers not yet implemented"))
+        let! value = sum.Throw(Errors.Singleton () (fun () -> "This function is deprecated"))
 
         return value |> Json.discriminator "deltaExt"
       }

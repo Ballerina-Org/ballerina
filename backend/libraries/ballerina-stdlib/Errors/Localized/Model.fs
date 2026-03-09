@@ -12,7 +12,8 @@ module LocalizedErrors =
       Line: int
       Column: int }
 
-    override this.ToString() = $"{this.Line}:{this.Column}"
+    override this.ToString() =
+      sprintf "%s:%d:%d" this.File this.Line this.Column
 
   type Location with
     static member Initial(file: string) = { File = file; Line = 1; Column = 1 }

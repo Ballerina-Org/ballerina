@@ -21,6 +21,7 @@ open Ballerina.StdLib.Object
 open Ballerina.DSL.Next.StdLib
 open Ballerina.StdLib.OrderPreservingMap
 open Ballerina.Cat.Collections.OrderedMap
+open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 
 type SeedingClue =
   | Absent
@@ -42,12 +43,13 @@ type SeedingContext =
     Generator: BogusDataGenerator }
 
 type SeedingState =
-  { TypeContext: TypeCheckState<ValueExt>
+  { TypeContext: TypeCheckState<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>
     Label: SeedingClue
     InfinitiveVarNamesIndex: int
     InfinitiveNamesIndex: Map<string, int> }
 
 module Traverser =
+  open Ballerina.DSL.Next.StdLib.DB
 
   let isSupported =
     function
@@ -60,7 +62,17 @@ module Traverser =
 
   let rec seed
     (entity: EntityName)
-    : TypeValue<ValueExt> -> State<Value<TypeValue<ValueExt>, ValueExt>, SeedingContext, SeedingState, Errors<unit>> =
+    : TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>
+        -> State<
+          Value<
+            TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>,
+            ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
+           >,
+          SeedingContext,
+          SeedingState,
+          Errors<unit>
+         >
+    =
     fun typeValue ->
 
       let (!) = seed entity
@@ -68,14 +80,14 @@ module Traverser =
       let setLabel label =
         state.SetState(fun s -> { s with Label = FromContext label })
 
-      let (!!) label (t: TypeValue<ValueExt>) = setLabel label >>= fun () -> !t
+      let (!!) label (t: TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>) = setLabel label >>= fun () -> !t
 
       state {
 
         match typeValue with
         | TypeValue.Imported x when x.Id.Name = "List" && List.length x.Arguments = 1 ->
           let! values = [ 0..2 ] |> List.map (fun _ -> (!) x.Arguments.Head) |> state.All
-          let listExtValue = ListValues >> Choice1Of6 >> ValueExt.ValueExt
+          let listExtValue = ListValues >> Choice1Of7 >> ValueExt.ValueExt
           let lv = List.Model.ListValues.List values |> listExtValue
           return Value.Ext(lv, None)
         | TypeValue.Imported _ ->
@@ -117,19 +129,6 @@ module Traverser =
         | TypeValue.Tuple { value = elements } ->
           let! values = elements |> Seq.map (!) |> state.All
           return Value.Tuple values
-
-        | TypeValue.Map({ value = key, value }) ->
-          let! key = (!) key
-          let! value = (!) value
-
-          return
-            Value.Record(
-              Map.ofList
-                [ "Key" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve, key
-                  "Value" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve, value ]
-            )
-            |> List.singleton
-            |> Value.Tuple
 
         | TypeValue.Union cases ->
           let! ctx = state.GetContext()
@@ -225,6 +224,9 @@ module Traverser =
           return! state.Throw(Errors.Singleton () (fun () -> "Schema LookupMany seeds not implemented yet"))
         | TypeValue.ForeignKeyRelation _ ->
           return! state.Throw(Errors.Singleton () (fun () -> "Schema ForeignKeyRelation seeds not implemented yet"))
+        | TypeValue.QueryRow _
+        | TypeValue.QueryTypeFunction ->
+          return! state.Throw(Errors.Singleton () (fun () -> "Query seeds not implemented yet"))
       }
 
 type SeedingContext with
@@ -235,7 +237,7 @@ type SeedingContext with
       Options = FullStructure }
 
 type SeedingState with
-  static member Default(typeContext: TypeCheckState<ValueExt>) =
+  static member Default(typeContext: TypeCheckState<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>) =
     { TypeContext = typeContext
       Label = Absent
       InfinitiveVarNamesIndex = 0

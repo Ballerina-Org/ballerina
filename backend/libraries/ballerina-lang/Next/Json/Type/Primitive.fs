@@ -114,3 +114,4 @@ module PrimitiveType =
       | PrimitiveType.DateTime -> PrimitiveType.ToJsonDateTime()
       | PrimitiveType.DateOnly -> PrimitiveType.ToJsonDateOnly()
       | PrimitiveType.TimeSpan -> PrimitiveType.ToJsonTimeSpan()
+      | PrimitiveType.Vector -> failwith "Vector types should not be serialized as primitive types"

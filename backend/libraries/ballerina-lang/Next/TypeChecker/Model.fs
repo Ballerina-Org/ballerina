@@ -126,3 +126,13 @@ module Model =
       -> Location
       -> TypeExpr<'valueExt>
       -> TypeExprSymbolEvalResult<'valueExt>
+
+  type TypeExprQueryRowEvalResult<'valueExt when 'valueExt: comparison> =
+    State<TypeQueryRow<'valueExt>, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>>
+
+  type TypeQueryRowExprEval<'valueExt when 'valueExt: comparison> =
+    TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt>
+      -> Option<ExprTypeLetBindingName>
+      -> Location
+      -> TypeQueryRowExpr<'valueExt>
+      -> TypeExprQueryRowEvalResult<'valueExt>

@@ -1,0 +1,159 @@
+namespace Ballerina.DSL.Next.StdLib.DB.Extension
+
+[<AutoOpen>]
+module DeleteMany =
+  open Ballerina.StdLib.String
+  open Ballerina.Collections.Option
+  open Ballerina
+  open Ballerina.Collections.Sum
+  open Ballerina.Reader.WithError
+  open Ballerina.LocalizedErrors
+  open Ballerina.Errors
+  open Ballerina.DSL.Next.Terms
+  open Ballerina.DSL.Next.Terms.Patterns
+  open Ballerina.DSL.Next.Types
+  open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.Lenses
+  open Ballerina.DSL.Next.Extensions
+  open FSharp.Data
+  open Ballerina.Collections.NonEmptyList
+  open Ballerina.DSL.Next.Types.TypeChecker
+  open System
+  open Ballerina.Cat.Collections.OrderedMap
+  open Ballerina
+  open Ballerina.DSL.Next.StdLib.DB
+
+
+  let DBDeleteManyExtension<'runtimeContext, 'db, 'ext when 'ext: comparison>
+    (db_ops: DBTypeClass<'runtimeContext, 'db, 'ext>)
+    (mapLens: PartialLens<'ext, Map<Value<TypeValue<'ext>, 'ext>, Value<TypeValue<'ext>, 'ext>>>)
+    (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
+    =
+
+    let memoryDBDeleteManyId =
+      Identifier.FullyQualified([ "DB" ], "deleteMany")
+      |> TypeCheckScope.Empty.Resolve
+
+    let memoryDBDeleteManyType =
+      TypeValue.CreateLambda(
+        TypeParameter.Create("schema", Kind.Schema),
+        TypeExpr.Lambda(
+          TypeParameter.Create("entity", Kind.Star),
+          TypeExpr.Lambda(
+            TypeParameter.Create("entity_with_props", Kind.Star),
+            TypeExpr.Lambda(
+              TypeParameter.Create("entityId", Kind.Star),
+              TypeExpr.Arrow(
+                createSchemaEntityTypeApplication "schema" "entity" "entity_with_props" "entityId",
+                TypeExpr.Arrow(
+                  TypeExpr.Apply(
+                    TypeExpr.Apply(
+                      TypeExpr.Lookup("Map" |> Identifier.LocalScope),
+                      TypeExpr.Lookup("entityId" |> Identifier.LocalScope)
+                    ),
+                    TypeExpr.Primitive PrimitiveType.Unit
+                  ),
+                  TypeExpr.Primitive PrimitiveType.Unit
+                // TypeExpr.Apply(
+                //   TypeExpr.Apply(
+                //     TypeExpr.Lookup("Map" |> Identifier.LocalScope),
+                //     TypeExpr.Lookup("entityId" |> Identifier.LocalScope)
+                //   ),
+                //   TypeExpr.Primitive PrimitiveType.Bool
+                // )
+                )
+              )
+            )
+          )
+        )
+      )
+
+    let memoryDBDeleteManyKind = standardSchemaOperationKind
+
+    let DeleteManyOperation: OperationExtension<'runtimeContext, _, _> =
+      { PublicIdentifiers =
+          Some
+          <| (memoryDBDeleteManyType, memoryDBDeleteManyKind, DBValues.DeleteMany {| EntityRef = None |})
+        OperationsLens =
+          valueLens
+          |> PartialLens.BindGet (function
+            | DBValues.DeleteMany v -> Some(DBValues.DeleteMany v)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              let! op =
+                op
+                |> DBValues.AsDeleteMany
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              match op with
+              | None -> // the closure is empty - first step in the application
+                let! v = extractEntityRefFromValue loc0 v valueLens
+
+                return
+                  (DBValues.DeleteMany({| EntityRef = Some v |}) |> valueLens.Set, Some memoryDBDeleteManyId)
+                  |> Ext
+              | Some(entity_ref) -> // the closure has the first operand - second step in the application
+
+                let! vs, _ =
+                  v
+                  |> Value.AsExt
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
+
+                let! vs =
+                  vs
+                  |> mapLens.Get
+                  |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
+                  |> reader.OfSum
+
+                let vs = vs |> Map.keys |> Seq.toList
+
+                let! ctx = reader.GetContext()
+
+                let! deletingValuesWithProps =
+                  vs
+                  |> Seq.map (fun _entityId ->
+                    reader {
+                      let existingValue =
+                        db_ops.GetById entity_ref _entityId
+                        |> Reader.Run ctx.RuntimeContext
+                        |> Sum.toOption
+
+                      match existingValue with
+                      | None -> return _entityId, None
+                      | Some currentValueWithProps ->
+
+                        do! onDeletingHook db_ops entity_ref loc0 _entityId currentValueWithProps
+
+                        return _entityId, Some currentValueWithProps
+                    })
+                  |> reader.All
+
+                let! _ =
+                  db_ops.DeleteMany entity_ref vs
+                  |> Reader.Run ctx.RuntimeContext
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
+
+                do!
+                  deletingValuesWithProps
+                  |> Seq.map (fun (_entityId, existingValue) ->
+                    reader {
+                      match existingValue with
+                      | None -> return ()
+                      | Some currentValueWithProps ->
+
+                        do! onDeletedHook db_ops entity_ref loc0 _entityId currentValueWithProps
+
+                        return ()
+                    })
+                  |> reader.All
+                  |> reader.Ignore
+
+                return Value.Primitive(PrimitiveValue.Unit)
+            } }
+
+    memoryDBDeleteManyId, DeleteManyOperation

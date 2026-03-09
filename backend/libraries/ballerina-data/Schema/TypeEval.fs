@@ -1,5 +1,7 @@
 namespace Ballerina.Data
 
+open Ballerina.DSL.Next.StdLib.Extensions
+open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 open Ballerina.Data.Schema.Model
 
 module TypeEval =
@@ -50,7 +52,7 @@ module TypeEval =
       |> state.AllMapOrdered
 
     static member SchemaEval
-      ()
+      (_db_query_sym, _make_db_query_type)
       : Schema<TypeExpr<'ValueExt>, Identifier, 'ValueExt>
           -> State<
             Schema<TypeValue<'ValueExt>, ResolvedIdentifier, 'ValueExt>,
@@ -61,7 +63,7 @@ module TypeEval =
       =
       fun schema ->
         state {
-          let tc = Expr.TypeCheck()
+          let tc = Expr.TypeCheck(_db_query_sym, _make_db_query_type)
           let! types = Schema.CreateTypeContext<'ValueExt> tc schema
           let eval = TypeExpr.Eval()
 

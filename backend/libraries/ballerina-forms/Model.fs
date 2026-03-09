@@ -9,6 +9,7 @@ module Model =
   open System
   open Ballerina.Collections.Sum
   open Ballerina.Errors
+  open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 
   type RendererName = RendererName of string
   type FormName = FormName of string
@@ -64,7 +65,7 @@ module Model =
       Many: CodegenConfigManyDef
       ReadOnly: CodegenConfigReadOnlyDef
       Map: CodegenConfigMapDef
-      Sum: CodegenConfigSumDef
+      Sum: List<CodegenConfigSumDef>
       Tuple: List<TupleCodegenConfigTypeDef>
       Union: CodegenConfigUnionDef
       Record: CodegenConfigRecordDef
@@ -99,7 +100,7 @@ module Model =
       RequiredImport: Option<GoImport> }
 
   and TupleCodegenConfigTypeDef =
-    { Ariety: int
+    { Arity: int
       GeneratedTypeName: string
       DeltaTypeName: string
       SupportedRenderers: Set<RendererName>
@@ -112,8 +113,9 @@ module Model =
       (arity: int)
       : Sum<TupleCodegenConfigTypeDef, Errors<unit>> =
       config
-      |> List.tryFind (fun c -> c.Ariety = arity)
-      |> Sum.fromOption (fun () -> Errors.Singleton () (fun () -> $"Error: missing tuple config for arity {arity}"))
+      |> List.tryFind (fun c -> c.Arity = arity)
+      |> Sum.fromOption (fun () ->
+        Errors.Singleton () (fun () -> sprintf "Error: missing tuple config for arity %d" arity))
 
 
   and CodegenConfigUnionDef =
@@ -179,13 +181,21 @@ module Model =
       SupportedRenderers: Set<RendererName> }
 
   and CodegenConfigSumDef =
-    { GeneratedTypeName: string
+    { Arity: int
+      GeneratedTypeName: string
       RequiredImport: Option<GoImport>
       DeltaTypeName: string
       LeftConstructor: string
       RightConstructor: string
       SupportedRenderers: Set<RendererName>
       Serialization: Serialization }
+
+    static member FindArity (config: List<CodegenConfigSumDef>) (arity: int) : Sum<CodegenConfigSumDef, Errors<unit>> =
+      config
+      |> List.tryFind (fun c -> c.Arity = arity)
+      |> Sum.fromOption (fun () ->
+        Errors.Singleton () (fun () -> sprintf "Error: missing sum config for arity %d" arity))
+
 
   and CodegenConfigTypeDef =
     { GeneratedTypeName: string
@@ -235,11 +245,11 @@ module Model =
 
   type FormLauncherId =
     { LauncherName: LauncherName
-      LauncherId: Guid }
+      LauncherId: int }
 
   and FormLauncher =
     { LauncherName: LauncherName
-      LauncherId: Guid
+      LauncherId: int
       Form: FormConfigId
       Mode: FormLauncherMode }
 
@@ -262,7 +272,13 @@ module Model =
          TableApi: TableApiId |}
 
   and EnumCaseFilterExpr =
-    | Filter of Expr<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt> list * TypeCheckState<ValueExt>
+    | Filter of
+      Expr<
+        TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>,
+        ResolvedIdentifier,
+        ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
+       > list *
+      TypeCheckState<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>
     | PassAll
 
   and EnumApiId = { EnumName: string }
@@ -381,11 +397,11 @@ module Model =
             { s with
                 FormApis.Lookups = u (s.Lookups) } |}
 
-  and FormConfigId = { FormName: FormName; FormId: Guid }
+  and FormConfigId = { FormName: FormName; FormId: int }
 
   and FormConfig<'ExprExtension, 'ValueExtension> =
     { FormName: FormName
-      FormId: Guid
+      FormId: int
       Body: FormBody<'ExprExtension, 'ValueExtension> }
 
     static member Name(f: FormConfig<'ExprExtension, 'ValueExtension>) = f.FormName
@@ -447,11 +463,11 @@ module Model =
     | Computed of Expr<'ExprExtension, 'ValueExtension>
     | Inlined of List<FieldConfigId>
 
-  and FieldConfigId = { FieldName: string; FieldId: Guid }
+  and FieldConfigId = { FieldName: string; FieldId: int }
 
   and FieldConfig<'ExprExtension, 'ValueExtension> =
     { FieldName: string
-      FieldId: Guid
+      FieldId: int
       Label: Option<Label>
       Tooltip: Option<string>
       Details: Option<string>
@@ -569,11 +585,11 @@ module Model =
 
   and PrimitiveRendererId =
     { PrimitiveRendererName: RendererName
-      PrimitiveRendererId: Guid }
+      PrimitiveRendererId: int }
 
   and PrimitiveRenderer =
     { PrimitiveRendererName: RendererName
-      PrimitiveRendererId: Guid
+      PrimitiveRendererId: int
       Type: ExprType
       Label: Label option
     // Children: RendererChildren
@@ -618,7 +634,8 @@ module Model =
           {| Type: ExprType
              SupportedRenderers: Set<RendererName> |}
          >
-      Launchers: Map<LauncherName, FormLauncher> }
+      Launchers: Map<LauncherName, FormLauncher>
+      NextId: int }
 
     static member Updaters =
       {| Types =
@@ -645,7 +662,12 @@ module Model =
           fun u ->
             fun (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) ->
               { s with
-                  ParsedFormsContext.Launchers = u (s.Launchers) } |}
+                  ParsedFormsContext.Launchers = u (s.Launchers) }
+         NextId =
+          fun u ->
+            fun (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) ->
+              { s with
+                  ParsedFormsContext.NextId = u (s.NextId) } |}
 
 module Serialization =
   open Model
