@@ -33,6 +33,7 @@ import {
   RecordAbstractRendererReadonlyContext,
   RecordAbstractRendererForeignMutationsExpected,
   NestedRenderer,
+  SimpleCallback,
 } from "../../../../../../../../main";
 import {
   OneAbstractRendererForeignMutationsExpected,
@@ -40,12 +41,14 @@ import {
   OneAbstractRendererState,
   OneAbstractRendererView,
   OneAbstractRendererViewForeignMutationsExpected,
+  OnePendingOperation,
 } from "./state";
 import {
   initializeOneRunner,
   initializeStreamRunner,
   oneTableDebouncerRunner,
   oneTableLoaderRunner,
+  optimisticUpdateRunner,
 } from "./coroutines/runner";
 
 /*
@@ -109,6 +112,11 @@ export const OneAbstractRenderer = <
     ExtraContext
   >();
   const typedOneTableDebouncerRunner = oneTableDebouncerRunner<
+    CustomPresentationContext,
+    Flags,
+    ExtraContext
+  >();
+  const typedOptimisticUpdateRunner = optimisticUpdateRunner<
     CustomPresentationContext,
     Flags,
     ExtraContext
@@ -486,10 +494,28 @@ export const OneAbstractRenderer = <
 
                 props.foreignMutations.select &&
                 PredicateValue.Operations.IsUnit(props.context.value)
-                  ? props.foreignMutations.select(updater, delta)
-                  : props.foreignMutations.onChange(
-                      Option.Default.some(updater),
-                      delta,
+                  ? props.setState(
+                      OneAbstractRendererState.Updaters.Core.customFormState.children.pendingOperation(
+                        replaceWith(
+                          Sum.Default.right({
+                            run: () =>
+                              props.foreignMutations.select?.(updater, delta),
+                          }),
+                        ),
+                      ),
+                    )
+                  : props.setState(
+                      OneAbstractRendererState.Updaters.Core.customFormState.children.pendingOperation(
+                        replaceWith(
+                          Sum.Default.right({
+                            run: () =>
+                              props.foreignMutations.onChange(
+                                Option.Default.some(updater),
+                                delta,
+                              ),
+                          }),
+                        ),
+                      ),
                     );
               },
               create: (value, flags) => {
@@ -547,6 +573,10 @@ export const OneAbstractRenderer = <
   }).any([
     typedInitializeStreamRunner,
     typedOneTableLoaderRunner,
+    typedOptimisticUpdateRunner.mapContextFromProps((props) => ({
+      ...props.context,
+      foreignMutations: props.foreignMutations,
+    })),
     typedInitializeOneRunner.mapContextFromProps((props) => ({
       ...props.context,
       onChange: props.foreignMutations.onChange,

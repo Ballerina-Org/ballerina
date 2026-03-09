@@ -31,6 +31,8 @@ import {
   Sum,
   PredicateValue,
   replaceWith,
+  unit,
+  PreventOneInitializationStatus,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 
@@ -48,6 +50,10 @@ export type OneAbstractRendererReadonlyContext<
   remoteEntityVersionIdentifier: string;
 };
 
+export type OnePendingOperation = {
+  run: SimpleCallback<void>;
+};
+
 export type OneAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
     detailsState: RecordAbstractRendererState;
@@ -61,6 +67,7 @@ export type OneAbstractRendererState = CommonAbstractRendererState & {
           BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
         >
       | undefined;
+    pendingOperation: Sum<Unit, OnePendingOperation>;
   };
 };
 
@@ -81,6 +88,7 @@ export const OneAbstractRendererState = {
       status: "closed",
       getChunkWithParams: getChunk,
       stream: Sum.Default.right("not initialized"),
+      pendingOperation: Sum.Default.left(unit),
     },
   }),
   Updaters: {
@@ -100,6 +108,9 @@ export const OneAbstractRendererState = {
         ),
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "previewStates",
+        ),
+        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
+          "pendingOperation",
         ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<OneAbstractRendererState>()({
@@ -125,6 +136,18 @@ export const OneAbstractRendererState = {
     },
   },
   Operations: {
+    ShouldProcessPendingOperation: <
+      CustomPresentationContext = Unit,
+      ExtraContext = Unit,
+    >(
+      ctx: OneAbstractRendererReadonlyContext<
+        CustomPresentationContext,
+        ExtraContext
+      > &
+        OneAbstractRendererState,
+    ): boolean => 
+        ctx.customFormState.pendingOperation.kind == "r" &&
+        ctx.preventOneInitialization.kind == false,
     GetIdFromContext: <CustomPresentationContext = Unit, ExtraContext = Unit>(
       ctx: OneAbstractRendererReadonlyContext<
         CustomPresentationContext,

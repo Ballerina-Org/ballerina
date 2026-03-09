@@ -15,14 +15,15 @@ import {
   Sum,
 } from "../../../../../../../../../main";
 import { Map } from "immutable";
-import { Co, DebouncerCo, InitializeCo } from "./builder";
+import { Co, DebouncerCo, InitializeCo, OptimisticUpdateCo } from "./builder";
 import { initializeOne } from "./_initializeOne";
 import { initializeStream } from "./_initializeStream";
 import { debouncer } from "./_debouncer";
+import { optimisticUpdateHandler } from "./_optimisticUpdateHandler";
 
 export const initializeOneRunner = <
   CustomPresentationContext = Unit,
-  Flags = BaseFlags,
+  Flags extends BaseFlags = BaseFlags,
   ExtraContext = Unit,
 >() =>
   InitializeCo<CustomPresentationContext, ExtraContext>().Template<
@@ -94,3 +95,18 @@ export const oneTableLoaderRunner = <
         ),
     },
   );
+
+export const optimisticUpdateRunner = <
+  CustomPresentationContext = Unit,
+  Flags extends BaseFlags = BaseFlags,
+  ExtraContext = Unit,
+>() =>
+  OptimisticUpdateCo<CustomPresentationContext, Flags, ExtraContext>().Template<
+    OneAbstractRendererForeignMutationsExpected<Flags>
+  >(optimisticUpdateHandler<CustomPresentationContext, Flags, ExtraContext>(), {
+    interval: 15,
+    runFilter: (props) =>
+      OneAbstractRendererState.Operations.ShouldProcessPendingOperation(
+        props.context,
+      ),
+  });

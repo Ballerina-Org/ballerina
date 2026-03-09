@@ -43,8 +43,12 @@ export type CommonAbstractRendererReadonlyContext<
   lookupTypeAncestorNames: string[];
   preprocessedSpecContext?: PreprocessedSpecContext;
   usePreprocessor: boolean;
-  preventOneInitialization: { kind: false } | { kind: true; rowId: string };
+  preventOneInitialization: PreventOneInitializationStatus;
 };
+
+export type PreventOneInitializationStatus =
+  | { kind: false }
+  | { kind: true; rowId: string };
 
 export type CommonAbstractRendererViewOnlyReadonlyContext = {
   domNodeId: string;

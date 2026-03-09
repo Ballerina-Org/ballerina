@@ -51,3 +51,19 @@ export const DebouncedCo = CoTypedFactory<
   { onDebounce: SimpleCallback<void> },
   Value<[Map<string, string>, boolean]>
 >();
+
+export const OptimisticUpdateCo = <
+  CustomPresentationContext = Unit,
+  Flags extends BaseFlags = BaseFlags,
+  ExtraContext = Unit,
+>() =>
+  CoTypedFactory<
+    OneAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
+      OneAbstractRendererState & {
+        foreignMutations: OneAbstractRendererForeignMutationsExpected<Flags>;
+      },
+    OneAbstractRendererState
+  >();
