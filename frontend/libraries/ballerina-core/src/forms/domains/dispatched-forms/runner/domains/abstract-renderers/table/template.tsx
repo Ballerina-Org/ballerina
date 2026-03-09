@@ -257,7 +257,9 @@ export const TableAbstractRenderer = <
             preprocessedSpecContext: _.preprocessedSpecContext,
             labelContext,
             usePreprocessor: _.usePreprocessor,
-            preventOneInitialization: isFakeRow(rowId),
+            preventOneInitialization: isFakeRow(rowId)
+              ? { kind: true, rowId }
+              : { kind: false },
           };
         })
 
@@ -455,11 +457,11 @@ export const TableAbstractRenderer = <
                 preprocessedSpecContext: _.preprocessedSpecContext,
                 labelContext,
                 usePreprocessor: _.usePreprocessor,
-                preventOneInitialization: PredicateValue.Operations.IsString(
-                  selectedDetailRow,
-                )
-                  ? isFakeRow(selectedDetailRow)
-                  : false,
+                preventOneInitialization:
+                  PredicateValue.Operations.IsString(selectedDetailRow) &&
+                  isFakeRow(selectedDetailRow)
+                    ? { kind: true, rowId: selectedDetailRow }
+                    : { kind: false },
               };
             })
               .mapStateFromProps<TableAbstractRendererState>(

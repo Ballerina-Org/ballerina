@@ -100,7 +100,7 @@ export const DispatchCreateFormLauncherTemplate = <
           customPresentationContext: undefined,
           typeAncestors: [],
           usePreprocessor: props.context.usePreprocessor,
-          preventOneInitialization: false,
+          preventOneInitialization: { kind: false },
         }}
         setState={(stateUpdater) =>
           props.setState(

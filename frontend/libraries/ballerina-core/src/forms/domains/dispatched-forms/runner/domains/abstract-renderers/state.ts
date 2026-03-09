@@ -43,7 +43,7 @@ export type CommonAbstractRendererReadonlyContext<
   lookupTypeAncestorNames: string[];
   preprocessedSpecContext?: PreprocessedSpecContext;
   usePreprocessor: boolean;
-  preventOneInitialization: boolean;
+  preventOneInitialization: { kind: false } | { kind: true; rowId: string };
 };
 
 export type CommonAbstractRendererViewOnlyReadonlyContext = {

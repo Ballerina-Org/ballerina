@@ -118,7 +118,7 @@ export const DispatchPassthroughFormLauncherTemplate = <
           customPresentationContext: undefined,
           typeAncestors: [],
           usePreprocessor: props.context.usePreprocessor,
-          preventOneInitialization: false,
+          preventOneInitialization: { kind: false },
         }}
         setState={(stateUpdater: BasicUpdater<CommonAbstractRendererState>) =>
           props.setState(

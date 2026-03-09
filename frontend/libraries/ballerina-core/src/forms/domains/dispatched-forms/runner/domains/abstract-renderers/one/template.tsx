@@ -173,7 +173,7 @@ export const OneAbstractRenderer = <
         usePreprocessor: _.usePreprocessor,
         // we do not want to propagate this flag to all the ones in the hierarchy
         // stop as soon as we reach the first one
-        preventOneInitialization: false,
+        preventOneInitialization: { kind: false },
       };
     })
       .mapState(
@@ -275,7 +275,7 @@ export const OneAbstractRenderer = <
               preprocessedSpecContext: _.preprocessedSpecContext,
               labelContext,
               usePreprocessor: _.usePreprocessor,
-              preventOneInitialization: false,
+              preventOneInitialization: { kind: false },
             };
           })
             .mapState(
@@ -535,6 +535,10 @@ export const OneAbstractRenderer = <
               value.kind === "unit" || value.isSome
                 ? embeddedPreviewRenderer
                 : undefined
+            }
+            waitingForParentId={
+              props.context.preventOneInitialization.kind == true &&
+              props.context.preventOneInitialization.rowId == maybeId.value
             }
           />
         </IdProvider>

@@ -236,5 +236,6 @@ export type OneAbstractRendererView<
       OneAbstractRendererState,
       OneAbstractRendererViewForeignMutationsExpected<Flags>
     >;
+    waitingForParentId: boolean;
   }
 >;
