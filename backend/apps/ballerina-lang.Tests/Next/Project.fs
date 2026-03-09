@@ -12,31 +12,43 @@ open Ballerina.DSL.Next.Runners.Project
 open Ballerina.Collections.NonEmptyList
 open Ballerina.Errors
 open Ballerina.DSL.Next.StdLib.Extensions
+open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 
-
+type private ValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
 
 let private fileFromNameAndContent (name: string) (content: string) : FileBuildConfiguration =
   { FileName = { Path = name }
     Content = fun () -> content
-    Checksum = Checksum.Compute content }
+    Checksum = Checksum.Compute content
+    RequireUnitTermination = true }
 
-let private buildAndEval
-  (files: NonEmptyList<string * string>)
+let private fileFromNameAndContentWithTermination
+  (name: string)
+  (content: string)
+  (requireUnitTermination: bool)
+  : FileBuildConfiguration =
+  { FileName = { Path = name }
+    Content = fun () -> content
+    Checksum = Checksum.Compute content
+    RequireUnitTermination = requireUnitTermination }
+
+let private buildAndEvalFromConfiguredFiles
+  (files: NonEmptyList<FileBuildConfiguration>)
   : Sum<Value<TypeValue<ValueExt>, ValueExt> * TypeValue<ValueExt> * int, string> =
-  let project: ProjectBuildConfiguration =
-    { Files =
-        files
-        |> NonEmptyList.map (fun (name, content) -> fileFromNameAndContent name content) }
+  let project: ProjectBuildConfiguration = { Files = files }
 
   let context = Term.Expr_Eval.context
   let cache = memcache (context.TypeCheckContext, context.TypeCheckState)
 
-  let buildResult = ProjectBuildConfiguration.BuildCached cache project
+  let buildResult =
+    ProjectBuildConfiguration.BuildCached Term.Expr_Eval._db_query_sym Term.Expr_Eval._make_db_query_type cache project
 
   match buildResult with
   | Left(exprs, typeValue, _, finalState) ->
+    let evalContext = ExprEvalContext.Empty() |> context.ExprEvalContext
+
     let evalContext =
-      ExprEvalContext.WithTypeCheckingSymbols context.ExprEvalContext finalState.Symbols
+      ExprEvalContext.WithTypeCheckingSymbols evalContext finalState.Symbols
 
     let evalResult =
       Expr.Eval(NonEmptyList.prependList context.TypeCheckedPreludes exprs)
@@ -50,6 +62,13 @@ let private buildAndEval
   | Right e ->
     let errString = Errors.ToString(e, "\n")
     Right(sprintf "Build failed: %s" errString)
+
+let private buildAndEval
+  (files: NonEmptyList<string * string>)
+  : Sum<Value<TypeValue<ValueExt>, ValueExt> * TypeValue<ValueExt> * int, string> =
+  files
+  |> NonEmptyList.map (fun (name, content) -> fileFromNameAndContent name content)
+  |> buildAndEvalFromConfiguredFiles
 
 
 [<Test>]
@@ -139,3 +158,67 @@ x * 2
   match result with
   | Left(value, _, _) -> Assert.Fail $"Expected evaluation to fail, got {value}"
   | Right e -> Assert.That(e, Does.Contain("x"), "Error should mention missing x variable")
+
+[<Test>]
+let ``Non-last project files must terminate with constant unit`` () =
+  let file1 =
+    "file1.bl",
+    """
+1
+    """
+
+  let file2 =
+    "file2.bl",
+    """
+2
+    """
+
+  let result = buildAndEval (NonEmptyList.OfList(file1, [ file2 ]))
+
+  match result with
+  | Left _ -> Assert.Fail "Expected build to fail because non-last file is not terminated by constant unit"
+  | Right e ->
+    Assert.That(e, Does.Contain("file1.bl"), "Error should point to the offending file")
+    Assert.That(e, Does.Contain("terminated by constant unit"), "Error should mention constant unit termination")
+
+[<Test>]
+let ``Last project file can return non-unit`` () =
+  let file1 =
+    "file1.bl",
+    """
+()
+    """
+
+  let file2 =
+    "file2.bl",
+    """
+2
+    """
+
+  let result = buildAndEval (NonEmptyList.OfList(file1, [ file2 ]))
+
+  match result with
+  | Left(value, typeValue, exprCount) ->
+    Assert.That(exprCount, Is.EqualTo(2), "Should have 2 expressions")
+
+    match value with
+    | Value.Primitive(Int32 2) ->
+      match typeValue with
+      | TypeValue.Primitive({ value = PrimitiveType.Int32 }) ->
+        Assert.Pass "Last file correctly returns a non-unit value"
+      | _ -> Assert.Fail $"Expected Int32 type, got {typeValue.AsFSharpString}"
+    | _ -> Assert.Fail $"Expected 2, got {value}"
+  | Right e -> Assert.Fail e
+
+[<Test>]
+let ``Non-last project file allows non-unit when RequireUnitTermination is false`` () =
+  let file1 = fileFromNameAndContentWithTermination "file1.bl" "1" false
+  let file2 = fileFromNameAndContentWithTermination "file2.bl" "2" true
+
+  let result = buildAndEvalFromConfiguredFiles (NonEmptyList.OfList(file1, [ file2 ]))
+
+  match result with
+  | Left(_, _, exprCount) ->
+    Assert.That(exprCount, Is.EqualTo(2), "Should have 2 expressions")
+    Assert.Pass "Non-last file with disabled termination requirement should succeed"
+  | Right e -> Assert.Fail e

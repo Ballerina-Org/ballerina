@@ -88,5 +88,8 @@ module KindEval =
             let paramKinds = i.Parameters |> List.map (fun p -> p.Kind)
             return List.foldBack (fun k acc -> Kind.Arrow(k, acc)) paramKinds Kind.Star
 
+          | TypeValue.QueryRow _ -> return Kind.QueryRow
+          | TypeValue.QueryTypeFunction -> return Kind.Arrow(Kind.QueryRow, Kind.Star)
+
           | _ -> return Kind.Star
         }

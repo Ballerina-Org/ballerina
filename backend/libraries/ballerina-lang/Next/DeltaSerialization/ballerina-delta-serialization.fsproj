@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ballerina_delta_serialization</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Models\PocoObjects.fs" />
+    <Compile Include="Models\Context.fs" />
+    <Compile Include="Serializer\DeltaSerializer.fs" />
+    <Compile Include="Serializer\DeltaDeserializer.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Serialization\ballerina-lang-serialization.fsproj" />
+    <ProjectReference Include="..\..\..\ballerina-delta\ballerina-delta.fsproj" />
+  </ItemGroup>
+
+</Project>

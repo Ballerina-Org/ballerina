@@ -16,11 +16,25 @@ open Ballerina.Seeds
 open Ballerina.State.WithError
 
 module Runner =
-  let _extensions, languageContext = stdExtensions
+  open Ballerina.DSL.Next.StdLib.MutableMemoryDB
+  let _extensions, languageContext, _, _ = db_ops () |> stdExtensions
 
   let seed
-    (schema: Schema<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt>)
-    : Reader<SpecData<TypeValue<ValueExt>, ValueExt>, SeedingContext, Errors<unit>> =
+    (schema:
+      Schema<
+        TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>,
+        ResolvedIdentifier,
+        ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
+       >)
+    : Reader<
+        SpecData<
+          TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>,
+          ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
+         >,
+        SeedingContext,
+        Errors<unit>
+       >
+    =
     reader {
       let! ctx = reader.GetContext()
 

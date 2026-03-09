@@ -14,37 +14,59 @@ module Model =
   open Ballerina.Data.Schema.Model
   open Ballerina.DSL.Next.StdLib.Extensions
   open Ballerina.DSL.Next.Types
-  open Ballerina.Data.Delta.Extensions
   open Ballerina.VirtualFolders.Model
+  open Ballerina.DSL.Next.StdLib.DB
 
   type TenantId = TenantId of Guid
 
-  type Seeder =
-    Schema<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt>
-      -> Sum<SpecData<TypeValue<ValueExt>, ValueExt>, Errors<unit>>
+  type Seeder<'runtimeContext, 'db, 'ext when 'db: comparison and 'ext: comparison> =
+    Schema<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ResolvedIdentifier, ValueExt<'runtimeContext, 'db, 'ext>>
+      -> Sum<
+        SpecData<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>,
+        Errors<unit>
+       >
 
   type TenantStore = { ListTenants: unit -> TenantId list }
 
-  type SpecsStore =
-    { GetSpecApi: TenantId -> Sum<SpecApi<TypeValue<ValueExt>, ValueExt>, Errors<unit>>
-      GetDataApi: TenantId -> SpecName -> VirtualPath option -> Sum<SpecDataApi<ValueExt, DeltaExt>, Errors<unit>> }
+  type SpecsStore<'runtimeContext, 'db, 'ext when 'db: comparison and 'ext: comparison> =
+    { GetSpecApi:
+        TenantId
+          -> Sum<
+            SpecApi<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>,
+            Errors<unit>
+           >
+      GetDataApi:
+        TenantId
+          -> SpecName
+          -> VirtualPath option
+          -> Sum<SpecDataApi<ValueExt<'runtimeContext, 'db, 'ext>, DeltaExt<'runtimeContext, 'db, 'ext>>, Errors<unit>> }
 
-  type Workspace =
+  type Workspace<'runtimeContext, 'db, 'ext when 'db: comparison and 'ext: comparison> =
     { SeedSpecEval:
         TenantId
           -> SpecName
-          -> Seeder
+          -> Seeder<'runtimeContext, 'db, 'ext>
           -> VirtualPath option
           -> State<
-            SpecData<TypeValue<ValueExt>, ValueExt>,
-            TypeCheckContext<ValueExt>,
-            TypeCheckState<ValueExt>,
+            SpecData<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>,
+            TypeCheckContext<ValueExt<'runtimeContext, 'db, 'ext>>,
+            TypeCheckState<ValueExt<'runtimeContext, 'db, 'ext>>,
             Errors<unit>
            >
-      SeedSpec: TenantId * SpecName * SpecData<TypeValue<ValueExt>, ValueExt> -> Sum<unit, Errors<unit>>
-      GetSeeds: TenantId -> SpecName -> Sum<SpecData<TypeValue<ValueExt>, ValueExt>, Errors<unit>> }
+      SeedSpec:
+        TenantId *
+        SpecName *
+        SpecData<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>
+          -> Sum<unit, Errors<unit>>
+      GetSeeds:
+        TenantId
+          -> SpecName
+          -> Sum<
+            SpecData<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>,
+            Errors<unit>
+           > }
 
-  and Store =
-    { Specs: SpecsStore
+  and Store<'runtimeContext, 'db, 'ext when 'db: comparison and 'ext: comparison> =
+    { Specs: SpecsStore<'runtimeContext, 'db, 'ext>
       Tenants: TenantStore
-      Workspace: Workspace }
+      Workspace: Workspace<'runtimeContext, 'db, 'ext> }

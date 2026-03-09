@@ -13,6 +13,7 @@ module Model =
 
   open FSharp.Core
   open Ballerina.Collections.NonEmptyList
+  open System
 
   type ParserResult<'a, 'sym, 'loc, 'err> =
     | ParserResult of 'a * Option<List<'sym> * 'loc>
@@ -210,3 +211,20 @@ module Model =
       }
 
     member parser.Ignore(p: Parser<'a, 'sym, 'loc, 'err>) : Parser<Unit, 'sym, 'loc, 'err> = p |> parser.Map ignore
+
+    member parser.DebugErrors
+      (label: string)
+      (print_errors: 'err -> string)
+      (p: Parser<'a, 'sym, 'loc, 'err>)
+      : Parser<'a, 'sym, 'loc, 'err> =
+      parser {
+        let! res = p |> parser.Try
+
+        match res with
+        | Right errors ->
+          do Console.WriteLine $"{label} errors = {print_errors errors}"
+          do Console.ReadLine() |> ignore
+        | _ -> ()
+
+        return! res |> parser.OfSum
+      }

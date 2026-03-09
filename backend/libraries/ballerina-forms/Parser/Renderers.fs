@@ -39,10 +39,12 @@ module Renderers =
         let! config = state.GetContext()
 
         if config.Bool.SupportedRenderers |> Set.contains name then
+          let! nextId = state.NextId()
+
           return
             PrimitiveRenderer
               { PrimitiveRendererName = name
-                PrimitiveRendererId = Guid.CreateVersion7()
+                PrimitiveRendererId = nextId
                 Label = label
                 Type = ExprType.PrimitiveType PrimitiveType.BoolType }
         else
@@ -65,10 +67,12 @@ module Renderers =
         let! config = state.GetContext()
 
         if config.Date.SupportedRenderers |> Set.contains name then
+          let! nextId = state.NextId()
+
           return
             PrimitiveRenderer
               { PrimitiveRendererName = name
-                PrimitiveRendererId = Guid.CreateVersion7()
+                PrimitiveRendererId = nextId
                 Label = label
                 Type = ExprType.PrimitiveType PrimitiveType.DateOnlyType }
         else
@@ -92,10 +96,12 @@ module Renderers =
         let! config = state.GetContext()
 
         if config.Unit.SupportedRenderers |> Set.contains name then
+          let! nextId = state.NextId()
+
           return
             PrimitiveRenderer
               { PrimitiveRendererName = name
-                PrimitiveRendererId = Guid.CreateVersion7()
+                PrimitiveRendererId = nextId
                 Label = label
                 Type = ExprType.UnitType }
         else
@@ -118,10 +124,12 @@ module Renderers =
         let! config = state.GetContext()
 
         if config.Guid.SupportedRenderers |> Set.contains name then
+          let! nextId = state.NextId()
+
           return
             PrimitiveRenderer
               { PrimitiveRendererName = name
-                PrimitiveRendererId = Guid.CreateVersion7()
+                PrimitiveRendererId = nextId
                 Label = label
                 Type = ExprType.PrimitiveType PrimitiveType.GuidType }
         else
@@ -144,10 +152,12 @@ module Renderers =
         let! config = state.GetContext()
 
         if config.Int.SupportedRenderers |> Set.contains name then
+          let! nextId = state.NextId()
+
           return
             PrimitiveRenderer
               { PrimitiveRendererName = name
-                PrimitiveRendererId = Guid.CreateVersion7()
+                PrimitiveRendererId = nextId
                 Label = label
                 Type = ExprType.PrimitiveType PrimitiveType.IntType }
         else
@@ -170,10 +180,12 @@ module Renderers =
         let! config = state.GetContext()
 
         if config.String.SupportedRenderers |> Set.contains name then
+          let! nextId = state.NextId()
+
           return
             PrimitiveRenderer
               { PrimitiveRendererName = name
-                PrimitiveRendererId = Guid.CreateVersion7()
+                PrimitiveRendererId = nextId
                 Label = label
                 Type = ExprType.PrimitiveType PrimitiveType.StringType }
         else
@@ -350,8 +362,9 @@ module Renderers =
       =
       state {
         let! config = state.GetContext()
+        let! sumConfig = CodegenConfigSumDef.FindArity config.Sum 2 |> state.OfSum
 
-        if config.Sum.SupportedRenderers |> Set.contains name then
+        if sumConfig.SupportedRenderers |> Set.contains name then
           return!
             state {
               let! (leftRendererJson, rightRendererJson) =
@@ -667,11 +680,12 @@ module Renderers =
           state {
             let! (formsState: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
             let! t = formsState.TryFindType c.Key |> state.OfSum
+            let! nextId = state.NextId()
 
             return
               PrimitiveRenderer
                 { PrimitiveRendererName = name
-                  PrimitiveRendererId = Guid.CreateVersion7()
+                  PrimitiveRendererId = nextId
                   Label = label
                   Type = t.Type }
           }
@@ -701,10 +715,12 @@ module Renderers =
             |> NonEmptyList.map (fun g ->
               state {
                 if g.SupportedRenderers |> Set.contains name then
+                  let! nextId = state.NextId()
+
                   return
                     PrimitiveRenderer
                       { PrimitiveRendererName = name
-                        PrimitiveRendererId = Guid.CreateVersion7()
+                        PrimitiveRendererId = nextId
                         Label = label
                         Type = g.Type }
 
@@ -747,11 +763,11 @@ module Renderers =
               |> Seq.map (NestedRenderer.Parse primitivesExt exprParser)
               |> state.All
 
-            if itemRenderers.Length <> tupleConfig.Ariety then
+            if itemRenderers.Length <> tupleConfig.Arity then
               return!
                 state.Throw(
                   Errors.Singleton () (fun () ->
-                    $"Error: mismatched tuple size. Expected {tupleConfig.Ariety}, found {itemRenderers.Length}.")
+                    $"Error: mismatched tuple size. Expected {tupleConfig.Arity}, found {itemRenderers.Length}.")
                 )
             else
               return
@@ -1301,9 +1317,11 @@ module Renderers =
             )
         | _ ->
 
+          let! nextId = state.NextId()
+
           let fc =
             { FieldName = fieldName
-              FieldId = Guid.CreateVersion7()
+              FieldId = nextId
               Label = label
               Tooltip = tooltip
               Details = details
@@ -1446,13 +1464,15 @@ module Renderers =
 
         return!
           fields
-          |> Seq.map (
-            JsonValue.AsString
-            >> state.OfSum
-            >> state.Map(fun fieldName ->
-              { FieldName = fieldName
-                FieldId = Guid.CreateVersion7() })
-          )
+          |> Seq.map (fun field ->
+            state {
+              let! fieldName = JsonValue.AsString field |> state.OfSum
+              let! nextId = state.NextId()
+
+              return
+                { FieldName = fieldName
+                  FieldId = nextId }
+            })
           |> state.All
           |> state.Map FormGroup.Inlined
 

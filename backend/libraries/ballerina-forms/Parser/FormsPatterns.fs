@@ -66,6 +66,16 @@ module FormsPatterns =
       |> Map.tryFindWithError name "launcher" (name |> fun (LauncherName name) -> (fun () -> name))
 
   type StateBuilder with
+    member state.NextId<'c, 'ExprExtension, 'ValueExtension>
+      ()
+      : State<int, 'c, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors<Unit>> =
+      state {
+        let! (s: ParsedFormsContext<'ExprExtension, 'ValueExtension>) = state.GetState()
+        let id = s.NextId
+        do! state.SetState(ParsedFormsContext.Updaters.NextId(fun n -> n + 1))
+        return id
+      }
+
     member state.TryFindType<'c, 'ExprExtension, 'ValueExtension>
       name
       : State<TypeBinding, 'c, ParsedFormsContext<'ExprExtension, 'ValueExtension>, Errors<Unit>> =

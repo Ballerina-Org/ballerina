@@ -29,7 +29,11 @@ module Value =
           | Some _ -> value.Value ]
     )
 
-  let enwrapArity (value: Value<_, 'valueExt>) (typeValue: TypeValue<'valueExt>) (arity: LookupArity) =
+  let enwrapArity
+    (value: Value<TypeValue<'valueExt>, 'valueExt>)
+    (typeValue: TypeValue<'valueExt>)
+    (arity: LookupArity)
+    =
 
     match Cardinality.FromArity arity, value, typeValue with
     | One, Value.UnionCase _, _

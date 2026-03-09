@@ -33,6 +33,13 @@ module FormAST =
 
   type Details = Details of string
 
+  type ListAction =
+    | Add
+    | Remove
+    | Clear
+    | Move
+    | Duplicate
+
   type Cardinality =
     | Single
     | Multi
@@ -78,6 +85,7 @@ module FormAST =
   and ListRenderer<'typeValue> =
     { List: RendererIdentifier
       Element: RendererExpression<'typeValue>
+      Actions: Set<ListAction>
       Type: 'typeValue }
 
   and ReadonlyRenderer<'typeValue> =

@@ -354,7 +354,7 @@ module Patterns =
         TypeParameters = ctx.TypeParameters
         Values = ctx.Values }
 
-    static member Empty =
+    static member Empty: TypeInstantiateContext<'valueExt> =
       { VisitedVars = Set.empty
         Scope = TypeCheckScope.Empty
         TypeVariables = Map.empty

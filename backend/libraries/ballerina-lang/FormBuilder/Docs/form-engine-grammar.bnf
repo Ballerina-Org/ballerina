@@ -57,7 +57,8 @@ optionCase ::=
   "|" "2Of2" "->" nestedRenderer
 option ::= "option" rendererDef "with" optionCase
 
-list ::= "list" rendererDef nestedRenderer
+listAction ::= "add" | "remove" | "clear" | "move" | "duplicate"
+list ::= "list" rendererDef ["with" listAction {listAction}] nestedRenderer
 readonly ::= "readonly" rendererDef nestedRenderer
 
 sumCase ::=

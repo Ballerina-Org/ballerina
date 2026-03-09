@@ -30,6 +30,7 @@
         <ProjectReference Include="..\ballerina-lang\ballerina-lang-v1.fsproj" />
         <ProjectReference Include="..\ballerina-lang\Next\ballerina-lang.fsproj" />
         <ProjectReference Include="..\ballerina-lang\Next\Stdlib\ballerina-lang-stdlib.fsproj" />
+        <ProjectReference Include="..\ballerina-memorydb\ballerina-memorydb.fsproj" />
     </ItemGroup>
 
 </Project>

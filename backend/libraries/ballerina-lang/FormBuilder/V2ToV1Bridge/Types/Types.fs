@@ -24,8 +24,6 @@ module Types =
       unionTypes
       |> Seq.fold
         (fun (accResults, accAdditional, seen) (unionType) ->
-          seen |> Set.iter (fun s -> System.Console.WriteLine($"s: {s}"))
-
           if Set.contains (unionType.Type.ToString()) seen then
             (accResults, accAdditional, seen)
           else

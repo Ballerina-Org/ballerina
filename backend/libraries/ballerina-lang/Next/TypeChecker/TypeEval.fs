@@ -26,7 +26,60 @@ module Eval =
   open Ballerina.DSL.Next.Unification
   open Ballerina.DSL.Next.Terms.Patterns
 
-  type TypeExpr<'valueExt> with
+  type TypeQueryRowExpr<'valueExt> with
+    static member Eval<'ve when 've: comparison>() : TypeQueryRowExprEval<'ve> =
+      fun typeCheckExpr _n loc0 q_row ->
+        state {
+          let (!) = TypeExpr.Eval<'ve> () typeCheckExpr None loc0
+          // let (!!) = TypeQueryRowExpr.Eval<'ve> () typeCheckExpr None loc0
+          // let! ctx = state.GetContext()
+
+          // let error e = Errors.Singleton loc0 e
+
+          let ofSum (p: Sum<'a, Errors<Unit>>) =
+            p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
+
+          match q_row with
+          | TypeQueryRowExpr.PrimaryKey q ->
+            let! q, q_k = !q
+            do! q_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+            return TypeQueryRow.PrimaryKey q
+          | TypeQueryRowExpr.Json q ->
+            let! q, q_k = !q
+            do! q_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+            return TypeQueryRow.Json q
+          | TypeQueryRowExpr.PrimitiveType(pt, is_nullable) -> return TypeQueryRow.PrimitiveType(pt, is_nullable)
+          | TypeQueryRowExpr.Tuple qs ->
+            let! qs =
+              qs
+              |> List.map (fun q ->
+                state {
+                  let! q, q_k = !q
+                  let! q = q |> TypeValue.AsQueryRow |> ofSum
+                  do! q_k |> Kind.AsStar |> ofSum |> state.Ignore
+                  return q
+                })
+              |> state.All
+
+            return TypeQueryRow.Tuple qs
+          | TypeQueryRowExpr.Record qs ->
+            let! qs =
+              qs
+              |> Map.map (fun _k q ->
+                state {
+                  let! q, q_k = !q
+                  let! q = q |> TypeValue.AsQueryRow |> ofSum
+                  do! q_k |> Kind.AsStar |> ofSum |> state.Ignore
+                  return q
+                })
+              |> state.AllMap
+
+            return TypeQueryRow.Record qs
+        }
+
+  and TypeExpr<'valueExt> with
     static member EvalAsSymbol<'ve when 've: comparison>() : TypeExprSymbolEval<'ve> =
       fun exprTypeCheck loc0 t ->
         state {
@@ -48,7 +101,10 @@ module Eval =
                 NonEmptyList.OfList(
                   TypeCheckState.tryFindTypeSymbol (v |> ctx.Scope.Resolve, loc0),
                   [ TypeCheckState.tryFindRecordFieldSymbol (v |> ctx.Scope.Resolve, loc0)
-                    TypeCheckState.tryFindUnionCaseSymbol (v |> ctx.Scope.Resolve, loc0) ]
+                    TypeCheckState.tryFindUnionCaseSymbol (v |> ctx.Scope.Resolve, loc0)
+                    TypeCheckState.tryFindTypeSymbol (v |> TypeCheckScope.Empty.Resolve, loc0)
+                    TypeCheckState.tryFindRecordFieldSymbol (v |> TypeCheckScope.Empty.Resolve, loc0)
+                    TypeCheckState.tryFindUnionCaseSymbol (v |> TypeCheckScope.Empty.Resolve, loc0) ]
                 )
               )
               |> state.OfStateReader
@@ -77,6 +133,7 @@ module Eval =
         state {
           let (!) = TypeExpr.Eval<'ve> () typeCheckExpr None loc0
           let (!!) = TypeExpr.EvalAsSymbol<'ve> () typeCheckExpr loc0
+          let (!!!) = TypeQueryRowExpr.Eval<'ve> () typeCheckExpr None loc0
           let! ctx = state.GetContext()
 
           let error e = Errors.Singleton loc0 e
@@ -185,9 +242,33 @@ module Eval =
 
             return TypeValue.CreateRelationLookupMany(a_schema, t', f_id, t_id), Kind.Star
           | TypeExpr.Schema parsed_schema ->
+            let! included_schema_entityhooks_relation_hooks =
+              match parsed_schema.Includes with
+              | Some(includeName, entity_hooks, relation_hooks) ->
+                state {
+                  let! included_schema, included_schema_k =
+                    TypeCheckState.tryFindType (
+                      includeName.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve,
+                      loc0
+                    )
+                    |> state.OfStateReader
+
+                  do! included_schema_k |> Kind.AsSchema |> ofSum |> state.Ignore
+
+                  let! included_schema = included_schema |> TypeValue.AsSchema |> ofSum
+
+                  return Some(included_schema, entity_hooks, relation_hooks)
+                }
+              | None -> state { return None }
+
             let repeatedEntityNames =
               parsed_schema.Entities
               |> List.map (fun e -> e.Name)
+              |> List.append (
+                included_schema_entityhooks_relation_hooks
+                |> Option.map (fun (s, _, _) -> s.Entities |> OrderedMap.values |> List.map (fun e -> e.Name))
+                |> Option.defaultValue []
+              )
               |> List.groupBy id
               |> List.filter (fun (_, l) -> List.length l > 1)
               |> List.map (fst >> fun n -> n.Name)
@@ -219,88 +300,64 @@ module Eval =
 
                           let path_segments = p.Path |> Option.defaultValue []
 
-                          let! _, path_scope, resolved_scope =
-                            path_segments
-                            |> List.fold
-                              (fun acc segment ->
-                                state {
-                                  let! t, segments_acc, resolved_scope = acc
+                          if path_segments |> List.isEmpty && (p.Name.Name = "Id" || p.Name.Name = "Value") then
+                            return!
+                              (fun () ->
+                                $"Error: property {p.Name} cannot have an empty path as it would conflict with the entity's Id or Value property")
+                              |> error
+                              |> state.Throw
+                          else
 
-                                  match segment with
-                                  | (maybe_var_name, SchemaPathTypeDecompositionExpr.Field f) ->
-                                    let! t_record = t |> TypeValue.AsRecordWithSourceMapping |> ofSum
-                                    let t_record_scope = t_record.typeCheckScopeSource
-                                    let t_record = t_record.value
+                            let! _, path_scope, resolved_scope =
+                              path_segments
+                              |> List.fold
+                                (fun acc segment ->
+                                  state {
+                                    let! t, segments_acc, resolved_scope = acc
 
-                                    let! (f_i, (f_t, f_k)) =
-                                      t_record
-                                      |> OrderedMap.toSeq
-                                      |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.LocalName)
-                                      |> Sum.fromOption (fun () ->
-                                        (fun () -> $"Error: cannot find field {f} in record type {t}")
-                                        |> Errors.Singleton loc0)
-                                      |> state.OfSum
+                                    match segment with
+                                    | (maybe_var_name, SchemaPathTypeDecompositionExpr.Field f) ->
+                                      let! t_record = t |> TypeValue.AsRecordWithSourceMapping |> ofSum
+                                      let t_record_scope = t_record.typeCheckScopeSource
+                                      let t_record = t_record.value
 
-                                    do! f_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-                                    let next_t = f_t
-
-                                    let next_segments =
-                                      match maybe_var_name with
-                                      | Some var_name ->
-                                        (Identifier.LocalScope var_name.Name |> TypeCheckScope.Empty.Resolve,
-                                         (next_t, f_k))
-                                        :: segments_acc
-                                      | None -> segments_acc
-
-                                    return
-                                      next_t,
-                                      next_segments,
-                                      (maybe_var_name,
-                                       f_i.Name |> t_record_scope.Resolve |> SchemaPathTypeDecomposition.Field)
-                                      :: resolved_scope
-                                  | (maybe_var_name, SchemaPathTypeDecompositionExpr.UnionCase f) ->
-                                    let! _, t_union_scope, t_union = t |> TypeValue.AsUnionWithSourceMapping |> ofSum
-
-                                    let! (case_i, case_t) =
-                                      t_union
-                                      |> OrderedMap.toSeq
-                                      |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.LocalName)
-                                      |> Sum.fromOption (fun () ->
-                                        (fun () -> $"Error: cannot find case {f} in union type {t}")
-                                        |> Errors.Singleton loc0)
-                                      |> state.OfSum
-
-                                    let next_t = case_t
-
-                                    let next_segments =
-                                      match maybe_var_name with
-                                      | Some var_name ->
-                                        (Identifier.LocalScope var_name.Name |> TypeCheckScope.Empty.Resolve,
-                                         (next_t, Kind.Star))
-                                        :: segments_acc
-                                      | None -> segments_acc
-
-                                    return
-                                      next_t,
-                                      next_segments,
-                                      (maybe_var_name,
-                                       case_i.Name |> t_union_scope.Resolve |> SchemaPathTypeDecomposition.UnionCase)
-                                      :: resolved_scope
-                                  | (maybe_var_name, SchemaPathTypeDecompositionExpr.SumCase f) ->
-                                    let! t_sum = t |> TypeValue.AsSum |> ofSum
-
-                                    if f.Case < 1 || f.Case > t_sum.Length || f.Count <> t_sum.Length then
-                                      return!
-                                        (fun () -> $"Error: sum case {f} is out of bounds for sum type {t}")
-                                        |> Errors.Singleton loc0
-                                        |> state.Throw
-                                    else
-                                      let! case_t =
-                                        t_sum
-                                        |> Seq.tryItem (f.Case - 1)
+                                      let! (f_i, (f_t, f_k)) =
+                                        t_record
+                                        |> OrderedMap.toSeq
+                                        |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.LocalName)
                                         |> Sum.fromOption (fun () ->
-                                          (fun () -> $"Error: cannot find sum case {f} in sum type {t}")
+                                          (fun () -> $"Error: cannot find field {f} in record type {t}")
+                                          |> Errors.Singleton loc0)
+                                        |> state.OfSum
+
+                                      do! f_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                                      let next_t = f_t
+
+                                      let next_segments =
+                                        match maybe_var_name with
+                                        | Some var_name ->
+                                          (Identifier.LocalScope var_name.Name |> TypeCheckScope.Empty.Resolve,
+                                           (next_t, f_k))
+                                          :: segments_acc
+                                        | None -> segments_acc
+
+                                      return
+                                        next_t,
+                                        next_segments,
+                                        (maybe_var_name,
+                                         f_i.Name |> t_record_scope.Resolve |> SchemaPathTypeDecomposition.Field)
+                                        :: resolved_scope
+                                    | (maybe_var_name, SchemaPathTypeDecompositionExpr.UnionCase f) ->
+                                      let! _, t_union_scope, t_union =
+                                        t |> TypeValue.AsUnionWithSourceMapping |> ofSum
+
+                                      let! (case_i, case_t) =
+                                        t_union
+                                        |> OrderedMap.toSeq
+                                        |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.LocalName)
+                                        |> Sum.fromOption (fun () ->
+                                          (fun () -> $"Error: cannot find case {f} in union type {t}")
                                           |> Errors.Singleton loc0)
                                         |> state.OfSum
 
@@ -317,25 +374,79 @@ module Eval =
                                       return
                                         next_t,
                                         next_segments,
-                                        (maybe_var_name, SchemaPathTypeDecomposition.SumCase f) :: resolved_scope
-                                  | (maybe_var_name, SchemaPathTypeDecompositionExpr.Item f) ->
-                                    let! t_tuple = t |> TypeValue.AsTuple |> ofSum
+                                        (maybe_var_name,
+                                         case_i.Name
+                                         |> t_union_scope.Resolve
+                                         |> SchemaPathTypeDecomposition.UnionCase)
+                                        :: resolved_scope
+                                    | (maybe_var_name, SchemaPathTypeDecompositionExpr.SumCase f) ->
+                                      let! t_sum = t |> TypeValue.AsSum |> ofSum
 
-                                    if f.Index < 1 || f.Index > t_tuple.Length then
-                                      return!
-                                        (fun () -> $"Error: tuple index {f} is out of bounds for tuple type {t}")
-                                        |> Errors.Singleton loc0
-                                        |> state.Throw
-                                    else
-                                      let! item_t =
-                                        t_tuple
-                                        |> Seq.tryItem (f.Index - 1)
-                                        |> Sum.fromOption (fun () ->
-                                          (fun () -> $"Error: cannot find tuple index {f} in tuple type {t}")
-                                          |> Errors.Singleton loc0)
-                                        |> state.OfSum
+                                      if f.Case < 1 || f.Case > t_sum.Length || f.Count <> t_sum.Length then
+                                        return!
+                                          (fun () -> $"Error: sum case {f} is out of bounds for sum type {t}")
+                                          |> Errors.Singleton loc0
+                                          |> state.Throw
+                                      else
+                                        let! case_t =
+                                          t_sum
+                                          |> Seq.tryItem (f.Case - 1)
+                                          |> Sum.fromOption (fun () ->
+                                            (fun () -> $"Error: cannot find sum case {f} in sum type {t}")
+                                            |> Errors.Singleton loc0)
+                                          |> state.OfSum
 
-                                      let next_t = item_t
+                                        let next_t = case_t
+
+                                        let next_segments =
+                                          match maybe_var_name with
+                                          | Some var_name ->
+                                            (Identifier.LocalScope var_name.Name |> TypeCheckScope.Empty.Resolve,
+                                             (next_t, Kind.Star))
+                                            :: segments_acc
+                                          | None -> segments_acc
+
+                                        return
+                                          next_t,
+                                          next_segments,
+                                          (maybe_var_name, SchemaPathTypeDecomposition.SumCase f) :: resolved_scope
+                                    | (maybe_var_name, SchemaPathTypeDecompositionExpr.Item f) ->
+                                      let! t_tuple = t |> TypeValue.AsTuple |> ofSum
+
+                                      if f.Index < 1 || f.Index > t_tuple.Length then
+                                        return!
+                                          (fun () -> $"Error: tuple index {f} is out of bounds for tuple type {t}")
+                                          |> Errors.Singleton loc0
+                                          |> state.Throw
+                                      else
+                                        let! item_t =
+                                          t_tuple
+                                          |> Seq.tryItem (f.Index - 1)
+                                          |> Sum.fromOption (fun () ->
+                                            (fun () -> $"Error: cannot find tuple index {f} in tuple type {t}")
+                                            |> Errors.Singleton loc0)
+                                          |> state.OfSum
+
+                                        let next_t = item_t
+
+                                        let next_segments =
+                                          match maybe_var_name with
+                                          | Some var_name ->
+                                            (Identifier.LocalScope var_name.Name |> TypeCheckScope.Empty.Resolve,
+                                             (next_t, Kind.Star))
+                                            :: segments_acc
+                                          | None -> segments_acc
+
+                                        return
+                                          next_t,
+                                          next_segments,
+                                          (maybe_var_name, SchemaPathTypeDecomposition.Item f) :: resolved_scope
+                                    | (maybe_var_name, SchemaPathTypeDecompositionExpr.Iterator it) ->
+                                      let! container, _ = it.Container |> TypeExpr.Lookup |> (!)
+                                      let! t_arg, _ = it.TypeDef |> TypeExpr.Lookup |> (!)
+                                      let! mapper, _, _, _ = typeCheckExpr None (it.Mapper |> Expr.Lookup)
+
+                                      let next_t = t_arg
 
                                       let next_segments =
                                         match maybe_var_name with
@@ -348,61 +459,76 @@ module Eval =
                                       return
                                         next_t,
                                         next_segments,
-                                        (maybe_var_name, SchemaPathTypeDecomposition.Item f) :: resolved_scope
-                                  | (maybe_var_name, SchemaPathTypeDecompositionExpr.Iterator it) ->
-                                    let! container, _ = it.Container |> TypeExpr.Lookup |> (!)
-                                    let! t_arg, _ = it.TypeDef |> TypeExpr.Lookup |> (!)
-                                    let! mapper, _, _, _ = typeCheckExpr None (it.Mapper |> Expr.Lookup)
+                                        (maybe_var_name,
+                                         SchemaPathTypeDecomposition.Iterator
+                                           {| Container = container
+                                              TypeDef = t_arg
+                                              Mapper = mapper |})
+                                        :: resolved_scope
+                                  })
+                                (state { return t, [], [] })
 
-                                    let next_t = t_arg
+                            let resolved_scope = resolved_scope |> List.rev
 
-                                    let next_segments =
-                                      match maybe_var_name with
-                                      | Some var_name ->
-                                        (Identifier.LocalScope var_name.Name |> TypeCheckScope.Empty.Resolve,
-                                         (next_t, Kind.Star))
-                                        :: segments_acc
-                                      | None -> segments_acc
+                            let path_scope =
+                              path_scope
+                              |> List.map (fun (id, (t, k)) -> Map.add id (t, k))
+                              |> List.fold (>>) (fun x -> x)
 
-                                    return
-                                      next_t,
-                                      next_segments,
-                                      (maybe_var_name,
-                                       SchemaPathTypeDecomposition.Iterator
-                                         {| Container = container
-                                            TypeDef = t_arg
-                                            Mapper = mapper |})
-                                      :: resolved_scope
-                                })
-                              (state { return t, [], [] })
-
-                          let resolved_scope = resolved_scope |> List.rev
-
-                          let path_scope =
-                            path_scope
-                            |> List.map (fun (id, (t, k)) -> Map.add id (t, k))
-                            |> List.fold (>>) (fun x -> x)
-
-                          let! body_e, body_t, body_k, _ =
-                            typeCheckExpr (Some p_decl_t) p.Body
-                            |> state.MapContext(
-                              TypeCheckContext.Updaters.Values(
-                                Map.add (Identifier.LocalScope "self" |> TypeCheckScope.Empty.Resolve) (t, t_k)
-                                >> path_scope
+                            let! body_e, body_t, body_k, _ =
+                              typeCheckExpr (Some p_decl_t) p.Body
+                              |> state.MapContext(
+                                TypeCheckContext.Updaters.Values(
+                                  Map.add (Identifier.LocalScope "self" |> TypeCheckScope.Empty.Resolve) (t, t_k)
+                                  >> path_scope
+                                )
+                                >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
                               )
-                              >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
-                            )
 
-                          do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
+                            do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                          do! TypeValue.Unify(loc0, body_t, p_decl_t) |> Expr.liftUnification
+                            do! TypeValue.Unify(loc0, body_t, p_decl_t) |> Expr.liftUnification
 
-                          return
-                            { SchemaEntityProperty.Path = resolved_scope
-                              PropertyName = p.Name
-                              ReturnType = p_decl_t
-                              ReturnKind = p_decl_k
-                              Body = body_e }
+                            return
+                              { SchemaEntityProperty.Path = resolved_scope
+                                PropertyName = p.Name
+                                ReturnType = p_decl_t
+                                ReturnKind = p_decl_k
+                                Body = body_e }
+                        })
+                      |> state.All
+                      |> state.Map(List.ofSeq)
+
+                    let! vectors =
+                      e.Vectors
+                      |> Seq.map (fun p ->
+                        state {
+                          if p.Name.Name = "Id" || p.Name.Name = "Value" then
+                            return!
+                              (fun () ->
+                                $"Error: please rename vector, it conflicts with the entity's Id or Value property")
+                              |> error
+                              |> state.Throw
+                          else
+
+                            let! body_e, body_t, body_k, _ =
+                              typeCheckExpr (Some(TypeValue.CreatePrimitive(PrimitiveType.String))) p.Body
+                              |> state.MapContext(
+                                TypeCheckContext.Updaters.Values(
+                                  Map.add (Identifier.LocalScope "self" |> TypeCheckScope.Empty.Resolve) (t, t_k)
+                                )
+                                >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
+                              )
+
+                            do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                            do!
+                              TypeValue.Unify(loc0, body_t, TypeValue.CreatePrimitive(PrimitiveType.String))
+                              |> Expr.liftUnification
+
+                            return
+                              { SchemaEntityVector.VectorName = p.Name
+                                Body = body_e }
                         })
                       |> state.All
                       |> state.Map(List.ofSeq)
@@ -522,19 +648,56 @@ module Eval =
                           })
                         (state { return t })
 
+                    let rec (+) (t: TypeValue<'ve>) (name: LocalIdentifier) =
+                      state {
+                        let! fields = t |> TypeValue.AsRecord |> ofSum
+
+                        let vector_name_already_exists =
+                          fields
+                          |> OrderedMap.toSeq
+                          |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = name.Name)
+
+                        if vector_name_already_exists.IsSome then
+                          return!
+                            (fun () ->
+                              $"Error: a field with the same name as vector {name.Name} already exists in record type {t}")
+                            |> Errors.Singleton loc0
+                            |> state.Throw
+
+                        else
+                          let fields =
+                            fields
+                            |> OrderedMap.add
+                              (name.Name |> Identifier.LocalScope |> TypeSymbol.Create)
+                              (TypeValue.CreatePrimitive PrimitiveType.Vector, Kind.Star)
+
+                          return TypeValue.CreateRecord fields
+                      }
+
+                    let! t_with_props =
+                      vectors
+                      |> Seq.fold
+                        (fun acc (p: SchemaEntityVector<'ve>) ->
+                          state {
+                            let! t = acc
+                            return! t + p.VectorName
+                          })
+                        (state { return t_with_props })
+
                     return
-                      { Name = e.Name
+                      { SchemaEntity.Name = e.Name
                         Id = id
                         TypeOriginal = t
                         TypeWithProps = t_with_props
-                        SearchBy = e.SearchBy
                         Properties = properties
-                        OnCreating = None
-                        OnCreated = None
-                        OnUpdating = None
-                        OnUpdated = None
-                        OnDeleting = None
-                        OnDeleted = None }
+                        Vectors = vectors
+                        Hooks =
+                          { SchemaEntityHooks.OnCreating = None
+                            OnCreated = None
+                            OnUpdating = None
+                            OnUpdated = None
+                            OnDeleting = None
+                            OnDeleted = None } }
                   })
                 |> OrderedMap.ofList
                 |> state.AllMapOrdered
@@ -555,10 +718,14 @@ module Eval =
                     match id_fields with
                     | [ field_name, field_type ] ->
                       match field_type with
-                      | TypeValue.Primitive _ -> return field_name, field_type
+                      | TypeValue.Primitive({ value = PrimitiveType.Guid })
+                      | TypeValue.Primitive({ value = PrimitiveType.String })
+                      | TypeValue.Primitive({ value = PrimitiveType.Int32 })
+                      | TypeValue.Primitive({ value = PrimitiveType.Int64 }) -> return field_name, field_type
                       | _ ->
                         return!
-                          (fun () -> $"Error: entity id field type must be a primitive type, got {field_type}")
+                          (fun () ->
+                            $"Error: entity id field type can only be Guid, String, Int32, or Int64, got {field_type}")
                           |> error
                           |> state.Throw
                     | _ ->
@@ -740,18 +907,423 @@ module Eval =
                           From = r.From |> fst
                           To = r.To |> fst
                           Cardinality = r.Cardinality
-                          OnLinking = None
-                          OnLinked = None
-                          OnUnlinking = None
-                          OnUnlinked = None }
+                          Hooks =
+                            { SchemaRelationHooks.OnLinking = None
+                              SchemaRelationHooks.OnLinked = None
+                              SchemaRelationHooks.OnUnlinking = None
+                              SchemaRelationHooks.OnUnlinked = None } }
                     })
                   |> OrderedMap.ofList
                   |> state.AllMapOrdered
 
+                let included_entities =
+                  included_schema_entityhooks_relation_hooks
+                  |> Option.map (fun (s, _, _) -> s.Entities)
+                  |> Option.defaultValue OrderedMap.empty
+
+                let included_relations =
+                  included_schema_entityhooks_relation_hooks
+                  |> Option.map (fun (s, _, _) -> s.Relations)
+                  |> Option.defaultValue OrderedMap.empty
+
+                let included_entities_hooks =
+                  included_schema_entityhooks_relation_hooks
+                  |> Option.map (fun (_, e, _) -> e)
+                  |> Option.defaultValue []
+                  |> Map.ofList
+
                 let resulting_schema_without_hooks =
                   { DeclaredAtForNominalEquality = loc0
-                    Entities = entities
-                    Relations = relations }
+                    Entities = entities |> OrderedMap.mergeSecondAfterFirst included_entities
+                    Relations = relations |> OrderedMap.mergeSecondAfterFirst included_relations }
+
+                let typecheck_entity_hooks
+                  (e_typechecked: SchemaEntity<'ve>)
+                  (parsed_hooks: SchemaEntityHooksExpr<'ve>)
+                  =
+                  state {
+                    let error_type = TypeValue.Lookup(Identifier.FullyQualified([], "Error"))
+
+                    let typechecked_hooks =
+                      { OnCreating = None
+                        OnCreated = None
+                        OnUpdating = None
+                        OnUpdated = None
+                        OnDeleting = None
+                        OnDeleted = None }
+
+                    let! typechecked_hooks =
+                      state {
+                        match parsed_hooks.OnCreating with
+                        | None ->
+                          return
+                            { typechecked_hooks with
+                                OnCreating = None }
+                        | Some on_creating ->
+                          let! on_creating_expr, on_creating_t, on_creating_k, _ = typeCheckExpr None on_creating
+                          do! on_creating_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                          do!
+                            TypeValue.Unify(
+                              on_creating.Location,
+                              on_creating_t,
+                              // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
+                              TypeValue.CreateArrow(
+                                TypeValue.Schema resulting_schema_without_hooks,
+                                TypeValue.CreateArrow(
+                                  e_typechecked.Id,
+                                  TypeValue.CreateArrow(
+                                    e_typechecked.TypeOriginal,
+                                    TypeValue.CreateArrow(
+                                      e_typechecked.TypeWithProps,
+                                      TypeValue.CreateSum
+                                        [ TypeValue.CreateUnit(); error_type; e_typechecked.TypeOriginal ]
+                                    )
+                                  )
+                                )
+                              )
+                            )
+                            |> Expr.liftUnification
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                          return
+                            { typechecked_hooks with
+                                OnCreating = Some on_creating_expr }
+                      }
+
+                    let! typechecked_hooks =
+                      state {
+                        match parsed_hooks.OnCreated with
+                        | None ->
+                          return
+                            { typechecked_hooks with
+                                OnCreated = None }
+                        | Some on_created ->
+                          let! on_created_expr, on_created_t, on_created_k, _ = typeCheckExpr None on_created
+                          do! on_created_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                          do!
+                            TypeValue.Unify(
+                              on_created.Location,
+                              on_created_t,
+                              // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
+                              TypeValue.CreateArrow(
+                                TypeValue.Schema resulting_schema_without_hooks,
+                                TypeValue.CreateArrow(
+                                  e_typechecked.Id,
+                                  TypeValue.CreateArrow(
+                                    e_typechecked.TypeWithProps,
+                                    TypeValue.CreateSum [ TypeValue.CreateUnit(); error_type ]
+                                  )
+                                )
+                              )
+                            )
+                            |> Expr.liftUnification
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                          return
+                            { typechecked_hooks with
+                                OnCreated = Some on_created_expr }
+                      }
+
+                    let! typechecked_hooks =
+                      state {
+                        match parsed_hooks.OnUpdating with
+                        | None ->
+                          return
+                            { typechecked_hooks with
+                                OnUpdating = None }
+                        | Some on_updating ->
+                          let! on_updating_expr, on_updating_t, on_updating_k, _ = typeCheckExpr None on_updating
+                          do! on_updating_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                          do!
+                            TypeValue.Unify(
+                              on_updating.Location,
+                              on_updating_t,
+                              // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
+                              TypeValue.CreateArrow(
+                                TypeValue.Schema resulting_schema_without_hooks,
+                                TypeValue.CreateArrow(
+                                  e_typechecked.Id,
+                                  TypeValue.CreateArrow(
+                                    e_typechecked.TypeWithProps,
+                                    TypeValue.CreateArrow(
+                                      e_typechecked.TypeOriginal,
+                                      TypeValue.CreateArrow(
+                                        e_typechecked.TypeWithProps,
+                                        TypeValue.CreateSum
+                                          [ TypeValue.CreateUnit(); error_type; e_typechecked.TypeOriginal ]
+                                      )
+                                    )
+                                  )
+                                )
+                              )
+                            )
+                            |> Expr.liftUnification
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                          return
+                            { typechecked_hooks with
+                                OnUpdating = Some on_updating_expr }
+                      }
+
+                    let! typechecked_hooks =
+                      state {
+                        match parsed_hooks.OnUpdated with
+                        | None ->
+                          return
+                            { typechecked_hooks with
+                                OnUpdated = None }
+                        | Some on_updated ->
+                          let! on_updated_expr, on_updated_t, on_updated_k, _ = typeCheckExpr None on_updated
+                          do! on_updated_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                          do!
+                            TypeValue.Unify(
+                              on_updated.Location,
+                              on_updated_t,
+                              // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
+                              TypeValue.CreateArrow(
+                                TypeValue.Schema resulting_schema_without_hooks,
+                                TypeValue.CreateArrow(
+                                  e_typechecked.Id,
+                                  TypeValue.CreateArrow(
+                                    e_typechecked.TypeWithProps,
+                                    TypeValue.CreateArrow(
+                                      e_typechecked.TypeWithProps,
+                                      TypeValue.CreateSum [ TypeValue.CreateUnit(); error_type ]
+                                    )
+                                  )
+                                )
+                              )
+                            )
+                            |> Expr.liftUnification
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                          return
+                            { typechecked_hooks with
+                                OnUpdated = Some on_updated_expr }
+                      }
+
+                    let! typechecked_hooks =
+                      state {
+                        match parsed_hooks.OnDeleting with
+                        | None ->
+                          return
+                            { typechecked_hooks with
+                                OnDeleting = None }
+                        | Some on_deleting ->
+                          let! on_deleting_expr, on_deleting_t, on_deleting_k, _ = typeCheckExpr None on_deleting
+                          do! on_deleting_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                          do!
+                            TypeValue.Unify(
+                              on_deleting.Location,
+                              on_deleting_t,
+                              // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
+                              TypeValue.CreateArrow(
+                                TypeValue.Schema resulting_schema_without_hooks,
+                                TypeValue.CreateArrow(
+                                  e_typechecked.Id,
+                                  TypeValue.CreateArrow(
+                                    e_typechecked.TypeWithProps,
+                                    TypeValue.CreateSum [ TypeValue.CreateUnit(); error_type ]
+                                  )
+                                )
+                              )
+                            )
+                            |> Expr.liftUnification
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                          return
+                            { typechecked_hooks with
+                                OnDeleting = Some on_deleting_expr }
+                      }
+
+                    let! typechecked_hooks =
+                      state {
+                        match parsed_hooks.OnDeleted with
+                        | None ->
+                          return
+                            { typechecked_hooks with
+                                OnDeleted = None }
+                        | Some on_deleted ->
+                          let! on_deleted_expr, on_deleted_t, on_deleted_k, _ = typeCheckExpr None on_deleted
+                          do! on_deleted_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                          do!
+                            TypeValue.Unify(
+                              on_deleted.Location,
+                              on_deleted_t,
+                              // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
+                              TypeValue.CreateArrow(
+                                TypeValue.Schema resulting_schema_without_hooks,
+                                TypeValue.CreateArrow(
+                                  e_typechecked.Id,
+                                  TypeValue.CreateArrow(
+                                    e_typechecked.TypeWithProps,
+                                    TypeValue.CreateSum [ TypeValue.CreateUnit(); error_type ]
+                                  )
+                                )
+                              )
+                            )
+                            |> Expr.liftUnification
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                          return
+                            { typechecked_hooks with
+                                OnDeleted = Some on_deleted_expr }
+                      }
+
+                    return typechecked_hooks
+                  }
+
+                let typecheck_relation_hooks
+                  (assert_no_cardinality: State<unit, TypeCheckContext<'ve>, TypeCheckState<'ve>, Errors<Location>>)
+                  (relation_hook_type: TypeValue<'ve>)
+                  (parsed_hooks: SchemaRelationHooksExpr<'ve>)
+                  =
+                  state {
+                    let r_typechecked =
+                      { OnLinking = None
+                        OnLinked = None
+                        OnUnlinking = None
+                        OnUnlinked = None }
+
+                    let! r_typechecked =
+                      state {
+                        match parsed_hooks.OnLinking with
+                        | None -> return { r_typechecked with OnLinking = None }
+                        | Some on_linking ->
+                          do! assert_no_cardinality
+                          let! on_linking_expr, on_linking_t, on_linking_k, _ = typeCheckExpr None on_linking
+                          do! on_linking_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                          do!
+                            TypeValue.Unify(on_linking.Location, on_linking_t, relation_hook_type)
+                            |> Expr.liftUnification
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                          return
+                            { r_typechecked with
+                                OnLinking = Some on_linking_expr }
+                      }
+
+                    let! r_typechecked =
+                      state {
+                        match parsed_hooks.OnLinked with
+                        | None -> return { r_typechecked with OnLinked = None }
+                        | Some on_linked ->
+                          do! assert_no_cardinality
+                          let! on_linked_expr, on_linked_t, on_linked_k, _ = typeCheckExpr None on_linked
+                          do! on_linked_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                          do!
+                            TypeValue.Unify(on_linked.Location, on_linked_t, relation_hook_type)
+                            |> Expr.liftUnification
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                          return
+                            { r_typechecked with
+                                OnLinked = Some on_linked_expr }
+                      }
+
+                    let! r_typechecked =
+                      state {
+                        match parsed_hooks.OnUnlinking with
+                        | None ->
+                          return
+                            { r_typechecked with
+                                OnUnlinking = None }
+                        | Some on_unlinking ->
+                          do! assert_no_cardinality
+                          let! on_unlinking_expr, on_unlinking_t, on_unlinking_k, _ = typeCheckExpr None on_unlinking
+                          do! on_unlinking_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                          do!
+                            TypeValue.Unify(on_unlinking.Location, on_unlinking_t, relation_hook_type)
+                            |> Expr.liftUnification
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                          return
+                            { r_typechecked with
+                                OnUnlinking = Some on_unlinking_expr }
+                      }
+
+                    let! r_typechecked =
+                      state {
+                        match parsed_hooks.OnUnlinked with
+                        | None -> return { r_typechecked with OnUnlinked = None }
+                        | Some on_unlinked ->
+                          do! assert_no_cardinality
+                          let! on_unlinked_expr, on_unlinked_t, on_unlinked_k, _ = typeCheckExpr None on_unlinked
+                          do! on_unlinked_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                          do!
+                            TypeValue.Unify(on_unlinked.Location, on_unlinked_t, relation_hook_type)
+                            |> Expr.liftUnification
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                          return
+                            { r_typechecked with
+                                OnUnlinked = Some on_unlinked_expr }
+                      }
+
+                    return r_typechecked
+                  }
+
+                let! included_entities_hooks =
+                  included_entities_hooks
+                  |> Map.toSeq
+                  |> Seq.map (fun (entityName, hooks) ->
+                    state {
+                      let! included_entity =
+                        included_entities
+                        |> OrderedMap.tryFind entityName
+                        |> Sum.fromOption (fun () ->
+                          (fun () -> $"Error: cannot find included entity {entityName} for hooks")
+                          |> Errors.Singleton loc0)
+                        |> state.OfSum
+
+                      let! typechecked_hooks = typecheck_entity_hooks included_entity hooks
+
+                      return entityName, typechecked_hooks
+                    })
+                  |> state.All
+                  |> state.Map(Map.ofSeq)
+
+                let included_entities =
+                  included_entities_hooks
+                  |> Map.fold
+                    (fun acc entityName hooks ->
+                      match acc |> OrderedMap.tryFind entityName with
+                      | Some v ->
+                        let v =
+                          { v with
+                              SchemaEntity.Hooks =
+                                { SchemaEntityHooks.OnCreating = v.Hooks.OnCreating |> Option.orElse hooks.OnCreating
+                                  SchemaEntityHooks.OnCreated = v.Hooks.OnCreated |> Option.orElse hooks.OnCreated
+                                  SchemaEntityHooks.OnUpdating = v.Hooks.OnUpdating |> Option.orElse hooks.OnUpdating
+                                  SchemaEntityHooks.OnUpdated = v.Hooks.OnUpdated |> Option.orElse hooks.OnUpdated
+                                  SchemaEntityHooks.OnDeleting = v.Hooks.OnDeleting |> Option.orElse hooks.OnDeleting
+                                  SchemaEntityHooks.OnDeleted = v.Hooks.OnDeleted |> Option.orElse hooks.OnDeleted } }
+
+                        acc |> OrderedMap.add entityName v
+                      | None -> acc)
+                    included_entities
+
+                let included_entities_hooks_names =
+                  included_entities_hooks
+                  |> Map.toSeq
+                  |> Seq.map (fst >> (fun n -> n.Name))
+                  |> Set.ofSeq
+
+                let included_relations_hooks =
+                  included_schema_entityhooks_relation_hooks
+                  |> Option.map (fun (_, _, r) -> r)
+                  |> Option.defaultValue []
+                  |> Map.ofList
 
                 let hooks_scope =
                   { TypeCheckScope.Empty with
@@ -775,6 +1347,7 @@ module Eval =
                   |> state.All
                   |> state.Ignore
 
+
                 let! entities_with_hooks =
                   parsed_schema.Entities
                   |> Seq.map (fun e_parsed ->
@@ -787,213 +1360,11 @@ module Eval =
                           |> Errors.Singleton loc0)
                         |> state.OfSum
 
-                      let! e_typechecked =
-                        state {
-                          match e_parsed.OnCreating with
-                          | None -> return { e_typechecked with OnCreating = None }
-                          | Some on_creating ->
-                            let! on_creating_expr, on_creating_t, on_creating_k, _ = typeCheckExpr None on_creating
-                            do! on_creating_k |> Kind.AsStar |> ofSum |> state.Ignore
+                      let! typechecked_hooks = typecheck_entity_hooks e_typechecked e_parsed.Hooks
 
-                            do!
-                              TypeValue.Unify(
-                                loc0,
-                                on_creating_t,
-                                // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
-                                TypeValue.CreateArrow(
-                                  TypeValue.Schema resulting_schema_without_hooks,
-                                  TypeValue.CreateArrow(
-                                    e_typechecked.Id,
-                                    TypeValue.CreateArrow(
-                                      e_typechecked.TypeOriginal,
-                                      TypeValue.CreateArrow(
-                                        e_typechecked.TypeWithProps,
-                                        TypeValue.CreateSum
-                                          [ TypeValue.CreateUnit()
-                                            TypeValue.Lookup(Identifier.LocalScope "Error")
-                                            e_typechecked.TypeOriginal ]
-                                      )
-                                    )
-                                  )
-                                )
-                              )
-                              |> Expr.liftUnification
-
-                            return
-                              { e_typechecked with
-                                  OnCreating = Some on_creating_expr }
-                        }
-
-                      let! e_typechecked =
-                        state {
-                          match e_parsed.OnCreated with
-                          | None -> return { e_typechecked with OnCreated = None }
-                          | Some on_created ->
-                            let! on_created_expr, on_created_t, on_created_k, _ = typeCheckExpr None on_created
-                            do! on_created_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-                            do!
-                              TypeValue.Unify(
-                                loc0,
-                                on_created_t,
-                                // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
-                                TypeValue.CreateArrow(
-                                  TypeValue.Schema resulting_schema_without_hooks,
-                                  TypeValue.CreateArrow(
-                                    e_typechecked.Id,
-                                    TypeValue.CreateArrow(
-                                      e_typechecked.TypeWithProps,
-                                      TypeValue.CreateSum
-                                        [ TypeValue.CreateUnit(); TypeValue.Lookup(Identifier.LocalScope "Error") ]
-                                    )
-                                  )
-                                )
-                              )
-                              |> Expr.liftUnification
-
-                            return
-                              { e_typechecked with
-                                  OnCreated = Some on_created_expr }
-                        }
-
-                      let! e_typechecked =
-                        state {
-                          match e_parsed.OnUpdating with
-                          | None -> return { e_typechecked with OnUpdating = None }
-                          | Some on_updating ->
-                            let! on_updating_expr, on_updating_t, on_updating_k, _ = typeCheckExpr None on_updating
-                            do! on_updating_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-                            do!
-                              TypeValue.Unify(
-                                loc0,
-                                on_updating_t,
-                                // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
-                                TypeValue.CreateArrow(
-                                  TypeValue.Schema resulting_schema_without_hooks,
-                                  TypeValue.CreateArrow(
-                                    e_typechecked.Id,
-                                    TypeValue.CreateArrow(
-                                      e_typechecked.TypeWithProps,
-                                      TypeValue.CreateArrow(
-                                        e_typechecked.TypeOriginal,
-                                        TypeValue.CreateArrow(
-                                          e_typechecked.TypeWithProps,
-                                          TypeValue.CreateSum
-                                            [ TypeValue.CreateUnit()
-                                              TypeValue.Lookup(Identifier.LocalScope "Error")
-                                              e_typechecked.TypeOriginal ]
-                                        )
-                                      )
-                                    )
-                                  )
-                                )
-                              )
-                              |> Expr.liftUnification
-
-                            return
-                              { e_typechecked with
-                                  OnUpdating = Some on_updating_expr }
-                        }
-
-                      let! e_typechecked =
-                        state {
-                          match e_parsed.OnUpdated with
-                          | None -> return { e_typechecked with OnUpdated = None }
-                          | Some on_updated ->
-                            let! on_updated_expr, on_updated_t, on_updated_k, _ = typeCheckExpr None on_updated
-                            do! on_updated_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-                            do!
-                              TypeValue.Unify(
-                                loc0,
-                                on_updated_t,
-                                // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
-                                TypeValue.CreateArrow(
-                                  TypeValue.Schema resulting_schema_without_hooks,
-                                  TypeValue.CreateArrow(
-                                    e_typechecked.Id,
-                                    TypeValue.CreateArrow(
-                                      e_typechecked.TypeWithProps,
-                                      TypeValue.CreateArrow(
-                                        e_typechecked.TypeWithProps,
-                                        TypeValue.CreateSum
-                                          [ TypeValue.CreateUnit(); TypeValue.Lookup(Identifier.LocalScope "Error") ]
-                                      )
-                                    )
-                                  )
-                                )
-                              )
-                              |> Expr.liftUnification
-
-                            return
-                              { e_typechecked with
-                                  OnUpdated = Some on_updated_expr }
-                        }
-
-                      let! e_typechecked =
-                        state {
-                          match e_parsed.OnDeleting with
-                          | None -> return { e_typechecked with OnDeleting = None }
-                          | Some on_deleting ->
-                            let! on_deleting_expr, on_deleting_t, on_deleting_k, _ = typeCheckExpr None on_deleting
-                            do! on_deleting_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-                            do!
-                              TypeValue.Unify(
-                                loc0,
-                                on_deleting_t,
-                                // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
-                                TypeValue.CreateArrow(
-                                  TypeValue.Schema resulting_schema_without_hooks,
-                                  TypeValue.CreateArrow(
-                                    e_typechecked.Id,
-                                    TypeValue.CreateArrow(
-                                      e_typechecked.TypeWithProps,
-                                      TypeValue.CreateSum
-                                        [ TypeValue.CreateUnit(); TypeValue.Lookup(Identifier.LocalScope "Error") ]
-                                    )
-                                  )
-                                )
-                              )
-                              |> Expr.liftUnification
-
-                            return
-                              { e_typechecked with
-                                  OnDeleting = Some on_deleting_expr }
-                        }
-
-                      let! e_typechecked =
-                        state {
-                          match e_parsed.OnDeleted with
-                          | None -> return { e_typechecked with OnDeleted = None }
-                          | Some on_deleted ->
-                            let! on_deleted_expr, on_deleted_t, on_deleted_k, _ = typeCheckExpr None on_deleted
-                            do! on_deleted_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-                            do!
-                              TypeValue.Unify(
-                                loc0,
-                                on_deleted_t,
-                                // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
-                                TypeValue.CreateArrow(
-                                  TypeValue.Schema resulting_schema_without_hooks,
-                                  TypeValue.CreateArrow(
-                                    e_typechecked.Id,
-                                    TypeValue.CreateArrow(
-                                      e_typechecked.TypeWithProps,
-                                      TypeValue.CreateSum
-                                        [ TypeValue.CreateUnit(); TypeValue.Lookup(Identifier.LocalScope "Error") ]
-                                    )
-                                  )
-                                )
-                              )
-                              |> Expr.liftUnification
-
-                            return
-                              { e_typechecked with
-                                  OnDeleted = Some on_deleted_expr }
-                        }
+                      let e_typechecked =
+                        { e_typechecked with
+                            Hooks = typechecked_hooks }
 
                       return e_parsed.Name, e_typechecked
                     })
@@ -1006,6 +1377,134 @@ module Eval =
                   )
 
                 let entities_with_hooks = entities_with_hooks |> OrderedMap.ofList
+
+                let entities_with_hooks =
+                  entities_with_hooks |> OrderedMap.mergeSecondAfterFirst included_entities
+
+                let! included_relations_hooks =
+                  included_relations_hooks
+                  |> Map.toSeq
+                  |> Seq.map (fun (relationName, hooks) ->
+                    state {
+                      let! included_relation =
+                        included_relations
+                        |> OrderedMap.tryFind relationName
+                        |> Sum.fromOption (fun () ->
+                          (fun () -> $"Error: cannot find included relation {relationName} for hooks")
+                          |> Errors.Singleton loc0)
+                        |> state.OfSum
+
+                      let! from_e =
+                        entities_with_hooks
+                        |> OrderedMap.tryFind (included_relation.From.LocalName |> SchemaEntityName.Create)
+                        |> Sum.fromOption (fun () ->
+                          (fun () ->
+                            $"Error: cannot find entity {included_relation.From} for relation {included_relation.Name}")
+                          |> Errors.Singleton loc0)
+                        |> state.OfSum
+
+                      let! to_e =
+                        entities_with_hooks
+                        |> OrderedMap.tryFind (included_relation.To.LocalName |> SchemaEntityName.Create)
+                        |> Sum.fromOption (fun () ->
+                          (fun () ->
+                            $"Error: cannot find entity {included_relation.To} for relation {included_relation.Name}")
+                          |> Errors.Singleton loc0)
+                        |> state.OfSum
+
+                      let relation_hook_type =
+                        TypeValue.CreateArrow(
+                          TypeValue.Schema resulting_schema_without_hooks,
+                          TypeValue.CreateArrow(
+                            from_e.Id,
+                            TypeValue.CreateArrow(
+                              to_e.Id,
+                              TypeValue.CreateSum
+                                [ TypeValue.CreateUnit(); TypeValue.CreatePrimitive PrimitiveType.String ]
+                            )
+                          )
+                        )
+
+                      let assert_no_cardinality =
+                        match included_relation.Cardinality with
+                        | None ->
+                          (fun () ->
+                            $"Error: cannot define hooks on relation {included_relation.Name} with cardinality constraints")
+                          |> Errors.Singleton loc0
+                          |> state.Throw
+                        | Some _ -> state { return () }
+
+
+                      let! typechecked_hooks = typecheck_relation_hooks assert_no_cardinality relation_hook_type hooks
+
+                      return relationName, typechecked_hooks
+                    })
+                  |> state.All
+                  |> state.Map(Map.ofSeq)
+
+                let included_relations =
+                  included_relations_hooks
+                  |> Map.fold
+                    (fun acc relationName hooks ->
+                      match acc |> OrderedMap.tryFind relationName with
+                      | Some v ->
+                        let v =
+                          { v with
+                              SchemaRelation.Hooks =
+                                { SchemaRelationHooks.OnLinking = v.Hooks.OnLinking |> Option.orElse hooks.OnLinking
+                                  SchemaRelationHooks.OnLinked = v.Hooks.OnLinked |> Option.orElse hooks.OnLinked
+                                  SchemaRelationHooks.OnUnlinking =
+                                    v.Hooks.OnUnlinking |> Option.orElse hooks.OnUnlinking
+                                  SchemaRelationHooks.OnUnlinked = v.Hooks.OnUnlinked |> Option.orElse hooks.OnUnlinked } }
+
+                        acc |> OrderedMap.add relationName v
+                      | None -> acc)
+                    included_relations
+
+                let included_relations_hooks_names =
+                  included_relations_hooks
+                  |> Map.toSeq
+                  |> Seq.map (fst >> (fun n -> n.Name))
+                  |> Set.ofSeq
+
+                let existing_entity_names =
+                  resulting_schema_without_hooks.Entities
+                  |> OrderedMap.keys
+                  |> Seq.map (fun n -> n.Name)
+                  |> Set.ofSeq
+
+                let existing_relation_names =
+                  resulting_schema_without_hooks.Relations
+                  |> OrderedMap.keys
+                  |> Seq.map (fun n -> n.Name)
+                  |> Set.ofSeq
+
+                if not (Set.isSubset included_entities_hooks_names existing_entity_names) then
+                  let conflicting_entity_names =
+                    included_entities_hooks_names
+                    |> Seq.filter (fun n -> not (Set.contains n existing_entity_names))
+
+                  let comma = ", "
+
+                  return!
+                    (fun () ->
+                      $"Error: cannot specify hooks for included entities that have the same name as entities in the including schema, see {conflicting_entity_names |> Seq.map (fun n -> n) |> String.join comma} for details")
+                    |> Errors.Singleton loc0
+                    |> state.Throw
+                else if not (Set.isSubset included_relations_hooks_names existing_relation_names) then
+                  let conflicting_relation_names =
+                    included_relations_hooks_names
+                    |> Seq.filter (fun n -> not (Set.contains n existing_relation_names))
+
+                  let comma = ", "
+
+                  return!
+                    (fun () ->
+                      $"Error: cannot specify hooks for included relations that have the same name as relations in the including schema, see {conflicting_relation_names |> Seq.map (fun n -> n) |> String.join comma} for details")
+                    |> Errors.Singleton loc0
+                    |> state.Throw
+                else
+                  ()
 
                 let! relations_with_hooks =
                   parsed_schema.Relations
@@ -1043,7 +1542,7 @@ module Eval =
                             TypeValue.CreateArrow(
                               to_e.Id,
                               TypeValue.CreateSum
-                                [ TypeValue.CreateUnit(); TypeValue.Lookup(Identifier.LocalScope "Error") ]
+                                [ TypeValue.CreateUnit(); TypeValue.CreatePrimitive PrimitiveType.String ]
                             )
                           )
                         )
@@ -1057,76 +1556,13 @@ module Eval =
                           |> state.Throw
                         | Some _ -> state { return () }
 
-                      let! e_typechecked =
-                        state {
-                          match r_parsed.OnLinking with
-                          | None -> return { r_typechecked with OnLinking = None }
-                          | Some on_linking ->
-                            do! assert_no_cardinality
-                            let! on_linking_expr, on_linking_t, on_linking_k, _ = typeCheckExpr None on_linking
-                            do! on_linking_k |> Kind.AsStar |> ofSum |> state.Ignore
+                      let! r_typechecked_hooks =
+                        typecheck_relation_hooks assert_no_cardinality relation_hook_type r_parsed.Hooks
 
-                            do! TypeValue.Unify(loc0, on_linking_t, relation_hook_type) |> Expr.liftUnification
-
-                            return
-                              { r_typechecked with
-                                  OnLinking = Some on_linking_expr }
-                        }
-
-                      let! e_typechecked =
-                        state {
-                          match r_parsed.OnLinked with
-                          | None -> return { e_typechecked with OnLinked = None }
-                          | Some on_linked ->
-                            do! assert_no_cardinality
-                            let! on_linked_expr, on_linked_t, on_linked_k, _ = typeCheckExpr None on_linked
-                            do! on_linked_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-                            do! TypeValue.Unify(loc0, on_linked_t, relation_hook_type) |> Expr.liftUnification
-
-                            return
-                              { e_typechecked with
-                                  OnLinked = Some on_linked_expr }
-                        }
-
-                      let! e_typechecked =
-                        state {
-                          match r_parsed.OnUnlinking with
-                          | None ->
-                            return
-                              { e_typechecked with
-                                  OnUnlinking = None }
-                          | Some on_unlinking ->
-                            do! assert_no_cardinality
-                            let! on_unlinking_expr, on_unlinking_t, on_unlinking_k, _ = typeCheckExpr None on_unlinking
-                            do! on_unlinking_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-                            do!
-                              TypeValue.Unify(loc0, on_unlinking_t, relation_hook_type)
-                              |> Expr.liftUnification
-
-                            return
-                              { e_typechecked with
-                                  OnUnlinking = Some on_unlinking_expr }
-                        }
-
-                      let! e_typechecked =
-                        state {
-                          match r_parsed.OnUnlinked with
-                          | None -> return { e_typechecked with OnUnlinked = None }
-                          | Some on_unlinked ->
-                            do! assert_no_cardinality
-                            let! on_unlinked_expr, on_unlinked_t, on_unlinked_k, _ = typeCheckExpr None on_unlinked
-                            do! on_unlinked_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-                            do! TypeValue.Unify(loc0, on_unlinked_t, relation_hook_type) |> Expr.liftUnification
-
-                            return
-                              { e_typechecked with
-                                  OnUnlinked = Some on_unlinked_expr }
-                        }
-
-                      return r_parsed.Name, e_typechecked
+                      return
+                        r_parsed.Name,
+                        { r_typechecked with
+                            Hooks = r_typechecked_hooks }
                     })
                   |> state.All
                   |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
@@ -1137,6 +1573,9 @@ module Eval =
                   )
 
                 let relations_with_hooks = relations_with_hooks |> OrderedMap.ofList
+
+                let relations_with_hooks =
+                  relations_with_hooks |> OrderedMap.mergeSecondAfterFirst included_relations
 
                 do! state.SetState(state_to_restore |> replaceWith)
 
@@ -1188,6 +1627,8 @@ module Eval =
                   typeCheckScopeSource = ctx.Scope },
               Kind.Star
           | TypeExpr.Lookup v ->
+            // do Console.WriteLine($"Looking up type for {v} in scope {ctx.Scope}")
+
             let! res =
               state.Any(
                 NonEmptyList.OfList(
@@ -1422,7 +1863,7 @@ module Eval =
             let! f_k_i, f_k_o = f_k |> Kind.AsArrow |> ofSum
 
             return!
-              state.Either5
+              state.Either6
                 (state {
                   let! param, body = f |> TypeValue.AsLambda |> ofSum |> state.Map WithSourceMapping.Getters.Value
 
@@ -1456,11 +1897,11 @@ module Eval =
                   let! f_i = f |> TypeValue.AsImported |> ofSum
 
                   // let! ctx = state.GetContext()
-                  // do Console.WriteLine($"Evaluating argument part {a.ToFSharpString}")
+                  // do Console.WriteLine($"Evaluating argument part {a}")
                   // do Console.WriteLine($"Context is {ctx.TypeParameters.ToFSharpString}")
                   // do Console.ReadLine() |> ignore
                   let! a, a_k = !a
-                  // do Console.WriteLine($"aka {a.ToFSharpString}")
+                  // do Console.WriteLine($"aka {a}")
                   // do Console.ReadLine() |> ignore
 
                   if a_k <> f_k_i then
@@ -1510,8 +1951,65 @@ module Eval =
                     return TypeValue.CreateApplication(SymbolicTypeApplication.Application(f_app, a)), f_k_o
                 })
                 (state {
+                  do! f |> TypeValue.AsQueryTypeFunction |> ofSum
+
                   return!
-                    (fun () -> $"Error: cannot evaluate type application {t}")
+                    state {
+                      let! a_t, a_k = !a
+                      // do Console.WriteLine $"Applying query type function to argument of type {a_t} and kind {a_k}"
+                      do! a_k |> Kind.AsQueryRow |> ofSum |> state.Ignore
+
+                      return!
+                        state.Either3
+                          (state {
+                            let! a_t = a_t |> TypeValue.AsQueryRow |> ofSum
+
+                            let rec try_convert a_t =
+                              state {
+                                match a_t with
+                                | TypeQueryRow.Json j -> return j, Kind.Star
+                                | TypeQueryRow.PrimaryKey k -> return k, Kind.Star
+                                | TypeQueryRow.PrimitiveType(pt, false) ->
+                                  return TypeValue.CreatePrimitive pt, Kind.Star
+                                | TypeQueryRow.PrimitiveType(pt, true) ->
+                                  return
+                                    TypeValue.CreateSum [ TypeValue.CreateUnit(); TypeValue.CreatePrimitive pt ],
+                                    Kind.Star
+                                | TypeQueryRow.Tuple ts ->
+                                  let! ts = ts |> List.map (fun t -> try_convert t) |> state.All
+                                  let ts = ts |> List.map fst
+                                  return TypeValue.CreateTuple ts, Kind.Star
+                                | TypeQueryRow.Record _ ->
+                                  return!
+                                    (fun () ->
+                                      $"Error: cannot return record query rows, please convert to a tuple first")
+                                    |> error
+                                    |> state.Throw
+                              }
+
+                            let! result, _ = a_t |> try_convert
+
+                            return TypeValue.SetSourceMapping(result, source), Kind.Star
+                          })
+                          (state {
+                            let! a_t = a_t |> TypeValue.AsLookup |> ofSum
+                            return TypeValue.CreateApplication(SymbolicTypeApplication.FromQueryRow a_t), Kind.Star
+                          })
+                          (state {
+                            let! a_t = a_t |> TypeValue.AsVar |> ofSum
+
+                            return
+                              TypeValue.CreateApplication(
+                                SymbolicTypeApplication.FromQueryRow(a_t.Name |> Identifier.LocalScope)
+                              ),
+                              Kind.Star
+                          })
+                    }
+                    |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+                })
+                (state {
+                  return!
+                    (fun () -> $"TypeEval(TypeExpr.Apply): cannot evaluate type application {t}")
                     |> error
                     |> state.Throw
                  }
@@ -1541,7 +2039,6 @@ module Eval =
               )
 
             // do Console.WriteLine($"Evaluated type lambda body to {body_t}")
-            // do Console.ReadLine() |> ignore
 
             // |> state.MapContext(TypeExprEvalContext.Updaters.TypeVariables(replaceWith closure))
 
@@ -1552,7 +2049,9 @@ module Eval =
                   typeCheckScopeSource = ctx.Scope },
               Kind.Arrow(param.Kind, body_k)
           | TypeExpr.Arrow(input, output) ->
+            // do Console.WriteLine($"Evaluating arrow from {input} to {output}")
             let! input, input_k = !input
+            // do Console.WriteLine $"Evaluated input type to {input} with kind {input_k}"
             let! output, output_k = !output
 
             do!
@@ -1630,18 +2129,6 @@ module Eval =
             return
               TypeValue.Set
                 { value = element
-                  typeExprSource = source
-                  typeCheckScopeSource = ctx.Scope },
-              Kind.Star
-          | TypeExpr.Map(key, value) ->
-            let! key, key_k = !key
-            let! value, value_k = !value
-            do! key_k |> Kind.AsStar |> ofSum |> state.Ignore
-            do! value_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-            return
-              TypeValue.Map
-                { value = (key, value)
                   typeExprSource = source
                   typeCheckScopeSource = ctx.Scope },
               Kind.Star
@@ -1865,7 +2352,6 @@ module Eval =
                 })
                 (state {
                   let! fields1 = type1 |> TypeValue.AsRecord |> ofSum
-
                   let! fields2 = type2 |> TypeValue.AsRecord |> ofSum
 
                   let keys2 = fields2 |> OrderedMap.keys |> Set.ofSeq
@@ -1918,4 +2404,12 @@ module Eval =
                 })
                 (state { return! (fun () -> $"Error: cannot evaluate rotation") |> error |> state.Throw }
                  |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High)))
+          | TypeExpr.QueryRow q_row ->
+
+            let! q_row = !!!q_row
+
+            return TypeValue.QueryRow q_row, Kind.QueryRow
+
+          | TypeExpr.FromQueryRow -> return TypeValue.QueryTypeFunction, Kind.Arrow(Kind.QueryRow, Kind.Star)
+
         }

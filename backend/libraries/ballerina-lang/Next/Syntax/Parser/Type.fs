@@ -224,6 +224,36 @@ module Type =
             |> parser.Throw
       }
 
+    let vectorTypeDecl () =
+      parser {
+        let! id = singleIdentifier
+
+        match id with
+        | "vector" -> return TypeExpr.Primitive PrimitiveType.Vector
+        | _ ->
+          let! loc = parser.Location
+
+          return!
+            (fun () -> $"Error: expected vector, got {id}")
+            |> Errors.Singleton loc
+            |> parser.Throw
+      }
+
+    let fromQueryRowTypeDecl () =
+      parser {
+        let! id = singleIdentifier
+
+        match id with
+        | "FromQueryRow" -> return TypeExpr.FromQueryRow
+        | _ ->
+          let! loc = parser.Location
+
+          return!
+            (fun () -> $"Error: expected FromQueryRow, got {id}")
+            |> Errors.Singleton loc
+            |> parser.Throw
+      }
+
     let unitTypeDecl () =
       parser {
         do! openRoundBracketOperator
@@ -347,6 +377,61 @@ module Type =
             |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
+    let relation_hooks () =
+      let onHook (hookKeyword, hookKeywordParser) =
+        parser {
+          let! startsWithHookKeyword =
+            parser {
+              do! letKeyword
+              do! onKeyword
+              do! hookKeywordParser
+            }
+            |> parser.Lookahead
+            |> parser.Try
+
+          match startsWithHookKeyword with
+          | Right _ -> return! parser.Throw(Errors.Singleton Location.Unknown (fun () -> "No hook found"))
+          | Left _ ->
+            do! letKeyword
+            do! onKeyword
+            do! hookKeywordParser
+            do! equalsOperator
+            let! hookExpr = parseExpr
+            return hookKeyword, hookExpr
+        }
+
+      [ (SchemaRelationHook.Linking, linkingKeyword) |> onHook
+        (SchemaRelationHook.Linked, linkedKeyword) |> onHook
+        (SchemaRelationHook.Unlinking, unlinkingKeyword) |> onHook
+        (SchemaRelationHook.Unlinked, unlinkedKeyword) |> onHook ]
+      |> parser.Any
+      |> parser.Many
+      |> parser.Map(Map.ofList)
+
+    let relation_extension () =
+      afterKeyword
+        relationKeyword
+        (parser {
+          let! relationName = singleIdentifier
+          do! openCurlyBracketOperator
+
+          let! hooks = relation_hooks ()
+
+          let onLinking = hooks |> Map.tryFind SchemaRelationHook.Linking
+          let onLinked = hooks |> Map.tryFind SchemaRelationHook.Linked
+          let onUnlinking = hooks |> Map.tryFind SchemaRelationHook.Unlinking
+          let onUnlinked = hooks |> Map.tryFind SchemaRelationHook.Unlinked
+
+          do! closeCurlyBracketOperator
+
+          return
+            { SchemaRelationName.Name = relationName },
+            { SchemaRelationHooksExpr.OnLinking = onLinking
+              SchemaRelationHooksExpr.OnLinked = onLinked
+              SchemaRelationHooksExpr.OnUnlinking = onUnlinking
+              SchemaRelationHooksExpr.OnUnlinked = onUnlinked }
+        })
+
     let relation () =
       afterKeyword
         relationKeyword
@@ -379,36 +464,8 @@ module Type =
                   )
               }
 
-          let onHook (hookKeyword, hookKeywordParser) =
-            parser {
-              let! startsWithHookKeyword =
-                parser {
-                  do! letKeyword
-                  do! onKeyword
-                  do! hookKeywordParser
-                }
-                |> parser.Lookahead
-                |> parser.Try
 
-              match startsWithHookKeyword with
-              | Right _ -> return! parser.Throw(Errors.Singleton Location.Unknown (fun () -> "No hook found"))
-              | Left _ ->
-                do! letKeyword
-                do! onKeyword
-                do! hookKeywordParser
-                do! equalsOperator
-                let! hookExpr = parseExpr
-                return hookKeyword, hookExpr
-            }
-
-          let! hooks =
-            [ (SchemaRelationHook.Linking, linkingKeyword) |> onHook
-              (SchemaRelationHook.Linked, linkedKeyword) |> onHook
-              (SchemaRelationHook.Unlinking, unlinkingKeyword) |> onHook
-              (SchemaRelationHook.Unlinked, unlinkedKeyword) |> onHook ]
-            |> parser.Any
-            |> parser.Many
-            |> parser.Map(Map.ofList)
+          let! hooks = relation_hooks ()
 
           let onLinking = hooks |> Map.tryFind SchemaRelationHook.Linking
           let onLinked = hooks |> Map.tryFind SchemaRelationHook.Linked
@@ -422,11 +479,45 @@ module Type =
               From = (fromEntity, fromPath)
               To = (toEntity, toPath)
               Cardinality = cardinality
-              OnLinking = onLinking
-              OnLinked = onLinked
-              OnUnlinking = onUnlinking
-              OnUnlinked = onUnlinked }
+              Hooks =
+                { OnLinking = onLinking
+                  OnLinked = onLinked
+                  OnUnlinking = onUnlinking
+                  OnUnlinked = onUnlinked } }
         })
+
+    let entity_hooks () =
+      let onHook (hookKeyword, hookKeywordParser) =
+        parser {
+          let! startsWithHookKeyword =
+            parser {
+              do! letKeyword
+              do! onKeyword
+              do! hookKeywordParser
+            }
+            |> parser.Lookahead
+            |> parser.Try
+
+          match startsWithHookKeyword with
+          | Right _ -> return! parser.Throw(Errors.Singleton Location.Unknown (fun () -> "No hook found"))
+          | Left _ ->
+            do! letKeyword
+            do! onKeyword
+            do! hookKeywordParser
+            do! equalsOperator
+            let! hookExpr = parseExpr
+            return hookKeyword, hookExpr
+        }
+
+      [ (SchemaEntityHook.Creating, creatingKeyword) |> onHook
+        (SchemaEntityHook.Created, createdKeyword) |> onHook
+        (SchemaEntityHook.Updating, updatingKeyword) |> onHook
+        (SchemaEntityHook.Updated, updatedKeyword) |> onHook
+        (SchemaEntityHook.Deleting, deletingKeyword) |> onHook
+        (SchemaEntityHook.Deleted, deletedKeyword) |> onHook ]
+      |> parser.Any
+      |> parser.Many
+      |> parser.Map(Map.ofList)
 
     let entity () =
       afterKeyword
@@ -437,29 +528,6 @@ module Type =
           do! typeKeyword
           let! entityType = typeDecl parseExpr parseAllComplexTypeShapes
           let! idType = typeDecl parseExpr parseAllComplexTypeShapes
-          let! searchBy = searchByKeyword |> parser.Try
-
-          let! searchBy =
-            parser {
-              match searchBy with
-              | Right _ -> return []
-              | Left() ->
-                do! openSquareBracketOperator
-
-                let! ids =
-                  parser.ManyIndex(fun i ->
-                    parser {
-                      if i > 0 then
-                        do! semicolonOperator
-
-                      let! id, lookups = identifierWithLookups ()
-                      return { Identifier = id; Lookups = lookups }
-                    })
-                  |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
-
-                do! closeSquareBracketOperator
-                return ids
-            }
 
           let! properties =
             parser.Many(
@@ -482,39 +550,23 @@ module Type =
             )
             |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
-          let onHook (hookKeyword, hookKeywordParser) =
-            parser {
-              let! startsWithHookKeyword =
-                parser {
-                  do! letKeyword
-                  do! onKeyword
-                  do! hookKeywordParser
-                }
-                |> parser.Lookahead
-                |> parser.Try
-
-              match startsWithHookKeyword with
-              | Right _ -> return! parser.Throw(Errors.Singleton Location.Unknown (fun () -> "No hook found"))
-              | Left _ ->
+          let! vectors =
+            parser.Many(
+              parser {
                 do! letKeyword
-                do! onKeyword
-                do! hookKeywordParser
+                do! vectorKeyword
+                let! vectorName = singleIdentifier
                 do! equalsOperator
-                let! hookExpr = parseExpr
-                return hookKeyword, hookExpr
-            }
+                let! vectorBody = parseExpr
 
-          let! hooks =
-            [ (SchemaEntityHook.Creating, creatingKeyword) |> onHook
-              (SchemaEntityHook.Created, createdKeyword) |> onHook
-              (SchemaEntityHook.Updating, updatingKeyword) |> onHook
-              (SchemaEntityHook.Updated, updatedKeyword) |> onHook
-              (SchemaEntityHook.Deleting, deletingKeyword) |> onHook
-              (SchemaEntityHook.Deleted, deletedKeyword) |> onHook ]
-            |> parser.Any
-            |> parser.Many
-            |> parser.Map(Map.ofList)
+                return
+                  { SchemaEntityVectorExpr.Name = LocalIdentifier.Create vectorName
+                    Body = vectorBody }
+              }
+            )
+            |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
+          let! hooks = entity_hooks ()
           let onCreating = hooks |> Map.tryFind SchemaEntityHook.Creating
           let onCreated = hooks |> Map.tryFind SchemaEntityHook.Created
           let onUpdating = hooks |> Map.tryFind SchemaEntityHook.Updating
@@ -529,9 +581,41 @@ module Type =
             { SchemaEntityExpr.Name = { SchemaEntityName.Name = entityName }
               Type = entityType
               Id = idType
-              SearchBy = searchBy
               Properties = properties
-              OnCreating = onCreating
+              Vectors = vectors
+              Hooks =
+                { OnCreating = onCreating
+                  OnCreated = onCreated
+                  OnUpdating = onUpdating
+                  OnUpdated = onUpdated
+                  OnDeleting = onDeleting
+                  OnDeleted = onDeleted } }
+        })
+
+
+    let entity_extension
+      ()
+      : Parser<(SchemaEntityName * SchemaEntityHooksExpr<'valueExt>), LocalizedToken, Location, Errors<Location>> =
+      afterKeyword
+        entityKeyword
+        (parser {
+          let! entityName = singleIdentifier
+          do! openCurlyBracketOperator
+
+          let! hooks = entity_hooks ()
+          let onCreating = hooks |> Map.tryFind SchemaEntityHook.Creating
+          let onCreated = hooks |> Map.tryFind SchemaEntityHook.Created
+          let onUpdating = hooks |> Map.tryFind SchemaEntityHook.Updating
+          let onUpdated = hooks |> Map.tryFind SchemaEntityHook.Updated
+          let onDeleting = hooks |> Map.tryFind SchemaEntityHook.Deleting
+          let onDeleted = hooks |> Map.tryFind SchemaEntityHook.Deleted
+
+
+          do! closeCurlyBracketOperator
+
+          return
+            { SchemaEntityName.Name = entityName },
+            { OnCreating = onCreating
               OnCreated = onCreated
               OnUpdating = onUpdating
               OnUpdated = onUpdated
@@ -539,13 +623,57 @@ module Type =
               OnDeleted = onDeleted }
         })
 
-
     let schema () =
       afterKeyword
         schemaKeyword
         (parser {
           let! loc = parser.Location
           do! openCurlyBracketOperator
+
+          let! includes =
+            parser {
+              let! hasInclude = includeKeyword |> parser.Try
+
+              match hasInclude with
+              | Right _ -> return None
+              | Left() ->
+                let! schemaName = singleIdentifier
+                let! hasWith = withKeyword |> parser.Try
+
+                let! entities, relations =
+                  match hasWith with
+                  | Right _ -> parser { return [], [] }
+                  | Left() ->
+                    parser {
+                      do! openCurlyBracketOperator
+
+                      let! entitiesAndRelations =
+                        parser.Many(
+                          parser.Any
+                            [ entity_extension () |> parser.Map Sum.Left
+                              relation_extension () |> parser.Map Sum.Right ]
+                        )
+                        |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+
+                      let entities =
+                        entitiesAndRelations
+                        |> List.choose (function
+                          | Left e -> Some e
+                          | _ -> None)
+
+                      let relations =
+                        entitiesAndRelations
+                        |> List.choose (function
+                          | Right r -> Some r
+                          | _ -> None)
+
+                      do! closeCurlyBracketOperator
+
+                      return entities, relations
+                    }
+
+                return (schemaName |> LocalIdentifier.Create, entities, relations) |> Some
+            }
 
           let! entitiesAndRelations =
             parser.Many(parser.Any [ entity () |> parser.Map Sum.Left; relation () |> parser.Map Sum.Right ])
@@ -568,6 +696,7 @@ module Type =
           return
             TypeExpr.Schema
               { SchemaExpr.DeclaredAtForNominalEquality = loc
+                Includes = includes
                 Entities = entities
                 Relations = relations }
         })
@@ -604,9 +733,10 @@ module Type =
                 |> List.map (fun (id, td) -> (id |> Identifier.LocalScope |> TypeExpr.Lookup, td))
               )
           }
-          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium))
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
       }
+      |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
     let unionTypeDecl () =
       parser {
@@ -640,6 +770,7 @@ module Type =
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
+      |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
     let scopedIdentifier () =
       parser {
@@ -659,6 +790,7 @@ module Type =
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
+      |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
     let binaryExpressionChainTail () =
       parser {
@@ -682,6 +814,7 @@ module Type =
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
+      |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
     let recordDes () =
       parser {
@@ -701,6 +834,7 @@ module Type =
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
+      |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
 
     let application () =
@@ -747,6 +881,8 @@ module Type =
         dateTimeTypeDecl ()
         dateOnlyTypeDecl ()
         timeSpanTypeDecl ()
+        vectorTypeDecl ()
+        fromQueryRowTypeDecl ()
         lookupTypeDecl () ]
 
     parser {
@@ -760,7 +896,10 @@ module Type =
       // do Console.ReadLine() |> ignore
 
       if parseComplexShapes |> Set.isEmpty then
-        return! simpleShapes |> parser.Any
+        return!
+          simpleShapes
+          |> parser.Any
+          |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
       else
         // let! s = parser.Stream
 

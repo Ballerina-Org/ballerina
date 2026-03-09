@@ -21,8 +21,20 @@ open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.FormEngine.Model
 
 module Extract =
-  let _stdExtensions, (langContext: LanguageContext<ValueExt, ValueExtDTO>) =
-    stdExtensions
+  open Ballerina.DSL.Next.StdLib.MutableMemoryDB
+
+  let (_stdExtensions,
+       (langContext:
+         LanguageContext<
+           unit,
+           ValueExt<unit, MutableMemoryDB<unit, unit>, unit>,
+           ValueExtDTO,
+           DeltaExt<unit, MutableMemoryDB<unit, unit>, unit>,
+           DeltaExtDTO
+          >),
+       _,
+       _) =
+    db_ops () |> stdExtensions
 
   let private entityNameFromLauncher (launcherName: LauncherName) (context: ParsedFormsContext<_, _>) =
     let launcher = context.Launchers |> Map.find launcherName

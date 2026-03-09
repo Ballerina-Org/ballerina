@@ -16,8 +16,10 @@ open System.Text
 open Ballerina.Errors
 open Ballerina.StdLib
 open Ballerina.Collections.NonEmptyList
+open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 
-type private Value = Value<TypeValue<ValueExt>, ValueExt>
+type private Value =
+  Value<TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>, ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>
 
 module EnumFilteringProgram =
   [<Literal>]
@@ -90,7 +92,11 @@ List::filter[{CasesTypeName}]
     sb.ToString()
 
   let private buildCache =
-    let languageContext = snd stdExtensions
+    let _, languageContext, _db_query_sym, _make_db_query_type =
+      db_ops () |> stdExtensions
+
+    _db_query_sym,
+    _make_db_query_type,
     hardDriveCache (languageContext.TypeCheckContext, languageContext.TypeCheckState)
 
   let private getChecksum (input: string) =
@@ -116,8 +122,10 @@ List::filter[{CasesTypeName}]
         { Files =
             NonEmptyList.OfList(commonFile, [ FileBuildConfiguration.FromFile($"{enumName}-filter.bl", filterProgram) ]) }
 
+      let _db_query_sym, _make_db_query_type, cache = buildCache
 
-      let buildResult = ProjectBuildConfiguration.BuildCached buildCache project
+      let buildResult =
+        ProjectBuildConfiguration.BuildCached _db_query_sym _make_db_query_type cache project
 
       match buildResult with
       | Right errors ->

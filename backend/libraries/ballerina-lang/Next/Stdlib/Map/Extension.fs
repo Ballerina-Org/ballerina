@@ -5,6 +5,7 @@ module Extension =
   open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.DSL.Next.Types
+  open Ballerina.DSL.Next.Types.TypeChecker
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.Map.Model
@@ -20,14 +21,26 @@ module Extension =
   open Ballerina.DSL.Next.Serialization
   open Ballerina.DSL.Next.Serialization.ValueSerializer
   open Ballerina.DSL.Next.Serialization.ValueDeserializer
+  open Ballerina.DSL.Next.StdLib
+  open Ballerina.Data.Delta.Serialization.DeltaDTO
+  open Ballerina.Data.Delta.Serialization
+  open Ballerina.Data.Delta.Serialization.DeltaSerializer
+  open Ballerina.Data.Delta.Serialization.DeltaDeserializer
 
 
-  let MapExtension<'ext, 'extDTO when 'ext: comparison and 'extDTO: not null and 'extDTO: not struct>
+  let MapExtension<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO
+    when 'ext: comparison
+    and 'extDTO: not null
+    and 'extDTO: not struct
+    and 'deltaExtDTO: not null
+    and 'deltaExtDTO: not struct>
     (valueLens: PartialLens<'ext, MapValues<'ext>>)
     (operationLens: PartialLens<'ext, MapOperations<'ext>>)
     (listValueLens: Option<PartialLens<'ext, ListValues<'ext>>>)
     (valueDTOLens: PartialLens<'extDTO, MapValueDTO<'extDTO>>)
-    : TypeExtension<'ext, 'extDTO, Unit, MapValues<'ext>, MapOperations<'ext>> =
+    (deltaLens: PartialLens<'deltaExt, MapDeltaExt<'ext, 'deltaExt>>)
+    (deltaDTOLens: PartialLens<'deltaExtDTO, MapDeltaExtDTO<'extDTO, 'deltaExtDTO>>)
+    : TypeExtension<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO, Unit, MapValues<'ext>, MapOperations<'ext>> =
     let mapId = Identifier.LocalScope "Map"
     let mapSymbolId = mapId |> TypeSymbol.Create
     let kVar, kKind = TypeVar.Create("k"), Kind.Star
@@ -50,7 +63,7 @@ module Extension =
       Identifier.FullyQualified([ "Map" ], "Empty") |> TypeCheckScope.Empty.Resolve
 
     let mapMapToListId =
-      Identifier.FullyQualified([ "Map" ], "maptoList")
+      Identifier.FullyQualified([ "Map" ], "mapToList")
       |> TypeCheckScope.Empty.Resolve
 
     let getValueAsMap
@@ -67,7 +80,8 @@ module Extension =
         v
       }
 
-    let mapOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, MapValues<'ext>, MapOperations<'ext>> =
+    let mapOperation
+      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, MapValues<'ext>, MapOperations<'ext>> =
       mapMapId,
       { Type =
           TypeValue.CreateLambda(
@@ -126,7 +140,8 @@ module Extension =
                 return (MapValues.Map(Map.ofList newMap) |> valueLens.Set, None) |> Ext
             } }
 
-    let setOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, MapValues<'ext>, MapOperations<'ext>> =
+    let setOperation
+      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, MapValues<'ext>, MapOperations<'ext>> =
       mapSetId,
       { Type =
           TypeValue.CreateLambda(
@@ -198,7 +213,8 @@ module Extension =
                 return (MapValues.Map(Map.add key value map) |> valueLens.Set, None) |> Ext
             } }
 
-    let emptyOperation: ResolvedIdentifier * TypeOperationExtension<'ext, Unit, MapValues<'ext>, MapOperations<'ext>> =
+    let emptyOperation
+      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, MapValues<'ext>, MapOperations<'ext>> =
       mapEmptyId,
       { Type =
           TypeValue.CreateLambda(
@@ -228,7 +244,7 @@ module Extension =
             } }
 
     let maptolistOperation
-      : ResolvedIdentifier * TypeOperationExtension<'ext, Unit, MapValues<'ext>, MapOperations<'ext>> =
+      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, MapValues<'ext>, MapOperations<'ext>> =
       mapMapToListId,
       { Type =
           TypeValue.CreateLambda(
@@ -304,7 +320,7 @@ module Extension =
         return
           MapValueDTO.CreateMapFromList pairs
           |> valueDTOLens.Set
-          |> ValueDTO.CreateExt applicableId
+          |> fun ext -> new ValueDTO<'extDTO>(applicableId, ext)
       }
 
     let DTOToMap
@@ -331,6 +347,146 @@ module Extension =
         return Ext(MapValues.Map(mapElements |> Map.ofList) |> valueLens.Set, applicableId)
       }
 
+    let isMapInstanceOf: IsExtInstanceOf<'ext> =
+      fun (f: IsValueInstanceOf<'ext>) v t ->
+        reader {
+          let! l =
+            v
+            |> valueLens.Get
+            |> sum.OfOption(Errors.Singleton () (fun _ -> "Expected list value in isListInstanceOf."))
+            |> reader.OfSum
+
+          match l, t with
+          | MapValues.Map m, TypeValue.Imported i when i.Id = mapId ->
+            let! key_t, val_t =
+              match i.Arguments with
+              | [ key_t; val_t ] -> reader { return (key_t, val_t) }
+              | _ ->
+                Errors.Singleton () (fun _ -> "Expected two type arguments for Map in isListInstanceOf.")
+                |> reader.Throw
+
+            return!
+              m
+              |> Map.toSeq
+              |> Seq.map (fun (k, v) -> reader.All2 (f (k, key_t)) (f (v, val_t)))
+              |> reader.All
+              |> reader.Ignore
+          | _ ->
+            return!
+              Errors.Singleton () (fun _ -> "Expected list value in isListInstanceOf.")
+              |> reader.Throw
+        }
+
+    let mapDeltaToDTO
+      (delta: 'deltaExt)
+      : Reader<
+          DeltaDTO<'extDTO, 'deltaExtDTO>,
+          DeltaSerializationContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>,
+          Errors<unit>
+         >
+      =
+      reader {
+        let! mapDelta =
+          delta
+          |> deltaLens.Get
+          |> sum.OfOption(Errors.Singleton () (fun _ -> "Expected map delta extension in mapDeltaToDTO."))
+          |> reader.OfSum
+
+        match mapDelta with
+        | UpdateKey(oldKey, newKey) ->
+          let! oldKeyDTO =
+            valueToDTO oldKey
+            |> reader.MapContext(fun context -> context.SerializationContext)
+
+          let! newKeyDTO =
+            valueToDTO newKey
+            |> reader.MapContext(fun context -> context.SerializationContext)
+
+          return
+            MapDeltaExtDTO.CreateUpdateKey oldKeyDTO newKeyDTO
+            |> deltaDTOLens.Set
+            |> DeltaDTO.CreateExtension
+        | UpdateValue(key, delta) ->
+          let! keyDTO = valueToDTO key |> reader.MapContext(fun context -> context.SerializationContext)
+          let! deltaDTO = deltaToDTO delta
+
+          return
+            MapDeltaExtDTO.CreateUpdateValue keyDTO deltaDTO
+            |> deltaDTOLens.Set
+            |> DeltaDTO.CreateExtension
+        | AddItem(key, value) ->
+          let! keyDTO = valueToDTO key |> reader.MapContext(fun context -> context.SerializationContext)
+
+          let! valueDTO =
+            valueToDTO value
+            |> reader.MapContext(fun context -> context.SerializationContext)
+
+          return
+            MapDeltaExtDTO.CreateAddItem keyDTO valueDTO
+            |> deltaDTOLens.Set
+            |> DeltaDTO.CreateExtension
+        | RemoveItem key ->
+          let! keyDTO = valueToDTO key |> reader.MapContext(fun context -> context.SerializationContext)
+
+          return
+            MapDeltaExtDTO.CreateRemoveItem keyDTO
+            |> deltaDTOLens.Set
+            |> DeltaDTO.CreateExtension
+      }
+
+    let mapDeltaFromDTO
+      (deltaDTO: 'deltaExtDTO)
+      : Reader<
+          Ballerina.Data.Delta.Model.Delta<'ext, 'deltaExt>,
+          DeltaSerializationContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>,
+          Errors<unit>
+         >
+      =
+      reader {
+        let! mapDeltaDTO =
+          deltaDTO
+          |> deltaDTOLens.Get
+          |> sum.OfOption(Errors.Singleton () (fun _ -> "Expected map delta DTO extension in mapDeltaFromDTO."))
+          |> reader.OfSum
+
+        match mapDeltaDTO.Discriminator with
+        | MapDeltaExtDiscriminator.UpdateKey when isNull mapDeltaDTO.UpdateKey |> not ->
+          let! oldKey =
+            valueFromDTO mapDeltaDTO.UpdateKey.OldKey
+            |> reader.MapContext(fun context -> context.SerializationContext)
+
+          let! newKey =
+            valueFromDTO mapDeltaDTO.UpdateKey.NewKey
+            |> reader.MapContext(fun context -> context.SerializationContext)
+
+          return UpdateKey(oldKey, newKey) |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
+        | MapDeltaExtDiscriminator.UpdateValue when isNull mapDeltaDTO.UpdateValue |> not ->
+          let! key =
+            valueFromDTO mapDeltaDTO.UpdateValue.Key
+            |> reader.MapContext(fun context -> context.SerializationContext)
+
+          let! delta = deltaFromDTO mapDeltaDTO.UpdateValue.Value
+
+          return UpdateValue(key, delta) |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
+        | MapDeltaExtDiscriminator.AddItem when isNull mapDeltaDTO.AddItem |> not ->
+          let! key =
+            valueFromDTO mapDeltaDTO.AddItem.Key
+            |> reader.MapContext(fun context -> context.SerializationContext)
+
+          let! value =
+            valueFromDTO mapDeltaDTO.AddItem.Value
+            |> reader.MapContext(fun context -> context.SerializationContext)
+
+          return AddItem(key, value) |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
+        | MapDeltaExtDiscriminator.RemoveItem when isNull mapDeltaDTO.RemoveItem |> not ->
+          let! key =
+            valueFromDTO mapDeltaDTO.RemoveItem
+            |> reader.MapContext(fun context -> context.SerializationContext)
+
+          return RemoveItem key |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
+        | _ -> return! reader.Throw(Errors.Singleton () (fun _ -> "Malformed map delta DTO."))
+      }
+
     { TypeName = mapId, mapSymbolId
       TypeVars = [ (kVar, kKind); (vVar, vKind) ]
       Cases = Map.empty
@@ -343,4 +499,10 @@ module Extension =
       //       let rest = map |> Map.remove firstKey |> MapValues.Map
       //       Value<TypeValue<'ext>, 'ext>.Tuple([ firstKey; firstValue; (rest |> valueLens.Set, None) |> Ext ])
       //     | _ -> Value<TypeValue<'ext>, 'ext>.Primitive PrimitiveValue.Unit
-      Serialization = Some { ToDTO = mapToDTO; FromDTO = DTOToMap } }
+      Serialization =
+        Some
+          { SerializationContext = { ToDTO = mapToDTO; FromDTO = DTOToMap }
+            ToDTO = mapDeltaToDTO
+            FromDTO = mapDeltaFromDTO }
+
+      ExtTypeChecker = Some isMapInstanceOf }

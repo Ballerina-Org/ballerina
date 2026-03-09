@@ -15,9 +15,9 @@ module Extension =
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
 
-  let Float32Extension<'ext>
+  let Float32Extension<'runtimeContext, 'ext>
     (operationLens: PartialLens<'ext, Float32Operations<'ext>>)
-    : OperationsExtension<'ext, Float32Operations<'ext>> =
+    : OperationsExtension<'runtimeContext, 'ext, Float32Operations<'ext>> =
     let float32PlusId =
       Identifier.FullyQualified([ "float32" ], "+") |> TypeCheckScope.Empty.Resolve
 
@@ -25,7 +25,7 @@ module Extension =
     let float32TypeValue = TypeValue.CreateFloat32()
     let boolTypeValue = TypeValue.CreateBool()
 
-    let plusOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
+    let plusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float32Operations<'ext>> =
       float32PlusId,
       { PublicIdentifiers =
           Some
@@ -71,7 +71,7 @@ module Extension =
     let float32MinusId =
       Identifier.FullyQualified([ "float32" ], "-") |> TypeCheckScope.Empty.Resolve
 
-    let minusOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
+    let minusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float32Operations<'ext>> =
       float32MinusId,
       { PublicIdentifiers =
           Some
@@ -117,7 +117,7 @@ module Extension =
     let float32DivideId =
       Identifier.FullyQualified([ "float32" ], "/") |> TypeCheckScope.Empty.Resolve
 
-    let divideOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
+    let divideOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float32Operations<'ext>> =
       float32DivideId,
       { PublicIdentifiers =
           Some
@@ -163,7 +163,7 @@ module Extension =
     let float32PowerId =
       Identifier.FullyQualified([ "float32" ], "**") |> TypeCheckScope.Empty.Resolve
 
-    let powerOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
+    let powerOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float32Operations<'ext>> =
       float32PowerId,
       { PublicIdentifiers =
           Some
@@ -215,7 +215,7 @@ module Extension =
     let float32ModId =
       Identifier.FullyQualified([ "float32" ], "%") |> TypeCheckScope.Empty.Resolve
 
-    let modOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
+    let modOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float32Operations<'ext>> =
       float32ModId,
       { PublicIdentifiers =
           Some
@@ -261,7 +261,7 @@ module Extension =
     let float32EqualId =
       Identifier.FullyQualified([ "float32" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float32Operations<'ext>> =
       float32EqualId,
       { PublicIdentifiers =
           Some
@@ -307,7 +307,7 @@ module Extension =
     let float32NotEqualId =
       Identifier.FullyQualified([ "float32" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float32Operations<'ext>> =
       float32NotEqualId,
       { PublicIdentifiers =
           Some
@@ -353,7 +353,7 @@ module Extension =
     let float32GreaterThanId =
       Identifier.FullyQualified([ "float32" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
+    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float32Operations<'ext>> =
       float32GreaterThanId,
       { PublicIdentifiers =
           Some
@@ -399,7 +399,8 @@ module Extension =
     let float32GreaterThanOrEqualId =
       Identifier.FullyQualified([ "float32" ], ">=") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
+    let greaterThanOrEqualOperation
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float32Operations<'ext>> =
       float32GreaterThanOrEqualId,
       { PublicIdentifiers =
           Some
@@ -446,7 +447,7 @@ module Extension =
     let float32LessThanId =
       Identifier.FullyQualified([ "float32" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
+    let lessThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float32Operations<'ext>> =
       float32LessThanId,
       { PublicIdentifiers =
           Some
@@ -492,7 +493,8 @@ module Extension =
     let float32LessThanOrEqualId =
       Identifier.FullyQualified([ "float32" ], "<=") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Float32Operations<'ext>> =
+    let lessThanOrEqualOperation
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float32Operations<'ext>> =
       float32LessThanOrEqualId,
       { PublicIdentifiers =
           Some

@@ -76,9 +76,12 @@ module InstantiateSyntheticVars =
           let! value = !value
           let! body = !body
           return Expr.Let(v, t, value, body)
-        | ExprRec.Lambda({ Param = p; Body = b; ParamType = pt }) ->
+        | ExprRec.Lambda({ Param = p
+                           Body = b
+                           ParamType = pt
+                           BodyType = bt }) ->
           let! b = !b
-          return Expr.Lambda(p, pt, b)
+          return Expr.Lambda(p, pt, b, bt)
         | ExprRec.If({ Cond = c; Then = t; Else = e }) ->
           let! c = !c
           let! t = !t
@@ -132,4 +135,6 @@ module InstantiateSyntheticVars =
                                       Direction = direction }) ->
           let! e = !e
           return Expr.RelationLookupDes(e, relationName, direction, loc0, expr.Scope)
+        | ExprRec.Query q -> return Expr.Query q
+
       }

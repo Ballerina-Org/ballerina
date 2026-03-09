@@ -15,9 +15,9 @@ module Extension =
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
 
-  let DecimalExtension<'ext>
+  let DecimalExtension<'runtimeContext, 'ext>
     (operationLens: PartialLens<'ext, DecimalOperations<'ext>>)
-    : OperationsExtension<'ext, DecimalOperations<'ext>> =
+    : OperationsExtension<'runtimeContext, 'ext, DecimalOperations<'ext>> =
 
     let int32TypeValue = TypeValue.CreateInt32()
     let decimalTypeValue = TypeValue.CreateDecimal()
@@ -27,7 +27,7 @@ module Extension =
       Identifier.FullyQualified([ "decimal" ], "string")
       |> TypeCheckScope.Empty.Resolve
 
-    let toStringOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let toStringOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DecimalOperations<'ext>> =
       decimalToStringId,
       { PublicIdentifiers =
           Some
@@ -66,7 +66,7 @@ module Extension =
     let decimalPlusId =
       Identifier.FullyQualified([ "decimal" ], "+") |> TypeCheckScope.Empty.Resolve
 
-    let plusOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let plusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DecimalOperations<'ext>> =
       decimalPlusId,
       { PublicIdentifiers =
           Some
@@ -114,7 +114,7 @@ module Extension =
     let decimalMinusId =
       Identifier.FullyQualified([ "decimal" ], "-") |> TypeCheckScope.Empty.Resolve
 
-    let minusOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let minusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DecimalOperations<'ext>> =
       decimalMinusId,
       { PublicIdentifiers =
           Some
@@ -160,7 +160,7 @@ module Extension =
     let decimalProductId =
       Identifier.FullyQualified([ "decimal" ], "*") |> TypeCheckScope.Empty.Resolve
 
-    let productOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let productOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DecimalOperations<'ext>> =
       decimalProductId,
       { PublicIdentifiers =
           Some
@@ -206,7 +206,7 @@ module Extension =
     let decimalDivideId =
       Identifier.FullyQualified([ "decimal" ], "/") |> TypeCheckScope.Empty.Resolve
 
-    let divideOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let divideOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DecimalOperations<'ext>> =
       decimalDivideId,
       { PublicIdentifiers =
           Some
@@ -252,7 +252,7 @@ module Extension =
     let decimalPowerId =
       Identifier.FullyQualified([ "decimal" ], "**") |> TypeCheckScope.Empty.Resolve
 
-    let powerOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let powerOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DecimalOperations<'ext>> =
       decimalPowerId,
       { PublicIdentifiers =
           Some
@@ -304,7 +304,7 @@ module Extension =
     let decimalModId =
       Identifier.FullyQualified([ "decimal" ], "%") |> TypeCheckScope.Empty.Resolve
 
-    let modOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let modOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DecimalOperations<'ext>> =
       decimalModId,
       { PublicIdentifiers =
           Some
@@ -350,7 +350,7 @@ module Extension =
     let decimalEqualId =
       Identifier.FullyQualified([ "decimal" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DecimalOperations<'ext>> =
       decimalEqualId,
       { PublicIdentifiers =
           Some
@@ -396,7 +396,7 @@ module Extension =
     let decimalNotEqualId =
       Identifier.FullyQualified([ "decimal" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DecimalOperations<'ext>> =
       decimalNotEqualId,
       { PublicIdentifiers =
           Some
@@ -442,7 +442,7 @@ module Extension =
     let decimalGreaterThanId =
       Identifier.FullyQualified([ "decimal" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DecimalOperations<'ext>> =
       decimalGreaterThanId,
       { PublicIdentifiers =
           Some
@@ -488,7 +488,8 @@ module Extension =
     let decimalGreaterThanOrEqualId =
       Identifier.FullyQualified([ "decimal" ], ">=") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let greaterThanOrEqualOperation
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DecimalOperations<'ext>> =
       decimalGreaterThanOrEqualId,
       { PublicIdentifiers =
           Some
@@ -535,7 +536,7 @@ module Extension =
     let decimalLessThanId =
       Identifier.FullyQualified([ "decimal" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let lessThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DecimalOperations<'ext>> =
       decimalLessThanId,
       { PublicIdentifiers =
           Some
@@ -581,7 +582,8 @@ module Extension =
     let decimalLessThanOrEqualId =
       Identifier.FullyQualified([ "decimal" ], "<=") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, DecimalOperations<'ext>> =
+    let lessThanOrEqualOperation
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DecimalOperations<'ext>> =
       decimalLessThanOrEqualId,
       { PublicIdentifiers =
           Some

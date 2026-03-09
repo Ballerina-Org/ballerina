@@ -48,7 +48,8 @@ module Validator =
           GenericRenderers = []
           SupportedRecordRenderers = codegenConfig.Record.SupportedRenderers
           LanguageStreamType = codegenConfig.LanguageStreamType
-          Launchers = Map.empty }
+          Launchers = Map.empty
+          NextId = 0 }
 
       let generatedLanguageSpecificConfig =
         { EnumValueFieldName = "Value"

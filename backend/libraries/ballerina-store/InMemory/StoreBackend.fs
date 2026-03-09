@@ -7,9 +7,9 @@ open Ballerina
 open Ballerina
 open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.StdLib.Extensions
+open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 open Ballerina.DSL.Next.Types.TypeChecker.Model
 open Ballerina.DSL.Next.Types.Model
-open Ballerina.Data.Delta.Extensions
 open Ballerina.Data.Schema.Model
 open Ballerina.Data.Schema.Json
 open Ballerina.Data.Spec.Model
@@ -26,30 +26,52 @@ open Ballerina.VirtualFolders.Interactions
 open Ballerina.VirtualFolders.Model
 open Ballerina.DSL.Next.Terms.Model
 
-type ConcurrentStore =
-  { Tenants: ConcurrentDictionary<TenantId, ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>> }
+type ConcurrentStore<'runtimeContext, 'db, 'ext when 'db: comparison and 'ext: comparison> =
+  { Tenants:
+      ConcurrentDictionary<
+        TenantId,
+        ConcurrentDictionary<
+          SpecName,
+          Spec<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>
+         >
+       > }
 
 module ConcurrentStore =
-  let emptyStore =
-    { Tenants = ConcurrentDictionary<TenantId, ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>>() }
-
-  let initStore (tenantIds: TenantId list) : ConcurrentStore =
-    let tenants = emptyStore.Tenants
+  let initStore (tenantIds: TenantId list) : ConcurrentStore<'runtimeContext, 'db, 'ext> =
+    let tenants =
+      ConcurrentDictionary<
+        TenantId,
+        ConcurrentDictionary<
+          SpecName,
+          Spec<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>
+         >
+       >()
 
     for tid in tenantIds do
-      tenants[tid] <- ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>()
+      tenants[tid] <- ConcurrentDictionary()
 
     { Tenants = tenants }
 
   let makeSpecApi
-    (store: ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>)
+    (store:
+      ConcurrentDictionary<
+        SpecName,
+        Spec<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>
+       >)
     (specName: SpecName)
     (path: VirtualPath option)
     (onDeltaExt:
-      DeltaExt -> Value<TypeValue<ValueExt>, ValueExt> -> Sum<Value<TypeValue<ValueExt>, ValueExt>, Errors.Errors<unit>>)
-    : SpecDataApi<ValueExt, DeltaExt> =
+      DeltaExt<'runtimeContext, 'db, 'ext>
+        -> Value<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>
+        -> Sum<
+          Value<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>,
+          Errors.Errors<unit>
+         >)
+    : SpecDataApi<ValueExt<'runtimeContext, 'db, 'ext>, DeltaExt<'runtimeContext, 'db, 'ext>> =
 
-    let storeUpdater (u: U<SpecData<TypeValue<ValueExt>, ValueExt>>) =
+    let storeUpdater
+      (u: U<SpecData<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>>)
+      =
       sum {
         match store.TryGetValue specName with
         | true, current ->
@@ -504,8 +526,12 @@ module ConcurrentStore =
     Errors.Singleton () (fun () -> msg) |> sum.Throw
 
   let makeSpecsApi
-    (store: ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>)
-    : SpecApi<TypeValue<ValueExt>, ValueExt> =
+    (store:
+      ConcurrentDictionary<
+        SpecName,
+        Spec<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>
+       >)
+    : SpecApi<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>> =
     { Get =
         fun specName ->
           sum {
@@ -547,7 +573,9 @@ module ConcurrentStore =
             | false, _ -> return! error $"SpecApi Delete: '{specName.SpecName}' does not exist in store"
           }
       Update =
-        fun (name: SpecName) (spec: Spec<TypeValue<ValueExt>, ValueExt>) ->
+        fun
+            (name: SpecName)
+            (spec: Spec<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>) ->
           sum {
             match store.TryGetValue name with
             | true, current ->
@@ -562,13 +590,28 @@ module ConcurrentStore =
       List = fun () -> sum { return store.Keys |> Seq.toList } }
 
   let seed
-    (store: ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>)
+    (store:
+      ConcurrentDictionary<
+        SpecName,
+        Spec<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>
+       >)
     (seeder:
-      Schema<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt>
-        -> Sum<SpecData<TypeValue<ValueExt>, ValueExt>, Errors<unit>>)
+      Schema<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ResolvedIdentifier, ValueExt<'runtimeContext, 'db, 'ext>>
+        -> Sum<
+          SpecData<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>,
+          Errors<unit>
+         >)
     (name: SpecName)
     (path: VirtualPath option)
-    : State<SpecData<TypeValue<ValueExt>, ValueExt>, TypeCheckContext<ValueExt>, TypeCheckState<ValueExt>, Errors<unit>> =
+    _db_query_sym
+    _make_db_query_type
+    : State<
+        SpecData<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>,
+        TypeCheckContext<ValueExt<'runtimeContext, 'db, 'ext>>,
+        TypeCheckState<ValueExt<'runtimeContext, 'db, 'ext>>,
+        Errors<unit>
+       >
+    =
 
     state {
       match store.ContainsKey name with
@@ -587,7 +630,7 @@ module ConcurrentStore =
 
         let! schemaValues =
           v2
-          |> Ballerina.Data.Schema.Model.Schema.SchemaEval()
+          |> Ballerina.Data.Schema.Model.Schema.SchemaEval(_db_query_sym, _make_db_query_type)
           |> state.MapError(Errors.MapContext(replaceWith ()))
 
         let! seeds = seeder schemaValues |> state.OfSum
@@ -602,9 +645,13 @@ module ConcurrentStore =
     }
 
   let seedWith
-    (store: ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>)
+    (store:
+      ConcurrentDictionary<
+        SpecName,
+        Spec<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>
+       >)
     (name: SpecName)
-    (seeds: SpecData<TypeValue<ValueExt>, ValueExt>)
+    (seeds: SpecData<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>)
     : Sum<unit, Errors<unit>> =
 
     sum {
@@ -625,7 +672,14 @@ module ConcurrentStore =
         return! sum.Throw(Errors.Singleton () (fun () -> $"SeedsWith failed. Spec {name} not present in the store"))
     }
 
-  let getSeeds (store: ConcurrentDictionary<SpecName, Spec<TypeValue<ValueExt>, ValueExt>>) (specName: SpecName) =
+  let getSeeds
+    (store:
+      ConcurrentDictionary<
+        SpecName,
+        Spec<TypeValue<ValueExt<'runtimeContext, 'db, 'ext>>, ValueExt<'runtimeContext, 'db, 'ext>>
+       >)
+    (specName: SpecName)
+    =
     sum {
       match store.TryGetValue specName with
       | false, _ -> return! error $"SpecApi GetSeeds: '{specName.SpecName}' does not exist in store"

@@ -310,30 +310,31 @@ module Mock =
                 RendererName "nestedMap"
                 RendererName "keyValue" ] }
       Sum =
-        { GeneratedTypeName = "Sum"
-          RequiredImport = None
-          DeltaTypeName = "Sum"
-          LeftConstructor = "Left"
-          RightConstructor = "Right"
-          SupportedRenderers =
-            Set.ofList
-              [ RendererName "sum"
-                RendererName "defaultSum"
-                RendererName "onlyLeft"
-                RendererName "onlyRight"
-                RendererName "readonlySum"
-                RendererName "switchableSum"
-                RendererName "customAiBanner"
-                RendererName "localStateFormRight" ]
-          Serialization =
-            { Serializer =
-                { Name = "serialization.SumSerializer"
-                  Import = GoImport "serialization/library" }
-              Deserializer =
-                { Name = "serialization.SumDeserializer"
-                  Import = GoImport "serialization/library" } } }
+        [ { GeneratedTypeName = "Sum"
+            Arity = 2
+            RequiredImport = None
+            DeltaTypeName = "Sum"
+            LeftConstructor = "Left"
+            RightConstructor = "Right"
+            SupportedRenderers =
+              Set.ofList
+                [ RendererName "sum"
+                  RendererName "defaultSum"
+                  RendererName "onlyLeft"
+                  RendererName "onlyRight"
+                  RendererName "readonlySum"
+                  RendererName "switchableSum"
+                  RendererName "customAiBanner"
+                  RendererName "localStateFormRight" ]
+            Serialization =
+              { Serializer =
+                  { Name = "serialization.SumSerializer"
+                    Import = GoImport "serialization/library" }
+                Deserializer =
+                  { Name = "serialization.SumDeserializer"
+                    Import = GoImport "serialization/library" } } } ]
       Tuple =
-        [ { Ariety = 2
+        [ { Arity = 2
             GeneratedTypeName = "Tuple2"
             DeltaTypeName = "DeltaTuple2"
             SupportedRenderers = Set.ofList [ RendererName "defaultTuple2" ]
@@ -346,7 +347,7 @@ module Mock =
                 Deserializer =
                   { Name = "serialization.Tuple2Deserializer"
                     Import = GoImport "serialization/library" } } }
-          { Ariety = 3
+          { Arity = 3
             GeneratedTypeName = "Tuple3"
             DeltaTypeName = "DeltaTuple3"
             SupportedRenderers = Set.ofList [ RendererName "defaultTuple3" ]

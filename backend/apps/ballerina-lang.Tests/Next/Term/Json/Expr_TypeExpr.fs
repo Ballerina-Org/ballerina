@@ -13,8 +13,11 @@ open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Terms.Json
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.Errors
+open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 
 let private (!) = Identifier.LocalScope
+
+type private ValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
 
 let ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
   (expression: Expr<TypeExpr<ValueExt>, Identifier, ValueExt>)
@@ -45,7 +48,7 @@ let ``Dsl:Terms:Expr.Lambda json round-trip`` () =
     """{"discriminator":"lambda","value":["x",{"discriminator":"int32","value":"42"}]}"""
 
   let expected: Expr<TypeExpr<ValueExt>, Identifier, ValueExt> =
-    Expr.Lambda(Var.Create "x", None, Expr.Primitive(PrimitiveValue.Int32 42))
+    Expr.Lambda(Var.Create "x", None, Expr.Primitive(PrimitiveValue.Int32 42), None)
 
   (expected, JsonValue.Parse json)
   ||> ``Assert Expr<TypeExpr> -> ToJson -> FromJson -> Expr<TypeExpr>``
@@ -79,7 +82,7 @@ let ``Dsl:Terms:Expr.Apply json round-trip`` () =
 
   let expected: Expr<TypeExpr<ValueExt>, Identifier, ValueExt> =
     Expr.Apply(
-      Expr.Lambda(Var.Create "x", None, Expr.Primitive(PrimitiveValue.Int32 1)),
+      Expr.Lambda(Var.Create "x", None, Expr.Primitive(PrimitiveValue.Int32 1), None),
       Expr.Primitive(PrimitiveValue.Int32 2)
     )
 

@@ -48,6 +48,8 @@ module NonEmptyList =
       match l with
       | NonEmptyList(h, t) -> h :: t
 
+    static member toList(l: NonEmptyList<'e>) = NonEmptyList.ToList(l)
+
     static member ToSeq(l: NonEmptyList<'e>) =
       seq {
         match l with
@@ -56,7 +58,10 @@ module NonEmptyList =
           yield! t
       }
 
+    static member toSeq(l: NonEmptyList<'e>) = NonEmptyList.ToSeq(l)
     static member OfList(head: 'e, tail: List<'e>) = NonEmptyList(head, tail)
+
+    static member ofList(head, tail) = NonEmptyList.OfList(head, tail)
 
     static member TryOfList(l: List<'e>) =
       match l with
@@ -71,3 +76,5 @@ module NonEmptyList =
       | listHead :: listTail -> NonEmptyList.OfList(listHead, listTail @ [ head ] @ tail)
 
     static member length(NonEmptyList(_, t): NonEmptyList<'e>) = t.Length + 1
+
+    static member contains(NonEmptyList(h, t), e) = t |> List.contains e || h = e

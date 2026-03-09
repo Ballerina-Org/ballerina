@@ -189,6 +189,7 @@ type BogusDataGenerator(cultureCode: string) =
 
       | PrimitiveType.Unit, RealValue _
       | PrimitiveType.Unit, FakeValue _ -> PrimitiveValue.Unit
+      | PrimitiveType.Vector, _ -> failwith "Vector types should not be generated as primitive types"
 
     result |> Value.Primitive
 

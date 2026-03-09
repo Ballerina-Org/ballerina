@@ -3,6 +3,8 @@ module Ballerina.Cat.Tests.BusinessRuleEngine.Next.Type.Eval
 open System
 open Ballerina
 open Ballerina.Collections.Sum
+open Ballerina.DSL.Next.StdLib.Extensions
+open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 open NUnit.Framework
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Patterns
@@ -16,10 +18,16 @@ open Ballerina.Cat.Collections.OrderedMap
 open Ballerina.LocalizedErrors
 open Ballerina.Errors
 
-let private typeCheck: ExprTypeChecker<IComparable> = Expr.TypeCheck()
-let private evalFull: TypeExprEval<IComparable> = TypeExpr.Eval()
+let private typeCheck<'a> : ExprTypeChecker<ValueExt<'a, MutableMemoryDB<'a, unit>, unit>> =
+  let _, _, _db_query_sym, _make_db_query_type = db_ops () |> stdExtensions
+  Expr.TypeCheck(_db_query_sym, _make_db_query_type)
 
-let private eval: TypeExpr<IComparable> -> TypeExprEvalResult<IComparable> =
+let private evalFull<'a> : TypeExprEval<ValueExt<'a, MutableMemoryDB<'a, unit>, unit>> =
+  TypeExpr.Eval()
+
+let private eval<'a>
+  : TypeExpr<ValueExt<'a, MutableMemoryDB<'a, unit>, unit>>
+      -> TypeExprEvalResult<ValueExt<_, MutableMemoryDB<_, unit>, unit>> =
   evalFull typeCheck None Location.Unknown
 
 [<Test>]
@@ -588,7 +596,7 @@ let ``LangNext-TypeEval Rotate from record to union`` () =
 
 [<Test>]
 let ``LangNext-TypeEval (generic) Apply`` () =
-  let t =
+  let t: TypeExpr<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>> =
     TypeExpr.Apply(
       TypeExpr.Lambda(
         TypeParameter.Create("a", Kind.Star),
@@ -603,7 +611,7 @@ let ``LangNext-TypeEval (generic) Apply`` () =
   let actual =
     t |> eval |> State.Run(TypeCheckContext.Empty("", ""), TypeCheckState.Empty)
 
-  let expected: TypeValue<IComparable> =
+  let expected: TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>> =
     TypeValue.Tuple
       { value =
           [ TypeValue.PrimitiveWithTrivialSource PrimitiveType.Int32
