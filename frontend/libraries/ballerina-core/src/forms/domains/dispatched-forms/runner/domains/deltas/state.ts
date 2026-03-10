@@ -1529,23 +1529,27 @@ export const DispatchDeltaTransfer = {
           }
           if (delta.kind == "TableAddBatch") {
             return ValueOrErrors.Default.return<
-                [
-                  DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
-                  DispatchDeltaTransferComparand,
-                  AggregatedFlags<Flags>,
-                ],
-                string
-              >([
-                {
-                  Discriminator: "TableAddBatch",
-                  AddBatch: delta.count,
-                },
-                `[TableAddBatch][${delta.uniqueTableIdentifier}][${delta.count}]`,
-                delta.flags
-                  ? [[delta.flags, `[TableAddBatch][${delta.uniqueTableIdentifier}][${delta.count}]`]]
-                  : [],
-              ]
-            );
+              [
+                DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>,
+              ],
+              string
+            >([
+              {
+                Discriminator: "TableAddBatch",
+                AddBatch: delta.count,
+              },
+              `[TableAddBatch][${delta.uniqueTableIdentifier}][${delta.count}]`,
+              delta.flags
+                ? [
+                    [
+                      delta.flags,
+                      `[TableAddBatch][${delta.uniqueTableIdentifier}][${delta.count}]`,
+                    ],
+                  ]
+                : [],
+            ]);
           }
           if (delta.kind == "TableRemoveBatch") {
             return ValueOrErrors.Default.return<
