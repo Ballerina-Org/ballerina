@@ -336,11 +336,26 @@ export type DispatchDeltaTable<T = Unit> =
       id: string;
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
+      uniqueTableIdentifier: string;
     }
   | {
       kind: "TableRemoveAll";
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
+    }
+  | {
+      kind: "TableAddBatch";
+      count: number;
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+      uniqueTableIdentifier: string;
+    }
+  | {
+      kind: "TableRemoveBatch";
+      ids: string[];
+      flags: T | undefined;
+      sourceAncestorLookupTypeNames: string[];
+      uniqueTableIdentifier: string;
     }
   | {
       kind: "TableMoveTo";
@@ -503,7 +518,9 @@ export type DispatchDeltaTransferTable<DispatchDeltaTransferCustom> =
       ValueAll: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
     }
   | { Discriminator: "TableAddEmpty" }
+  | { Discriminator: "TableAddBatch"; AddBatch: number }
   | { Discriminator: "TableRemoveAt"; RemoveAt: string }
+  | { Discriminator: "TableRemoveBatch"; RemoveBatch: string[] }
   | { Discriminator: "TableRemoveAll"; RemoveAll: Unit }
   | { Discriminator: "TableDuplicateAt"; DuplicateAt: string }
   | { Discriminator: "TableActionOnAll"; ActionOnAll: string }
@@ -1488,9 +1505,14 @@ export const DispatchDeltaTransfer = {
                 Discriminator: "TableRemoveAt",
                 RemoveAt: delta.id,
               },
-              `[TableRemoveAt][${delta.id}]`,
+              `[TableRemoveAt][${delta.uniqueTableIdentifier}][${delta.id}]`,
               delta.flags
-                ? [[delta.flags, `[TableRemoveAt][${delta.id}]`]]
+                ? [
+                    [
+                      delta.flags,
+                      `[TableRemoveAt][${delta.uniqueTableIdentifier}][${delta.id}]`,
+                    ],
+                  ]
                 : [],
             ]);
           }
@@ -1509,6 +1531,54 @@ export const DispatchDeltaTransfer = {
               },
               `[TableRemoveAll]`,
               delta.flags ? [[delta.flags, "[TableRemoveAll]"]] : [],
+            ]);
+          }
+          if (delta.kind == "TableAddBatch") {
+            return ValueOrErrors.Default.return<
+              [
+                DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>,
+              ],
+              string
+            >([
+              {
+                Discriminator: "TableAddBatch",
+                AddBatch: delta.count,
+              },
+              `[TableAddBatch][${delta.uniqueTableIdentifier}]`,
+              delta.flags
+                ? [
+                    [
+                      delta.flags,
+                      `[TableAddBatch][${delta.uniqueTableIdentifier}]`,
+                    ],
+                  ]
+                : [],
+            ]);
+          }
+          if (delta.kind == "TableRemoveBatch") {
+            return ValueOrErrors.Default.return<
+              [
+                DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>,
+              ],
+              string
+            >([
+              {
+                Discriminator: "TableRemoveBatch",
+                RemoveBatch: delta.ids,
+              },
+              `[TableRemoveBatch][${delta.uniqueTableIdentifier}]`,
+              delta.flags
+                ? [
+                    [
+                      delta.flags,
+                      `[TableRemoveBatch][${delta.uniqueTableIdentifier}]`,
+                    ],
+                  ]
+                : [],
             ]);
           }
           if (delta.kind == "TableDuplicate") {

@@ -883,31 +883,43 @@ export const TableAbstractRenderer = <
                       return;
                     }
 
-                    // index of the new "fake" row in the table
-                    const newPendingRowIndex =
-                      props.context.value.data.size +
-                      (props.context.customFormState.pendingOps.kind == "add"
-                        ? props.context.customFormState.pendingOps.pending.size
-                        : 0);
+                    const hasPendingAddOperations =
+                      props.context.customFormState.pendingOps.kind == "add" &&
+                      props.context.customFormState.pendingOps.pending.size > 0;
 
-                    const delta: DispatchDelta<Flags> = {
-                      kind: "TableAddEmpty",
-                      flags,
-                      newIndex: newPendingRowIndex,
-                      uniqueTableIdentifier: domNodeId,
-                      sourceAncestorLookupTypeNames:
-                        props.context.lookupTypeAncestorNames,
-                    };
+                    if (!hasPendingAddOperations) {
+                      // first add operation
+                      // create a delta and call the onChange function
+                      // this means the local queue is free so we can run this operation now
+
+                      // index of the new "fake" row in the table
+                      const newPendingRowIndex =
+                        props.context.value.data.size +
+                        (props.context.customFormState.pendingOps.kind == "add"
+                          ? props.context.customFormState.pendingOps.pending
+                              .size
+                          : 0);
+
+                      const delta: DispatchDelta<Flags> = {
+                        kind: "TableAddEmpty",
+                        flags,
+                        newIndex: newPendingRowIndex,
+                        uniqueTableIdentifier: domNodeId,
+                        sourceAncestorLookupTypeNames:
+                          props.context.lookupTypeAncestorNames,
+                      };
+
+                      // no need to apply the updater to the table here
+                      // the fake row will be added later to the list of extra data
+                      // so we just send the delta
+                      props.foreignMutations.onChange(
+                        Option.Default.none(),
+                        delta,
+                      );
+                    }
+
                     const tempId =
                       `placeholder-${v4()}` as PendingAddOperationId;
-
-                    // no need to apply the updater to the table here
-                    // the fake row will be added later to the list of extra data
-                    // so we just send the delta
-                    props.foreignMutations.onChange(
-                      Option.Default.none(),
-                      delta,
-                    );
 
                     const setModifiedByUser =
                       TableAbstractRendererState.Updaters.Core.commonFormState(
@@ -932,6 +944,7 @@ export const TableAbstractRenderer = <
                                     c.GetDefaultValue(),
                                   ).concat([["Id", tempId]]),
                                 ),
+                                flags,
                               ),
                             ]),
                           )(_),
@@ -957,17 +970,25 @@ export const TableAbstractRenderer = <
                       return;
                     }
 
-                    const delta: DispatchDelta<Flags> = {
-                      kind: "TableRemove",
-                      id: k,
-                      flags,
-                      sourceAncestorLookupTypeNames:
-                        props.context.lookupTypeAncestorNames,
-                    };
-                    props.foreignMutations.onChange(
-                      Option.Default.none(),
-                      delta,
-                    );
+                    const hasPendingRemoveOperations =
+                      props.context.customFormState.pendingOps.kind ==
+                        "remove" &&
+                      props.context.customFormState.pendingOps.pending.size > 0;
+
+                    if (!hasPendingRemoveOperations) {
+                      const delta: DispatchDelta<Flags> = {
+                        kind: "TableRemove",
+                        id: k,
+                        uniqueTableIdentifier: domNodeId,
+                        flags,
+                        sourceAncestorLookupTypeNames:
+                          props.context.lookupTypeAncestorNames,
+                      };
+                      props.foreignMutations.onChange(
+                        Option.Default.none(),
+                        delta,
+                      );
+                    }
 
                     const setModifiedByUser =
                       TableAbstractRendererState.Updaters.Core.commonFormState(
@@ -981,6 +1002,7 @@ export const TableAbstractRenderer = <
                           List([
                             TableAbstractRendererPendingRemoveOperation.Default(
                               k,
+                              flags,
                             ),
                           ]),
                         ),
@@ -1163,10 +1185,12 @@ export const TableAbstractRenderer = <
     InstantiatedApplyEditsRunner.mapContextFromProps((props) => ({
       ...props.context,
       onChange: props.foreignMutations.onChange,
+      uniqueTableIdentifier: props.context.domNodeAncestorPath,
     })),
     InstantiatedDequeueRemoveOpsRunner.mapContextFromProps((props) => ({
       ...props.context,
       onChange: props.foreignMutations.onChange,
+      uniqueTableIdentifier: props.context.domNodeAncestorPath,
     })),
   ]);
 };
