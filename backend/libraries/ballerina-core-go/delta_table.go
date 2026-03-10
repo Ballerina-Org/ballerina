@@ -15,6 +15,8 @@ const (
 	tableAddAt       deltaTableEffectsEnum = "TableAddAt"
 	tableRemoveAt    deltaTableEffectsEnum = "TableRemoveAt"
 	tableRemoveAll   deltaTableEffectsEnum = "TableRemoveAll"
+	tableAddBatch    deltaTableEffectsEnum = "TableAddBatch"
+	tableRemoveBatch deltaTableEffectsEnum = "TableRemoveBatch"
 	tableMoveFromTo  deltaTableEffectsEnum = "TableMoveFromTo"
 	tableDuplicateAt deltaTableEffectsEnum = "TableDuplicateAt"
 	tableAdd         deltaTableEffectsEnum = "TableAdd"
@@ -31,6 +33,8 @@ type DeltaTable[a any, deltaA any] struct {
 	addAt         *Tuple2[uuid.UUID, a]
 	removeAt      *uuid.UUID
 	removeAll     Unit
+	addBatch      int
+	removeBatch   []uuid.UUID
 	moveFromTo    *Tuple2[uuid.UUID, uuid.UUID]
 	duplicateAt   *uuid.UUID
 	add           *a
@@ -50,6 +54,8 @@ func (d DeltaTable[a, deltaA]) MarshalJSON() ([]byte, error) {
 		AddAt         *Tuple2[uuid.UUID, a]
 		RemoveAt      *uuid.UUID
 		RemoveAll     Unit
+		AddBatch      int
+		RemoveBatch   []uuid.UUID
 		MoveFromTo    *Tuple2[uuid.UUID, uuid.UUID]
 		DuplicateAt   *uuid.UUID
 		Add           *a
@@ -63,6 +69,8 @@ func (d DeltaTable[a, deltaA]) MarshalJSON() ([]byte, error) {
 		AddAt:         d.addAt,
 		RemoveAt:      d.removeAt,
 		RemoveAll:     d.removeAll,
+		AddBatch:      d.addBatch,
+		RemoveBatch:   d.removeBatch,
 		MoveFromTo:    d.moveFromTo,
 		DuplicateAt:   d.duplicateAt,
 		Add:           d.add,
@@ -80,6 +88,8 @@ func (d *DeltaTable[a, deltaA]) UnmarshalJSON(data []byte) error {
 		AddAt         *Tuple2[uuid.UUID, a]
 		RemoveAt      *uuid.UUID
 		RemoveAll     Unit
+		AddBatch      int
+		RemoveBatch   []uuid.UUID
 		MoveFromTo    *Tuple2[uuid.UUID, uuid.UUID]
 		DuplicateAt   *uuid.UUID
 		Add           *a
@@ -98,6 +108,8 @@ func (d *DeltaTable[a, deltaA]) UnmarshalJSON(data []byte) error {
 	d.addAt = aux.AddAt
 	d.removeAt = aux.RemoveAt
 	d.removeAll = aux.RemoveAll
+	d.addBatch = aux.AddBatch
+	d.removeBatch = aux.RemoveBatch
 	d.moveFromTo = aux.MoveFromTo
 	d.duplicateAt = aux.DuplicateAt
 	d.add = aux.Add
@@ -136,6 +148,18 @@ func NewDeltaTableRemoveAll[a any, deltaA any]() DeltaTable[a, deltaA] {
 	return DeltaTable[a, deltaA]{
 		discriminator: tableRemoveAll,
 		removeAll:     NewUnit(),
+	}
+}
+func NewDeltaTableAddBatch[a any, deltaA any](count int) DeltaTable[a, deltaA] {
+	return DeltaTable[a, deltaA]{
+		discriminator: tableAddBatch,
+		addBatch:      count,
+	}
+}
+func NewDeltaTableRemoveBatch[a any, deltaA any](ids []uuid.UUID) DeltaTable[a, deltaA] {
+	return DeltaTable[a, deltaA]{
+		discriminator: tableRemoveBatch,
+		removeBatch:   ids,
 	}
 }
 func NewDeltaTableMoveFromTo[a any, deltaA any](from uuid.UUID, to uuid.UUID) DeltaTable[a, deltaA] {
@@ -181,6 +205,8 @@ func MatchDeltaTable[a any, deltaA any, Result any](
 	onAddAt func(Tuple2[uuid.UUID, a]) (Result, error),
 	onRemoveAt func(uuid.UUID) (Result, error),
 	onRemoveAll func() (Result, error),
+	onAddBatch func(int) (Result, error),
+	onRemoveBatch func([]uuid.UUID) (Result, error),
 	onMoveFromTo func(Tuple2[uuid.UUID, uuid.UUID]) (Result, error),
 	onDuplicateAt func(uuid.UUID) (Result, error),
 	onAdd func(a) (Result, error),
@@ -207,6 +233,10 @@ func MatchDeltaTable[a any, deltaA any, Result any](
 				return onRemoveAt(*delta.removeAt)
 			case tableRemoveAll:
 				return onRemoveAll()
+			case tableAddBatch:
+				return onAddBatch(delta.addBatch)
+			case tableRemoveBatch:
+				return onRemoveBatch(delta.removeBatch)
 			case tableMoveFromTo:
 				return onMoveFromTo(*delta.moveFromTo)
 			case tableDuplicateAt:
