@@ -214,6 +214,7 @@ module Model =
     | Updated
     | Deleting
     | Deleted
+    | Background
 
   and SchemaEntityHooksExpr<'valueExt> =
     { OnCreating: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
@@ -221,7 +222,8 @@ module Model =
       OnUpdating: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
       OnUpdated: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
       OnDeleting: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
-      OnDeleted: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>> }
+      OnDeleted: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
+      OnBackground: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>> }
 
   and SchemaEntityExpr<'valueExt> =
     { Name: SchemaEntityName
@@ -487,7 +489,8 @@ module Model =
       OnUpdating: Option<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>>
       OnUpdated: Option<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>>
       OnDeleting: Option<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>>
-      OnDeleted: Option<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> }
+      OnDeleted: Option<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>>
+      OnBackground: Option<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> }
 
   and SchemaEntity<'valueExt> =
     { Name: SchemaEntityName

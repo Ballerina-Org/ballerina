@@ -43,7 +43,8 @@ module Patterns =
             Type = None }
         TypeVariables = Map.empty
         TypeParameters = Map.empty
-        Values = Map.empty }
+        Values = Map.empty
+        BackgroundHooksExtraScope = Map.empty }
 
     static member Updaters =
       {| Scope = fun u (c: TypeCheckContext<'valueExt>) -> { c with Scope = c.Scope |> u }
@@ -55,7 +56,11 @@ module Patterns =
           fun u (c: TypeCheckContext<'valueExt>) ->
             { c with
                 TypeParameters = c.TypeParameters |> u }
-         Values = fun u (c: TypeCheckContext<'valueExt>) -> { c with Values = c.Values |> u } |}
+         Values = fun u (c: TypeCheckContext<'valueExt>) -> { c with Values = c.Values |> u }
+         BackgroundHooksExtraScope =
+          fun u (c: TypeCheckContext<'valueExt>) ->
+            { c with
+                BackgroundHooksExtraScope = c.BackgroundHooksExtraScope |> u } |}
 
     static member FromInstantiateContext<'ve when 've: comparison>
       (ctx: TypeInstantiateContext<'ve>)
@@ -63,7 +68,8 @@ module Patterns =
       { Scope = ctx.Scope
         TypeVariables = ctx.TypeVariables
         TypeParameters = ctx.TypeParameters
-        Values = ctx.Values }
+        Values = ctx.Values
+        BackgroundHooksExtraScope = ctx.BackgroundHooksExtraScope }
 
     static member tryFindTypeVariable
       (v: string, loc: Location)
@@ -352,14 +358,16 @@ module Patterns =
         Scope = ctx.Scope
         TypeVariables = ctx.TypeVariables
         TypeParameters = ctx.TypeParameters
-        Values = ctx.Values }
+        Values = ctx.Values
+        BackgroundHooksExtraScope = ctx.BackgroundHooksExtraScope }
 
     static member Empty: TypeInstantiateContext<'valueExt> =
       { VisitedVars = Set.empty
         Scope = TypeCheckScope.Empty
         TypeVariables = Map.empty
         TypeParameters = Map.empty
-        Values = Map.empty }
+        Values = Map.empty
+        BackgroundHooksExtraScope = Map.empty }
 
     static member Updaters =
       {| VisitedVars =

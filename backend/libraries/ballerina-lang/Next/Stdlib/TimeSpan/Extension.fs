@@ -23,6 +23,7 @@ module Extension =
     let boolTypeValue = TypeValue.CreateBool()
     let int32TypeValue = TypeValue.CreateInt32()
     let float64TypeValue = TypeValue.CreateFloat64()
+    let decimalTypeValue = TypeValue.CreateDecimal()
 
     let TimeSpanPlusId =
       Identifier.FullyQualified([ "timeSpan" ], "+") |> TypeCheckScope.Empty.Resolve
@@ -695,6 +696,40 @@ module Extension =
               return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float64(v.TotalMilliseconds))
             } }
 
+    let timeSpanFromSecondsId =
+      Identifier.FullyQualified([ "timeSpan" ], "fromSeconds")
+      |> TypeCheckScope.Empty.Resolve
+
+    let timeSpanFromSeconds: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+      timeSpanFromSecondsId,
+      { PublicIdentifiers =
+          Some(TypeValue.CreateArrow(decimalTypeValue, timeSpanTypeValue), Kind.Star, TimeSpanOperations.FromSeconds)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | TimeSpanOperations.FromSeconds -> Some(TimeSpanOperations.FromSeconds)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (_, v) ->
+            reader {
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return
+                Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan.FromSeconds(float v)))
+            } }
+
+
+
     let timeSpanNewId =
       Identifier.FullyQualified([ "timeSpan" ], "new") |> TypeCheckScope.Empty.Resolve
 
@@ -800,6 +835,7 @@ module Extension =
           getTotalMinutesOperation
           getTotalSecondsOperation
           getTotalMillisecondsOperation
+          timeSpanFromSeconds
           timeSpanNew
           timeSpanZero ]
         |> Map.ofList }

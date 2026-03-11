@@ -697,7 +697,8 @@ module Eval =
                             OnUpdating = None
                             OnUpdated = None
                             OnDeleting = None
-                            OnDeleted = None } }
+                            OnDeleted = None
+                            OnBackground = None } }
                   })
                 |> OrderedMap.ofList
                 |> state.AllMapOrdered
@@ -950,7 +951,8 @@ module Eval =
                         OnUpdating = None
                         OnUpdated = None
                         OnDeleting = None
-                        OnDeleted = None }
+                        OnDeleted = None
+                        OnBackground = None }
 
                     let! typechecked_hooks =
                       state {
@@ -1176,6 +1178,47 @@ module Eval =
                                 OnDeleted = Some on_deleted_expr }
                       }
 
+                    let! typechecked_hooks =
+                      state {
+                        match parsed_hooks.OnBackground with
+                        | None ->
+                          return
+                            { typechecked_hooks with
+                                OnBackground = None }
+                        | Some on_background ->
+                          let! ctx = state.GetContext()
+                          let extra_scope = ctx.BackgroundHooksExtraScope |> Map.map (fun _ v -> v |> fst)
+
+                          let! on_background_expr, on_background_t, on_background_k, _ =
+                            typeCheckExpr None on_background
+                            |> state.MapContext(TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope))
+
+                          do! on_background_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                          do!
+                            TypeValue.Unify(
+                              on_background.Location,
+                              on_background_t,
+                              // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
+                              TypeValue.CreateArrow(
+                                TypeValue.Schema resulting_schema_without_hooks,
+                                TypeValue.CreateArrow(
+                                  e_typechecked.Id,
+                                  TypeValue.CreateArrow(
+                                    e_typechecked.TypeWithProps,
+                                    TypeValue.CreateSum [ TypeValue.CreateUnit(); TypeValue.CreateTimeSpan() ]
+                                  )
+                                )
+                              )
+                            )
+                            |> Expr.liftUnification
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                          return
+                            { typechecked_hooks with
+                                OnBackground = Some on_background_expr }
+                      }
+
                     return typechecked_hooks
                   }
 
@@ -1307,7 +1350,9 @@ module Eval =
                                   SchemaEntityHooks.OnUpdating = v.Hooks.OnUpdating |> Option.orElse hooks.OnUpdating
                                   SchemaEntityHooks.OnUpdated = v.Hooks.OnUpdated |> Option.orElse hooks.OnUpdated
                                   SchemaEntityHooks.OnDeleting = v.Hooks.OnDeleting |> Option.orElse hooks.OnDeleting
-                                  SchemaEntityHooks.OnDeleted = v.Hooks.OnDeleted |> Option.orElse hooks.OnDeleted } }
+                                  SchemaEntityHooks.OnDeleted = v.Hooks.OnDeleted |> Option.orElse hooks.OnDeleted
+                                  SchemaEntityHooks.OnBackground =
+                                    v.Hooks.OnBackground |> Option.orElse hooks.OnBackground } }
 
                         acc |> OrderedMap.add entityName v
                       | None -> acc)
