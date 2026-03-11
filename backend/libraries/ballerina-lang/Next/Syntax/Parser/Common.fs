@@ -202,6 +202,7 @@ module Common =
   let createdKeyword = softKeyword "created"
   let updatedKeyword = softKeyword "updated"
   let deletedKeyword = softKeyword "deleted"
+  let backgroundKeyword = softKeyword "background"
   let linkingKeyword = softKeyword "linking"
   let unlinkingKeyword = softKeyword "unlinking"
   let linkedKeyword = softKeyword "linked"

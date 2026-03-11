@@ -25,3 +25,4 @@ module Model =
     | TotalMilliseconds
     | TimeSpan_New
     | TimeSpan_Zero
+    | FromSeconds

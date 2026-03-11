@@ -514,7 +514,8 @@ module Type =
         (SchemaEntityHook.Updating, updatingKeyword) |> onHook
         (SchemaEntityHook.Updated, updatedKeyword) |> onHook
         (SchemaEntityHook.Deleting, deletingKeyword) |> onHook
-        (SchemaEntityHook.Deleted, deletedKeyword) |> onHook ]
+        (SchemaEntityHook.Deleted, deletedKeyword) |> onHook
+        (SchemaEntityHook.Background, backgroundKeyword) |> onHook ]
       |> parser.Any
       |> parser.Many
       |> parser.Map(Map.ofList)
@@ -573,7 +574,7 @@ module Type =
           let onUpdated = hooks |> Map.tryFind SchemaEntityHook.Updated
           let onDeleting = hooks |> Map.tryFind SchemaEntityHook.Deleting
           let onDeleted = hooks |> Map.tryFind SchemaEntityHook.Deleted
-
+          let onBackground = hooks |> Map.tryFind SchemaEntityHook.Background
 
           do! closeCurlyBracketOperator
 
@@ -589,7 +590,8 @@ module Type =
                   OnUpdating = onUpdating
                   OnUpdated = onUpdated
                   OnDeleting = onDeleting
-                  OnDeleted = onDeleted } }
+                  OnDeleted = onDeleted
+                  OnBackground = onBackground } }
         })
 
 
@@ -609,7 +611,7 @@ module Type =
           let onUpdated = hooks |> Map.tryFind SchemaEntityHook.Updated
           let onDeleting = hooks |> Map.tryFind SchemaEntityHook.Deleting
           let onDeleted = hooks |> Map.tryFind SchemaEntityHook.Deleted
-
+          let onBackground = hooks |> Map.tryFind SchemaEntityHook.Background
 
           do! closeCurlyBracketOperator
 
@@ -620,7 +622,8 @@ module Type =
               OnUpdating = onUpdating
               OnUpdated = onUpdated
               OnDeleting = onDeleting
-              OnDeleted = onDeleted }
+              OnDeleted = onDeleted
+              OnBackground = onBackground }
         })
 
     let schema () =

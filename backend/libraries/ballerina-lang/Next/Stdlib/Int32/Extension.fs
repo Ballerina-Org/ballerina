@@ -20,6 +20,45 @@ module Extension =
 
     let boolTypeValue = TypeValue.CreatePrimitive PrimitiveType.Bool
     let int32TypeValue = TypeValue.CreatePrimitive PrimitiveType.Int32
+    let stringTypeValue = TypeValue.CreatePrimitive PrimitiveType.String
+
+    let int32ToStringId =
+      Identifier.FullyQualified([ "int32" ], "toString")
+      |> TypeCheckScope.Empty.Resolve
+
+    let toStringOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
+      int32ToStringId,
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(int32TypeValue, stringTypeValue), Kind.Star, Int32Operations.String)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | Int32Operations.String -> Some(Int32Operations.String)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> Int32Operations.AsToString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsInt32
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.String(v |> string))
+            } }
 
     let int32PlusId =
       Identifier.FullyQualified([ "int32" ], "+") |> TypeCheckScope.Empty.Resolve
@@ -581,7 +620,8 @@ module Extension =
 
     { TypeVars = []
       Operations =
-        [ plusOperation
+        [ toStringOperation
+          plusOperation
           minusOperation
           timesOperation
           divideOperation

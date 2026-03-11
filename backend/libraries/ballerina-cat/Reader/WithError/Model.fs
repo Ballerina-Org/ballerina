@@ -108,6 +108,9 @@ module WithError =
 
     member _.GetContext() : Reader<'c, 'c, 'e> = Reader(fun c -> sum { return c })
 
+    member _.Zero() : Reader<unit, 'c, 'e> = Reader(fun _ -> Left())
+    member _.Delay f = f ()
+
     member reader.RunOption(p: Option<Reader<'a, 'c, 'e>>) =
       reader {
         match p with
