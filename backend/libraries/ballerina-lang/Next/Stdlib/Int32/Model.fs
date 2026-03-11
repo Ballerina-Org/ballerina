@@ -3,6 +3,7 @@ namespace Ballerina.DSL.Next.StdLib.Int32
 [<AutoOpen>]
 module Model =
   type Int32Operations<'ext> =
+    | String
     | Plus of {| v1: Option<int32> |}
     | Times of {| v1: Option<int32> |}
     | Minus of {| v1: Option<int32> |}
