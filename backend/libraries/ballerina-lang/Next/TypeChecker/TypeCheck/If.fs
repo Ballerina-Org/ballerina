@@ -31,6 +31,10 @@ module If =
 
   type Expr<'T, 'Id, 'v when 'Id: comparison> with
     static member internal TypeCheckIf<'valueExt when 'valueExt: comparison>
+      (
+        query_type_symbol: TypeSymbol,
+        mk_query_type: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>
+      )
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
       : TypeChecker<ExprIf<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
@@ -63,7 +67,7 @@ module If =
 
           let! t_then =
             t_then
-            |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
             |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
           return Expr.If(cond, thenBranch, elseBranch, loc0, ctx.Scope), t_then, Kind.Star, ctx

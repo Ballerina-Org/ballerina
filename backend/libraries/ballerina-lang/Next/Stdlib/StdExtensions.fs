@@ -21,7 +21,7 @@ type ValueExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'c
       Unit,
       PrimitiveExt<'runtimeContext, 'db, 'customExtension>,
       CompositeTypeExt<'runtimeContext, 'db, 'customExtension>,
-      MemoryDBExt<'runtimeContext, 'db, 'customExtension>,
+      DBExt<'runtimeContext, 'db, 'customExtension>,
       MapExt<'runtimeContext, 'db, 'customExtension>,
       'customExtension
      >
@@ -55,12 +55,12 @@ and ValueExtDTO =
       List = null
       Map = null }
 
-and MemoryDBExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> =
-  | MemoryDBValues of DB.Model.DBValues<'runtimeContext, 'db, ValueExt<'runtimeContext, 'db, 'customExtension>>
+and DBExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> =
+  | DBValues of DB.Model.DBValues<'runtimeContext, 'db, ValueExt<'runtimeContext, 'db, 'customExtension>>
 
   override self.ToString() : string =
     match self with
-    | MemoryDBValues vals -> vals.ToString()
+    | DBValues vals -> vals.ToString()
 
   static member inline ValueLens
     : PartialLens<
@@ -69,9 +69,9 @@ and MemoryDBExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 
        > =
     { Get =
         function
-        | ValueExt(Choice5Of7(MemoryDBExt.MemoryDBValues x)) -> Some x
+        | ValueExt(Choice5Of7(DBExt.DBValues x)) -> Some x
         | _ -> None
-      Set = MemoryDBExt.MemoryDBValues >> Choice5Of7 >> ValueExt.ValueExt }
+      Set = DBExt.DBValues >> Choice5Of7 >> ValueExt.ValueExt }
 
 and MapExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> =
   | MapOperations of Map.Model.MapOperations<ValueExt<'runtimeContext, 'db, 'customExtension>>
@@ -514,7 +514,7 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
           | ValueExt(Choice6Of7(MapValues(Map.Model.MapValues.Map x))) -> Some x
           | _ -> None
         Set = Map.Model.MapValues.Map >> MapValues >> Choice6Of7 >> ValueExt.ValueExt }
-      MemoryDBExt<_, _, _>.ValueLens
+      DBExt<_, _, _>.ValueLens
 
   let listExtension =
     List.Extension.ListExtension<

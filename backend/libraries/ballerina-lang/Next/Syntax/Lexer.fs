@@ -40,6 +40,7 @@ module Lexer =
     | Where
     | Join
     | On
+    | Can
     | And
     | OrderBy
     | Ascending
@@ -68,6 +69,7 @@ module Lexer =
       | Where -> "where"
       | Join -> "join"
       | On -> "on"
+      | Can -> "can"
       | And -> "and"
       | OrderBy -> "orderby"
       | Ascending -> "asc"
@@ -284,6 +286,7 @@ module Lexer =
       Keyword.Where.ToString(), LocalizedToken.FromKeyword Keyword.Where
       Keyword.Join.ToString(), LocalizedToken.FromKeyword Keyword.Join
       Keyword.On.ToString(), LocalizedToken.FromKeyword Keyword.On
+      Keyword.Can.ToString(), LocalizedToken.FromKeyword Keyword.Can
       Keyword.OrderBy.ToString(), LocalizedToken.FromKeyword Keyword.OrderBy
       Keyword.Ascending.ToString(), LocalizedToken.FromKeyword Keyword.Ascending
       Keyword.Descending.ToString(), LocalizedToken.FromKeyword Keyword.Descending

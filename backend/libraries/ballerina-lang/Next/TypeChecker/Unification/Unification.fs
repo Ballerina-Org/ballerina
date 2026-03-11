@@ -417,6 +417,7 @@ module Unification =
       let ofSum = Sum.mapRight (Errors.MapContext(replaceWith loc0)) >> state.OfSum
 
       let (==) a b = TypeValue.Unify(loc0, a, b)
+      let (===) a b = TypeQueryRow.Unify(loc0, a, b)
 
       let unifySchemas e1 e2 =
         state {
@@ -474,6 +475,7 @@ module Unification =
 
         match left, right with
         | TypeValue.Primitive p1, TypeValue.Primitive p2 when p1.value = p2.value -> return ()
+        | TypeValue.QueryRow q1, TypeValue.QueryRow q2 -> return! q1 === q2
         | TypeValue.Lookup l1, TypeValue.Lookup l2 when l1 = l2 -> return ()
         | TypeValue.Lookup l, t2
         | t2, TypeValue.Lookup l when ctx.TypeParameters |> Map.containsKey l.LocalName |> not ->
@@ -630,6 +632,53 @@ module Unification =
           do! tId1 == tId2
         | _ -> return! (fun () -> $"Cannot unify types: {left} and {right}") |> error |> state.Throw
       }
+
+
+  and TypeQueryRow<'ve> with
+    static member Unify<'valueExt when 'valueExt: comparison>
+      (loc0: Location, left: TypeQueryRow<'valueExt>, right: TypeQueryRow<'valueExt>)
+      : State<Unit, UnificationContext<'valueExt>, UnificationState<'valueExt>, Errors<Location>> =
+
+      let error e = Errors.Singleton loc0 e
+
+      let ofSum = Sum.mapRight (Errors.MapContext(replaceWith loc0)) >> state.OfSum
+
+      let (==) a b = TypeValue.Unify(loc0, a, b)
+      let (===) a b = TypeQueryRow.Unify(loc0, a, b)
+
+      state {
+        match left, right with
+        | TypeQueryRow.PrimaryKey k1, TypeQueryRow.PrimaryKey k2 -> return! k1 == k2
+        | TypeQueryRow.Json j1, TypeQueryRow.Json j2 -> return! j1 == j2
+        | TypeQueryRow.PrimitiveType(p1, n1), TypeQueryRow.PrimitiveType(p2, n2) when p1 = p2 && n1 = n2 -> return ()
+        | TypeQueryRow.Tuple(t1), TypeQueryRow.Tuple(t2) ->
+          if t1.Length <> t2.Length then
+            return!
+              (fun () -> $"Cannot unify query row types: {left} and {right}, tuple lengths do not match")
+              |> error
+              |> state.Throw
+          else
+            for v1, v2 in List.zip t1 t2 do
+              do! v1 === v2
+
+            return ()
+        | TypeQueryRow.Record fields1, TypeQueryRow.Record fields2 ->
+          if fields1.Count <> fields2.Count then
+            return!
+              (fun () -> $"Cannot unify query row types: {left} and {right}, record field counts do not match")
+              |> error
+              |> state.Throw
+          else
+            for k1, v1 in fields1 |> Map.toSeq do
+              let! v2 = fields2 |> Map.tryFindWithError k1 "" (fun () -> "") loc0 |> ofSum
+              do! v1 === v2
+        | _ ->
+          return!
+            (fun () -> $"Cannot unify query row types: {left} and {right}")
+            |> error
+            |> state.Throw
+      }
+
 
   type SymbolicTypeApplication<'ve> with
     static member Instantiate<'valueExt when 'valueExt: comparison>
@@ -951,7 +1000,7 @@ module Unification =
                   typeExprSource = n
                   typeCheckScopeSource = scope }
           // | TypeValue.Apply { value = var, arg; source = n } ->
-          //   let! arg' = TypeValue.Instantiate () (TypeExpr.Eval ()) loc0 arg
+          //   let! arg' = TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type) loc0 arg
           //   return TypeValue.Apply { value = var, arg'; source = n }
           | TypeValue.Set { value = v
                             typeExprSource = n

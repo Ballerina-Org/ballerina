@@ -19,11 +19,11 @@ open Ballerina.DSL.Next.Types.TypeChecker.Model
 open Ballerina.DSL.Next.Types.TypeChecker.Patterns
 open Ballerina.DSL.Next.Types.TypeChecker
 
-let private typeCheck<'a> =
+let private typeCheck, _db_query_sym, _make_db_query_type =
   let _, _, _db_query_sym, _make_db_query_type =
-    db_ops () |> stdExtensions<'a, MutableMemoryDB<'a, unit>>
+    db_ops () |> stdExtensions<_, MutableMemoryDB<_, unit>>
 
-  Expr.TypeCheck(_db_query_sym, _make_db_query_type)
+  Expr.TypeCheck(_db_query_sym, _make_db_query_type), _db_query_sym, _make_db_query_type
 
 [<Test>]
 let ``LangNext-Instantiate straightforward var to primitive`` () =
@@ -37,7 +37,7 @@ let ``LangNext-Instantiate straightforward var to primitive`` () =
   let program = TypeValue.Var a
 
   let actual =
-    ((TypeValue.Instantiate () (TypeExpr.Eval () typeCheck) Location.Unknown program)
+    ((TypeValue.Instantiate () (TypeExpr.Eval _db_query_sym _make_db_query_type typeCheck) Location.Unknown program)
       .run (TypeInstantiateContext.Empty, UnificationState.Create classes |> TypeCheckState.CreateFromUnificationState))
 
   let expected: TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>> =
@@ -59,7 +59,7 @@ let ``LangNext-Instantiate var nested inside generics to primitive`` () =
   let program = TypeValue.Var a |> TypeValue.CreateSet
 
   let actual =
-    ((TypeValue.Instantiate () (TypeExpr.Eval () typeCheck) Location.Unknown program)
+    ((TypeValue.Instantiate () (TypeExpr.Eval _db_query_sym _make_db_query_type typeCheck) Location.Unknown program)
       .run (TypeInstantiateContext.Empty, UnificationState.Create classes |> TypeCheckState.CreateFromUnificationState))
 
   let expected: TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>> =
@@ -84,7 +84,7 @@ let ``LangNext-Instantiate var nested inside generics via other bound var to pri
   let program = TypeValue.Var a |> TypeValue.CreateSet
 
   let actual =
-    ((TypeValue.Instantiate () (TypeExpr.Eval () typeCheck) Location.Unknown program)
+    ((TypeValue.Instantiate () (TypeExpr.Eval _db_query_sym _make_db_query_type typeCheck) Location.Unknown program)
       .run (TypeInstantiateContext.Empty, UnificationState.Create classes |> TypeCheckState.CreateFromUnificationState))
 
   let expected: TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>> =
@@ -110,7 +110,7 @@ let ``LangNext-Instantiate var nested inside generics via other bound and aliase
   let program = TypeValue.Var a |> TypeValue.CreateSet |> TypeValue.CreateSet
 
   let actual =
-    ((TypeValue.Instantiate () (TypeExpr.Eval () typeCheck) Location.Unknown program)
+    ((TypeValue.Instantiate () (TypeExpr.Eval _db_query_sym _make_db_query_type typeCheck) Location.Unknown program)
       .run (TypeInstantiateContext.Empty, UnificationState.Create classes |> TypeCheckState.CreateFromUnificationState))
 
   let expected: TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>> =

@@ -6,6 +6,7 @@ module Query =
   open Ballerina.Collections.Sum
   open Ballerina.State.WithError
   open Ballerina.Collections.Option
+  open Ballerina.Collections.Map
   open Ballerina.LocalizedErrors
   open Ballerina.Errors
   open System
@@ -42,9 +43,12 @@ module Query =
 
 
   type QueryTypeCheckContext<'valueExt> =
-    { Iterators: Map<LocalIdentifier, TypeQueryRow<'valueExt>> }
+    { Iterators: Map<LocalIdentifier, TypeQueryRow<'valueExt>>
+      Closure: Map<ResolvedIdentifier, TypeQueryRow<'valueExt>> }
 
-    static member Create iterators = { Iterators = iterators }
+    static member Create iterators closure =
+      { Iterators = iterators
+        Closure = closure }
 
   type QueryTypeCheckerResult<'r, 'valueExt when 'valueExt: comparison> =
     State<'r, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>>
@@ -94,20 +98,52 @@ module Query =
               ExprQueryExprRec.QueryTupleCons(args_e_t |> Seq.map fst |> Seq.toList)
               |> ExprQueryExpr.Create expr.Location,
               TypeQueryRow.Tuple args_t
-          | ExprQueryExprRec.QueryLookup(Identifier.LocalScope v) ->
+          | ExprQueryExprRec.QueryLookup(Identifier.FullyQualified _ as l) ->
+            let l = l |> ResolvedIdentifier.FromIdentifier
+
             let! t =
-              identifiers_context.Iterators
+              identifiers_context.Closure
               |> Map.tryFindWithError
-                (v |> LocalIdentifier.Create)
-                "query iteration variable"
-                (fun () -> $"Type checking error: Undefined iterator variable {v}")
+                l
+                "query closure variable"
+                (fun () -> $"Type checking error: Undefined closure variable {l}")
                 ()
               |> ofSum
 
-            return
-              ExprQueryExprRec.QueryLookup(v |> ResolvedIdentifier.Create)
-              |> ExprQueryExpr.Create expr.Location,
-              t
+            return ExprQueryExprRec.QueryLookup l |> ExprQueryExpr.Create expr.Location, t
+          | ExprQueryExprRec.QueryLookup(Identifier.LocalScope v as l) ->
+            return!
+              state.Either
+                (state {
+                  let! t =
+                    identifiers_context.Iterators
+                    |> Map.tryFindWithError
+                      (v |> LocalIdentifier.Create)
+                      "query iteration variable"
+                      (fun () -> $"Type checking error: Undefined iterator variable {v}")
+                      ()
+                    |> ofSum
+
+                  return
+                    ExprQueryExprRec.QueryLookup(v |> ResolvedIdentifier.Create)
+                    |> ExprQueryExpr.Create expr.Location,
+                    t
+                })
+                (state {
+                  let l = l |> ResolvedIdentifier.FromIdentifier
+
+                  let! t =
+                    identifiers_context.Closure
+                    |> Map.tryFindWithError
+                      l
+                      "query closure variable"
+                      (fun () -> $"Type checking error: Undefined closure variable {l}")
+                      ()
+                    |> ofSum
+
+                  return ExprQueryExprRec.QueryLookup l |> ExprQueryExpr.Create expr.Location, t
+                })
+
           | ExprQueryExprRec.QueryTupleDes(tuple, item) ->
             let! tuple_e, tuple_t = !tuple
 
@@ -416,6 +452,86 @@ module Query =
             |> Seq.map (fun (_, v, _, q) -> v.Name |> LocalIdentifier.Create, q)
             |> Map.ofSeq
 
+          let! ctx = state.GetContext()
+
+          let rec get_lookups_from_context (q: ExprQueryExpr<_, _, _>) =
+            state {
+              match q.Expr with
+              | ExprQueryExprRec.QueryLookup(l: Identifier) ->
+                if
+                  l.IsLocalScope
+                  && iterator_bindings |> Map.containsKey (l.LocalName |> LocalIdentifier.Create)
+                then
+                  return Map.empty
+                else
+                  let l = l |> ResolvedIdentifier.FromIdentifier
+
+                  match ctx.Values |> Map.tryFind l with
+                  | Some(TypeValue.Primitive { value = p }, Kind.Star) ->
+                    return Map.empty |> Map.add l (TypeQueryRow.PrimitiveType(p, false))
+                  | Some(TypeValue.Sum { value = [ TypeValue.Primitive { value = PrimitiveType.Unit }
+                                                   TypeValue.Primitive { value = p } ] },
+                         Kind.Star) -> return Map.empty |> Map.add l (TypeQueryRow.PrimitiveType(p, true))
+                  | _ ->
+                    return!
+                      state.Throw(
+                        Errors.Singleton q.Location (fun () -> $"Type checking error: Undefined identifier {l}")
+                      )
+
+              | ExprQueryExprRec.QueryTupleCons items ->
+                let! maps = items |> Seq.map get_lookups_from_context |> state.All
+                return maps |> Seq.fold (fun acc m -> Map.merge (fun _ -> id) acc m) Map.empty
+              | ExprQueryExprRec.QueryRecordDes(expr, _field) ->
+                let! map = get_lookups_from_context expr
+                return map
+              | ExprQueryExprRec.QueryTupleDes(expr, _) ->
+                let! map = get_lookups_from_context expr
+                return map
+              | ExprQueryExprRec.QueryConditional(cond, ``then``, ``else``) ->
+                let! cond_map = get_lookups_from_context cond
+                let! then_map = get_lookups_from_context ``then``
+                let! else_map = get_lookups_from_context ``else``
+                return Map.merge (fun _ -> id) cond_map (Map.merge (fun _ -> id) then_map else_map)
+              | ExprQueryExprRec.QueryUnionDes(_expr, _handlers) ->
+                return!
+                  (fun () ->
+                    $"Error: Query union destruction expressions are not supported in the current implementation")
+                  |> Errors.Singleton q.Location
+                  |> state.Throw
+              | ExprQueryExprRec.QuerySumDes(_, _) ->
+                return!
+                  (fun () ->
+                    $"Error: Query sum destruction expressions are not supported in the current implementation")
+                  |> Errors.Singleton q.Location
+                  |> state.Throw
+              | ExprQueryExprRec.QueryApply(func, arg) ->
+                let! func_map = get_lookups_from_context func
+                let! arg_map = get_lookups_from_context arg
+                return Map.merge (fun _ -> id) func_map arg_map
+              | ExprQueryExprRec.QueryIntrinsic(_) -> return Map.empty
+              | ExprQueryExprRec.QueryConstant(_) -> return Map.empty
+            }
+
+          let! where_lookups =
+            state {
+              match where_expr with
+              | Some where_expr -> return! get_lookups_from_context where_expr
+              | None -> return Map.empty
+            }
+
+          let! select_lookups = get_lookups_from_context select_expr
+          let select_lookups = where_lookups |> Map.merge (fun _ -> id) select_lookups
+
+          let! orderby_lookups =
+            state {
+              match orderby_expr with
+              | Some(orderby_expr, _) -> return! get_lookups_from_context orderby_expr
+              | None -> return Map.empty
+            }
+
+          let select_orderby_lookups =
+            select_lookups |> Map.merge (fun _ -> id) orderby_lookups
+
           let! iterators =
             iterators
             |> NonEmptyList.TryOfList
@@ -425,7 +541,8 @@ module Query =
             )
             |> state.OfSum
 
-          let queryTypeCheckingContext = iterator_bindings |> QueryTypeCheckContext<_>.Create
+          let queryTypeCheckingContext =
+            QueryTypeCheckContext<_>.Create iterator_bindings select_orderby_lookups
 
           let! joins_expr' =
             state {

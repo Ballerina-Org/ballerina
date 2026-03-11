@@ -9,6 +9,11 @@ module Patterns =
   open Ballerina.DSL.Next.Types
 
   type Int32Operations<'ext> with
+    static member AsToString(op: Int32Operations<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | Int32Operations.String -> () |> sum.Return
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected ToString operation"))
+
     static member AsPlus(op: Int32Operations<'ext>) : Sum<Option<int32>, Errors<Unit>> =
       match op with
       | Int32Operations.Plus v -> v.v1 |> sum.Return

@@ -27,10 +27,13 @@ module Eval =
   open Ballerina.DSL.Next.Terms.Patterns
 
   type TypeQueryRowExpr<'valueExt> with
-    static member Eval<'ve when 've: comparison>() : TypeQueryRowExprEval<'ve> =
+    static member Eval<'ve when 've: comparison>
+      (query_type_symbol: TypeSymbol)
+      (mk_query_type: Schema<'ve> -> TypeQueryRow<'ve> -> TypeValue<'ve>)
+      : TypeQueryRowExprEval<'ve> =
       fun typeCheckExpr _n loc0 q_row ->
         state {
-          let (!) = TypeExpr.Eval<'ve> () typeCheckExpr None loc0
+          let (!) = TypeExpr.Eval<'ve> query_type_symbol mk_query_type typeCheckExpr None loc0
           // let (!!) = TypeQueryRowExpr.Eval<'ve> () typeCheckExpr None loc0
           // let! ctx = state.GetContext()
 
@@ -80,11 +83,14 @@ module Eval =
         }
 
   and TypeExpr<'valueExt> with
-    static member EvalAsSymbol<'ve when 've: comparison>() : TypeExprSymbolEval<'ve> =
+    static member EvalAsSymbol<'ve when 've: comparison>
+      (query_type_symbol: TypeSymbol)
+      (mk_query_type: Schema<'ve> -> TypeQueryRow<'ve> -> TypeValue<'ve>)
+      : TypeExprSymbolEval<'ve> =
       fun exprTypeCheck loc0 t ->
         state {
-          let (!) = TypeExpr.EvalAsSymbol () exprTypeCheck loc0
-          let (!!) = TypeExpr.Eval () exprTypeCheck None loc0
+          let (!) = TypeExpr.EvalAsSymbol query_type_symbol mk_query_type exprTypeCheck loc0
+          let (!!) = TypeExpr.Eval query_type_symbol mk_query_type exprTypeCheck None loc0
           let! ctx = state.GetContext()
 
           let error e = Errors.Singleton loc0 e
@@ -128,12 +134,20 @@ module Eval =
               |> state.Throw
         }
 
-    static member Eval<'ve when 've: comparison>() : TypeExprEval<'ve> =
+    static member Eval<'ve when 've: comparison>
+      (query_type_symbol: TypeSymbol)
+      (mk_query_type: Schema<'ve> -> TypeQueryRow<'ve> -> TypeValue<'ve>)
+      : TypeExprEval<'ve> =
       fun typeCheckExpr n loc0 t ->
         state {
-          let (!) = TypeExpr.Eval<'ve> () typeCheckExpr None loc0
-          let (!!) = TypeExpr.EvalAsSymbol<'ve> () typeCheckExpr loc0
-          let (!!!) = TypeQueryRowExpr.Eval<'ve> () typeCheckExpr None loc0
+          let (!) = TypeExpr.Eval<'ve> query_type_symbol mk_query_type typeCheckExpr None loc0
+
+          let (!!) =
+            TypeExpr.EvalAsSymbol<'ve> query_type_symbol mk_query_type typeCheckExpr loc0
+
+          let (!!!) =
+            TypeQueryRowExpr.Eval<'ve> query_type_symbol mk_query_type typeCheckExpr None loc0
+
           let! ctx = state.GetContext()
 
           let error e = Errors.Singleton loc0 e
@@ -697,7 +711,12 @@ module Eval =
                             OnUpdating = None
                             OnUpdated = None
                             OnDeleting = None
-                            OnDeleted = None } }
+                            OnDeleted = None
+                            OnBackground = None
+                            CanCreate = None
+                            CanRead = None
+                            CanUpdate = None
+                            CanDelete = None } }
                   })
                 |> OrderedMap.ofList
                 |> state.AllMapOrdered
@@ -950,7 +969,12 @@ module Eval =
                         OnUpdating = None
                         OnUpdated = None
                         OnDeleting = None
-                        OnDeleted = None }
+                        OnDeleted = None
+                        OnBackground = None
+                        CanCreate = None
+                        CanRead = None
+                        CanUpdate = None
+                        CanDelete = None }
 
                     let! typechecked_hooks =
                       state {
@@ -1176,8 +1200,190 @@ module Eval =
                                 OnDeleted = Some on_deleted_expr }
                       }
 
+                    let! typechecked_hooks =
+                      state {
+                        match parsed_hooks.OnBackground with
+                        | None ->
+                          return
+                            { typechecked_hooks with
+                                OnBackground = None }
+                        | Some on_background ->
+                          let! ctx = state.GetContext()
+                          let extra_scope = ctx.BackgroundHooksExtraScope |> Map.map (fun _ v -> v |> fst)
+
+                          let! on_background_expr, on_background_t, on_background_k, _ =
+                            typeCheckExpr None on_background
+                            |> state.MapContext(TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope))
+
+                          do! on_background_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                          do!
+                            TypeValue.Unify(
+                              on_background.Location,
+                              on_background_t,
+                              // fun (schema:Schema) (e_id:AID) (e:A) (e_with_props:Schema::As)
+                              TypeValue.CreateArrow(
+                                TypeValue.Schema resulting_schema_without_hooks,
+                                TypeValue.CreateArrow(
+                                  e_typechecked.Id,
+                                  TypeValue.CreateArrow(
+                                    e_typechecked.TypeWithProps,
+                                    TypeValue.CreateSum [ TypeValue.CreateUnit(); TypeValue.CreateTimeSpan() ]
+                                  )
+                                )
+                              )
+                            )
+                            |> Expr.liftUnification
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                          return
+                            { typechecked_hooks with
+                                OnBackground = Some on_background_expr }
+                      }
+
+                    let! typechecked_hooks =
+                      state {
+                        match parsed_hooks.CanCreate with
+                        | None ->
+                          return
+                            { typechecked_hooks with
+                                CanCreate = None }
+                        | Some can_create ->
+
+                          let! ctx = state.GetContext()
+                          let extra_scope = ctx.PermissionHooksExtraScope |> Map.map (fun _ v -> v |> fst)
+
+                          let! can_create_expr, can_create_t, can_create_k, _ =
+                            typeCheckExpr None can_create
+                            |> state.MapContext(TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope))
+
+                          do! can_create_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                          do!
+                            TypeValue.Unify(
+                              can_create.Location,
+                              can_create_t,
+                              TypeValue.CreateArrow(
+                                TypeValue.Schema resulting_schema_without_hooks,
+                                TypeValue.CreateBool()
+                              )
+                            )
+                            |> Expr.liftUnification
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                          return
+                            { typechecked_hooks with
+                                CanCreate = Some can_create_expr }
+                      }
+
+                    let! typechecked_hooks =
+                      state {
+                        match parsed_hooks.CanRead with
+                        | None ->
+                          return
+                            { typechecked_hooks with
+                                CanRead = None }
+                        | Some can_read ->
+
+                          let! ctx = state.GetContext()
+                          let extra_scope = ctx.PermissionHooksExtraScope |> Map.map (fun _ v -> v |> fst)
+
+                          let! can_read_expr, can_read_t, can_read_k, _ =
+                            typeCheckExpr None can_read
+                            |> state.MapContext(TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope))
+
+                          do! can_read_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                          do!
+                            TypeValue.Unify(
+                              can_read.Location,
+                              can_read_t,
+                              TypeValue.CreateArrow(
+                                TypeValue.Schema resulting_schema_without_hooks,
+                                mk_query_type resulting_schema_without_hooks (TypeQueryRow.PrimaryKey e_typechecked.Id)
+                              )
+                            )
+                            |> Expr.liftUnification
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                          return
+                            { typechecked_hooks with
+                                CanRead = Some can_read_expr }
+                      }
+
+                    let! typechecked_hooks =
+                      state {
+                        match parsed_hooks.CanUpdate with
+                        | None ->
+                          return
+                            { typechecked_hooks with
+                                CanUpdate = None }
+                        | Some can_update ->
+
+                          let! ctx = state.GetContext()
+                          let extra_scope = ctx.PermissionHooksExtraScope |> Map.map (fun _ v -> v |> fst)
+
+                          let! can_update_expr, can_update_t, can_update_k, _ =
+                            typeCheckExpr None can_update
+                            |> state.MapContext(TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope))
+
+                          do! can_update_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                          do!
+                            TypeValue.Unify(
+                              can_update.Location,
+                              can_update_t,
+                              TypeValue.CreateArrow(
+                                TypeValue.Schema resulting_schema_without_hooks,
+                                mk_query_type resulting_schema_without_hooks (TypeQueryRow.PrimaryKey e_typechecked.Id)
+                              )
+                            )
+                            |> Expr.liftUnification
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                          return
+                            { typechecked_hooks with
+                                CanUpdate = Some can_update_expr }
+                      }
+
+                    let! typechecked_hooks =
+                      state {
+                        match parsed_hooks.CanDelete with
+                        | None ->
+                          return
+                            { typechecked_hooks with
+                                CanDelete = None }
+                        | Some can_delete ->
+
+                          let! ctx = state.GetContext()
+                          let extra_scope = ctx.PermissionHooksExtraScope |> Map.map (fun _ v -> v |> fst)
+
+                          let! can_delete_expr, can_delete_t, can_delete_k, _ =
+                            typeCheckExpr None can_delete
+                            |> state.MapContext(TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope))
+
+                          do! can_delete_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                          do!
+                            TypeValue.Unify(
+                              can_delete.Location,
+                              can_delete_t,
+                              TypeValue.CreateArrow(
+                                TypeValue.Schema resulting_schema_without_hooks,
+                                mk_query_type resulting_schema_without_hooks (TypeQueryRow.PrimaryKey e_typechecked.Id)
+                              )
+                            )
+                            |> Expr.liftUnification
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                          return
+                            { typechecked_hooks with
+                                CanDelete = Some can_delete_expr }
+                      }
+
                     return typechecked_hooks
                   }
+
 
                 let typecheck_relation_hooks
                   (assert_no_cardinality: State<unit, TypeCheckContext<'ve>, TypeCheckState<'ve>, Errors<Location>>)
@@ -1307,7 +1513,13 @@ module Eval =
                                   SchemaEntityHooks.OnUpdating = v.Hooks.OnUpdating |> Option.orElse hooks.OnUpdating
                                   SchemaEntityHooks.OnUpdated = v.Hooks.OnUpdated |> Option.orElse hooks.OnUpdated
                                   SchemaEntityHooks.OnDeleting = v.Hooks.OnDeleting |> Option.orElse hooks.OnDeleting
-                                  SchemaEntityHooks.OnDeleted = v.Hooks.OnDeleted |> Option.orElse hooks.OnDeleted } }
+                                  SchemaEntityHooks.OnDeleted = v.Hooks.OnDeleted |> Option.orElse hooks.OnDeleted
+                                  SchemaEntityHooks.OnBackground =
+                                    v.Hooks.OnBackground |> Option.orElse hooks.OnBackground
+                                  SchemaEntityHooks.CanCreate = v.Hooks.CanCreate |> Option.orElse hooks.CanCreate
+                                  SchemaEntityHooks.CanRead = v.Hooks.CanRead |> Option.orElse hooks.CanRead
+                                  SchemaEntityHooks.CanUpdate = v.Hooks.CanUpdate |> Option.orElse hooks.CanUpdate
+                                  SchemaEntityHooks.CanDelete = v.Hooks.CanDelete |> Option.orElse hooks.CanDelete } }
 
                         acc |> OrderedMap.add entityName v
                       | None -> acc)
@@ -1595,7 +1807,7 @@ module Eval =
 
             let! tv =
               tv
-              |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+              |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
               |> State.Run(TypeInstantiateContext.FromEvalContext(ctx), s)
               |> sum.Map fst
               |> sum.MapError fst

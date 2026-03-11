@@ -53,3 +53,8 @@ module Patterns =
       | _ ->
         sum.Throw
         <| Errors.Singleton () (fun () -> "Expected LessThanOrEqual operation")
+
+    static member AsFromSeconds(op: TimeSpanOperations<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | TimeSpanOperations.FromSeconds -> sum.Return()
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected FromSeconds operation")
