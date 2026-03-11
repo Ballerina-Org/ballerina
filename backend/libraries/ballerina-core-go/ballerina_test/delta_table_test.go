@@ -54,6 +54,12 @@ func (s *DeltaTableSerializationTestSuite) TestAdd() {
 	assertBackAndForthFromJsonYieldsSameValue(s.T(), delta)
 }
 
+func (s *DeltaTableSerializationTestSuite) TestAddBatch() {
+	delta := ballerina.NewDeltaTableAddBatch[string, ballerina.DeltaString]([]string{"new table element 1", "new table element 2"})
+
+	assertBackAndForthFromJsonYieldsSameValue(s.T(), delta)
+}
+
 func (s *DeltaTableSerializationTestSuite) TestAddEmpty() {
 	delta := ballerina.NewDeltaTableAddEmpty[string, ballerina.DeltaString]()
 
