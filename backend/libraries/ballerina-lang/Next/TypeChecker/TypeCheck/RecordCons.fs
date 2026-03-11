@@ -34,6 +34,7 @@ module RecordCons =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckRecordCons<'valueExt when 'valueExt: comparison>
+      (query_type_symbol, mk_query_type)
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
       : TypeChecker<ExprRecordCons<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Fields = fields }) ->
@@ -97,7 +98,7 @@ module RecordCons =
 
           let! return_t =
             TypeValue.CreateRecord fieldsTypes
-            |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
           return Expr.RecordCons(fieldsExpr, loc0, ctx.Scope), return_t, Kind.Star, ctx

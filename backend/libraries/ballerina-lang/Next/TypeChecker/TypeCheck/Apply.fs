@@ -30,6 +30,10 @@ module Apply =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckApply<'valueExt when 'valueExt: comparison>
+      (
+        query_type_symbol: TypeSymbol,
+        mk_query_type: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>
+      )
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
       : TypeChecker<ExprApply<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ F = f_expr; Arg = a_expr }) ->
@@ -175,13 +179,24 @@ module Apply =
                               (fun acc tp -> TypeExpr.Apply(acc, tp.Name |> Identifier.LocalScope |> TypeExpr.Lookup))
                               (f_i |> TypeExpr.FromTypeValue)
 
-                          let! f_i, _ = f_i |> TypeExpr.Eval () typeCheckExpr None loc0 |> Expr.liftTypeEval
+                          let! f_i, _ =
+                            f_i
+                            |> TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr None loc0
+                            |> Expr.liftTypeEval
+
                           do! TypeValue.Unify(loc0, f_i, t_a) |> Expr<'T, 'Id, 'valueExt>.liftUnification
-                          let! f_o, _ = f_o |> TypeExpr.Eval () typeCheckExpr None loc0 |> Expr.liftTypeEval
+
+                          let! f_o, _ =
+                            f_o
+                            |> TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr None loc0
+                            |> Expr.liftTypeEval
 
                           let! f_o =
                             f_o
-                            |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+                            |> TypeValue.Instantiate
+                              ()
+                              (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr)
+                              loc0
                             |> Expr.liftInstantiation
 
                           return Expr.Apply(Expr.Lookup f_lookup, a, loc0, ctx.Scope), f_o, f_k, ctx
@@ -225,7 +240,10 @@ module Apply =
 
                               let! t_res =
                                 t_f
-                                |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+                                |> TypeValue.Instantiate
+                                  ()
+                                  (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr)
+                                  loc0
                                 |> Expr.liftInstantiation
 
                               return t_res
@@ -246,7 +264,7 @@ module Apply =
 
                         //       let! t_res =
                         //         t_f
-                        //         |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+                        //         |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
                         //         |> Expr.liftInstantiation
 
                         //       return t_res
@@ -279,7 +297,10 @@ module Apply =
 
                               let! f_output =
                                 f_output
-                                |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+                                |> TypeValue.Instantiate
+                                  ()
+                                  (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr)
+                                  loc0
                                 |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
                               return Expr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx
@@ -333,7 +354,7 @@ module Apply =
 
                               let! t_f', _ =
                                 t_f'
-                                |> TypeExpr.Eval () typeCheckExpr None loc0
+                                |> TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr None loc0
                                 |> Expr<'T, 'Id, 'valueExt>.liftTypeEval
 
                               // do Console.WriteLine $"after evaluating type expression, t_f' = {t_f'}"
@@ -359,7 +380,10 @@ module Apply =
 
                               let! f_output =
                                 f_output
-                                |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+                                |> TypeValue.Instantiate
+                                  ()
+                                  (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr)
+                                  loc0
                                 |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
                               // do Console.WriteLine $"after instantiating function output type, f_output = {f_output}"
@@ -413,7 +437,10 @@ module Apply =
                                   TypeValue.CreatePrimitive adHocResolution.OtherInput,
                                   TypeValue.CreatePrimitive adHocResolution.Output
                                 )
-                                |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+                                |> TypeValue.Instantiate
+                                  ()
+                                  (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr)
+                                  loc0
                                 |> Expr.liftInstantiation
 
                               let k_res = Kind.Star
@@ -480,7 +507,7 @@ module Apply =
 
                       let! t_a =
                         t_a
-                        |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+                        |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
                         |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
                       return t_a, Some(TypeValue.CreateArrow(t_a, freshVar))
@@ -511,7 +538,7 @@ module Apply =
 
                     let! f_output =
                       f_output
-                      |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+                      |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
                       |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
                     return Expr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx

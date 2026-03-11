@@ -487,12 +487,12 @@ module Type =
         })
 
     let entity_hooks () =
-      let onHook (hookKeyword, hookKeywordParser) =
+      let onHook (preHookKeyword) (hookKeyword, hookKeywordParser) =
         parser {
           let! startsWithHookKeyword =
             parser {
               do! letKeyword
-              do! onKeyword
+              do! preHookKeyword
               do! hookKeywordParser
             }
             |> parser.Lookahead
@@ -502,19 +502,24 @@ module Type =
           | Right _ -> return! parser.Throw(Errors.Singleton Location.Unknown (fun () -> "No hook found"))
           | Left _ ->
             do! letKeyword
-            do! onKeyword
+            do! preHookKeyword
             do! hookKeywordParser
             do! equalsOperator
             let! hookExpr = parseExpr
             return hookKeyword, hookExpr
         }
 
-      [ (SchemaEntityHook.Creating, creatingKeyword) |> onHook
-        (SchemaEntityHook.Created, createdKeyword) |> onHook
-        (SchemaEntityHook.Updating, updatingKeyword) |> onHook
-        (SchemaEntityHook.Updated, updatedKeyword) |> onHook
-        (SchemaEntityHook.Deleting, deletingKeyword) |> onHook
-        (SchemaEntityHook.Deleted, deletedKeyword) |> onHook ]
+      [ (SchemaEntityHook.Creating, creatingKeyword) |> onHook onKeyword
+        (SchemaEntityHook.Created, createdKeyword) |> onHook onKeyword
+        (SchemaEntityHook.Updating, updatingKeyword) |> onHook onKeyword
+        (SchemaEntityHook.Updated, updatedKeyword) |> onHook onKeyword
+        (SchemaEntityHook.Deleting, deletingKeyword) |> onHook onKeyword
+        (SchemaEntityHook.Deleted, deletedKeyword) |> onHook onKeyword
+        (SchemaEntityHook.Background, backgroundKeyword) |> onHook onKeyword
+        (SchemaEntityHook.CanCreate, canCreateKeyword) |> onHook canKeyword
+        (SchemaEntityHook.CanRead, canReadKeyword) |> onHook canKeyword
+        (SchemaEntityHook.CanUpdate, canUpdateKeyword) |> onHook canKeyword
+        (SchemaEntityHook.CanDelete, canDeleteKeyword) |> onHook canKeyword ]
       |> parser.Any
       |> parser.Many
       |> parser.Map(Map.ofList)
@@ -573,7 +578,11 @@ module Type =
           let onUpdated = hooks |> Map.tryFind SchemaEntityHook.Updated
           let onDeleting = hooks |> Map.tryFind SchemaEntityHook.Deleting
           let onDeleted = hooks |> Map.tryFind SchemaEntityHook.Deleted
-
+          let onBackground = hooks |> Map.tryFind SchemaEntityHook.Background
+          let canCreate = hooks |> Map.tryFind SchemaEntityHook.CanCreate
+          let canRead = hooks |> Map.tryFind SchemaEntityHook.CanRead
+          let canUpdate = hooks |> Map.tryFind SchemaEntityHook.CanUpdate
+          let canDelete = hooks |> Map.tryFind SchemaEntityHook.CanDelete
 
           do! closeCurlyBracketOperator
 
@@ -589,7 +598,12 @@ module Type =
                   OnUpdating = onUpdating
                   OnUpdated = onUpdated
                   OnDeleting = onDeleting
-                  OnDeleted = onDeleted } }
+                  OnDeleted = onDeleted
+                  OnBackground = onBackground
+                  CanCreate = canCreate
+                  CanRead = canRead
+                  CanUpdate = canUpdate
+                  CanDelete = canDelete } }
         })
 
 
@@ -609,7 +623,11 @@ module Type =
           let onUpdated = hooks |> Map.tryFind SchemaEntityHook.Updated
           let onDeleting = hooks |> Map.tryFind SchemaEntityHook.Deleting
           let onDeleted = hooks |> Map.tryFind SchemaEntityHook.Deleted
-
+          let onBackground = hooks |> Map.tryFind SchemaEntityHook.Background
+          let canCreate = hooks |> Map.tryFind SchemaEntityHook.CanCreate
+          let canRead = hooks |> Map.tryFind SchemaEntityHook.CanRead
+          let canUpdate = hooks |> Map.tryFind SchemaEntityHook.CanUpdate
+          let canDelete = hooks |> Map.tryFind SchemaEntityHook.CanDelete
 
           do! closeCurlyBracketOperator
 
@@ -620,7 +638,12 @@ module Type =
               OnUpdating = onUpdating
               OnUpdated = onUpdated
               OnDeleting = onDeleting
-              OnDeleted = onDeleted }
+              OnDeleted = onDeleted
+              OnBackground = onBackground
+              CanCreate = canCreate
+              CanRead = canRead
+              CanUpdate = canUpdate
+              CanDelete = canDelete }
         })
 
     let schema () =

@@ -157,6 +157,7 @@ module Common =
       // | Token.Keyword(Keyword.Where) -> Keyword.Where.ToString() |> Some
       // | Token.Keyword(Keyword.Join) -> Keyword.Join.ToString() |> Some
       | Token.Keyword(Keyword.On) -> Keyword.On.ToString() |> Some
+      | Token.Keyword(Keyword.Can) -> Keyword.Can.ToString() |> Some
       | Token.Keyword(Keyword.And) -> Keyword.And.ToString() |> Some
       | Token.Keyword(Keyword.OrderBy) -> Keyword.OrderBy.ToString() |> Some
       | Token.Keyword(Keyword.Ascending) -> Keyword.Ascending.ToString() |> Some
@@ -202,6 +203,14 @@ module Common =
   let createdKeyword = softKeyword "created"
   let updatedKeyword = softKeyword "updated"
   let deletedKeyword = softKeyword "deleted"
+  let backgroundKeyword = softKeyword "background"
+  let canCreateKeyword = softKeyword "create"
+  let canReadKeyword = softKeyword "read"
+  let canUpdateKeyword = softKeyword "update"
+  let canDeleteKeyword = softKeyword "delete"
+  let canKeyword = parseKeyword Keyword.Can
+
+
   let linkingKeyword = softKeyword "linking"
   let unlinkingKeyword = softKeyword "unlinking"
   let linkedKeyword = softKeyword "linked"

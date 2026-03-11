@@ -18,16 +18,15 @@ open Ballerina.Cat.Collections.OrderedMap
 open Ballerina.LocalizedErrors
 open Ballerina.Errors
 
-let private typeCheck<'a> : ExprTypeChecker<ValueExt<'a, MutableMemoryDB<'a, unit>, unit>> =
+let private typeCheck, _db_query_sym, _make_db_query_type =
   let _, _, _db_query_sym, _make_db_query_type = db_ops () |> stdExtensions
-  Expr.TypeCheck(_db_query_sym, _make_db_query_type)
+  Expr.TypeCheck(_db_query_sym, _make_db_query_type), _db_query_sym, _make_db_query_type
 
-let private evalFull<'a> : TypeExprEval<ValueExt<'a, MutableMemoryDB<'a, unit>, unit>> =
-  TypeExpr.Eval()
+let private evalFull = TypeExpr.Eval _db_query_sym _make_db_query_type
 
-let private eval<'a>
-  : TypeExpr<ValueExt<'a, MutableMemoryDB<'a, unit>, unit>>
-      -> TypeExprEvalResult<ValueExt<_, MutableMemoryDB<_, unit>, unit>> =
+let private eval =
+  // : TypeExpr<ValueExt<'a, MutableMemoryDB<'a, unit>, unit>>
+  //     -> TypeExprEvalResult<ValueExt<_, MutableMemoryDB<_, unit>, unit>> =
   evalFull typeCheck None Location.Unknown
 
 [<Test>]

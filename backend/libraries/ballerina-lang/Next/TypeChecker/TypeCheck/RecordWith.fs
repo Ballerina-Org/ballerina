@@ -34,6 +34,7 @@ module RecordWith =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckRecordWith<'valueExt when 'valueExt: comparison>
+      (query_type_symbol, mk_query_type)
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
       : TypeChecker<ExprRecordWith<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Record = record; Fields = fields }) ->
@@ -71,7 +72,7 @@ module RecordWith =
           let! t_record =
             t_record
             |> TypeValue.CreateRecord
-            |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
           return Expr.RecordWith(record, fieldsExpr, loc0, ctx.Scope), t_record, Kind.Star, ctx
