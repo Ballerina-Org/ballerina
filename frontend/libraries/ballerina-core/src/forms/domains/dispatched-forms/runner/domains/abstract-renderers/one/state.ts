@@ -199,9 +199,7 @@ export const OneAbstractRendererState = {
       // if the inner value is unit, we are rendering a partial one
       (ctx.customFormState.initializationStatus.kind === "not initialized" ||
         ctx.customFormState.initializationStatus.kind === "reinitializing") &&
-      ctx.getApi != undefined &&
-      ctx.value.kind === "option" &&
-      !ctx.value.isSome,
+      ctx.getApi != undefined,
   },
 };
 
