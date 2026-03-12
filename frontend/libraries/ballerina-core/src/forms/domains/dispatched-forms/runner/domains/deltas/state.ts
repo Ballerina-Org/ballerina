@@ -350,7 +350,7 @@ export type DispatchDeltaTable<T = Unit> =
       sourceAncestorLookupTypeNames: string[];
       uniqueTableIdentifier: string;
     }
-    | {
+  | {
       kind: "TableRemoveBatch";
       ids: string[];
       flags: T | undefined;
@@ -1530,23 +1530,27 @@ export const DispatchDeltaTransfer = {
           }
           if (delta.kind == "TableAddBatchEmpty") {
             return ValueOrErrors.Default.return<
-                [
-                  DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
-                  DispatchDeltaTransferComparand,
-                  AggregatedFlags<Flags>,
-                ],
-                string
-              >([
-                {
-                  Discriminator: "TableAddBatchEmpty",
-                  AddBatchEmpty: delta.count,
-                },
-                `[TableAddBatchEmpty][${delta.uniqueTableIdentifier}][${delta.count}]`,
-                delta.flags
-                  ? [[delta.flags, `[TableAddBatchEmpty][${delta.uniqueTableIdentifier}][${delta.count}]`]]
-                  : [],
-              ]
-            );
+              [
+                DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
+                DispatchDeltaTransferComparand,
+                AggregatedFlags<Flags>,
+              ],
+              string
+            >([
+              {
+                Discriminator: "TableAddBatchEmpty",
+                AddBatchEmpty: delta.count,
+              },
+              `[TableAddBatchEmpty][${delta.uniqueTableIdentifier}][${delta.count}]`,
+              delta.flags
+                ? [
+                    [
+                      delta.flags,
+                      `[TableAddBatchEmpty][${delta.uniqueTableIdentifier}][${delta.count}]`,
+                    ],
+                  ]
+                : [],
+            ]);
           }
           if (delta.kind == "TableRemoveBatch") {
             return ValueOrErrors.Default.return<
@@ -1563,7 +1567,12 @@ export const DispatchDeltaTransfer = {
               },
               `[TableRemoveBatch][${delta.uniqueTableIdentifier}]`,
               delta.flags
-                ? [[delta.flags, `[TableRemoveBatch][${delta.uniqueTableIdentifier}]`]]
+                ? [
+                    [
+                      delta.flags,
+                      `[TableRemoveBatch][${delta.uniqueTableIdentifier}]`,
+                    ],
+                  ]
                 : [],
             ]);
           }
