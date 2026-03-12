@@ -122,13 +122,9 @@ module IsLinked =
                 match v with
                 | [ _fromId; _toId ] ->
 
-                  let! ctx = reader.GetContext()
-
                   let! is_linked =
                     db_ops.IsLinked relation_ref { FromId = _fromId; ToId = _toId }
-                    |> Reader.Run ctx.RuntimeContext
-                    |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                    |> reader.OfSum
+                    |> reader.MapError(Errors.MapContext(replaceWith loc0))
 
                   return Value.Primitive(PrimitiveValue.Bool is_linked)
                 | _ ->
@@ -262,13 +258,10 @@ module IsLinked =
                       | [ _fromId; _toId ] ->
 
                         do! onLinkingHook db_ops relation_ref loc0 _fromId _toId
-                        let! ctx = reader.GetContext()
 
                         do!
                           db_ops.Link relation_ref { FromId = _fromId; ToId = _toId }
-                          |> Reader.Run ctx.RuntimeContext
-                          |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                          |> reader.OfSum
+                          |> reader.MapError(Errors.MapContext(replaceWith loc0))
 
                         do! onLinkedHook db_ops relation_ref loc0 _fromId _toId
 

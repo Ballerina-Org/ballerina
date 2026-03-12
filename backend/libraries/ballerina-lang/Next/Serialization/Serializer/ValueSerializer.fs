@@ -23,6 +23,7 @@ module ValueSerializer =
   let rec recordToDTO (record: Map<ResolvedIdentifier, Value<'T, 'valueExt>>) =
     record
     |> Map.toList
+    |> List.sortWith (fun (id1, _) (id2, _) -> ResolvedIdentifier.Compare id1 id2)
     |> List.map (fun (identifier, value) ->
       reader {
         let identifierDTO = resolvedIdentifierToDTO identifier

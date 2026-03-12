@@ -1335,7 +1335,10 @@ module Eval =
                               can_update_t,
                               TypeValue.CreateArrow(
                                 TypeValue.Schema resulting_schema_without_hooks,
-                                mk_query_type resulting_schema_without_hooks (TypeQueryRow.PrimaryKey e_typechecked.Id)
+                                TypeValue.CreateArrow(
+                                  e_typechecked.Id,
+                                  TypeValue.CreateArrow(e_typechecked.TypeWithProps, TypeValue.CreateBool())
+                                )
                               )
                             )
                             |> Expr.liftUnification
@@ -1370,7 +1373,10 @@ module Eval =
                               can_delete_t,
                               TypeValue.CreateArrow(
                                 TypeValue.Schema resulting_schema_without_hooks,
-                                mk_query_type resulting_schema_without_hooks (TypeQueryRow.PrimaryKey e_typechecked.Id)
+                                TypeValue.CreateArrow(
+                                  e_typechecked.Id,
+                                  TypeValue.CreateArrow(e_typechecked.TypeWithProps, TypeValue.CreateBool())
+                                )
                               )
                             )
                             |> Expr.liftUnification

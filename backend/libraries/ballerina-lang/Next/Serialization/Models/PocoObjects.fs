@@ -6,6 +6,13 @@ module PocoObjects =
   open System
   open System.Collections.Generic
   open System.Text.Json.Serialization
+  open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.Collections.Sum
+  open Ballerina.Errors
+  open Ballerina.DSL.Next.Types.TypeChecker
+  open Ballerina.DSL.Next.Types.TypeChecker.Patterns
+  open Ballerina.State.WithError
+  open Ballerina
 
   type TypeParameterDiscriminator =
     | Symbol = 1
@@ -59,6 +66,15 @@ module PocoObjects =
       Module: string
       Type: string
       Name: string }
+
+    static member FromResolvedIdentifier(identifier: ResolvedIdentifier) : ResolvedIdentifierDTO =
+      { Assembly = identifier.Assembly
+        Module = identifier.Module
+        Type =
+          match identifier.Type with
+          | None -> null
+          | Some t -> t
+        Name = identifier.Name }
 
   type TypeCheckScopeDTO =
     { Assembly: string
@@ -507,6 +523,42 @@ module PocoObjects =
     member val Primitive: PrimitiveValueDTO | null = null with get, set
     member val Var: Var | null = null with get, set
     member val Ext: ExtDTO<'valueExt> | null = null with get, set
+
+    member this.GetRecordFieldPositions
+      (typeValue: TypeValue<'ext>)
+      : State<Map<TypeSymbol, int>, TypeCheckContext<'ext>, TypeCheckState<'ext>, Errors<Location>> =
+      state {
+        let! record =
+          TypeValue.AsRecord typeValue
+          |> state.OfSum
+          |> state.MapError(Errors.MapContext(replaceWith Location.Unknown))
+
+        if this.Kind = ValueDiscriminator.Record && isNull this.Record |> not then
+          return!
+            record.data
+            |> Map.toList
+            |> List.map (fun (typeSymbol, _) ->
+              state {
+                let! typeSymbolResolvedIdentifierDTO =
+                  TypeCheckState.TryResolveIdentifier(typeSymbol, Location.Unknown)
+                  |> state.Map ResolvedIdentifierDTO.FromResolvedIdentifier
+
+                let! index =
+                  this.Record
+                  |> Array.tryFindIndex (fun recordField -> recordField.Key = typeSymbolResolvedIdentifierDTO)
+                  |> sum.OfOption(
+                    Errors.Singleton Location.Unknown (fun _ ->
+                      $"The field {typeSymbol.Name} from the type value was not found in the dto.")
+                  )
+                  |> state.OfSum
+
+                return typeSymbol, index
+              })
+            |> state.All
+            |> state.Map Map.ofList
+        else
+          return! state.Throw(Errors.Singleton Location.Unknown (fun _ -> "The given value dto is not a record."))
+      }
 
     new(applicableId: Option<ResolvedIdentifierDTO>, ext: 'valueExt) as this =
       ValueDTO<'valueExt>()

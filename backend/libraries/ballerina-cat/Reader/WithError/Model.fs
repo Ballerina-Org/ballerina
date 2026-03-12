@@ -98,6 +98,9 @@ module WithError =
 
     member _.OfSum(s: Sum<'a, 'e>) : Reader<'a, 'c, 'e> = Reader.ofSum s
 
+    member reader.OfOption e v = v |> sum.OfOption e |> reader.OfSum
+
+
     member _.MapContext<'c1, 'c, 'a, 'e>(f: 'c1 -> 'c) : Reader<'a, 'c, 'e> -> Reader<'a, 'c1, 'e> = Reader.mapContext f
 
     member _.Map<'c, 'a, 'b, 'e>(f: 'a -> 'b) : Reader<'a, 'c, 'e> -> Reader<'b, 'c, 'e> = Reader.map f

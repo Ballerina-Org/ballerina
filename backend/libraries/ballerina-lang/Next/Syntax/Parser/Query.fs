@@ -714,7 +714,8 @@ module Query =
                 Joins = joins
                 Where = where_
                 Select = select_expr
-                OrderBy = orderby_ },
+                OrderBy = orderby_
+                Closure = Map.empty },
               loc,
               TypeCheckScope.Empty
             )

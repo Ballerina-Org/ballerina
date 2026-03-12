@@ -7,7 +7,6 @@ module Model =
   open Ballerina.DSL.Next.Terms
   open Ballerina.Reader.WithError
   open Ballerina.Errors
-  open Ballerina.LocalizedErrors
   open Ballerina.Collections.Sum
 
   [<CustomEquality; CustomComparison>]
@@ -65,48 +64,59 @@ module Model =
       RunQuery:
         ValueQuery<TypeValue<'ext>, 'ext>
           -> Option<int * int>
-          -> Reader<List<Value<TypeValue<'ext>, 'ext>>, 'runtimeContext, Errors<Unit>>
+          -> Reader<List<Value<TypeValue<'ext>, 'ext>>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
       Create:
         EntityRef<'db, 'ext>
           -> CreateArgs<'runtimeContext, 'db, 'ext>
-          -> Reader<Value<TypeValue<'ext>, 'ext>, 'runtimeContext, Errors<Unit>>
+          -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
       Upsert:
         EntityRef<'db, 'ext>
           -> UpsertArgs<'runtimeContext, 'db, 'ext>
-          -> Reader<Value<TypeValue<'ext>, 'ext>, 'runtimeContext, Errors<Unit>>
-      Delete: EntityRef<'db, 'ext> -> Value<TypeValue<'ext>, 'ext> -> Reader<unit, 'runtimeContext, Errors<Unit>>
+          -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
+      Delete:
+        EntityRef<'db, 'ext>
+          -> Value<TypeValue<'ext>, 'ext>
+          -> Reader<unit, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
       DeleteMany:
-        EntityRef<'db, 'ext> -> List<Value<TypeValue<'ext>, 'ext>> -> Reader<unit, 'runtimeContext, Errors<Unit>>
+        EntityRef<'db, 'ext>
+          -> List<Value<TypeValue<'ext>, 'ext>>
+          -> Reader<unit, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
       Link:
-        RelationRef<'db, 'ext> -> LinkArgs<'runtimeContext, 'db, 'ext> -> Reader<unit, 'runtimeContext, Errors<Unit>>
+        RelationRef<'db, 'ext>
+          -> LinkArgs<'runtimeContext, 'db, 'ext>
+          -> Reader<unit, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
       Unlink:
-        RelationRef<'db, 'ext> -> UnlinkArgs<'runtimeContext, 'db, 'ext> -> Reader<unit, 'runtimeContext, Errors<Unit>>
+        RelationRef<'db, 'ext>
+          -> UnlinkArgs<'runtimeContext, 'db, 'ext>
+          -> Reader<unit, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
       IsLinked:
         RelationRef<'db, 'ext>
           -> IsLinkedArgs<'runtimeContext, 'db, 'ext>
-          -> Reader<bool, 'runtimeContext, Errors<Unit>>
+          -> Reader<bool, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
       GetById:
         EntityRef<'db, 'ext>
           -> Value<TypeValue<'ext>, 'ext>
-          -> Reader<Value<TypeValue<'ext>, 'ext>, 'runtimeContext, Errors<Unit>>
+          -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
       GetMany:
-        EntityRef<'db, 'ext> -> int * int -> Reader<List<Value<TypeValue<'ext>, 'ext>>, 'runtimeContext, Errors<Unit>>
+        EntityRef<'db, 'ext>
+          -> int * int
+          -> Reader<List<Value<TypeValue<'ext>, 'ext>>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
       LookupMaybe:
         RelationRef<'db, 'ext>
           -> Value<TypeValue<'ext>, 'ext>
           -> RelationLookupDirection
-          -> Reader<Option<Value<TypeValue<'ext>, 'ext>>, 'runtimeContext, Errors<Unit>>
+          -> Reader<Option<Value<TypeValue<'ext>, 'ext>>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
       LookupOne:
         RelationRef<'db, 'ext>
           -> Value<TypeValue<'ext>, 'ext>
           -> RelationLookupDirection
-          -> Reader<Value<TypeValue<'ext>, 'ext>, 'runtimeContext, Errors<Unit>>
+          -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
       LookupMany:
         RelationRef<'db, 'ext>
           -> Value<TypeValue<'ext>, 'ext>
           -> RelationLookupDirection
           -> int * int
-          -> Reader<List<Value<TypeValue<'ext>, 'ext>>, 'runtimeContext, Errors<Unit>> }
+          -> Reader<List<Value<TypeValue<'ext>, 'ext>>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>> }
 
   type DBEvalProperty<'ext> =
     { PropertyName: LocalIdentifier

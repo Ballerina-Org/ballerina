@@ -170,24 +170,54 @@ module Delete =
               | Some(entity_ref) -> // the closure has the first operand - second step in the application
                 let entityId = v
 
-                let! ctx = reader.GetContext()
-
-                let existingValue =
+                let! existingValue =
                   db_ops.GetById entity_ref entityId
-                  |> Reader.Run ctx.RuntimeContext
-                  |> Sum.toOption
+                  |> reader.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.Catch
+                  |> reader.Map Sum.toOption
 
                 match existingValue with
                 | None -> return Value.Primitive(PrimitiveValue.Bool false)
                 | Some currentValueWithProps ->
+                  let actual_delete =
+                    reader {
+                      do! onDeletingHook db_ops entity_ref loc0 entityId currentValueWithProps
 
-                  do! onDeletingHook db_ops entity_ref loc0 entityId currentValueWithProps
+                      let! result =
+                        db_ops.Delete entity_ref entityId
+                        |> reader.MapError(Errors.MapContext(replaceWith loc0))
+                        |> reader.Catch
 
-                  let result = db_ops.Delete entity_ref entityId |> Reader.Run ctx.RuntimeContext
+                      do! onDeletedHook db_ops entity_ref loc0 entityId currentValueWithProps
 
-                  do! onDeletedHook db_ops entity_ref loc0 entityId currentValueWithProps
+                      return Value.Primitive(PrimitiveValue.Bool(result.IsLeft))
+                    }
 
-                  return Value.Primitive(PrimitiveValue.Bool(result.IsLeft))
+                  return!
+                    reader {
+                      let _, _, entity, schema_value = entity_ref
+
+                      match entity.Hooks.CanDelete with
+                      | Some canDeleteHook ->
+                        match!
+                          Expr.Apply(
+                            Expr.Apply(
+                              Expr.Apply(
+                                canDeleteHook,
+                                Expr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
+                              ),
+                              Expr.FromValue(entityId, TypeValue.CreateUnit(), Kind.Star)
+                            ),
+                            Expr.FromValue(currentValueWithProps, TypeValue.CreateUnit(), Kind.Star)
+                          )
+                          |> NonEmptyList.One
+                          |> Expr.Eval
+                        with
+                        | Value.Primitive(PrimitiveValue.Bool canDelete) when canDelete -> return! actual_delete
+                        | _ -> return Value.Primitive(PrimitiveValue.Bool(false))
+                      | None -> return! actual_delete
+                    }
+
             } }
 
     memoryDBDeleteId, DeleteOperation

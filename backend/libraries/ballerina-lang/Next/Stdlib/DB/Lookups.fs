@@ -114,11 +114,10 @@ module Lookups =
                   (DBValues.LookupOne {| RelationRef = Some v |} |> valueLens.Set, Some memoryDBLookupOneId)
                   |> Ext
               | Some(relation_ref, direction) -> // the closure has the first operand - second step in the application
-                let! ctx = reader.GetContext()
-
-                let target_values =
-                  // actual_lookup loc0 relation_ref v |> reader.Catch
-                  db_ops.LookupOne relation_ref v direction |> Reader.Run ctx.RuntimeContext
+                let! target_values =
+                  db_ops.LookupOne relation_ref v direction
+                  |> reader.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.Catch
 
                 match target_values with
                 | Right(_e: Errors<_>) -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
@@ -212,10 +211,10 @@ module Lookups =
                   (DBValues.LookupOption {| RelationRef = Some v |} |> valueLens.Set, Some memoryDBLookupOptionId)
                   |> Ext
               | Some(relation_ref, direction) -> // the closure has the first operand - second step in the application
-                let! ctx = reader.GetContext()
-
-                let target_values =
-                  db_ops.LookupMaybe relation_ref v direction |> Reader.Run ctx.RuntimeContext
+                let! target_values =
+                  db_ops.LookupMaybe relation_ref v direction
+                  |> reader.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.Catch
 
                 match target_values with
                 | Right(_e: Errors<_>) -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
@@ -347,11 +346,10 @@ module Lookups =
 
                   match v with
                   | [ Value.Primitive(PrimitiveValue.Int32 _offset); Value.Primitive(PrimitiveValue.Int32 _limit) ] ->
-                    let! ctx = reader.GetContext()
-
-                    let target_values =
+                    let! target_values =
                       db_ops.LookupMany relation_ref entityId direction (_offset, _limit)
-                      |> Reader.Run ctx.RuntimeContext
+                      |> reader.MapError(Errors.MapContext(replaceWith loc0))
+                      |> reader.Catch
 
                     match target_values with
                     | Right(_e: Errors<_>) ->

@@ -101,7 +101,7 @@ module DBRunQuery =
 
     let apply loc0 (query: Option<ValueQuery<TypeValue<'ext>, 'ext>>) value =
       reader {
-        let! ctx = reader.GetContext()
+        // let! ctx = reader.GetContext()
 
         match query with
         | None ->
@@ -120,7 +120,7 @@ module DBRunQuery =
           | Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit) ->
             let! res =
               db_ops.RunQuery q None
-              |> Reader.mapContext (replaceWith ctx.RuntimeContext)
+              // |> Reader.mapContext (replaceWith ctx.RuntimeContext)
               |> Reader.mapError (Errors.MapContext(replaceWith loc0))
 
             return (res |> listSet, None) |> Ext
@@ -129,7 +129,7 @@ module DBRunQuery =
                                     Value.Primitive(PrimitiveValue.Int32 take) ]) ->
             let! res =
               db_ops.RunQuery q (Some(skip, take))
-              |> Reader.mapContext (replaceWith ctx.RuntimeContext)
+              // |> Reader.mapContext (replaceWith ctx.RuntimeContext)
               |> Reader.mapError (Errors.MapContext(replaceWith loc0))
 
             return (res |> listSet, None) |> Ext

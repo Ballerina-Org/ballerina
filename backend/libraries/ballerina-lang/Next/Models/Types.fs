@@ -31,6 +31,19 @@ module Model =
       Type: Option<string>
       Name: string }
 
+    static member Compare (id1: ResolvedIdentifier) (id2: ResolvedIdentifier) =
+      match compare id1.Name id2.Name with
+      | 0 ->
+        match id1.Type, id2.Type with
+        | Some t1, Some t2 -> compare t1 t2
+        | Some _, None -> -1
+        | None, Some _ -> 1
+        | None, None ->
+          match compare id1.Module id2.Module with
+          | 0 -> compare id1.Assembly id2.Assembly
+          | comparison -> comparison
+      | comparison -> comparison
+
     static member Create(assembly: string, module_: string, type_: Option<string>, name: string) : ResolvedIdentifier =
       { Assembly = assembly
         Module = module_
@@ -862,7 +875,8 @@ module Model =
       Joins: Option<NonEmptyList<ExprQueryJoin<'T, 'Id, 'valueExt>>>
       Where: Option<ExprQueryExpr<'T, 'Id, 'valueExt>>
       Select: ExprQueryExpr<'T, 'Id, 'valueExt>
-      OrderBy: Option<ExprQueryExpr<'T, 'Id, 'valueExt> * OrderByDirection> }
+      OrderBy: Option<ExprQueryExpr<'T, 'Id, 'valueExt> * OrderByDirection>
+      Closure: Map<ResolvedIdentifier, TypeQueryRow<'valueExt>> }
 
   and OrderByDirection =
     | Asc
@@ -902,6 +916,7 @@ module Model =
     | QueryLookup of 'Id
     | QueryIntrinsic of QueryIntrinsic
     | QueryConstant of PrimitiveValue
+    | QueryClosureValue of Value<TypeValue<'valueExt>, 'valueExt> * TypeQueryRow<'valueExt>
 
     override self.ToString() =
       match self with
@@ -933,6 +948,7 @@ module Model =
       | QueryLookup id -> id.ToString()
       | QueryIntrinsic intrinsic -> intrinsic.ToString()
       | QueryConstant c -> c.ToString()
+      | QueryClosureValue(v, _) -> v.ToString()
 
   and QueryCaseHandler<'T, 'Id, 'valueExt when 'Id: comparison> =
     { Param: Var

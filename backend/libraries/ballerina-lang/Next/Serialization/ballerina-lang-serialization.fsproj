@@ -19,6 +19,7 @@
     <ProjectReference Include="..\Models\ballerina-lang-models.fsproj" />
     <ProjectReference Include="..\..\..\ballerina-stdlib\ballerina-stdlib.fsproj" />
     <ProjectReference Include="..\..\..\ballerina-cat\ballerina-cat.fsproj" />
+    <ProjectReference Include="..\TypeChecker\ballerina-lang-typecheck.fsproj" />
   </ItemGroup>
 
 </Project>

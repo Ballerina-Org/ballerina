@@ -74,6 +74,14 @@ module Query =
 
         // let error e = Errors.Singleton loc0 e
 
+        let two_primary_keys =
+          function
+          | [ TypeQueryRow.PrimaryKey(TypeValue.Record { value = k1 })
+              TypeQueryRow.PrimaryKey(TypeValue.Record { value = k2 }) ] when k1 = k2 ->
+
+            true
+          | _ -> false
+
         let two_int32s =
           function
           | [ TypeQueryRow.PrimitiveType(PrimitiveType.Int32, _); TypeQueryRow.PrimitiveType(PrimitiveType.Int32, _) ]
@@ -82,9 +90,18 @@ module Query =
           | [ TypeQueryRow.PrimitiveType(PrimitiveType.Int32, _)
               TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Int32 }) ]
           | [ TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Int32 })
-              TypeQueryRow.PrimitiveType(PrimitiveType.Int32, _) ] -> true
-          | [ TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Int32 })
               TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Int32 }) ] -> true
+          | _ -> false
+
+        let two_bools =
+          function
+          | [ TypeQueryRow.PrimitiveType(PrimitiveType.Bool, _); TypeQueryRow.PrimitiveType(PrimitiveType.Bool, _) ]
+          | [ TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Bool })
+              TypeQueryRow.PrimitiveType(PrimitiveType.Bool, _) ]
+          | [ TypeQueryRow.PrimitiveType(PrimitiveType.Bool, _)
+              TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Bool }) ]
+          | [ TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Bool })
+              TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Bool }) ] -> true
           | _ -> false
 
         state {
@@ -197,10 +214,10 @@ module Query =
                       (state {
                         let! record_t = json_t |> TypeValue.AsRecord |> ofSum
 
-                        let! id = TypeCheckState.TryResolveIdentifier(field, loc0)
+                        let! field_id = TypeCheckState.TryResolveIdentifier(field, loc0)
 
                         let! field_sym =
-                          TypeCheckState.tryFindRecordFieldSymbol (id, loc0)
+                          TypeCheckState.tryFindRecordFieldSymbol (field_id, loc0)
                           |> state.OfStateReader
                           |> Expr.liftTypeEval
 
@@ -213,7 +230,7 @@ module Query =
                           |> ofSum
 
                         return
-                          ExprQueryExprRec.QueryRecordDes(record_e, field.LocalName |> ResolvedIdentifier.Create)
+                          ExprQueryExprRec.QueryRecordDes(record_e, field_id)
                           |> ExprQueryExpr.Create expr.Location,
                           field_t |> TypeQueryRow.Json
                       })
@@ -288,6 +305,26 @@ module Query =
               return
                 ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create expr.Location,
                 TypeQueryRow.PrimitiveType(PrimitiveType.TimeSpan, false)
+          | ExprQueryExprRec.QueryApply({ Expr = ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.And) }, arg) ->
+            let! arg_e, arg_t = !arg
+            let! arg_t_elements = arg_t |> TypeQueryRow.AsTuple |> ofSum
+
+            if arg_t_elements |> two_bools then
+              return
+                ExprQueryExprRec.QueryApply(
+                  ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.And)
+                  |> ExprQueryExpr.Create expr.Location,
+                  arg_e
+                )
+                |> ExprQueryExpr.Create expr.Location,
+                TypeQueryRow.PrimitiveType(PrimitiveType.Bool, false)
+            else
+              return!
+                (fun () ->
+                  $"Type checking error: invalid type arguments {arg_t_elements} for && operator in query expression")
+                |> Errors.Singleton expr.Location
+                |> state.Throw
+
           | ExprQueryExprRec.QueryApply({ Expr = ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.GreaterThan) }, arg) ->
             let! arg_e, arg_t = !arg
             let! arg_t_elements = arg_t |> TypeQueryRow.AsTuple |> ofSum
@@ -305,6 +342,26 @@ module Query =
               return!
                 (fun () ->
                   $"Type checking error: invalid type arguments {arg_t_elements} for > operator in query expression")
+                |> Errors.Singleton expr.Location
+                |> state.Throw
+
+          | ExprQueryExprRec.QueryApply({ Expr = ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Equals) }, arg) ->
+            let! arg_e, arg_t = !arg
+            let! arg_t_elements = arg_t |> TypeQueryRow.AsTuple |> ofSum
+
+            if arg_t_elements |> two_primary_keys then
+              return
+                ExprQueryExprRec.QueryApply(
+                  ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Equals)
+                  |> ExprQueryExpr.Create expr.Location,
+                  arg_e
+                )
+                |> ExprQueryExpr.Create expr.Location,
+                TypeQueryRow.PrimitiveType(PrimitiveType.Bool, false)
+            else
+              return!
+                (fun () ->
+                  $"Type checking error: invalid type arguments {arg_t_elements} for = operator in query expression")
                 |> Errors.Singleton expr.Location
                 |> state.Throw
 
@@ -328,6 +385,8 @@ module Query =
                 |> Errors.Singleton expr.Location
                 |> state.Throw
 
+          | ExprQueryExprRec.QueryClosureValue(v, t) ->
+            return ExprQueryExprRec.QueryClosureValue(v, t) |> ExprQueryExpr.Create expr.Location, t
           | _ ->
             return!
               (fun () ->
@@ -472,6 +531,30 @@ module Query =
                   | Some(TypeValue.Sum { value = [ TypeValue.Primitive { value = PrimitiveType.Unit }
                                                    TypeValue.Primitive { value = p } ] },
                          Kind.Star) -> return Map.empty |> Map.add l (TypeQueryRow.PrimitiveType(p, true))
+                  | Some((TypeValue.Record _) as t, Kind.Star) ->
+                    let! entities =
+                      schema.Entities
+                      |> OrderedMap.values
+                      |> NonEmptyList.TryOfList
+                      |> sum.OfOption(
+                        Errors.Singleton loc0 (fun () ->
+                          $"Type checking error: No entities found in schema for lookup {l}")
+                      )
+                      |> state.OfSum
+
+                    let! matching_entity_id =
+                      entities
+                      |> NonEmptyList.map (fun entity ->
+                        state {
+                          do!
+                            TypeValue.Unify(q.Location, t, entity.Id)
+                            |> Expr<'T, 'Id, 'valueExt>.liftUnification
+
+                          return entity.Id
+                        })
+                      |> state.Any
+
+                    return Map.empty |> Map.add l (TypeQueryRow.PrimaryKey matching_entity_id)
                   | _ ->
                     return!
                       state.Throw(
@@ -510,6 +593,7 @@ module Query =
                 return Map.merge (fun _ -> id) func_map arg_map
               | ExprQueryExprRec.QueryIntrinsic(_) -> return Map.empty
               | ExprQueryExprRec.QueryConstant(_) -> return Map.empty
+              | ExprQueryExprRec.QueryClosureValue(_, _) -> return Map.empty
             }
 
           let! where_lookups =
@@ -633,7 +717,8 @@ module Query =
                 Joins = joins_expr'
                 Where = where_expr'
                 Select = select_expr'
-                OrderBy = orderby_expr' }
+                OrderBy = orderby_expr'
+                Closure = select_orderby_lookups }
 
           let return_type = mk_query_type schema select_expr'_t
 
