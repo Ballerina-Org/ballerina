@@ -1133,7 +1133,22 @@ export const TableAbstractRenderer = <
                 ),
               ),
             )}
-            UnfilteredTableData_Dangerous={embeddedUnfilteredTableData}
+            UnfilteredTableData_Dangerous={embeddedUnfilteredTableData.map(
+              (_) =>
+                _.map((row) =>
+                  row(
+                    TableAbstractRendererPendingOps.Operations.hasPendingAddOperation(
+                      props.context.customFormState.pendingOps,
+                    ),
+                  )(
+                    TableAbstractRendererPendingOps.Operations.optimisticUpdate<
+                      CustomPresentationContext,
+                      Flags,
+                      ExtraContext
+                    >(props),
+                  ),
+                ),
+            )}
             AllowedFilters={EmbeddedAllowedFilters}
             AllowedSorting={props.context.sorting}
             HighlightedFilters={props.context.highlightedFilters}
