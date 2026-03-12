@@ -72,8 +72,8 @@ func (s *DeltaTableSerializationTestSuite) TestRemoveAll() {
 	assertBackAndForthFromJsonYieldsSameValue(s.T(), delta)
 }
 
-func (s *DeltaTableSerializationTestSuite) TestAddBatch() {
-	delta := ballerina.NewDeltaTableAddBatch[string, ballerina.DeltaString](3)
+func (s *DeltaTableSerializationTestSuite) TestAddBatchEmpty() {
+	delta := ballerina.NewDeltaTableAddBatchEmpty[string, ballerina.DeltaString](3)
 
 	assertBackAndForthFromJsonYieldsSameValue(s.T(), delta)
 }

@@ -344,7 +344,7 @@ export type DispatchDeltaTable<T = Unit> =
       sourceAncestorLookupTypeNames: string[];
     }
   | {
-      kind: "TableAddBatch";
+      kind: "TableAddBatchEmpty";
       count: number;
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
@@ -517,7 +517,7 @@ export type DispatchDeltaTransferTable<DispatchDeltaTransferCustom> =
       ValueAll: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
     }
   | { Discriminator: "TableAddEmpty" }
-  | { Discriminator: "TableAddBatch"; AddBatch: number }
+  | { Discriminator: "TableAddBatchEmpty"; AddBatchEmpty: number }
   | { Discriminator: "TableRemoveAt"; RemoveAt: string }
   | { Discriminator: "TableRemoveBatch"; RemoveBatch: string[] }
   | { Discriminator: "TableRemoveAll"; RemoveAll: Unit }
@@ -1527,7 +1527,7 @@ export const DispatchDeltaTransfer = {
               delta.flags ? [[delta.flags, "[TableRemoveAll]"]] : [],
             ]);
           }
-          if (delta.kind == "TableAddBatch") {
+          if (delta.kind == "TableAddBatchEmpty") {
             return ValueOrErrors.Default.return<
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
@@ -1537,12 +1537,12 @@ export const DispatchDeltaTransfer = {
                 string
               >([
                 {
-                  Discriminator: "TableAddBatch",
-                  AddBatch: delta.count,
+                  Discriminator: "TableAddBatchEmpty",
+                  AddBatchEmpty: delta.count,
                 },
-                `[TableAddBatch][${delta.uniqueTableIdentifier}][${delta.count}]`,
+                `[TableAddBatchEmpty][${delta.uniqueTableIdentifier}][${delta.count}]`,
                 delta.flags
-                  ? [[delta.flags, `[TableAddBatch][${delta.uniqueTableIdentifier}][${delta.count}]`]]
+                  ? [[delta.flags, `[TableAddBatchEmpty][${delta.uniqueTableIdentifier}][${delta.count}]`]]
                   : [],
               ]
             );
