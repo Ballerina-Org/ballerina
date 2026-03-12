@@ -11,7 +11,6 @@ import {
   Unit,
   ValueOrErrors,
   ValueRecord,
-  BaseFlags,
   Sum,
 } from "../../../../../../../../../main";
 import { Map } from "immutable";
@@ -19,6 +18,7 @@ import { Co, DebouncerCo, InitializeCo } from "./builder";
 import { initializeOne } from "./_initializeOne";
 import { initializeStream } from "./_initializeStream";
 import { debouncer } from "./_debouncer";
+import { BaseFlags } from "../../../deltas/delta-to-dto/state";
 
 export const initializeOneRunner = <
   CustomPresentationContext = Unit,

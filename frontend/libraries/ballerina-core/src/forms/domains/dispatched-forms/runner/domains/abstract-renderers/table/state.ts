@@ -31,10 +31,10 @@ import {
   ValueSumN,
   ValueUnit,
   id,
-  DispatchDelta,
 } from "../../../../../../../../main";
 import { Template, View } from "../../../../../../../template/state";
 import { TableAbstractRendererPendingOps } from "./domains/pending-operation/state";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export type TableAbstractRendererReadonlyContext<
   CustomPresentationContext = Unit,

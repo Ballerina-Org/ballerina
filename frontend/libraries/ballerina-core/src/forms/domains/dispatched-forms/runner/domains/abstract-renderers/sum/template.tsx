@@ -2,7 +2,6 @@ import {
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
   DispatchCommonFormState,
-  DispatchDelta,
   IdWrapperProps,
   PredicateValue,
   replaceWith,
@@ -22,6 +21,7 @@ import {
   SumAbstractRendererState,
   SumAbstractRendererView,
 } from "./state";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const SumAbstractRenderer = <
   CustomPresentationContext = Unit,

@@ -4,7 +4,6 @@ import {
   CoTypedFactory,
   Debounce,
   Debounced,
-  DispatchDelta,
   id,
   InfiniteStreamLoader,
   InfiniteStreamState,
@@ -24,6 +23,7 @@ import {
   SearchableInfiniteStreamAbstractRendererReadonlyContext,
   SearchableInfiniteStreamAbstractRendererForeignMutationsExpected,
 } from "./state";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const SearchableInfiniteStreamAbstractRenderer = <
   CustomPresentationContext = Unit,

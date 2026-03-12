@@ -1,7 +1,6 @@
 import {
   BasicFun,
   BasicUpdater,
-  DispatchDelta,
   ListRepo,
   Option,
   TableAbstractRendererReadonlyContext,
@@ -24,6 +23,7 @@ import {
   TableAbstractRendererPendingRemoveOperation,
   TableAbstractRendererPendingRemoveOps,
 } from "./remove/state";
+import { DispatchDelta } from "../../../../deltas/dispatch-delta/state";
 
 export type TableAbstractRendererPendingOps =
   | TableAbstractRendererNoPendingOps

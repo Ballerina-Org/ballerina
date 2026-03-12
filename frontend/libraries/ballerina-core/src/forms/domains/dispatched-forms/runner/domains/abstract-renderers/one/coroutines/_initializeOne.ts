@@ -1,12 +1,8 @@
 import {
-  BaseFlags,
-  DispatchDelta,
   OneAbstractRendererState,
-  PredicateValue,
   replaceWith,
   Sum,
   Unit,
-  id as IdUpdater,
   ValueInfiniteStreamState,
   ValueOption,
   ValueOrErrors,
@@ -14,6 +10,8 @@ import {
   Option,
 } from "../../../../../../../../../main";
 import { InitializeCo } from "./builder";
+import { DispatchDelta } from "../../../deltas/dispatch-delta/state";
+import { BaseFlags } from "../../../deltas/delta-to-dto/state";
 
 export const initializeOne = <
   CustomPresentationContext = Unit,

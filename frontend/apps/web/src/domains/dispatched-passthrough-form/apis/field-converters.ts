@@ -197,13 +197,14 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
     Table: {
       fromAPIRawValue: (_) => {
         if (_ == undefined) {
-          return { data: Map(), hasMoreValues: false, from: 0, to: 0 };
+          return { data: Map(), hasMoreValues: false, from: 0, to: 0, defaultRow: undefined };
         }
         return {
           data: OrderedMap(_.Values),
           hasMoreValues: _.HasMore,
           from: _.From,
           to: _.To,
+          defaultRow: _.DefaultRow,
         };
       },
       toAPIRawValue: ([_, __]) => ({
@@ -211,6 +212,7 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
         To: 0,
         HasMore: false,
         Values: [],
+        DefaultRow: undefined,
       }),
     },
     One: {

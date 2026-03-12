@@ -2,7 +2,6 @@ import { List, Map, Set } from "immutable";
 import {
   BasicUpdater,
   DispatchCommonFormState,
-  DispatchDelta,
   DispatchParsedType,
   PredicateValue,
   replaceWith,
@@ -21,7 +20,7 @@ import {
   PredicateFormLayout,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
-
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 import {
   RecordAbstractRendererReadonlyContext,
   RecordAbstractRendererForeignMutationsExpected,
