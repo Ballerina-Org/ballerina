@@ -204,24 +204,43 @@ module Create =
 
                 match v with
                 | [ _entityId; v ] ->
-                  let! valueWithProps = calculateProps db_ops v entity_ref
+                  let actual_creation =
+                    reader {
+                      let! valueWithProps = calculateProps db_ops v entity_ref
 
-                  let! valueWithProps = onCreatingHook db_ops calculateProps entity_ref loc0 _entityId v valueWithProps
+                      let! valueWithProps =
+                        onCreatingHook db_ops calculateProps entity_ref loc0 _entityId v valueWithProps
 
-                  let! ctx = reader.GetContext()
+                      let! _ =
+                        db_ops.Create
+                          entity_ref
+                          { Id = _entityId
+                            Value = valueWithProps }
+                        |> reader.MapError(Errors.MapContext(replaceWith loc0))
 
-                  let! _ =
-                    db_ops.Create
-                      entity_ref
-                      { Id = _entityId
-                        Value = valueWithProps }
-                    |> Reader.Run ctx.RuntimeContext
-                    |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                    |> reader.OfSum
+                      do! onCreatedHook db_ops calculateProps entity_ref loc0 _entityId v valueWithProps
 
-                  do! onCreatedHook db_ops calculateProps entity_ref loc0 _entityId v valueWithProps
+                      return Value.Sum({ Case = 2; Count = 2 }, valueWithProps)
+                    }
 
-                  return Value.Sum({ Case = 2; Count = 2 }, valueWithProps)
+                  return!
+                    reader {
+                      let _, _, entity, schema_value = entity_ref
+
+                      match entity.Hooks.CanCreate with
+                      | Some canCreateHook ->
+                        match!
+                          Expr.Apply(
+                            canCreateHook,
+                            Expr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
+                          )
+                          |> NonEmptyList.One
+                          |> Expr.Eval
+                        with
+                        | Value.Primitive(PrimitiveValue.Bool canCreate) when canCreate -> return! actual_creation
+                        | _ -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                      | None -> return! actual_creation
+                    }
                 | _ ->
                   return!
                     sum.Throw(

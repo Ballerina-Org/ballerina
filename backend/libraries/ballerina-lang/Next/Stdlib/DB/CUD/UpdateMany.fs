@@ -132,65 +132,83 @@ module UpdateMany =
                   vs
                   |> Map.map (fun _entityId updateFunc ->
                     reader {
-                      let! ctx = reader.GetContext()
-
-                      let existingValue =
+                      let! existingValue =
                         db_ops.GetById entity_ref _entityId
-                        |> Reader.Run ctx.RuntimeContext
-                        |> Sum.toOption
-                      // option {
-                      //   let! entity = _db.entities |> Map.tryFind _entity.Name
-                      //   let! value = entity |> Map.tryFind _entityId
-                      //   return value
-                      // }
+                        |> reader.MapError(Errors.MapContext(replaceWith loc0))
+                        |> reader.Catch
+                        |> reader.Map Sum.toOption
 
                       match existingValue with
                       | None -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
                       | Some existingValue ->
-                        let! existingValueWithoutProps = stripProps db_ops existingValue entity_ref
+                        let actual_update =
+                          reader {
+                            let! existingValueWithoutProps = stripProps db_ops existingValue entity_ref
 
-                        let! updatedValue =
-                          Expr.Apply(
-                            Expr.Apply(
-                              Expr.FromValue(updateFunc, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
-                              Expr.FromValue(existingValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-                            ),
-                            Expr.FromValue(
-                              existingValueWithoutProps,
-                              TypeValue.CreatePrimitive PrimitiveType.Unit,
-                              Kind.Star
-                            )
-                          )
-                          |> NonEmptyList.One
-                          |> Expr.Eval
+                            let! updatedValue =
+                              Expr.Apply(
+                                Expr.Apply(
+                                  Expr.FromValue(updateFunc, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
+                                  Expr.FromValue(
+                                    existingValue,
+                                    TypeValue.CreatePrimitive PrimitiveType.Unit,
+                                    Kind.Star
+                                  )
+                                ),
+                                Expr.FromValue(
+                                  existingValueWithoutProps,
+                                  TypeValue.CreatePrimitive PrimitiveType.Unit,
+                                  Kind.Star
+                                )
+                              )
+                              |> NonEmptyList.One
+                              |> Expr.Eval
 
-                        let! valueWithProps = calculateProps db_ops updatedValue entity_ref
+                            let! valueWithProps = calculateProps db_ops updatedValue entity_ref
 
-                        let! valueWithProps =
-                          onUpdatingHook
-                            db_ops
-                            calculateProps
-                            entity_ref
-                            loc0
-                            _entityId
-                            existingValue
-                            updatedValue
-                            valueWithProps
+                            let! valueWithProps =
+                              onUpdatingHook
+                                db_ops
+                                calculateProps
+                                entity_ref
+                                loc0
+                                _entityId
+                                existingValue
+                                updatedValue
+                                valueWithProps
 
-                        let! ctx = reader.GetContext()
+                            let! _ =
+                              db_ops.Upsert
+                                entity_ref
+                                { Id = _entityId
+                                  Value = valueWithProps }
+                              |> reader.MapError(Errors.MapContext(replaceWith loc0))
 
-                        let! _ =
-                          db_ops.Upsert
-                            entity_ref
-                            { Id = _entityId
-                              Value = valueWithProps }
-                          |> Reader.Run ctx.RuntimeContext
-                          |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                          |> reader.OfSum
+                            do! onUpdatedHook db_ops entity_ref loc0 _entityId existingValue valueWithProps
 
-                        do! onUpdatedHook db_ops entity_ref loc0 _entityId existingValue valueWithProps
+                            return Value.Sum({ Case = 2; Count = 2 }, valueWithProps)
+                          }
 
-                        return Value.Sum({ Case = 2; Count = 2 }, valueWithProps)
+                        return!
+                          reader {
+                            let _, _, entity, schema_value = entity_ref
+
+                            match entity.Hooks.CanUpdate with
+                            | Some canUpdateHook ->
+                              match!
+                                Expr.Apply(
+                                  canUpdateHook,
+                                  Expr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
+                                )
+                                |> NonEmptyList.One
+                                |> Expr.Eval
+                              with
+                              | Value.Primitive(PrimitiveValue.Bool canUpdate) when canUpdate -> return! actual_update
+                              | _ -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                            | None -> return! actual_update
+                          }
+
+
                     })
                   |> reader.AllMap
 

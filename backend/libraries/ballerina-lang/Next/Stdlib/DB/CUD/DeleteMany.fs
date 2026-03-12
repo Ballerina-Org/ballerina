@@ -111,32 +111,54 @@ module DeleteMany =
 
                 let vs = vs |> Map.keys |> Seq.toList
 
-                let! ctx = reader.GetContext()
-
                 let! deletingValuesWithProps =
                   vs
                   |> Seq.map (fun _entityId ->
                     reader {
-                      let existingValue =
+                      let! existingValue =
                         db_ops.GetById entity_ref _entityId
-                        |> Reader.Run ctx.RuntimeContext
-                        |> Sum.toOption
+                        |> reader.MapError(Errors.MapContext(replaceWith loc0))
+                        |> reader.Catch
+                        |> reader.Map Sum.toOption
 
                       match existingValue with
                       | None -> return _entityId, None
                       | Some currentValueWithProps ->
+                        let _, _, entity, schema_value = entity_ref
 
-                        do! onDeletingHook db_ops entity_ref loc0 _entityId currentValueWithProps
+                        match entity.Hooks.CanDelete with
+                        | Some canDeleteHook ->
+                          match!
+                            Expr.Apply(
+                              Expr.Apply(
+                                Expr.Apply(
+                                  canDeleteHook,
+                                  Expr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
+                                ),
+                                Expr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
+                              ),
+                              Expr.FromValue(currentValueWithProps, TypeValue.CreateUnit(), Kind.Star)
+                            )
+                            |> NonEmptyList.One
+                            |> Expr.Eval
+                          with
+                          | Value.Primitive(PrimitiveValue.Bool canDelete) when canDelete ->
+                            do! onDeletingHook db_ops entity_ref loc0 _entityId currentValueWithProps
 
-                        return _entityId, Some currentValueWithProps
+                            return _entityId, Some currentValueWithProps
+                          | _ -> return _entityId, None
+                        | None ->
+                          do! onDeletingHook db_ops entity_ref loc0 _entityId currentValueWithProps
+
+                          return _entityId, Some currentValueWithProps
+
+
                     })
                   |> reader.All
 
                 let! _ =
                   db_ops.DeleteMany entity_ref vs
-                  |> Reader.Run ctx.RuntimeContext
-                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                  |> reader.OfSum
+                  |> reader.MapError(Errors.MapContext(replaceWith loc0))
 
                 do!
                   deletingValuesWithProps

@@ -211,13 +211,9 @@ module Unlink =
 
                   do! onUnlinkingHook db_ops relation_ref loc0 _fromId _toId
 
-                  let! ctx = reader.GetContext()
-
                   do!
                     db_ops.Unlink relation_ref { FromId = _fromId; ToId = _toId }
-                    |> Reader.Run ctx.RuntimeContext
-                    |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                    |> reader.OfSum
+                    |> reader.MapError(Errors.MapContext(replaceWith loc0))
 
                   do! onUnlinkedHook db_ops relation_ref loc0 _fromId _toId
 
@@ -355,13 +351,9 @@ module Unlink =
 
                         do! onUnlinkingHook db_ops relation_ref loc0 _fromId _toId
 
-                        let! ctx = reader.GetContext()
-
                         do!
                           db_ops.Unlink relation_ref { FromId = _fromId; ToId = _toId }
-                          |> Reader.Run ctx.RuntimeContext
-                          |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                          |> reader.OfSum
+                          |> reader.MapError(Errors.MapContext(replaceWith loc0))
 
                         do! onUnlinkedHook db_ops relation_ref loc0 _fromId _toId
                         return Value.Sum({ Case = 2; Count = 2 }, Value.Primitive PrimitiveValue.Unit)

@@ -113,15 +113,10 @@ module GetById =
                   (DBValues.GetById({| EntityRef = Some v |}) |> valueLens.Set, Some memoryDBGetById)
                   |> Ext
               | Some(entity_ref) -> // the closure has the first operand - second step in the application
-                let! ctx = reader.GetContext()
-                let v = db_ops.GetById entity_ref v |> Reader.Run ctx.RuntimeContext
-
-                // let v =
-                //   option {
-                //     let! entity = _db.entities |> Map.tryFind _entity.Name
-                //     let! value = entity |> Map.tryFind v
-                //     return value
-                //   }
+                let! v =
+                  db_ops.GetById entity_ref v
+                  |> reader.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.Catch
 
                 match v with
                 | Right _ -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)

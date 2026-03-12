@@ -745,15 +745,70 @@ module Eval =
               })
             |> reader.AllNonEmpty
 
+          let! ctx = reader.GetContext()
+
+          let closure =
+            ctx.Scope.Values |> Map.filter (fun k _ -> q.Closure |> Map.containsKey k)
+
+          let closure = closure |> Map.map (fun k v -> v, q.Closure.[k])
+
+          let rec replace_closure_lookups (e: ExprQueryExpr<_, _, _>) =
+            let (!) = replace_closure_lookups
+
+            match e.Expr with
+            | ExprQueryExprRec.QueryConstant _
+            | ExprQueryExprRec.QueryIntrinsic _ -> e
+            | ExprQueryExprRec.QueryTupleCons items ->
+              { e with
+                  Expr = ExprQueryExprRec.QueryTupleCons(items |> List.map (!)) }
+            | ExprQueryExprRec.QueryRecordDes(expr, field) ->
+              { e with
+                  Expr = ExprQueryExprRec.QueryRecordDes((!expr), field) }
+            | ExprQueryExprRec.QueryTupleDes(expr, item) ->
+              { e with
+                  Expr = ExprQueryExprRec.QueryTupleDes((!expr), item) }
+            | ExprQueryExprRec.QueryConditional(cond, ``then``, ``else``) ->
+              { e with
+                  Expr = ExprQueryExprRec.QueryConditional((!cond), (!``then``), (!``else``)) }
+            | ExprQueryExprRec.QueryUnionDes(expr, handlers) ->
+              { e with
+                  Expr =
+                    ExprQueryExprRec.QueryUnionDes(
+                      (!expr),
+                      handlers |> Map.map (fun _k handler -> { handler with Body = !handler.Body })
+                    ) }
+            | ExprQueryExprRec.QuerySumDes(expr, handlers) ->
+              { e with
+                  Expr =
+                    ExprQueryExprRec.QuerySumDes(
+                      (!expr),
+                      handlers |> Map.map (fun _k handler -> { handler with Body = !handler.Body })
+                    ) }
+            | ExprQueryExprRec.QueryApply(func, arg) ->
+              { e with
+                  Expr = ExprQueryExprRec.QueryApply((!func), (!arg)) }
+            | ExprQueryExprRec.QueryLookup(l) ->
+              match closure |> Map.tryFind l with
+              | None -> e
+              | Some(v, t) ->
+                { e with
+                    Expr = ExprQueryExprRec.QueryClosureValue(v, t) }
+            | ExprQueryExprRec.QueryClosureValue(_, _) -> e
+
+
           let res: Value<_, _> =
             Value.Query
               { Iterators = iterators
-                Joins = q.Joins
-                Where = q.Where
-                Select = q.Select
-                OrderBy = q.OrderBy }
-
-
+                Joins =
+                  q.Joins
+                  |> Option.map (
+                    NonEmptyList.map (fun join ->
+                      { join with
+                          Left = join.Left |> replace_closure_lookups })
+                  )
+                Where = q.Where |> Option.map replace_closure_lookups
+                Select = q.Select |> replace_closure_lookups
+                OrderBy = q.OrderBy |> Option.map (fun (v, dir) -> replace_closure_lookups v, dir) }
 
           return res
         | _ ->

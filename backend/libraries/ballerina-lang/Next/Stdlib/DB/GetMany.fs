@@ -127,23 +127,11 @@ module GetMany =
 
                 match v with
                 | [ Value.Primitive(PrimitiveValue.Int32 _offset); Value.Primitive(PrimitiveValue.Int32 _limit) ] ->
-                  let! ctx = reader.GetContext()
+                  let! results =
+                    db_ops.GetMany entity_ref (_offset, _limit)
+                    |> reader.MapError(Errors.MapContext(replaceWith loc0))
 
-                  let results =
-                    db_ops.GetMany entity_ref (_offset, _limit) |> Reader.Run ctx.RuntimeContext
-                  // let results =
-                  //   option {
-                  //     let! allValues = _db.entities |> Map.tryFind _entity.Name
-
-                  //     let pagedValues =
-                  //       allValues |> Map.values |> Seq.skip _offset |> Seq.truncate _limit |> Seq.toList
-
-                  //     return listSet pagedValues
-                  //   }
-
-                  match results with
-                  | Left res -> return (res |> listSet, None) |> Ext
-                  | Right err -> return! err |> Errors<_>.MapContext(replaceWith loc0) |> reader.Throw
+                  return (results |> listSet, None) |> Ext
                 | _ ->
                   return!
                     Errors.Singleton loc0 (fun () -> "Expected a tuple of two Int32 values for offset and limit")
