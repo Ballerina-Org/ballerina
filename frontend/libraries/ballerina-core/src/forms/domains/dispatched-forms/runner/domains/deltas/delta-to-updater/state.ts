@@ -1,19 +1,9 @@
-import {
-  BasicUpdater,
-  Updater,
-} from "../../../../../../../fun/domains/updater/state";
+import { Updater } from "../../../../../../../fun/domains/updater/state";
 import { Unit } from "../../../../../../../fun/domains/unit/state";
 import { ValueOrErrors } from "../../../../../../../collections/domains/valueOrErrors/state";
 import { DispatchDelta, DispatchDeltaCustom } from "../dispatch-delta/state";
-import {
-  PredicateValue,
-  ValueRecord,
-  ValueSum,
-  ValueTable,
-  ValueTuple,
-  ValueUnionCase,
-} from "../../../../../parser/domains/predicates/state";
-import { List, OrderedMap } from "immutable";
+import { PredicateValue } from "../../../../../parser/domains/predicates/state";
+import { List } from "immutable";
 import { replaceWith } from "../../../../../../../fun/domains/updater/domains/replaceWith/state";
 import { Sum } from "ballerina-core";
 
@@ -26,26 +16,174 @@ export const DispatchDeltaToUpdater =
   (
     delta: DispatchDelta<Flags>,
   ): ValueOrErrors<Updater<PredicateValue>, string> => {
+    const failCurrent = (current: PredicateValue, message: string): PredicateValue => {
+      console.error("Error when applying an updater from a delta:\n", message);
+      return current;
+    };
     const rec = (
       nestedDelta: DispatchDelta<Flags>,
     ): ValueOrErrors<Updater<PredicateValue>, string> =>
       DispatchDeltaToUpdater(parseCustomDelta)(nestedDelta);
 
+    if (delta.kind == "NumberReplace") {
+      return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+        Updater((current) =>
+          PredicateValue.Operations.IsNumber(current)
+            ? delta.replace
+            : failCurrent(
+                current,
+                `Delta NumberReplace expects current to be number, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              ),
+        ),
+      );
+    }
+
+    if (delta.kind == "StringReplace") {
+      return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+        Updater((current) =>
+          PredicateValue.Operations.IsString(current)
+            ? delta.replace
+            : failCurrent(
+                current,
+                `Delta StringReplace expects current to be string, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              ),
+        ),
+      );
+    }
+
+    if (delta.kind == "BoolReplace") {
+      return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+        Updater((current) =>
+          PredicateValue.Operations.IsBoolean(current)
+            ? delta.replace
+            : failCurrent(
+                current,
+                `Delta BoolReplace expects current to be boolean, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              ),
+        ),
+      );
+    }
+
+    if (delta.kind == "TimeReplace") {
+      return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+        Updater((current) =>
+          PredicateValue.Operations.IsDate(current)
+            ? delta.replace
+            : failCurrent(
+                current,
+                `Delta TimeReplace expects current to be date, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              ),
+        ),
+      );
+    }
+
+    if (delta.kind == "GuidReplace") {
+      return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+        Updater((current) =>
+          PredicateValue.Operations.IsString(current)
+            ? delta.replace
+            : failCurrent(
+                current,
+                `Delta GuidReplace expects current to be string, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              ),
+        ),
+      );
+    }
+
+    if (delta.kind == "UnitReplace") {
+      return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+        Updater((current) =>
+          PredicateValue.Operations.IsUnit(current)
+            ? replaceWith(delta.replace)(current)
+            : failCurrent(
+                current,
+                `Delta UnitReplace expects current to be unit, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              ),
+        ),
+      );
+    }
+
+    if (delta.kind == "OptionReplace") {
+      return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+        Updater((current) =>
+          PredicateValue.Operations.IsOption(current)
+            ? replaceWith(delta.replace)(current)
+            : failCurrent(
+                current,
+                `Delta OptionReplace expects current to be option, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              ),
+        ),
+      );
+    }
+
+    if (delta.kind == "SumReplace") {
+      return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+        Updater((current) =>
+          PredicateValue.Operations.IsSum(current)
+            ? replaceWith(delta.replace)(current)
+            : failCurrent(
+                current,
+                `Delta SumReplace expects current to be sum, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              ),
+        ),
+      );
+    }
+
+    if (delta.kind == "ArrayReplace") {
+      return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+        Updater((current) =>
+          PredicateValue.Operations.IsTuple(current)
+            ? replaceWith(delta.replace)(current)
+            : failCurrent(
+                current,
+                `Delta ArrayReplace expects current to be tuple, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              ),
+        ),
+      );
+    }
+
+    if (delta.kind == "RecordReplace") {
+      return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+        Updater((current) =>
+          PredicateValue.Operations.IsRecord(current)
+            ? replaceWith(delta.replace)(current)
+            : failCurrent(
+                current,
+                `Delta RecordReplace expects current to be record, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              ),
+        ),
+      );
+    }
+
+    if (delta.kind == "UnionReplace") {
+      return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+        Updater((current) =>
+          PredicateValue.Operations.IsUnionCase(current)
+            ? replaceWith(delta.replace)(current)
+            : failCurrent(
+                current,
+                `Delta UnionReplace expects current to be unionCase, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              ),
+        ),
+      );
+    }
+
+    if (delta.kind == "TupleReplace") {
+      return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+        Updater((current) =>
+          PredicateValue.Operations.IsTuple(current)
+            ? replaceWith(delta.replace)(current)
+            : failCurrent(
+                current,
+                `Delta TupleReplace expects current to be tuple, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              ),
+        ),
+      );
+    }
+
     if (
-      delta.kind == "NumberReplace" ||
-      delta.kind == "StringReplace" ||
-      delta.kind == "BoolReplace" ||
-      delta.kind == "TimeReplace" ||
-      delta.kind == "GuidReplace" ||
-      delta.kind == "UnitReplace" ||
-      delta.kind == "OptionReplace" ||
-      delta.kind == "SumReplace" ||
-      delta.kind == "ArrayReplace" ||
       delta.kind == "SetReplace" ||
       delta.kind == "MapReplace" ||
-      delta.kind == "RecordReplace" ||
-      delta.kind == "UnionReplace" ||
-      delta.kind == "TupleReplace" ||
       delta.kind == "OneReplace"
     ) {
       return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
@@ -54,208 +192,298 @@ export const DispatchDeltaToUpdater =
     }
 
     if (delta.kind == "SumLeft") {
-      return rec(delta.value).Then(
-        (nestedUpdater) =>
-          ValueOrErrors.Default.return<Updater<ValueSum>, string>(
-            Updater((current) => ({
+      return rec(delta.value).Then((nestedUpdater) =>
+        ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+          Updater((current) => {
+            if (!PredicateValue.Operations.IsSum(current)) {
+              return failCurrent(
+                current,
+                `Delta SumLeft expects current to be sum, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              );
+            }
+            if (current.value.kind !== "l") {
+              return failCurrent(current, `SumLeft: current sum is right-valued`);
+            }
+            return {
               ...current,
               value: Sum.Updaters.left<PredicateValue, PredicateValue>(
                 nestedUpdater,
               )(current.value),
-            })),
-          ) as ValueOrErrors<Updater<PredicateValue>, string>,
+            };
+          }),
+        ),
       );
     }
 
     if (delta.kind == "SumRight") {
-      return rec(delta.value).Then(
-        (nestedUpdater) =>
-          ValueOrErrors.Default.return<Updater<ValueSum>, string>(
-            Updater((current) => ({
+      return rec(delta.value).Then((nestedUpdater) =>
+        ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+          Updater((current) => {
+            if (!PredicateValue.Operations.IsSum(current)) {
+              return failCurrent(
+                current,
+                `Delta SumRight expects current to be sum, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              );
+            }
+            if (current.value.kind !== "r") {
+              return failCurrent(current, `SumRight: current sum is left-valued`);
+            }
+            return {
               ...current,
               value: Sum.Updaters.right<PredicateValue, PredicateValue>(
                 nestedUpdater,
               )(current.value),
-            })),
-          ) as ValueOrErrors<Updater<PredicateValue>, string>,
+            };
+          }),
+        ),
       );
     }
 
     if (delta.kind == "ArrayValue") {
       return rec(delta.value[1]).Then((nestedUpdater) =>
-        ValueOrErrors.Default.return<Updater<ValueTuple>, string>(
-          Updater((current) => ({
-            ...current,
-            values: current.values.update(delta.value[0], (value) =>
-              value ? nestedUpdater(value) : value,
-            ),
-          })),
-        ),
-      ) as ValueOrErrors<Updater<PredicateValue>, string>;
-    }
-
-    if (delta.kind == "ArrayAdd") {
-      return ValueOrErrors.Default.return<Updater<ValueTuple>, string>(
-        Updater((current) => {
-          return {
-            ...current,
-            values: current.values.push(delta.value),
-          };
-        }),
-      ) as ValueOrErrors<Updater<PredicateValue>, string>;
-    }
-
-    if (delta.kind == "ArrayAddAt") {
-      return ValueOrErrors.Default.return<Updater<ValueTuple>, string>(
-        Updater((current) => {
-          return {
-            ...current,
-            values: current.values.insert(delta.value[0], delta.value[1]),
-          };
-        }),
-      ) as ValueOrErrors<Updater<PredicateValue>, string>;
-    }
-
-    if (delta.kind == "ArrayRemoveAt") {
-      return ValueOrErrors.Default.return<Updater<ValueTuple>, string>(
-        Updater((current) => {
-          return {
-            ...current,
-            values: current.values.remove(delta.index),
-          };
-        }),
-      ) as ValueOrErrors<Updater<PredicateValue>, string>;
-    }
-
-    if (delta.kind == "ArrayRemoveAll") {
-      return ValueOrErrors.Default.return<Updater<ValueTuple>, string>(
-        Updater((current) => {
-          return {
-            ...current,
-            values: List(),
-          };
-        }),
-      ) as ValueOrErrors<Updater<PredicateValue>, string>;
-    }
-
-    if (delta.kind == "RecordField") {
-      return rec(delta.field[1]).Then((nestedUpdater) =>
-        ValueOrErrors.Default.return<Updater<ValueRecord>, string>(
+        ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
           Updater((current) => {
+            if (!PredicateValue.Operations.IsTuple(current)) {
+              return failCurrent(
+                current,
+                `Delta ArrayValue expects current to be tuple, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              );
+            }
+            const currentItem = current.values.get(delta.value[0]);
+            if (currentItem === undefined) {
+              return failCurrent(
+                current,
+                `ArrayValue: item at index ${delta.value[0]} does not exist`,
+              );
+            }
             return {
               ...current,
-              fields: current.fields.update(delta.field[0], (value) =>
-                value ? nestedUpdater(value) : value,
+              values: current.values.update(delta.value[0], (item) =>
+                item ? nestedUpdater(item) : item,
               ),
             };
           }),
         ),
-      ) as ValueOrErrors<Updater<PredicateValue>, string>;
+      );
+    }
+
+    if (delta.kind == "ArrayAdd") {
+      return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+        Updater((current) =>
+          PredicateValue.Operations.IsTuple(current)
+            ? {
+                ...current,
+                values: current.values.push(delta.value),
+              }
+            : failCurrent(
+                current,
+                `Delta ArrayAdd expects current to be tuple, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              ),
+        ),
+      );
+    }
+
+    if (delta.kind == "ArrayAddAt") {
+      return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+        Updater((current) =>
+          PredicateValue.Operations.IsTuple(current)
+            ? {
+                ...current,
+                values: current.values.insert(delta.value[0], delta.value[1]),
+              }
+            : failCurrent(
+                current,
+                `Delta ArrayAddAt expects current to be tuple, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              ),
+        ),
+      );
+    }
+
+    if (delta.kind == "ArrayRemoveAt") {
+      return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+        Updater((current) =>
+          PredicateValue.Operations.IsTuple(current)
+            ? {
+                ...current,
+                values: current.values.remove(delta.index),
+              }
+            : failCurrent(
+                current,
+                `Delta ArrayRemoveAt expects current to be tuple, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              ),
+        ),
+      );
+    }
+
+    if (delta.kind == "ArrayRemoveAll") {
+      return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+        Updater((current) =>
+          PredicateValue.Operations.IsTuple(current)
+            ? {
+                ...current,
+                values: List(),
+              }
+            : failCurrent(
+                current,
+                `Delta ArrayRemoveAll expects current to be tuple, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              ),
+        ),
+      );
+    }
+
+    if (delta.kind == "RecordField") {
+      return rec(delta.field[1]).Then((nestedUpdater) =>
+        ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+          Updater((current) => {
+            if (!PredicateValue.Operations.IsRecord(current)) {
+              return failCurrent(
+                current,
+                `Delta RecordField expects current to be record, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              );
+            }
+            const currentField = current.fields.get(delta.field[0]);
+            if (currentField === undefined) {
+              return failCurrent(
+                current,
+                `RecordField: field ${delta.field[0]} does not exist`,
+              );
+            }
+            return {
+              ...current,
+              fields: current.fields.update(delta.field[0], (fieldValue) =>
+                fieldValue ? nestedUpdater(fieldValue) : fieldValue,
+              ),
+            };
+          }),
+        ),
+      );
     }
 
     if (delta.kind == "UnionCase") {
-      return rec(delta.caseName[1]).Then(
-        (nestedUpdater) =>
-          ValueOrErrors.Default.return<Updater<ValueUnionCase>, string>(
-            Updater((current) => {
-              return {
-                ...current,
-                caseName: delta.caseName[0],
-                fields: nestedUpdater(current.fields),
-              };
-            }),
-          ) as ValueOrErrors<Updater<PredicateValue>, string>,
+      return rec(delta.caseName[1]).Then((nestedUpdater) =>
+        ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+          Updater((current) => {
+            if (!PredicateValue.Operations.IsUnionCase(current)) {
+              return failCurrent(
+                current,
+                `Delta UnionCase expects current to be unionCase, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              );
+            }
+            return {
+              ...current,
+              caseName: delta.caseName[0],
+              fields: nestedUpdater(current.fields),
+            };
+          }),
+        ),
       );
     }
 
     if (delta.kind == "TupleCase") {
-      return rec(delta.item[1]).Then(
-        (nestedUpdater) =>
-          ValueOrErrors.Default.return<Updater<ValueTuple>, string>(
-            Updater((current) => {
-              return {
-                ...current,
-                values: current.values.update(delta.item[0], (value) =>
-                  value ? nestedUpdater(value) : value,
-                ),
-              };
-            }),
-          ) as ValueOrErrors<Updater<PredicateValue>, string>,
+      return rec(delta.item[1]).Then((nestedUpdater) =>
+        ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+          Updater((current) => {
+            if (!PredicateValue.Operations.IsTuple(current)) {
+              return failCurrent(
+                current,
+                `Delta TupleCase expects current to be tuple, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              );
+            }
+            const currentItem = current.values.get(delta.item[0]);
+            if (currentItem === undefined) {
+              return failCurrent(
+                current,
+                `TupleCase: item at index ${delta.item[0]} does not exist`,
+              );
+            }
+            return {
+              ...current,
+              values: current.values.update(delta.item[0], (item) =>
+                item ? nestedUpdater(item) : item,
+              ),
+            };
+          }),
+        ),
       );
     }
 
     if (delta.kind == "TableValue") {
       return rec(delta.nestedDelta).Then((nestedUpdater) =>
-        ValueOrErrors.Default.return<Updater<ValueTable>, string>(
+        ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
           Updater((current) => {
+            if (!PredicateValue.Operations.IsTable(current)) {
+              return failCurrent(
+                current,
+                `Delta TableValue expects current to be table, got ${(current as { kind?: string }).kind ?? typeof current}`,
+              );
+            }
+            const row = current.data.get(delta.id);
+            if (row === undefined) {
+              return failCurrent(current, `TableValue: row ${delta.id} does not exist`);
+            }
+            const updatedRow = nestedUpdater(row);
+            if (!PredicateValue.Operations.IsRecord(updatedRow)) {
+              return failCurrent(current, `TableValue: nested updater must return a record`);
+            }
             return {
               ...current,
-              data: current.data.update(delta.id, (value) =>
-                value
-                  ? (nestedUpdater as BasicUpdater<ValueRecord>)(value)
-                  : value,
-              ),
+              data: current.data.set(delta.id, updatedRow),
             };
           }),
         ),
-      ) as ValueOrErrors<Updater<PredicateValue>, string>;
+      );
     }
 
     if (delta.kind == "TableAdd") {
-      const value = delta.value;
-      if (!PredicateValue.Operations.IsRecord(value)) {
-        return ValueOrErrors.Default.throwOne<Updater<PredicateValue>, string>(
-          `TableAdd: value must be a record`,
-        );
-      }
-      const id = value.fields.get("Id");
-      if (typeof id !== "string") {
-        return ValueOrErrors.Default.throwOne<Updater<PredicateValue>, string>(
-          `TableAdd: id must be a string`,
-        );
-      }
-      return ValueOrErrors.Default.return<Updater<ValueTable>, string>(
+      return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
         Updater((current) => {
+          if (!PredicateValue.Operations.IsTable(current)) {
+            return failCurrent(
+              current,
+              `Delta TableAdd expects current to be table, got ${(current as { kind?: string }).kind ?? typeof current}`,
+            );
+          }
+          if (!PredicateValue.Operations.IsRecord(delta.value)) {
+            return failCurrent(current, `TableAdd: value must be a record`);
+          }
+          const id = delta.value.fields.get("Id");
+          if (typeof id !== "string") {
+            return failCurrent(current, `TableAdd: id must be a string`);
+          }
           return {
             ...current,
-            data: current.data.set(id, value),
+            data: current.data.set(id, delta.value),
           };
         }),
-      ) as ValueOrErrors<Updater<PredicateValue>, string>;
+      );
     }
 
     if (delta.kind == "TableAddBatch") {
-      return ValueOrErrors.Operations.All(
-        delta.values.map((value) => {
-          if (!PredicateValue.Operations.IsRecord(value)) {
-            return ValueOrErrors.Default.throwOne<
-              [string, ValueRecord],
-              string
-            >(`TableAddBatch: value must be a record`);
+      return ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
+        Updater((current) => {
+          if (!PredicateValue.Operations.IsTable(current)) {
+            return failCurrent(
+              current,
+              `Delta TableAddBatch expects current to be table, got ${(current as { kind?: string }).kind ?? typeof current}`,
+            );
           }
-          const id = value.fields.get("Id");
-          if (typeof id !== "string") {
-            return ValueOrErrors.Default.throwOne<
-              [string, ValueRecord],
-              string
-            >(`TableAddBatch: id must be a string`);
+          const values: Array<[string, any]> = [];
+          for (const row of delta.values.toArray()) {
+            if (!PredicateValue.Operations.IsRecord(row)) {
+              return failCurrent(current, `TableAddBatch: value must be a record`);
+            }
+            const id = row.fields.get("Id");
+            if (typeof id !== "string") {
+              return failCurrent(current, `TableAddBatch: id must be a string`);
+            }
+            values.push([id, row]);
           }
-          return ValueOrErrors.Default.return<[string, ValueRecord], string>([
-            id,
-            value,
-          ]);
+          return {
+            ...current,
+            data: current.data.concat(values),
+          };
         }),
-      ).Then((values) => {
-        const newData = OrderedMap(values);
-        return ValueOrErrors.Default.return<Updater<ValueTable>, string>(
-          Updater((current) => {
-            return {
-              ...current,
-              data: current.data.concat(newData),
-            };
-          }),
-        ) as ValueOrErrors<Updater<PredicateValue>, string>;
-      });
+      );
     }
 
     if (delta.kind == "CustomDelta") {
