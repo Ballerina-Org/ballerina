@@ -83,10 +83,11 @@ describe("DispatchDeltaTransferOperations", () => {
       Discriminator: "Int32Replace",
       Replace: 42n,
     };
-    const float32Replace: { Discriminator: "Float32Replace"; Replace: number } = {
-      Discriminator: "Float32Replace",
-      Replace: 42.5,
-    };
+    const float32Replace: { Discriminator: "Float32Replace"; Replace: number } =
+      {
+        Discriminator: "Float32Replace",
+        Replace: 42.5,
+      };
     const unit: {} = {};
 
     const optionReplace: DispatchDeltaTransferOptionReplace = {
@@ -279,39 +280,67 @@ describe("DispatchDeltaTransferOperations", () => {
     };
 
     const recordType = DispatchParsedType.Default.record(
-      Map([
-        ["name", DispatchParsedType.Default.primitive("string")],
-      ]),
+      Map([["name", DispatchParsedType.Default.primitive("string")]]),
     );
     const unionType = DispatchParsedType.Default.union(
       Map([["CaseA", recordType]]),
     );
-    const tupleType = DispatchParsedType.Default.tuple(
-      [DispatchParsedType.Default.primitive("string")],
-    );
+    const tupleType = DispatchParsedType.Default.tuple([
+      DispatchParsedType.Default.primitive("string"),
+    ]);
 
-    expect(DispatchDeltaTransferOperations.isNumberReplace(numberReplace)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isStringReplace(stringReplace)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isBoolReplace(boolReplace)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isTimeReplace(timeReplace)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isGuidReplace(guidReplace)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isInt32Replace(int32Replace)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isFloat32Replace(float32Replace)).toBe(true);
+    expect(DispatchDeltaTransferOperations.isNumberReplace(numberReplace)).toBe(
+      true,
+    );
+    expect(DispatchDeltaTransferOperations.isStringReplace(stringReplace)).toBe(
+      true,
+    );
+    expect(DispatchDeltaTransferOperations.isBoolReplace(boolReplace)).toBe(
+      true,
+    );
+    expect(DispatchDeltaTransferOperations.isTimeReplace(timeReplace)).toBe(
+      true,
+    );
+    expect(DispatchDeltaTransferOperations.isGuidReplace(guidReplace)).toBe(
+      true,
+    );
+    expect(DispatchDeltaTransferOperations.isInt32Replace(int32Replace)).toBe(
+      true,
+    );
+    expect(
+      DispatchDeltaTransferOperations.isFloat32Replace(float32Replace),
+    ).toBe(true);
     expect(DispatchDeltaTransferOperations.isUnit(unit)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isOptionReplace(optionReplace)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isOptionValue(optionValue)).toBe(true);
+    expect(DispatchDeltaTransferOperations.isOptionReplace(optionReplace)).toBe(
+      true,
+    );
+    expect(DispatchDeltaTransferOperations.isOptionValue(optionValue)).toBe(
+      true,
+    );
     expect(DispatchDeltaTransferOperations.isSumReplace(sumReplace)).toBe(true);
     expect(DispatchDeltaTransferOperations.isSumLeft(sumLeft)).toBe(true);
     expect(DispatchDeltaTransferOperations.isSumRight(sumRight)).toBe(true);
     expect(DispatchDeltaTransferOperations.isArrayAdd(arrayAdd)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isArrayReplace(arrayReplace)).toBe(true);
+    expect(DispatchDeltaTransferOperations.isArrayReplace(arrayReplace)).toBe(
+      true,
+    );
     expect(DispatchDeltaTransferOperations.isArrayValue(arrayValue)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isArrayValueAll(arrayValueAll)).toBe(true);
+    expect(DispatchDeltaTransferOperations.isArrayValueAll(arrayValueAll)).toBe(
+      true,
+    );
     expect(DispatchDeltaTransferOperations.isArrayAddAt(arrayAddAt)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isArrayRemoveAt(arrayRemoveAt)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isArrayRemoveAll(arrayRemoveAll)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isArrayMoveFromTo(arrayMoveFromTo)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isArrayDuplicateAt(arrayDuplicateAt)).toBe(true);
+    expect(DispatchDeltaTransferOperations.isArrayRemoveAt(arrayRemoveAt)).toBe(
+      true,
+    );
+    expect(
+      DispatchDeltaTransferOperations.isArrayRemoveAll(arrayRemoveAll),
+    ).toBe(true);
+    expect(
+      DispatchDeltaTransferOperations.isArrayMoveFromTo(arrayMoveFromTo),
+    ).toBe(true);
+    expect(
+      DispatchDeltaTransferOperations.isArrayDuplicateAt(arrayDuplicateAt),
+    ).toBe(true);
     expect(DispatchDeltaTransferOperations.isSetReplace(setReplace)).toBe(true);
     expect(DispatchDeltaTransferOperations.isSetValue(setValue)).toBe(true);
     expect(DispatchDeltaTransferOperations.isSetAdd(setAdd)).toBe(true);
@@ -321,33 +350,66 @@ describe("DispatchDeltaTransferOperations", () => {
     expect(DispatchDeltaTransferOperations.isMapKey(mapKey)).toBe(true);
     expect(DispatchDeltaTransferOperations.isMapAdd(mapAdd)).toBe(true);
     expect(DispatchDeltaTransferOperations.isMapRemove(mapRemove)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isRecordReplace(recordReplace, recordType)).toBe(
+    expect(
+      DispatchDeltaTransferOperations.isRecordReplace(
+        recordReplace,
+        recordType,
+      ),
+    ).toBe(true);
+    expect(
+      DispatchDeltaTransferOperations.isRecordField(recordField, recordType),
+    ).toBe(true);
+    expect(DispatchDeltaTransferOperations.isUnionReplace(unionReplace)).toBe(
       true,
     );
-    expect(DispatchDeltaTransferOperations.isRecordField(recordField, recordType)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isUnionReplace(unionReplace)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isUnionCase(unionCase, unionType)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isTupleReplace(tupleReplace)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isTupleValue(tupleValue, tupleType)).toBe(true);
+    expect(
+      DispatchDeltaTransferOperations.isUnionCase(unionCase, unionType),
+    ).toBe(true);
+    expect(DispatchDeltaTransferOperations.isTupleReplace(tupleReplace)).toBe(
+      true,
+    );
+    expect(
+      DispatchDeltaTransferOperations.isTupleValue(tupleValue, tupleType),
+    ).toBe(true);
     expect(DispatchDeltaTransferOperations.isTableValue(tableValue)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isTableValueAll(tableValueAll)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isTableAddEmpty(tableAddEmpty)).toBe(true);
+    expect(DispatchDeltaTransferOperations.isTableValueAll(tableValueAll)).toBe(
+      true,
+    );
+    expect(DispatchDeltaTransferOperations.isTableAddEmpty(tableAddEmpty)).toBe(
+      true,
+    );
     expect(DispatchDeltaTransferOperations.isTableAdd(tableAdd)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isTableAddBatch(tableAddBatch)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isTableAddBatchEmpty(tableAddBatchEmpty)).toBe(
+    expect(DispatchDeltaTransferOperations.isTableAddBatch(tableAddBatch)).toBe(
       true,
     );
-    expect(DispatchDeltaTransferOperations.isTableRemoveAt(tableRemoveAt)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isTableRemoveBatch(tableRemoveBatch)).toBe(
+    expect(
+      DispatchDeltaTransferOperations.isTableAddBatchEmpty(tableAddBatchEmpty),
+    ).toBe(true);
+    expect(DispatchDeltaTransferOperations.isTableRemoveAt(tableRemoveAt)).toBe(
       true,
     );
-    expect(DispatchDeltaTransferOperations.isTableRemoveAll(tableRemoveAll)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isTableDuplicateAt(tableDuplicateAt)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isTableActionOnAll(tableActionOnAll)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isTableMoveFromTo(tableMoveFromTo)).toBe(true);
+    expect(
+      DispatchDeltaTransferOperations.isTableRemoveBatch(tableRemoveBatch),
+    ).toBe(true);
+    expect(
+      DispatchDeltaTransferOperations.isTableRemoveAll(tableRemoveAll),
+    ).toBe(true);
+    expect(
+      DispatchDeltaTransferOperations.isTableDuplicateAt(tableDuplicateAt),
+    ).toBe(true);
+    expect(
+      DispatchDeltaTransferOperations.isTableActionOnAll(tableActionOnAll),
+    ).toBe(true);
+    expect(
+      DispatchDeltaTransferOperations.isTableMoveFromTo(tableMoveFromTo),
+    ).toBe(true);
     expect(DispatchDeltaTransferOperations.isOneValue(oneValue)).toBe(true);
     expect(DispatchDeltaTransferOperations.isOneReplace(oneReplace)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isOneCreateValue(oneCreateValue)).toBe(true);
-    expect(DispatchDeltaTransferOperations.isOneDeleteValue(oneDeleteValue)).toBe(true);
+    expect(
+      DispatchDeltaTransferOperations.isOneCreateValue(oneCreateValue),
+    ).toBe(true);
+    expect(
+      DispatchDeltaTransferOperations.isOneDeleteValue(oneDeleteValue),
+    ).toBe(true);
   });
 });

@@ -93,7 +93,7 @@ services:
       context: ./frontend
       dockerfile: libraries/ballerina-core/Dockerfile
       target: global-dependencies
-    working_dir: /app/frontend/libraries/ballerina-core/
+    working_dir: /app/frontend
     volumes:
       - .:/app
       - ./.gitignore:/app/.gitignore:ro

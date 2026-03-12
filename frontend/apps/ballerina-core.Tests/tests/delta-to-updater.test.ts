@@ -2,7 +2,10 @@ import { ValueOrErrors } from "../../../libraries/ballerina-core/src/collections
 import { DispatchDeltaTransfer } from "../../../libraries/ballerina-core/src/forms/domains/dispatched-forms/runner/domains/deltas/state";
 import { type DispatchDelta } from "../../../libraries/ballerina-core/src/forms/domains/dispatched-forms/runner/domains/deltas/dispatch-delta/state";
 import { DispatchParsedType } from "../../../libraries/ballerina-core/src/forms/domains/dispatched-forms/deserializer/domains/specification/domains/types/state";
-import { PredicateValue, type PredicateValue as PredicateValueType } from "../../../libraries/ballerina-core/src/forms/domains/parser/domains/predicates/state";
+import {
+  PredicateValue,
+  type PredicateValue as PredicateValueType,
+} from "../../../libraries/ballerina-core/src/forms/domains/parser/domains/predicates/state";
 import { Updater } from "../../../libraries/ballerina-core/src/fun/domains/updater/state";
 import { List, Map, OrderedMap } from "immutable";
 import { DispatchCategory } from "../utils/category";
@@ -44,9 +47,7 @@ describe("DispatchDeltaTransfer.Default.ToUpdater", () => {
 
     const initialValue = PredicateValue.Default.unionCase(
       "Person",
-      PredicateValue.Default.record(
-        OrderedMap([["name", "Bob"]]),
-      ),
+      PredicateValue.Default.record(OrderedMap([["name", "Bob"]])),
     );
 
     const delta: DispatchDelta = {
@@ -88,15 +89,14 @@ describe("DispatchDeltaTransfer.Default.ToUpdater", () => {
     expect(updatedValue).toMatchObject(
       PredicateValue.Default.unionCase(
         "Person",
-        PredicateValue.Default.record(
-          OrderedMap([["name", "Alice"]]),
-        ),
+        PredicateValue.Default.record(OrderedMap([["name", "Alice"]])),
       ),
     );
   });
 
   it("updates a custom category predicate value through CustomDelta", () => {
-    const injectedCategoryType = DispatchParsedType.Default.primitive("injectedCategory");
+    const injectedCategoryType =
+      DispatchParsedType.Default.primitive("injectedCategory");
     const initialValue: DispatchCategory = {
       kind: "custom",
       value: {
@@ -129,14 +129,16 @@ describe("DispatchDeltaTransfer.Default.ToUpdater", () => {
       sourceAncestorLookupTypeNames: [],
     };
 
-    const updaterResult = DispatchDeltaTransfer.Default.ToUpdater((customDelta) => {
-      if (customDelta.value.kind !== "CategoryReplace") {
-        return ValueOrErrors.Default.throwOne("Unsupported custom delta");
-      }
-      return ValueOrErrors.Default.return(
-        Updater(() => customDelta.value.replace),
-      );
-    })(delta);
+    const updaterResult = DispatchDeltaTransfer.Default.ToUpdater(
+      (customDelta) => {
+        if (customDelta.value.kind !== "CategoryReplace") {
+          return ValueOrErrors.Default.throwOne("Unsupported custom delta");
+        }
+        return ValueOrErrors.Default.return(
+          Updater(() => customDelta.value.replace),
+        );
+      },
+    )(delta);
 
     expect(updaterResult.kind).toBe("value");
     if (updaterResult.kind !== "value") {
@@ -158,7 +160,13 @@ describe("DispatchDeltaTransfer.Default.ToUpdater", () => {
       OrderedMap([
         [
           "entries",
-          PredicateValue.Default.table(0, 0, OrderedMap(), false, PredicateValue.Default.record(OrderedMap())),
+          PredicateValue.Default.table(
+            0,
+            0,
+            OrderedMap(),
+            false,
+            PredicateValue.Default.record(OrderedMap()),
+          ),
         ],
       ]),
     );
@@ -200,7 +208,9 @@ describe("DispatchDeltaTransfer.Default.ToUpdater", () => {
       throw new Error("Expected updated value to be a record");
     }
     const updatedTableValue = updatedValue.fields.get("entries");
-    expect(PredicateValue.Operations.IsTable(updatedTableValue as any)).toBe(true);
+    expect(PredicateValue.Operations.IsTable(updatedTableValue as any)).toBe(
+      true,
+    );
     if (!PredicateValue.Operations.IsTable(updatedTableValue as any)) {
       throw new Error("Expected entries to be a table");
     }
@@ -226,7 +236,13 @@ describe("DispatchDeltaTransfer.Default.ToUpdater", () => {
       OrderedMap([
         [
           "entries",
-          PredicateValue.Default.table(0, 0, OrderedMap(), false, PredicateValue.Default.record(OrderedMap())),
+          PredicateValue.Default.table(
+            0,
+            0,
+            OrderedMap(),
+            false,
+            PredicateValue.Default.record(OrderedMap()),
+          ),
         ],
       ]),
     );
@@ -268,7 +284,9 @@ describe("DispatchDeltaTransfer.Default.ToUpdater", () => {
       throw new Error("Expected updated value to be a record");
     }
     const updatedTableValue = updatedValue.fields.get("entries");
-    expect(PredicateValue.Operations.IsTable(updatedTableValue as any)).toBe(true);
+    expect(PredicateValue.Operations.IsTable(updatedTableValue as any)).toBe(
+      true,
+    );
     if (!PredicateValue.Operations.IsTable(updatedTableValue as any)) {
       throw new Error("Expected entries to be a table");
     }

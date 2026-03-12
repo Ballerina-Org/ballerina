@@ -4,8 +4,16 @@ import { DispatchDeltaDTOToDelta } from "../../../libraries/ballerina-core/src/f
 import { DispatchParsedType } from "../../../libraries/ballerina-core/src/forms/domains/dispatched-forms/deserializer/domains/specification/domains/types/state";
 import { dispatchFromAPIRawValue } from "../../../libraries/ballerina-core/src/forms/domains/dispatched-forms/built-ins/state";
 import { DispatchFieldTypeConverters } from "../utils/converters";
-import { DispatchCategory, DispatchPassthroughFormInjectedTypes } from "utils/category";
-import { DispatchDeltaTransferPrimitive, DispatchDeltaTransferRecord, DispatchDeltaTransferTable, DispatchDeltaTransferUnion } from "src/forms/domains/dispatched-forms/runner/domains/deltas/dispatch-delta-dto/state";
+import {
+  DispatchCategory,
+  DispatchPassthroughFormInjectedTypes,
+} from "utils/category";
+import {
+  DispatchDeltaTransferPrimitive,
+  DispatchDeltaTransferRecord,
+  DispatchDeltaTransferTable,
+  DispatchDeltaTransferUnion,
+} from "src/forms/domains/dispatched-forms/runner/domains/deltas/dispatch-delta-dto/state";
 import { DispatchDelta } from "ballerina-core";
 import { PredicateValue } from "../../../libraries/ballerina-core/src/forms/domains/parser/domains/predicates/state";
 
@@ -13,9 +21,8 @@ describe("DispatchDeltaDTOToDelta", () => {
   it("correctly generates a delta from a NumberReplace DTO", () => {
     const numberType = DispatchParsedType.Default.primitive("number");
 
-    const fromApiRaw = (
-      raw: unknown,
-    ) => ValueOrErrors.Default.return<number, string>(raw as number);
+    const fromApiRaw = (raw: unknown) =>
+      ValueOrErrors.Default.return<number, string>(raw as number);
 
     const parseCustomDeltaDTO = () => () =>
       ValueOrErrors.Default.throwOne<any, string>("Unexpected custom delta");
@@ -25,9 +32,10 @@ describe("DispatchDeltaDTOToDelta", () => {
       Replace: 123,
     };
 
-    const result = DispatchDeltaDTOToDelta(fromApiRaw, parseCustomDeltaDTO)(numberType)(
-      dto,
-    );
+    const result = DispatchDeltaDTOToDelta(
+      fromApiRaw,
+      parseCustomDeltaDTO,
+    )(numberType)(dto);
 
     expect(result.kind).toBe("value");
     if (result.kind !== "value") {
@@ -53,10 +61,10 @@ describe("DispatchDeltaDTOToDelta", () => {
       Map([["Person", personCaseType]]),
     );
 
-
-
-    const fromApiRaw = (raw: unknown, type: DispatchParsedType<DispatchPassthroughFormInjectedTypes>) =>
-      dispatchFromAPIRawValue(type, Map(), DispatchFieldTypeConverters)(raw);
+    const fromApiRaw = (
+      raw: unknown,
+      type: DispatchParsedType<DispatchPassthroughFormInjectedTypes>,
+    ) => dispatchFromAPIRawValue(type, Map(), DispatchFieldTypeConverters)(raw);
 
     const parseCustomDeltaDTO = () => () =>
       ValueOrErrors.Default.throwOne<any, string>("Unexpected custom delta");
@@ -66,19 +74,22 @@ describe("DispatchDeltaDTOToDelta", () => {
       Replace: "Alice",
     };
 
-    const RecordFieldDTO: DispatchDeltaTransferRecord<DispatchPassthroughFormInjectedTypes> = {
-      Discriminator: "name",
-      name: StringReplaceDTO,
-    };
+    const RecordFieldDTO: DispatchDeltaTransferRecord<DispatchPassthroughFormInjectedTypes> =
+      {
+        Discriminator: "name",
+        name: StringReplaceDTO,
+      };
 
-    const UnionCaseDTO: DispatchDeltaTransferUnion<DispatchPassthroughFormInjectedTypes> = {
-      Discriminator: "Person",
-      Person: RecordFieldDTO,
-    };
+    const UnionCaseDTO: DispatchDeltaTransferUnion<DispatchPassthroughFormInjectedTypes> =
+      {
+        Discriminator: "Person",
+        Person: RecordFieldDTO,
+      };
 
-    const result = DispatchDeltaDTOToDelta(fromApiRaw, parseCustomDeltaDTO)(unionType)(
-      UnionCaseDTO,
-    );
+    const result = DispatchDeltaDTOToDelta(
+      fromApiRaw,
+      parseCustomDeltaDTO,
+    )(unionType)(UnionCaseDTO);
 
     const expected: DispatchDelta<DispatchPassthroughFormInjectedTypes> = {
       kind: "UnionCase",
@@ -126,9 +137,7 @@ describe("DispatchDeltaDTOToDelta", () => {
     ) => dispatchFromAPIRawValue(type, Map(), DispatchFieldTypeConverters)(raw);
 
     const parseCustomDeltaDTO =
-      (
-        fromApiRawForType: (raw: any) => ValueOrErrors<any, string>,
-      ) =>
+      (fromApiRawForType: (raw: any) => ValueOrErrors<any, string>) =>
       (customDeltaDTO: { kind: "CategoryReplace"; replace: any }) =>
         fromApiRawForType(customDeltaDTO.replace).Then((replace) =>
           ValueOrErrors.Default.return<any, string>({
@@ -152,9 +161,10 @@ describe("DispatchDeltaDTOToDelta", () => {
       },
     };
 
-    const result = DispatchDeltaDTOToDelta(fromApiRaw, parseCustomDeltaDTO)(
-      injectedCategoryType,
-    )(dto as any);
+    const result = DispatchDeltaDTOToDelta(
+      fromApiRaw,
+      parseCustomDeltaDTO,
+    )(injectedCategoryType)(dto as any);
 
     expect(result.kind).toBe("value");
     if (result.kind !== "value") {
@@ -200,7 +210,12 @@ describe("DispatchDeltaDTOToDelta", () => {
     const fromApiRaw = (
       raw: unknown,
       type: DispatchParsedType<DispatchPassthroughFormInjectedTypes>,
-    ) => dispatchFromAPIRawValue(type, typesMap as any, DispatchFieldTypeConverters)(raw);
+    ) =>
+      dispatchFromAPIRawValue(
+        type,
+        typesMap as any,
+        DispatchFieldTypeConverters,
+      )(raw);
 
     const parseCustomDeltaDTO = () => () =>
       ValueOrErrors.Default.throwOne<any, string>("Unexpected custom delta");
@@ -213,14 +228,16 @@ describe("DispatchDeltaDTOToDelta", () => {
       Add: { Id: "row-1", Name: "Alice" },
     };
 
-    const recordFieldDTO: DispatchDeltaTransferRecord<DispatchPassthroughFormInjectedTypes> = {
-      Discriminator: "entries",
-      entries: tableAddDTO,
-    };
+    const recordFieldDTO: DispatchDeltaTransferRecord<DispatchPassthroughFormInjectedTypes> =
+      {
+        Discriminator: "entries",
+        entries: tableAddDTO,
+      };
 
-    const result = DispatchDeltaDTOToDelta(fromApiRaw, parseCustomDeltaDTO)(containerType)(
-      recordFieldDTO,
-    );
+    const result = DispatchDeltaDTOToDelta(
+      fromApiRaw,
+      parseCustomDeltaDTO,
+    )(containerType)(recordFieldDTO);
 
     expect(result.kind).toBe("value");
     if (result.kind !== "value") {
@@ -236,7 +253,9 @@ describe("DispatchDeltaDTOToDelta", () => {
     if (result.value.field[1].kind !== "TableAdd") {
       throw new Error("Expected nested TableAdd");
     }
-    expect(PredicateValue.Operations.IsRecord(result.value.field[1].value)).toBe(true);
+    expect(
+      PredicateValue.Operations.IsRecord(result.value.field[1].value),
+    ).toBe(true);
     if (!PredicateValue.Operations.IsRecord(result.value.field[1].value)) {
       throw new Error("Expected TableAdd value to be record");
     }
@@ -262,7 +281,12 @@ describe("DispatchDeltaDTOToDelta", () => {
     const fromApiRaw = (
       raw: unknown,
       type: DispatchParsedType<DispatchPassthroughFormInjectedTypes>,
-    ) => dispatchFromAPIRawValue(type, typesMap as any, DispatchFieldTypeConverters)(raw);
+    ) =>
+      dispatchFromAPIRawValue(
+        type,
+        typesMap as any,
+        DispatchFieldTypeConverters,
+      )(raw);
 
     const parseCustomDeltaDTO = () => () =>
       ValueOrErrors.Default.throwOne<any, string>("Unexpected custom delta");
@@ -278,14 +302,16 @@ describe("DispatchDeltaDTOToDelta", () => {
       ],
     };
 
-    const recordFieldDTO: DispatchDeltaTransferRecord<DispatchPassthroughFormInjectedTypes> = {
-      Discriminator: "entries",
-      entries: tableAddBatchDTO,
-    };
+    const recordFieldDTO: DispatchDeltaTransferRecord<DispatchPassthroughFormInjectedTypes> =
+      {
+        Discriminator: "entries",
+        entries: tableAddBatchDTO,
+      };
 
-    const result = DispatchDeltaDTOToDelta(fromApiRaw, parseCustomDeltaDTO)(containerType)(
-      recordFieldDTO,
-    );
+    const result = DispatchDeltaDTOToDelta(
+      fromApiRaw,
+      parseCustomDeltaDTO,
+    )(containerType)(recordFieldDTO);
 
     expect(result.kind).toBe("value");
     if (result.kind !== "value") {
