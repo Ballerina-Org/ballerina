@@ -11,9 +11,9 @@ import { LookupRenderer, SerializedLookup } from "./domains/lookup/state";
 import { MapRenderer, SerializedMapRenderer } from "./domains/map/state";
 import { OneRenderer, SerializedOneRenderer } from "./domains/one/state";
 import {
-  ReferenceRenderer,
-  SerializedReferenceRenderer,
-} from "./domains/reference/state";
+  ReferenceOneRenderer,
+  SerializedReferenceOneRenderer,
+} from "./domains/referenceOne/state";
 import {
   ReadOnlyRenderer,
   SerializedReadOnlyRenderer,
@@ -52,7 +52,7 @@ export type SerializedRenderer =
   | SerializedListRenderer
   | SerializedMapRenderer
   | SerializedOneRenderer
-  | SerializedReferenceRenderer
+  | SerializedReferenceOneRenderer
   | SerializedReadOnlyRenderer
   | SerializedStreamRenderer
   | SerializedSumRenderer
@@ -69,7 +69,7 @@ export type Renderer<T> =
   | ListRenderer<T>
   | MapRenderer<T>
   | OneRenderer<T>
-  | ReferenceRenderer<T>
+  | ReferenceOneRenderer<T>
   | ReadOnlyRenderer<T>
   | StreamRenderer<T>
   | SumRenderer<T>
@@ -354,8 +354,8 @@ export const Renderer = {
                                         forms,
                                         alreadyParsedForms,
                                       )
-                                    : type.kind == "reference"
-                                      ? ReferenceRenderer.Operations.Deserialize(
+                                    : type.kind == "referenceOne"
+                                      ? ReferenceOneRenderer.Operations.Deserialize(
                                           type,
                                           serialized,
                                           concreteRenderers,

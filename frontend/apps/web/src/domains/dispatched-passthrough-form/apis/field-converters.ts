@@ -220,7 +220,7 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
           : PredicateValue.Default.option(false, PredicateValue.Default.unit()),
       toAPIRawValue: ([_, __]) => _,
     },
-    Reference: {
+    ReferenceOne: {
       fromAPIRawValue: (_) =>
         _.isRight
           ? PredicateValue.Default.option(true, _.right)

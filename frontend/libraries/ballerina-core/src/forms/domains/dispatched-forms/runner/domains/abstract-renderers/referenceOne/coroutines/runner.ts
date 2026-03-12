@@ -1,8 +1,8 @@
 import { ValueInfiniteStreamLoader } from "../../../../../../../../value-infinite-data-stream/coroutines/infiniteLoader";
 import { ValueInfiniteStreamState } from "../../../../../../../../value-infinite-data-stream/state";
 import {
-  ReferenceAbstractRendererForeignMutationsExpected,
-  ReferenceAbstractRendererState,
+  ReferenceOneAbstractRendererForeignMutationsExpected,
+  ReferenceOneAbstractRendererState,
 } from "../state";
 import {
   SimpleCallback,
@@ -16,35 +16,35 @@ import {
 } from "../../../../../../../../../main";
 import { Map } from "immutable";
 import { Co, DebouncerCo, InitializeCo } from "./builder";
-import { initializeReference } from "./_initializeReference";
+import { initializeReferenceOne } from "./_initializeReferenceOne";
 import { initializeStream } from "./_initializeStream";
 import { debouncer } from "./_debouncer";
 
-export const initializeReferenceRunner = <
+export const initializeReferenceOneRunner = <
   CustomPresentationContext = Unit,
   Flags = BaseFlags,
   ExtraContext = Unit,
 >() =>
   InitializeCo<CustomPresentationContext, ExtraContext>().Template<
-    ReferenceAbstractRendererForeignMutationsExpected<Flags>
-  >(initializeReference<CustomPresentationContext, ExtraContext>(), {
+    ReferenceOneAbstractRendererForeignMutationsExpected<Flags>
+  >(initializeReferenceOne<CustomPresentationContext, ExtraContext>(), {
     interval: 15,
     runFilter: (props) =>
       // if the value is some, we already have something to pass to the renderers
       // -> we don't have to run the initialization coroutine
-      // if the inner value is unit, we are rendering a partial reference
+      // if the inner value is unit, we are rendering a partial referenceOne
       props.context.value.kind === "option" &&
       !props.context.value.isSome &&
       props.context.getApi != undefined,
   });
 
-export const initializeStreamRunnerReference = <
+export const initializeStreamRunnerReferenceOne = <
   CustomPresentationContext = Unit,
   Flags = BaseFlags,
   ExtraContext = Unit,
 >() =>
   Co<CustomPresentationContext, ExtraContext>().Template<
-    ReferenceAbstractRendererForeignMutationsExpected<Flags>
+    ReferenceOneAbstractRendererForeignMutationsExpected<Flags>
   >(initializeStream<CustomPresentationContext, ExtraContext>(), {
     interval: 15,
     runFilter: (props) =>
@@ -52,13 +52,13 @@ export const initializeStreamRunnerReference = <
       props.context.customFormState.getChunkWithParams !== undefined,
   });
 
-export const referenceTableDebouncerRunner = <
+export const referenceOneTableDebouncerRunner = <
   CustomPresentationContext = Unit,
   Flags = BaseFlags,
   ExtraContext = Unit,
 >() =>
   DebouncerCo<CustomPresentationContext, ExtraContext>().Template<
-    ReferenceAbstractRendererForeignMutationsExpected<Flags>
+    ReferenceOneAbstractRendererForeignMutationsExpected<Flags>
   >(debouncer<CustomPresentationContext, ExtraContext>(), {
     interval: 15,
     runFilter: (props) =>
@@ -67,13 +67,13 @@ export const referenceTableDebouncerRunner = <
       ) && props.context.customFormState.getChunkWithParams !== undefined,
   });
 
-export const referenceTableLoaderRunner = <
+export const referenceOneTableLoaderRunner = <
   CustomPresentationContext = Unit,
   Flags = BaseFlags,
   ExtraContext = Unit,
 >() =>
   Co<CustomPresentationContext, ExtraContext>().Template<
-    ReferenceAbstractRendererForeignMutationsExpected<Flags>
+    ReferenceOneAbstractRendererForeignMutationsExpected<Flags>
   >(
     ValueInfiniteStreamLoader().embed(
       (_) =>
@@ -81,7 +81,7 @@ export const referenceTableLoaderRunner = <
           ? _.customFormState.stream.value
           : undefined,
       (upd) =>
-        ReferenceAbstractRendererState.Updaters.Core.customFormState.children.stream(
+        ReferenceOneAbstractRendererState.Updaters.Core.customFormState.children.stream(
           Sum.Updaters.left(upd),
         ),
     ),

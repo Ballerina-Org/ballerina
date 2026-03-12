@@ -974,7 +974,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       );
     },
   },
-  reference: {
+  referenceOne: {
     admin: () => (props) => {
       if (PredicateValue.Operations.IsUnit(props.context.value)) {
         return <></>;
@@ -992,7 +992,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       const optionValue = props.context.value.value;
 
       if (!PredicateValue.Operations.IsRecord(optionValue)) {
-        console.error("reference option inner value is not a record", optionValue);
+        console.error("referenceOne option inner value is not a record", optionValue);
         return <></>;
       }
 
@@ -1128,7 +1128,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
 
         return (
           <>
-            <p>reference admin renderer</p>
+            <p>referenceOne admin renderer</p>
             <p>DetailsRenderer</p>
             {props.DetailsRenderer?.(undefined)({
               ...props,
@@ -1238,13 +1238,13 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       const optionValue = props.context.value.value;
 
       if (!PredicateValue.Operations.IsRecord(optionValue)) {
-        console.error("reference option inner value is not a record", optionValue);
+        console.error("referenceOne option inner value is not a record", optionValue);
         return <></>;
       }
 
       return (
         <>
-          <p>reference admin renderer</p>
+          <p>referenceOne admin renderer</p>
           <p>DetailsRenderer</p>
           {props.DetailsRenderer?.(undefined)({
             ...props,
@@ -1383,11 +1383,11 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       const optionValue = maybeOption.value;
 
       if (!PredicateValue.Operations.IsRecord(optionValue)) {
-        console.error("reference option inner value is not a record", optionValue);
+        console.error("referenceOne option inner value is not a record", optionValue);
         return (
           <>
             <h2>{props.context.label}</h2>
-            <>Error: reference option inner value is not a record</>
+            <>Error: referenceOne option inner value is not a record</>
           </>
         );
       }
@@ -1521,180 +1521,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </div>
       );
     },
-    eagerEditableReference: () => (props) => {
-      const maybeOption = props.context.value;
-      if (PredicateValue.Operations.IsUnit(maybeOption)) {
-        return (
-          <>
-            <h2>{props.context.label}</h2>
-            <>Error: value option expected but got unit</>
-          </>
-        );
-      }
-
-      if (!PredicateValue.Operations.IsOption(maybeOption)) {
-        console.error("value option expected but got", maybeOption);
-        return (
-          <>
-            <h2>{props.context.label}</h2>
-            <>Error: value option expected but got</>
-          </>
-        );
-      }
-
-      if (!maybeOption.isSome) {
-        console.error("no value for eager editable reference");
-        return (
-          <>
-            <h2>{props.context.label}</h2>
-            <>Error: no value for eager editable reference</>
-          </>
-        );
-      }
-
-      const optionValue = maybeOption.value;
-
-      if (!PredicateValue.Operations.IsRecord(optionValue)) {
-        console.error("reference option inner value is not a record", optionValue);
-        return (
-          <>
-            <h2>{props.context.label}</h2>
-            <>Error: reference option inner value is not a record</>
-          </>
-        );
-      }
-
-      if (props.context.customFormState.stream.kind === "r") {
-        console.error("stream missing from eager editable reference");
-        return (
-          <>
-            <h2>{props.context.label}</h2>
-            <>Error: stream missing</>
-          </>
-        );
-      }
-
-      return (
-        <div
-          style={{
-            border: "1px solid red",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "centre",
-            justifyContent: "center",
-            gap: "10px",
-            width: "50%",
-            margin: "auto",
-          }}
-        >
-          <h2>{props.context.label}</h2>
-          <li>
-            {props.DetailsRenderer?.(undefined)({
-              ...props,
-              context: {
-                ...props.context,
-              },
-              foreignMutations: {
-                ...props.foreignMutations,
-              },
-              view: unit,
-            })}
-          </li>
-          <li>
-            <button
-              disabled={props.context.disabled}
-              onClick={() => props.foreignMutations.toggleOpen()}
-            >
-              {props?.PreviewRenderer &&
-                props?.PreviewRenderer(optionValue)("unique-id")(undefined)?.({
-                  ...props,
-                  context: {
-                    ...props.context,
-                  },
-                  foreignMutations: {
-                    ...props.foreignMutations,
-                  },
-                  view: unit,
-                })}
-              {props.context.customFormState.status == "open" ? "➖" : "➕"}
-            </button>
-          </li>
-          {props.context.customFormState.status == "closed" ? (
-            <></>
-          ) : (
-            <>
-              <input
-                disabled={props.context.disabled}
-                value={
-                  props.context.customFormState.streamParams.value[0].get(
-                    "search",
-                  ) ?? ""
-                }
-                onChange={(e) =>
-                  props.foreignMutations.setStreamParam(
-                    "search",
-                    e.currentTarget.value,
-                    true,
-                  )
-                }
-              />
-              <ul>
-                {props.context.customFormState.stream.value.loadedElements
-                  .entrySeq()
-                  .map(([key, chunk]) =>
-                    chunk.data.valueSeq().map((element: any) => {
-                      return (
-                        <li>
-                          <button
-                            disabled={props.context.disabled}
-                            onClick={() =>
-                              props.foreignMutations.select(element, undefined)
-                            }
-                          >
-                            <div
-                              onClick={() =>
-                                props.foreignMutations.select(
-                                  element,
-                                  undefined,
-                                )
-                              }
-                              style={{
-                                display: "flex",
-                                flexDirection: "row",
-                                gap: "10px",
-                              }}
-                            />
-                            {props?.PreviewRenderer &&
-                              props.PreviewRenderer(element)(key.toString())(
-                                undefined,
-                              )?.({
-                                ...props,
-                                context: {
-                                  ...props.context,
-                                },
-                                foreignMutations: {
-                                  ...props.foreignMutations,
-                                },
-                                view: unit,
-                              })}
-                          </button>
-                        </li>
-                      );
-                    }),
-                  )}
-              </ul>
-            </>
-          )}
-          <button
-            disabled={props.context.hasMoreValues == false}
-            onClick={() => props.foreignMutations.loadMore()}
-          >
-            ⋯
-          </button>
-        </div>
-      );
-    },
-    lazyReadonlyReference: () => (props) => {
+    readonlyReferenceOne: () => (props) => {
       const maybeOption = props.context.value;
       if (PredicateValue.Operations.IsUnit(maybeOption)) {
         return (
@@ -1727,21 +1554,21 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       const optionValue = maybeOption.value;
 
       if (!PredicateValue.Operations.IsRecord(optionValue)) {
-        console.error("reference option inner value is not a record", optionValue);
+        console.error("referenceOne option inner value is not a record", optionValue);
         return (
           <>
             <h2>{props.context.label}</h2>
-            <>Error: reference option inner value is not a record</>
+            <>Error: referenceOne option inner value is not a record</>
           </>
         );
       }
 
       if (props.context.customFormState.stream.kind === "l") {
-        console.error("stream incorrectly provided for lazy readonly reference");
+        console.error("stream incorrectly provided for readonly referenceOne");
         return (
           <>
             <h2>{props.context.label}</h2>
-            <>Error: stream incorrectly provided for lazy readonly reference</>
+            <>Error: stream incorrectly provided for readonly referenceOne</>
           </>
         );
       }
@@ -1749,7 +1576,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       return (
         <div
           style={{
-            border: "1px solid red",
+            border: "1px solid pink",
             display: "flex",
             flexDirection: "column",
             alignItems: "centre",
@@ -1761,18 +1588,6 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         >
           <h2>{props.context.label}</h2>
           <li>
-            {props.DetailsRenderer?.(undefined)({
-              ...props,
-              context: {
-                ...props.context,
-              },
-              foreignMutations: {
-                ...props.foreignMutations,
-              },
-              view: unit,
-            })}
-          </li>
-          <li>
             <button
               disabled={true}
               onClick={() => props.foreignMutations.toggleOpen()}
@@ -1780,20 +1595,24 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
               {props?.PreviewRenderer &&
                 props?.PreviewRenderer(optionValue)("unique-id")(undefined)?.({
                   ...props,
-                  context: {
-                    ...props.context,
-                  },
-                  foreignMutations: {
-                    ...props.foreignMutations,
-                  },
+                  context: props.context,
+                  foreignMutations: props.foreignMutations,
                   view: unit,
                 })}
-            </button>
+              </button>
+          </li>
+          <li>
+            {props.DetailsRenderer?.(undefined)({
+              ...props, 
+              context: props.context,
+              foreignMutations: props.foreignMutations,
+              view: unit,
+            })}
           </li>
         </div>
       );
     },
-    eagerReadonlyReference: () => (props) => {
+    editableReferenceOne: () => (props) => {
       const maybeOption = props.context.value;
       if (PredicateValue.Operations.IsUnit(maybeOption)) {
         return (
@@ -1815,11 +1634,10 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       }
 
       if (!maybeOption.isSome) {
-        console.error("no value for eager readonly reference");
         return (
           <>
             <h2>{props.context.label}</h2>
-            <>Error: no value for eager readonly reference</>
+            <>Loading...</>
           </>
         );
       }
@@ -1827,23 +1645,21 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       const optionValue = maybeOption.value;
 
       if (!PredicateValue.Operations.IsRecord(optionValue)) {
-        console.error("reference option inner value is not a record", optionValue);
+        console.error("referenceOne option inner value is not a record", optionValue);
         return (
           <>
             <h2>{props.context.label}</h2>
-            <>Error: reference option inner value is not a record</>
+            <>Error: referenceOne option inner value is not a record</>
           </>
         );
       }
 
-      console.debug("bestFriend", props);
-
-      if (props.context.customFormState.stream.kind === "l") {
-        console.error("stream incorrectly provided for eager readonly reference");
+      if (props.context.customFormState.stream.kind === "r") {
+        console.error("stream missing from editable referenceOne");
         return (
           <>
             <h2>{props.context.label}</h2>
-            <>Error: stream incorrectly provided for eager readonly reference</>
+            <>Error: stream missing</>
           </>
         );
       }
@@ -1851,7 +1667,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
       return (
         <div
           style={{
-            border: "1px solid red",
+            border: "1px solid pink",
             display: "flex",
             flexDirection: "column",
             alignItems: "centre",
@@ -1876,7 +1692,7 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
           </li>
           <li>
             <button
-              disabled={true}
+              disabled={props.context.disabled}
               onClick={() => props.foreignMutations.toggleOpen()}
             >
               {props?.PreviewRenderer &&
@@ -1890,8 +1706,81 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
                   },
                   view: unit,
                 })}
+              {props.context.customFormState.status == "open" ? "➖" : "➕"}
             </button>
           </li>
+          {props.context.customFormState.status == "closed" ? (
+            <></>
+          ) : (
+            <>
+              <input
+                disabled={props.context.disabled}
+                value={
+                  props.context.customFormState.streamParams.value[0].get(
+                    "search",
+                  ) ?? ""
+                }
+                onChange={(e) =>
+                  props.foreignMutations.setStreamParam(
+                    "search",
+                    e.currentTarget.value,
+                    true,
+                  )
+                }
+              />
+              <ul>
+                {props.context.customFormState.stream.value.loadedElements
+                  .entrySeq()
+                  .map(([key, chunk]) =>
+                    chunk.data.valueSeq().map((element: any) => {
+                      return (
+                        <li>
+                          <button
+                            disabled={props.context.disabled}
+                            onClick={() =>
+                              props.foreignMutations.select(element, undefined)
+                            }
+                          >
+                            <div
+                              onClick={() =>
+                                props.foreignMutations.select(
+                                  element,
+                                  undefined,
+                                )
+                              }
+                              style={{
+                                display: "flex",
+                                flexDirection: "row",
+                                gap: "10px",
+                              }}
+                            />
+                            {props?.PreviewRenderer &&
+                              props.PreviewRenderer(element)(key.toString())(
+                                undefined,
+                              )?.({
+                                ...props,
+                                context: {
+                                  ...props.context,
+                                },
+                                foreignMutations: {
+                                  ...props.foreignMutations,
+                                },
+                                view: unit,
+                              })}
+                          </button>
+                        </li>
+                      );
+                    }),
+                  )}
+              </ul>
+            </>
+          )}
+          <button
+            disabled={props.context.hasMoreValues == false}
+            onClick={() => props.foreignMutations.loadMore()}
+          >
+            ⋯
+          </button>
         </div>
       );
     },

@@ -5,7 +5,7 @@ import {
   SimpleCallback,
   Value,
 } from "../../../../../../../../../main";
-import { ReferenceAbstractRendererState } from "../state";
+import { ReferenceOneAbstractRendererState } from "../state";
 import { DebouncerCo, DebouncedCo } from "./builder";
 
 export const debouncer = <
@@ -28,7 +28,7 @@ export const debouncer = <
           ..._.customFormState.streamParams,
           onDebounce: _.onDebounce,
         }),
-        ReferenceAbstractRendererState.Updaters.Core.customFormState.children
+        ReferenceOneAbstractRendererState.Updaters.Core.customFormState.children
           .streamParams,
       ),
       DebouncerCo<CustomPresentationContext, ExtraContext>().Wait(0),

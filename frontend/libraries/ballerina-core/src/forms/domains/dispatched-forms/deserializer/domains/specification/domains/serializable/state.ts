@@ -27,6 +27,7 @@ import {
   DispatchSpecificationDeserializationResult,
   DispatchInfiniteStreamSources,
   DispatchLookupSources,
+  DispatchReferenceSources,
   DispatchTableApiSources,
   Renderer,
   IdWrapperProps,
@@ -321,6 +322,7 @@ export const hydrateDeserializedDispatchForms =
             defaultState: (
               infiniteStreamSources: DispatchInfiniteStreamSources,
               lookupSources: DispatchLookupSources | undefined,
+              referenceSources: DispatchReferenceSources | undefined,
               tableApiSources: DispatchTableApiSources | undefined,
             ) =>
               dispatchDefaultState(
@@ -330,6 +332,7 @@ export const hydrateDeserializedDispatchForms =
                 specification.forms,
                 apiConverters,
                 lookupSources,
+                referenceSources,
                 tableApiSources,
                 specification.apis,
               ),

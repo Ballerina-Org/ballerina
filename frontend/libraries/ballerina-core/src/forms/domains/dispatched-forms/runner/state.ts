@@ -18,6 +18,7 @@ import {
   DispatchEntityApis,
   DispatchTableApiSources,
   DispatchLookupSources,
+  DispatchReferenceSources,
   FormRefEditApiHandlers,
   FormRefCreateApiHandlers,
   Guid,
@@ -67,6 +68,7 @@ export type BaseApiSources = {
   enumOptionsSources: DispatchEnumOptionsSources;
   tableApiSources?: DispatchTableApiSources;
   lookupSources?: DispatchLookupSources;
+  referenceSources?: DispatchReferenceSources;
 };
 
 export type EntityLauncherRefConfig =

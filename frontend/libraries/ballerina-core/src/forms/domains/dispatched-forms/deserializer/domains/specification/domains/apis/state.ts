@@ -37,6 +37,7 @@ export type SpecificationApis<T> = {
   streams?: StreamApis;
   tables?: TableApis<T>;
   lookups?: LookupApis;
+  references?: ReferenceApis;
 };
 
 export type EnumApiName = string;
@@ -555,6 +556,103 @@ export const LookupApis = {
               .MapErrors((errors) =>
                 errors.map(
                   (error) => `${error}\n...When deserializing lookup apis`,
+                ),
+              );
+    },
+  },
+};
+
+export type ReferenceApiName = string;
+export type ReferenceApis = Map<ReferenceApiName, { referenceOne: ReferenceOneApi }>;
+
+export type ReferenceOneApi = Map<
+  string,
+  {
+    type: DispatchTypeName;
+    methods: {
+      get: boolean;
+      getMany: boolean;
+      search: boolean;
+    };
+  }
+>;
+
+export const ReferenceApis = {//TODO Suzan: all operations seem unused, remove
+  Operations: {
+    isReferenceOneApi: (
+      _: unknown,
+    ): _ is {
+      referenceOne: {
+        [key: string]: {
+          type: DispatchTypeName;
+          methods: Array<string>;
+        };
+      };
+    } =>
+      DispatchIsObject(_) &&
+      "referenceOne" in _ &&
+      DispatchIsObject(_.referenceOne) &&
+      Object.values(_.referenceOne).every(
+        (value) =>
+          isObject(value) &&
+          "type" in value &&
+          isString(value.type) &&
+          "methods" in value &&
+          Array.isArray(value.methods) &&
+          value.methods.every((method) => isString(method)),
+      ),
+    DeserializeReferenceOne: (
+      serializedReferenceOneApi: unknown,
+    ): ValueOrErrors<ReferenceOneApi, string> =>
+      !ReferenceApis.Operations.isReferenceOneApi(serializedReferenceOneApi)
+        ? ValueOrErrors.Default.throwOne<ReferenceOneApi, string>(
+            `serializedReferenceOneApi is not a valid lookup api`,
+          )
+        : ValueOrErrors.Default.return<ReferenceOneApi, string>(
+            Map(
+              Object.entries(serializedReferenceOneApi.referenceOne).map(([key, value]) => [
+                key,
+                {
+                  type: value.type,
+                  methods: {
+                    get: value.methods.includes("get"),
+                    getMany: value.methods.includes("getMany"),
+                    search: value.methods.includes("search"),
+                  },
+                },
+              ]),
+            ),
+          ).MapErrors((errors) =>
+            errors.map((error) => `${error}\n...When deserializing referenceOne api`),
+          ),
+    Deserialize: ( //TODO Suzan: seems unused at the time of writing. Remove if not needed?
+      serializedApiReferenceOnes?: unknown,
+    ): ValueOrErrors<undefined | ReferenceApis, string> => {
+      return serializedApiReferenceOnes === undefined
+        ? ValueOrErrors.Default.return(undefined)
+        : !isObject(serializedApiReferenceOnes)
+          ? ValueOrErrors.Default.throwOne(
+              `serializedApiReferenceOnes is not an object`,
+            )
+          : ValueOrErrors.Operations.All(
+              List<
+                ValueOrErrors<[ReferenceApiName, { referenceOne: ReferenceOneApi }], string>
+              >(
+                Object.entries(serializedApiReferenceOnes).map(([key, value]) =>
+                  ReferenceApis.Operations.DeserializeReferenceOne(value).Then((referenceOne) =>
+                    ValueOrErrors.Default.return([key, { referenceOne }]),
+                  ),
+                ),
+              ),
+            )
+              .Then((entries) =>
+                ValueOrErrors.Default.return(
+                  Map<ReferenceApiName, { referenceOne: ReferenceOneApi }>(entries),
+                ),
+              )
+              .MapErrors((errors) =>
+                errors.map(
+                  (error) => `${error}\n...When deserializing reference apis`,
                 ),
               );
     },

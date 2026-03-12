@@ -25,6 +25,7 @@ import {
   UnionAbstractRendererState,
   OneAbstractRendererState,
   DispatchLookupSources,
+  DispatchReferenceSources,
   DispatchTableApiSources,
   ValueOption,
   BasicUpdater,
@@ -51,8 +52,8 @@ import {
   ValueFilterStartsWith,
   ValueSumN,
   ValueFilterNotEqualsTo,
-  ReferenceAbstractRendererView,
-  ReferenceAbstractRendererState,
+  ReferenceOneAbstractRendererView,
+  ReferenceOneAbstractRendererState,
 } from "../../../../../main";
 import {
   DispatchParsedType,
@@ -174,7 +175,7 @@ export const DispatchGenericTypes = [
   "KeyOf",
   "Table",
   "One",
-  "Reference",
+  "ReferenceOne",
   "ReadOnly",
 ] as const;
 export type DispatchGenericType = (typeof DispatchGenericTypes)[number];
@@ -202,7 +203,7 @@ type BuiltInApiConverters = {
   SumUnitDate: ApiConverter<Sum<Unit, Date>>;
   Table: ApiConverter<Table>;
   One: ApiConverter<ValueOption>;
-  Reference: ApiConverter<ValueOption>;
+  ReferenceOne: ApiConverter<ValueOption>;
   ReadOnly: ApiConverter<any>;
   Contains: ApiConverter<ValueFilterContains>;
   "=": ApiConverter<ValueFilterEqualsTo>;
@@ -487,11 +488,11 @@ export type ConcreteRenderers<
           >
         >;
   };
-  reference: {
+  referenceOne: {
     [_: string]: () =>
-      | ReferenceAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
+      | ReferenceOneAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
       | React.MemoExoticComponent<
-          ReferenceAbstractRendererView<
+          ReferenceOneAbstractRendererView<
             CustomPresentationContext,
             Flags,
             ExtraContext
@@ -529,7 +530,7 @@ export type ConcreteRenderer<T> =
   | OneAbstractRendererView<any, any>
   | ReadOnlyAbstractRendererView<any, any>
   | RecordAbstractRendererView<any, any>
-  | ReferenceAbstractRendererView<any, any>
+  | ReferenceOneAbstractRendererView<any, any>
   | SearchableInfiniteStreamAbstractRendererView<any, any>
   | SearchableInfiniteStreamMultiselectAbstractRendererView<any, any>
   | SecretAbstractRendererView<any, any>
@@ -654,6 +655,7 @@ export const dispatchDefaultState =
     forms: Map<string, Renderer<T>>,
     converters: DispatchApiConverters<T>,
     lookupSources: DispatchLookupSources | undefined,
+    referenceSources: DispatchReferenceSources | undefined,
     tableApiSources: DispatchTableApiSources | undefined,
     specApis: SpecificationApis<T>,
   ) =>
@@ -680,6 +682,7 @@ export const dispatchDefaultState =
                 forms,
                 converters,
                 lookupSources,
+                referenceSources,
                 tableApiSources,
                 specApis,
               )(resolvedType, resolvedRenderer),
@@ -699,6 +702,7 @@ export const dispatchDefaultState =
             forms,
             converters,
             lookupSources,
+            referenceSources,
             tableApiSources,
             specApis,
           )(resolvedType, renderer.inlinedRenderer),
@@ -715,6 +719,7 @@ export const dispatchDefaultState =
               forms,
               converters,
               lookupSources,
+              referenceSources,
               tableApiSources,
               specApis,
             )(renderer.type, resolvedRenderer),
@@ -822,6 +827,7 @@ export const dispatchDefaultState =
                     forms,
                     converters,
                     lookupSources,
+                    referenceSources,
                     tableApiSources,
                     specApis,
                   )(_, renderer.itemRenderers[index].renderer).Then(
@@ -848,6 +854,7 @@ export const dispatchDefaultState =
               forms,
               converters,
               lookupSources,
+              referenceSources,
               tableApiSources,
               specApis,
             )(t.args[0], renderer.leftRenderer.renderer).Then((left) =>
@@ -862,6 +869,7 @@ export const dispatchDefaultState =
                     forms,
                     converters,
                     lookupSources,
+                    referenceSources,
                     tableApiSources,
                     specApis,
                   )(t.args[1], renderer.rightRenderer.renderer).Then((right) =>
@@ -943,49 +951,48 @@ export const dispatchDefaultState =
                 OneAbstractRendererState.Default(undefined),
               );
 
-      //TODO Suzan: replace one lookup with reference
-      if (t.kind == "reference")
-        return renderer.kind != "referenceRenderer"
+      if (t.kind == "referenceOne") //TODO Suzan: use correct sources here
+        return renderer.kind != "referenceOneRenderer"
           ? ValueOrErrors.Default.throwOne(
-              `received non reference renderer kind "${renderer.kind}" when resolving defaultState for reference`,
+              `received non referenceOne renderer kind "${renderer.kind}" when resolving defaultState for referenceOne`,
             )
-          : specApis.lookups != undefined &&
-              specApis.lookups.get(renderer.api[0]) != undefined &&
-              specApis.lookups.get(renderer.api[0])?.one != undefined &&
-              specApis.lookups.get(renderer.api[0])?.one.get(renderer.api[1]) !=
+          : specApis.references != undefined &&
+              specApis.references.get(renderer.entityName) != undefined &&
+              specApis.references.get(renderer.entityName)?.referenceOne != undefined &&
+              specApis.references.get(renderer.entityName)?.referenceOne.get("get") !=
                 undefined &&
-              specApis.lookups.get(renderer.api[0])?.one.get(renderer.api[1])
-                ?.methods.getManyUnlinked
-            ? lookupSources == undefined
+              specApis.references.get(renderer.entityName)?.referenceOne.get("get")
+                ?.methods.getMany //TODO Suzan: this will always be false
+            ? referenceSources == undefined
               ? ValueOrErrors.Default.throwOne(
-                  `lookup sources referenced but no lookup sources are provided`,
+                  `referenceOne sources referenced but no referenceOne sources are provided`,
                 )
-              : lookupSources(renderer.api[0]) == undefined
+              : referenceSources(renderer.entityName) == undefined
                 ? ValueOrErrors.Default.throwOne(
-                    `cannot find lookup source for ${renderer.api[0]}`,
+                    `cannot find reference source for ${renderer.entityName}`,
                   )
-                : lookupSources(renderer.api[0]).Then((lookupSource) =>
-                    lookupSource.one == undefined
+                : referenceSources(renderer.entityName).Then((referenceSource) =>
+                    referenceSource.referenceOne == undefined
                       ? ValueOrErrors.Default.throwOne(
-                          `reference source not provided for ${renderer.api[0]}`,
+                          `reference source not provided for ${renderer.entityName}`,
                         )
-                      : lookupSource.one!(renderer.api[1]) // safe because we check for undefined above but type system doesn't know that
+                      : referenceSource.referenceOne!("get") // safe because we check for undefined above but type system doesn't know that
                           .Then((referenceSource) =>
-                            referenceSource.getManyUnlinked == undefined
+                            referenceSource.getMany == undefined 
                               ? ValueOrErrors.Default.throwOne(
-                                  `getManyUnlinked not provided for ${renderer.api[0]}-${renderer.api[1]}`,
+                                  `getMany not provided for ${renderer.entityName}-get`,
                                 )
                               : MapRepo.Operations.tryFindWithError(
-                                  t.arg.name,
+                                  t.detailsType.name,
                                   types,
                                   () =>
-                                    `cannot find lookup type ${JSON.stringify(
-                                      t.arg.name,
+                                    `cannot find reference type ${JSON.stringify(
+                                      t.detailsType.name,
                                     )} in ${JSON.stringify(t)}`,
                                 ).Then((lookupType) =>
                                   ValueOrErrors.Default.return(
-                                    OneAbstractRendererState.Default(
-                                      referenceSource.getManyUnlinked!(
+                                    ReferenceOneAbstractRendererState.Default(
+                                      referenceSource.getMany!(
                                         // safe because we check for undefined above but type system doesn't know that
                                         dispatchFromAPIRawValue(
                                           lookupType,
@@ -1000,7 +1007,7 @@ export const dispatchDefaultState =
                           ),
                   )
             : ValueOrErrors.Default.return(
-                ReferenceAbstractRendererState.Default(undefined),
+                ReferenceOneAbstractRendererState.Default(undefined),
               );
 
       if (t.kind == "readOnly")
@@ -1015,6 +1022,7 @@ export const dispatchDefaultState =
               forms,
               converters,
               lookupSources,
+              referenceSources,
               tableApiSources,
               specApis,
             )(t.arg, renderer.childRenderer.renderer).Then((childState) =>
@@ -1049,6 +1057,7 @@ export const dispatchDefaultState =
                         forms,
                         converters,
                         lookupSources,
+                        referenceSources,
                         tableApiSources,
                         specApis,
                       )(fieldType, fieldRenderer.renderer).Then((value) =>
@@ -1088,6 +1097,7 @@ export const dispatchDefaultState =
                         forms,
                         converters,
                         lookupSources,
+                        referenceSources,
                         tableApiSources,
                         specApis,
                       )(caseType, caseRenderer).Then((caseState) =>
@@ -1641,13 +1651,14 @@ export const dispatchFromAPIRawValue =
         );
       }
 
-      if (t.kind == "reference") {
-        const result = converters["Reference"].fromAPIRawValue(raw);
+      if (t.kind == "referenceOne") {
+        const result = converters["ReferenceOne"].fromAPIRawValue(raw);
         if (!result.isSome) {
           return ValueOrErrors.Default.return(result);
         }
+
         return dispatchFromAPIRawValue(
-          t.arg,
+          t.detailsType,
           types,
           converters,
           injectedPrimitives,

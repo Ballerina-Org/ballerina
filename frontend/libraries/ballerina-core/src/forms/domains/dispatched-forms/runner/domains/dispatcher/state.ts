@@ -8,7 +8,7 @@ import { ListDispatcher } from "./domains/list/state";
 import { MapDispatcher } from "./domains/map/state";
 import { MultiSelectionDispatcher } from "./domains/multiSelection/state";
 import { OneDispatcher } from "./domains/one/state";
-import { ReferenceDispatcher } from "./domains/reference/state";
+import { ReferenceOneDispatcher } from "./domains/referenceOne/state";
 import { ReadOnlyDispatcher } from "./domains/readOnly/state";
 import { RecordDispatcher } from "./domains/record/state";
 import { LookupDispatcher } from "./domains/lookup/state";
@@ -167,8 +167,8 @@ export const Dispatcher = {
                                       isInlined ?? true,
                                       currentLookupRenderer,
                                     )
-                                  : renderer.kind == "referenceRenderer"
-                                    ? ReferenceDispatcher.Operations.Dispatch(
+                                  : renderer.kind == "referenceOneRenderer"
+                                    ? ReferenceOneDispatcher.Operations.Dispatch(
                                         renderer,
                                         dispatcherContext,
                                         isInlined ?? true,

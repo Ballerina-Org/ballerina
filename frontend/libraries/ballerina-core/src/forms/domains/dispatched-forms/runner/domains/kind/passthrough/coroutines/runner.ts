@@ -199,6 +199,7 @@ export const DispatchPassthroughFormRunner = <
                 defaultState: dispatcherContext.defaultState(
                   launcherRef.apiSources.infiniteStreamSources,
                   launcherRef.apiSources.lookupSources,
+                  launcherRef.apiSources.referenceSources,
                   launcherRef.apiSources.tableApiSources,
                 ),
               };
@@ -236,6 +237,7 @@ export const DispatchPassthroughFormRunner = <
               const initialState = dispatcherContext.defaultState(
                 launcherRef.apiSources.infiniteStreamSources,
                 launcherRef.apiSources.lookupSources,
+                launcherRef.apiSources.referenceSources,
                 launcherRef.apiSources.tableApiSources,
               )(passthroughFormLauncher.type, passthroughFormLauncher.renderer);
 

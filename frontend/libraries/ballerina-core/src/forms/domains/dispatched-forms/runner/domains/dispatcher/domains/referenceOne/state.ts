@@ -1,17 +1,17 @@
 import {
   BasicFun,
   Guid,
-  ReferenceAbstractRenderer,
+  ReferenceOneAbstractRenderer,
   DispatchInjectablesTypes,
   Template,
   ValueOrErrors,
   DispatchParsedType,
 } from "../../../../../../../../../main";
-import { ReferenceRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/reference/state";
+import { ReferenceOneRenderer } from "../../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/referenceOne/state";
 import { NestedDispatcher } from "../nestedDispatcher/state";
 import { DispatcherContextWithApiSources } from "../../../../state";
 
-export const ReferenceDispatcher = {
+export const ReferenceOneDispatcher = {
   Operations: {
     DispatchPreviewRenderer: <
       T extends DispatchInjectablesTypes<T>,
@@ -19,7 +19,7 @@ export const ReferenceDispatcher = {
       CustomPresentationContext,
       ExtraContext,
     >(
-      renderer: ReferenceRenderer<T>,
+      renderer: ReferenceOneRenderer<T>,
       dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
@@ -36,60 +36,69 @@ export const ReferenceDispatcher = {
             "previewRenderer",
             isInlined,
           ),
+    DispatchDetailsRenderer: < //TODO Suzan: unused at time of writing; remove?
+      T extends DispatchInjectablesTypes<T>,
+      Flags,
+      CustomPresentationContext,
+      ExtraContext,
+    >(
+      renderer: ReferenceOneRenderer<T>,
+      dispatcherContext: DispatcherContextWithApiSources<
+        T,
+        Flags,
+        CustomPresentationContext,
+        ExtraContext
+      >,
+      isInlined: boolean,
+    ): ValueOrErrors<undefined | Template<any, any, any, any>, string> =>
+      renderer.detailsRenderer == undefined
+        ? ValueOrErrors.Default.return(undefined)
+        : NestedDispatcher.Operations.DispatchAs(
+            renderer.detailsRenderer,
+            dispatcherContext,
+            "detailsRenderer",
+            isInlined,
+          ),
     GetApi: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContext,
       ExtraContext,
     >(
-      api: string[],
+      entityName: string,
       dispatcherContext: DispatcherContextWithApiSources<
         any,
         Flags,
         CustomPresentationContext,
         ExtraContext
       >,
-    ): ValueOrErrors<BasicFun<Guid, Promise<any>> | undefined, string> =>
-      Array.isArray(api) &&
-      api.length == 2 &&
-      api.every((_) => typeof _ == "string")
-        ? dispatcherContext.specApis.lookups == undefined
-          ? ValueOrErrors.Default.return(undefined)
-          : dispatcherContext.specApis.lookups.get(api[0]) == undefined
-            ? ValueOrErrors.Default.return(undefined)
-            //TODO Suzan: use reference lookup instead of one lookup
-            : dispatcherContext.specApis.lookups.get(api[0])?.one == undefined
-              ? ValueOrErrors.Default.return(undefined)
-              : dispatcherContext.specApis.lookups.get(api[0])?.one.get(api[1])
-                    ?.methods.get == false
-                ? ValueOrErrors.Default.return(undefined)
-                : dispatcherContext.lookupSources == undefined
+    ): ValueOrErrors<BasicFun<Guid, Promise<any>> | undefined, string> => //TODO Suzan: get from correct place
+      typeof entityName != "string"
+        ? ValueOrErrors.Default.throwOne(`entityName must be a string`)
+        : dispatcherContext.referenceSources == undefined
+          ? ValueOrErrors.Default.throwOne(
+              `referenceSources api sources are undefined`,
+            )
+          : dispatcherContext
+              .referenceSources(entityName)
+              .Then((referenceSource) =>
+                referenceSource.referenceOne == undefined
                   ? ValueOrErrors.Default.throwOne(
-                      `lookup api sources are undefined`,
+                      `lookup source missing "referenceOne" api`,
                     )
-                  : dispatcherContext
-                      .lookupSources(api[0])
-                      .Then((lookupSource) =>
-                        lookupSource.one == undefined
-                          ? ValueOrErrors.Default.throwOne(
-                              `lookup source missing "one" api`,
-                            )
-                          : lookupSource
-                              .one(api[1])
-                              .Then((source) =>
-                                ValueOrErrors.Default.return(source.get),
-                              ),
-                      )
-        : ValueOrErrors.Default.throwOne(
-            `api must be a string or an array of strings`,
-          ),
+                  : referenceSource
+                      .referenceOne(entityName)
+                      .Then((source) =>
+                        ValueOrErrors.Default.return(source.get)
+                      ),
+              ),
     Dispatch: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContext,
       ExtraContext,
     >(
-      renderer: ReferenceRenderer<T>,
+      renderer: ReferenceOneRenderer<T>,
       dispatcherContext: DispatcherContextWithApiSources<
         T,
         Flags,
@@ -99,14 +108,14 @@ export const ReferenceDispatcher = {
       isInlined: boolean,
     ): ValueOrErrors<Template<any, any, any, any>, string> =>
       DispatchParsedType.Operations.ResolveLookupType(
-        renderer.type.arg.name,
+        renderer.type.detailsType.name,
         dispatcherContext.types,
-      ).Then((referenceEntityType) =>
-        referenceEntityType.kind != "record"
+      ).Then((referenceOneEntityType) =>
+        referenceOneEntityType.kind != "record"
           ? ValueOrErrors.Default.throwOne(
-              `expected a record type, but got a ${referenceEntityType.kind} type`,
+              `expected a record type, but got a ${referenceOneEntityType.kind} type`,
             )
-          : ReferenceDispatcher.Operations.DispatchPreviewRenderer(
+          : ReferenceOneDispatcher.Operations.DispatchPreviewRenderer(
               renderer,
               dispatcherContext,
               isInlined,
@@ -117,28 +126,28 @@ export const ReferenceDispatcher = {
                 "detailsRenderer",
                 isInlined,
               ).Then((detailsRenderer) =>
-                ReferenceDispatcher.Operations.GetApi(
-                  renderer.api,
+                ReferenceOneDispatcher.Operations.GetApi(
+                  renderer.entityName,
                   dispatcherContext,
                 ).Then((getApi) =>
                   dispatcherContext
-                    .getConcreteRenderer("reference", renderer.concreteRenderer)
+                    .getConcreteRenderer("referenceOne", renderer.concreteRenderer)
                     .Then((concreteRenderer) =>
                       ValueOrErrors.Default.return(
-                        ReferenceAbstractRenderer(
+                        ReferenceOneAbstractRenderer(
                           detailsRenderer,
                           previewRenderer,
                           dispatcherContext.IdProvider,
                           dispatcherContext.ErrorRenderer,
                           renderer.detailsRenderer,
                           renderer.previewRenderer,
-                          referenceEntityType,
+                          referenceOneEntityType,
                         )
                           .mapContext((_: any) => ({
                             ..._,
                             getApi,
                             fromApiParser: dispatcherContext.parseFromApiByType(
-                              renderer.type.arg,
+                              renderer.type.previewType,
                             ),
                             type: renderer.type,
                           }))

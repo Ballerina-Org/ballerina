@@ -262,6 +262,7 @@ export const initCo = <
               defaultState: dispatcherContext.defaultState(
                 current.launcherRef.apiSources.infiniteStreamSources,
                 current.launcherRef.apiSources.lookupSources,
+                current.launcherRef.apiSources.referenceSources,
                 current.launcherRef.apiSources.tableApiSources,
               ),
             };
@@ -282,6 +283,7 @@ export const initCo = <
             const initialState = dispatcherContext.defaultState(
               current.launcherRef.apiSources.infiniteStreamSources,
               current.launcherRef.apiSources.lookupSources,
+              current.launcherRef.apiSources.referenceSources,
               current.launcherRef.apiSources.tableApiSources,
             )(editFormLauncher.type, editFormLauncher.renderer);
 

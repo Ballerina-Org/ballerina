@@ -1,5 +1,20 @@
 {
   "types": {
+    "UserPreview": {
+      "fields": {
+        "Id": "guid",
+        "Name": "string",
+        "Surname": "string"
+      }
+    },
+    "UserDetails": {
+      "fields": {
+        "Id": "guid",
+        "Name": "string",
+        "Surname": "string",
+        "Email": "string"
+      }
+    },
     "GlobalConfiguration": {
       "extends": [],
       "fields": {
@@ -606,13 +621,19 @@
           "fun": "One",
           "args": ["User"]
         },
-        "LazyReadonlyReference": {
-          "fun": "Reference",
-          "args": ["User"]
+        "ReadonlyReferenceOne": {
+          "fun": "ReferenceOne",
+          "args": {
+            "preview": "UserPreview",
+            "details": "UserDetails"
+          }
         },
-        "EagerEditableReference": {
-          "fun": "Reference",
-          "args": ["User"]
+        "EditableReferenceOne": {
+          "fun": "ReferenceOne",
+          "args": {
+            "preview": "UserPreview",
+            "details": "UserDetails"
+          }
         }
       }
     }
@@ -636,14 +657,6 @@
           "LazyReadonlyOneApi": {
             "type": "User",
             "methods": ["get"]
-          },
-          "LazyReadonlyReferenceApi": {
-            "type": "User",
-            "methods": ["get"]
-          },
-          "EagerEditableReferenceApi": {
-            "type": "User",
-            "methods": ["getManyUnlinked"]
           }
         }
       }
@@ -2049,13 +2062,42 @@
           },
           "api": ["User", "LazyReadonlyOneApi"]
         },
-        "LazyReadonlyReference": {
-          "label": "Lazy Readonly Reference",
-          "renderer": "lazyReadonlyReference",
+        "ReadonlyReferenceOne": {
+          "label": "Readonly Reference One",
+          "renderer": "readonlyReferenceOne",
+          "entityName": "User",
+          "vectorName": "",
           "previewRenderer": {
             "renderer": {
-              "type": "User",
+              "type": "UserPreview",
               "fields": {
+                "Id": {
+                  "renderer": "defaultString"
+                },
+                "Name": {
+                  "renderer": "defaultString"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Id", "Name"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "detailsRenderer": {
+            "renderer": {
+              "type": "UserDetails",
+              "fields": {
+                "Id": {
+                  "renderer": "defaultString"
+                },
                 "Name": {
                   "renderer": "defaultString"
                 },
@@ -2078,37 +2120,44 @@
                 }
               }
             }
-          },
-          "detailsRenderer": {
-            "renderer": {
-              "type": "User",
-              "fields": {
-                "Name": {
-                  "renderer": "defaultString"
-                }
-              },
-              "tabs": {
-                "main": {
-                  "columns": {
-                    "main": {
-                      "groups": {
-                        "main": ["Name"]
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "api": ["User", "LazyReadonlyReferenceApi"]
+          }
         },
-        "EagerEditableReference": {
-          "label": "Eager Editable Reference",
-          "renderer": "eagerEditableReference",
+        "EditableReferenceOne": {
+          "label": "Editable Reference One",
+          "renderer": "editableReferenceOne",
+          "entityName": "User",
+          "vectorName": "",
           "previewRenderer": {
             "renderer": {
-              "type": "User",
+              "type": "UserPreview",
               "fields": {
+                "Id": {
+                  "renderer": "defaultString"
+                },
+                "Name": {
+                  "renderer": "defaultString"
+                }
+              },
+              "tabs": {
+                "main": {
+                  "columns": {
+                    "main": {
+                      "groups": {
+                        "main": ["Id", "Name"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "detailsRenderer": {
+            "renderer": {
+              "type": "UserDetails",
+              "fields": {
+                "Id": {
+                  "renderer": "defaultString"
+                },
                 "Name": {
                   "renderer": "defaultString"
                 },
@@ -2131,29 +2180,7 @@
                 }
               }
             }
-          },
-          "detailsRenderer": {
-            "renderer": {
-              "type": "User",
-              "fields": {
-                "Name": {
-                  "renderer": "defaultString"
-                }
-              },
-              "tabs": {
-                "main": {
-                  "columns": {
-                    "main": {
-                      "groups": {
-                        "main": ["Name"]
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "api": ["User", "EagerEditableReferenceApi"]
+          }
         },
         "EagerReadonlyOne": {
           "label": "Eager Readonly One",
@@ -2242,10 +2269,10 @@
                 "main": [
                   "BestFriend",
                   "EagerEditableOne",
-                  "EagerEditableReference",
                   "LazyReadonlyOne",
                   "EagerReadonlyOne",
-                  "LazyReadonlyReference",
+                  "ReadonlyReferenceOne",
+                  "EditableReferenceOne",
                   "Friends",
                   "Children",
                   "Job",

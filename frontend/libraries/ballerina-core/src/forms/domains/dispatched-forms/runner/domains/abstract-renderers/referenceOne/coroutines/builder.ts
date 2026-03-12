@@ -9,15 +9,15 @@ import {
   ValueRecord,
   BaseFlags,
   Sum,
-  ReferenceAbstractRendererForeignMutationsExpected,
-  ReferenceAbstractRendererReadonlyContext,
-  ReferenceAbstractRendererState,
+  ReferenceOneAbstractRendererForeignMutationsExpected,
+  ReferenceOneAbstractRendererReadonlyContext,
+  ReferenceOneAbstractRendererState,
 } from "../../../../../../../../../main";
 
 export const Co = <CustomPresentationContext = Unit, ExtraContext = Unit>() =>
   CoTypedFactory<
-    ReferenceAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext>,
-    ReferenceAbstractRendererState
+    ReferenceOneAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext>,
+    ReferenceOneAbstractRendererState
   >();
 
 export const InitializeCo = <
@@ -25,12 +25,12 @@ export const InitializeCo = <
   ExtraContext = Unit,
 >() =>
   CoTypedFactory<
-    ReferenceAbstractRendererReadonlyContext<
+    ReferenceOneAbstractRendererReadonlyContext<
       CustomPresentationContext,
       ExtraContext
     > &
-      Pick<ReferenceAbstractRendererForeignMutationsExpected, "onChange">,
-    ReferenceAbstractRendererState
+      Pick<ReferenceOneAbstractRendererForeignMutationsExpected, "onChange">,
+    ReferenceOneAbstractRendererState
   >();
 
 export const DebouncerCo = <
@@ -38,13 +38,13 @@ export const DebouncerCo = <
   ExtraContext = Unit,
 >() =>
   CoTypedFactory<
-    ReferenceAbstractRendererReadonlyContext<
+    ReferenceOneAbstractRendererReadonlyContext<
       CustomPresentationContext,
       ExtraContext
     > & {
       onDebounce: SimpleCallback<void>;
     },
-    ReferenceAbstractRendererState
+    ReferenceOneAbstractRendererState
   >();
 
 export const DebouncedCo = CoTypedFactory<

@@ -208,10 +208,17 @@ export const SerializedType = {
     _: SerializedType<T>,
   ): _ is { fun: "One"; args: Array<SerializedType<T>> } =>
     SerializedType.isApplication(_) && _.fun == "One" && _.args.length == 1,
-  isReference: <T>(
+  isReferenceOne: <T>(
     _: SerializedType<T>,
-  ): _ is { fun: "Reference"; args: Array<SerializedType<T>> } =>
-    SerializedType.isApplication(_) && _.fun == "Reference" && _.args.length == 1,
+  ): _ is { fun: "ReferenceOne"; args: { details: string, preview: string} } =>
+    DispatchIsObject(_) && 
+    DispatchHasFun(_) && 
+    DispatchIsGenericType(_.fun) && 
+    _.fun == "ReferenceOne" && 
+    "args" in _ && 
+    DispatchIsObject(_.args) && 
+    "details" in _.args &&
+    "preview" in _.args,
   isReadOnly: <T>(
     _: SerializedType<T>,
   ): _ is { fun: "ReadOnly"; args: Array<SerializedType<T>> } =>
@@ -430,17 +437,19 @@ export const OneType = {
   },
 };
 
-export type ReferenceType<T> = {
-  kind: "reference";
-  arg: LookupType;
+export type ReferenceOneType<T> = {
+  kind: "referenceOne";
+  detailsType: LookupType; //TODO Suzan: should this be lookup type?
+  previewType: LookupType; //TODO Suzan: should this be lookup type?
   // asString: () => StringSerializedType;
 };
 
-export const ReferenceType = {
+export const ReferenceOneType = {
   SerializeToString: (
-    serializedArg: StringSerializedType,
+    serializedDetailsType: StringSerializedType,
+    serializedPreviewType: StringSerializedType,
   ): StringSerializedType => {
-    return `[reference; arg: ${serializedArg}]`;
+    return `[referenceOne; detailsType: ${serializedDetailsType}, previewType: ${serializedPreviewType}]`;
   },
 };
 
@@ -620,7 +629,7 @@ export type DispatchParsedType<T> =
   | MapType<T>
   | TableType<T>
   | OneType<T>
-  | ReferenceType<T>
+  | ReferenceOneType<T>
   | ReadOnlyType<T>
   | FilterType<T>;
 
@@ -692,9 +701,10 @@ export const DispatchParsedType = {
       kind: "one",
       arg,
     }),
-    reference: <T>(arg: LookupType): ReferenceType<T> => ({
-      kind: "reference",
-      arg,
+    referenceOne: <T>(detailsType: LookupType, previewType: LookupType): ReferenceOneType<T> => ({
+      kind: "referenceOne",
+      detailsType,
+      previewType,
     }),
     filterContains: <T>(
       contains: DispatchParsedType<T>,
@@ -766,9 +776,10 @@ export const DispatchParsedType = {
           return OneType.SerializeToString(
             DispatchParsedType.Operations.AsString(type.arg),
           );
-        case "reference":
-          return ReferenceType.SerializeToString(
-            DispatchParsedType.Operations.AsString(type.arg),
+        case "referenceOne":
+          return ReferenceOneType.SerializeToString(
+            DispatchParsedType.Operations.SerializeToString(type.detailsType),
+            DispatchParsedType.Operations.SerializeToString(type.previewType),
           );
         case "singleSelection":
           return SingleSelectionType.SerializeToString(
@@ -1006,9 +1017,10 @@ export const DispatchParsedType = {
           return OneType.SerializeToString(
             DispatchParsedType.Operations.SerializeToString(type.arg),
           );
-        case "reference":
-          return ReferenceType.SerializeToString(
-            DispatchParsedType.Operations.SerializeToString(type.arg),
+        case "referenceOne":
+          return ReferenceOneType.SerializeToString(
+            DispatchParsedType.Operations.SerializeToString(type.detailsType),
+            DispatchParsedType.Operations.SerializeToString(type.previewType),
           );
         case "singleSelection":
           return SingleSelectionType.SerializeToString(
@@ -1770,23 +1782,35 @@ export const DispatchParsedType = {
                 ]),
           );
         }
-        if (SerializedType.isReference(rawType)) {
+        if (SerializedType.isReferenceOne(rawType)) {
           return DispatchParsedType.Operations.ParseRawType(
-            rawType.args[0] as string,
-            rawType.args[0],
+            rawType.args.details,
+            rawType.args.details,
             serializedTypes,
             alreadyParsedTypes,
             injectedPrimitives,
-          ).Then(([parsedArg, newAlreadyParsedTypes]) =>
-            parsedArg.kind != "lookup"
+          ).Then(([parsedArgDetails, newAlreadyParsedTypesDetails]) => {
+            return parsedArgDetails.kind != "lookup" //TODO Suzan: should it be lookup?
               ? ValueOrErrors.Default.throwOne(
-                  `reference content type ${JSON.stringify(parsedArg)} is not a lookup type`,
+                  `referenceOne details content type ${JSON.stringify(parsedArgDetails)} is not a lookup type`,
                 )
-              : ValueOrErrors.Default.return([
-                  DispatchParsedType.Default.reference(parsedArg),
-                  newAlreadyParsedTypes,
-                ]),
-          );
+              : DispatchParsedType.Operations.ParseRawType(
+                rawType.args.preview, 
+                rawType.args.preview,
+                serializedTypes,
+                newAlreadyParsedTypesDetails,
+                injectedPrimitives,
+              ).Then(([parsedArgPreview, newAlreadyParsedTypesPreview]) => {
+                return parsedArgPreview.kind != "lookup" //TODO Suzan: should it be lookup?
+                  ? ValueOrErrors.Default.throwOne(
+                      `referenceOne preview content type ${JSON.stringify(parsedArgPreview)} is not a lookup type`,
+                    )
+                  : ValueOrErrors.Default.return([
+                      DispatchParsedType.Default.referenceOne(parsedArgDetails, parsedArgPreview),
+                      newAlreadyParsedTypesPreview,
+                    ])
+              });
+          });
         }
         if (SerializedType.isReadOnly(rawType))
           return DispatchParsedType.Operations.ParseRawType(

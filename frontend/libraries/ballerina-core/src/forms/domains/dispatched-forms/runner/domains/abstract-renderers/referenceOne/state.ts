@@ -11,7 +11,7 @@ import {
   simpleUpdaterWithChildren,
   ValueInfiniteStreamState,
   CommonAbstractRendererReadonlyContext,
-  ReferenceType,
+  ReferenceOneType,
   ValueOrErrors,
   Guid,
   Unit,
@@ -34,11 +34,11 @@ import {
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 
-export type ReferenceAbstractRendererReadonlyContext<
+export type ReferenceOneAbstractRendererReadonlyContext<
   CustomPresentationContext,
   ExtraContext,
 > = CommonAbstractRendererReadonlyContext<
-  ReferenceType<unknown>,
+  ReferenceOneType<unknown>,
   ValueOption | ValueUnit,
   CustomPresentationContext,
   ExtraContext
@@ -48,7 +48,7 @@ export type ReferenceAbstractRendererReadonlyContext<
   remoteEntityVersionIdentifier: string;
 };
 
-export type ReferenceAbstractRendererState = CommonAbstractRendererState & {
+export type ReferenceOneAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
     detailsState: RecordAbstractRendererState;
     previewStates: Map<string, RecordAbstractRendererState>;
@@ -64,7 +64,7 @@ export type ReferenceAbstractRendererState = CommonAbstractRendererState & {
   };
 };
 
-export const ReferenceAbstractRendererState = {
+export const ReferenceOneAbstractRendererState = {
   Default: (
     getChunk:
       | BasicFun<
@@ -72,7 +72,7 @@ export const ReferenceAbstractRendererState = {
           BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
         >
       | undefined,
-  ): ReferenceAbstractRendererState => ({
+  ): ReferenceOneAbstractRendererState => ({
     ...CommonAbstractRendererState.Default(),
     customFormState: {
       detailsState: RecordAbstractRendererState.Default.zero(),
@@ -85,25 +85,25 @@ export const ReferenceAbstractRendererState = {
   }),
   Updaters: {
     Core: {
-      ...simpleUpdaterWithChildren<ReferenceAbstractRendererState>()({
-        ...simpleUpdater<ReferenceAbstractRendererState["customFormState"]>()(
+      ...simpleUpdaterWithChildren<ReferenceOneAbstractRendererState>()({
+        ...simpleUpdater<ReferenceOneAbstractRendererState["customFormState"]>()(
           "status",
         ),
-        ...simpleUpdater<ReferenceAbstractRendererState["customFormState"]>()(
+        ...simpleUpdater<ReferenceOneAbstractRendererState["customFormState"]>()(
           "stream",
         ),
-        ...simpleUpdater<ReferenceAbstractRendererState["customFormState"]>()(
+        ...simpleUpdater<ReferenceOneAbstractRendererState["customFormState"]>()(
           "streamParams",
         ),
-        ...simpleUpdater<ReferenceAbstractRendererState["customFormState"]>()(
+        ...simpleUpdater<ReferenceOneAbstractRendererState["customFormState"]>()(
           "detailsState",
         ),
-        ...simpleUpdater<ReferenceAbstractRendererState["customFormState"]>()(
+        ...simpleUpdater<ReferenceOneAbstractRendererState["customFormState"]>()(
           "previewStates",
         ),
       })("customFormState"),
-      ...simpleUpdaterWithChildren<ReferenceAbstractRendererState>()({
-        ...simpleUpdater<ReferenceAbstractRendererState["commonFormState"]>()(
+      ...simpleUpdaterWithChildren<ReferenceOneAbstractRendererState>()({
+        ...simpleUpdater<ReferenceOneAbstractRendererState["commonFormState"]>()(
           "modifiedByUser",
         ),
       })("commonFormState"),
@@ -113,8 +113,8 @@ export const ReferenceAbstractRendererState = {
         key: string,
         _: BasicUpdater<string>,
         shouldReload: boolean,
-      ): Updater<ReferenceAbstractRendererState> =>
-        ReferenceAbstractRendererState.Updaters.Core.customFormState.children.streamParams(
+      ): Updater<ReferenceOneAbstractRendererState> =>
+        ReferenceOneAbstractRendererState.Updaters.Core.customFormState.children.streamParams(
           Debounced.Updaters.Template.value(
             Value.Updaters.value((__) => [
               MapRepo.Updaters.upsert(key, () => "", _)(__[0]),
@@ -126,7 +126,7 @@ export const ReferenceAbstractRendererState = {
   },
   Operations: {
     GetIdFromContext: <CustomPresentationContext = Unit, ExtraContext = Unit>(
-      ctx: ReferenceAbstractRendererReadonlyContext<
+      ctx: ReferenceOneAbstractRendererReadonlyContext<
         CustomPresentationContext,
         ExtraContext
       >,
@@ -140,26 +140,26 @@ export const ReferenceAbstractRendererState = {
       const local = ctx.bindings.get("local");
       if (local == undefined) {
         return ValueOrErrors.Default.throwOne(
-          `local binding is undefined when intialising reference`,
+          `local binding is undefined when intialising referenceOne`,
         );
       }
 
       if (!PredicateValue.Operations.IsRecord(local)) {
         return ValueOrErrors.Default.throwOne(
-          `local binding is not a record when intialising reference\n... in couroutine for\n...${ctx.domNodeAncestorPath + "[reference]"}`,
+          `local binding is not a record when intialising referenceOne\n... in couroutine for\n...${ctx.domNodeAncestorPath + "[referenceOne]"}`,
         );
       }
 
       if (!local.fields.has("Id")) {
         return ValueOrErrors.Default.throwOne(
-          `local binding is missing Id (check casing) when intialising reference\n... in couroutine for\n...${ctx.domNodeAncestorPath + "[reference]"}`,
+          `local binding is missing Id (check casing) when intialising referenceOne\n... in couroutine for\n...${ctx.domNodeAncestorPath + "[referenceOne]"}`,
         );
       }
 
       const id = local.fields.get("Id")!; // safe because of above check;
       if (!PredicateValue.Operations.IsString(id)) {
         return ValueOrErrors.Default.throwOne(
-          `local Id is not a string when intialising reference\n... in couroutine for\n...${ctx.domNodeAncestorPath + "[reference]"}`,
+          `local Id is not a string when intialising referenceOne\n... in couroutine for\n...${ctx.domNodeAncestorPath + "[referenceOne]"}`,
         );
       }
 
@@ -168,7 +168,7 @@ export const ReferenceAbstractRendererState = {
   },
 };
 
-export type ReferenceAbstractRendererForeignMutationsExpected<Flags = BaseFlags> = {
+export type ReferenceOneAbstractRendererForeignMutationsExpected<Flags = BaseFlags> = {
   onChange: DispatchOnChange<ValueOption | ValueUnit, BaseFlags>;
   clear?: () => void;
   delete?: (delta: DispatchDelta<Flags>) => void;
@@ -182,7 +182,7 @@ export type ReferenceAbstractRendererForeignMutationsExpected<Flags = BaseFlags>
   ) => void;
 };
 
-export type ReferenceAbstractRendererViewForeignMutationsExpected<Flags = BaseFlags> =
+export type ReferenceOneAbstractRendererViewForeignMutationsExpected<Flags = BaseFlags> =
   {
     onChange: DispatchOnChange<ValueOption | ValueUnit, Flags>;
     toggleOpen: SimpleCallback<void>;
@@ -195,31 +195,31 @@ export type ReferenceAbstractRendererViewForeignMutationsExpected<Flags = BaseFl
     reinitializeStream: SimpleCallback<void>;
   };
 
-export type ReferenceAbstractRendererView<
+export type ReferenceOneAbstractRendererView<
   CustomPresentationContext = Unit,
   Flags = BaseFlags,
   ExtraContext = Unit,
 > = View<
-  ReferenceAbstractRendererReadonlyContext<
+  ReferenceOneAbstractRendererReadonlyContext<
     CustomPresentationContext,
     ExtraContext
   > & {
     hasMoreValues: boolean;
   } & CommonAbstractRendererViewOnlyReadonlyContext &
-    ReferenceAbstractRendererState,
-  ReferenceAbstractRendererState,
-  ReferenceAbstractRendererViewForeignMutationsExpected<Flags>,
+    ReferenceOneAbstractRendererState,
+  ReferenceOneAbstractRendererState,
+  ReferenceOneAbstractRendererViewForeignMutationsExpected<Flags>,
   {
-    DetailsRenderer?: (
+    DetailsRenderer: (
       flags: Flags | undefined,
     ) => Template<
-      ReferenceAbstractRendererState &
-        ReferenceAbstractRendererReadonlyContext<
+      ReferenceOneAbstractRendererState &
+        ReferenceOneAbstractRendererReadonlyContext<
           CustomPresentationContext,
           ExtraContext
         >,
-      ReferenceAbstractRendererState,
-      ReferenceAbstractRendererViewForeignMutationsExpected<Flags>
+      ReferenceOneAbstractRendererState,
+      ReferenceOneAbstractRendererViewForeignMutationsExpected<Flags>
     >;
     PreviewRenderer?: (
       value: ValueRecord,
@@ -228,13 +228,13 @@ export type ReferenceAbstractRendererView<
     ) => (
       flags: Flags | undefined,
     ) => Template<
-      ReferenceAbstractRendererState &
-        ReferenceAbstractRendererReadonlyContext<
+      ReferenceOneAbstractRendererState &
+        ReferenceOneAbstractRendererReadonlyContext<
           CustomPresentationContext,
           ExtraContext
         >,
-      ReferenceAbstractRendererState,
-      ReferenceAbstractRendererViewForeignMutationsExpected<Flags>
+      ReferenceOneAbstractRendererState,
+      ReferenceOneAbstractRendererViewForeignMutationsExpected<Flags>
     >;
   }
 >;

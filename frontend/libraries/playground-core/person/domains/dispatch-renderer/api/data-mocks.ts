@@ -13,8 +13,9 @@ import {
   ValueStreamPosition,
   DispatchTableApiSources,
   DispatchOneSource,
-  DispatchReferenceSource,
+  DispatchReferenceOneSource,
   DispatchLookupSources,
+  DispatchReferenceSources,
   TableAbstractRendererState,
   DispatchTableFiltersAndSorting,
   SumNType,
@@ -623,9 +624,21 @@ const lazyReadonlyOne: DispatchOneSource = {
   getManyUnlinked: undefined,
 };
 
-const eagerEditableReference: DispatchReferenceSource = {
-  get: undefined,
-  getManyUnlinked:
+const userReferenceOne: DispatchReferenceOneSource = {
+  get: (id: Guid) => {
+    return PromiseRepo.Default.mock(
+      () => ({
+        Id: v4(),
+        Name: "Tim",
+        Surname: "Pool",
+        Email: "tim.pool@example.com",
+      }),
+      undefined,
+      undefined,
+      1,
+    );
+  },
+  getMany:
     (fromApiRaw: BasicFun<any, ValueOrErrors<PredicateValue, string>>) =>
     (id: Guid) =>
     (streamParams: Map<string, string>) =>
@@ -636,19 +649,6 @@ const eagerEditableReference: DispatchReferenceSource = {
             Id: v4(),
             Name: faker.person.firstName(),
             Surname: faker.person.lastName(),
-            Birthday: faker.date.birthdate().toISOString(),
-            Email: faker.internet.email(),
-            SubscribeToNewsletter: faker.datatype.boolean(),
-            FavoriteColor: {
-              Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-              IsSome: true,
-            },
-            Friends: {
-              From: 0,
-              To: 0,
-              HasMore: true,
-              Values: {},
-            },
           }))
           .reduce((acc, curr) => {
             acc[curr.Id] = curr;
@@ -667,35 +667,25 @@ const eagerEditableReference: DispatchReferenceSource = {
         ),
       }));
     },
-};
-
-const lazyReadonlyReference: DispatchReferenceSource = {
-  get: (id: Guid) => {
-    return PromiseRepo.Default.mock(
-      () => ({
-        Id: v4(),
-        Name: "Tim",
-        Surname: "Pool",
-        Birthday: "1990-01-01",
-        Email: "tim.pool@example.com",
-        SubscribeToNewsletter: true,
-        FavoriteColor: {
-          Value: { Value: colors[Math.round(Math.random() * 10) % 3] },
-          IsSome: true,
-        },
-        Friends: {
-          From: 0,
-          To: 0,
-          HasMore: true,
-          Values: {},
-        },
-      }),
-      undefined,
-      undefined,
-      1,
-    );
-  },
-  getManyUnlinked: undefined,
+  search: (entityName: string) =>
+    (vectorName: string) => 
+    ({start, count}: {start: number, count: number}) => {
+      return PromiseRepo.Default.mock(() => ({
+        Values: Range(1, 5)
+          .map((_) => ({
+            Id: v4(),
+            Name: faker.person.firstName(),
+            Surname: faker.person.lastName(),
+          }))
+          .reduce((acc, curr) => {
+            acc[curr.Id] = curr;
+            return acc;
+          }, {} as any),
+        HasMore: false,
+        From: 1,
+        To: 5,
+      })).then((res) => res.Values);
+    },
 };
 
 const lookupSources: DispatchLookupSources = (typeName: string) =>
@@ -708,13 +698,23 @@ const lookupSources: DispatchLookupSources = (typeName: string) =>
               ? ValueOrErrors.Default.return(eagerEditableOne)
               : apiName == "LazyReadonlyOneApi"
                 ? ValueOrErrors.Default.return(lazyReadonlyOne)
-                : apiName == "LazyReadonlyReferenceApi"
-                  ? ValueOrErrors.Default.return(lazyReadonlyReference)
-                  : apiName == "EagerEditableReferenceApi"
-                    ? ValueOrErrors.Default.return(eagerEditableReference)
-                    : ValueOrErrors.Default.throwOne(
-                        `can't find api ${apiName} when getting dispatch lookup api sources`,
-                      ),
+                : ValueOrErrors.Default.throwOne(
+                  `can't find api ${apiName} when getting dispatch lookup api sources`,
+                ),
+      })
+    : ValueOrErrors.Default.throwOne(
+        `can't find type ${typeName} when getting lookup api source`,
+      );
+
+const referenceSources: DispatchReferenceSources = (typeName: string) =>
+  typeName == "User"
+    ? ValueOrErrors.Default.return({
+        referenceOne: (apiName: string) =>
+          apiName == "User"
+            ? ValueOrErrors.Default.return(userReferenceOne)
+            : ValueOrErrors.Default.throwOne(
+                `can't find api ${apiName} when getting dispatch reference api sources`,
+              ),
       })
     : ValueOrErrors.Default.throwOne(
         `can't find type ${typeName} when getting lookup api source`,
@@ -850,20 +850,13 @@ const entityApis: EntityApis = {
                 SubscribeToNewsletter: true,
               },
             },
-            LazyReadonlyReference: {
+            ReadonlyReferenceOne: {
               isRight: false,
               right: {},
             },
-            EagerEditableReference: {
-              isRight: true,
-              right: {
-                Id: v4(),
-                Name: "John",
-                Surname: "Doe",
-                Birthday: "1990-01-01",
-                Email: "john.doe@example.com",
-                SubscribeToNewsletter: true,
-              },
+            EditableReferenceOne: {
+              isRight: false,
+              right: {},
             },
             Friends: {
               Values: {
@@ -1441,20 +1434,13 @@ const entityApis: EntityApis = {
                   SubscribeToNewsletter: true,
                 },
               },
-              LazyReadonlyReference: {
+              ReadonlyReferenceOne: {
                 isRight: false,
                 right: {},
               },
-              EagerEditableReference: {
-                isRight: true,
-                right: {
-                  Id: v4(),
-                  Name: "John",
-                  Surname: "Doe",
-                  Birthday: "1990-01-01",
-                  Email: "john.doe@example.com",
-                  SubscribeToNewsletter: true,
-                },
+              EditableReferenceOne: {
+                isRight: false,
+                right: {},
               },
               Friends: {
                 Values: {
@@ -1960,5 +1946,6 @@ export const DispatchPersonFromConfigApis = {
   entityApis,
   tableApiSources,
   lookupSources,
+  referenceSources,
 };
 //

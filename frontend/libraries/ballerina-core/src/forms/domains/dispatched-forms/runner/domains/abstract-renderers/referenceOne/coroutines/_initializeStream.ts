@@ -1,6 +1,6 @@
 import { Unit, replaceWith, Sum } from "../../../../../../../../../main";
 import { ValueInfiniteStreamState } from "../../../../../../../../value-infinite-data-stream/state";
-import { ReferenceAbstractRendererState } from "../state";
+import { ReferenceOneAbstractRendererState } from "../state";
 import { Co } from "./builder";
 
 export const initializeStream = <
@@ -11,11 +11,11 @@ export const initializeStream = <
     .GetState()
     .then((current) => {
       const InstantiatedCo = Co<CustomPresentationContext, ExtraContext>();
-      const maybeId = ReferenceAbstractRendererState.Operations.GetIdFromContext(
+      const maybeId = ReferenceOneAbstractRendererState.Operations.GetIdFromContext(
         current,
       ).MapErrors((_) =>
         _.concat(
-          `\n... in couroutine for\n...${current.domNodeAncestorPath + "[reference]"}`,
+          `\n... in couroutine for\n...${current.domNodeAncestorPath + "[referenceOne]"}`,
         ),
       );
 
@@ -25,13 +25,13 @@ export const initializeStream = <
       }
 
       return InstantiatedCo.SetState(
-        ReferenceAbstractRendererState.Updaters.Core.customFormState.children.stream(
+        ReferenceOneAbstractRendererState.Updaters.Core.customFormState.children.stream(
           replaceWith(
             Sum.Default.left(
               ValueInfiniteStreamState.Default(
                 100,
                 // safe because we check for undefined in the runFilter
-                current.customFormState.getChunkWithParams!(maybeId.value)( //TODO Suzan: injecting is not needed for the refs
+                current.customFormState.getChunkWithParams!(maybeId.value)(
                   current.customFormState.streamParams.value[0],
                 ),
               ),

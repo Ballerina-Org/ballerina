@@ -448,6 +448,8 @@ export const DispatcherFormsApp = (props: {}) => {
                             DispatchPersonFromConfigApis.tableApiSources,
                           lookupSources:
                             DispatchPersonFromConfigApis.lookupSources,
+                          referenceSources:
+                            DispatchPersonFromConfigApis.referenceSources,
                         },
                       },
                       remoteEntityVersionIdentifier:
@@ -501,6 +503,8 @@ export const DispatcherFormsApp = (props: {}) => {
                           DispatchPersonFromConfigApis.tableApiSources,
                         lookupSources:
                           DispatchPersonFromConfigApis.lookupSources,
+                        referenceSources:
+                          DispatchPersonFromConfigApis.referenceSources,
                       },
                     },
                     remoteEntityVersionIdentifier,
@@ -535,6 +539,8 @@ export const DispatcherFormsApp = (props: {}) => {
                           DispatchPersonFromConfigApis.tableApiSources,
                         lookupSources:
                           DispatchPersonFromConfigApis.lookupSources,
+                        referenceSources:
+                          DispatchPersonFromConfigApis.referenceSources,
                       },
                       // config: {
                       //   source: "api",

@@ -1,7 +1,7 @@
 import {
   BaseFlags,
   DispatchDelta,
-  ReferenceAbstractRendererState,
+  ReferenceOneAbstractRendererState,
   PredicateValue,
   replaceWith,
   Sum,
@@ -15,18 +15,18 @@ import {
 } from "../../../../../../../../../main";
 import { InitializeCo } from "./builder";
 
-export const initializeReference = <
+export const initializeReferenceOne = <
   CustomPresentationContext = Unit,
   ExtraContext = Unit,
 >() =>
   InitializeCo<CustomPresentationContext, ExtraContext>()
     .GetState()
     .then((current) => {
-      const maybeId = ReferenceAbstractRendererState.Operations.GetIdFromContext(
+      const maybeId = ReferenceOneAbstractRendererState.Operations.GetIdFromContext(
         current,
       ).MapErrors((_) =>
         _.concat(
-          `\n... in couroutine for\n...${current.domNodeAncestorPath + "[reference]"}`,
+          `\n... in couroutine for\n...${current.domNodeAncestorPath + "[referenceOne]"}`,
         ),
       );
 
@@ -39,7 +39,7 @@ export const initializeReference = <
         .Await(
           // get Api being defined is in the run condition and is a sign that this could be lazy loaded
           () => current.getApi!(maybeId.value),
-          (_) => console.error("error while getting api value for the reference", _),
+          (_) => console.error("error while getting api value for the referenceOne", _),
         )
         .then((value) =>
           InitializeCo<CustomPresentationContext, ExtraContext>().Do(() => {
@@ -50,7 +50,7 @@ export const initializeReference = <
                   ValueOption.Default.some(result),
                 );
                 const delta: DispatchDelta<BaseFlags> = {
-                  kind: "ReferenceReplace",
+                  kind: "ReferenceOneReplace",
                   replace: result,
                   flags: {
                     kind: "localOnly",
@@ -64,7 +64,7 @@ export const initializeReference = <
                 return ValueOrErrors.Default.return(result);
               })
               .MapErrors((_) => {
-                console.error("error while parsing api value for the reference", _);
+                console.error("error while parsing api value for the referenceOne", _);
                 return _;
               });
           }),

@@ -35,34 +35,35 @@ import {
   NestedRenderer,
 } from "../../../../../../../../main";
 import {
-  ReferenceAbstractRendererForeignMutationsExpected,
-  ReferenceAbstractRendererReadonlyContext,
-  ReferenceAbstractRendererState,
-  ReferenceAbstractRendererView,
-  ReferenceAbstractRendererViewForeignMutationsExpected,
+  ReferenceOneAbstractRendererForeignMutationsExpected,
+  ReferenceOneAbstractRendererReadonlyContext,
+  ReferenceOneAbstractRendererState,
+  ReferenceOneAbstractRendererView,
+  ReferenceOneAbstractRendererViewForeignMutationsExpected,
 } from "./state";
 import {
-  initializeReferenceRunner,
-  initializeStreamRunnerReference,
-  referenceTableDebouncerRunner,
-  referenceTableLoaderRunner,
+  initializeReferenceOneRunner,
+  initializeStreamRunnerReferenceOne,
+  referenceOneTableDebouncerRunner,
+  referenceOneTableLoaderRunner,
 } from "./coroutines/runner";
 
+//TODO Suzan: verify that comment below still applies after all changes
 /*
- * The clear, set, create and delete callbacks are used when and only when the reference is partial (it can have a value of unit or Reference)
- * This means the reference is inside a Sum<unit, Reference> (or inverse) renderer.
- * Clear and delete are used to set the sum to a left of unit or delete the referenced entity in the reference.
+ * The clear, set, create and delete callbacks are used when and only when the referenceOne is partial (it can have a value of unit or ReferenceOne)
+ * This means the referenceOne is inside a Sum<unit, ReferenceOne> (or inverse) renderer.
+ * Clear and delete are used to set the sum to a left of unit or delete the referenced entity in the referenceOne.
  * The sum defines the 'optionality', so when clearing, no delta is needed (the sum will return a delta indicated clearing)
  * and the sum exclusibely controls the updating on the entity value, so no updater is needed.
- * When deleting, the delta is needed to delete the referenced entity in the reference and will be nested in the sum's delta, but again
+ * When deleting, the delta is needed to delete the referenced entity in the referenceOne and will be nested in the sum's delta, but again
  * no updater is needed.
- * The set and create callbacks are used when the reference is inside a Sum whose current value is unit.
- * If the reference is not in a Sum<unit, Reference> (or inverse), then the set and create callbacks are not used.
+ * The set and create callbacks are used when the referenceOne is inside a Sum whose current value is unit.
+ * If the referenceOne is not in a Sum<unit, ReferenceOne> (or inverse), then the set and create callbacks are not used.
  * The updater is always needed because we need to know the value of the new selection / creation.
  * The actual implementation and passing down of the callbacks is done in the concrete sum renderer.
  */
 
-export const ReferenceAbstractRenderer = <
+export const ReferenceOneAbstractRenderer = <
   CustomPresentationContext = Unit,
   Flags extends BaseFlags = BaseFlags,
   ExtraContext = Unit,
@@ -91,37 +92,37 @@ export const ReferenceAbstractRenderer = <
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   DetailsRendererRaw: NestedRenderer<any>,
   PreviewRendererRaw: NestedRenderer<any> | undefined,
-  referenceEntityType: RecordType<any>,
+  referenceOneEntityType: RecordType<any>,
 ) => {
-  const typedInitializeStreamRunner = initializeStreamRunnerReference<
+  const typedInitializeStreamRunner = initializeStreamRunnerReferenceOne<
     CustomPresentationContext,
     Flags,
     ExtraContext
   >();
-  const typedInitializeReferenceRunner = initializeReferenceRunner<
+  const typedInitializeReferenceOneRunner = initializeReferenceOneRunner<
     CustomPresentationContext,
     Flags,
     ExtraContext
   >();
-  const typedReferenceTableLoaderRunner = referenceTableLoaderRunner<
+  const typedReferenceOneTableLoaderRunner = referenceOneTableLoaderRunner<
     CustomPresentationContext,
     Flags,
     ExtraContext
   >();
-  const typedReferenceTableDebouncerRunner = referenceTableDebouncerRunner<
+  const typedReferenceOneTableDebouncerRunner = referenceOneTableDebouncerRunner<
     CustomPresentationContext,
     Flags,
     ExtraContext
   >();
 
-  // value is Unit -> partial reference, dont'run
+  // value is Unit -> partial referenceOne, dont'run
   // value is Option<none> -> signal to run the initialization
   // value is Option<some> -> there is a value, we do not care about what's inside
 
   const embeddedDetailsRenderer = (flags: Flags | undefined) =>
     DetailsRenderer.mapContext<
-      ReferenceAbstractRendererState &
-        ReferenceAbstractRendererReadonlyContext<
+      ReferenceOneAbstractRendererState &
+        ReferenceOneAbstractRendererReadonlyContext<
           CustomPresentationContext,
           ExtraContext
         >
@@ -137,7 +138,7 @@ export const ReferenceAbstractRenderer = <
 
       if (!PredicateValue.Operations.IsRecord(_.value.value)) {
         console.error(
-          `${_.domNodeAncestorPath + "[reference][details]"}: Record expected but got ${JSON.stringify(_.value.value)}`,
+          `${_.domNodeAncestorPath + "[referenceOne][details]"}: Record expected but got ${JSON.stringify(_.value.value)}`,
         );
         return undefined;
       }
@@ -156,7 +157,7 @@ export const ReferenceAbstractRenderer = <
         globallyDisabled: _.globallyDisabled,
         bindings: _.bindings,
         extraContext: _.extraContext,
-        type: referenceEntityType,
+        type: referenceOneEntityType,
         customPresentationContext: _.customPresentationContext,
         remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
         typeAncestors: [_.type as DispatchParsedType<any>].concat(
@@ -164,9 +165,9 @@ export const ReferenceAbstractRenderer = <
         ),
         domNodeAncestorPath: _.domNodeAncestorPath + "[Value]",
         legacy_domNodeAncestorPath:
-          _.legacy_domNodeAncestorPath + "[reference][details]",
+          _.legacy_domNodeAncestorPath + "[referenceOne][details]",
         predictionAncestorPath: _.predictionAncestorPath + "[Value]",
-        layoutAncestorPath: _.layoutAncestorPath + "[reference][details]",
+        layoutAncestorPath: _.layoutAncestorPath + "[referenceOne][details]",
         lookupTypeAncestorNames: _.lookupTypeAncestorNames,
         preprocessedSpecContext: _.preprocessedSpecContext,
         labelContext,
@@ -176,23 +177,23 @@ export const ReferenceAbstractRenderer = <
       .mapState(
         (
           _: BasicUpdater<RecordAbstractRendererState>,
-        ): Updater<ReferenceAbstractRendererState> =>
-          ReferenceAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
+        ): Updater<ReferenceOneAbstractRendererState> =>
+          ReferenceOneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
             _,
           ),
       )
       .mapForeignMutationsFromProps<
-        ReferenceAbstractRendererViewForeignMutationsExpected<Flags>
+        ReferenceOneAbstractRendererViewForeignMutationsExpected<Flags>
       >((props) => ({
         onChange: (
           updater: Option<BasicUpdater<ValueRecord>>,
           nestedDelta: DispatchDelta<Flags>,
         ) => {
           props.setState(
-            ReferenceAbstractRendererState.Updaters.Core.commonFormState.children
+            ReferenceOneAbstractRendererState.Updaters.Core.commonFormState.children
               .modifiedByUser(replaceWith(true))
               .then(
-                ReferenceAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
+                ReferenceOneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
                   RecordAbstractRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
                       replaceWith(true),
@@ -203,14 +204,14 @@ export const ReferenceAbstractRenderer = <
           );
 
           const delta: DispatchDelta<Flags> = {
-            kind: "ReferenceValue",
+            kind: "ReferenceOneValue",
             nestedDelta,
             flags,
             sourceAncestorLookupTypeNames:
               nestedDelta.sourceAncestorLookupTypeNames,
           };
 
-          // The Option component of the reference is a lazy load signal. Either the value is provided initially,
+          // The Option component of the referenceOne is a lazy load signal. Either the value is provided initially,
           // or it is loaded lazily. Here we always update a some, because if the detail renderer is displayed,
           // we must already have a value, and the option is a some.
           props.foreignMutations.onChange(
@@ -233,8 +234,8 @@ export const ReferenceAbstractRenderer = <
     PreviewRenderer && PreviewRendererRaw
       ? (value: ValueRecord) => (id: string) => (flags: Flags | undefined) =>
           PreviewRenderer.mapContext<
-            ReferenceAbstractRendererState &
-              ReferenceAbstractRendererReadonlyContext<
+            ReferenceOneAbstractRendererState &
+              ReferenceOneAbstractRendererReadonlyContext<
                 CustomPresentationContext,
                 ExtraContext
               >
@@ -257,7 +258,7 @@ export const ReferenceAbstractRenderer = <
               locked: _.locked,
               bindings: _.bindings,
               extraContext: _.extraContext,
-              type: referenceEntityType,
+              type: referenceOneEntityType,
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               typeAncestors: [_.type as DispatchParsedType<any>].concat(
@@ -265,9 +266,9 @@ export const ReferenceAbstractRenderer = <
               ),
               domNodeAncestorPath: _.domNodeAncestorPath + "[Value]",
               legacy_domNodeAncestorPath:
-                _.legacy_domNodeAncestorPath + "[reference][preview]",
+                _.legacy_domNodeAncestorPath + "[referenceOne][preview]",
               predictionAncestorPath: _.predictionAncestorPath + "[Value]",
-              layoutAncestorPath: _.layoutAncestorPath + "[reference][preview]",
+              layoutAncestorPath: _.layoutAncestorPath + "[referenceOne][preview]",
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               preprocessedSpecContext: _.preprocessedSpecContext,
               labelContext,
@@ -277,8 +278,8 @@ export const ReferenceAbstractRenderer = <
             .mapState(
               (
                 _: BasicUpdater<RecordAbstractRendererState>,
-              ): Updater<ReferenceAbstractRendererState> =>
-                ReferenceAbstractRendererState.Updaters.Core.customFormState.children.previewStates(
+              ): Updater<ReferenceOneAbstractRendererState> =>
+                ReferenceOneAbstractRendererState.Updaters.Core.customFormState.children.previewStates(
                   MapRepo.Updaters.upsert(
                     id,
                     () => RecordAbstractRendererState.Default.zero(),
@@ -287,17 +288,17 @@ export const ReferenceAbstractRenderer = <
                 ),
             )
             .mapForeignMutationsFromProps<
-              ReferenceAbstractRendererViewForeignMutationsExpected<Flags>
+              ReferenceOneAbstractRendererViewForeignMutationsExpected<Flags>
             >((props) => ({
               onChange: (
                 updater: Option<BasicUpdater<ValueRecord>>,
                 nestedDelta: DispatchDelta<Flags>,
               ) => {
                 props.setState(
-                  ReferenceAbstractRendererState.Updaters.Core.commonFormState.children
+                  ReferenceOneAbstractRendererState.Updaters.Core.commonFormState.children
                     .modifiedByUser(replaceWith(true))
                     .then(
-                      ReferenceAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
+                      ReferenceOneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
                         RecordAbstractRendererState.Updaters.Core.commonFormState(
                           DispatchCommonFormState.Updaters.modifiedByUser(
                             replaceWith(true),
@@ -308,7 +309,7 @@ export const ReferenceAbstractRenderer = <
                 );
 
                 const delta: DispatchDelta<Flags> = {
-                  kind: "ReferenceValue",
+                  kind: "ReferenceOneValue",
                   nestedDelta,
                   flags,
                   sourceAncestorLookupTypeNames:
@@ -339,13 +340,13 @@ export const ReferenceAbstractRenderer = <
       : undefined;
 
   return Template.Default<
-    ReferenceAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext>,
-    ReferenceAbstractRendererState,
-    ReferenceAbstractRendererForeignMutationsExpected<Flags>,
-    ReferenceAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
+    ReferenceOneAbstractRendererReadonlyContext<CustomPresentationContext, ExtraContext>,
+    ReferenceOneAbstractRendererState,
+    ReferenceOneAbstractRendererForeignMutationsExpected<Flags>,
+    ReferenceOneAbstractRendererView<CustomPresentationContext, Flags, ExtraContext>
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
-    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[reference]";
+    const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[referenceOne]";
     const value = props.context.value;
 
     if (
@@ -364,7 +365,7 @@ export const ReferenceAbstractRenderer = <
       );
     }
 
-    const maybeId = ReferenceAbstractRendererState.Operations.GetIdFromContext(
+    const maybeId = ReferenceOneAbstractRendererState.Operations.GetIdFromContext(
       props.context,
     ).MapErrors((_) => _.concat(`\n...${domNodeId}`));
 
@@ -397,7 +398,7 @@ export const ReferenceAbstractRenderer = <
               ...props.foreignMutations,
               toggleOpen: () =>
                 props.setState(
-                  ReferenceAbstractRendererState.Updaters.Core.customFormState.children
+                  ReferenceOneAbstractRendererState.Updaters.Core.customFormState.children
                     .status(
                       replaceWith(
                         props.context.customFormState.status == "closed"
@@ -409,7 +410,7 @@ export const ReferenceAbstractRenderer = <
                       props.context.customFormState.stream.kind === "l" &&
                         props.context.customFormState.stream.value.loadedElements.count() ==
                           0
-                        ? ReferenceAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                        ? ReferenceOneAbstractRendererState.Updaters.Core.customFormState.children.stream(
                             Sum.Updaters.left(
                               ValueInfiniteStreamState.Updaters.Template.initLoad(),
                             ),
@@ -423,12 +424,12 @@ export const ReferenceAbstractRenderer = <
                 shouldReload: boolean,
               ) =>
                 props.setState(
-                  ReferenceAbstractRendererState.Updaters.Template.streamParam(
+                  ReferenceOneAbstractRendererState.Updaters.Template.streamParam(
                     key,
                     replaceWith(value),
                     shouldReload,
                   ).then(
-                    ReferenceAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                    ReferenceOneAbstractRendererState.Updaters.Core.customFormState.children.stream(
                       Sum.Updaters.left(
                         ValueInfiniteStreamState.Updaters.Core.position(
                           ValueStreamPosition.Updaters.Core.nextStart(
@@ -447,7 +448,7 @@ export const ReferenceAbstractRenderer = <
                 ),
               loadMore: () =>
                 props.setState(
-                  ReferenceAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                  ReferenceOneAbstractRendererState.Updaters.Core.customFormState.children.stream(
                     Sum.Updaters.left(
                       ValueInfiniteStreamState.Updaters.Template.loadMore(),
                     ),
@@ -456,9 +457,9 @@ export const ReferenceAbstractRenderer = <
               clear: () =>
                 // See comment at top of file
                 props.foreignMutations.clear && props.foreignMutations.clear(),
-              delete: (flags) => {
+              delete: (flags) => { //TODO Suzan: should delete be implemented?
                 const delta: DispatchDelta<Flags> = {
-                  kind: "ReferenceDeleteValue",
+                  kind: "ReferenceOneDeleteValue",
                   flags,
                   sourceAncestorLookupTypeNames:
                     props.context.lookupTypeAncestorNames,
@@ -468,7 +469,7 @@ export const ReferenceAbstractRenderer = <
               },
               select: (value, flags) => {
                 const delta: DispatchDelta<Flags> = {
-                  kind: "ReferenceReplace",
+                  kind: "ReferenceOneReplace",
                   replace: value,
                   flags,
                   type: props.context.type,
@@ -490,7 +491,7 @@ export const ReferenceAbstractRenderer = <
               },
               create: (value, flags) => {
                 const delta: DispatchDelta<Flags> = {
-                  kind: "ReferenceCreateValue",
+                  kind: "ReferenceOneCreateValue",
                   value,
                   flags,
                   type: props.context.type,
@@ -512,7 +513,7 @@ export const ReferenceAbstractRenderer = <
               },
               reinitializeStream: () =>
                 props.setState(
-                  ReferenceAbstractRendererState.Updaters.Core.customFormState.children.stream(
+                  ReferenceOneAbstractRendererState.Updaters.Core.customFormState.children.stream(
                     replaceWith(
                       Sum.Default.right<
                         ValueInfiniteStreamState,
@@ -522,11 +523,7 @@ export const ReferenceAbstractRenderer = <
                   ),
                 ),
             }}
-            DetailsRenderer={
-              value.kind === "unit" || value.isSome
-                ? embeddedDetailsRenderer
-                : undefined
-            }
+            DetailsRenderer={embeddedDetailsRenderer}
             PreviewRenderer={
               value.kind === "unit" || value.isSome
                 ? embeddedPreviewRenderer
@@ -538,16 +535,16 @@ export const ReferenceAbstractRenderer = <
     );
   }).any([
     typedInitializeStreamRunner,
-    typedReferenceTableLoaderRunner,
-    typedInitializeReferenceRunner.mapContextFromProps((props) => ({
+    typedReferenceOneTableLoaderRunner,
+    typedInitializeReferenceOneRunner.mapContextFromProps((props) => ({
       ...props.context,
       onChange: props.foreignMutations.onChange,
     })),
-    typedReferenceTableDebouncerRunner.mapContextFromProps((props) => {
-      const maybeId = ReferenceAbstractRendererState.Operations.GetIdFromContext(
+    typedReferenceOneTableDebouncerRunner.mapContextFromProps((props) => {
+      const maybeId = ReferenceOneAbstractRendererState.Operations.GetIdFromContext(
         props.context,
       ).MapErrors((_) =>
-        _.concat(`\n...${props.context.domNodeAncestorPath + "[reference]"}`),
+        _.concat(`\n...${props.context.domNodeAncestorPath + "[referenceOne]"}`),
       );
 
       if (maybeId.kind === "errors") {
@@ -560,7 +557,7 @@ export const ReferenceAbstractRenderer = <
         onDebounce: () => {
           if (props.context.customFormState.streamParams.value[1]) {
             props.setState(
-              ReferenceAbstractRendererState.Updaters.Core.customFormState.children.stream(
+              ReferenceOneAbstractRendererState.Updaters.Core.customFormState.children.stream(
                 Sum.Updaters.left(
                   ValueInfiniteStreamState.Updaters.Template.reload(
                     // safe because we check for undefined in the runFilter

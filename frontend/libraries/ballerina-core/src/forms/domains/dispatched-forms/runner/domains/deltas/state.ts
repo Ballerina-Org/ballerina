@@ -25,7 +25,7 @@ export type DispatchDelta<T = Unit> =
   | DispatchDeltaUnit<T>
   | DispatchDeltaTable<T>
   | DispatchDeltaOne<T>
-  | DispatchDeltaReference<T>;
+  | DispatchDeltaReferenceOne<T>;
 
 export type DispatchDeltaPrimitive<T = Unit> =
   | {
@@ -386,29 +386,29 @@ export type DispatchDeltaOne<T = Unit> =
       sourceAncestorLookupTypeNames: string[];
     };
 
-export type DispatchDeltaReference<T = Unit> =
+export type DispatchDeltaReferenceOne<T = Unit> =
   | {
-      kind: "ReferenceReplace";
+      kind: "ReferenceOneReplace";
       replace: PredicateValue;
       type: DispatchParsedType<any>;
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
     }
   | {
-      kind: "ReferenceValue";
+      kind: "ReferenceOneValue";
       nestedDelta: DispatchDelta<T>;
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
     }
   | {
-      kind: "ReferenceCreateValue";
+      kind: "ReferenceOneCreateValue";
       value: PredicateValue;
       type: DispatchParsedType<any>;
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
     }
   | {
-      kind: "ReferenceDeleteValue";
+      kind: "ReferenceOneDeleteValue"; //TODO Suzan: should deleting be possible?
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
     };
@@ -548,15 +548,15 @@ export type DispatchDeltaTransferOne<DispatchDeltaTransferCustom> =
       DeleteValue: Unit;
     };
 
-export type DispatchDeltaTransferReference<DispatchDeltaTransferCustom> =
+export type DispatchDeltaTransferReferenceOne<DispatchDeltaTransferCustom> =
   | {
-      Discriminator: "ReferenceValue";
+      Discriminator: "ReferenceOneValue";
       Value: DispatchDeltaTransfer<DispatchDeltaTransferCustom>;
     }
-  | { Discriminator: "ReferenceReplace"; Replace: any }
-  | { Discriminator: "ReferenceCreateValue"; CreateValue: any }
+  | { Discriminator: "ReferenceOneReplace"; Replace: any }
+  | { Discriminator: "ReferenceOneCreateValue"; CreateValue: any }
   | {
-      Discriminator: "ReferenceDeleteValue";
+      Discriminator: "ReferenceOneDeleteValue"; //TODO Suzan: should deleting be possible?
       DeleteValue: Unit;
     };
 
@@ -573,7 +573,7 @@ export type DispatchDeltaTransfer<DispatchDeltaTransferCustom> =
   | DispatchDeltaTransferTuple<DispatchDeltaTransferCustom>
   | DispatchDeltaTransferTable<DispatchDeltaTransferCustom>
   | DispatchDeltaTransferOne<DispatchDeltaTransferCustom>
-  | DispatchDeltaTransferReference<DispatchDeltaTransferCustom>
+  | DispatchDeltaTransferReferenceOne<DispatchDeltaTransferCustom>
   | DispatchDeltaTransferCustom;
 
 export type DispatchDeltaTransferComparand = string;
@@ -1712,7 +1712,7 @@ export const DispatchDeltaTransfer = {
               delta.flags ? [[delta.flags, `[OneDeleteValue]`]] : [],
             ]);
           }
-          if (delta.kind == "ReferenceValue") {
+          if (delta.kind == "ReferenceOneValue") {
             return DispatchDeltaTransfer.Default.FromDelta(
               toRawObject,
               parseCustomDelta,
@@ -1726,18 +1726,18 @@ export const DispatchDeltaTransfer = {
                 string
               >([
                 {
-                  Discriminator: "ReferenceValue",
+                  Discriminator: "ReferenceOneValue",
                   Value: value[0],
                 },
-                `[ReferenceValue]${value[1]}`,
+                `[ReferenceOneValue]${value[1]}`,
                 delta.flags
-                  ? [[delta.flags, `[ReferenceValue]${value[1]}`], ...value[2]]
+                  ? [[delta.flags, `[ReferenceOneValue]${value[1]}`], ...value[2]]
                   : value[2],
               ]),
             );
           }
-          if (delta.kind == "ReferenceReplace") {
-            if (delta.type.kind != "reference") {
+          if (delta.kind == "ReferenceOneReplace") {
+            if (delta.type.kind != "referenceOne") {
               return ValueOrErrors.Default.throwOne<
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
@@ -1746,12 +1746,12 @@ export const DispatchDeltaTransfer = {
                 ],
                 string
               >(
-                `Error: reference expected but received ${JSON.stringify(
+                `Error: referenceOne expected but received ${JSON.stringify(
                   delta.type,
-                )} in ReferenceReplace.`,
+                )} in ReferenceOneReplace.`,
               );
             }
-            return toRawObject(delta.replace, delta.type.arg, unit).Then(
+            return toRawObject(delta.replace, delta.type.previewType, unit).Then( 
               (value) => {
                 return ValueOrErrors.Default.return<
                   [
@@ -1762,17 +1762,17 @@ export const DispatchDeltaTransfer = {
                   string
                 >([
                   {
-                    Discriminator: "ReferenceReplace",
+                    Discriminator: "ReferenceOneReplace",
                     Replace: value,
                   },
-                  `[ReferenceReplace]`,
-                  delta.flags ? [[delta.flags, `[ReferenceReplace]`]] : [],
+                  `[ReferenceOneReplace]`,
+                  delta.flags ? [[delta.flags, `[ReferenceOneReplace]`]] : [],
                 ]);
               },
             );
           }
-          if (delta.kind == "ReferenceCreateValue") {
-            if (delta.type.kind != "reference") {
+          if (delta.kind == "ReferenceOneCreateValue") {
+            if (delta.type.kind != "referenceOne") {
               return ValueOrErrors.Default.throwOne<
                 [
                   DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
@@ -1781,13 +1781,13 @@ export const DispatchDeltaTransfer = {
                 ],
                 string
               >(
-                `Error: reference expected but received ${JSON.stringify(
+                `Error: referenceOne expected but received ${JSON.stringify(
                   delta.type,
-                )} in ReferenceCreateValue.`,
+                )} in ReferenceOneCreateValue.`,
               );
             }
 
-            return toRawObject(delta.value, delta.type.arg, unit).Then(
+            return toRawObject(delta.value, delta.type.previewType, unit).Then( //TODO Suzan: in the delta, should the preview be used? That is what the user can choose, they don't have access to the details
               (value) =>
                 ValueOrErrors.Default.return<
                   [
@@ -1798,16 +1798,16 @@ export const DispatchDeltaTransfer = {
                   string
                 >([
                   {
-                    Discriminator: "ReferenceCreateValue",
+                    Discriminator: "ReferenceOneCreateValue",
                     CreateValue: value,
                   },
-                  `[ReferenceCreateValue]`,
-                  delta.flags ? [[delta.flags, `[ReferenceCreateValue]`]] : [],
+                  `[ReferenceOneCreateValue]`,
+                  delta.flags ? [[delta.flags, `[ReferenceOneCreateValue]`]] : [],
                 ]),
             );
           }
           // TODO -- suspicious
-          if (delta.kind == "ReferenceDeleteValue") {
+          if (delta.kind == "ReferenceOneDeleteValue") {
             return ValueOrErrors.Default.return<
               [
                 DispatchDeltaTransfer<DispatchDeltaTransferCustom>,
@@ -1817,11 +1817,11 @@ export const DispatchDeltaTransfer = {
               string
             >([
               {
-                Discriminator: "ReferenceDeleteValue",
+                Discriminator: "ReferenceOneDeleteValue",
                 DeleteValue: unit,
               },
-              `[ReferenceDeleteValue]`,
-              delta.flags ? [[delta.flags, `[ReferenceDeleteValue]`]] : [],
+              `[ReferenceOneDeleteValue]`,
+              delta.flags ? [[delta.flags, `[ReferenceOneDeleteValue]`]] : [],
             ]);
           }
           if (delta.kind == "CustomDelta") {

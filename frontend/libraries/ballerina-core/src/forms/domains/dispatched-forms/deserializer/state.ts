@@ -157,6 +157,7 @@ export type DispatcherContext<
   defaultState: (
     infiniteStreamSources: DispatchInfiniteStreamSources,
     lookupSources: DispatchLookupSources | undefined,
+    referenceSources: DispatchReferenceSources | undefined,
     tableApiSources: DispatchTableApiSources | undefined,
   ) => (
     t: DispatchParsedType<T>,
@@ -279,9 +280,23 @@ export type DispatchOneSource = {
     | undefined;
 };
 
-export type DispatchReferenceSource = {
-  get: BasicFun<Guid, Promise<any>> | undefined;
-  getManyUnlinked:
+export type SearchResult = {
+  entityId: Guid,
+  entityPreview: any //TODO Suzan: use unknown instead of any
+}
+
+export type DispatchReferenceOneSource = {
+  get: BasicFun<Guid, Promise<any>> | undefined; //TODO Suzan: use unknown instead of any
+  search:
+    | BasicFun<
+        string, 
+        BasicFun<
+          string, 
+          BasicFun<{start: number, count: number}, Promise<SearchResult>>
+        >
+      >
+    | undefined;
+  getMany:
     | BasicFun<
         BasicFun<any, ValueOrErrors<PredicateValue, string>>,
         BasicFun<
@@ -292,11 +307,16 @@ export type DispatchReferenceSource = {
     | undefined;
 };
 
-// TODO Suzan: add Dispatch Sources for references
-
 export type DispatchLookupSources = (typeName: string) => ValueOrErrors<
   {
     one?: BasicFun<DispatchApiName, ValueOrErrors<DispatchOneSource, string>>;
+  },
+  string
+>;
+
+export type DispatchReferenceSources = (typeName: string) => ValueOrErrors<
+  {
+    referenceOne?: BasicFun<DispatchApiName, ValueOrErrors<DispatchReferenceOneSource, string>>;
   },
   string
 >;
@@ -600,6 +620,7 @@ export const parseDispatchFormsToLaunchers =
                     defaultState: (
                       infiniteStreamSources: DispatchInfiniteStreamSources,
                       lookupSources: DispatchLookupSources | undefined,
+                      referenceSources: DispatchReferenceSources | undefined,
                       tableApiSources: DispatchTableApiSources | undefined,
                     ) =>
                       dispatchDefaultState(
@@ -609,6 +630,7 @@ export const parseDispatchFormsToLaunchers =
                         specification.forms,
                         apiConverters,
                         lookupSources,
+                        referenceSources,
                         tableApiSources,
                         specification.apis,
                       ),

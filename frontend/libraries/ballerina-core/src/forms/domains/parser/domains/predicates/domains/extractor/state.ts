@@ -297,12 +297,12 @@ export const PredicateValueExtractor = {
                     ]),
                   );
         }
-        case "reference": {
+        case "referenceOne": {
           const traverseValue: TypeInstancesExtractor = self(
             lookupName,
             typesMap,
-            t.arg,
-            debugPath.concat("reference"),
+            t.detailsType, //TODO Suzan: should this be details or preview type?
+            debugPath.concat("referenceOne"),
           );
           return (v): ExtractedTypeInstances =>
             PredicateValue.Operations.IsOption(v)
@@ -315,7 +315,7 @@ export const PredicateValueExtractor = {
                   : ValueOrErrors.Default.return([])
                 : ValueOrErrors.Default.throwOne(
                     Errors.Default.singleton([
-                      "not a Reference/Option or Reference/Sum (from reference)",
+                      "not a ReferenceOne/Option or ReferenceOne/Sum (from referenceOne)",
                       JSON.stringify(v),
                     ]),
                   );
