@@ -350,11 +350,12 @@ export type DispatchDeltaTable<T = Unit> =
       sourceAncestorLookupTypeNames: string[];
       uniqueTableIdentifier: string;
     }
-  | {
+    | {
       kind: "TableRemoveBatch";
       ids: string[];
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
+      uniqueTableIdentifier: string;
     }
   | {
       kind: "TableMoveTo";
@@ -1560,9 +1561,9 @@ export const DispatchDeltaTransfer = {
                 Discriminator: "TableRemoveBatch",
                 RemoveBatch: delta.ids,
               },
-              `[TableRemoveBatch][${delta.ids.length}]`,
+              `[TableRemoveBatch][${delta.uniqueTableIdentifier}]`,
               delta.flags
-                ? [[delta.flags, `[TableRemoveBatch][${delta.ids.length}]`]]
+                ? [[delta.flags, `[TableRemoveBatch][${delta.uniqueTableIdentifier}]`]]
                 : [],
             ]);
           }
