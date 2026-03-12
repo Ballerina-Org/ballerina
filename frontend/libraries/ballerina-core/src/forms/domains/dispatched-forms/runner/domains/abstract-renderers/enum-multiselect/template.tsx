@@ -1,7 +1,6 @@
 import React from "react";
 import {
   AsyncState,
-  DispatchDelta,
   Guid,
   IdWrapperProps,
   replaceWith,
@@ -9,7 +8,6 @@ import {
   Unit,
   ErrorRendererProps,
   Option,
-  StringSerializedType,
 } from "../../../../../../../../main";
 import { CoTypedFactory } from "../../../../../../../coroutines/builder";
 import { Template } from "../../../../../../../template/state";
@@ -25,6 +23,7 @@ import {
   EnumMultiselectAbstractRendererForeignMutationsExpected,
 } from "./state";
 import { OrderedMap } from "immutable";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const EnumMultiselectAbstractRenderer = <
   CustomPresentationContext = Unit,

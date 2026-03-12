@@ -11,7 +11,6 @@ import {
   PredicateValue,
   ValueTuple,
   Updater,
-  DispatchDelta,
   BasicUpdater,
   ListRepo,
   replaceWith,
@@ -30,6 +29,7 @@ import {
   DispatchParsedType,
   MapType,
 } from "../../../../deserializer/domains/specification/domains/types/state";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const MapAbstractRenderer = <
   CustomPresentationContext = Unit,

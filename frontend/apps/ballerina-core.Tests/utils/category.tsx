@@ -14,9 +14,9 @@ import {
   CommonAbstractRendererReadonlyContext,
   DispatchPrimitiveType,
   CommonAbstractRendererState,
-  StringSerializedType,
   CommonAbstractRendererViewOnlyReadonlyContext,
 } from "ballerina-core";
+import React from "react";
 
 export type CategoryAbstractRendererReadonlyContext<
   CustomPresentationContext = Unit,

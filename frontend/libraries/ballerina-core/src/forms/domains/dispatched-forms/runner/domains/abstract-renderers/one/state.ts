@@ -25,14 +25,13 @@ import {
   VoidCallbackWithOptionalFlags,
   DispatchOnChange,
   CommonAbstractRendererState,
-  DispatchDelta,
   CommonAbstractRendererViewOnlyReadonlyContext,
-  BaseFlags,
   Sum,
   PredicateValue,
-  replaceWith,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
+import { BaseFlags } from "../../deltas/delta-to-dto/state";
 
 export type OneAbstractRendererReadonlyContext<
   CustomPresentationContext,

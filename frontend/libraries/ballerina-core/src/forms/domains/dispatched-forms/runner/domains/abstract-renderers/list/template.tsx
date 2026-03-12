@@ -1,6 +1,5 @@
 import {
   DispatchCommonFormState,
-  DispatchDelta,
   IdWrapperProps,
   ListRepo,
   MapRepo,
@@ -27,6 +26,7 @@ import {
   ListAbstractRendererState,
   ListAbstractRendererView,
 } from "./state";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const ListAbstractRenderer = <
   T extends DispatchParsedType<T>,

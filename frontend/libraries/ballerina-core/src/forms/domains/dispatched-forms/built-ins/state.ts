@@ -28,7 +28,6 @@ import {
   DispatchTableApiSources,
   ValueOption,
   BasicUpdater,
-  DispatchDelta,
   Option,
   CommonAbstractRendererState,
   EnumMultiselectAbstractRendererView,
@@ -52,6 +51,7 @@ import {
   ValueSumN,
   ValueFilterNotEqualsTo,
 } from "../../../../../main";
+import { DispatchDelta } from "../runner/domains/deltas/dispatch-delta/state";
 import {
   DispatchParsedType,
   DispatchTypeName,

@@ -1,11 +1,8 @@
 import {
-  ApiConverters,
   CollectionSelection,
   DispatchApiConverters,
-  fromAPIRawValue,
   PredicateValue,
   Sum,
-  toAPIRawValue,
   ValueFilterContains,
   ValueFilterEqualsTo,
   ValueFilterGreaterThan,
@@ -16,13 +13,12 @@ import {
   ValueFilterSmallerThanOrEqualsTo,
   ValueFilterSmallerThan,
   ValueFilterStartsWith,
-  ValueOption,
   ValueSumN,
   unit,
   Unit,
 } from "ballerina-core";
 import { List, OrderedMap, Map } from "immutable";
-import { DispatchPassthroughFormInjectedTypes } from "../injected-forms/category";
+import { DispatchPassthroughFormInjectedTypes } from "./category";
 
 export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthroughFormInjectedTypes> =
   {
@@ -218,7 +214,6 @@ export const DispatchFieldTypeConverters: DispatchApiConverters<DispatchPassthro
         To: 0,
         HasMore: false,
         Values: [],
-        DefaultRow: undefined,
       }),
     },
     One: {

@@ -40,25 +40,7 @@ services:
     security_opt:
       - no-new-privileges:true
 
-  ballerina-core-frontend-dependency-updater:
-    build:
-      context: ./frontend
-      dockerfile: libraries/ballerina-core/Dockerfile
-      target: global-dependencies
-    volumes:
-      - ./frontend/libraries/ballerina-core/package.json:/app/libraries/ballerina-core/package.json:ro
-      - ./frontend/libraries/create-domain/package.json:/app/libraries/create-domain/package.json:ro
-      - ./frontend/libraries/playground-core/package.json:/app/libraries/playground-core/package.json:ro
-      - ./frontend/apps/web/package.json:/app/apps/web/package.json:ro
-      - ./frontend/apps/mobile/package.json:/app/apps/mobile/package.json:ro
-      - ./frontend/apps/test/package.json:/app/apps/test/package.json:ro
-      - ./frontend/package.json:/app/package.json:ro
-      - ./frontend/yarn.lock:/app/yarn.lock
-    command: yarn install --mode update-lockfile
-    cap_drop:
-      - ALL
-    security_opt:
-      - no-new-privileges:true
+
 
   ballerina-core-frontend-dependency-installer:
     build:
@@ -67,9 +49,10 @@ services:
       target: global-dependencies
     volumes:
       - ./frontend/libraries/ballerina-core/node_modules:/app/node_modules
-      - ./frontend/libraries/ballerina-core/package.json:/app/package.json:ro
-      - ./frontend/yarn.lock:/app/yarn.lock:ro
-    command: yarn install --frozen-lockfile
+      - ./frontend/libraries/ballerina-core/package.json:/app/package.json
+      - ./frontend/apps/ballerina-core.Tests/package.json:/app/apps/ballerina-core.Tests/package.json
+      - ./frontend/yarn.lock:/app/yarn.lock
+    command: yarn install
     cap_drop:
       - ALL
     security_opt:
@@ -110,13 +93,42 @@ services:
       context: ./frontend
       dockerfile: libraries/ballerina-core/Dockerfile
       target: global-dependencies
-    working_dir: /app/frontend/libraries/ballerina-core/
+    working_dir: /app/frontend
     volumes:
       - .:/app
       - ./.gitignore:/app/.gitignore:ro
       - ./.prettierrc:/app/.prettierrc:ro
       - ./.prettierignore:/app/.prettierignore:ro
     command: yarn prettier
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  ballerina-core-tests:
+    build:
+      context: ./frontend
+      dockerfile: libraries/ballerina-core/Dockerfile
+      target: global-dependencies
+    working_dir: /app/frontend
+    volumes:
+      - .:/app
+      - ./frontend/.cache/jest:/app/.cache/jest
+    command: sh -lc "cd apps/ballerina-core.Tests && yarn test"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  ballerina-core-tests-installer:
+    build:
+      context: ./frontend
+      dockerfile: libraries/ballerina-core/Dockerfile
+      target: global-dependencies
+    working_dir: /app/frontend
+    volumes:
+      - .:/app
+    command: yarn install --frozen-lockfile
     cap_drop:
       - ALL
     security_opt:

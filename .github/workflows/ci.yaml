@@ -17,6 +17,7 @@ jobs:
       - run: yarn
       - run: yarn prettier:check
       - run: yarn compile-ballerina-core
+      - run: yarn test-ballerina-core
 
   backend:
     runs-on: ubuntu-latest

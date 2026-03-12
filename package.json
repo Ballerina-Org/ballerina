@@ -18,7 +18,9 @@
     "docker-up-d": "CURRENT_UID=$(id -u):$(id -g) docker-compose up --build -d",
     "docker-down": "CURRENT_UID=$(id -u):$(id -g) docker-compose down",
     "docker-down-volumes": "CURRENT_UID=$(id -u):$(id -g) docker-compose down -v",
-    "docker-stop": "CURRENT_UID=$(id -u):$(id -g) docker-compose stop"
+    "docker-stop": "CURRENT_UID=$(id -u):$(id -g) docker-compose stop",
+    "test-ballerina-core-install-docker": "CURRENT_UID=$(id -u):$(id -g) docker-compose run --rm ballerina-core-tests-installer",
+    "test-ballerina-core-docker": "CURRENT_UID=$(id -u):$(id -g) docker-compose run --rm ballerina-core-tests"
   },
   "author": "giuseppemag@gmail.com",
   "license": "MIT",

@@ -7,7 +7,6 @@ import {
   TableLayout,
   Expr,
   PredicateComputedOrInlined,
-  DispatchDelta,
   ValueOrErrors,
   TableAbstractRendererReadonlyContext,
   replaceWith,
@@ -61,6 +60,7 @@ import {
   TableAbstractRendererPendingAddOperation,
 } from "./domains/pending-operation/add/state";
 import { TableAbstractRendererPendingRemoveOperation } from "./domains/pending-operation/remove/state";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const TableAbstractRenderer = <
   CustomPresentationContext = Unit,
