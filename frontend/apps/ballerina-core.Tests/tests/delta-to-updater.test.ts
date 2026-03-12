@@ -342,8 +342,9 @@ describe("DispatchDeltaTransfer.Default.ToUpdater", () => {
   describe("base branch coverage", () => {
     const toUpdater = (
       delta: DispatchDelta,
-      parseCustomDelta: Parameters<typeof DispatchDeltaTransfer.Default.ToUpdater>[0] = () =>
-        ValueOrErrors.Default.throwOne("Unexpected custom delta"),
+      parseCustomDelta: Parameters<
+        typeof DispatchDeltaTransfer.Default.ToUpdater
+      >[0] = () => ValueOrErrors.Default.throwOne("Unexpected custom delta"),
     ) => DispatchDeltaTransfer.Default.ToUpdater(parseCustomDelta)(delta);
 
     const expectIdentityWithConsoleError = (
@@ -363,7 +364,9 @@ describe("DispatchDeltaTransfer.Default.ToUpdater", () => {
       expect(updated).toEqual(current);
       expect(consoleErrorSpy).toHaveBeenCalled();
       if (expectedMessage) {
-        expect(consoleErrorSpy.mock.calls[0]?.join(" ")).toContain(expectedMessage);
+        expect(consoleErrorSpy.mock.calls[0]?.join(" ")).toContain(
+          expectedMessage,
+        );
       }
       consoleErrorSpy.mockRestore();
     };
@@ -508,7 +511,9 @@ describe("DispatchDeltaTransfer.Default.ToUpdater", () => {
       );
       expect(positive).toEqual(
         PredicateValue.Default.sum(
-          Sum.Default.left<PredicateValueType, PredicateValueType>("left-updated"),
+          Sum.Default.left<PredicateValueType, PredicateValueType>(
+            "left-updated",
+          ),
         ),
       );
 
@@ -585,7 +590,9 @@ describe("DispatchDeltaTransfer.Default.ToUpdater", () => {
       const positive = updaterResult.value(
         PredicateValue.Default.tuple(List(["a", "b"])),
       );
-      expect(positive).toEqual(PredicateValue.Default.tuple(List(["a", "updated"])));
+      expect(positive).toEqual(
+        PredicateValue.Default.tuple(List(["a", "updated"])),
+      );
 
       expectIdentityWithConsoleError(
         delta,
@@ -605,9 +612,9 @@ describe("DispatchDeltaTransfer.Default.ToUpdater", () => {
       const updaterResult = toUpdater(delta);
       expect(updaterResult.kind).toBe("value");
       if (updaterResult.kind !== "value") throw new Error("Expected value");
-      expect(updaterResult.value(PredicateValue.Default.tuple(List(["a"])))).toEqual(
-        PredicateValue.Default.tuple(List(["a", "b"])),
-      );
+      expect(
+        updaterResult.value(PredicateValue.Default.tuple(List(["a"]))),
+      ).toEqual(PredicateValue.Default.tuple(List(["a", "b"])));
       expectIdentityWithConsoleError(
         delta,
         PredicateValue.Default.record(OrderedMap()),
@@ -626,9 +633,9 @@ describe("DispatchDeltaTransfer.Default.ToUpdater", () => {
       const updaterResult = toUpdater(delta);
       expect(updaterResult.kind).toBe("value");
       if (updaterResult.kind !== "value") throw new Error("Expected value");
-      expect(updaterResult.value(PredicateValue.Default.tuple(List(["a"])))).toEqual(
-        PredicateValue.Default.tuple(List(["b", "a"])),
-      );
+      expect(
+        updaterResult.value(PredicateValue.Default.tuple(List(["a"]))),
+      ).toEqual(PredicateValue.Default.tuple(List(["b", "a"])));
       expectIdentityWithConsoleError(
         delta,
         PredicateValue.Default.record(OrderedMap()),

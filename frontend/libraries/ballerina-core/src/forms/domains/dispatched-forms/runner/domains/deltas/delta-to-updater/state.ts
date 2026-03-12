@@ -16,7 +16,10 @@ export const DispatchDeltaToUpdater =
   (
     delta: DispatchDelta<Flags>,
   ): ValueOrErrors<Updater<PredicateValue>, string> => {
-    const failCurrent = (current: PredicateValue, message: string): PredicateValue => {
+    const failCurrent = (
+      current: PredicateValue,
+      message: string,
+    ): PredicateValue => {
       console.error("Error when applying an updater from a delta:\n", message);
       return current;
     };
@@ -202,7 +205,10 @@ export const DispatchDeltaToUpdater =
               );
             }
             if (current.value.kind !== "l") {
-              return failCurrent(current, `SumLeft: current sum is right-valued`);
+              return failCurrent(
+                current,
+                `SumLeft: current sum is right-valued`,
+              );
             }
             return {
               ...current,
@@ -226,7 +232,10 @@ export const DispatchDeltaToUpdater =
               );
             }
             if (current.value.kind !== "r") {
-              return failCurrent(current, `SumRight: current sum is left-valued`);
+              return failCurrent(
+                current,
+                `SumRight: current sum is left-valued`,
+              );
             }
             return {
               ...current,
@@ -419,11 +428,17 @@ export const DispatchDeltaToUpdater =
             }
             const row = current.data.get(delta.id);
             if (row === undefined) {
-              return failCurrent(current, `TableValue: row ${delta.id} does not exist`);
+              return failCurrent(
+                current,
+                `TableValue: row ${delta.id} does not exist`,
+              );
             }
             const updatedRow = nestedUpdater(row);
             if (!PredicateValue.Operations.IsRecord(updatedRow)) {
-              return failCurrent(current, `TableValue: nested updater must return a record`);
+              return failCurrent(
+                current,
+                `TableValue: nested updater must return a record`,
+              );
             }
             return {
               ...current,
@@ -470,7 +485,10 @@ export const DispatchDeltaToUpdater =
           const values: Array<[string, any]> = [];
           for (const row of delta.values.toArray()) {
             if (!PredicateValue.Operations.IsRecord(row)) {
-              return failCurrent(current, `TableAddBatch: value must be a record`);
+              return failCurrent(
+                current,
+                `TableAddBatch: value must be a record`,
+              );
             }
             const id = row.fields.get("Id");
             if (typeof id !== "string") {
