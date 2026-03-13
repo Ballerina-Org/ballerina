@@ -12,6 +12,7 @@ module Model =
   open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 
   type RendererName = RendererName of string
+
   type FormName = FormName of string
   type LauncherName = LauncherName of string
   type Label = Label of string

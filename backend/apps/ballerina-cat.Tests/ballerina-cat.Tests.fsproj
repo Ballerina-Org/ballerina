@@ -1,12 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>Ballerina.Cat.Tests</RootNamespace>
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
   </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="Collections/Sum.fs" />
     <Compile Include="Collections\TaskSum.fs" />
@@ -14,7 +12,6 @@
     <Compile Include="State/StacklessWithError.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="AutoFixture.NUnit4" Version="5.0.0-preview0012" />
     <PackageReference Include="coverlet.collector" Version="6.0.4">
@@ -29,9 +26,7 @@
     </PackageReference>
     <PackageReference Include="NUnit3TestAdapter" Version="6.1.0" />
   </ItemGroup>
-
   <ItemGroup>
-    <ProjectReference Include="..\..\libraries\ballerina-cat\ballerina-cat.fsproj" />
+    <ProjectReference Include="../../libraries/ballerina-cat/ballerina-cat.fsproj" />
   </ItemGroup>
-
 </Project>
