@@ -407,6 +407,17 @@ export const OneAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
+              onChange: (updater, delta) => {
+                props.foreignMutations.onChange(updater, delta);
+                props.setState(
+                  OneAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
+                    replaceWith<InitializationStatus>({
+                      kind: "reinitializing",
+                      afterReinitializationAction: () => {},
+                    }),
+                  ),
+                );
+              },
               toggleOpen: () =>
                 props.setState(
                   OneAbstractRendererState.Updaters.Core.customFormState.children
@@ -465,9 +476,20 @@ export const OneAbstractRenderer = <
                     ),
                   ),
                 ),
-              clear: () =>
+              clear: () => {
                 // See comment at top of file
-                props.foreignMutations.clear && props.foreignMutations.clear(),
+                props.foreignMutations.clear && props.foreignMutations.clear();
+
+                // TODO: this is likely wrong
+                props.setState(
+                  OneAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
+                    replaceWith<InitializationStatus>({
+                      kind: "reinitializing",
+                      afterReinitializationAction: () => {},
+                    }),
+                  ),
+                );
+              },
               delete: (flags) => {
                 const delta: DispatchDelta<Flags> = {
                   kind: "OneDeleteValue",
@@ -477,6 +499,16 @@ export const OneAbstractRenderer = <
                 };
                 props.foreignMutations.delete &&
                   props.foreignMutations.delete(delta);
+                  
+                  // TODO: this is likely wrong
+                  props.setState(
+                    OneAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
+                      replaceWith<InitializationStatus>({
+                        kind: "reinitializing",
+                        afterReinitializationAction: () => {},
+                      }),
+                    ),
+                  );
               },
               select: (value, flags) => {
                 const delta: DispatchDelta<Flags> = {
@@ -499,6 +531,13 @@ export const OneAbstractRenderer = <
                       Option.Default.some(updater),
                       delta,
                     );
+                props.setState(
+                  OneAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
+                    replaceWith<InitializationStatus>({
+                      kind: "not initialized",
+                    }),
+                  ),
+                );
               },
               create: (value, flags) => {
                 const delta: DispatchDelta<Flags> = {
