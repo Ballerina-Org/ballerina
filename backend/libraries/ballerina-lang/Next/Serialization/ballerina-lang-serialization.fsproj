@@ -1,11 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>ballerina_lang_serialization</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="Models/PocoObjects.fs" />
     <Compile Include="Models/Context.fs" />
@@ -14,12 +12,10 @@
     <!-- <Compile Include="Serializer/ExprSerializer.fs" /> -->
     <Compile Include="Serializer/ValueDeserializer.fs" />
   </ItemGroup>
-
   <ItemGroup>
-    <ProjectReference Include="..\Models\ballerina-lang-models.fsproj" />
-    <ProjectReference Include="..\..\..\ballerina-stdlib\ballerina-stdlib.fsproj" />
-    <ProjectReference Include="..\..\..\ballerina-cat\ballerina-cat.fsproj" />
-    <ProjectReference Include="..\TypeChecker\ballerina-lang-typecheck.fsproj" />
+    <ProjectReference Include="../Models/ballerina-lang-models.fsproj" />
+    <ProjectReference Include="../../../ballerina-stdlib/ballerina-stdlib.fsproj" />
+    <ProjectReference Include="../../../ballerina-cat/ballerina-cat.fsproj" />
+    <ProjectReference Include="../TypeChecker/ballerina-lang-typecheck.fsproj" />
   </ItemGroup>
-
 </Project>

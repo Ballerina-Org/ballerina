@@ -1,34 +1,31 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <OutputType>Library</OutputType>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <Compile Include="Core\String\Model.fs" />
-        <Compile Include="Core\StringBuilder\Model.fs" />
-        <Compile Include="Core\Object\Model.fs" />
-        <Compile Include="Core\Map\Model.fs" />
-        <Compile Include="Core\Guid\Model.fs" />
-        <Compile Include="Core\Core.fs" />
-        <Compile Include="Errors\Model.fs" />
-        <Compile Include="Errors\Localized\Model.fs" />
-        <Compile Include="Core\OrderedMap\Model.fs" />
-        <Compile Include="Core\Json\Patterns.fs" />
-        <Compile Include="Core\Json\Sum.fs" />
-        <Compile Include="Core\Json\Reader.fs" />
-        <Compile Include="Range\Model.fs" />
-        <Compile Include="Queries\QuotationToLinq.fs" />
-        <Compile Include="Crud\Model.fs" />
-        <Compile Include="Algorithms\TopologicalSort.fs" />
-        <Compile Include="Formats\Iso8601.fs" />
-    </ItemGroup>
-    <ItemGroup>
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.2" />
-        <PackageReference Include="FSharp.Data" Version="6.6.0" />
-    </ItemGroup>
-    <ItemGroup>
-        <ProjectReference Include="..\ballerina-cat\ballerina-cat.fsproj" />
-    </ItemGroup>
-
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Core\String\Model.fs" />
+    <Compile Include="Core\StringBuilder\Model.fs" />
+    <Compile Include="Core\Object\Model.fs" />
+    <Compile Include="Core\Map\Model.fs" />
+    <Compile Include="Core\Guid\Model.fs" />
+    <Compile Include="Core\Core.fs" />
+    <Compile Include="Errors\Model.fs" />
+    <Compile Include="Errors\Localized\Model.fs" />
+    <Compile Include="Core\OrderedMap\Model.fs" />
+    <Compile Include="Core\Json\Patterns.fs" />
+    <Compile Include="Core\Json\Sum.fs" />
+    <Compile Include="Core\Json\Reader.fs" />
+    <Compile Include="Range\Model.fs" />
+    <Compile Include="Queries\QuotationToLinq.fs" />
+    <Compile Include="Crud\Model.fs" />
+    <Compile Include="Algorithms\TopologicalSort.fs" />
+    <Compile Include="Formats\Iso8601.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.2" />
+    <PackageReference Include="FSharp.Data" Version="6.6.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../ballerina-cat/ballerina-cat.fsproj" />
+  </ItemGroup>
 </Project>

@@ -1,40 +1,35 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <RootNamespace>Ballerina.StdLib.Tests</RootNamespace>
-        <LangVersion>latest</LangVersion>
-        <IsPackable>false</IsPackable>
-        <GenerateProgramFile>false</GenerateProgramFile>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <Compile Include="State\WithError\Model.fs" />
-        <Compile Include="Algorithms\TopologicalSort.fs" />
-        <Compile Include="Core\OrderedMap.fs" />
-        <Compile Include="Core\MemoizeTests.fs" />
-        <Compile Include="Formats\Iso8601\DateOnlyTests.fs" />
-        <Compile Include="Formats\Iso8601\DateTimeTests.fs" />
-        <Compile Include="Program.fs" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="AutoFixture.NUnit4" Version="4.19.0" />
-        <PackageReference Include="coverlet.collector" Version="6.0.4">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
-        <PackageReference Include="NUnit" Version="4.4.0" />
-        <PackageReference Include="NUnit.Analyzers" Version="4.11.2">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="NUnit3TestAdapter" Version="6.1.0" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\..\libraries\ballerina-cat\ballerina-cat.fsproj" />
-        <ProjectReference Include="..\..\libraries\ballerina-stdlib\ballerina-stdlib.fsproj" />
-    </ItemGroup>
-
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Ballerina.StdLib.Tests</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <GenerateProgramFile>false</GenerateProgramFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="State\WithError\Model.fs" />
+    <Compile Include="Algorithms\TopologicalSort.fs" />
+    <Compile Include="Core\OrderedMap.fs" />
+    <Compile Include="Core\MemoizeTests.fs" />
+    <Compile Include="Formats\Iso8601\DateOnlyTests.fs" />
+    <Compile Include="Formats\Iso8601\DateTimeTests.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="AutoFixture.NUnit4" Version="4.19.0" />
+    <PackageReference Include="coverlet.collector" Version="6.0.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="NUnit" Version="4.4.0" />
+    <PackageReference Include="NUnit.Analyzers" Version="4.11.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="NUnit3TestAdapter" Version="6.1.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../libraries/ballerina-cat/ballerina-cat.fsproj" />
+    <ProjectReference Include="../../libraries/ballerina-stdlib/ballerina-stdlib.fsproj" />
+  </ItemGroup>
 </Project>
