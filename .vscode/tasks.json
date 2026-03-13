@@ -11,9 +11,9 @@
 			"detail": "Build the absample.fsproj project using dotnet build"
 		},
 		{
-			"label": "Ballerina Core: Frontend Dependency Installer",
+			"label": "Ballerina Frontend: Dependency Installer",
 			"type": "shell",
-			"command": "docker compose run --remove-orphans --build --rm ballerina-core-frontend-dependency-installer",
+			"command": "docker compose run --remove-orphans --build --rm ballerina-frontend-installer",
 			"problemMatcher": [],
 			"isBackground": false,
 			"presentation": {
@@ -62,18 +62,6 @@
 			"label": "Ballerina Core: Tests",
 			"type": "shell",
 			"command": "docker compose run --remove-orphans --build --rm ballerina-core-tests",
-			"problemMatcher": [],
-			"isBackground": false,
-			"presentation": {
-				"reveal": "always",
-				"panel": "dedicated",
-				"close": false
-			}
-		},
-		{
-			"label": "Ballerina Core: Tests Installer",
-			"type": "shell",
-			"command": "docker compose run --remove-orphans --build --rm ballerina-core-tests-installer",
 			"problemMatcher": [],
 			"isBackground": false,
 			"presentation": {
