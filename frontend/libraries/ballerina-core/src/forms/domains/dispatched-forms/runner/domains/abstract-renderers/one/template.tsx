@@ -497,16 +497,16 @@ export const OneAbstractRenderer = <
                 };
                 props.foreignMutations.delete &&
                   props.foreignMutations.delete(delta);
-                  
-                  // TODO: this is likely wrong
-                  props.setState(
-                    OneAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
-                      replaceWith<InitializationStatus>({
-                        kind: "reinitializing",
-                        afterReinitializationAction: () => {},
-                      }),
-                    ),
-                  );
+
+                // TODO: this is likely wrong
+                props.setState(
+                  OneAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
+                    replaceWith<InitializationStatus>({
+                      kind: "reinitializing",
+                      afterReinitializationAction: () => {},
+                    }),
+                  ),
+                );
               },
               select: (value, flags) => {
                 const delta: DispatchDelta<Flags> = {
