@@ -35,12 +35,10 @@ export const initializeOne = <
         ),
       );
 
-        if (maybeId.kind === "errors") {
-          console.error(maybeId.errors.join("\n"));
-          return InitializeCo<CustomPresentationContext, ExtraContext>().Wait(
-            0,
-          );
-        }
+      if (maybeId.kind === "errors") {
+        console.error(maybeId.errors.join("\n"));
+        return InitializeCo<CustomPresentationContext, ExtraContext>().Wait(0);
+      }
 
       return InitializeCo<CustomPresentationContext, ExtraContext>()
         .Await(
