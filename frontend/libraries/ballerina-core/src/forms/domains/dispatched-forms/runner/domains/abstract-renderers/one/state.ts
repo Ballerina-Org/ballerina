@@ -195,10 +195,17 @@ export const OneAbstractRendererState = {
     ): boolean =>
       // if the value is some, we already have something to pass to the renderers
       // -> we don't have to run the initialization coroutine
-      // if the inner value is unit, we are rendering a partial one
-      (ctx.customFormState.initializationStatus.kind === "not initialized" ||
-        ctx.customFormState.initializationStatus.kind === "reinitializing") &&
-      ctx.getApi != undefined,
+      // if the inner value is unit, we are rendering a partial one {
+      {
+        return (
+          (ctx.customFormState.initializationStatus.kind ===
+            "not initialized" ||
+            ctx.customFormState.initializationStatus.kind ===
+              "reinitializing" ||
+            (ctx.value.kind === "option" && !ctx.value.isSome)) &&
+          ctx.getApi != undefined
+        );
+      },
   },
 };
 
