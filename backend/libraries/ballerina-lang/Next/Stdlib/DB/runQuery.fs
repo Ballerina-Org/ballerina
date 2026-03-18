@@ -35,7 +35,7 @@ module DBRunQuery =
       (Schema<'ext> -> TypeQueryRow<'ext> -> TypeValue<'ext>)
     =
 
-    let dbQueryId = Identifier.LocalScope "Query"
+    let dbQueryId = Identifier.FullyQualified([ "DB" ], "Query")
     let dbQueryResolvedId = dbQueryId |> TypeCheckScope.Empty.Resolve
     let dbQuerySymbol = dbQueryId |> TypeSymbol.Create
 
@@ -76,10 +76,7 @@ module DBRunQuery =
           TypeParameter.Create("row", Kind.QueryRow),
           TypeExpr.Arrow(
             TypeExpr.Apply(
-              TypeExpr.Apply(
-                TypeExpr.Lookup("Query" |> Identifier.LocalScope),
-                TypeExpr.Lookup("schema" |> Identifier.LocalScope)
-              ),
+              TypeExpr.Apply(TypeExpr.Lookup(dbQueryId), TypeExpr.Lookup("schema" |> Identifier.LocalScope)),
               TypeExpr.Lookup("row" |> Identifier.LocalScope)
             ),
             TypeExpr.Arrow(

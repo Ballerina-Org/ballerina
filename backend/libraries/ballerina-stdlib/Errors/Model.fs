@@ -117,6 +117,16 @@ module Errors =
               Errors = fun () -> NonEmptyList.OfList(x, xs) }
         | [] -> e
 
+    static member Filter (e: Errors<'context>) (predicate: Error<'context> -> bool) : Option<Errors<'context>> =
+      let errors = e.Errors() |> NonEmptyList.ToList
+
+      match errors |> List.filter (predicate) with
+      | x :: xs ->
+        Some
+          { e with
+              Errors = fun () -> NonEmptyList.OfList(x, xs) }
+      | [] -> None
+
     static member Print (inputFile: string) (e: Errors<'context>) =
       do Console.WriteLine $"Errors when processing {inputFile}"
       do Console.ForegroundColor <- ConsoleColor.Red
