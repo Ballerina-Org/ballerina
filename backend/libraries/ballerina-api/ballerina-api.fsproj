@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ballerina_api</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Model/Model.fs" />
+    <!-- <Compile Include="Common/SyntheticData.fs" /> -->
+    <Compile Include="Common/Utils.fs" />
+    <Compile Include="Endpoints/Create.fs" />
+    <Compile Include="Endpoints/Delete.fs" />
+    <Compile Include="Endpoints/Linking.fs" />
+    <Compile Include="Endpoints/Read.fs" />
+    <Compile Include="Endpoints/Upsert.fs" />
+    <Compile Include="APIRegistration.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../ballerina-lang/Next/ballerina-lang.fsproj" />
+    <ProjectReference Include="../ballerina-lang-synthetic-data/ballerina-lang-synthetic-data.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+</Project>

@@ -10,6 +10,7 @@ module Model =
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.DSL.Next.StdLib.MutableMemoryDB
+  open Codegen.Golang
 
   type RendererName = RendererName of string
 
@@ -17,7 +18,6 @@ module Model =
   type LauncherName = LauncherName of string
   type Label = Label of string
   type LanguageStreamType = LanguageStreamType of string
-  type GoImport = GoImport of string
 
   type Serializer = { Name: string; Import: GoImport }
 

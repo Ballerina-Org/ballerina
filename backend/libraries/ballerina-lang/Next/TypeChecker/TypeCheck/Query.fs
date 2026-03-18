@@ -41,6 +41,203 @@ module Query =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.NonEmptyList
 
+  let two_equal_primitives loc0 expected_primitive_type (t, (e: ExprQueryExpr<_, _, _>)) =
+    match t, e.Expr with
+    | [ TypeQueryRow.PrimitiveType(p1, is_p1_nullable); TypeQueryRow.PrimitiveType(p2, is_p2_nullable) ], _ when
+      p1 = expected_primitive_type && p2 = expected_primitive_type
+      ->
+      Some(e, is_p1_nullable || is_p2_nullable)
+    | [ TypeQueryRow.Json(TypeValue.Primitive { value = p1 }); TypeQueryRow.PrimitiveType(p2, is_p2_nullable) ],
+      ExprQueryExprRec.QueryTupleCons [ v1; v2 ] when p1 = expected_primitive_type && p2 = expected_primitive_type ->
+      Some(
+        [ ExprQueryExprRec.QueryCastTo(v1, TypeQueryRow.PrimitiveType(expected_primitive_type, false))
+          |> ExprQueryExpr.Create loc0
+          v2 ]
+        |> ExprQueryExprRec.QueryTupleCons
+        |> ExprQueryExpr.Create loc0,
+        is_p2_nullable
+      )
+    | [ TypeQueryRow.PrimitiveType(p1, is_p1_nullable); TypeQueryRow.Json(TypeValue.Primitive { value = p2 }) ],
+      ExprQueryExprRec.QueryTupleCons [ v1; v2 ] when p1 = expected_primitive_type && p2 = expected_primitive_type ->
+      Some(
+        [ v1
+          ExprQueryExprRec.QueryCastTo(v2, TypeQueryRow.PrimitiveType(expected_primitive_type, false))
+          |> ExprQueryExpr.Create loc0 ]
+        |> ExprQueryExprRec.QueryTupleCons
+        |> ExprQueryExpr.Create loc0,
+        is_p1_nullable
+      )
+    | [ TypeQueryRow.Json(TypeValue.Primitive { value = p1 }); TypeQueryRow.Json(TypeValue.Primitive { value = p2 }) ],
+      ExprQueryExprRec.QueryTupleCons [ v1; v2 ] when p1 = expected_primitive_type && p2 = expected_primitive_type ->
+      Some(
+        [ ExprQueryExprRec.QueryCastTo(v1, TypeQueryRow.PrimitiveType(expected_primitive_type, false))
+          |> ExprQueryExpr.Create loc0
+          ExprQueryExprRec.QueryCastTo(v2, TypeQueryRow.PrimitiveType(expected_primitive_type, false))
+          |> ExprQueryExpr.Create loc0 ]
+        |> ExprQueryExprRec.QueryTupleCons
+        |> ExprQueryExpr.Create loc0,
+        false
+      )
+    | _ -> None
+
+  let binary_operators: Map<QueryIntrinsic, NonEmptyList<PrimitiveType>> =
+    [ QueryIntrinsic.Multiply,
+      NonEmptyList.ofList<PrimitiveType> (
+        PrimitiveType.Int32,
+        [ PrimitiveType.Float32; PrimitiveType.Float64; PrimitiveType.Decimal ]
+      )
+      QueryIntrinsic.Divide,
+      NonEmptyList.ofList<PrimitiveType> (
+        PrimitiveType.Int32,
+        [ PrimitiveType.Float32; PrimitiveType.Float64; PrimitiveType.Decimal ]
+      )
+      QueryIntrinsic.Minus,
+      NonEmptyList.ofList<PrimitiveType> (
+        PrimitiveType.Int32,
+        [ PrimitiveType.Float32; PrimitiveType.Float64; PrimitiveType.Decimal ]
+      )
+      QueryIntrinsic.Modulo,
+      NonEmptyList.ofList<PrimitiveType> (
+        PrimitiveType.Int32,
+        [ PrimitiveType.Float32; PrimitiveType.Float64; PrimitiveType.Decimal ]
+      )
+      QueryIntrinsic.Plus,
+      NonEmptyList.ofList<PrimitiveType> (
+        PrimitiveType.Int32,
+        [ PrimitiveType.Float32
+          PrimitiveType.Float64
+          PrimitiveType.Decimal
+          PrimitiveType.String ]
+      )
+      QueryIntrinsic.And, NonEmptyList.ofList<PrimitiveType> (PrimitiveType.Bool, [])
+      QueryIntrinsic.Or, NonEmptyList.ofList<PrimitiveType> (PrimitiveType.Bool, []) ]
+    |> List.map (fun (op, types) -> op, types)
+    |> Map.ofList
+
+  let comparison_operators =
+    [ QueryIntrinsic.GreaterThan,
+      NonEmptyList.ofList<PrimitiveType> (
+        PrimitiveType.Int32,
+        [ PrimitiveType.Float32
+          PrimitiveType.Float64
+          PrimitiveType.Decimal
+          PrimitiveType.TimeSpan
+          PrimitiveType.DateOnly
+          PrimitiveType.DateTime ]
+      )
+      QueryIntrinsic.LessThan,
+      NonEmptyList.ofList<PrimitiveType> (
+        PrimitiveType.Int32,
+        [ PrimitiveType.Float32
+          PrimitiveType.Float64
+          PrimitiveType.Decimal
+          PrimitiveType.TimeSpan
+          PrimitiveType.DateOnly
+          PrimitiveType.DateTime ]
+      )
+      QueryIntrinsic.GreaterThanOrEqual,
+      NonEmptyList.ofList<PrimitiveType> (
+        PrimitiveType.Int32,
+        [ PrimitiveType.Float32
+          PrimitiveType.Float64
+          PrimitiveType.Decimal
+          PrimitiveType.TimeSpan
+          PrimitiveType.DateOnly
+          PrimitiveType.DateTime ]
+      )
+      QueryIntrinsic.LessThanOrEqual,
+      NonEmptyList.ofList<PrimitiveType> (
+        PrimitiveType.Int32,
+        [ PrimitiveType.Float32
+          PrimitiveType.Float64
+          PrimitiveType.Decimal
+          PrimitiveType.TimeSpan
+          PrimitiveType.DateOnly
+          PrimitiveType.DateTime ]
+      )
+      QueryIntrinsic.Equals,
+      NonEmptyList.ofList<PrimitiveType> (
+        PrimitiveType.Int32,
+        [ PrimitiveType.Float32
+          PrimitiveType.Float64
+          PrimitiveType.Decimal
+          PrimitiveType.String
+          PrimitiveType.Bool
+          PrimitiveType.TimeSpan
+          PrimitiveType.DateOnly
+          PrimitiveType.DateTime
+          PrimitiveType.Guid ]
+      )
+      QueryIntrinsic.NotEquals,
+      NonEmptyList.ofList<PrimitiveType> (
+        PrimitiveType.Int32,
+        [ PrimitiveType.Float32
+          PrimitiveType.Float64
+          PrimitiveType.Decimal
+          PrimitiveType.String
+          PrimitiveType.Bool
+          PrimitiveType.TimeSpan
+          PrimitiveType.DateOnly
+          PrimitiveType.DateTime
+          PrimitiveType.Guid ]
+      ) ]
+    |> List.map (fun (op, types) -> op, types)
+    |> Map.ofList
+
+  let query_constant_to_type loc c =
+    state {
+      match c with
+      | PrimitiveValue.Unit ->
+        return
+          ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create loc,
+          TypeQueryRow.PrimitiveType(PrimitiveType.Unit, false)
+      | PrimitiveValue.Int32(_) ->
+        return
+          ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create loc,
+          TypeQueryRow.PrimitiveType(PrimitiveType.Int32, false)
+      | PrimitiveValue.Int64(_) ->
+        return
+          ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create loc,
+          TypeQueryRow.PrimitiveType(PrimitiveType.Int64, false)
+      | PrimitiveValue.Float32(_) ->
+        return
+          ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create loc,
+          TypeQueryRow.PrimitiveType(PrimitiveType.Float32, false)
+      | PrimitiveValue.Float64(_) ->
+        return
+          ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create loc,
+          TypeQueryRow.PrimitiveType(PrimitiveType.Float64, false)
+      | PrimitiveValue.Decimal(_) ->
+        return
+          ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create loc,
+          TypeQueryRow.PrimitiveType(PrimitiveType.Decimal, false)
+      | PrimitiveValue.Bool(_) ->
+        return
+          ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create loc,
+          TypeQueryRow.PrimitiveType(PrimitiveType.Bool, false)
+      | PrimitiveValue.Guid(_) ->
+        return
+          ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create loc,
+          TypeQueryRow.PrimitiveType(PrimitiveType.Guid, false)
+      | PrimitiveValue.String(_) ->
+        return
+          ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create loc,
+          TypeQueryRow.PrimitiveType(PrimitiveType.String, false)
+      | PrimitiveValue.Date(_) ->
+        return
+          ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create loc,
+          TypeQueryRow.PrimitiveType(PrimitiveType.DateOnly, false)
+      | PrimitiveValue.DateTime(_) ->
+        return
+          ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create loc,
+          TypeQueryRow.PrimitiveType(PrimitiveType.DateTime, false)
+      | PrimitiveValue.TimeSpan(_) ->
+        return
+          ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create loc,
+          TypeQueryRow.PrimitiveType(PrimitiveType.TimeSpan, false)
+
+    }
+
 
   type QueryTypeCheckContext<'valueExt> =
     { Iterators: Map<LocalIdentifier, TypeQueryRow<'valueExt>>
@@ -63,10 +260,11 @@ module Query =
 
   type ExprQueryExpr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckQueryExpr<'valueExt when 'valueExt: comparison>
+      (depth: int)
       (loc0: Location)
       : QueryTypeChecker<ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun identifiers_context expr ->
-        let (!) = ExprQueryExpr.TypeCheckQueryExpr loc0 identifiers_context
+        let (!) = ExprQueryExpr.TypeCheckQueryExpr (depth + 1) loc0 identifiers_context
         // let (=>) c e = typeCheckExpr c e
 
         let ofSum (p: Sum<'a, Errors<Unit>>) =
@@ -77,31 +275,13 @@ module Query =
         let two_primary_keys =
           function
           | [ TypeQueryRow.PrimaryKey(TypeValue.Record { value = k1 })
-              TypeQueryRow.PrimaryKey(TypeValue.Record { value = k2 }) ] when k1 = k2 ->
+              TypeQueryRow.PrimaryKey(TypeValue.Record { value = k2 }) ] when
+            k1 |> OrderedMap.count = 1 && k2 |> OrderedMap.count = 1
+            ->
+            let k1, k2 =
+              k1 |> OrderedMap.toSeq |> Seq.head |> fst, k2 |> OrderedMap.toSeq |> Seq.head |> fst
 
-            true
-          | _ -> false
-
-        let two_int32s =
-          function
-          | [ TypeQueryRow.PrimitiveType(PrimitiveType.Int32, _); TypeQueryRow.PrimitiveType(PrimitiveType.Int32, _) ]
-          | [ TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Int32 })
-              TypeQueryRow.PrimitiveType(PrimitiveType.Int32, _) ]
-          | [ TypeQueryRow.PrimitiveType(PrimitiveType.Int32, _)
-              TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Int32 }) ]
-          | [ TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Int32 })
-              TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Int32 }) ] -> true
-          | _ -> false
-
-        let two_bools =
-          function
-          | [ TypeQueryRow.PrimitiveType(PrimitiveType.Bool, _); TypeQueryRow.PrimitiveType(PrimitiveType.Bool, _) ]
-          | [ TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Bool })
-              TypeQueryRow.PrimitiveType(PrimitiveType.Bool, _) ]
-          | [ TypeQueryRow.PrimitiveType(PrimitiveType.Bool, _)
-              TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Bool }) ]
-          | [ TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Bool })
-              TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Bool }) ] -> true
+            k1 = k2
           | _ -> false
 
         state {
@@ -179,7 +359,7 @@ module Query =
                   $"Type checking error: Tuple type {tuple_t} has only {tuple_t_elements.Length} elements, but tried to access item {item.Index}")
                 |> Errors.Singleton loc0
                 |> state.Throw
-          | ExprQueryExprRec.QueryRecordDes(record, field) ->
+          | ExprQueryExprRec.QueryRecordDes(record, field, _) ->
             let! record_e, record_t = !record
 
             return!
@@ -200,7 +380,7 @@ module Query =
                         |> ofSum
 
                       return
-                        ExprQueryExprRec.QueryRecordDes(record_e, field.LocalName |> ResolvedIdentifier.Create)
+                        ExprQueryExprRec.QueryRecordDes(record_e, field.LocalName |> ResolvedIdentifier.Create, None)
                         |> ExprQueryExpr.Create expr.Location,
                         field_t
                     }
@@ -230,14 +410,22 @@ module Query =
                           |> ofSum
 
                         return
-                          ExprQueryExprRec.QueryRecordDes(record_e, field_id)
+                          ExprQueryExprRec.QueryRecordDes(
+                            record_e,
+                            field_id,
+                            record_t
+                            |> OrderedMap.toSeq
+                            |> Seq.tryFindIndex (fun (s, _) -> s = field_sym)
+                            |> Option.defaultValue 0
+                            |> Some
+                          )
                           |> ExprQueryExpr.Create expr.Location,
                           field_t |> TypeQueryRow.Json
                       })
                       (state {
                         let! record_t = json_t |> TypeValue.AsRecord |> ofSum
 
-                        let! _, (field_t, _) =
+                        let! field_sym, (field_t, _) =
                           record_t
                           |> OrderedMap.toSeq
                           |> Seq.tryFind (fun (field_sym, _) -> field_sym.Name = field)
@@ -248,142 +436,127 @@ module Query =
                           |> state.OfSum
 
                         return
-                          ExprQueryExprRec.QueryRecordDes(record_e, field.LocalName |> ResolvedIdentifier.Create)
+                          ExprQueryExprRec.QueryRecordDes(
+                            record_e,
+                            field.LocalName |> ResolvedIdentifier.Create,
+                            record_t
+                            |> OrderedMap.toSeq
+                            |> Seq.tryFindIndex (fun (s, _) -> s = field_sym)
+                            |> Option.defaultValue 0
+                            |> Some
+                          )
                           |> ExprQueryExpr.Create expr.Location,
                           field_t |> TypeQueryRow.Json
                       })
                     |> state.MapError(Errors<_>.MapPriority(replaceWith ErrorPriority.High))
                 })
               |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
-          | ExprQueryExprRec.QueryConstant c ->
-            match c with
-            | PrimitiveValue.Unit ->
-              return
-                ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create expr.Location,
-                TypeQueryRow.PrimitiveType(PrimitiveType.Unit, false)
-            | PrimitiveValue.Int32(_) ->
-              return
-                ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create expr.Location,
-                TypeQueryRow.PrimitiveType(PrimitiveType.Int32, false)
-            | PrimitiveValue.Int64(_) ->
-              return
-                ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create expr.Location,
-                TypeQueryRow.PrimitiveType(PrimitiveType.Int64, false)
-            | PrimitiveValue.Float32(_) ->
-              return
-                ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create expr.Location,
-                TypeQueryRow.PrimitiveType(PrimitiveType.Float32, false)
-            | PrimitiveValue.Float64(_) ->
-              return
-                ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create expr.Location,
-                TypeQueryRow.PrimitiveType(PrimitiveType.Float64, false)
-            | PrimitiveValue.Decimal(_) ->
-              return
-                ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create expr.Location,
-                TypeQueryRow.PrimitiveType(PrimitiveType.Decimal, false)
-            | PrimitiveValue.Bool(_) ->
-              return
-                ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create expr.Location,
-                TypeQueryRow.PrimitiveType(PrimitiveType.Bool, false)
-            | PrimitiveValue.Guid(_) ->
-              return
-                ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create expr.Location,
-                TypeQueryRow.PrimitiveType(PrimitiveType.Guid, false)
-            | PrimitiveValue.String(_) ->
-              return
-                ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create expr.Location,
-                TypeQueryRow.PrimitiveType(PrimitiveType.String, false)
-            | PrimitiveValue.Date(_) ->
-              return
-                ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create expr.Location,
-                TypeQueryRow.PrimitiveType(PrimitiveType.DateOnly, false)
-            | PrimitiveValue.DateTime(_) ->
-              return
-                ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create expr.Location,
-                TypeQueryRow.PrimitiveType(PrimitiveType.DateTime, false)
-            | PrimitiveValue.TimeSpan(_) ->
-              return
-                ExprQueryExprRec.QueryConstant c |> ExprQueryExpr.Create expr.Location,
-                TypeQueryRow.PrimitiveType(PrimitiveType.TimeSpan, false)
-          | ExprQueryExprRec.QueryApply({ Expr = ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.And) }, arg) ->
-            let! arg_e, arg_t = !arg
-            let! arg_t_elements = arg_t |> TypeQueryRow.AsTuple |> ofSum
+          | ExprQueryExprRec.QueryConstant c -> return! query_constant_to_type expr.Location c
 
-            if arg_t_elements |> two_bools then
-              return
-                ExprQueryExprRec.QueryApply(
-                  ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.And)
-                  |> ExprQueryExpr.Create expr.Location,
-                  arg_e
-                )
-                |> ExprQueryExpr.Create expr.Location,
-                TypeQueryRow.PrimitiveType(PrimitiveType.Bool, false)
-            else
-              return!
-                (fun () ->
-                  $"Type checking error: invalid type arguments {arg_t_elements} for && operator in query expression")
-                |> Errors.Singleton expr.Location
-                |> state.Throw
+          | ExprQueryExprRec.QueryApply({ Expr = ExprQueryExprRec.QueryIntrinsic(intrinsic) }, arg) ->
+            return!
+              state.Either3
+                (state {
+                  match intrinsic with
+                  | QueryIntrinsic.Equals
+                  | QueryIntrinsic.NotEquals ->
+                    let! arg_e, arg_t = !arg
+                    let! arg_t_elements = arg_t |> TypeQueryRow.AsTuple |> ofSum
 
-          | ExprQueryExprRec.QueryApply({ Expr = ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.GreaterThan) }, arg) ->
-            let! arg_e, arg_t = !arg
-            let! arg_t_elements = arg_t |> TypeQueryRow.AsTuple |> ofSum
+                    if arg_t_elements |> two_primary_keys then
+                      return
+                        ExprQueryExprRec.QueryApply(
+                          ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Equals)
+                          |> ExprQueryExpr.Create expr.Location,
+                          arg_e
+                        )
+                        |> ExprQueryExpr.Create expr.Location,
+                        TypeQueryRow.PrimitiveType(PrimitiveType.Bool, false)
+                    else
+                      return!
+                        (fun () ->
+                          $"Type checking error: Equals/not equals operator in query expressions only supports tuples of two primary keys, but got {arg_t}")
+                        |> Errors.Singleton loc0
+                        |> state.Throw
+                  | _ -> return! (fun () -> $"Skipping branch.") |> Errors.Singleton loc0 |> state.Throw
 
-            if arg_t_elements |> two_int32s then
-              return
-                ExprQueryExprRec.QueryApply(
-                  ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.GreaterThan)
-                  |> ExprQueryExpr.Create expr.Location,
-                  arg_e
-                )
-                |> ExprQueryExpr.Create expr.Location,
-                TypeQueryRow.PrimitiveType(PrimitiveType.Bool, false)
-            else
-              return!
-                (fun () ->
-                  $"Type checking error: invalid type arguments {arg_t_elements} for > operator in query expression")
-                |> Errors.Singleton expr.Location
-                |> state.Throw
+                })
+                (state {
+                  let! binary_operator =
+                    binary_operators
+                    |> Map.tryFind intrinsic
+                    |> sum.OfOption(
+                      (fun () -> $"Type checking error: unknown binary operator {intrinsic}")
+                      |> Errors.Singleton loc0
+                    )
+                    |> state.OfSum
 
-          | ExprQueryExprRec.QueryApply({ Expr = ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Equals) }, arg) ->
-            let! arg_e, arg_t = !arg
-            let! arg_t_elements = arg_t |> TypeQueryRow.AsTuple |> ofSum
+                  let! arg_e, arg_t = !arg
+                  let! arg_t_elements = arg_t |> TypeQueryRow.AsTuple |> ofSum
 
-            if arg_t_elements |> two_primary_keys then
-              return
-                ExprQueryExprRec.QueryApply(
-                  ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Equals)
-                  |> ExprQueryExpr.Create expr.Location,
-                  arg_e
-                )
-                |> ExprQueryExpr.Create expr.Location,
-                TypeQueryRow.PrimitiveType(PrimitiveType.Bool, false)
-            else
-              return!
-                (fun () ->
-                  $"Type checking error: invalid type arguments {arg_t_elements} for = operator in query expression")
-                |> Errors.Singleton expr.Location
-                |> state.Throw
+                  return!
+                    state.Any(
+                      binary_operator
+                      |> NonEmptyList.map (fun expected_primitive_type ->
+                        state {
+                          let! arg_e, is_nullable =
+                            (arg_t_elements, arg_e)
+                            |> two_equal_primitives expr.Location expected_primitive_type
+                            |> sum.OfOption(
+                              (fun () ->
+                                $"Type checking error: invalid type arguments {arg_t_elements} for {intrinsic} operator in query expression")
+                              |> Errors.Singleton expr.Location
+                            )
+                            |> state.OfSum
 
-          | ExprQueryExprRec.QueryApply({ Expr = ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Multiply) }, arg) ->
-            let! arg_e, arg_t = !arg
-            let! arg_t_elements = arg_t |> TypeQueryRow.AsTuple |> ofSum
+                          return
+                            ExprQueryExprRec.QueryApply(
+                              ExprQueryExprRec.QueryIntrinsic(intrinsic) |> ExprQueryExpr.Create expr.Location,
+                              arg_e
+                            )
+                            |> ExprQueryExpr.Create expr.Location,
+                            TypeQueryRow.PrimitiveType(expected_primitive_type, is_nullable)
+                        })
+                    )
+                })
+                (state {
+                  let! comparison_operator =
+                    comparison_operators
+                    |> Map.tryFind intrinsic
+                    |> sum.OfOption(
+                      (fun () -> $"Type checking error: unknown binary operator {intrinsic}")
+                      |> Errors.Singleton loc0
+                    )
+                    |> state.OfSum
 
-            if arg_t_elements |> two_int32s then
-              return
-                ExprQueryExprRec.QueryApply(
-                  ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Multiply)
-                  |> ExprQueryExpr.Create expr.Location,
-                  arg_e
-                )
-                |> ExprQueryExpr.Create expr.Location,
-                TypeQueryRow.PrimitiveType(PrimitiveType.Int32, false)
-            else
-              return!
-                (fun () ->
-                  $"Type checking error: invalid type arguments {arg_t_elements} for * operator in query expression")
-                |> Errors.Singleton expr.Location
-                |> state.Throw
+                  let! arg_e, arg_t = !arg
+                  let! arg_t_elements = arg_t |> TypeQueryRow.AsTuple |> ofSum
+
+                  return!
+                    state.Any(
+                      comparison_operator
+                      |> NonEmptyList.map (fun expected_primitive_type ->
+                        state {
+                          let! arg_e, is_nullable =
+                            (arg_t_elements, arg_e)
+                            |> two_equal_primitives expr.Location expected_primitive_type
+                            |> sum.OfOption(
+                              (fun () ->
+                                $"Type checking error: invalid type arguments {arg_t_elements} for {intrinsic} operator in query expression")
+                              |> Errors.Singleton expr.Location
+                            )
+                            |> state.OfSum
+
+                          return
+                            ExprQueryExprRec.QueryApply(
+                              ExprQueryExprRec.QueryIntrinsic(intrinsic) |> ExprQueryExpr.Create expr.Location,
+                              arg_e
+                            )
+                            |> ExprQueryExpr.Create expr.Location,
+                            TypeQueryRow.PrimitiveType(PrimitiveType.Bool, is_nullable)
+                        })
+                    )
+                })
 
           | ExprQueryExprRec.QueryClosureValue(v, t) ->
             return ExprQueryExprRec.QueryClosureValue(v, t) |> ExprQueryExpr.Create expr.Location, t
@@ -558,13 +731,14 @@ module Query =
                   | _ ->
                     return!
                       state.Throw(
-                        Errors.Singleton q.Location (fun () -> $"Type checking error: Undefined identifier {l}")
+                        Errors.Singleton q.Location (fun () ->
+                          $"Type checking error: Undefined identifier {l} or unsupported type for query closure. Only primitives and primary keys are supported.")
                       )
 
               | ExprQueryExprRec.QueryTupleCons items ->
                 let! maps = items |> Seq.map get_lookups_from_context |> state.All
                 return maps |> Seq.fold (fun acc m -> Map.merge (fun _ -> id) acc m) Map.empty
-              | ExprQueryExprRec.QueryRecordDes(expr, _field) ->
+              | ExprQueryExprRec.QueryRecordDes(expr, _field, _) ->
                 let! map = get_lookups_from_context expr
                 return map
               | ExprQueryExprRec.QueryTupleDes(expr, _) ->
@@ -594,6 +768,7 @@ module Query =
               | ExprQueryExprRec.QueryIntrinsic(_) -> return Map.empty
               | ExprQueryExprRec.QueryConstant(_) -> return Map.empty
               | ExprQueryExprRec.QueryClosureValue(_, _) -> return Map.empty
+              | ExprQueryExprRec.QueryCastTo(v, _) -> return! get_lookups_from_context v
             }
 
           let! where_lookups =
@@ -640,10 +815,10 @@ module Query =
                   |> Seq.map (fun join_expr ->
                     state {
                       let! left_e, left_t =
-                        ExprQueryExpr.TypeCheckQueryExpr loc0 queryTypeCheckingContext join_expr.Left
+                        ExprQueryExpr.TypeCheckQueryExpr 0 loc0 queryTypeCheckingContext join_expr.Left
 
                       let! right_e, right_t =
-                        ExprQueryExpr.TypeCheckQueryExpr loc0 queryTypeCheckingContext join_expr.Right
+                        ExprQueryExpr.TypeCheckQueryExpr 0 loc0 queryTypeCheckingContext join_expr.Right
 
                       let! left_t = left_t |> TypeQueryRow.AsPrimaryKey |> ofSum
                       let! right_t = right_t |> TypeQueryRow.AsPrimaryKey |> ofSum
@@ -681,7 +856,7 @@ module Query =
               | Some where_expr ->
 
                 let! where_expr', where_expr'_t =
-                  ExprQueryExpr.TypeCheckQueryExpr loc0 queryTypeCheckingContext where_expr
+                  ExprQueryExpr.TypeCheckQueryExpr 0 loc0 queryTypeCheckingContext where_expr
 
                 match where_expr'_t with
                 | TypeQueryRow.PrimitiveType(PrimitiveType.Bool, _)
@@ -693,14 +868,15 @@ module Query =
                     |> state.Throw
             }
 
-          let! select_expr', select_expr'_t = ExprQueryExpr.TypeCheckQueryExpr loc0 queryTypeCheckingContext select_expr
+          let! select_expr', select_expr'_t =
+            ExprQueryExpr.TypeCheckQueryExpr 0 loc0 queryTypeCheckingContext select_expr
 
           let! orderby_expr' =
             state {
               match orderby_expr with
               | None -> return None
               | Some(orderby_expr, direction) ->
-                let! orderby_expr', _ = ExprQueryExpr.TypeCheckQueryExpr loc0 queryTypeCheckingContext orderby_expr
+                let! orderby_expr', _ = ExprQueryExpr.TypeCheckQueryExpr 0 loc0 queryTypeCheckingContext orderby_expr
 
                 return Some(orderby_expr', direction)
             }
@@ -718,7 +894,8 @@ module Query =
                 Where = where_expr'
                 Select = select_expr'
                 OrderBy = orderby_expr'
-                Closure = select_orderby_lookups }
+                Closure = select_orderby_lookups
+                DeserializeFrom = select_expr'_t }
 
           let return_type = mk_query_type schema select_expr'_t
 

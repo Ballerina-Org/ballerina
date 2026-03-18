@@ -540,5 +540,5 @@ module Patterns =
 
     static member AsRecordDes(e: ExprQueryExpr<'T, 'Id, 'valueExt>) =
       match e.Expr with
-      | QueryRecordDes(r, id) -> sum.Return(r, id)
+      | QueryRecordDes(r, id, isJson) -> sum.Return(r, id, isJson)
       | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected a query record destruct but got {other}"))

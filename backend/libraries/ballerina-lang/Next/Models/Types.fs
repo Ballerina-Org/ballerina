@@ -759,22 +759,23 @@ module Model =
       match self with
       | Unit -> "()"
       | Guid -> "guid"
-      | Int32 -> "int"
-      | Int64 -> "int:Signed64"
-      | Float32 -> "float:Float32"
-      | Float64 -> "float"
+      | Int32 -> "int32"
+      | Int64 -> "int64"
+      | Float32 -> "float32"
+      | Float64 -> "float64"
       | Decimal -> "decimal"
       | Bool -> "boolean"
       | String -> "string"
-      | DateTime -> "time:Utc"
-      | DateOnly -> "time:Date"
-      | TimeSpan -> "time:Interval"
+      | DateTime -> "dateTime"
+      | DateOnly -> "dateOnly"
+      | TimeSpan -> "timeSpan"
       | Vector -> "vector"
 
   and Var =
     { Name: string }
 
     static member Create name : Var = { Var.Name = name }
+    override self.ToString() = self.Name
 
   and ExprLookup<'T, 'Id, 'valueExt when 'Id: comparison> =
     { Id: 'Id }
@@ -876,7 +877,8 @@ module Model =
       Where: Option<ExprQueryExpr<'T, 'Id, 'valueExt>>
       Select: ExprQueryExpr<'T, 'Id, 'valueExt>
       OrderBy: Option<ExprQueryExpr<'T, 'Id, 'valueExt> * OrderByDirection>
-      Closure: Map<ResolvedIdentifier, TypeQueryRow<'valueExt>> }
+      Closure: Map<ResolvedIdentifier, TypeQueryRow<'valueExt>>
+      DeserializeFrom: TypeQueryRow<'valueExt> }
 
   and OrderByDirection =
     | Asc
@@ -900,7 +902,7 @@ module Model =
 
   and ExprQueryExprRec<'T, 'Id, 'valueExt when 'Id: comparison> =
     | QueryTupleCons of List<ExprQueryExpr<'T, 'Id, 'valueExt>>
-    | QueryRecordDes of Expr: ExprQueryExpr<'T, 'Id, 'valueExt> * Field: 'Id
+    | QueryRecordDes of Expr: ExprQueryExpr<'T, 'Id, 'valueExt> * Field: 'Id * JsonFieldIndex: Option<int>
     | QueryTupleDes of Expr: ExprQueryExpr<'T, 'Id, 'valueExt> * Item: TupleDesSelector
     | QueryConditional of
       Cond: ExprQueryExpr<'T, 'Id, 'valueExt> *
@@ -917,13 +919,17 @@ module Model =
     | QueryIntrinsic of QueryIntrinsic
     | QueryConstant of PrimitiveValue
     | QueryClosureValue of Value<TypeValue<'valueExt>, 'valueExt> * TypeQueryRow<'valueExt>
+    | QueryCastTo of ExprQueryExpr<'T, 'Id, 'valueExt> * TypeQueryRow<'valueExt>
 
     override self.ToString() =
       match self with
       | QueryTupleCons items ->
         let itemStrs = items |> List.map (fun i -> i.ToString()) |> String.join ", "
         $"({itemStrs})"
-      | QueryRecordDes(e, field) -> $"{e}.{field}"
+      | QueryRecordDes(e, field, jsonFieldIndex) ->
+        match jsonFieldIndex with
+        | None -> $"{e}.{field}"
+        | Some index -> $"{e} -> \"{field}\"[{index}]"
       | QueryTupleDes(e, item) -> $"{e}.{item.Index}"
       | QueryConditional(cond, thenExpr, elseExpr) -> $"if {cond} then {thenExpr} else {elseExpr}"
       | QueryUnionDes(e, handlers) ->
@@ -949,6 +955,7 @@ module Model =
       | QueryIntrinsic intrinsic -> intrinsic.ToString()
       | QueryConstant c -> c.ToString()
       | QueryClosureValue(v, _) -> v.ToString()
+      | QueryCastTo(v, t) -> $"{v} :: {t}"
 
   and QueryCaseHandler<'T, 'Id, 'valueExt when 'Id: comparison> =
     { Param: Var
@@ -1185,6 +1192,21 @@ from {iterator_vars q} in {iterator_sources q}{joins}{where_to_str}{select_to_st
       | TimeSpan v -> v.ToString()
       | Unit -> "()"
 
+    member self.ToObject() =
+      match self with
+      | Int32 v -> box v
+      | Int64 v -> box v
+      | Float32 v -> box v
+      | Float64 v -> box v
+      | Decimal v -> box v
+      | Bool v -> box v
+      | Guid v -> box v
+      | String v -> box v
+      | Date v -> box v
+      | DateTime v -> box v
+      | TimeSpan v -> box v
+      | Unit -> null
+
   and ValueQueryIterators<'T, 'valueExt> = NonEmptyList<ValueQueryIterator<'T, 'valueExt>>
 
   and ValueQueryIterator<'T, 'valueExt> =
@@ -1198,7 +1220,8 @@ from {iterator_vars q} in {iterator_sources q}{joins}{where_to_str}{select_to_st
       Joins: Option<NonEmptyList<ExprQueryJoin<'T, ResolvedIdentifier, 'valueExt>>>
       Where: Option<ExprQueryExpr<'T, ResolvedIdentifier, 'valueExt>>
       Select: ExprQueryExpr<'T, ResolvedIdentifier, 'valueExt>
-      OrderBy: Option<ExprQueryExpr<'T, ResolvedIdentifier, 'valueExt> * OrderByDirection> }
+      OrderBy: Option<ExprQueryExpr<'T, ResolvedIdentifier, 'valueExt> * OrderByDirection>
+      DeserializeFrom: TypeQueryRow<'valueExt> }
 
     override self.ToString() =
       let joins =

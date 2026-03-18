@@ -416,15 +416,12 @@ module Query =
                               | BinaryExprOperator.DoubleGreaterThan ->
                                 failwith "DoubleGreaterThan operator is not supported in query expressions"
 
-                            match op with
-                            | BinaryExprOperator.Plus -> failwith ""
-                            | _ ->
-                              ExprQueryExprRec.QueryApply(
-                                query_op |> ExprQueryExprRec.QueryIntrinsic |> ExprQueryExpr.Create loc,
-                                ExprQueryExprRec.QueryTupleCons([ e1; e2 ]) |> ExprQueryExpr.Create loc
-                              )
-                              |> ExprQueryExpr.Create loc,
-                              NonMergeable
+                            ExprQueryExprRec.QueryApply(
+                              query_op |> ExprQueryExprRec.QueryIntrinsic |> ExprQueryExpr.Create loc,
+                              ExprQueryExprRec.QueryTupleCons([ e1; e2 ]) |> ExprQueryExpr.Create loc
+                            )
+                            |> ExprQueryExpr.Create loc,
+                            NonMergeable
                         ToExpr = id }
                       loc
                       precedence
@@ -450,7 +447,7 @@ module Query =
                       (fun acc id ->
                         match id with
                         | Sum.Left id ->
-                          ExprQueryExprRec.QueryRecordDes(acc, id |> Identifier.LocalScope)
+                          ExprQueryExprRec.QueryRecordDes(acc, id |> Identifier.LocalScope, None)
                           |> ExprQueryExpr.Create loc
                         | Sum.Right idx ->
                           ExprQueryExprRec.QueryTupleDes(acc, { Index = idx }) |> ExprQueryExpr.Create loc)
@@ -715,7 +712,9 @@ module Query =
                 Where = where_
                 Select = select_expr
                 OrderBy = orderby_
-                Closure = Map.empty },
+                // Closure and DeserializeFrom are placeholders, they will be calculated by the type checker
+                Closure = Map.empty
+                DeserializeFrom = TypeQueryRow.PrimitiveType(PrimitiveType.Unit, false) },
               loc,
               TypeCheckScope.Empty
             )

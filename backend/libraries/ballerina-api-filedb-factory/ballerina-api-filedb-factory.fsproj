@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ballerina_api_memorydb_factory</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Models\Schema.fs" />
+    <Compile Include="Utils.fs" />
+    <Compile Include="API\Publication.fs" />
+    <Compile Include="MemoryDBFactory.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../ballerina-lang/Next/Stdlib/ballerina-lang-stdlib.fsproj" />
+    <ProjectReference Include="../ballerina-memorydb/ballerina-memorydb.fsproj" />
+    <ProjectReference Include="../ballerina-cat/ballerina-cat.fsproj" />
+    <ProjectReference Include="../ballerina-api/ballerina-api.fsproj" />
+    <ProjectReference Include="../ballerina-stdlib/ballerina-stdlib.fsproj" />
+    <ProjectReference Include="../msgpack-serialization/msgpack-serialization.fsproj" />
+    <ProjectReference Include="../ballerina-filedb/ballerina-filedb.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+</Project>
