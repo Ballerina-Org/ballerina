@@ -468,6 +468,15 @@
           "ballerina-cat": "[1.0.0, )"
         }
       },
+      "codegen": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.0.102, )",
+          "FSharp.SystemTextJson": "[1.4.36, )",
+          "ballerina-cat": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
       "smartcomponents.inference": {
         "type": "Project",
         "dependencies": {

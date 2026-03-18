@@ -104,7 +104,7 @@ module MutableMemoryDB =
       | ExprQueryExprRec.QueryTupleCons items ->
         let! items = items |> Seq.map evalQueryExpr |> reader.All
         return Value.Tuple(Seq.toList items)
-      | ExprQueryExprRec.QueryRecordDes(expr, field) ->
+      | ExprQueryExprRec.QueryRecordDes(expr, field, _isJson) ->
         let! recordVal = evalQueryExpr expr
 
         match recordVal with
@@ -166,6 +166,7 @@ module MutableMemoryDB =
           |> reader.Throw
       | ExprQueryExprRec.QueryConstant v -> return Value.Primitive v
       | ExprQueryExprRec.QueryClosureValue(v, _) -> return v
+      | ExprQueryExprRec.QueryCastTo(v, _) -> return! evalQueryExpr v
     }
 
   let rec entity_values_restricted_by_can_read (entity_ref: EntityRef<MutableMemoryDB<_, _>, _>) =
