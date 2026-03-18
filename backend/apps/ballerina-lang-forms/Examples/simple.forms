@@ -1,0 +1,22 @@
+view evidenceOnPage: EvidenceOnPage {
+  Page int32(int32);
+  Cells list(listAsTable) int32(int32);
+  tab main with column main with group main with Page, Cells
+}
+view intWithEvidence: IntWithEvidence {
+  Value int32(int32);
+  Evidence sum(sum) with
+    | 1of2 -> unit(unit)
+    | 2of2 -> list(list) view(evidenceOnPage);
+  tab main with column main with group main with Value, Evidence
+}
+
+view optionalIntWithEvidenceAndApproval: OptionalIntWithEvidenceAndApproval {
+  Value sum(sum) with
+    | 1of2 -> unit(unit)
+    | 2of2 -> view(intWithEvidence);
+  Approved bool(boolean);
+  tab main with column main with group main with Value, Approved
+}
+
+entrypoint view valueView : Value {Hour view(optionalIntWithEvidenceAndApproval); Minute view(optionalIntWithEvidenceAndApproval);tab main with column main with group main with Hour, Minute}

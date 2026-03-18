@@ -761,9 +761,9 @@ module Eval =
             | ExprQueryExprRec.QueryTupleCons items ->
               { e with
                   Expr = ExprQueryExprRec.QueryTupleCons(items |> List.map (!)) }
-            | ExprQueryExprRec.QueryRecordDes(expr, field) ->
+            | ExprQueryExprRec.QueryRecordDes(expr, field, isJson) ->
               { e with
-                  Expr = ExprQueryExprRec.QueryRecordDes((!expr), field) }
+                  Expr = ExprQueryExprRec.QueryRecordDes((!expr), field, isJson) }
             | ExprQueryExprRec.QueryTupleDes(expr, item) ->
               { e with
                   Expr = ExprQueryExprRec.QueryTupleDes((!expr), item) }
@@ -794,6 +794,9 @@ module Eval =
                 { e with
                     Expr = ExprQueryExprRec.QueryClosureValue(v, t) }
             | ExprQueryExprRec.QueryClosureValue(_, _) -> e
+            | ExprQueryExprRec.QueryCastTo(e, t) ->
+              { e with
+                  Expr = ExprQueryExprRec.QueryCastTo(!e, t) }
 
 
           let res: Value<_, _> =
@@ -808,7 +811,8 @@ module Eval =
                   )
                 Where = q.Where |> Option.map replace_closure_lookups
                 Select = q.Select |> replace_closure_lookups
-                OrderBy = q.OrderBy |> Option.map (fun (v, dir) -> replace_closure_lookups v, dir) }
+                OrderBy = q.OrderBy |> Option.map (fun (v, dir) -> replace_closure_lookups v, dir)
+                DeserializeFrom = q.DeserializeFrom }
 
           return res
         | _ ->

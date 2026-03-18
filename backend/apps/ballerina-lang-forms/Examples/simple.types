@@ -1,0 +1,23 @@
+type EvidenceOnPage = {
+  Page: int32;
+  Cells: List [int32];
+}
+in type Wrapper = {
+  Data: List [EvidenceOnPage];
+}
+in type Uncertainty = {
+  IsFailing: bool;
+  Message: string;
+}
+in type OptionalEvidenceOnPage = () + List [EvidenceOnPage]
+in type IntWithEvidence = {
+  Value: int32;
+  Evidence: OptionalEvidenceOnPage;  
+}
+in type OptionalIntWithEvidence = () + IntWithEvidence
+in type OptionalIntWithEvidenceAndApproval = {
+  Value: OptionalIntWithEvidence;
+  Approved: bool;
+}
+
+in type Value = { Hour: OptionalIntWithEvidenceAndApproval; Minute: OptionalIntWithEvidenceAndApproval; }

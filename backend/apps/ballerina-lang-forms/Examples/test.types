@@ -1,0 +1,26 @@
+type GradeSystem =
+| Whole of int32
+| Decimal of float32
+| Other of string
+
+in type Class =
+| Minors of List [string]
+| Major of string
+
+in type Address = {
+  Number: int32;
+  Street: string;
+  City: string;
+}
+
+in type Student = {
+  Id: guid;
+  Name: string;
+  Year: int32;
+  Grade: GradeSystem;
+  Subjects: List [Class];
+  ContactNumbers: List [string];
+  Address: Address;
+}
+
+in ()
