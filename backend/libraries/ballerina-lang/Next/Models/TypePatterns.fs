@@ -617,6 +617,32 @@ module Patterns =
       | TypeValue.QueryTypeFunction
       | TypeValue.QueryRow _ -> t
 
+    static member GetSourceMapping(t: TypeValue<'valueExt>) : TypeExprSourceMapping<'valueExt> =
+      match t with
+      | TypeValue.Var _
+      | TypeValue.Lookup _
+      | TypeValue.Imported _ -> TypeExprSourceMapping<'valueExt>.NoSourceMapping ""
+      | TypeValue.Primitive(p: WithSourceMapping<PrimitiveType, 'valueExt>) -> p.typeExprSource
+      | TypeValue.Application v -> v.typeExprSource
+      | TypeValue.Lambda v -> v.typeExprSource
+      | TypeValue.Arrow v -> v.typeExprSource
+      | TypeValue.Record v -> v.typeExprSource
+      | TypeValue.Tuple v -> v.typeExprSource
+      | TypeValue.Union v -> v.typeExprSource
+      | TypeValue.Sum v -> v.typeExprSource
+      | TypeValue.Set v -> v.typeExprSource
+      | TypeValue.Schema _
+      | TypeValue.Entities _
+      | TypeValue.Relations _
+      | TypeValue.Entity _
+      | TypeValue.RelationLookupOption _
+      | TypeValue.RelationLookupOne _
+      | TypeValue.RelationLookupMany _
+      | TypeValue.Relation _
+      | TypeValue.ForeignKeyRelation _
+      | TypeValue.QueryTypeFunction
+      | TypeValue.QueryRow _ -> TypeExprSourceMapping<'valueExt>.NoSourceMapping ""
+
   type TypeValue<'valueExt> with
     member t.AsExpr: TypeExpr<'valueExt> = TypeExpr.FromTypeValue t
 
