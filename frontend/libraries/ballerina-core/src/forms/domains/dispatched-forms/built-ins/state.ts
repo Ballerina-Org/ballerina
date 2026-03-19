@@ -956,59 +956,46 @@ export const dispatchDefaultState =
           ? ValueOrErrors.Default.throwOne(
               `received non referenceOne renderer kind "${renderer.kind}" when resolving defaultState for referenceOne`,
             )
-          : specApis.references != undefined &&
-              specApis.references.get(renderer.entityName) != undefined &&
-              specApis.references.get(renderer.entityName)?.referenceOne != undefined &&
-              specApis.references.get(renderer.entityName)?.referenceOne.get("get") !=
-                undefined &&
-              specApis.references.get(renderer.entityName)?.referenceOne.get("get")
-                ?.methods.getMany //TODO Suzan: this will always be false
-            ? referenceSources == undefined
+          : referenceSources == undefined
+            ? ValueOrErrors.Default.throwOne(
+                `referenceOne sources referenced but no referenceOne sources are provided`,
+              )
+            : referenceSources(renderer.entityName) == undefined
               ? ValueOrErrors.Default.throwOne(
-                  `referenceOne sources referenced but no referenceOne sources are provided`,
+                  `cannot find referenceOne source for ${renderer.entityName}`,
                 )
-              : referenceSources(renderer.entityName) == undefined
+              : referenceSources(renderer.entityName).Then((referenceSource) =>
+                referenceSource.referenceOne == undefined
                 ? ValueOrErrors.Default.throwOne(
-                    `cannot find reference source for ${renderer.entityName}`,
-                  )
-                : referenceSources(renderer.entityName).Then((referenceSource) =>
-                    referenceSource.referenceOne == undefined
-                      ? ValueOrErrors.Default.throwOne(
-                          `reference source not provided for ${renderer.entityName}`,
-                        )
-                      : referenceSource.referenceOne!("get") // safe because we check for undefined above but type system doesn't know that
-                          .Then((referenceSource) =>
-                            referenceSource.getMany == undefined 
-                              ? ValueOrErrors.Default.throwOne(
-                                  `getMany not provided for ${renderer.entityName}-get`,
-                                )
-                              : MapRepo.Operations.tryFindWithError(
-                                  t.detailsType.name,
-                                  types,
-                                  () =>
-                                    `cannot find reference type ${JSON.stringify(
-                                      t.detailsType.name,
-                                    )} in ${JSON.stringify(t)}`,
-                                ).Then((lookupType) =>
-                                  ValueOrErrors.Default.return(
-                                    ReferenceOneAbstractRendererState.Default(
-                                      referenceSource.getMany!(
-                                        // safe because we check for undefined above but type system doesn't know that
-                                        dispatchFromAPIRawValue(
-                                          lookupType,
-                                          types,
-                                          converters,
-                                          injectedPrimitives,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                  `referenceOne source not provided for ${renderer.entityName}`,
+                )
+                : referenceSource.referenceOne!() // safe because we check for undefined above but type system doesn't know that
+                  .Then((referenceSource) => referenceSource.getMany == undefined 
+                    ? ValueOrErrors.Default.throwOne(
+                        `getMany not provided for ${renderer.entityName} in referenceOne source`,
+                      )
+                    : MapRepo.Operations.tryFindWithError(
+                      t.detailsType.name,
+                      types,
+                      () => `cannot find referenceOne type ${JSON.stringify(t.detailsType.name)} in ${JSON.stringify(t)}`,
+                    ).Then((lookupType) =>
+                      ValueOrErrors.Default.return(
+                        ReferenceOneAbstractRendererState.Default(
+                          referenceSource.getMany!(
+                            // safe because we check for undefined above but type system doesn't know that
+                            dispatchFromAPIRawValue(
+                              lookupType,
+                              types,
+                              converters,
+                              injectedPrimitives,
+                            ),
                           ),
-                  )
-            : ValueOrErrors.Default.return(
-                ReferenceOneAbstractRendererState.Default(undefined),
-              );
+                        ),
+                      ),
+                    ),
+                  ),
+              )
+      
 
       if (t.kind == "readOnly")
         return renderer.kind != "readOnlyRenderer"
@@ -1982,7 +1969,7 @@ export const dispatchToAPIRawValue =
             !EnumReference.Operations.IsEnumReference(fieldsObject)
           ) {
             console.warn(
-              "Received a non-collection or enum reference value in a multi selection, ignoring: ",
+              "Received a non-collection or enum referenceOne value in a multi selection, ignoring: ",
               JSON.stringify(value),
             );
             return false;

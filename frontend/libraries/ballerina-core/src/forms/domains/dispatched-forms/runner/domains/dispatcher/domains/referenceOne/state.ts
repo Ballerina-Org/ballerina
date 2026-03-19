@@ -87,7 +87,7 @@ export const ReferenceOneDispatcher = {
                       `lookup source missing "referenceOne" api`,
                     )
                   : referenceSource
-                      .referenceOne(entityName)
+                      .referenceOne()
                       .Then((source) =>
                         ValueOrErrors.Default.return(source.get)
                       ),

@@ -316,7 +316,7 @@ export type DispatchLookupSources = (typeName: string) => ValueOrErrors<
 
 export type DispatchReferenceSources = (typeName: string) => ValueOrErrors<
   {
-    referenceOne?: BasicFun<DispatchApiName, ValueOrErrors<DispatchReferenceOneSource, string>>;
+    referenceOne?: () => ValueOrErrors<DispatchReferenceOneSource, string>;
   },
   string
 >;

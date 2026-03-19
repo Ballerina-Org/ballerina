@@ -709,12 +709,7 @@ const lookupSources: DispatchLookupSources = (typeName: string) =>
 const referenceSources: DispatchReferenceSources = (typeName: string) =>
   typeName == "User"
     ? ValueOrErrors.Default.return({
-        referenceOne: (apiName: string) =>
-          apiName == "User"
-            ? ValueOrErrors.Default.return(userReferenceOne)
-            : ValueOrErrors.Default.throwOne(
-                `can't find api ${apiName} when getting dispatch reference api sources`,
-              ),
+        referenceOne: () => ValueOrErrors.Default.return(userReferenceOne)
       })
     : ValueOrErrors.Default.throwOne(
         `can't find type ${typeName} when getting lookup api source`,
