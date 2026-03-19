@@ -77,6 +77,10 @@ module MutableMemoryDB =
   type EvalQueryContext<'ext when 'ext: comparison> =
     { Bindings: Map<ResolvedIdentifier, Value<TypeValue<'ext>, 'ext>> }
 
+  type MemoryDBQueryRunAdapter<'db, 'ext when 'ext: comparison> =
+    { GetDbFromEntityRef: EntityRef<'db, 'ext> -> 'db
+      GetDbFromRelationRef: RelationRef<'db, 'ext> -> 'db }
+
   let rec private evalQueryExpr
     (query: ExprQueryExpr<TypeValue<'ext>, ResolvedIdentifier, 'ext>)
     : Reader<Value<TypeValue<'ext>, 'ext>, EvalQueryContext<'ext>, Errors<Unit>> =
@@ -169,8 +173,12 @@ module MutableMemoryDB =
       | ExprQueryExprRec.QueryCastTo(v, _) -> return! evalQueryExpr v
     }
 
-  let rec entity_values_restricted_by_can_read (entity_ref: EntityRef<MutableMemoryDB<_, _>, _>) =
-    let _, (db: MutableMemoryDB<_, _>), entity_desc, schema_value = entity_ref
+  let rec entity_values_restricted_by_can_read
+    (entity_ref: EntityRef<MutableMemoryDB<_, _>, _>)
+    (queryRunAdapter: MemoryDBQueryRunAdapter<_, _>)
+    =
+    let (db: MutableMemoryDB<_, _>) = queryRunAdapter.GetDbFromEntityRef entity_ref
+    let _, _, entity_desc, schema_value = entity_ref
 
     let all_values =
       db.entities |> Map.tryFind entity_desc.Name |> Option.defaultValue Map.empty
@@ -190,7 +198,7 @@ module MutableMemoryDB =
 
         let! can_read_query = can_read_query |> Value.AsQuery |> reader.OfSum
 
-        let! visible_ids = runQuery false can_read_query
+        let! visible_ids = runQuery false queryRunAdapter can_read_query
 
         let visible_ids = visible_ids |> fst
         let visible_ids = visible_ids |> Set.ofSeq
@@ -198,8 +206,9 @@ module MutableMemoryDB =
         return all_values |> Map.filter (fun id _ -> visible_ids |> Set.contains id)
     }
 
-  and private runQuery
+  and runQuery
     (apply_permissions: bool)
+    (queryRunAdapter: MemoryDBQueryRunAdapter<_, _>)
     (query: ValueQuery<_, _>)
     : Reader<seq<Value<_, _>> * MutableMemoryDB<_, _>, ExprEvalContext<'runtimeContext, ValueExt<_, _, _>>, Errors<Unit>> =
     reader {
@@ -209,12 +218,13 @@ module MutableMemoryDB =
           reader {
             match it.Source with
             | Value.Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.EntityRef entity_ref))), _) ->
-              let _, (db: MutableMemoryDB<_, _>), entity_desc, _ = entity_ref
+              let (db: MutableMemoryDB<_, _>) = queryRunAdapter.GetDbFromEntityRef entity_ref
+              let _, _, entity_desc, _ = entity_ref
 
               let! all_values =
                 reader {
                   if apply_permissions then
-                    return! entity_values_restricted_by_can_read entity_ref
+                    return! entity_values_restricted_by_can_read entity_ref queryRunAdapter
                   else
                     return db.entities |> Map.tryFind entity_desc.Name |> Option.defaultValue Map.empty
                 }
@@ -237,12 +247,15 @@ module MutableMemoryDB =
                 |> reader.OfSum
 
               match relation with
-              | Value.Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.RelationRef relation_ref))), _) ->
-                let _, (db: MutableMemoryDB<_, _>), relation_ref, _, _, _ = relation_ref
+              | Value.Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.RelationRef(relation_ref:
+                            RelationRef<MutableMemoryDB<'a, 'b>, ValueExt<'a, MutableMemoryDB<'a, 'b>, 'b>>)))),
+                          _) ->
+                let (db: MutableMemoryDB<_, _>) = queryRunAdapter.GetDbFromRelationRef relation_ref
+                let _, _, schema_relation, _, _, _ = relation_ref
 
                 let relation_values =
                   db.relations
-                  |> Map.tryFind relation_ref.Name
+                  |> Map.tryFind schema_relation.Name
                   |> Option.defaultValue MemoryDBRelation.Empty
                   |> fun rel -> rel.All
                   |> Seq.map (fun (fromId, toId) ->
@@ -257,7 +270,7 @@ module MutableMemoryDB =
                   Errors.Singleton () (fun () -> "Expected Relation field to be a RelationRef in iterator source")
                   |> reader.Throw
             | Value.Query q ->
-              let! values, db = runQuery true q
+              let! values, db = runQuery true queryRunAdapter q
               return it.Var, values, db
             | _ ->
               return!
@@ -467,6 +480,16 @@ module MutableMemoryDB =
         ValueExt<'runtimeContext, MutableMemoryDB<'runtimeContext, 'customExt>, 'customExt>
        >
     =
+    let queryRunAdapter =
+      { GetDbFromEntityRef =
+          fun entity_ref ->
+            let _, (db: MutableMemoryDB<_, _>), _, _ = entity_ref
+            db
+        GetDbFromRelationRef =
+          fun relation_ref ->
+            let _, (db: MutableMemoryDB<_, _>), _, _, _, _ = relation_ref
+            db }
+
     let actual_lookup
       (
         schema: Schema<_>,
@@ -506,7 +529,8 @@ module MutableMemoryDB =
 
         let source_id = v
 
-        let! targets = entity_values_restricted_by_can_read (schema, db, target_entity_ref, schema_value)
+        let! targets =
+          entity_values_restricted_by_can_read (schema, db, target_entity_ref, schema_value) queryRunAdapter
 
         let target_ids =
           source_to_targets |> Map.tryFind source_id |> Option.defaultValue Set.empty
@@ -535,7 +559,9 @@ module MutableMemoryDB =
       RunQuery =
         fun query range ->
           reader {
-            let! (values, _db) = runQuery true query |> Reader.mapError (Errors.MapContext(replaceWith ()))
+            let! (values, _db) =
+              runQuery true queryRunAdapter query
+              |> Reader.mapError (Errors.MapContext(replaceWith ()))
 
             match range with
             | None -> return values |> Seq.toList
@@ -726,7 +752,7 @@ module MutableMemoryDB =
       GetById =
         fun entity_ref entityId ->
           reader {
-            let! entityMap = entity_values_restricted_by_can_read entity_ref
+            let! entityMap = entity_values_restricted_by_can_read entity_ref queryRunAdapter
 
             let! value =
               entityMap
@@ -741,7 +767,7 @@ module MutableMemoryDB =
       GetMany =
         fun entity_ref (skip, take) ->
           reader {
-            let! entityMap = entity_values_restricted_by_can_read entity_ref
+            let! entityMap = entity_values_restricted_by_can_read entity_ref queryRunAdapter
 
             let values =
               entityMap |> Map.toSeq |> Seq.skip skip |> Seq.truncate take |> Seq.toList
