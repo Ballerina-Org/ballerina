@@ -1288,13 +1288,24 @@ export const dispatchDefaultValue =
               MapRepo.Operations.tryFirstWithError(
                 renderer.cases,
                 () => `union renderer has no cases`,
-              ).Then((firstCaseRenderer) =>
-                dispatchDefaultValue(
+              ).Then((firstCaseRenderer) => {
+                const defaultCase = renderer.cases.keySeq().first();
+
+                if (defaultCase == undefined)
+                  return ValueOrErrors.Default.throwOne(
+                    "No union case can be found",
+                  );
+
+                return dispatchDefaultValue(
                   injectedPrimitives,
                   types,
                   forms,
-                )(firstCaseType, firstCaseRenderer),
-              ),
+                )(firstCaseType, firstCaseRenderer).Then((result) =>
+                  ValueOrErrors.Operations.Return(
+                    PredicateValue.Default.unionCase(defaultCase, result),
+                  ),
+                );
+              }),
             );
       }
 
