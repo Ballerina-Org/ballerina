@@ -7,5 +7,6 @@ export const DispatchDeltaTransfer = {
   Default: {
     FromDelta: DispatchDeltaFromDTO,
     ToUpdater: DispatchDeltaToUpdater,
+    ToDelta: DispatchDeltaFromDTO,
   },
 };
