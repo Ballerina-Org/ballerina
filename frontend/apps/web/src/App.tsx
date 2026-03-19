@@ -16,6 +16,7 @@ import { DataDrivenFieldsApp } from "./DataDrivenFieldsApp";
 import { DispatcherFormsApp } from "./DispatcherFormsApp";
 import { DispatcherFormsAppTables } from "./DispatcherFormsAppTables.";
 import { TraversalDispatchTest } from "./TraversalDispatchTest";
+import { DispatcherFormsAppReferences } from "./DispatcherFormsAppReferences";
 
 function App(props: {
   app:
@@ -23,12 +24,14 @@ function App(props: {
     | "forms"
     | "data-driven-fields"
     | "dispatcher-forms"
+    | "dispatcher-forms-references"
     | "dispatcher-forms-tables"
     | "traversal-dispatch-test";
 }) {
   if (props.app == "forms") return FormsApp({});
   if (props.app == "data-driven-fields") return DataDrivenFieldsApp({});
   if (props.app == "dispatcher-forms") return DispatcherFormsApp({});
+  if (props.app == "dispatcher-forms-references") return DispatcherFormsAppReferences({});
   if (props.app == "dispatcher-forms-tables")
     return DispatcherFormsAppTables({});
   if (props.app == "traversal-dispatch-test") return TraversalDispatchTest({});
