@@ -1563,15 +1563,15 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         );
       }
 
-      if (props.context.customFormState.stream.kind === "l") {
-        console.error("stream incorrectly provided for readonly referenceOne");
-        return (
-          <>
-            <h2>{props.context.label}</h2>
-            <>Error: stream incorrectly provided for readonly referenceOne</>
-          </>
-        );
-      }
+      // if (props.context.customFormState.stream.kind === "l") {
+      //   console.error("stream incorrectly provided for readonly referenceOne");
+      //   return (
+      //     <>
+      //       <h2>{props.context.label}</h2>
+      //       <>Error: stream incorrectly provided for readonly referenceOne</>
+      //     </>
+      //   );
+      // }
 
       return (
         <div
