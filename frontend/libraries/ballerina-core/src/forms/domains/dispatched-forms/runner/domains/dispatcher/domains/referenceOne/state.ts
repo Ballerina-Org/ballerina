@@ -147,7 +147,7 @@ export const ReferenceOneDispatcher = {
                             ..._,
                             getApi,
                             fromApiParser: dispatcherContext.parseFromApiByType(
-                              renderer.type.previewType,
+                              renderer.type.detailsType,
                             ),
                             type: renderer.type,
                           }))
