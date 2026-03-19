@@ -415,4 +415,22 @@ module FileDB =
       LookupMaybe = lookupMaybe directory extension memoryDbOps
       LookupOne = lookupOne directory extension memoryDbOps
       LookupMany = lookupMany directory extension memoryDbOps
-      RunQuery = memoryDbOps.RunQuery }
+      RunQuery =
+        fun query range ->
+          reader {
+            let! fileManager = makeFileManager directory extension
+            let! currentDb = fileManager.GetContent() |> reader.OfSum
+
+            let queryRunAdapter =
+              { GetDbFromEntityRef = fun _ -> currentDb
+                GetDbFromRelationRef = fun _ -> currentDb }
+
+            let! (values, _db) =
+              runQuery true queryRunAdapter query
+              |> Reader.mapError (Errors.MapContext(replaceWith ()))
+
+            match range with
+            | None -> return values |> Seq.toList
+            | Some(skip, take) -> return values |> Seq.skip skip |> Seq.truncate take |> Seq.toList
+
+          } }

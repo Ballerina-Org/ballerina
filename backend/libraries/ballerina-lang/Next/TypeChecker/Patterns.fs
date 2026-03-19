@@ -226,8 +226,8 @@ module Patterns =
       }
 
     static member tryFindResolvedIdentifier
-      (v: TypeSymbol, loc: Location)
-      : Reader<ResolvedIdentifier, TypeCheckState<'valueExt>, Errors<Location>> =
+      (v: TypeSymbol, loc: 'err_ctx)
+      : Reader<ResolvedIdentifier, TypeCheckState<'valueExt>, Errors<'err_ctx>> =
       reader {
         let! ctx = reader.GetContext()
 
