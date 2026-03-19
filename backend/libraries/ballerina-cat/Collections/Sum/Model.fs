@@ -1,4 +1,4 @@
-﻿namespace Ballerina.Collections.Sum
+namespace Ballerina.Collections.Sum
 
 [<AutoOpen>]
 module Model =
@@ -8,6 +8,14 @@ module Model =
   type Sum<'a, 'b> =
     | Left of 'a
     | Right of 'b
+
+    static member fromNullable<'value, 'error when 'value: not null and 'value: not struct>
+      (rightPlaceholder: unit -> 'error)
+      (value: 'value | null)
+      : Sum<'value, 'error> =
+      match value with
+      | null -> Right(rightPlaceholder ())
+      | v -> Left v
 
     static member map<'a, 'b, 'c>(f: 'a -> 'c) : Sum<'a, 'b> -> Sum<'c, 'b> =
       function
