@@ -17,14 +17,9 @@ import { BaseFlags } from "../../../deltas/delta-to-dto/state";
 export const initializeOne = <
   CustomPresentationContext = Unit,
   ExtraContext = Unit,
->() => {
-  console.debug("initializeOne");
-
-  return InitializeCo<CustomPresentationContext, ExtraContext>()
+>() => InitializeCo<CustomPresentationContext, ExtraContext>()
     .GetState()
     .then((current) => {
-      console.debug("initializing one", current.domNodeAncestorPath);
-
       const maybeId = OneAbstractRendererState.Operations.GetIdFromContext(
         current,
       ).MapErrors((_) =>
@@ -50,15 +45,6 @@ export const initializeOne = <
               current
                 .fromApiParser(value.value)
                 .Then((result) => {
-                  if (
-                    current.domNodeAncestorPath.includes(
-                      "InvoicePositionAccountingRows",
-                    )
-                  ) {
-                    console.group("InvoicePositionAccountingRows");
-                    console.debug("one content", result);
-                    console.groupEnd();
-                  }
                   const updater = replaceWith<ValueOption | ValueUnit>(
                     ValueOption.Default.some(result),
                   );
@@ -103,4 +89,3 @@ export const initializeOne = <
           ),
         );
     });
-};
