@@ -30,12 +30,9 @@ export const initializeOneRunner = <
   >(initializeOne<CustomPresentationContext, ExtraContext>(), {
     interval: 15,
     runFilter: (props) =>
-      // if the value is some, we already have something to pass to the renderers
-      // -> we don't have to run the initialization coroutine
-      // if the inner value is unit, we are rendering a partial one
-      props.context.value.kind === "option" &&
-      !props.context.value.isSome &&
-      props.context.getApi != undefined,
+      OneAbstractRendererState.Operations.ShouldRunInitialization(
+        props.context,
+      ),
   });
 
 export const initializeStreamRunner = <
