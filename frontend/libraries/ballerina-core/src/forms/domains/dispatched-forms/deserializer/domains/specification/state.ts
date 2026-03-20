@@ -108,29 +108,26 @@ export const Specification = {
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
       explicitLookupTypes?: List<DispatchTypeName>,
     ): ValueOrErrors<Map<DispatchTypeName, DispatchParsedType<T>>, string> => {
-      const parsedLauncherTypes = launcherTypes.reduce(
-        (acc, rawTypeName) => {
-          if (acc.has(rawTypeName)) {
-            return acc;
-          }
-          const res = DispatchParsedType.Operations.ParseRawType(
-            rawTypeName,
-            serializedTypes[rawTypeName],
-            serializedTypes,
-            acc,
-            injectedPrimitives,
-          );
-          return res.kind == "errors"
-            ? acc.set(rawTypeName, res)
-            : res.value[1].set(
-                rawTypeName,
-                ValueOrErrors.Default.return<DispatchParsedType<T>, string>(
-                  res.value[0],
-                ),
-              );
-        },
-        Map<DispatchTypeName, ValueOrErrors<DispatchParsedType<T>, string>>(),
-      );
+      const parsedLauncherTypes = launcherTypes.reduce((acc, rawTypeName) => {
+        if (acc.has(rawTypeName)) {
+          return acc;
+        }
+        const res = DispatchParsedType.Operations.ParseRawType(
+          rawTypeName,
+          serializedTypes[rawTypeName],
+          serializedTypes,
+          acc,
+          injectedPrimitives,
+        );
+        return res.kind == "errors"
+          ? acc.set(rawTypeName, res)
+          : res.value[1].set(
+              rawTypeName,
+              ValueOrErrors.Default.return<DispatchParsedType<T>, string>(
+                res.value[0],
+              ),
+            );
+      }, Map<DispatchTypeName, ValueOrErrors<DispatchParsedType<T>, string>>());
 
       const withExplicitLookupTypes = (
         explicitLookupTypes ?? List<DispatchTypeName>()
