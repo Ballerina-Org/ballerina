@@ -8,17 +8,20 @@ export type TableAbstractRendererPendingAddOperation = {
   id: PendingAddOperationId;
   record: ValueRecord;
   editsToApply: List<PendingEdit<any>>;
+  flags: any;
 };
 export const TableAbstractRendererPendingAddOperation = {
   Default: (
     idx: number,
     id: PendingAddOperationId,
     record: ValueRecord,
+    flags: any,
   ): TableAbstractRendererPendingAddOperation => ({
     idx,
     id,
     record,
     editsToApply: List(),
+    flags,
   }),
   Updaters: {
     Core: {

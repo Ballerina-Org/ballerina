@@ -1029,12 +1029,12 @@ export const DispatchDeltaFromDTO =
             Discriminator: "TableAddBatchEmpty",
             AddBatchEmpty: delta.count,
           },
-          `[TableAddBatchEmpty][${delta.uniqueTableIdentifier}][${delta.count}]`,
+          `[TableAddBatchEmpty][${delta.uniqueTableIdentifier}]`,
           delta.flags
             ? [
                 [
                   delta.flags,
-                  `[TableAddBatchEmpty][${delta.uniqueTableIdentifier}][${delta.count}]`,
+                  `[TableAddBatchEmpty][${delta.uniqueTableIdentifier}]`,
                 ],
               ]
             : [],

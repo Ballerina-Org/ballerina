@@ -735,12 +735,11 @@ export const DispatchDeltaTransferOperations = {
     delta !== null &&
     "Discriminator" in delta &&
     typeof delta.Discriminator === "string" &&
-    (
-      (() => {
-        const match = /^Tuple\d+Item(\d+)$/.exec(delta.Discriminator);
-        return match != null && Object.keys(delta).includes(`Item${match[1]}`);
-    })()),
-isTableValue: (
+    (() => {
+      const match = /^Tuple\d+Item(\d+)$/.exec(delta.Discriminator);
+      return match != null && Object.keys(delta).includes(`Item${match[1]}`);
+    })(),
+  isTableValue: (
     delta: unknown,
   ): delta is {
     Discriminator: "TableValue";

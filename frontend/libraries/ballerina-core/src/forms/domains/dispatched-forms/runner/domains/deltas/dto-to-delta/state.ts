@@ -131,10 +131,7 @@ export const DispatchDeltaDTOToDelta =
     ): ValueOrErrors<DispatchDelta<Flags>, string> => {
       if (type.kind == "lookup" && resolveLookupType != undefined) {
         return resolveLookupType(type.name).Then((resolvedType) => {
-          if (
-            resolvedType.kind == "lookup" &&
-            resolvedType.name == type.name
-          ) {
+          if (resolvedType.kind == "lookup" && resolvedType.name == type.name) {
             return ValueOrErrors.Default.throwOne<DispatchDelta<Flags>, string>(
               `Unable to resolve lookup type ${type.name}`,
             );
@@ -617,12 +614,12 @@ export const DispatchDeltaDTOToDelta =
         }
         return rec(caseType, deltaDTO[rawCaseName] ?? deltaDTO[caseName]).Then(
           (value) =>
-          ValueOrErrors.Default.return<DispatchDelta<Flags>, string>(
-            withCommon({
-              kind: "UnionCase",
-              caseName: [caseName, value],
-            }),
-          ),
+            ValueOrErrors.Default.return<DispatchDelta<Flags>, string>(
+              withCommon({
+                kind: "UnionCase",
+                caseName: [caseName, value],
+              }),
+            ),
         );
       }
       if (DispatchDeltaTransferOperations.isTupleReplace(deltaDTO)) {
@@ -740,6 +737,7 @@ export const DispatchDeltaDTOToDelta =
           withCommon({
             kind: "TableRemove",
             id: deltaDTO.RemoveAt,
+            uniqueTableIdentifier: "",
           }),
         );
       }
