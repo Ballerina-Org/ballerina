@@ -17,7 +17,8 @@ import { BaseFlags } from "../../../deltas/delta-to-dto/state";
 export const initializeOne = <
   CustomPresentationContext = Unit,
   ExtraContext = Unit,
->() => InitializeCo<CustomPresentationContext, ExtraContext>()
+>() =>
+  InitializeCo<CustomPresentationContext, ExtraContext>()
     .GetState()
     .then((current) => {
       const maybeId = OneAbstractRendererState.Operations.GetIdFromContext(

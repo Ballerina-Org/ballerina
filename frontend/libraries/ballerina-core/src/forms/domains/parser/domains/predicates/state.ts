@@ -708,7 +708,7 @@ export const PredicateValue = {
   Operations: {
     ToJS: (value: PredicateValue): object => {
       const toJS = PredicateValue.Operations.ToJS;
-      
+
       if (PredicateValue.Operations.IsPrimitive(value)) {
         return {
           kind: "primitive",
