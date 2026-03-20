@@ -14,17 +14,56 @@ module Extension =
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
 
-  let Int32Extension<'ext>
+  let Int32Extension<'runtimeContext, 'ext>
     (operationLens: PartialLens<'ext, Int32Operations<'ext>>)
-    : OperationsExtension<'ext, Int32Operations<'ext>> =
+    : OperationsExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
 
     let boolTypeValue = TypeValue.CreatePrimitive PrimitiveType.Bool
     let int32TypeValue = TypeValue.CreatePrimitive PrimitiveType.Int32
+    let stringTypeValue = TypeValue.CreatePrimitive PrimitiveType.String
+
+    let int32ToStringId =
+      Identifier.FullyQualified([ "int32" ], "toString")
+      |> TypeCheckScope.Empty.Resolve
+
+    let toStringOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
+      int32ToStringId,
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(int32TypeValue, stringTypeValue), Kind.Star, Int32Operations.String)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | Int32Operations.String -> Some(Int32Operations.String)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> Int32Operations.AsToString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsInt32
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.String(v |> string))
+            } }
 
     let int32PlusId =
       Identifier.FullyQualified([ "int32" ], "+") |> TypeCheckScope.Empty.Resolve
 
-    let plusOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let plusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32PlusId,
       { PublicIdentifiers =
           Some
@@ -70,7 +109,7 @@ module Extension =
     let int32MinusId =
       Identifier.FullyQualified([ "int32" ], "-") |> TypeCheckScope.Empty.Resolve
 
-    let minusOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let minusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32MinusId,
       { PublicIdentifiers =
           Some
@@ -117,7 +156,7 @@ module Extension =
     let int32TimesId =
       Identifier.FullyQualified([ "int32" ], "*") |> TypeCheckScope.Empty.Resolve
 
-    let timesOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let timesOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32TimesId,
       { PublicIdentifiers =
           Some
@@ -164,7 +203,7 @@ module Extension =
     let int32DivideId =
       Identifier.FullyQualified([ "int32" ], "/") |> TypeCheckScope.Empty.Resolve
 
-    let divideOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let divideOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32DivideId,
       { PublicIdentifiers =
           Some
@@ -210,7 +249,7 @@ module Extension =
     let int32PowerId =
       Identifier.FullyQualified([ "int32" ], "**") |> TypeCheckScope.Empty.Resolve
 
-    let powerOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let powerOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32PowerId,
       { PublicIdentifiers =
           Some
@@ -257,7 +296,7 @@ module Extension =
     let int32ModId =
       Identifier.FullyQualified([ "int32" ], "%") |> TypeCheckScope.Empty.Resolve
 
-    let modOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let modOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32ModId,
       { PublicIdentifiers =
           Some
@@ -303,7 +342,7 @@ module Extension =
     let int32EqualId =
       Identifier.FullyQualified([ "int32" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32EqualId,
       { PublicIdentifiers =
           Some
@@ -349,7 +388,7 @@ module Extension =
     let int32NotEqualId =
       Identifier.FullyQualified([ "int32" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32NotEqualId,
       { PublicIdentifiers =
           Some
@@ -395,7 +434,7 @@ module Extension =
     let int32GreaterThanId =
       Identifier.FullyQualified([ "int32" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32GreaterThanId,
       { PublicIdentifiers =
           Some
@@ -442,7 +481,8 @@ module Extension =
     let int32GreaterThanOrEqualId =
       Identifier.FullyQualified([ "int32" ], ">=") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let greaterThanOrEqualOperation
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32GreaterThanOrEqualId,
       { PublicIdentifiers =
           Some
@@ -489,7 +529,7 @@ module Extension =
     let int32LessThanId =
       Identifier.FullyQualified([ "int32" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let lessThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32LessThanId,
       { PublicIdentifiers =
           Some
@@ -535,7 +575,7 @@ module Extension =
     let int32LessThanOrEqualId =
       Identifier.FullyQualified([ "int32" ], "<=") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Int32Operations<'ext>> =
+    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32LessThanOrEqualId,
       { PublicIdentifiers =
           Some
@@ -580,7 +620,8 @@ module Extension =
 
     { TypeVars = []
       Operations =
-        [ plusOperation
+        [ toStringOperation
+          plusOperation
           minusOperation
           timesOperation
           divideOperation

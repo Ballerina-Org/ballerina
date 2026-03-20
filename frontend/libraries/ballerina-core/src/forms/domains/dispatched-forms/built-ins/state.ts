@@ -28,7 +28,6 @@ import {
   DispatchTableApiSources,
   ValueOption,
   BasicUpdater,
-  DispatchDelta,
   Option,
   CommonAbstractRendererState,
   EnumMultiselectAbstractRendererView,
@@ -52,6 +51,7 @@ import {
   ValueSumN,
   ValueFilterNotEqualsTo,
 } from "../../../../../main";
+import { DispatchDelta } from "../runner/domains/deltas/dispatch-delta/state";
 import {
   DispatchParsedType,
   DispatchTypeName,
@@ -153,11 +153,12 @@ type RawUnion = {
   fields: Record<string, any>;
 };
 
-type Table = {
-  data: Map<string, Record<string, any>>;
+type Table<Row> = {
+  data: Map<string, Row>;
   hasMoreValues: boolean;
   from: number;
   to: number;
+  defaultRow: Row;
 };
 
 export const DispatchGenericTypes = [
@@ -197,7 +198,7 @@ type BuiltInApiConverters = {
   Sum: ApiConverter<Sum<any, any>>;
   SumN: ApiConverter<ValueSumN>;
   SumUnitDate: ApiConverter<Sum<Unit, Date>>;
-  Table: ApiConverter<Table>;
+  Table: ApiConverter<Table<any>>;
   One: ApiConverter<ValueOption>;
   ReadOnly: ApiConverter<any>;
   Contains: ApiConverter<ValueFilterContains>;
@@ -1287,20 +1288,37 @@ export const dispatchDefaultValue =
               MapRepo.Operations.tryFirstWithError(
                 renderer.cases,
                 () => `union renderer has no cases`,
-              ).Then((firstCaseRenderer) =>
-                dispatchDefaultValue(
+              ).Then((firstCaseRenderer) => {
+                const defaultCase = renderer.cases.keySeq().first();
+
+                if (defaultCase == undefined)
+                  return ValueOrErrors.Default.throwOne(
+                    "No union case can be found",
+                  );
+
+                return dispatchDefaultValue(
                   injectedPrimitives,
                   types,
                   forms,
-                )(firstCaseType, firstCaseRenderer),
-              ),
+                )(firstCaseType, firstCaseRenderer).Then((result) =>
+                  ValueOrErrors.Operations.Return(
+                    PredicateValue.Default.unionCase(defaultCase, result),
+                  ),
+                );
+              }),
             );
       }
 
       if (t.kind == "table") {
         return renderer.kind == "tableRenderer"
           ? ValueOrErrors.Default.return(
-              PredicateValue.Default.table(0, 0, Map(), false),
+              PredicateValue.Default.table(
+                0,
+                0,
+                Map(),
+                false,
+                ValueRecord.Default.empty(),
+              ),
             )
           : ValueOrErrors.Default.throwOne(
               `received non table renderer kind "${renderer.kind}" when resolving defaultValue for table`,
@@ -1542,6 +1560,7 @@ export const dispatchFromAPIRawValue =
                 converterResult.to,
                 converterResult.hasMoreValues,
                 OrderedMap(values),
+                converterResult.defaultRow,
               ),
             ),
           ),

@@ -57,6 +57,11 @@ module Patterns =
       | Kind.Star -> sum.Return()
       | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Expected star kind, got {kind})"))
 
+    static member AsQueryRow(kind: Kind) =
+      match kind with
+      | Kind.QueryRow -> sum.Return()
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Expected query row kind, got {kind})"))
+
     static member AsSchema(kind: Kind) =
       match kind with
       | Kind.Schema -> sum.Return()
@@ -155,6 +160,12 @@ module Patterns =
           typeExprSource = NoSourceMapping "TimeSpan"
           typeCheckScopeSource = TypeCheckScope.Empty }
 
+    static member CreateVector() : TypeValue<'valueExt> =
+      TypeValue.Primitive
+        { value = PrimitiveType.Vector
+          typeExprSource = NoSourceMapping "Vector"
+          typeCheckScopeSource = TypeCheckScope.Empty }
+
     static member CreatePrimitive(v: PrimitiveType) : TypeValue<'valueExt> =
       match v with
       | PrimitiveType.Unit -> TypeValue.CreateUnit()
@@ -169,6 +180,7 @@ module Patterns =
       | PrimitiveType.DateTime -> TypeValue.CreateDateTime()
       | PrimitiveType.DateOnly -> TypeValue.CreateDateOnly()
       | PrimitiveType.TimeSpan -> TypeValue.CreateTimeSpan()
+      | PrimitiveType.Vector -> TypeValue.CreateVector()
 
     static member CreateLambda(v: TypeParameter, t: TypeExpr<'valueExt>) : TypeValue<'valueExt> =
       TypeValue.Lambda
@@ -219,13 +231,6 @@ module Patterns =
         { value = v
           typeExprSource = NoSourceMapping "Set"
           typeCheckScopeSource = TypeCheckScope.Empty }
-
-    static member CreateMap(v: TypeValue<'valueExt> * TypeValue<'valueExt>) : TypeValue<'valueExt> =
-      TypeValue.Map
-        { value = v
-          typeExprSource = NoSourceMapping "Map"
-          typeCheckScopeSource = TypeCheckScope.Empty }
-
 
     static member CreateSchema(v: Schema<'valueExt>) : TypeValue<'valueExt> = TypeValue.Schema v
 
@@ -281,6 +286,8 @@ module Patterns =
         { typeExprSource = NoSourceMapping "Application"
           value = v
           typeCheckScopeSource = TypeCheckScope.Empty }
+
+    static member CreateQueryTypeFunction() : TypeValue<'valueExt> = TypeValue.QueryTypeFunction
 
     static member CreateImported(v: ImportedTypeValue<'valueExt>) : TypeValue<'valueExt> = TypeValue.Imported v
 
@@ -445,17 +452,6 @@ module Patterns =
             |> sum.Throw
       }
 
-    static member AsMap(t: TypeValue<'valueExt>) =
-      sum {
-        match t with
-        | TypeValue.Map v -> return v
-        | _ ->
-          return!
-            (fun () -> $"Error: expected map type (ie generic), got {t})")
-            |> Errors.Singleton()
-            |> sum.Throw
-      }
-
     static member AsSet(t: TypeValue<'valueExt>) =
       sum {
         match t with
@@ -544,6 +540,28 @@ module Patterns =
             |> sum.Throw
       }
 
+    static member AsQueryTypeFunction(t: TypeValue<'valueExt>) =
+      sum {
+        match t with
+        | TypeValue.QueryTypeFunction -> return ()
+        | _ ->
+          return!
+            (fun () -> $"Error: expected query type function, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
+      }
+
+    static member AsQueryRow(t: TypeValue<'valueExt>) =
+      sum {
+        match t with
+        | TypeValue.QueryRow q -> return q
+        | _ ->
+          return!
+            (fun () -> $"Error: expected query row type, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
+      }
+
     static member DropSourceMapping(t: TypeValue<'valueExt>) =
       match t with
       | TypeValue.Var id -> TypeValue.Var id
@@ -558,7 +576,6 @@ module Patterns =
       | TypeValue.Union v -> TypeValue.CreateUnion v.value
       | TypeValue.Sum v -> TypeValue.CreateSum v.value
       | TypeValue.Set v -> TypeValue.CreateSet v.value
-      | TypeValue.Map v -> TypeValue.CreateMap v.value
       | TypeValue.Schema v -> TypeValue.CreateSchema v
       | TypeValue.Entities v -> TypeValue.CreateEntities v
       | TypeValue.Relations v -> TypeValue.CreateRelations v
@@ -570,11 +587,13 @@ module Patterns =
       | TypeValue.RelationLookupMany(s, f', t_id, target_id) -> TypeValue.CreateLookupMany(s, f', t_id, target_id)
       | TypeValue.ForeignKeyRelation(s, rn, f, f', f_id, t, t', t_id) ->
         TypeValue.CreateForeignKeyRelation(s, rn, f, f', f_id, t, t', t_id)
+      | TypeValue.QueryRow q -> TypeValue.QueryRow q
+      | TypeValue.QueryTypeFunction -> TypeValue.CreateQueryTypeFunction()
 
     static member SetSourceMapping(t: TypeValue<'valueExt>, source: TypeExprSourceMapping<'valueExt>) =
       match t with
-      | TypeValue.Var _ -> t
-      | TypeValue.Lookup _ -> t
+      | TypeValue.Var _
+      | TypeValue.Lookup _
       | TypeValue.Imported _ -> t
       | TypeValue.Primitive(p: WithSourceMapping<PrimitiveType, 'valueExt>) ->
         WithSourceMapping.Setters.Source(p, source) |> TypeValue.Primitive
@@ -586,7 +605,6 @@ module Patterns =
       | TypeValue.Union v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Union
       | TypeValue.Sum v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Sum
       | TypeValue.Set v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Set
-      | TypeValue.Map v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Map
       | TypeValue.Schema _
       | TypeValue.Entities _
       | TypeValue.Relations _
@@ -595,7 +613,35 @@ module Patterns =
       | TypeValue.RelationLookupOne _
       | TypeValue.RelationLookupMany _
       | TypeValue.Relation _
-      | TypeValue.ForeignKeyRelation _ -> t
+      | TypeValue.ForeignKeyRelation _
+      | TypeValue.QueryTypeFunction
+      | TypeValue.QueryRow _ -> t
+
+    static member GetSourceMapping(t: TypeValue<'valueExt>) : TypeExprSourceMapping<'valueExt> =
+      match t with
+      | TypeValue.Var _
+      | TypeValue.Lookup _
+      | TypeValue.Imported _ -> TypeExprSourceMapping<'valueExt>.NoSourceMapping ""
+      | TypeValue.Primitive(p: WithSourceMapping<PrimitiveType, 'valueExt>) -> p.typeExprSource
+      | TypeValue.Application v -> v.typeExprSource
+      | TypeValue.Lambda v -> v.typeExprSource
+      | TypeValue.Arrow v -> v.typeExprSource
+      | TypeValue.Record v -> v.typeExprSource
+      | TypeValue.Tuple v -> v.typeExprSource
+      | TypeValue.Union v -> v.typeExprSource
+      | TypeValue.Sum v -> v.typeExprSource
+      | TypeValue.Set v -> v.typeExprSource
+      | TypeValue.Schema _
+      | TypeValue.Entities _
+      | TypeValue.Relations _
+      | TypeValue.Entity _
+      | TypeValue.RelationLookupOption _
+      | TypeValue.RelationLookupOne _
+      | TypeValue.RelationLookupMany _
+      | TypeValue.Relation _
+      | TypeValue.ForeignKeyRelation _
+      | TypeValue.QueryTypeFunction
+      | TypeValue.QueryRow _ -> TypeExprSourceMapping<'valueExt>.NoSourceMapping ""
 
   type TypeValue<'valueExt> with
     member t.AsExpr: TypeExpr<'valueExt> = TypeExpr.FromTypeValue t
@@ -667,10 +713,6 @@ module Patterns =
         | TypeExpr.Sum(fields) ->
           let! variants = fields |> List.map (!) |> sum.All
           return TypeValue.CreateSum variants
-        | TypeExpr.Map(key, value) ->
-          let! key = !key
-          let! value = !value
-          return TypeValue.CreateMap(key, value)
         | TypeExpr.Set(element) ->
           let! element = !element
           return TypeValue.CreateSet element
@@ -748,17 +790,6 @@ module Patterns =
             |> sum.Throw
       }
 
-    static member AsMap(t: TypeExpr<'valueExt>) =
-      sum {
-        match t with
-        | TypeExpr.Map(key, value) -> return (key, value)
-        | _ ->
-          return!
-            (fun () -> $"Error: expected map type, got {t}")
-            |> Errors.Singleton()
-            |> sum.Throw
-      }
-
     static member AsLambda(t: TypeExpr<'valueExt>) =
       sum {
         match t with
@@ -799,6 +830,17 @@ module Patterns =
         | _ ->
           return!
             (fun () -> $"Error: expected type application, got {t}")
+            |> Errors.Singleton()
+            |> sum.Throw
+      }
+
+    static member AsFromQueryRow(t: TypeExpr<'valueExt>) =
+      sum {
+        match t with
+        | TypeExpr.FromQueryRow -> return ()
+        | _ ->
+          return!
+            (fun () -> $"Error: expected type FromQueryRow, got {t}")
             |> Errors.Singleton()
             |> sum.Throw
       }
@@ -914,3 +956,64 @@ module Patterns =
       match p with
       | PrimitiveType.DateOnly -> sum.Return()
       | _ -> sum.Throw(Errors.Singleton () (fun () -> $"Expected DateOnly primitive type, got {p}"))
+
+  type ExprQueryExpr<'T, 'Id, 'valueExt when 'Id: comparison> with
+    static member Create loc expr =
+      { ExprQueryExpr.Location = loc
+        Expr = expr }
+
+  type TypeQueryRow<'valueExt> with
+    static member AsPrimaryKey(t: TypeQueryRow<'valueExt>) =
+      sum {
+        match t with
+        | TypeQueryRow.PrimaryKey pk -> return pk
+        | _ ->
+          return!
+            (fun () -> $"Error: expected primary key query row, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
+      }
+
+    static member AsJson(t: TypeQueryRow<'valueExt>) =
+      sum {
+        match t with
+        | TypeQueryRow.Json j -> return j
+        | _ ->
+          return!
+            (fun () -> $"Error: expected json query row, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
+      }
+
+    static member AsPrimitiveType(t: TypeQueryRow<'valueExt>) =
+      sum {
+        match t with
+        | TypeQueryRow.PrimitiveType(p, isNullable) -> return (p, isNullable)
+        | _ ->
+          return!
+            (fun () -> $"Error: expected primitive type query row, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
+      }
+
+    static member AsTuple(t: TypeQueryRow<'valueExt>) =
+      sum {
+        match t with
+        | TypeQueryRow.Tuple items -> return items
+        | _ ->
+          return!
+            (fun () -> $"Error: expected tuple query row, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
+      }
+
+    static member AsRecord(t: TypeQueryRow<'valueExt>) =
+      sum {
+        match t with
+        | TypeQueryRow.Record fields -> return fields
+        | _ ->
+          return!
+            (fun () -> $"Error: expected record query row, got {t})")
+            |> Errors.Singleton()
+            |> sum.Throw
+      }

@@ -41,6 +41,7 @@ module TypeValueApply =
     (app: SymbolicTypeApplication<'valueExt>)
     : JsonValue =
     match app with
+    | SymbolicTypeApplication.FromQueryRow(q_row) -> JsonValue.Array [| Identifier.ToJson q_row |]
     | SymbolicTypeApplication.Lookup(f, a) -> JsonValue.Array [| Identifier.ToJson f; rootToJson a |]
     | SymbolicTypeApplication.Application(f, a) ->
       JsonValue.Array [| toJsonSymbolicTypeApplication rootToJson f; rootToJson a |]

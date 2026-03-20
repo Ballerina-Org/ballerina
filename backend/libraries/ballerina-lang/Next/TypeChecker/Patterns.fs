@@ -43,7 +43,9 @@ module Patterns =
             Type = None }
         TypeVariables = Map.empty
         TypeParameters = Map.empty
-        Values = Map.empty }
+        Values = Map.empty
+        BackgroundHooksExtraScope = Map.empty
+        PermissionHooksExtraScope = Map.empty }
 
     static member Updaters =
       {| Scope = fun u (c: TypeCheckContext<'valueExt>) -> { c with Scope = c.Scope |> u }
@@ -55,7 +57,15 @@ module Patterns =
           fun u (c: TypeCheckContext<'valueExt>) ->
             { c with
                 TypeParameters = c.TypeParameters |> u }
-         Values = fun u (c: TypeCheckContext<'valueExt>) -> { c with Values = c.Values |> u } |}
+         Values = fun u (c: TypeCheckContext<'valueExt>) -> { c with Values = c.Values |> u }
+         BackgroundHooksExtraScope =
+          fun u (c: TypeCheckContext<'valueExt>) ->
+            { c with
+                BackgroundHooksExtraScope = c.BackgroundHooksExtraScope |> u }
+         PermissionHooksExtraScope =
+          fun u (c: TypeCheckContext<'valueExt>) ->
+            { c with
+                PermissionHooksExtraScope = c.PermissionHooksExtraScope |> u } |}
 
     static member FromInstantiateContext<'ve when 've: comparison>
       (ctx: TypeInstantiateContext<'ve>)
@@ -63,7 +73,9 @@ module Patterns =
       { Scope = ctx.Scope
         TypeVariables = ctx.TypeVariables
         TypeParameters = ctx.TypeParameters
-        Values = ctx.Values }
+        Values = ctx.Values
+        BackgroundHooksExtraScope = ctx.BackgroundHooksExtraScope
+        PermissionHooksExtraScope = ctx.PermissionHooksExtraScope }
 
     static member tryFindTypeVariable
       (v: string, loc: Location)
@@ -214,8 +226,8 @@ module Patterns =
       }
 
     static member tryFindResolvedIdentifier
-      (v: TypeSymbol, loc: Location)
-      : Reader<ResolvedIdentifier, TypeCheckState<'valueExt>, Errors<Location>> =
+      (v: TypeSymbol, loc: 'err_ctx)
+      : Reader<ResolvedIdentifier, TypeCheckState<'valueExt>, Errors<'err_ctx>> =
       reader {
         let! ctx = reader.GetContext()
 
@@ -352,14 +364,18 @@ module Patterns =
         Scope = ctx.Scope
         TypeVariables = ctx.TypeVariables
         TypeParameters = ctx.TypeParameters
-        Values = ctx.Values }
+        Values = ctx.Values
+        BackgroundHooksExtraScope = ctx.BackgroundHooksExtraScope
+        PermissionHooksExtraScope = ctx.PermissionHooksExtraScope }
 
-    static member Empty =
+    static member Empty: TypeInstantiateContext<'valueExt> =
       { VisitedVars = Set.empty
         Scope = TypeCheckScope.Empty
         TypeVariables = Map.empty
         TypeParameters = Map.empty
-        Values = Map.empty }
+        Values = Map.empty
+        BackgroundHooksExtraScope = Map.empty
+        PermissionHooksExtraScope = Map.empty }
 
     static member Updaters =
       {| VisitedVars =
@@ -375,7 +391,15 @@ module Patterns =
             { ctx with
                 TypeVariables = f ctx.TypeVariables }
          Scope = fun f (ctx: TypeInstantiateContext<'valueExt>) -> { ctx with Scope = f ctx.Scope }
-         Values = fun f (ctx: TypeInstantiateContext<'valueExt>) -> { ctx with Values = f ctx.Values } |}
+         Values = fun f (ctx: TypeInstantiateContext<'valueExt>) -> { ctx with Values = f ctx.Values }
+         BackgroundHooksExtraScope =
+          fun f (ctx: TypeInstantiateContext<'valueExt>) ->
+            { ctx with
+                BackgroundHooksExtraScope = f ctx.BackgroundHooksExtraScope }
+         PermissionHooksExtraScope =
+          fun f (ctx: TypeInstantiateContext<'valueExt>) ->
+            { ctx with
+                PermissionHooksExtraScope = f ctx.PermissionHooksExtraScope } |}
 
   type TypeCheckState<'valueExt when 'valueExt: comparison> with
     // static member ToInstantiationContext

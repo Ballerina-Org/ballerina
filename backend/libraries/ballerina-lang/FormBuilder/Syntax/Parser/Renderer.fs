@@ -238,15 +238,51 @@ module Parser =
         $"Invalid option pattern matching cases: {string firstCase}, {string secondCase}. Expected {string Choice1} or {string Choice2}.")
     )
 
+  and parseListAction () =
+    parser {
+      let! loc = parser.Location
+
+      let! action =
+        parser.Any(
+          [ returnKeyword Add
+            returnKeyword Remove
+            returnKeyword Clear
+            returnKeyword Move
+            returnKeyword Duplicate ]
+        )
+
+      match action.Token with
+      | Keyword Add -> return ListAction.Add
+      | Keyword Remove -> return ListAction.Remove
+      | Keyword Clear -> return ListAction.Clear
+      | Keyword Move -> return ListAction.Move
+      | Keyword Duplicate -> return ListAction.Duplicate
+      | _ -> return! parser.Throw(Errors.Singleton loc (fun () -> $"Invalid list action: {action.Token}"))
+    }
+
+  and parseListActions (k: Keyword) =
+    parser {
+      do! keyword k
+      let! first = parseListAction ()
+      let! rest = parser.Many(parseListAction ())
+      return first :: rest |> Set.ofList
+    }
+
   and parseList () =
     parser {
       do! keyword List
       let! rendererName = parseRendererDef ()
+
+      let! actions =
+        parser.Try(parseListActions Keyword.With)
+        |> parser.Map(Sum.toOption >> Option.defaultValue Set.empty)
+
       let! elementRenderer = parseRenderer ()
 
       return
         { List = RendererIdentifier rendererName
           Element = elementRenderer
+          Actions = actions
           Type = Unchecked }
     }
   and parseReferenceOne () =

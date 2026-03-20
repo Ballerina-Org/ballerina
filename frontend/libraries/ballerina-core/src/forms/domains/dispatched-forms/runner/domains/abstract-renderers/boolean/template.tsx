@@ -5,16 +5,15 @@ import {
 } from "./state";
 import { Template } from "../../../../../../../template/state";
 import {
-  DispatchDelta,
   IdWrapperProps,
   PredicateValue,
   ErrorRendererProps,
   Option,
   Unit,
-  StringSerializedType,
 } from "../../../../../../../../main";
 import { replaceWith } from "../../../../../../../../main";
 import { BoolAbstractRendererState } from "./state";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const BoolAbstractRenderer = <
   CustomPresentationContext = Unit,

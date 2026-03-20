@@ -1,11 +1,9 @@
 import {
-  DispatchDelta,
   IdWrapperProps,
   PredicateValue,
   ErrorRendererProps,
   Option,
   Unit,
-  StringSerializedType,
 } from "../../../../../../../../main";
 import { replaceWith, Template } from "../../../../../../../../main";
 import {
@@ -14,6 +12,7 @@ import {
   Base64FileAbstractRendererState,
   Base64FileAbstractRendererView,
 } from "./state";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const Base64FileAbstractRenderer = <
   CustomPresentationContext = Unit,

@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ballerina_lang_dto</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../libraries/ballerina-lang/Next/ballerina-lang.fsproj" />
+    <ProjectReference Include="../../libraries/ballerina-lang/Next/Serialization/ballerina-lang-serialization.fsproj" />
+    <ProjectReference Include="../../libraries/ballerina-memorydb/ballerina-memorydb.fsproj" />
+  </ItemGroup>
+</Project>

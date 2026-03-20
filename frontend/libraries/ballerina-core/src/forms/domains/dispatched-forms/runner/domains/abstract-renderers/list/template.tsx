@@ -1,6 +1,5 @@
 import {
   DispatchCommonFormState,
-  DispatchDelta,
   IdWrapperProps,
   ListRepo,
   MapRepo,
@@ -27,6 +26,7 @@ import {
   ListAbstractRendererState,
   ListAbstractRendererView,
 } from "./state";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const ListAbstractRenderer = <
   T extends DispatchParsedType<T>,
@@ -98,6 +98,7 @@ export const ListAbstractRenderer = <
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               preprocessedSpecContext: _.preprocessedSpecContext,
               usePreprocessor: _.usePreprocessor,
+              preventOneInitialization: _.preventOneInitialization,
             };
           },
         )
@@ -207,6 +208,7 @@ export const ListAbstractRenderer = <
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               preprocessedSpecContext: _.preprocessedSpecContext,
               usePreprocessor: _.usePreprocessor,
+              preventOneInitialization: _.preventOneInitialization,
             };
           },
         )

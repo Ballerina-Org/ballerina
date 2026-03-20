@@ -65,6 +65,11 @@ module Lexer =
     | Unlinked
     | Element
     | ReferenceOne
+    | Add
+    | Remove
+    | Clear
+    | Move
+    | Duplicate
 
     override this.ToString() : string =
       match this with
@@ -119,6 +124,11 @@ module Lexer =
       | Unlinked -> "unlinked"
       | Element -> "element"
       | ReferenceOne -> "referenceOne"
+      | Add -> "add"
+      | Remove -> "remove"
+      | Clear -> "clear"
+      | Move -> "move"
+      | Duplicate -> "duplicate"
 
   type Operator =
     | Colon
@@ -261,7 +271,13 @@ module Lexer =
             word (Linked.ToString()) |> tokenizer.Map(LocalizedToken.FromKeyword Linked)
             word (Unlinked.ToString()) |> tokenizer.Map(LocalizedToken.FromKeyword Unlinked)
             word (Element.ToString()) |> tokenizer.Map(LocalizedToken.FromKeyword Element)
-            word (ReferenceOne.ToString()) |> tokenizer.Map(LocalizedToken.FromKeyword ReferenceOne) ]
+            word (ReferenceOne.ToString()) |> tokenizer.Map(LocalizedToken.FromKeyword ReferenceOne) 
+            word (Add.ToString()) |> tokenizer.Map(LocalizedToken.FromKeyword Add)
+            word (Remove.ToString()) |> tokenizer.Map(LocalizedToken.FromKeyword Remove)
+            word (Clear.ToString()) |> tokenizer.Map(LocalizedToken.FromKeyword Clear)
+            word (Move.ToString()) |> tokenizer.Map(LocalizedToken.FromKeyword Move)
+            word (Duplicate.ToString())
+            |> tokenizer.Map(LocalizedToken.FromKeyword Duplicate) ]
 
       do!
         tokenizer.Lookahead(

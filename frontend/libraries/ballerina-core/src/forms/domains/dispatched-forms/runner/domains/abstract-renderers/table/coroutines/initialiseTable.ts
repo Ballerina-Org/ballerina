@@ -1,6 +1,4 @@
 import {
-  BaseFlags,
-  DispatchDelta,
   DispatchParsedType,
   DispatchTableApiSource,
   Option,
@@ -14,6 +12,8 @@ import {
 import { replaceWith } from "../../../../../../../../fun/domains/updater/domains/replaceWith/state";
 import { InfiniteLoaderCo as Co } from "./builder";
 import { TableLoadWithRetries } from "./loadWithRetries";
+import { DispatchDelta } from "../../../deltas/dispatch-delta/state";
+import { BaseFlags } from "../../../deltas/delta-to-dto/state";
 
 export const InitialiseTable = <
   CustomPresentationContext = Unit,
@@ -72,6 +72,7 @@ export const InitialiseTable = <
                           res.value.to,
                           res.value.hasMoreValues,
                           res.value.data,
+                          res.value.defaultRow,
                         ),
                       );
                       // Only needed as a delta is mandatory for onchange but it is ignored upstream

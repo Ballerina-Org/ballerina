@@ -16,10 +16,10 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open FSharp.Data
 
-  let GuidExtension<'ext, 'extDTO when 'extDTO: not null and 'extDTO: not struct>
+  let GuidExtension<'runtimeContext, 'ext, 'extDTO when 'extDTO: not null and 'extDTO: not struct>
     (operationLens: PartialLens<'ext, GuidOperations<'ext>>)
     // : TypeExtension<'ext, GuidConstructors, PrimitiveValue, GuidOperations<'ext>> =
-    : OperationsExtension<'ext, GuidOperations<'ext>> =
+    : OperationsExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
 
     let boolTypeValue = TypeValue.CreatePrimitive PrimitiveType.Bool
     let guidTypeValue = TypeValue.CreatePrimitive PrimitiveType.Guid
@@ -33,7 +33,7 @@ module Extension =
     let guidEqualId =
       Identifier.FullyQualified([ "guid" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, GuidOperations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
       guidEqualId,
       { PublicIdentifiers =
           Some
@@ -80,7 +80,7 @@ module Extension =
     let guidNotEqualId =
       Identifier.FullyQualified([ "guid" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, GuidOperations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
       guidNotEqualId,
       { PublicIdentifiers =
           Some
@@ -127,7 +127,7 @@ module Extension =
     let guidNewId = Identifier.FullyQualified([ "guid" ], "new")
     let guidNewId = guidNewId |> TypeCheckScope.Empty.Resolve
 
-    let guidNew: ResolvedIdentifier * OperationExtension<'ext, GuidOperations<'ext>> =
+    let guidNew: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
       guidNewId,
       { PublicIdentifiers =
           Some
@@ -160,7 +160,7 @@ module Extension =
     let guidV4Id = Identifier.FullyQualified([ "guid" ], "v4")
     let guidV4Id = guidV4Id |> TypeCheckScope.Empty.Resolve
 
-    let guidV4: ResolvedIdentifier * OperationExtension<'ext, GuidOperations<'ext>> =
+    let guidV4: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
       guidV4Id,
       { PublicIdentifiers =
           Some

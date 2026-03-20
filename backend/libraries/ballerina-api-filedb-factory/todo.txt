@@ -1,0 +1,11 @@
+[x] Data structure to represent schema metadata.
+[x] API to publish a schema
+  [x] Generate procedural file name given tenant id and schema name.
+  [x] Write schema metadata to file (with procedural name including version and tenant).
+[x] Implement db factory
+  [x] Create language context from stdlib.
+  [x] Implement descriptor fetcher.
+    [x] Read schema metadata from file.
+    [x] Eval the program and return it from the fetcher.
+[x] New file db type class.
+[x] Playground to run the application.

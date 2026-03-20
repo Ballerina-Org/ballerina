@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="MemoryDB.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../ballerina-stdlib/ballerina-stdlib.fsproj" />
+    <ProjectReference Include="../ballerina-cat/ballerina-cat.fsproj" />
+    <ProjectReference Include="../ballerina-lang/Next/ballerina-lang.fsproj" />
+    <ProjectReference Include="../ballerina-lang/Next/Serialization/ballerina-lang-serialization.fsproj" />
+  </ItemGroup>
+</Project>

@@ -31,6 +31,7 @@ module Let =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckLet<'valueExt when 'valueExt: comparison>
+      (query_type_symbol, mk_query_type)
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
       : TypeChecker<ExprLet<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
@@ -51,7 +52,7 @@ module Let =
           let! x_type =
             var_type
             |> Option.map (
-              TypeExpr.Eval () typeCheckExpr None loc0
+              TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr None loc0
               >> Expr<'T, 'Id, 'valueExt>.liftTypeEval
             )
             |> state.RunOption

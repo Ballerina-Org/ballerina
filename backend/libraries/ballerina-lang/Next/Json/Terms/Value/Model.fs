@@ -50,4 +50,5 @@ module Value =
       | Value.Var v -> Value.ToJsonVar v |> reader.Return
       | Value.Lambda(a, b, _closure, _) -> Value.ToJsonLambda a b
       | Value.TypeLambda(a, b) -> Value.ToJsonTypeLambda a b
+      | Value.Query q -> reader.Throw(Errors.Singleton () (fun () -> $"Query parsing not yet implemented: {q}"))
       | Value.Ext(e, _) -> reader.Throw(Errors.Singleton () (fun () -> $"Extension parsing not yet implemented: {e}"))

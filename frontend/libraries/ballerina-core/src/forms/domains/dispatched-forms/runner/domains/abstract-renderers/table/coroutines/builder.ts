@@ -29,3 +29,16 @@ export const InfiniteLoaderCo = <
       Pick<TableAbstractRendererForeignMutationsExpected, "onChange">,
     TableAbstractRendererState
   >();
+
+export const PendingOperationsCo = <
+  CustomPresentationContext = Unit,
+  ExtraContext = Unit,
+>() =>
+  CoTypedFactory<
+    TableAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > &
+      Pick<TableAbstractRendererForeignMutationsExpected, "onChange">,
+    TableAbstractRendererState
+  >();

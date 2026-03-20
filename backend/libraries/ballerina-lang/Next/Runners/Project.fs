@@ -22,6 +22,11 @@ module Project =
   type ProjectBuildConfiguration =
     { Files: NonEmptyList<FileBuildConfiguration> }
 
+  and FileTypeCheckedOutput<'valueExt when 'valueExt: comparison> =
+    { File: FileBuildConfiguration
+      Expr: Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>
+      TypeValue: TypeValue<'valueExt> }
+
   and FileName = { Path: string }
 
   and Checksum =
@@ -35,12 +40,14 @@ module Project =
   and FileBuildConfiguration =
     { FileName: FileName
       Content: Unit -> string
-      Checksum: Checksum }
+      Checksum: Checksum
+      RequireUnitTermination: bool }
 
     static member FromFile(fileName: string, fileContent: string) =
       { FileName = { Path = fileName }
         Content = fun () -> fileContent
-        Checksum = Checksum.Compute fileContent }
+        Checksum = Checksum.Compute fileContent
+        RequireUnitTermination = true }
 
   and ProjectCache<'valueExt when 'valueExt: comparison> =
     { Fold:
@@ -90,6 +97,15 @@ module Project =
     (cache: BuildCache<'valueExt>)
     (ctx0: TypeCheckContext<'valueExt>, st0: TypeCheckState<'valueExt>)
     : ProjectCache<'valueExt> =
+    let validateTerminatedByConstantUnit
+      (file: FileBuildConfiguration)
+      (expr: Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>)
+      : Sum<unit, Errors<Location>> =
+      expr
+      |> Expr.AsTerminatedByConstantUnit
+      |> sum.MapError(Errors.MapContext(replaceWith (Location.Initial file.FileName.Path)))
+      |> sum.WithErrorContext(fun () -> $"...while validating {file.FileName.Path} is terminated by constant unit")
+
     let processFile
       (typeCheck:
         FileBuildConfiguration * int
@@ -102,7 +118,7 @@ module Project =
       (prevChecksums: List<Checksum>)
       (ctx: TypeCheckContext<'valueExt>)
       (st: TypeCheckState<'valueExt>)
-      (file: FileBuildConfiguration, index: int)
+      (file: FileBuildConfiguration, index: int, isLastFile: bool)
       : Sum<
           (Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeValue<'valueExt>) *
           TypeCheckContext<'valueExt> *
@@ -114,12 +130,22 @@ module Project =
 
       match cached_entry with
       | Some(checksum, checksums, expr, typeValue, ctx', st') when checksum = file.Checksum && prevChecksums = checksums ->
-        Console.WriteLine $"Cache hit for {file.FileName.Path}"
-        Left((expr, typeValue), ctx', st')
+        sum {
+          Console.WriteLine $"Cache hit for {file.FileName.Path}"
+
+          if file.RequireUnitTermination && not isLastFile then
+            do! validateTerminatedByConstantUnit file expr
+
+          return (expr, typeValue), ctx', st'
+        }
       | _ ->
         sum {
           let! (expr, typeValue), st_ctx' = typeCheck (file, index) |> State.Run((), (ctx, st)) |> sum.MapError fst
           let ctx', st' = st_ctx' |> Option.defaultValue (ctx, st)
+
+          if file.RequireUnitTermination && not isLastFile then
+            do! validateTerminatedByConstantUnit file expr
+
           do cache.Set file.FileName (file.Checksum, prevChecksums, expr, typeValue, ctx', st')
 
           // do Console.WriteLine $"Cache miss for {file.FileName.Path}"
@@ -140,8 +166,11 @@ module Project =
                   TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
                   Errors<Location>
                  >) ->
-          files
-          |> NonEmptyList.mapi (fun i file -> file, i)
+          let filesWithOrder =
+            files
+            |> NonEmptyList.mapi (fun i file -> file, i, i = (NonEmptyList.length files - 1))
+
+          filesWithOrder
           |> NonEmptyList.fold
             (fun
                  (acc:
@@ -152,19 +181,19 @@ module Project =
                      TypeCheckState<'valueExt>,
                      Errors<Location>
                     >)
-                 ((file, index): FileBuildConfiguration * int) ->
+                 ((file, index, isLastFile): FileBuildConfiguration * int * bool) ->
               sum {
                 let! prevExprs, prevChecksums, ctx, st = acc
-                let! exprWithType, ctx', st' = processFile typeCheck prevChecksums ctx st (file, index)
+                let! exprWithType, ctx', st' = processFile typeCheck prevChecksums ctx st (file, index, isLastFile)
 
                 NonEmptyList.OfList(exprWithType, NonEmptyList.ToList prevExprs),
                 file.Checksum :: prevChecksums,
                 ctx',
                 st'
               })
-            (fun (file, index) ->
+            (fun (file, index, isLastFile) ->
               sum {
-                let! exprWithType, ctx', st' = processFile typeCheck [] ctx0 st0 (file, index)
+                let! exprWithType, ctx', st' = processFile typeCheck [] ctx0 st0 (file, index, isLastFile)
                 NonEmptyList.One exprWithType, [ file.Checksum ], ctx', st'
               })
           |> sum.Map(fun (exprs, _, ctx, st) -> exprs, ctx, st) }
@@ -259,6 +288,61 @@ It could be because the cache structure is outdated, and is expected in such cas
     abstract_build_cache hddCache (ctx0, st0)
 
   type ProjectBuildConfiguration with
+    static member BuildCachedWithFileOutputs<'valueExt when 'valueExt: comparison>
+      (query_type_symbol: TypeSymbol)
+      (mk_query_type: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>)
+      (cache: ProjectCache<'valueExt>)
+      (project: ProjectBuildConfiguration)
+      : Sum<
+          NonEmptyList<FileTypeCheckedOutput<'valueExt>> * TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
+          Errors<Location>
+         >
+      =
+      sum {
+        let! expressionsWithTypes, finalContext, finalState =
+          cache.Fold project.Files (fun (file, _index) ->
+            state {
+              let! ParserResult(program, _) =
+                file
+                |> ProjectBuildConfiguration.ParseFile
+                |> sum.WithErrorContext(fun () -> $"...while parsing {file.FileName.Path}")
+                |> state.OfSum
+
+              let! ctx, st = state.GetState()
+              let typeCheckerStopwatch = System.Diagnostics.Stopwatch.StartNew()
+
+              let! (typeCheckedExpr, typeValue, _, ctx'), st' =
+                Expr.TypeCheck (query_type_symbol, mk_query_type) None program
+                |> State.Run(ctx, st)
+                |> sum.MapError fst
+                |> sum.WithErrorContext(fun () -> $"...while typechecking {file.FileName.Path}")
+                |> state.OfSum
+
+              let st' = st' |> Option.defaultValue st
+              do! state.SetState(replaceWith (ctx', st'))
+
+              do typeCheckerStopwatch.Stop()
+
+              typeCheckedExpr, typeValue
+            })
+
+        let expressionsWithTypesInOrder =
+          expressionsWithTypes |> NonEmptyList.rev |> NonEmptyList.ToList
+
+        let filesInOrder = project.Files |> NonEmptyList.ToList
+
+        let fileOutputs =
+          List.zip filesInOrder expressionsWithTypesInOrder
+          |> List.map (fun (file, (expr, typeValue)) ->
+            { File = file
+              Expr = expr
+              TypeValue = typeValue })
+
+        match fileOutputs with
+        | outputHead :: outputTail -> return NonEmptyList.OfList(outputHead, outputTail), finalContext, finalState
+        | [] -> return! sum.Throw(Errors.Singleton Location.Unknown (fun () -> "Expected at least one file output"))
+      }
+
     static member ParseFile<'valueExt when 'valueExt: comparison>
       (file: FileBuildConfiguration)
       : Sum<
@@ -286,7 +370,7 @@ It could be because the cache structure is outdated, and is expected in such cas
           |> sum.MapError fst
 
         do parserStopwatch.Stop()
-        do Console.WriteLine $"Parsed {file.FileName.Path}\nin {parserStopwatch.ElapsedMilliseconds} ms"
+        // do Console.WriteLine $"Parsed {file.FileName.Path}\nin {parserStopwatch.ElapsedMilliseconds} ms"
 
         // match parserResult with
         // | ParserResult(program, _) -> do Console.WriteLine $"Parsed program is\n{program}\n"
@@ -295,6 +379,8 @@ It could be because the cache structure is outdated, and is expected in such cas
       }
 
     static member BuildCached<'valueExt when 'valueExt: comparison>
+      (query_type_symbol: TypeSymbol)
+      (mk_query_type: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>)
       (cache: ProjectCache<'valueExt>)
       (project: ProjectBuildConfiguration)
       : Sum<
@@ -307,43 +393,13 @@ It could be because the cache structure is outdated, and is expected in such cas
       =
 
       sum {
-        let! expressionsWithTypes, finalContext, finalState =
-          cache.Fold project.Files (fun (file, index) ->
-            state {
-              let! ParserResult(program, _) = file |> ProjectBuildConfiguration.ParseFile |> state.OfSum
+        let! fileOutputs, finalContext, finalState =
+          ProjectBuildConfiguration.BuildCachedWithFileOutputs query_type_symbol mk_query_type cache project
 
-              let! ctx, st = state.GetState()
-              let typeCheckerStopwatch = System.Diagnostics.Stopwatch.StartNew()
+        let expressions = fileOutputs |> NonEmptyList.map _.Expr
 
-              let! (typeCheckedExpr, typeValue, _, ctx'), st' =
-                Expr.TypeCheck () None program
-                |> State.Run(ctx, st)
-                |> sum.MapError fst
-                |> state.OfSum
+        let lastTypeValue =
+          fileOutputs |> NonEmptyList.ToList |> List.last |> (fun x -> x.TypeValue)
 
-              do
-                Console.WriteLine
-                  $"Typechecked {file.FileName.Path}:\n{typeValue}\nin {typeCheckerStopwatch.ElapsedMilliseconds} ms"
-
-              let st' = st' |> Option.defaultValue st
-              do! state.SetState(replaceWith (ctx', st'))
-
-              do typeCheckerStopwatch.Stop()
-
-              if index <> (NonEmptyList.ToList project.Files).Length - 1 then
-                do!
-                  typeCheckedExpr
-                  |> Expr.AsTerminatedByConstantUnit
-                  |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
-                  |> state.OfSum
-
-              typeCheckedExpr, typeValue
-            })
-
-        let expressionsWithTypesReversed = expressionsWithTypes |> NonEmptyList.rev
-        let expressions = expressionsWithTypesReversed |> NonEmptyList.map fst
-
-        let lastTypeValue = expressionsWithTypes.Head |> snd
-
-        expressions, lastTypeValue, finalContext, finalState
+        return expressions, lastTypeValue, finalContext, finalState
       }

@@ -1,12 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>Ballerina.Lang.Tests</RootNamespace>
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
   </PropertyGroup>
-
   <ItemGroup>
     <!-- <Compile Include="Parser/Common.fs" />
     <Compile Include="Parser/ExprType.fs" /> -->
@@ -14,6 +12,8 @@
     <Compile Include="Next/Type/Eval.fs" />
     <Compile Include="Next/Type/Unify.fs" />
     <Compile Include="Next/Type/Instantiate.fs" />
+    <Compile Include="Next/Type/Extraction.Tree.fs" />
+    <Compile Include="Next/Type/Extraction.Expr.fs" />
     <Compile Include="Next\Type\Json\Type_TypeValue_PrimitiveType.fs" />
     <Compile Include="Next\Type\Json\Type_TypeValue.fs" />
     <Compile Include="Next\Type\Json\Type.fs" />
@@ -25,9 +25,10 @@
     <Compile Include="Next\Project.fs" />
     <Compile Include="Next\Integration.fs" />
     <Compile Include="Next\V2ToV1Bridge\V2ToV1BridgeTests.fs" />
+    <Compile Include="Next\DTOs\Deltas.fs" />
+    <Compile Include="Next\SyntheticData\Generator.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
@@ -39,17 +40,14 @@
     <PackageReference Include="NUnit3TestAdapter" Version="6.1.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\libraries\ballerina-cat\ballerina-cat.fsproj" />
-    <ProjectReference
-      Include="..\..\libraries\ballerina-lang-stdlib-json\ballerina-lang-stdlib-json.fsproj" />
-    <ProjectReference
-      Include="..\..\libraries\ballerina-lang\Next\Models\ballerina-lang-models.fsproj" />
-    <ProjectReference Include="..\..\libraries\ballerina-lang\Next\Json\ballerina-lang-json.fsproj" />
-    <ProjectReference Include="..\..\libraries\ballerina-lang\Next\ballerina-lang.fsproj" />
-    <ProjectReference
-      Include="..\..\libraries\ballerina-lang\FormBuilder\V2ToV1Bridge\v2-to-v1-bridge.fsproj" />
-    <ProjectReference
-      Include="..\..\libraries\ballerina-lang\FormBuilder\Compiler\form-builder-lang-compiler.fsproj" />
+    <ProjectReference Include="../../libraries/ballerina-cat/ballerina-cat.fsproj" />
+    <ProjectReference Include="../../libraries/ballerina-lang-stdlib-json/ballerina-lang-stdlib-json.fsproj" />
+    <ProjectReference Include="../../libraries/ballerina-lang/Next/Models/ballerina-lang-models.fsproj" />
+    <ProjectReference Include="../../libraries/ballerina-lang/Next/Json/ballerina-lang-json.fsproj" />
+    <ProjectReference Include="../../libraries/ballerina-lang/Next/ballerina-lang.fsproj" />
+    <ProjectReference Include="../../libraries/ballerina-lang/FormBuilder/V2ToV1Bridge/v2-to-v1-bridge.fsproj" />
+    <ProjectReference Include="../../libraries/ballerina-lang/FormBuilder/Compiler/form-builder-lang-compiler.fsproj" />
+    <ProjectReference Include="../../libraries/ballerina-lang-synthetic-data/ballerina-lang-synthetic-data.fsproj" />
+    <ProjectReference Include="../../libraries/ballerina-memorydb/ballerina-memorydb.fsproj" />
   </ItemGroup>
-
 </Project>

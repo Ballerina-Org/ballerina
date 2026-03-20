@@ -29,13 +29,15 @@ module Lambda =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckLambda<'valueExt when 'valueExt: comparison>
+      (query_type_symbol, mk_query_type)
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
       : TypeChecker<ExprLambda<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
-          ({ Param = x
-             ParamType = t
-             Body = body }) ->
+          { Param = x
+            ParamType = t
+            Body = body
+            BodyType = bt } ->
         // let (!) = typeCheckExpr context_t
         let (=>) c e = typeCheckExpr c e
 
@@ -49,7 +51,15 @@ module Lambda =
             t
             |> Option.map (fun t ->
               t
-              |> TypeExpr.Eval () typeCheckExpr None loc0
+              |> TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr None loc0
+              |> Expr<'T, 'Id, 'valueExt>.liftTypeEval)
+            |> state.RunOption
+
+          let! bt =
+            bt
+            |> Option.map (fun bt ->
+              bt
+              |> TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr None loc0
               |> Expr<'T, 'Id, 'valueExt>.liftTypeEval)
             |> state.RunOption
 
@@ -80,8 +90,7 @@ module Lambda =
             match context_t with
             | Some(TypeValue.Arrow({ value = _, TypeValue.Var v })) when v.Synthetic -> None
             | Some(TypeValue.Arrow({ value = _, ret_t })) -> Some ret_t
-            | _ -> None
-
+            | _ -> bt |> Option.map fst
 
           let! body, t_body, body_k, _ =
             body_constraint_t => body
@@ -91,12 +100,21 @@ module Lambda =
 
           do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
 
+          do!
+            match bt with
+            | Some(t_bt, _) -> TypeValue.Unify(loc0, t_bt, t_body) |> Expr<'T, 'Id, 'valueExt>.liftUnification
+            | None -> state { return () }
+
           let! t_x =
             var_type
             |> fst
-            |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
             |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
-          // let! t_body = t_body |> TypeValue.Instantiate () (TypeExpr.Eval ()) loc0 |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
+
+          let! t_body =
+            t_body
+            |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
+            |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
           // do!
           //     UnificationState.DeleteVariable freshVar
@@ -105,9 +123,9 @@ module Lambda =
 
           let! t_res =
             TypeValue.CreateArrow(t_x, t_body)
-            |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
-          return Expr.Lambda(x, Some t_x, body, loc0, ctx.Scope), t_res, Kind.Star, ctx
+          return Expr.Lambda(x, Some t_x, body, Some t_body, loc0, ctx.Scope), t_res, Kind.Star, ctx
         }
 // |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `fun {x.Name} -> ...`"))

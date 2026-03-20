@@ -1,4 +1,4 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
 
 [<AutoOpen>]
 module TypeValue =
@@ -14,12 +14,14 @@ module TypeValue =
   type TypeValue<'valueExt> with
     static member FromJson(json: JsonValue) : Sum<TypeValue<'valueExt>, Errors<_>> =
 
+      let typeExprFromJson = TypeExpr.FromJsonWith TypeValue.FromJson
+
       let inline parse
         (fromJson: (JsonValue -> Sum<TypeValue<'valueExt>, Errors<_>>) -> JsonValue -> Sum<'v, Errors<_>>)
         (ctor: WithSourceMapping<'v, 'valueExt> -> TypeValue<'valueExt>)
         json
         =
-        WithSourceMapping.FromJson (fromJson TypeValue.FromJson) TypeExpr.FromJson json
+        WithSourceMapping.FromJson (fromJson TypeValue.FromJson) typeExprFromJson json
         |> sum.Map ctor
 
       sum.Any(
@@ -27,7 +29,7 @@ module TypeValue =
         [ TypeValue.FromJsonVar(json)
           TypeValue.FromJsonLookup(json)
           parse TypeValue.FromJsonArrow TypeValue.Arrow json
-          (WithSourceMapping.FromJson (TypeValue.FromJsonLambda TypeExpr.FromJson) TypeExpr.FromJson json
+          (WithSourceMapping.FromJson (TypeValue.FromJsonLambda typeExprFromJson) typeExprFromJson json
            |> sum.Map TypeValue.Lambda)
           parse TypeValue.FromJsonApplication TypeValue.Application json
           parse TypeValue.FromJsonRecord TypeValue.Record json
@@ -35,7 +37,6 @@ module TypeValue =
           parse TypeValue.FromJsonUnion TypeValue.Union json
           parse TypeValue.FromJsonSum TypeValue.Sum json
           parse TypeValue.FromJsonSet TypeValue.Set json
-          parse TypeValue.FromJsonMap TypeValue.Map json
           TypeValue.FromJsonImported TypeValue.FromJson json
           (fun () -> $"Unknown TypeValue JSON: {json.AsFSharpString.ReasonablyClamped}")
           |> Errors.Singleton()
@@ -45,8 +46,10 @@ module TypeValue =
       |> sum.MapError(Errors.HighestPriority)
 
     static member ToJson(v: TypeValue<'valueExt>) : JsonValue =
+      let typeExprToJson = TypeExpr.ToJsonWith TypeValue.ToJson
+
       let inline serialize makeJson mapping =
-        WithSourceMapping<_, _>.ToJson (makeJson TypeValue.ToJson) TypeExpr.ToJson mapping
+        WithSourceMapping<_, _>.ToJson (makeJson TypeValue.ToJson) typeExprToJson mapping
 
       match v with
       | TypeValue.Primitive primitive -> TypeValue.ToJsonPrimitive primitive.value
@@ -55,8 +58,8 @@ module TypeValue =
       | TypeValue.Arrow mapping -> serialize TypeValue.ToJsonArrow mapping
       | TypeValue.Lambda mapping ->
         WithSourceMapping<TypeParameter * TypeExpr<'valueExt>, 'valueExt>.ToJson
-          (TypeValue.ToJsonLambda TypeExpr.ToJson)
-          TypeExpr.ToJson
+          (TypeValue.ToJsonLambda typeExprToJson)
+          typeExprToJson
           mapping
       | TypeValue.Application mapping -> serialize TypeValue.ToJsonApplication mapping
       | TypeValue.Record mapping -> serialize TypeValue.ToJsonRecord mapping
@@ -64,7 +67,6 @@ module TypeValue =
       | TypeValue.Union mapping -> serialize TypeValue.ToJsonUnion mapping
       | TypeValue.Sum mapping -> serialize TypeValue.ToJsonSum mapping
       | TypeValue.Set mapping -> serialize TypeValue.ToJsonSet mapping
-      | TypeValue.Map mapping -> serialize TypeValue.ToJsonMap mapping
       | TypeValue.Imported i -> TypeValue.ToJsonImported TypeValue.ToJson i
       | TypeValue.Schema _ -> failwith "Schema ToJson not implemented"
       | TypeValue.Entity _ -> failwith "Schema Entity ToJson not implemented"
@@ -75,3 +77,5 @@ module TypeValue =
       | TypeValue.RelationLookupOne _ -> failwith "Schema LookupOne ToJson not implemented"
       | TypeValue.RelationLookupMany _ -> failwith "Schema LookupMany ToJson not implemented"
       | TypeValue.ForeignKeyRelation _ -> failwith "Schema ForeignKeyRelation ToJson not implemented"
+      | TypeValue.QueryTypeFunction -> failwith "QueryTypeFunction ToJson not implemented"
+      | TypeValue.QueryRow(_) -> failwith "QueryRow ToJson not implemented"

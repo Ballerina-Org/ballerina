@@ -45,58 +45,63 @@ module Eval =
     { Values: Map<ResolvedIdentifier, Value<TypeValue<'valueExtension>, 'valueExtension>>
       Symbols: ExprEvalContextSymbols }
 
-  type ExprEvalContext<'valueExtension> =
+  type ExprEvalContext<'runtimeContext, 'valueExtension> =
     { Scope: ExprEvalContextScope<'valueExtension>
-      ExtensionOps: ValueExtensionOps<'valueExtension> }
+      ExtensionOps: ValueExtensionOps<'runtimeContext, 'valueExtension>
+      RuntimeContext: 'runtimeContext }
 
-  and ApplicableExtEvalResult<'valueExtension> =
+  and ApplicableExtEvalResult<'runtimeContext, 'valueExtension> =
     (Location
       -> List<Expr<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>>
       -> 'valueExtension
       -> Value<TypeValue<'valueExtension>, 'valueExtension>
-      -> ExprEvaluator<'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
+      -> ExprEvaluator<'runtimeContext, 'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
 
-  and ExtEvalResult<'valueExtension> =
+  and ExtEvalResult<'runtimeContext, 'valueExtension> =
     | Result of Value<TypeValue<'valueExtension>, 'valueExtension>
-    | Async of Coroutine<ExtEvalResult<'valueExtension>, Unit, Unit, Unit, Errors<Location>>
+    | Async of Coroutine<ExtEvalResult<'runtimeContext, 'valueExtension>, Unit, Unit, Unit, Errors<Location>>
     | Applicable of
       (Value<TypeValue<'valueExtension>, 'valueExtension>
-        -> ExprEvaluator<'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
+        -> ExprEvaluator<'runtimeContext, 'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
     | TypeApplicable of
-      (TypeValue<'valueExtension> -> ExprEvaluator<'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
+      (TypeValue<'valueExtension>
+        -> ExprEvaluator<'runtimeContext, 'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
     | Matchable of
       (Map<ResolvedIdentifier, CaseHandler<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>>
-        -> ExprEvaluator<'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
+        -> ExprEvaluator<'runtimeContext, 'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
 
-  and ExtensionEvaluator<'valueExtension> =
+  and ExtensionEvaluator<'runtimeContext, 'valueExtension> =
     Location
       -> List<Expr<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>>
       -> 'valueExtension
-      -> ExprEvaluator<'valueExtension, ExtEvalResult<'valueExtension>>
+      -> ExprEvaluator<'runtimeContext, 'valueExtension, ExtEvalResult<'runtimeContext, 'valueExtension>>
 
-  and ValueExtensionOps<'valueExtension> =
-    { Eval: ExtensionEvaluator<'valueExtension>
-      Applicables: Map<ResolvedIdentifier, ApplicableExtEvalResult<'valueExtension>> }
+  and ValueExtensionOps<'runtimeContext, 'valueExtension> =
+    { Eval: ExtensionEvaluator<'runtimeContext, 'valueExtension>
+      Applicables: Map<ResolvedIdentifier, ApplicableExtEvalResult<'runtimeContext, 'valueExtension>> }
 
-  and ExprEvaluator<'valueExtension, 'res> = Reader<'res, ExprEvalContext<'valueExtension>, Errors<Location>>
+  and ExprEvaluator<'runtimeContext, 'valueExtension, 'res> =
+    Reader<'res, ExprEvalContext<'runtimeContext, 'valueExtension>, Errors<Location>>
 
-  type ExprEvalContext<'valueExtension> with
-    static member Empty: ExprEvalContext<'valueExtension> =
-      { Scope =
-          { Values = Map.empty
-            Symbols = ExprEvalContextSymbols.Empty }
-        ExtensionOps =
-          { Eval =
-              fun loc0 _ _ ->
-                (fun () -> $"Error: cannot evaluate empty extension")
-                |> Errors.Singleton loc0
-                |> reader.Throw
-            Applicables = Map.empty } }
+  type ExprEvalContext<'runtimeContext, 'valueExtension> with
+    static member Empty: 'runtimeContext -> ExprEvalContext<'runtimeContext, 'valueExtension> =
+      fun runtimeContext ->
+        { RuntimeContext = runtimeContext
+          Scope =
+            { Values = Map.empty
+              Symbols = ExprEvalContextSymbols.Empty }
+          ExtensionOps =
+            { Eval =
+                fun loc0 _ _ ->
+                  (fun () -> $"Error: cannot evaluate empty extension")
+                  |> Errors.Singleton loc0
+                  |> reader.Throw
+              Applicables = Map.empty } }
 
     static member WithTypeCheckingSymbols<'valueExtension>
-      (ctx: ExprEvalContext<'valueExtension>)
+      (ctx: ExprEvalContext<'runtimeContext, 'valueExtension>)
       (symbols: TypeExprEvalSymbols)
-      : ExprEvalContext<'valueExtension> =
+      : ExprEvalContext<'runtimeContext, 'valueExtension> =
       { ctx with
           Scope =
             { ctx.Scope with
@@ -104,23 +109,23 @@ module Eval =
                   ExprEvalContextSymbols.Append ctx.Scope.Symbols (ExprEvalContextSymbols.FromTypeChecker symbols) } }
 
     static member Getters =
-      {| Values = fun (c: ExprEvalContext<'valueExtension>) -> c.Scope.Values
-         ExtensionOps = fun (c: ExprEvalContext<'valueExtension>) -> c.ExtensionOps
-         Symbols = fun (c: ExprEvalContext<'valueExtension>) -> c.Scope.Symbols |}
+      {| Values = fun (c: ExprEvalContext<'runtimeContext, 'valueExtension>) -> c.Scope.Values
+         ExtensionOps = fun (c: ExprEvalContext<'runtimeContext, 'valueExtension>) -> c.ExtensionOps
+         Symbols = fun (c: ExprEvalContext<'runtimeContext, 'valueExtension>) -> c.Scope.Symbols |}
 
     static member Updaters =
       {| Values =
-          fun u (c: ExprEvalContext<'valueExtension>) ->
+          fun u (c: ExprEvalContext<'runtimeContext, 'valueExtension>) ->
             { c with
                 Scope =
                   { c.Scope with
                       Values = u (c.Scope.Values) } }
          ExtensionOps =
-          fun u (c: ExprEvalContext<'valueExtension>) ->
+          fun u (c: ExprEvalContext<'runtimeContext, 'valueExtension>) ->
             { c with
                 ExtensionOps = u (c.ExtensionOps) }
          Symbols =
-          fun u (c: ExprEvalContext<'valueExtension>) ->
+          fun u (c: ExprEvalContext<'runtimeContext, 'valueExtension>) ->
             { c with
                 Scope =
                   { c.Scope with
@@ -160,11 +165,14 @@ module Eval =
       }
 
     // NOTE: expressions are concatenated in the order of the input (the returned value is of the type of the last expression)
-    static member Eval<'valueExtension>
+    static member Eval<'runtimeContext, 'valueExtension>
       (NonEmptyList(e, rest): NonEmptyList<Expr<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>>)
-      : ExprEvaluator<'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>> =
-      let (!) = NonEmptyList.One >> Expr.Eval<'valueExtension>
-      let (!!) = fun e -> Expr.Eval<'valueExtension>(NonEmptyList(e, rest))
+      : ExprEvaluator<'runtimeContext, 'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>> =
+      let (!) = NonEmptyList.One >> Expr.Eval<'runtimeContext, 'valueExtension>
+
+      let (!!) =
+        fun e -> Expr.Eval<'runtimeContext, 'valueExtension>(NonEmptyList(e, rest))
+
       let loc0 = e.Location
 
       reader {
@@ -713,6 +721,100 @@ module Eval =
             |> reader.OfSum
 
           return relation_v
+        | ExprRec.Query q ->
+
+          let! iterators =
+            q.Iterators
+            |> NonEmptyList.map (fun iterator ->
+              reader {
+                let! sourceV = !iterator.Source
+
+                let! varType =
+                  iterator.VarType
+                  |> sum.OfOption(
+                    (fun () -> $"Error: {iterator.Var.Name} has no type")
+                    |> Errors.Singleton iterator.Source.Location
+                  )
+                  |> reader.OfSum
+
+                return
+                  { ValueQueryIterator.Location = iterator.Location
+                    Var = iterator.Var
+                    Source = sourceV
+                    VarType = varType }
+              })
+            |> reader.AllNonEmpty
+
+          let! ctx = reader.GetContext()
+
+          let closure =
+            ctx.Scope.Values |> Map.filter (fun k _ -> q.Closure |> Map.containsKey k)
+
+          let closure = closure |> Map.map (fun k v -> v, q.Closure.[k])
+
+          let rec replace_closure_lookups (e: ExprQueryExpr<_, _, _>) =
+            let (!) = replace_closure_lookups
+
+            match e.Expr with
+            | ExprQueryExprRec.QueryConstant _
+            | ExprQueryExprRec.QueryIntrinsic _ -> e
+            | ExprQueryExprRec.QueryTupleCons items ->
+              { e with
+                  Expr = ExprQueryExprRec.QueryTupleCons(items |> List.map (!)) }
+            | ExprQueryExprRec.QueryRecordDes(expr, field, isJson) ->
+              { e with
+                  Expr = ExprQueryExprRec.QueryRecordDes((!expr), field, isJson) }
+            | ExprQueryExprRec.QueryTupleDes(expr, item) ->
+              { e with
+                  Expr = ExprQueryExprRec.QueryTupleDes((!expr), item) }
+            | ExprQueryExprRec.QueryConditional(cond, ``then``, ``else``) ->
+              { e with
+                  Expr = ExprQueryExprRec.QueryConditional((!cond), (!``then``), (!``else``)) }
+            | ExprQueryExprRec.QueryUnionDes(expr, handlers) ->
+              { e with
+                  Expr =
+                    ExprQueryExprRec.QueryUnionDes(
+                      (!expr),
+                      handlers |> Map.map (fun _k handler -> { handler with Body = !handler.Body })
+                    ) }
+            | ExprQueryExprRec.QuerySumDes(expr, handlers) ->
+              { e with
+                  Expr =
+                    ExprQueryExprRec.QuerySumDes(
+                      (!expr),
+                      handlers |> Map.map (fun _k handler -> { handler with Body = !handler.Body })
+                    ) }
+            | ExprQueryExprRec.QueryApply(func, arg) ->
+              { e with
+                  Expr = ExprQueryExprRec.QueryApply((!func), (!arg)) }
+            | ExprQueryExprRec.QueryLookup(l) ->
+              match closure |> Map.tryFind l with
+              | None -> e
+              | Some(v, t) ->
+                { e with
+                    Expr = ExprQueryExprRec.QueryClosureValue(v, t) }
+            | ExprQueryExprRec.QueryClosureValue(_, _) -> e
+            | ExprQueryExprRec.QueryCastTo(e, t) ->
+              { e with
+                  Expr = ExprQueryExprRec.QueryCastTo(!e, t) }
+
+
+          let res: Value<_, _> =
+            Value.Query
+              { Iterators = iterators
+                Joins =
+                  q.Joins
+                  |> Option.map (
+                    NonEmptyList.map (fun join ->
+                      { join with
+                          Left = join.Left |> replace_closure_lookups })
+                  )
+                Where = q.Where |> Option.map replace_closure_lookups
+                Select = q.Select |> replace_closure_lookups
+                OrderBy = q.OrderBy |> Option.map (fun (v, dir) -> replace_closure_lookups v, dir)
+                DeserializeFrom = q.DeserializeFrom }
+
+          return res
         | _ ->
           return!
             (fun () -> $"Cannot eval expression {e}")

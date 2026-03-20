@@ -11,7 +11,6 @@ import {
   CoTypedFactory,
   Debounce,
   Debounced,
-  DispatchDelta,
   id,
   IdWrapperProps,
   InfiniteStreamLoader,
@@ -25,8 +24,8 @@ import {
   ErrorRendererProps,
   Option,
   Unit,
-  StringSerializedType,
 } from "../../../../../../../../main";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const InfiniteMultiselectDropdownFormAbstractRenderer = <
   CustomPresentationContext = Unit,

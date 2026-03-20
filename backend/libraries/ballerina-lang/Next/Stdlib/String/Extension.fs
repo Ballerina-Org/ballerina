@@ -15,20 +15,61 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open Ballerina
 
-  let StringExtension<'ext>
+  let StringExtension<'runtimeContext, 'ext>
     (operationLens: PartialLens<'ext, StringOperations<'ext>>)
-    : OperationsExtension<'ext, StringOperations<'ext>> =
+    : OperationsExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
 
     let int32TypeValue = TypeValue.CreateInt32()
     let boolTypeValue = TypeValue.CreateBool()
     let stringTypeValue = TypeValue.CreateString()
+    let unitTypeValue = TypeValue.CreateUnit()
 
+
+    let stringPrintId =
+      Identifier.FullyQualified([ "string" ], "print") |> TypeCheckScope.Empty.Resolve
+
+    let printOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
+      stringPrintId,
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(stringTypeValue, unitTypeValue), Kind.Star, StringOperations.Print)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | StringOperations.Print -> Some(StringOperations.Print)
+            | _ -> None)
+
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> StringOperations.AsPrint
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              do System.Console.WriteLine v
+
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Unit)
+            } }
 
     let stringLengthId =
       Identifier.FullyQualified([ "string" ], "length")
       |> TypeCheckScope.Empty.Resolve
 
-    let lengthOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let lengthOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
       stringLengthId,
       { PublicIdentifiers =
           Some
@@ -67,7 +108,7 @@ module Extension =
     let stringPlusId =
       Identifier.FullyQualified([ "string" ], "+") |> TypeCheckScope.Empty.Resolve
 
-    let plusOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let plusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
       stringPlusId,
       { PublicIdentifiers =
           Some
@@ -115,7 +156,7 @@ module Extension =
     let stringEqualId =
       Identifier.FullyQualified([ "string" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
       stringEqualId,
       { PublicIdentifiers =
           Some
@@ -161,7 +202,7 @@ module Extension =
     let stringNotEqualId =
       Identifier.FullyQualified([ "string" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
       stringNotEqualId,
       { PublicIdentifiers =
           Some
@@ -207,7 +248,7 @@ module Extension =
     let stringGreaterThanId =
       Identifier.FullyQualified([ "string" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
       stringGreaterThanId,
       { PublicIdentifiers =
           Some
@@ -253,7 +294,8 @@ module Extension =
     let stringGreaterThanOrEqualId =
       Identifier.FullyQualified([ "string" ], ">=") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let greaterThanOrEqualOperation
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
       stringGreaterThanOrEqualId,
       { PublicIdentifiers =
           Some
@@ -300,7 +342,7 @@ module Extension =
     let stringLessThanId =
       Identifier.FullyQualified([ "string" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let lessThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
       stringLessThanId,
       { PublicIdentifiers =
           Some
@@ -346,7 +388,7 @@ module Extension =
     let stringLessThanOrEqualId =
       Identifier.FullyQualified([ "string" ], "<=") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, StringOperations<'ext>> =
+    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
       stringLessThanOrEqualId,
       { PublicIdentifiers =
           Some
@@ -392,7 +434,8 @@ module Extension =
 
     { TypeVars = []
       Operations =
-        [ lengthOperation
+        [ printOperation
+          lengthOperation
           plusOperation
           equalOperation
           notEqualOperation

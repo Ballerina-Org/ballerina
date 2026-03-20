@@ -5,7 +5,6 @@ import {
   UnitAbstractRendererForeignMutationsExpected,
 } from "./state";
 import {
-  DispatchDelta,
   ErrorRendererProps,
   IdWrapperProps,
   PredicateValue,
@@ -13,8 +12,8 @@ import {
   Unit,
   Option,
   replaceWith,
-  StringSerializedType,
 } from "../../../../../../../../main";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const UnitAbstractRenderer = <
   CustomPresentationContext = Unit,

@@ -18,17 +18,27 @@ open Ballerina.DSL.Next.StdLib.List.Model
 open Ballerina.DSL.Next.StdLib.Map.Model
 open Ballerina.Cat.Collections.OrderedMap
 open Ballerina.Collections.NonEmptyList
+open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 
 let context = Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval.context
 
-let private run (program: string) =
+let _db_query_sym =
+  Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval._db_query_sym
 
-  let typeCheckResult = Expr.TypeCheckString context program
+let _make_db_query_type =
+  Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval._make_db_query_type
+
+type private ValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
+
+let private run (program: string) : Sum<(Value<TypeValue<ValueExt>, ValueExt> * TypeValue<ValueExt>), string> =
+
+  let typeCheckResult =
+    Expr.TypeCheckString (context, _db_query_sym, _make_db_query_type) program
 
   match typeCheckResult with
   | Left(program, typeValue, typeCheckFinalState) ->
 
-    let evalContext = context.ExprEvalContext
+    let evalContext = ExprEvalContext.Empty() |> context.ExprEvalContext
 
     let typeCheckedSymbols: ExprEvalContextSymbols =
       (typeCheckFinalState.Symbols) |> ExprEvalContextSymbols.FromTypeChecker
@@ -64,7 +74,12 @@ let ``LangNext-Integration let over int succeeds`` () =
   match actual with
   | Left(value, typeValue) ->
 
-    let expectedValue: Value<TypeValue<ValueExt>, ValueExt> = Primitive(Int32 10)
+    let expectedValue
+      : Value<
+          TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>,
+          ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
+         > =
+      Primitive(Int32 10)
 
     Assert.That(value, Is.EqualTo(expectedValue))
 
@@ -85,7 +100,12 @@ let ``LangNext-Integration let over decimal succeeds`` () =
   match actual with
   | Left(value, typeValue) ->
 
-    let expectedValue: Value<TypeValue<ValueExt>, ValueExt> = Primitive(Decimal 10.5M)
+    let expectedValue
+      : Value<
+          TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>,
+          ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
+         > =
+      Primitive(Decimal 10.5M)
 
     Assert.That(value, Is.EqualTo(expectedValue))
 
@@ -106,7 +126,12 @@ let ``LangNext-Integration let over bool succeeds`` () =
   match actual with
   | Left(value, typeValue) ->
 
-    let expectedValue: Value<TypeValue<ValueExt>, ValueExt> = Primitive(Bool true)
+    let expectedValue
+      : Value<
+          TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>,
+          ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
+         > =
+      Primitive(Bool true)
 
     Assert.That(value, Is.EqualTo(expectedValue))
 
@@ -127,7 +152,11 @@ let ``LangNext-Integration let over string succeeds`` () =
   match actual with
   | Left(value, typeValue) ->
 
-    let expectedValue: Value<TypeValue<ValueExt>, ValueExt> =
+    let expectedValue
+      : Value<
+          TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>,
+          ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
+         > =
       Primitive(String "Hello world!")
 
     Assert.That(value, Is.EqualTo(expectedValue))
@@ -148,7 +177,12 @@ let ``LangNext-Integration let over boolean expression succeeds`` () =
   match actual with
   | Left(value, typeValue) ->
 
-    let expectedValue: Value<TypeValue<ValueExt>, ValueExt> = Primitive(Bool false)
+    let expectedValue
+      : Value<
+          TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>,
+          ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
+         > =
+      Primitive(Bool false)
 
     Assert.That(value, Is.EqualTo(expectedValue))
 
@@ -462,7 +496,7 @@ in f true, f false
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Tuple [ Ext(ValueExt(Choice1Of6(_v1)), None); Ext(ValueExt(Choice1Of6(_v2)), None) ] -> Assert.Pass()
+    | Tuple [ Ext(ValueExt(Choice1Of7(_v1)), None); Ext(ValueExt(Choice1Of7(_v2)), None) ] -> Assert.Pass()
     | _ -> Assert.Fail($"Expected a tuple of two list values, got {value.AsFSharpString}")
 
   | Right e -> Assert.Fail($"Run failed: {e.AsFSharpString}")
@@ -485,15 +519,15 @@ in l,l1,l2,l3,l4
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Tuple [ Ext(ValueExt(Choice1Of6(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
+    | Tuple [ Ext(ValueExt(Choice1Of7(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
                                                                                              Value.Primitive(Int32 -2)
                                                                                              Value.Primitive(Int32 3) ]))),
                   _)
-              Ext(ValueExt(Choice1Of6(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Bool true)
+              Ext(ValueExt(Choice1Of7(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Bool true)
                                                                                              Value.Primitive(Bool false)
                                                                                              Value.Primitive(Bool true) ]))),
                   _)
-              Ext(ValueExt(Choice1Of6(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
+              Ext(ValueExt(Choice1Of7(ListExt.ListValues(StdLib.List.Model.ListValues.List [ Value.Primitive(Int32 1)
                                                                                              Value.Primitive(Int32 3) ]))),
                   _)
               Value.Primitive(Int32 2)
@@ -573,7 +607,7 @@ in List::append [string] l1 l2
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Ext(ValueExt(Choice1Of6(ListExt.ListValues(List.Model.ListValues.List [ Value.Primitive(String "hello")
+    | Ext(ValueExt(Choice1Of7(ListExt.ListValues(List.Model.ListValues.List [ Value.Primitive(String "hello")
                                                                               Value.Primitive(String " ")
                                                                               Value.Primitive(String "world")
                                                                               Value.Primitive(String "bonjour")
@@ -1040,7 +1074,7 @@ in match _ with
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Record _ ])))), None) ->
+    | Value.Ext(ValueExt.ValueExt(Choice1Of7(ListExt.ListValues(ListValues.List([ Value.Record _ ])))), None) ->
       Assert.Pass $"Correctly evaluated to a record"
     | _ -> Assert.Fail $"Expected a record, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
@@ -1069,7 +1103,7 @@ in match _ with
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Record _ ])))), None) ->
+    | Value.Ext(ValueExt.ValueExt(Choice1Of7(ListExt.ListValues(ListValues.List([ Value.Record _ ])))), None) ->
       Assert.Pass $"Correctly evaluated to a record"
     | _ -> Assert.Fail $"Expected a record, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
@@ -1165,9 +1199,9 @@ in singleton [int32] 10, singleton [bool] true
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Tuple [ Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Int32 10) ])))),
+    | Value.Tuple [ Value.Ext(ValueExt.ValueExt(Choice1Of7(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Int32 10) ])))),
                               None)
-                    Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ])))),
+                    Value.Ext(ValueExt.ValueExt(Choice1Of7(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ])))),
                               None) ] -> Assert.Pass $"Correctly evaluated to (10, true)"
     | _ -> Assert.Fail $"Expected a record, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
@@ -1188,9 +1222,9 @@ in singleton 10, singleton true
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Tuple [ Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Int32 10) ])))),
+    | Value.Tuple [ Value.Ext(ValueExt.ValueExt(Choice1Of7(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Int32 10) ])))),
                               None)
-                    Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ])))),
+                    Value.Ext(ValueExt.ValueExt(Choice1Of7(ListExt.ListValues(ListValues.List([ Value.Primitive(PrimitiveValue.Bool true) ])))),
                               None) ] -> Assert.Pass $"Correctly evaluated to (10, true)"
     | _ -> Assert.Fail $"Expected a record, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
@@ -1242,6 +1276,38 @@ in f x, getCount x, getCount y
                     Value.Primitive(PrimitiveValue.Int32 11) ] -> Assert.Pass $"Correctly evaluated to (110, 10, 11)"
     | _ -> Assert.Fail $"Expected a record, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
+
+[<Test>]
+let ``LangNextAllPrimitivesCanBeDeclaredAndInitialized`` () =
+  let program =
+    """
+let x:int32 = 10
+in let x:int32 = -10
+in let x:int64 = 10l
+in let x:int64 = -10l
+in let x:decimal = 10.01
+in let x:decimal = -10.01
+in let x:float32 = 10.0f
+in let x:float32 = -10.0f
+in let x:float64 = 10.0d
+in let x:float64 = -10.0d
+in let x:bool = true
+in let x:bool = false
+in let x:string = "abc"
+in let x:guid = guid::v4()
+in let x:()+guid = guid::new("")
+in let x:dateTime = dateTime::now()
+in let x:dateOnly = dateOnly::now()
+in let x:()+timeSpan = timeSpan::new("6:12:30:45")
+in x
+      """
+
+  let actual = program |> run
+
+  match actual with
+  | Left(_, _: TypeValue<ValueExt>) -> Assert.Pass("")
+  | Right e -> Assert.Fail $"Cannot compile: {e.AsFSharpString}"
+
 
 [<Test>]
 let ``LangNextIntegrationTypeValueIsAugmentedWithSourceScopeInfo`` () =
@@ -1314,7 +1380,7 @@ in Map::map (fun (v:int32) -> v + 100) n
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Ext(ValueExt.ValueExt(Choice6Of6(MapExt.MapValues(MapValues.Map(map)))), _) ->
+    | Value.Ext(ValueExt.ValueExt(Choice6Of7(MapExt.MapValues(MapValues.Map(map)))), _) ->
       let mapList = map |> Map.toList
 
       match mapList with
@@ -1327,12 +1393,12 @@ in Map::map (fun (v:int32) -> v + 100) n
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
 [<Test>]
-let ``LangNext-Integration map maptoList operation succeeds`` () =
+let ``LangNext-Integration map mapToList operation succeeds`` () =
   let program =
     """
 let empty = Map::Empty [string][int32] ()
 in let m = Map::set [string][int32] ("key1", 1) (Map::set [string][int32] ("key2", 2) empty)
-in Map::maptoList [string][int32] m
+in Map::mapToList [string][int32] m
       """
 
   let actual = program |> run
@@ -1340,7 +1406,7 @@ in Map::maptoList [string][int32] m
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Ext(ValueExt.ValueExt(Choice1Of6(ListExt.ListValues(ListValues.List(listValues)))), None) ->
+    | Value.Ext(ValueExt.ValueExt(Choice1Of7(ListExt.ListValues(ListValues.List(listValues)))), None) ->
       let tuple1 =
         Value.Tuple
           [ Value.Primitive(PrimitiveValue.String "key1")

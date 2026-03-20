@@ -3,7 +3,6 @@ import React from "react";
 import {
   BasicUpdater,
   DispatchCommonFormState,
-  DispatchDelta,
   id,
   PredicateValue,
   RecordAbstractRendererState,
@@ -23,12 +22,9 @@ import {
   Unit,
   MapRepo,
   DispatchParsedType,
-  BaseFlags,
   Sum,
   ValueStreamPosition,
-  CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
-  CommonAbstractRendererForeignMutationsExpected,
   Updater,
   RecordAbstractRendererReadonlyContext,
   RecordAbstractRendererForeignMutationsExpected,
@@ -47,6 +43,8 @@ import {
   oneTableDebouncerRunner,
   oneTableLoaderRunner,
 } from "./coroutines/runner";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
+import { BaseFlags } from "../../deltas/delta-to-dto/state";
 
 /*
  * The clear, set, create and delete callbacks are used when and only when the one is partial (it can have a value of unit or One)
@@ -171,6 +169,9 @@ export const OneAbstractRenderer = <
         preprocessedSpecContext: _.preprocessedSpecContext,
         labelContext,
         usePreprocessor: _.usePreprocessor,
+        // we do not want to propagate this flag to all the ones in the hierarchy
+        // stop as soon as we reach the first one
+        preventOneInitialization: false,
       };
     })
       .mapState(
@@ -272,6 +273,7 @@ export const OneAbstractRenderer = <
               preprocessedSpecContext: _.preprocessedSpecContext,
               labelContext,
               usePreprocessor: _.usePreprocessor,
+              preventOneInitialization: false,
             };
           })
             .mapState(

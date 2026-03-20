@@ -54,6 +54,7 @@ module Expr =
     : Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
 
     let expr = expr (depth + 1)
+    let singleIdentifier = singleTermIdentifier
 
     let typeDecl v = typeDecl (expr parseAllComplexShapes) v
     // let indent = "--"
@@ -226,20 +227,38 @@ module Expr =
             let! pars = parser.AtLeastOne(parser.Any [ typeParam |> parser.Map Left; termParam |> parser.Map Right ])
             let pars = pars |> NonEmptyList.ToSeq
 
+            let! colon = colonOperator |> parser.Try
+
+            let! bodyType =
+              match colon with
+              | Left _ ->
+                typeDecl (parseAllComplexTypeShapes |> Set.remove ComplexTypeKind.BinaryExpressionChain)
+                |> parser.Map Some
+              | Right _ -> parser { return None }
+
             do! parseOperator Operator.SingleArrow
             let! body = expr parseAllComplexShapes
 
             return
-              body
+              (body, true)
               |> Seq.foldBack
-                (fun p acc ->
+                (fun p (acc, is_first) ->
                   match p with
                   | Right(paramName, paramType: Option<TypeExpr<'valueExt>>) ->
-                    Expr.Lambda(Var.Create paramName, paramType, acc, loc, TypeCheckScope.Empty)
+                    Expr.Lambda(
+                      Var.Create paramName,
+                      paramType,
+                      acc,
+                      (if is_first then bodyType else None),
+                      loc,
+                      TypeCheckScope.Empty
+                    ),
+                    false
                   | Left(paramName: string, paramKind: Kind) ->
                     let p = (paramName, paramKind) |> TypeParameter.Create
-                    Expr.TypeLambda(p, acc, loc, TypeCheckScope.Empty))
+                    Expr.TypeLambda(p, acc, loc, TypeCheckScope.Empty), false)
                 pars
+              |> fst
           // Expr.Lambda(Var.Create paramName, paramType, body, loc, TypeCheckScope.Empty)
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
@@ -416,7 +435,10 @@ module Expr =
           parser {
             let! id = singleIdentifier
             do! equalsOperator
+
             let! typeDecl = typeDecl parseAllComplexTypeShapes
+            // |> parser.DebugErrors "typeDecl in type-let" (fun e -> e.Errors().AsFSharpString)
+
             do! inKeyword
             let! body = expr parseAllComplexShapes
 
@@ -449,6 +471,7 @@ module Expr =
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
+      |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
     let unaryOperatorIdentifier () =
       let singleOperator op =
@@ -464,7 +487,13 @@ module Expr =
 
     let identifierLookup () =
       parser {
-        let! id = singleIdentifier
+        let! id =
+          parser.Any
+            [ singleIdentifier
+              schemaKeyword |> parser.Map(replaceWith "schema")
+              entityKeyword |> parser.Map(replaceWith "entity")
+              relationKeyword |> parser.Map(replaceWith "relation") ]
+
         let! loc = parser.Location
         // do Console.WriteLine($"{String.replicate (depth * 2) indent}> Parsed identifier: {id.ToFSharpString}")
         return Expr.Lookup(Identifier.LocalScope id, loc, TypeCheckScope.Empty)
@@ -520,11 +549,13 @@ module Expr =
                   (fun () -> typeDecl parseAllComplexTypeShapes)
                   |> betweenSquareBrackets
                   |> parser.Map(Sum.Right) ]
+              |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
             return res
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
+      |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
     let application () =
       parser {
@@ -549,6 +580,7 @@ module Expr =
         betweenBrackets (fun () -> expr parseAllComplexShapes)
         typeLet ()
         matchWith ()
+        query (fun () -> expr parseAllComplexShapes) ()
         identifierLookup ()
         unaryOperatorIdentifier () ]
 
@@ -563,7 +595,10 @@ module Expr =
       // do Console.ReadLine() |> ignore
 
       if parseComplexShapes |> Set.isEmpty then
-        return! simpleShapes |> parser.Any
+        return!
+          simpleShapes
+          |> parser.Any
+          |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
       else
         // let! s = parser.Stream
 
@@ -685,6 +720,7 @@ module Expr =
                                   loc,
                                   TypeCheckScope.Empty
                                 ),
+                                None,
                                 loc,
                                 TypeCheckScope.Empty
                               ),

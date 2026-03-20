@@ -11,7 +11,6 @@ import {
   PredicateValue,
   ValueTuple,
   Updater,
-  DispatchDelta,
   BasicUpdater,
   ListRepo,
   replaceWith,
@@ -30,6 +29,7 @@ import {
   DispatchParsedType,
   MapType,
 } from "../../../../deserializer/domains/specification/domains/types/state";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const MapAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -114,6 +114,7 @@ export const MapAbstractRenderer = <
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               preprocessedSpecContext: _.preprocessedSpecContext,
               usePreprocessor: _.usePreprocessor,
+              preventOneInitialization: _.preventOneInitialization,
             };
           },
         )
@@ -251,6 +252,7 @@ export const MapAbstractRenderer = <
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               preprocessedSpecContext: _.preprocessedSpecContext,
               usePreprocessor: _.usePreprocessor,
+              preventOneInitialization: _.preventOneInitialization,
             };
           },
         )

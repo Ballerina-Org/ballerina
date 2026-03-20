@@ -15,16 +15,16 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
 
 
-  let BoolExtension<'ext>
+  let BoolExtension<'runtimeContext, 'ext>
     (operationLens: PartialLens<'ext, BoolOperations<'ext>>)
-    : OperationsExtension<'ext, BoolOperations<'ext>> =
+    : OperationsExtension<'runtimeContext, 'ext, BoolOperations<'ext>> =
 
     let boolTypeValue = TypeValue.CreateBool()
 
     let boolAndId =
       Identifier.FullyQualified([ "bool" ], "&&") |> TypeCheckScope.Empty.Resolve
 
-    let andOperation: ResolvedIdentifier * OperationExtension<'ext, BoolOperations<'ext>> =
+    let andOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, BoolOperations<'ext>> =
       boolAndId,
       { PublicIdentifiers =
           Some
@@ -71,7 +71,7 @@ module Extension =
     let boolOrId =
       Identifier.FullyQualified([ "bool" ], "||") |> TypeCheckScope.Empty.Resolve
 
-    let orOperation: ResolvedIdentifier * OperationExtension<'ext, BoolOperations<'ext>> =
+    let orOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, BoolOperations<'ext>> =
       boolOrId,
       { PublicIdentifiers =
           Some
@@ -118,7 +118,7 @@ module Extension =
     let boolNotId =
       Identifier.FullyQualified([ "bool" ], "!") |> TypeCheckScope.Empty.Resolve
 
-    let notOperation: ResolvedIdentifier * OperationExtension<'ext, BoolOperations<'ext>> =
+    let notOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, BoolOperations<'ext>> =
       boolNotId,
       { PublicIdentifiers =
           Some

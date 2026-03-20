@@ -188,7 +188,7 @@ entrypoint form(personDetails) Person : Person = {
   Holidays as "Holidays" list(defaultList) date(defaultDate);
   FriendsAddresses as "Friends addresses" map(defaultMap)
     string(defaultString),
-    list(defaultList) form(address);
+    list(defaultList) with add remove form(address);
   BestFriend as "Best Friend" record(bestFriend) : User {
     details record : User {
       Name string(defaultString);

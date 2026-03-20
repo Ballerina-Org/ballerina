@@ -28,12 +28,18 @@ module InstantiateSyntheticVars =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member InstantiateSyntheticVars<'valueExt when 'valueExt: comparison>
+      (
+        query_type_symbol: TypeSymbol,
+        mk_query_type: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>
+      )
       (typeCheckExpr)
       (expr: Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>)
       : TypeCheckerResult<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>, 'valueExt> =
       state {
         let loc0 = expr.Location
-        let (!) = Expr.InstantiateSyntheticVars typeCheckExpr
+
+        let (!) =
+          Expr.InstantiateSyntheticVars (query_type_symbol, mk_query_type) typeCheckExpr
 
         match expr.Expr with
         | ExprRec.RecordDes({ Expr = r; Field = field }) ->
@@ -76,9 +82,12 @@ module InstantiateSyntheticVars =
           let! value = !value
           let! body = !body
           return Expr.Let(v, t, value, body)
-        | ExprRec.Lambda({ Param = p; Body = b; ParamType = pt }) ->
+        | ExprRec.Lambda({ Param = p
+                           Body = b
+                           ParamType = pt
+                           BodyType = bt }) ->
           let! b = !b
-          return Expr.Lambda(p, pt, b)
+          return Expr.Lambda(p, pt, b, bt)
         | ExprRec.If({ Cond = c; Then = t; Else = e }) ->
           let! c = !c
           let! t = !t
@@ -94,7 +103,7 @@ module InstantiateSyntheticVars =
 
           let! t_arg =
             t_arg
-            |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
           let res = Expr.TypeApply(e, t_arg)
@@ -132,4 +141,6 @@ module InstantiateSyntheticVars =
                                       Direction = direction }) ->
           let! e = !e
           return Expr.RelationLookupDes(e, relationName, direction, loc0, expr.Scope)
+        | ExprRec.Query q -> return Expr.Query q
+
       }

@@ -357,6 +357,7 @@ export type ValueTable = {
   to: number;
   data: OrderedMap<Guid, ValueRecord>;
   hasMoreValues: boolean;
+  defaultRow: ValueRecord;
 };
 
 export type ValueReadOnly = {
@@ -382,18 +383,21 @@ export const ValueTable = {
       to: 0,
       data: OrderedMap(),
       hasMoreValues: false,
+      defaultRow: ValueRecord.Default.empty(),
     }),
     fromParsed: (
       from: number,
       to: number,
       hasMoreValues: boolean,
       data: OrderedMap<Guid, ValueRecord>,
+      defaultRow: ValueRecord,
     ): ValueTable => ({
       kind: "table",
       from,
       to,
       data,
       hasMoreValues,
+      defaultRow,
     }),
   },
   Updaters: {
@@ -639,12 +643,14 @@ export const PredicateValue = {
       to: number,
       data: OrderedMap<Guid, ValueRecord>,
       hasMoreValues: boolean,
+      defaultRow: ValueRecord,
     ): ValueTable => ({
       kind: "table",
       from,
       to,
       data,
       hasMoreValues,
+      defaultRow,
     }),
     readonly: (value: PredicateValue): ValueReadOnly => ({
       kind: "readOnly",

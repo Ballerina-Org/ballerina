@@ -5,7 +5,6 @@ import {
   SecretAbstractRendererView,
 } from "./state";
 import {
-  DispatchDelta,
   IdWrapperProps,
   PredicateValue,
   replaceWith,
@@ -14,6 +13,7 @@ import {
   Option,
   Unit,
 } from "../../../../../../../../main";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const SecretAbstractRenderer = <
   CustomPresentationContext = Unit,

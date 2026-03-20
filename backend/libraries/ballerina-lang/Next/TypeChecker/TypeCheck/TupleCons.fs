@@ -41,6 +41,7 @@ module TupleCons =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckTupleCons<'valueExt when 'valueExt: comparison>
+      (query_type_symbol, mk_query_type)
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
       : TypeChecker<ExprTupleCons<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Items = fields }) ->
@@ -67,7 +68,7 @@ module TupleCons =
 
           let! return_t =
             TypeValue.CreateTuple fieldsTypes
-            |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
           return Expr.TupleCons(fieldsExpr, loc0, ctx.Scope), return_t, Kind.Star, ctx

@@ -144,6 +144,26 @@ module Common =
   let thenKeyword = parseKeyword Keyword.Then
   let elseKeyword = parseKeyword Keyword.Else
 
+  let singleTermIdentifier =
+    parser.Exactly(fun t ->
+      match t.Token with
+      | Token.Identifier id -> Some id
+      | Token.Keyword(Keyword.Schema) -> Keyword.Schema.ToString() |> Some
+      | Token.Keyword(Keyword.Entity) -> Keyword.Entity.ToString() |> Some
+      | Token.Keyword(Keyword.Relation) -> Keyword.Relation.ToString() |> Some
+      | Token.Keyword(Keyword.Include) -> Keyword.Include.ToString() |> Some
+      // | Token.Keyword(Keyword.From) -> Keyword.From.ToString() |> Some
+      // | Token.Keyword(Keyword.Select) -> Keyword.Select.ToString() |> Some
+      // | Token.Keyword(Keyword.Where) -> Keyword.Where.ToString() |> Some
+      // | Token.Keyword(Keyword.Join) -> Keyword.Join.ToString() |> Some
+      | Token.Keyword(Keyword.On) -> Keyword.On.ToString() |> Some
+      | Token.Keyword(Keyword.Can) -> Keyword.Can.ToString() |> Some
+      | Token.Keyword(Keyword.And) -> Keyword.And.ToString() |> Some
+      | Token.Keyword(Keyword.OrderBy) -> Keyword.OrderBy.ToString() |> Some
+      | Token.Keyword(Keyword.Ascending) -> Keyword.Ascending.ToString() |> Some
+      | Token.Keyword(Keyword.Descending) -> Keyword.Descending.ToString() |> Some
+      | _ -> None)
+
   let singleIdentifier =
     parser.Exactly(fun t ->
       match t.Token with
@@ -162,24 +182,40 @@ module Common =
       | Token.Identifier id when k = id -> Some()
       | _ -> None)
 
-  let schemaKeyword = softKeyword "schema"
-  let entityKeyword = softKeyword "entity"
-  let relationKeyword = softKeyword "relation"
-  let searchByKeyword = softKeyword "searchBy"
+  let schemaKeyword = parseKeyword Keyword.Schema
+  let entityKeyword = parseKeyword Keyword.Entity
+  let relationKeyword = parseKeyword Keyword.Relation
+  let includeKeyword = parseKeyword Keyword.Include
+  let queryKeyword = parseKeyword Keyword.Query
+  let selectKeyword = parseKeyword Keyword.Select
+  let whereKeyword = parseKeyword Keyword.Where
+  let joinKeyword = parseKeyword Keyword.Join
+  let onKeyword = parseKeyword Keyword.On
+  let andKeyword = parseKeyword Keyword.And
+  let orderByKeyword = parseKeyword Keyword.OrderBy
+  let ascendingKeyword = parseKeyword Keyword.Ascending
+  let descendingKeyword = parseKeyword Keyword.Descending
   let propertyKeyword = softKeyword "property"
-  let onKeyword = softKeyword "on"
+  let vectorKeyword = softKeyword "vector"
   let creatingKeyword = softKeyword "creating"
   let updatingKeyword = softKeyword "updating"
   let deletingKeyword = softKeyword "deleting"
   let createdKeyword = softKeyword "created"
   let updatedKeyword = softKeyword "updated"
   let deletedKeyword = softKeyword "deleted"
-  let linkingKeyword = softKeyword "linking"
+  let backgroundKeyword = softKeyword "background"
+  let canCreateKeyword = softKeyword "create"
+  let canReadKeyword = softKeyword "read"
+  let canUpdateKeyword = softKeyword "update"
+  let canDeleteKeyword = softKeyword "delete"
+  let canKeyword = parseKeyword Keyword.Can
 
+
+  let linkingKeyword = softKeyword "linking"
   let unlinkingKeyword = softKeyword "unlinking"
   let linkedKeyword = softKeyword "linked"
   let unlinkedKeyword = softKeyword "unlinked"
-  let fromKeyword = softKeyword "from"
+  let fromKeyword = parseKeyword Keyword.From
   let toKeyword = softKeyword "to"
   let cardinalityKeyword = softKeyword "cardinality"
   let fieldKeyword = softKeyword "field"

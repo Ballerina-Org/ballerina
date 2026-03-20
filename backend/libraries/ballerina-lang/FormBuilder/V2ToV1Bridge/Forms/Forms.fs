@@ -6,15 +6,32 @@ module Forms =
   open Ballerina.Cat.Collections.OrderedMap
   open FSharp.Data
 
+  let private generateListActionsJson (actions: Set<ListAction>) : JsonValue option =
+    let generateListAction (action: ListAction) : string * JsonValue =
+      match action with
+      | ListAction.Add -> "add", JsonValue.String "list.actions.add"
+      | ListAction.Remove -> "remove", JsonValue.String "list.actions.remove"
+      | ListAction.Clear -> "clear", JsonValue.String "list.actions.clear"
+      | ListAction.Move -> "move", JsonValue.String "list.actions.move"
+      | ListAction.Duplicate -> "duplicate", JsonValue.String "list.actions.duplicate"
+
+    match actions with
+    | actions when actions.IsEmpty -> None
+    | _ -> Some(JsonValue.Record(Array.ofList (actions |> Set.toList |> List.map generateListAction)))
+
   let rec private generateRendererJson<'typeValue>
     (renderer: RendererExpression<'typeValue>)
     : list<string * JsonValue> =
     match renderer with
     | RendererExpression.Primitive { Primitive = RendererIdentifier id } -> [ "renderer", JsonValue.String id ]
     | RendererExpression.List { List = RendererIdentifier id
-                                Element = element } ->
+                                Element = element
+                                Actions = actions } ->
       [ "renderer", JsonValue.String id
         "elementRenderer", JsonValue.Record(Array.ofList (generateRendererJson element)) ]
+      @ match generateListActionsJson actions with
+        | Some actions -> [ "actions", actions ]
+        | None -> []
     | RendererExpression.Sum { Sum = RendererIdentifier id
                                Left = left
                                Right = right } ->

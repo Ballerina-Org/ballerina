@@ -1,0 +1,20 @@
+view Address : Address {
+  Number int32(number);
+  Street string(print);
+  City string(print);
+}
+
+entrypoint view Student : Student {
+  Name string(print);
+  Year int32(number);
+  Grade union(readonlyUnion) with
+   | Whole -> int32(number)
+   | Decimal -> float32(number)
+   | Other -> string(print);
+  Subjects list(listAsTable)
+    union(readonlyUnion) with
+    | Minors -> list(readonlyList) string(print)
+    | Major -> string(print);
+  ContactNumbers list(readonlyList) string(print);
+  Address view(Address);
+}

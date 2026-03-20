@@ -7,7 +7,6 @@ import {
   TableLayout,
   Expr,
   PredicateComputedOrInlined,
-  DispatchDelta,
   ValueOrErrors,
   TableAbstractRendererReadonlyContext,
   replaceWith,
@@ -38,14 +37,30 @@ import {
   DispatchTableApiSource,
   ValueUnit,
   NestedRenderer,
+  TableAbstractRendererForeignMutationsExposed,
+  DispatchOnChange,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import {
+  ApplyEditsRunner,
+  DequeueRemoveOpsRunner,
   TableInfiniteLoaderRunner,
   TableInitialiseFiltersAndSortingRunner,
   TableInitialiseTableRunner,
 } from "./coroutines/runner";
 import { TableCellRenderer } from "../../../../deserializer/domains/specification/domains/forms/domains/renderer/domains/table/domains/tableCellRenderer/state";
+import { v4 } from "uuid";
+import { AbstractTableRendererValueTable } from "./domains/extra-data/state";
+import {
+  PendingOps,
+  TableAbstractRendererPendingOps,
+} from "./domains/pending-operation/state";
+import {
+  PendingAddOperationId,
+  TableAbstractRendererPendingAddOperation,
+} from "./domains/pending-operation/add/state";
+import { TableAbstractRendererPendingRemoveOperation } from "./domains/pending-operation/remove/state";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const TableAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -148,6 +163,14 @@ export const TableAbstractRenderer = <
     CustomPresentationContext,
     ExtraContext
   >(tableApiSource, fromTableApiParser);
+  const InstantiatedApplyEditsRunner = ApplyEditsRunner<
+    CustomPresentationContext,
+    ExtraContext
+  >();
+  const InstantiatedDequeueRemoveOpsRunner = DequeueRemoveOpsRunner<
+    CustomPresentationContext,
+    ExtraContext
+  >();
 
   const embedCellTemplate =
     (
@@ -167,6 +190,13 @@ export const TableAbstractRenderer = <
     (idx: number) =>
     (value: PredicateValue) =>
     (disabled: boolean) =>
+    (isFakeRow: (_: string) => boolean) =>
+    (
+      onChange: (
+        idx: number,
+        valueRecordUpdater: Updater<ValueRecord>,
+      ) => DispatchOnChange<ValueTable, Flags>,
+    ) =>
     (flags: Flags | undefined) =>
       cellTemplate
         .mapContext<
@@ -227,6 +257,7 @@ export const TableAbstractRenderer = <
             preprocessedSpecContext: _.preprocessedSpecContext,
             labelContext,
             usePreprocessor: _.usePreprocessor,
+            preventOneInitialization: isFakeRow(rowId),
           };
         })
 
@@ -304,206 +335,225 @@ export const TableAbstractRenderer = <
                 nestedDelta.sourceAncestorLookupTypeNames,
             };
 
+            const valueRecordUpdater = ValueRecord.Updaters.update(
+              column,
+              nestedUpdater.kind == "r" ? nestedUpdater.value : id,
+            );
             const updater =
               nestedUpdater.kind == "l"
                 ? nestedUpdater
                 : Option.Default.some(
                     ValueTable.Updaters.data(
-                      MapRepo.Updaters.update(
-                        rowId,
-                        ValueRecord.Updaters.update(
-                          column,
-                          nestedUpdater.kind == "r" ? nestedUpdater.value : id,
-                        ),
-                      ),
+                      MapRepo.Updaters.update(rowId, valueRecordUpdater),
                     ),
                   );
 
-            props.foreignMutations.onChange(updater, delta);
+            // need to call the custom onChange function provided by the abstract table renderer
+            // to hande updated on "fake" rows (rows that have been optimisticaly added to the table)
+            onChange(idx, valueRecordUpdater)(updater, delta);
           },
         }));
 
   const embedDetailsRenderer =
     DetailsRenderer && DetailsRendererRaw
-      ? (tableData: OrderedMap<string, any>) => (flags: Flags | undefined) =>
-          DetailsRenderer.mapContext<
-            TableAbstractRendererReadonlyContext<
-              CustomPresentationContext,
-              ExtraContext
-            > &
-              TableAbstractRendererState
-          >((_) => {
-            const labelContext =
-              CommonAbstractRendererState.Operations.GetLabelContext(
-                _.labelContext,
-                DetailsRendererRaw,
-              );
-            const { selectedDetailRow } = _.customFormState;
+      ? (tableData: OrderedMap<string, any>) =>
+          (isFakeRow: (_: string) => boolean) =>
+          (
+            onChange: (
+              idx: number,
+              valueRecordUpdater: Updater<ValueRecord>,
+            ) => DispatchOnChange<ValueTable, Flags>,
+          ) =>
+          (flags: Flags | undefined) =>
+            DetailsRenderer.mapContext<
+              TableAbstractRendererReadonlyContext<
+                CustomPresentationContext,
+                ExtraContext
+              > &
+                TableAbstractRendererState
+            >((_) => {
+              const labelContext =
+                CommonAbstractRendererState.Operations.GetLabelContext(
+                  _.labelContext,
+                  DetailsRendererRaw,
+                );
+              const { selectedDetailRow } = _.customFormState;
 
-            if (selectedDetailRow == undefined) {
-              console.error(
-                `Selected detail row is undefined\n
+              if (selectedDetailRow == undefined) {
+                console.error(
+                  `Selected detail row is undefined\n
               ...When rendering table field\n
               ...${_.domNodeAncestorPath}`,
-              );
-              return undefined;
-            }
+                );
+                return undefined;
+              }
 
-            if (
-              !PredicateValue.Operations.IsString(selectedDetailRow) &&
-              !PredicateValue.Operations.IsUnit(selectedDetailRow)
-            ) {
-              console.error(
-                `Selected detail row is not a string or unit\n
+              if (
+                !PredicateValue.Operations.IsString(selectedDetailRow) &&
+                !PredicateValue.Operations.IsUnit(selectedDetailRow)
+              ) {
+                console.error(
+                  `Selected detail row is not a string or unit\n
               ...When rendering table field\n
               ...${_.domNodeAncestorPath}`,
-              );
-              return undefined;
-            }
+                );
+                return undefined;
+              }
 
-            const value = PredicateValue.Operations.IsUnit(selectedDetailRow)
-              ? ValueUnit.Default()
-              : _.value.data.get(selectedDetailRow);
+              const value = PredicateValue.Operations.IsUnit(selectedDetailRow)
+                ? ValueUnit.Default()
+                : _.value.data.get(selectedDetailRow);
 
-            if (value == undefined) {
-              console.error(
-                `Value is undefined for selected detail row\n
+              if (value == undefined) {
+                console.error(
+                  `Value is undefined for selected detail row\n
               ...When rendering table field\n
               ...${_.domNodeAncestorPath}`,
-              );
-              return undefined;
-            }
+                );
+                return undefined;
+              }
 
-            const rowState = PredicateValue.Operations.IsString(
-              selectedDetailRow,
-            )
-              ? (_.customFormState.rowStates.get(selectedDetailRow) ??
-                RecordAbstractRendererState.Default.fieldState(Map()))
-              : RecordAbstractRendererState.Default.fieldState(Map());
+              const rowState = PredicateValue.Operations.IsString(
+                selectedDetailRow,
+              )
+                ? (_.customFormState.rowStates.get(selectedDetailRow) ??
+                  RecordAbstractRendererState.Default.fieldState(Map()))
+                : RecordAbstractRendererState.Default.fieldState(Map());
 
-            const rowIndex = PredicateValue.Operations.IsString(
-              selectedDetailRow,
-            )
-              ? tableData.keySeq().indexOf(selectedDetailRow)
-              : 0;
+              const rowIndex = PredicateValue.Operations.IsString(
+                selectedDetailRow,
+              )
+                ? tableData.keySeq().indexOf(selectedDetailRow)
+                : 0;
 
-            return {
-              value,
-              ...rowState,
-              disabled: _.disabled || _.globallyDisabled,
-              globallyDisabled: _.globallyDisabled,
-              readOnly: _.readOnly || _.globallyReadOnly,
-              globallyReadOnly: _.globallyReadOnly,
-              locked: _.locked,
-              bindings: _.bindings.set("local", value),
-              extraContext: _.extraContext,
-              type: TableEntityType,
-              customPresentationContext: _.customPresentationContext,
-              remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-              typeAncestors: [_.type as DispatchParsedType<any>].concat(
-                _.typeAncestors,
-              ),
-              domNodeAncestorPath:
-                _.domNodeAncestorPath +
-                `[Values][${rowIndex == -1 ? 0 : rowIndex}]`,
-              legacy_domNodeAncestorPath:
-                _.legacy_domNodeAncestorPath +
-                `[table][cell][${selectedDetailRow}]`,
-              predictionAncestorPath:
-                _.predictionAncestorPath + `[Values][element]`,
-              layoutAncestorPath: _.layoutAncestorPath + `[table][details]`,
-              lookupTypeAncestorNames: _.lookupTypeAncestorNames,
-              preprocessedSpecContext: _.preprocessedSpecContext,
-              labelContext,
-              usePreprocessor: _.usePreprocessor,
-            };
-          })
-            .mapStateFromProps<TableAbstractRendererState>(
-              ([props, updater]) => {
-                const { selectedDetailRow } = props.context.customFormState;
+              return {
+                value,
+                ...rowState,
+                disabled: _.disabled || _.globallyDisabled,
+                globallyDisabled: _.globallyDisabled,
+                readOnly: _.readOnly || _.globallyReadOnly,
+                globallyReadOnly: _.globallyReadOnly,
+                locked: _.locked,
+                bindings: _.bindings.set("local", value),
+                extraContext: _.extraContext,
+                type: TableEntityType,
+                customPresentationContext: _.customPresentationContext,
+                remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+                typeAncestors: [_.type as DispatchParsedType<any>].concat(
+                  _.typeAncestors,
+                ),
+                domNodeAncestorPath:
+                  _.domNodeAncestorPath +
+                  `[Values][${rowIndex == -1 ? 0 : rowIndex}]`,
+                legacy_domNodeAncestorPath:
+                  _.legacy_domNodeAncestorPath +
+                  `[table][cell][${selectedDetailRow}]`,
+                predictionAncestorPath:
+                  _.predictionAncestorPath + `[Values][element]`,
+                layoutAncestorPath: _.layoutAncestorPath + `[table][details]`,
+                lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+                preprocessedSpecContext: _.preprocessedSpecContext,
+                labelContext,
+                usePreprocessor: _.usePreprocessor,
+                preventOneInitialization: PredicateValue.Operations.IsString(
+                  selectedDetailRow,
+                )
+                  ? isFakeRow(selectedDetailRow)
+                  : false,
+              };
+            })
+              .mapStateFromProps<TableAbstractRendererState>(
+                ([props, updater]) => {
+                  const { selectedDetailRow } = props.context.customFormState;
 
-                if (selectedDetailRow == undefined) {
-                  console.error(
-                    `Selected detail row is undefined\n
+                  if (selectedDetailRow == undefined) {
+                    console.error(
+                      `Selected detail row is undefined\n
                 ...When rendering table detail view \n
                 ...${props.context.domNodeAncestorPath}`,
-                  );
-                  return id;
-                }
-                if (!PredicateValue.Operations.IsString(selectedDetailRow)) {
-                  return id;
-                }
-                return TableAbstractRendererState.Updaters.Core.customFormState.children.rowStates(
-                  MapRepo.Updaters.upsert(
-                    selectedDetailRow,
-                    () => RecordAbstractRendererState.Default.fieldState(Map()),
-                    updater,
-                  ),
-                );
-              },
-            )
-            .mapForeignMutationsFromProps<
-              TableAbstractRendererForeignMutationsExpected<Flags>
-            >((props) => ({
-              onChange: (
-                nestedUpdater: Option<BasicUpdater<ValueRecord>>,
-                nestedDelta: DispatchDelta<Flags>,
-              ) => {
-                const { selectedDetailRow } = props.context.customFormState;
-
-                if (selectedDetailRow == undefined) {
-                  console.error(
-                    `Selected detail row is undefined\n
-                  ...When rendering table field\n
-                  ...${props.context.domNodeAncestorPath}`,
-                  );
-                  return id;
-                }
-
-                if (
-                  !PredicateValue.Operations.IsString(selectedDetailRow) &&
-                  !PredicateValue.Operations.IsUnit(selectedDetailRow)
-                ) {
-                  console.error(
-                    `Selected detail row is not a string or unit\n
-                    ...When rendering table field\n
-                    ...${props.context.domNodeAncestorPath}`,
-                  );
-                  return id;
-                }
-
-                if (PredicateValue.Operations.IsString(selectedDetailRow)) {
-                  props.setState(
-                    TableAbstractRendererState.Updaters.Core.commonFormState.children.modifiedByUser(
-                      replaceWith(true),
+                    );
+                    return id;
+                  }
+                  if (!PredicateValue.Operations.IsString(selectedDetailRow)) {
+                    return id;
+                  }
+                  return TableAbstractRendererState.Updaters.Core.customFormState.children.rowStates(
+                    MapRepo.Updaters.upsert(
+                      selectedDetailRow,
+                      () =>
+                        RecordAbstractRendererState.Default.fieldState(Map()),
+                      updater,
                     ),
                   );
+                },
+              )
+              .mapForeignMutationsFromProps<
+                TableAbstractRendererForeignMutationsExpected<Flags>
+              >((props) => ({
+                onChange: (
+                  nestedUpdater: Option<BasicUpdater<ValueRecord>>,
+                  nestedDelta: DispatchDelta<Flags>,
+                ) => {
+                  const { selectedDetailRow } = props.context.customFormState;
 
-                  const delta: DispatchDelta<Flags> = {
-                    kind: "TableValue",
-                    id: selectedDetailRow,
-                    nestedDelta: nestedDelta,
-                    flags,
-                    sourceAncestorLookupTypeNames:
-                      nestedDelta.sourceAncestorLookupTypeNames,
-                  };
+                  if (selectedDetailRow == undefined) {
+                    console.error(
+                      `Selected detail row is undefined\n
+                  ...When rendering table field\n
+                  ...${props.context.domNodeAncestorPath}`,
+                    );
+                    return id;
+                  }
 
-                  const updater =
-                    nestedUpdater.kind == "l"
-                      ? nestedUpdater
-                      : Option.Default.some(
-                          ValueTable.Updaters.data(
-                            MapRepo.Updaters.update(
-                              selectedDetailRow,
-                              nestedUpdater.value,
+                  if (
+                    !PredicateValue.Operations.IsString(selectedDetailRow) &&
+                    !PredicateValue.Operations.IsUnit(selectedDetailRow)
+                  ) {
+                    console.error(
+                      `Selected detail row is not a string or unit\n
+                    ...When rendering table field\n
+                    ...${props.context.domNodeAncestorPath}`,
+                    );
+                    return id;
+                  }
+
+                  if (PredicateValue.Operations.IsString(selectedDetailRow)) {
+                    props.setState(
+                      TableAbstractRendererState.Updaters.Core.commonFormState.children.modifiedByUser(
+                        replaceWith(true),
+                      ),
+                    );
+
+                    const delta: DispatchDelta<Flags> = {
+                      kind: "TableValue",
+                      id: selectedDetailRow,
+                      nestedDelta: nestedDelta,
+                      flags,
+                      sourceAncestorLookupTypeNames:
+                        nestedDelta.sourceAncestorLookupTypeNames,
+                    };
+
+                    const updater =
+                      nestedUpdater.kind == "l"
+                        ? nestedUpdater
+                        : Option.Default.some(
+                            ValueTable.Updaters.data(
+                              MapRepo.Updaters.update(
+                                selectedDetailRow,
+                                nestedUpdater.value,
+                              ),
                             ),
-                          ),
-                        );
+                          );
 
-                  props.foreignMutations.onChange(updater, delta);
-                }
-              },
-            }))
+                    const idx = tableData.keySeq().indexOf(selectedDetailRow);
+                    const valueRecordUpdater = Updater<ValueRecord>(
+                      nestedUpdater.kind == "l" ? id : nestedUpdater.value,
+                    );
+
+                    onChange(idx, valueRecordUpdater)(updater, delta);
+                  }
+                },
+              }))
       : undefined;
 
   const EmbeddedCellTemplates = CellTemplates.map((cellTemplate, column) =>
@@ -657,10 +707,16 @@ export const TableAbstractRenderer = <
       ),
     ).toArray();
 
+    // append the "fake" rows to the table data
+    const valueTable = AbstractTableRendererValueTable.Operations.withExtraData(
+      props.context.value,
+      props.context.customFormState.pendingOps,
+    );
+
     const embeddedTableData =
       props.context.customFormState.loadingState != "loaded"
         ? OrderedMap<string, OrderedMap<string, any>>()
-        : props.context.value.data.mapEntries(([rowId, rowData], idx) => [
+        : valueTable.data.mapEntries(([rowId, rowData], idx) => [
             rowId,
             rowData.fields
               .filter((_, column) => validVisibleColumns.includes(column))
@@ -674,7 +730,7 @@ export const TableAbstractRenderer = <
     const embeddedUnfilteredTableData =
       props.context.customFormState.loadingState != "loaded"
         ? OrderedMap<string, OrderedMap<string, any>>()
-        : props.context.value.data.mapEntries(([rowId, rowData], idx) => [
+        : valueTable.data.mapEntries(([rowId, rowData], idx) => [
             rowId,
             rowData.fields
               .filter((_, column) => validColumns.includes(column))
@@ -717,6 +773,7 @@ export const TableAbstractRenderer = <
                   ? props.context.customFormState.selectedDetailRow
                   : undefined,
               },
+              value: valueTable,
               domNodeId,
               legacy_domNodeId,
               tableHeaders: validVisibleColumns,
@@ -813,27 +870,93 @@ export const TableAbstractRenderer = <
               add: !props.context.apiMethods.includes("add")
                 ? undefined
                 : (flags: Flags | undefined) => {
+                    if (
+                      !TableAbstractRendererPendingOps.Operations.canEnqueueAddOperation(
+                        props.context.customFormState.pendingOps,
+                      )
+                    ) {
+                      console.warn("Cannot enqueue add operation");
+                      console.debug(
+                        "pending ops:",
+                        props.context.customFormState.pendingOps,
+                      );
+                      return;
+                    }
+
+                    // index of the new "fake" row in the table
+                    const newPendingRowIndex =
+                      props.context.value.data.size +
+                      (props.context.customFormState.pendingOps.kind == "add"
+                        ? props.context.customFormState.pendingOps.pending.size
+                        : 0);
+
                     const delta: DispatchDelta<Flags> = {
                       kind: "TableAddEmpty",
                       flags,
+                      newIndex: newPendingRowIndex,
+                      uniqueTableIdentifier: domNodeId,
                       sourceAncestorLookupTypeNames:
                         props.context.lookupTypeAncestorNames,
                     };
+                    const tempId =
+                      `placeholder-${v4()}` as PendingAddOperationId;
+
+                    // no need to apply the updater to the table here
+                    // the fake row will be added later to the list of extra data
+                    // so we just send the delta
                     props.foreignMutations.onChange(
                       Option.Default.none(),
                       delta,
                     );
-                    props.setState(
+
+                    const setModifiedByUser =
                       TableAbstractRendererState.Updaters.Core.commonFormState(
                         DispatchCommonFormState.Updaters.modifiedByUser(
                           replaceWith(true),
                         ),
-                      ),
+                      );
+
+                    const enqueuePendingAddOperation =
+                      TableAbstractRendererState.Updaters.Core.customFormState.children.pendingOps(
+                        (_) =>
+                          TableAbstractRendererPendingOps.Updaters.Core.pendingAddOperations(
+                            List([
+                              TableAbstractRendererPendingAddOperation.Default(
+                                // index will be used to match the correct row once we have it in the data
+                                props.context.value.data.size +
+                                  (_.kind == "add" ? _.pending.size : 0),
+                                tempId,
+                                // TODO: use props.context.value.defaultRow
+                                ValueRecord.Default.fromMap(
+                                  CellTemplates.map((c) =>
+                                    c.GetDefaultValue(),
+                                  ).concat([["Id", tempId]]),
+                                ),
+                              ),
+                            ]),
+                          )(_),
+                      );
+
+                    props.setState(
+                      setModifiedByUser.then(enqueuePendingAddOperation),
                     );
                   },
               remove: !props.context.apiMethods.includes("remove")
                 ? undefined
                 : (k: string, flags: Flags | undefined) => {
+                    if (
+                      !TableAbstractRendererPendingOps.Operations.canEnqueueRemoveOperation(
+                        props.context.customFormState.pendingOps,
+                      )
+                    ) {
+                      console.warn("Cannot enqueue remove operation");
+                      console.debug(
+                        "pending ops:",
+                        props.context.customFormState.pendingOps,
+                      );
+                      return;
+                    }
+
                     const delta: DispatchDelta<Flags> = {
                       kind: "TableRemove",
                       id: k,
@@ -845,12 +968,26 @@ export const TableAbstractRenderer = <
                       Option.Default.none(),
                       delta,
                     );
-                    props.setState(
+
+                    const setModifiedByUser =
                       TableAbstractRendererState.Updaters.Core.commonFormState(
                         DispatchCommonFormState.Updaters.modifiedByUser(
                           replaceWith(true),
                         ),
-                      ),
+                      );
+                    const enqueueRemoveOperation =
+                      TableAbstractRendererState.Updaters.Core.customFormState.children.pendingOps(
+                        TableAbstractRendererPendingOps.Updaters.Core.pendingRemoveOperations(
+                          List([
+                            TableAbstractRendererPendingRemoveOperation.Default(
+                              k,
+                            ),
+                          ]),
+                        ),
+                      );
+
+                    props.setState(
+                      setModifiedByUser.then(enqueueRemoveOperation),
                     );
                   },
               moveTo: !props.context.apiMethods.includes("move")
@@ -970,15 +1107,60 @@ export const TableAbstractRenderer = <
                 );
               },
             }}
-            DetailsRenderer={embedDetailsRenderer?.(embeddedTableData)}
-            TableData={embeddedTableData}
-            UnfilteredTableData_Dangerous={embeddedUnfilteredTableData}
+            DetailsRenderer={embedDetailsRenderer?.(embeddedTableData)(
+              TableAbstractRendererPendingOps.Operations.hasPendingAddOperation(
+                props.context.customFormState.pendingOps,
+              ),
+            )(
+              TableAbstractRendererPendingOps.Operations.optimisticUpdate<
+                CustomPresentationContext,
+                Flags,
+                ExtraContext
+              >(props),
+            )}
+            TableData={embeddedTableData.map((_) =>
+              _.map((row) =>
+                row(
+                  TableAbstractRendererPendingOps.Operations.hasPendingAddOperation(
+                    props.context.customFormState.pendingOps,
+                  ),
+                )(
+                  TableAbstractRendererPendingOps.Operations.optimisticUpdate<
+                    CustomPresentationContext,
+                    Flags,
+                    ExtraContext
+                  >(props),
+                ),
+              ),
+            )}
+            UnfilteredTableData_Dangerous={embeddedUnfilteredTableData.map(
+              (_) =>
+                _.map((row) =>
+                  row(
+                    TableAbstractRendererPendingOps.Operations.hasPendingAddOperation(
+                      props.context.customFormState.pendingOps,
+                    ),
+                  )(
+                    TableAbstractRendererPendingOps.Operations.optimisticUpdate<
+                      CustomPresentationContext,
+                      Flags,
+                      ExtraContext
+                    >(props),
+                  ),
+                ),
+            )}
             AllowedFilters={EmbeddedAllowedFilters}
             AllowedSorting={props.context.sorting}
             HighlightedFilters={props.context.highlightedFilters}
             isFilteringSortAndLoadingEnabled={
               props.context.customFormState.isFilteringInitialized
             }
+            hasPendingRemoveOps={PendingOps.Operations.hasPendingRemoveOps(
+              props.context.customFormState.pendingOps,
+            )}
+            hasPendingAddOps={PendingOps.Operations.hasPendingAddOps(
+              props.context.customFormState.pendingOps,
+            )}
           />
         </IdProvider>
       </>
@@ -990,6 +1172,14 @@ export const TableAbstractRenderer = <
     })),
     InstantiatedInitialiseFiltersAndSortingRunner,
     InstantiatedInitialiseTableRunner.mapContextFromProps((props) => ({
+      ...props.context,
+      onChange: props.foreignMutations.onChange,
+    })),
+    InstantiatedApplyEditsRunner.mapContextFromProps((props) => ({
+      ...props.context,
+      onChange: props.foreignMutations.onChange,
+    })),
+    InstantiatedDequeueRemoveOpsRunner.mapContextFromProps((props) => ({
       ...props.context,
       onChange: props.foreignMutations.onChange,
     })),

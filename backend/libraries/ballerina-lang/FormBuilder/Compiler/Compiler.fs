@@ -19,7 +19,7 @@ module FormCompiler =
   open Ballerina.Collections.Map
 
   type ProgramInput =
-    { Preludes: NonEmptyList<string>
+    { Preludes: NonEmptyList<FileBuildConfiguration>
       Source: string }
 
   type FormsInput = { Program: string; Source: string }
@@ -37,6 +37,7 @@ module FormCompiler =
       sum {
         match expr.Expr with
         | TypeLet typeLet -> return! memoizeTypeRec typeLet.Body (table.Add(typeLet.Name, typeLet.TypeDef))
+        | ExprRec.Let letExpr -> return! memoizeTypeRec letExpr.Rest table
         | ExprRec.Primitive PrimitiveValue.Unit -> return table
         | _ ->
           return!
@@ -52,25 +53,30 @@ module FormCompiler =
     if File.Exists file then
       File.Delete file
 
-  let compileForms<'valueExt, 'valueExtDTO
-    when 'valueExt: comparison and 'valueExtDTO: not null and 'valueExtDTO: not struct>
+  let compileForms<'runtimeContext, 'db, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO, 'customExtension
+    when 'db: comparison
+    and 'valueExt: comparison
+    and 'valueExtDTO: not null
+    and 'valueExtDTO: not struct
+    and 'deltaExt: comparison
+    and 'customExtension: comparison
+    and 'deltaExtDTO: not null
+    and 'deltaExtDTO: not struct>
     (input: FormCompilerInput<'valueExt>)
     (cache: ProjectCache<'valueExt>)
-    (languageContext: LanguageContext<'valueExt, 'valueExtDTO>)
-    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (languageContext: LanguageContext<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
+    (query_type_symbol: TypeSymbol)
+    (mk_query_type: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>)
     =
     sum {
       let formsInitialLocation = Location.Initial input.Forms.Source
 
-
-
       let! types, _, _, typeCheckState =
-        let project =
-          { Files =
-              input.Types.Preludes
-              |> NonEmptyList.mapi (fun i prelude -> FileBuildConfiguration.FromFile(sprintf "types_%i.bl" i, prelude)) }
+        let project = { Files = input.Types.Preludes }
 
-        ProjectBuildConfiguration.BuildCached cache project |> Sum.mapRight _.ToString()
+        ProjectBuildConfiguration.BuildCached query_type_symbol mk_query_type cache project
+        |> Sum.mapRight _.ToString()
 
       // lexing
       let! ParserResult(formTokens, _) =
@@ -95,7 +101,10 @@ module FormCompiler =
       let formTypeCheckState = FormTypeCheckerState<'valueExt>.Init typeCheckState
 
       let formTypeCheckContext =
-        FormTypeCheckingContext<ValueExt>.Init memoizedTypes languageContext.TypeCheckContext input.ApiTypes
+        FormTypeCheckingContext<ValueExt<'runtimeContext, 'db, 'customExtension>>.Init
+          memoizedTypes
+          languageContext.TypeCheckContext
+          input.ApiTypes
 
       let! typeCheckedFormDefinitions, _ =
         checkFormDefinitions formDefinitions stdExtensions

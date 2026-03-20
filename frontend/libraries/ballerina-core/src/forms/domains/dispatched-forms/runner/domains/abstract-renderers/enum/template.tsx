@@ -2,7 +2,6 @@ import { CoTypedFactory } from "../../../../../../../coroutines/builder";
 import { Template } from "../../../../../../../template/state";
 import {
   AsyncState,
-  DispatchDelta,
   IdWrapperProps,
   Guid,
   PredicateValue,
@@ -12,7 +11,6 @@ import {
   ValueRecord,
   ErrorRendererProps,
   Option,
-  StringSerializedType,
 } from "../../../../../../../../main";
 import {
   EnumAbstractRendererState,
@@ -21,6 +19,7 @@ import {
   EnumAbstractRendererForeignMutationsExpected,
 } from "./state";
 import { OrderedMap } from "immutable";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const EnumAbstractRenderer = <
   CustomPresentationContext = Unit,

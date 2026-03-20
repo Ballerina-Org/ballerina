@@ -10,12 +10,9 @@ import {
   ErrorRendererProps,
   Option,
   Unit,
-  DispatchDelta,
   CommonAbstractRendererState,
   CommonAbstractRendererForeignMutationsExpected,
-  StringSerializedType,
   Renderer,
-  ValueOrErrors,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 
@@ -26,6 +23,7 @@ import {
   UnionAbstractRendererView,
 } from "./state";
 import { Map } from "immutable";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const UnionAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -99,6 +97,7 @@ export const UnionAbstractRenderer = <
               preprocessedSpecContext: _.preprocessedSpecContext,
               labelContext,
               usePreprocessor: _.usePreprocessor,
+              preventOneInitialization: _.preventOneInitialization,
             };
           },
         )

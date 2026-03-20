@@ -131,11 +131,6 @@ let testCases guid : TypeValueTestCase list =
         """{"discriminator":"set","value":{"discriminator":"string"}}"""
         |> toScopedJson "Set"
       Expected = TypeValue<Unit>.CreateSet(TypeValue<Unit>.CreateString()) }
-    { Name = "Map"
-      Json =
-        """{"discriminator":"map","value":[{"discriminator":"bool"}, {"discriminator":"int32"}]}"""
-        |> toScopedJson "Map"
-      Expected = TypeValue<Unit>.CreateMap(TypeValue<Unit>.CreateBool(), TypeValue<Unit>.CreateInt32()) }
     { Name = "Record"
       Json =
         """{
@@ -189,7 +184,20 @@ let testCases guid : TypeValueTestCase list =
               SymbolicTypeApplication.Lookup(!"Map", TypeValue<Unit>.CreateString()),
               TypeValue<Unit>.CreateInt32()
             )
-          ) } ]
+          ) }
+    { Name = "Lambda with FromTypeValue body"
+      Json =
+        """{
+              "discriminator":"lambda",
+              "value":{
+            "param":{"name":"T","kind":{"discriminator":"star"}},
+            "body":{"discriminator":"fromTypeValue","value":{"discriminator":"string"}}
+              }
+          }"""
+        |> toScopedJson "Lambda"
+      Expected =
+        TypeValue<Unit>
+          .CreateLambda({ Name = "T"; Kind = Kind.Star }, TypeExpr.FromTypeValue(TypeValue<Unit>.CreateString())) } ]
 
 [<Test>]
 let ``Dsl:Type:TypeValue<Unit> json round-trip`` () =

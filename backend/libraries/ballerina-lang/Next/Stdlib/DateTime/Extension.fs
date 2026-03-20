@@ -15,9 +15,9 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open Ballerina.StdLib.Formats
 
-  let DateTimeExtension<'ext, 'extDTO when 'extDTO: not null and 'extDTO: not struct>
+  let DateTimeExtension<'runtimeContext, 'ext, 'extDTO when 'extDTO: not null and 'extDTO: not struct>
     (operationLens: PartialLens<'ext, DateTimeOperations<'ext>>)
-    : OperationsExtension<'ext, DateTimeOperations<'ext>> =
+    : OperationsExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
 
     let dateTimeTypeValue = TypeValue.CreateDateTime()
     let dateOnlyTypeValue = TypeValue.CreateDateOnly()
@@ -28,7 +28,7 @@ module Extension =
     let dateTimeNewId =
       Identifier.FullyQualified([ "dateTime" ], "new") |> TypeCheckScope.Empty.Resolve
 
-    let dateTimeNew: ResolvedIdentifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
+    let dateTimeNew: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
       dateTimeNewId,
       { PublicIdentifiers =
           Some(
@@ -61,7 +61,7 @@ module Extension =
     let dateTimeNowId =
       Identifier.FullyQualified([ "dateTime" ], "now") |> TypeCheckScope.Empty.Resolve
 
-    let dateTimeNow: ResolvedIdentifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
+    let dateTimeNow: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
       dateTimeNowId,
       { PublicIdentifiers =
           Some(
@@ -93,7 +93,7 @@ module Extension =
       Identifier.FullyQualified([ "dateTime" ], "utcNow")
       |> TypeCheckScope.Empty.Resolve
 
-    let dateTimeUTCNow: ResolvedIdentifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
+    let dateTimeUTCNow: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
       dateTimeUTCNowId,
       { PublicIdentifiers =
           Some(
@@ -124,7 +124,7 @@ module Extension =
     let dateTimeDiffId =
       Identifier.FullyQualified([ "dateTime" ], "-") |> TypeCheckScope.Empty.Resolve
 
-    let diffOperation: ResolvedIdentifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
+    let diffOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
       dateTimeDiffId,
       { PublicIdentifiers =
           Some(
@@ -172,7 +172,7 @@ module Extension =
     let dateTimeEqualId =
       Identifier.FullyQualified([ "dateTime" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
       dateTimeEqualId,
       { PublicIdentifiers =
           Some(
@@ -219,7 +219,7 @@ module Extension =
     let dateTimeNotEqualId =
       Identifier.FullyQualified([ "dateTime" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
       dateTimeNotEqualId,
       { PublicIdentifiers =
           Some(
@@ -266,7 +266,7 @@ module Extension =
     let dateTimeGreaterThanId =
       Identifier.FullyQualified([ "dateTime" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
+    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
       dateTimeGreaterThanId,
       { PublicIdentifiers =
           Some(
@@ -313,7 +313,8 @@ module Extension =
     let dateTimeGreaterThanOrEqualId =
       Identifier.FullyQualified([ "dateTime" ], ">=") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
+    let greaterThanOrEqualOperation
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
       dateTimeGreaterThanOrEqualId,
       { PublicIdentifiers =
           Some(
@@ -361,7 +362,7 @@ module Extension =
     let dateTimeLessThanId =
       Identifier.FullyQualified([ "dateTime" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
+    let lessThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
       dateTimeLessThanId,
       { PublicIdentifiers =
           Some(
@@ -408,7 +409,8 @@ module Extension =
     let dateTimeLessThanOrEqualId =
       Identifier.FullyQualified([ "dateTime" ], "<=") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
+    let lessThanOrEqualOperation
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
       dateTimeLessThanOrEqualId,
       { PublicIdentifiers =
           Some(
@@ -457,7 +459,7 @@ module Extension =
       Identifier.FullyQualified([ "dateTime" ], "toDateOnly")
       |> TypeCheckScope.Empty.Resolve
 
-    let toDateOnlyOperation: ResolvedIdentifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
+    let toDateOnlyOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
       dateTimeToDateOnlyId,
       { PublicIdentifiers =
           Some(TypeValue.CreateArrow(dateTimeTypeValue, dateOnlyTypeValue), Kind.Star, DateTimeOperations.ToDateOnly)
@@ -489,7 +491,7 @@ module Extension =
       Identifier.FullyQualified([ "dateTime" ], "getYear")
       |> TypeCheckScope.Empty.Resolve
 
-    let yearOperation: ResolvedIdentifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
+    let yearOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
       dateOnlyYearId,
       { PublicIdentifiers =
           Some(TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue), Kind.Star, DateTimeOperations.Year)
@@ -520,7 +522,7 @@ module Extension =
       Identifier.FullyQualified([ "DateOnly" ], "getMonth")
       |> TypeCheckScope.Empty.Resolve
 
-    let monthOperation: ResolvedIdentifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
+    let monthOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
       dateOnlyMonthId,
       { PublicIdentifiers =
           Some(TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue), Kind.Star, DateTimeOperations.Month)
@@ -551,7 +553,7 @@ module Extension =
       Identifier.FullyQualified([ "DateOnly" ], "getDay")
       |> TypeCheckScope.Empty.Resolve
 
-    let dayOperation: ResolvedIdentifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
+    let dayOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
       dateOnlyDayId,
       { PublicIdentifiers =
           Some(TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue), Kind.Star, DateTimeOperations.Day)
@@ -582,7 +584,7 @@ module Extension =
       Identifier.FullyQualified([ "DateOnly" ], "getDayOfWeek")
       |> TypeCheckScope.Empty.Resolve
 
-    let dayOfWeekOperation: ResolvedIdentifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
+    let dayOfWeekOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
       dateOnlyDayOfWeekId,
       { PublicIdentifiers =
           Some(TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue), Kind.Star, DateTimeOperations.DayOfWeek)
@@ -613,7 +615,7 @@ module Extension =
       Identifier.FullyQualified([ "DateOnly" ], "getDayOfYear")
       |> TypeCheckScope.Empty.Resolve
 
-    let dayOfYearOperation: ResolvedIdentifier * OperationExtension<'ext, DateTimeOperations<'ext>> =
+    let dayOfYearOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
       dateOnlyDayOfYearId,
       { PublicIdentifiers =
           Some(TypeValue.CreateArrow(dateOnlyTypeValue, int32TypeValue), Kind.Star, DateTimeOperations.DayOfYear)

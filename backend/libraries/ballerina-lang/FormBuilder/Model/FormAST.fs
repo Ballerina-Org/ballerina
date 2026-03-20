@@ -35,6 +35,13 @@ module FormAST =
 
   type Details = Details of string
 
+  type ListAction =
+    | Add
+    | Remove
+    | Clear
+    | Move
+    | Duplicate
+
   type Cardinality =
     | Single
     | Multi
@@ -77,10 +84,11 @@ module FormAST =
       Items: List<RendererExpression<'typeValue>>
       Type: 'typeValue }
 
-  and ListRenderer<'typeValue> =                     
-    { List: RendererIdentifier                      // nome di una funzione nei renderer che é capace di renderizzare una lista di oggetti (senza sapere come renderizzare i singoli elementi), esempio listAsTable/readOnlyList
-      Element: RendererExpression<'typeValue>       // renderer dell'elemento della lista che verrá invocato N volte; nel reference ce ne saranno due, uno per la preview(es.: dropdown) e uno per l'oggetto vero e proprio (es.: address)
-      Type: 'typeValue }                            // tipo dell'elemento della lista
+  and ListRenderer<'typeValue> =
+    { List: RendererIdentifier
+      Element: RendererExpression<'typeValue>
+      Actions: Set<ListAction>
+      Type: 'typeValue }
 
   and ReferenceOneRenderer<'typeValue> = 
     { ReferenceOne: RendererIdentifier 

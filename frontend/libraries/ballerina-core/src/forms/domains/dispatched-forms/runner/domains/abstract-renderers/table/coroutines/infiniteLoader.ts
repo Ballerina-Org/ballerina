@@ -1,12 +1,9 @@
 import {
-  BaseFlags,
-  DispatchDelta,
   DispatchParsedType,
   DispatchTableApiSource,
   Option,
   PredicateValue,
   TableAbstractRendererState,
-  unit,
   Unit,
   ValueOrErrors,
   ValueTable,
@@ -15,6 +12,8 @@ import { replaceWith } from "../../../../../../../../fun/domains/updater/domains
 import { InfiniteLoaderCo as Co } from "./builder";
 import { Map } from "immutable";
 import { TableLoadWithRetries } from "./loadWithRetries";
+import { DispatchDelta } from "../../../deltas/dispatch-delta/state";
+import { BaseFlags } from "../../../deltas/delta-to-dto/state";
 
 export const TableInfiniteLoader = <
   CustomPresentationContext = Unit,
@@ -47,6 +46,7 @@ export const TableInfiniteLoader = <
                       res.value.to,
                       res.value.hasMoreValues,
                       current.value.data.concat(res.value.data),
+                      res.value.defaultRow,
                     ),
                   );
                   // Only needed as a delta is mandatory for onchange but it is ignored upstream
