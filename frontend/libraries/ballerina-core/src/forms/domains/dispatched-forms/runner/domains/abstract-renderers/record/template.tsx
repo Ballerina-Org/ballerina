@@ -250,9 +250,10 @@ export const RecordAbstractRenderer = <
         props.context.layoutAncestorPath,
       );
 
-    if (layoutFromPreprocessor == undefined) {
-      console.warn("Layout not found for " + props.context.layoutAncestorPath);
-    }
+    // TODO: find a different way to warn about this case only when the preprocessor is needed, without spamming the console 
+    // if (layoutFromPreprocessor == undefined) {
+    //   console.warn("Layout not found for " + props.context.layoutAncestorPath);
+    // }
 
     const calculatedLayout =
       layoutFromPreprocessor != undefined
