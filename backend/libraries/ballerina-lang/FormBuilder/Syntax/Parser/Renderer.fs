@@ -253,17 +253,44 @@ module Parser =
     parser {
       do! keyword ReferenceOne
       let! rendererName = parseRendererDef ()
-      let! elementRenderer = parseRenderer ()
-      let! previewRenderer = parseRenderer ()
+
+      let! elementRendererOpt = 
+        parser.Try(parseDetailRenderer ()) 
+        |> parser.Map Sum.toOption
+      //let! elementRenderer = parseRenderer ()
+
+      let! previewRendererOpt = 
+        parser.Try(parsePreviewRenderer ()) 
+        |> parser.Map Sum.toOption
+      //let! previewRenderer = parseRenderer ()      
+      
+      let! schemaName = identifier()      
       let! schemaEntityName = identifier()  
+
+      match (previewRendererOpt, elementRendererOpt) with 
+        | (Some(RendererExpression.Readonly _), _) -> () // if the preview renderer is a readonly renderer, it's valid, and it doesn't matter what the detail renderer is 
+        | (None, Some(_)) -> () // if the preview is None, but the detail renderer is provided, it's also fine, we can have a reference one without a preview renderer
+        | (None, None) ->  // if both preview and detail renderers are None, it is not valid
+          return!
+            parser.Throw(
+              Errors.Singleton Location.Unknown (fun () -> "At least one between preview and detail renderer must be provided")
+              |> Errors.MapPriority(replaceWith ErrorPriority.High)
+            )
+        | _ -> // in this case it means that the preview renderer is provided but it's not a readonly renderer, which is not valid
+          return!
+            parser.Throw(
+              Errors.Singleton Location.Unknown (fun () -> "Preview renderer must be a readonly renderer")
+              |> Errors.MapPriority(replaceWith ErrorPriority.High)
+            )
 
       return
         { ReferenceOne = RendererIdentifier rendererName
-          CurrentElement = elementRenderer
-          Preview = previewRenderer
+          CurrentElement = elementRendererOpt
+          Preview = previewRendererOpt
+          SchemaName = { EntityName = schemaName}
           SchemaEntityName = { EntityName = schemaEntityName}
           Type = Unchecked
-          TypeID = Unchecked }
+          TypeElement = Unchecked }
     }
 
   and parseReadonly () =

@@ -189,6 +189,7 @@ module Types =
     | RendererExpression.Table _ -> failwith $"Table Renderers are not supported for field type generation"
     | RendererExpression.One _ -> failwith $"One Renderers are not supported for field type generation"
     | RendererExpression.Many _ -> failwith $"Many Renderers are not supported for field type generation"
+    | RendererExpression.ReferenceOne referenceOne -> JsonValue.String(referenceOne.Type.ToString()), unionTypes
     | _ -> failwith $"Renderer {renderer} not supported for field type generation"
 
   and private generateFormTypeJson<'typeValue>

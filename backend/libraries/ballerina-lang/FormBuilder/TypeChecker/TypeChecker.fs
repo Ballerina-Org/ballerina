@@ -1,6 +1,7 @@
 namespace Ballerina.DSL.FormBuilder.Types
 
 module TypeChecker =
+  open System
   open Ballerina
   open Ballerina.Collections.Sum
   open Ballerina.DSL.Next.Types
@@ -696,6 +697,111 @@ module TypeChecker =
           Type = targetType }
     }
 
+  and checkReferenceOne
+    (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
+    (targetType: TypeValue<'valueExt>)
+    (referenceOneRenderer: ReferenceOneRenderer<Unchecked>)
+    =
+    state {
+      // extract types from the context
+      let! types = state.GetContext() |> state.Map(fun context -> context.Types)
+
+      // find the schema with name schemaName
+      let schemaName = referenceOneRenderer.SchemaName.EntityName
+      let onlySchemaWithCorrectName = 
+        types 
+        |> Map.filter (fun name typeValue -> 
+          match typeValue with 
+          | Schema _ -> name = schemaName 
+          | _ -> false)
+
+      // find the schema entity with the name entityName
+      let entityName = referenceOneRenderer.SchemaEntityName.EntityName
+      let! schemaEntity =
+        onlySchemaWithCorrectName
+        |> Map.values
+        |> Seq.tryPick (fun typeValue ->
+            match typeValue with
+            | Schema schema ->
+                schema.Entities.data
+                |> Map.tryFindKey (fun entityKey _ -> entityKey.Name = entityName)
+                |> Option.map (fun entityKey -> schema.Entities.data.[entityKey])
+            | _ -> None)
+        |> Sum.fromOption (fun () ->
+          Errors.Singleton Location.Unknown (fun () -> $"Entity '{entityName}' was not found in the schema or schema was not found.")
+          |> Errors.MapPriority(replaceWith ErrorPriority.High))
+        |> state.OfSum
+      
+      // Console.WriteLine($"Found entity {schemaEntity.Name}")
+      
+      let typeValueWithProps = schemaEntity.TypeWithProps    // Address + props
+      let typeValueOriginal = schemaEntity.TypeOriginal      // Address      
+      let typeID = schemaEntity.Id                           // AddressID
+      // targetType = AddressID
+
+      // Check if typeID corresponds to (unifies with) targetType (i.e., both AddressID):
+      do!
+          TypeValue.Unify(Location.Unknown, typeID, targetType)
+          |> runUnification
+
+      // Create a synthetic type containing the props (with empty path) and the fields coming from typeID. 
+      // This new type should then be used to typecheck the Preview (otherwise you don't have the ID field).
+      let propsWithEmptyPath = schemaEntity.Properties |> List.filter (fun prop -> prop.Path = []) // we only want to keep the props with empty path
+      let propsWithEmptyPathAsFields = 
+        match typeValueWithProps with
+          | TypeValue.Record fields ->
+            fields.value 
+              |> OrderedMap.filter(fun typeSymbol _ -> propsWithEmptyPath |> List.exists(fun p -> typeSymbol.Name.LocalName = p.PropertyName.Name))
+          | _ -> OrderedMap.empty // fallback, should not happen
+      let recordWithPropsAndId = 
+        match typeID with
+        | TypeValue.Record idFields -> TypeValue.CreateRecord(OrderedMap.mergeSecondAfterFirst idFields.value propsWithEmptyPathAsFields)
+        | _ -> typeID // fallback, should not happen
+      let recordWithPropsAndFields = 
+        match typeValueOriginal with
+        | TypeValue.Record fields -> TypeValue.CreateRecord(OrderedMap.mergeSecondAfterFirst fields.value propsWithEmptyPathAsFields)
+        | _ -> typeValueOriginal // fallback, should not happen
+
+      let! typedPreview = 
+        state {
+          match referenceOneRenderer.Preview with
+          | Some(_) -> return! checkRenderer stdExtensions recordWithPropsAndId referenceOneRenderer.Preview.Value |> state.Map Some
+          | None -> return None
+        } 
+      // let! typedPreview = checkRenderer stdExtensions recordWithPropsAndId referenceOneRenderer.Preview
+      
+      let! typedCurrentElement = 
+        state {
+          match referenceOneRenderer.CurrentElement with
+          | Some(_) -> return! checkRenderer stdExtensions recordWithPropsAndFields referenceOneRenderer.CurrentElement.Value |> state.Map Some
+          | None -> return None
+        } 
+      //let! typedCurrentElement = checkRenderer stdExtensions recordWithPropsAndFields referenceOneRenderer.CurrentElement
+
+      // NOTE: is the following unification needed or superfluous? Is it done already by the checkRenderer above?
+      match typedPreview with 
+      | Some _ ->       
+        do!
+          TypeValue.Unify(Location.Unknown, typedPreview.Value.Type, recordWithPropsAndId)
+          |> runUnification
+      | None -> ()
+
+      match typedCurrentElement with
+      | Some _ ->
+        do!
+            TypeValue.Unify(Location.Unknown, typedCurrentElement.Value.Type, recordWithPropsAndFields)
+            |> runUnification
+      | None -> ()
+
+      return
+        { ReferenceOne = referenceOneRenderer.ReferenceOne
+          Preview = typedPreview
+          CurrentElement = typedCurrentElement
+          SchemaName = referenceOneRenderer.SchemaName
+          SchemaEntityName = referenceOneRenderer.SchemaEntityName
+          Type = targetType
+          TypeElement = typeValueOriginal } // was: entityType }
+    }
 
   and checkRenderer
     (stdExtensions: StdExtensions<'valueExt, 'valueExtDTO>)
@@ -746,6 +852,7 @@ module TypeChecker =
             )
         | Some formType -> return Form(formId, formType)
       | InlineForm inlineform -> return! checkInlineForm stdExtensions targetType inlineform |> state.Map InlineForm
+      | RendererExpression.ReferenceOne referenceOne -> return! checkReferenceOne stdExtensions targetType referenceOne |> state.Map ReferenceOne
       | _ -> return! state.Throw(Errors.Singleton Location.Unknown (fun () -> $"Unsupported renderer {renderer}."))
     }
 

@@ -84,11 +84,12 @@ module FormAST =
 
   and ReferenceOneRenderer<'typeValue> = 
     { ReferenceOne: RendererIdentifier 
-      Preview: RendererExpression<'typeValue> 
-      CurrentElement: RendererExpression<'typeValue> 
+      Preview: Option<RendererExpression<'typeValue>> 
+      CurrentElement: Option<RendererExpression<'typeValue>>
+      SchemaName: EntityName 
       SchemaEntityName: EntityName
       Type: 'typeValue
-      TypeID: 'typeValue } // per reference servono due tipi, uno é quello dell'id e uno é quello dell'oggetto (esempio: addressID e address) 
+      TypeElement: 'typeValue } // per reference servono due tipi, uno é quello dell'id e uno é quello dell'oggetto (esempio: addressID e address) 
   // Esempio di forms: ContactNumbers list(readonlyList) string(print);
   // readOnlyList = RendererIdentifier
   // string(print) = RendererExpression<'typeValue> 

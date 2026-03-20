@@ -93,6 +93,15 @@ module Forms =
     | RendererExpression.Table _ -> failwith $"Table Renderers are not supported"
     | RendererExpression.One _ -> failwith $"One Renderers are not supported"
     | RendererExpression.Many _ -> failwith $"Many Renderers are not supported"
+    | RendererExpression.ReferenceOne referenceOne ->
+      [ "renderer", JsonValue.String (referenceOne.ReferenceOne.ToString())
+        "previewRenderer", match referenceOne.Preview with 
+                            | Some(preview) -> JsonValue.Record(Array.ofList (generateRendererJson preview))
+                            | None -> JsonValue.Null
+        "currentElementRenderer", match referenceOne.CurrentElement with 
+                                    | Some(currentElement) -> JsonValue.Record(Array.ofList (generateRendererJson currentElement))
+                                    | None -> JsonValue.Null
+      ]    
     | _ -> failwith $"Renderer {renderer} not supported"
 
   and private generateFieldJson<'typeValue> (field: Field<'typeValue>) : JsonValue =
