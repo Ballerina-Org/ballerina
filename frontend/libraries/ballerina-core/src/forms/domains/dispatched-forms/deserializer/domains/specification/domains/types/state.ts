@@ -439,8 +439,8 @@ export const OneType = {
 
 export type ReferenceOneType<T> = {
   kind: "referenceOne";
-  detailsType: LookupType; //TODO Suzan: should this be lookup type?
-  previewType: LookupType; //TODO Suzan: should this be lookup type?
+  detailsType: LookupType;
+  previewType: LookupType;
   // asString: () => StringSerializedType;
 };
 
@@ -1790,7 +1790,7 @@ export const DispatchParsedType = {
             alreadyParsedTypes,
             injectedPrimitives,
           ).Then(([parsedArgDetails, newAlreadyParsedTypesDetails]) => {
-            return parsedArgDetails.kind != "lookup" //TODO Suzan: should it be lookup?
+            return parsedArgDetails.kind != "lookup"
               ? ValueOrErrors.Default.throwOne(
                   `referenceOne details content type ${JSON.stringify(parsedArgDetails)} is not a lookup type`,
                 )
@@ -1801,7 +1801,7 @@ export const DispatchParsedType = {
                 newAlreadyParsedTypesDetails,
                 injectedPrimitives,
               ).Then(([parsedArgPreview, newAlreadyParsedTypesPreview]) => {
-                return parsedArgPreview.kind != "lookup" //TODO Suzan: should it be lookup?
+                return parsedArgPreview.kind != "lookup"
                   ? ValueOrErrors.Default.throwOne(
                       `referenceOne preview content type ${JSON.stringify(parsedArgPreview)} is not a lookup type`,
                     )

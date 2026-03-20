@@ -400,15 +400,15 @@ export type DispatchDeltaReferenceOne<T = Unit> =
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
     }
-  | {
+  | { //TODO Suzan: remove
       kind: "ReferenceOneCreateValue";
       value: PredicateValue;
       type: DispatchParsedType<any>;
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
     }
-  | {
-      kind: "ReferenceOneDeleteValue"; //TODO Suzan: should deleting be possible?
+  | { //TODO Suzan: remove
+      kind: "ReferenceOneDeleteValue";
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
     };
@@ -556,7 +556,7 @@ export type DispatchDeltaTransferReferenceOne<DispatchDeltaTransferCustom> =
   | { Discriminator: "ReferenceOneReplace"; Replace: any }
   | { Discriminator: "ReferenceOneCreateValue"; CreateValue: any }
   | {
-      Discriminator: "ReferenceOneDeleteValue"; //TODO Suzan: should deleting be possible?
+      Discriminator: "ReferenceOneDeleteValue";
       DeleteValue: Unit;
     };
 
@@ -1787,7 +1787,7 @@ export const DispatchDeltaTransfer = {
               );
             }
 
-            return toRawObject(delta.value, delta.type.previewType, unit).Then( //TODO Suzan: in the delta, should the preview be used? That is what the user can choose, they don't have access to the details
+            return toRawObject(delta.value, delta.type.previewType, unit).Then(
               (value) =>
                 ValueOrErrors.Default.return<
                   [

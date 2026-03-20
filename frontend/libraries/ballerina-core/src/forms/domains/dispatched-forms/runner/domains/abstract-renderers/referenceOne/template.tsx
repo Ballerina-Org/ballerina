@@ -211,8 +211,9 @@ export const ReferenceOneAbstractRenderer = <
               nestedDelta.sourceAncestorLookupTypeNames,
           };
 
-          // The Option component of the referenceOne is a lazy load signal. Either the value is provided initially,
-          // or it is loaded lazily. Here we always update a some, because if the detail renderer is displayed,
+          // The Option component of the referenceOne is a lazy load signal. 
+          // The value for referenceOne is always provided initially.
+          // Here we always update a some, because if the detail renderer is displayed,
           // we must already have a value, and the option is a some.
           props.foreignMutations.onChange(
             updater.kind == "l"
@@ -248,6 +249,7 @@ export const ReferenceOneAbstractRenderer = <
             const state =
               _.customFormState?.previewStates.get(id) ??
               RecordAbstractRendererState.Default.zero();
+ 
             return {
               ...state,
               value,
@@ -457,7 +459,7 @@ export const ReferenceOneAbstractRenderer = <
               clear: () =>
                 // See comment at top of file
                 props.foreignMutations.clear && props.foreignMutations.clear(),
-              delete: (flags) => { //TODO Suzan: should delete be implemented?
+              delete: (flags) => {
                 const delta: DispatchDelta<Flags> = {
                   kind: "ReferenceOneDeleteValue",
                   flags,

@@ -301,7 +301,7 @@ export const PredicateValueExtractor = {
           const traverseValue: TypeInstancesExtractor = self(
             lookupName,
             typesMap,
-            t.detailsType, //TODO Suzan: should this be details or preview type?
+            t.detailsType, //TODO Suzan: should this be details or preview type? see tuple/map. both types should be passed
             debugPath.concat("referenceOne"),
           );
           return (v): ExtractedTypeInstances =>

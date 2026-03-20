@@ -951,7 +951,7 @@ export const dispatchDefaultState =
                 OneAbstractRendererState.Default(undefined),
               );
 
-      if (t.kind == "referenceOne") //TODO Suzan: use correct sources here
+      if (t.kind == "referenceOne")
         return renderer.kind != "referenceOneRenderer"
           ? ValueOrErrors.Default.throwOne(
               `received non referenceOne renderer kind "${renderer.kind}" when resolving defaultState for referenceOne`,
