@@ -372,6 +372,11 @@ export const DispatchDeltaToUpdater =
       return rec(delta.caseName[1]).Then((nestedUpdater) =>
         ValueOrErrors.Default.return<Updater<PredicateValue>, string>(
           Updater((current) => {
+            // Some runtime values represent the active union payload directly as a record.
+            // In that case, apply the nested updater on the record payload.
+            if (PredicateValue.Operations.IsRecord(current)) {
+              return nestedUpdater(current);
+            }
             if (!PredicateValue.Operations.IsUnionCase(current)) {
               return failCurrent(
                 current,

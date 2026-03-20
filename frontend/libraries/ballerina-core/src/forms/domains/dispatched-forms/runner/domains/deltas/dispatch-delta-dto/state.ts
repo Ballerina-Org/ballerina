@@ -727,16 +727,20 @@ export const DispatchDeltaTransferOperations = {
     delta: unknown,
     type: DispatchParsedType<any>,
   ): delta is {
-    Discriminator: "TupleValue";
-    Value: DispatchTransferTuple2<number, object>;
+    Discriminator: string;
+    [item: string]: unknown;
   } =>
     type.kind == "tuple" &&
     typeof delta === "object" &&
     delta !== null &&
     "Discriminator" in delta &&
     typeof delta.Discriminator === "string" &&
-    Object.keys(delta).includes(delta.Discriminator),
-  isTableValue: (
+    (
+      (() => {
+        const match = /^Tuple\d+Item(\d+)$/.exec(delta.Discriminator);
+        return match != null && Object.keys(delta).includes(`Item${match[1]}`);
+    })()),
+isTableValue: (
     delta: unknown,
   ): delta is {
     Discriminator: "TableValue";
