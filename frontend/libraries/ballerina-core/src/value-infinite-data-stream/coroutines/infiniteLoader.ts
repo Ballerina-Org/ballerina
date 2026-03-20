@@ -20,7 +20,6 @@ export const ValueInfiniteStreamLoader = (maxRetries = 3) => {
     Unit
   > =>
     Co.GetState().then((current) => {
-      console.debug("attempting to load infinite stream");
       return current.loadingMore.kind === "loaded"
         ? Co.Return(true)
         : Co.Await(
