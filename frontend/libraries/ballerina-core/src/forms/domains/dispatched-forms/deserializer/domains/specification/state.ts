@@ -106,30 +106,58 @@ export const Specification = {
       launcherTypes: List<DispatchTypeName>,
       serializedTypes: Record<string, SerializedType<T>>,
       injectedPrimitives?: DispatchInjectedPrimitives<T>,
+      explicitLookupTypes?: List<DispatchTypeName>,
     ): ValueOrErrors<Map<DispatchTypeName, DispatchParsedType<T>>, string> => {
+      const parsedLauncherTypes = launcherTypes.reduce(
+        (acc, rawTypeName) => {
+          if (acc.has(rawTypeName)) {
+            return acc;
+          }
+          const res = DispatchParsedType.Operations.ParseRawType(
+            rawTypeName,
+            serializedTypes[rawTypeName],
+            serializedTypes,
+            acc,
+            injectedPrimitives,
+          );
+          return res.kind == "errors"
+            ? acc.set(rawTypeName, res)
+            : res.value[1].set(
+                rawTypeName,
+                ValueOrErrors.Default.return<DispatchParsedType<T>, string>(
+                  res.value[0],
+                ),
+              );
+        },
+        Map<DispatchTypeName, ValueOrErrors<DispatchParsedType<T>, string>>(),
+      );
+
+      const withExplicitLookupTypes = (
+        explicitLookupTypes ?? List<DispatchTypeName>()
+      ).reduce((acc, rawTypeName) => {
+        if (acc.has(rawTypeName)) {
+          return acc;
+        }
+        const res = DispatchParsedType.Operations.ParseRawType(
+          rawTypeName,
+          serializedTypes[rawTypeName],
+          serializedTypes,
+          acc,
+          injectedPrimitives,
+        );
+        return res.kind == "errors"
+          ? acc.set(rawTypeName, res)
+          : res.value[1].set(
+              rawTypeName,
+              ValueOrErrors.Default.return<DispatchParsedType<T>, string>(
+                res.value[0],
+              ),
+            );
+      }, parsedLauncherTypes);
+
       return ValueOrErrors.Operations.All(
         List<ValueOrErrors<[DispatchTypeName, DispatchParsedType<T>], string>>(
-          launcherTypes
-            .reduce((acc, rawTypeName) => {
-              if (acc.has(rawTypeName)) {
-                return acc;
-              }
-              const res = DispatchParsedType.Operations.ParseRawType(
-                rawTypeName,
-                serializedTypes[rawTypeName],
-                serializedTypes,
-                acc,
-                injectedPrimitives,
-              );
-              return res.kind == "errors"
-                ? acc.set(rawTypeName, res)
-                : res.value[1].set(
-                    rawTypeName,
-                    ValueOrErrors.Default.return<DispatchParsedType<T>, string>(
-                      res.value[0],
-                    ),
-                  );
-            }, Map<DispatchTypeName, ValueOrErrors<DispatchParsedType<T>, string>>())
+          withExplicitLookupTypes
             .entrySeq()
             .map(([name, type]) =>
               type.Then((type) =>
@@ -410,6 +438,7 @@ export const Specification = {
           | SerializedSpecification
           | SerializedSpecification[],
         launcherNames?: string[],
+        explicitLookupTypes?: string[],
       ): ValueOrErrors<Specification<T>, string> =>
         injectedPrimitives
           ?.keySeq()
@@ -456,6 +485,7 @@ export const Specification = {
                               formTypes,
                               serializedSpecificationV2s.types,
                               injectedPrimitives,
+                              List(explicitLookupTypes),
                             ).Then((allTypes) =>
                               Specification.Operations.DeserializeForms<
                                 T,

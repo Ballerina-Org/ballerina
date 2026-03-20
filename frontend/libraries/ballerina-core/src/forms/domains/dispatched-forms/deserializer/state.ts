@@ -694,6 +694,7 @@ export type DispatchFormsParserContext<
   getFormsConfig: BasicFun<void, Promise<any>>;
   injectedPrimitives?: DispatchInjectables<T>;
   desiredLaunchers?: string[];
+  explicitLookupTypes?: string[]; // types that are always parsed even if not referenced by a launcher
 };
 
 export type DispatchFormsParserState<
