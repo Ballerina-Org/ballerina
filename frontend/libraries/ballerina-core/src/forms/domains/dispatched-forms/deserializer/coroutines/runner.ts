@@ -80,7 +80,7 @@ export const LoadAndDeserializeSpecification = <
             current.fieldTypeConverters,
             current.concreteRenderers,
             injectedPrimitives,
-          )(serializedSpecifications, current.desiredLaunchers);
+          )(serializedSpecifications, current.desiredLaunchers, current.explicitLookupTypes);
 
           if (deserializationResult.kind == "errors") {
             console.error(

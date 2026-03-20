@@ -588,14 +588,19 @@ export const DispatchDeltaDTOToDelta =
             `Union case expected but got ${JSON.stringify(type)}`,
           );
         }
-        const caseName = deltaDTO.Discriminator;
+        const rawCaseName = deltaDTO.Discriminator;
+        // temporary fix
+        const caseName = rawCaseName.startsWith("Case")
+          ? rawCaseName.slice(4)
+          : rawCaseName;
         const caseType = type.args.get(caseName);
         if (caseType == undefined) {
           return ValueOrErrors.Default.throwOne<DispatchDelta<Flags>, string>(
             `Case ${caseName} not found in union type ${JSON.stringify(type)}`,
           );
         }
-        return rec(caseType, deltaDTO[caseName]).Then((value) =>
+        return rec(caseType, deltaDTO[rawCaseName] ?? deltaDTO[caseName]).Then(
+          (value) =>
           ValueOrErrors.Default.return<DispatchDelta<Flags>, string>(
             withCommon({
               kind: "UnionCase",
