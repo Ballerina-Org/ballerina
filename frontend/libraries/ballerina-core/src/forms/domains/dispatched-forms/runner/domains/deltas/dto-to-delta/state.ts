@@ -20,6 +20,9 @@ export const DispatchDeltaDTOToDelta =
     ) => (
       customDeltaDTO: DispatchDeltaTransferCustom,
     ) => ValueOrErrors<DispatchDeltaCustom<Flags>, string>,
+    resolveLookupType: (
+      lookupName: string,
+    ) => ValueOrErrors<DispatchParsedType<any>, string>,
   ) =>
   (entityType: DispatchParsedType<any>) =>
   (
@@ -126,6 +129,19 @@ export const DispatchDeltaDTOToDelta =
       type: DispatchParsedType<any>,
       deltaDTO: DeltaTransfer<DispatchDeltaTransferCustom>,
     ): ValueOrErrors<DispatchDelta<Flags>, string> => {
+      if (type.kind == "lookup" && resolveLookupType != undefined) {
+        return resolveLookupType(type.name).Then((resolvedType) => {
+          if (
+            resolvedType.kind == "lookup" &&
+            resolvedType.name == type.name
+          ) {
+            return ValueOrErrors.Default.throwOne<DispatchDelta<Flags>, string>(
+              `Unable to resolve lookup type ${type.name}`,
+            );
+          }
+          return rec(resolvedType, deltaDTO);
+        });
+      }
       if (DispatchDeltaTransferOperations.isNumberReplace(deltaDTO)) {
         if (type.kind != "primitive" || type.name != "number") {
           return ValueOrErrors.Default.throwOne<DispatchDelta<Flags>, string>(
