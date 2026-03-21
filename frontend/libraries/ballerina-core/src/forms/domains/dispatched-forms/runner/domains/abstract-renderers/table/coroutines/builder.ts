@@ -39,6 +39,8 @@ export const PendingOperationsCo = <
       CustomPresentationContext,
       ExtraContext
     > &
-      Pick<TableAbstractRendererForeignMutationsExpected, "onChange">,
+      Pick<TableAbstractRendererForeignMutationsExpected, "onChange"> & {
+        uniqueTableIdentifier: string;
+      },
     TableAbstractRendererState
   >();

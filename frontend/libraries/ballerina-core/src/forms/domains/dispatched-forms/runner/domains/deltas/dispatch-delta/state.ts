@@ -359,6 +359,7 @@ export type DispatchDeltaTable<T = Unit> =
       id: string;
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
+      uniqueTableIdentifier: string;
     }
   | {
       kind: "TableRemoveAll";

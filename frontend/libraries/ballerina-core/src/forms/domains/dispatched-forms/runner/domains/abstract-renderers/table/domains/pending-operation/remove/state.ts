@@ -3,10 +3,15 @@ import { simpleUpdater } from "ballerina-core";
 
 export type TableAbstractRendererPendingRemoveOperation = {
   id: string;
+  flags: any;
 };
 export const TableAbstractRendererPendingRemoveOperation = {
-  Default: (id: string): TableAbstractRendererPendingRemoveOperation => ({
+  Default: (
+    id: string,
+    flags: any,
+  ): TableAbstractRendererPendingRemoveOperation => ({
     id,
+    flags,
   }),
 };
 
