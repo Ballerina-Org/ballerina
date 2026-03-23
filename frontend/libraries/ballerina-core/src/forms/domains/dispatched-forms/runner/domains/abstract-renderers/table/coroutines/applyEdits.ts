@@ -38,34 +38,6 @@ export const ApplyEdits = <
           );
 
         if (newData.kind == "r") {
-          // apply the correct edits to all the rows that have been added to the table
-          // since the previously applied edits have been overwritten by the new data
-          newData.value.forEach((op) => {
-            op.editsToApply.forEach((edit) => {
-              const rowId = current.value.data.keySeq().get(op.idx);
-              if (rowId == undefined) {
-                console.warn("Actual id is undefined for edit:", edit);
-                return;
-              }
-
-              const updater = Option.Default.some(
-                ValueTable.Updaters.data(
-                  MapRepo.Updaters.update(rowId, edit.recordUpdater),
-                ),
-              );
-
-              const correctRowIdDelta =
-                edit.delta.kind == "TableValue"
-                  ? {
-                      ...edit.delta,
-                      id: rowId,
-                    }
-                  : edit.delta;
-
-              current.onChange(updater, correctRowIdDelta);
-            });
-          });
-
           // bundle together all the add operations that have the same flags
           const remainingAddOperations =
             current.customFormState.pendingOps.pending

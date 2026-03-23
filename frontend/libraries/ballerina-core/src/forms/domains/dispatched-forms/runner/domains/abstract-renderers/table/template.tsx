@@ -191,12 +191,6 @@ export const TableAbstractRenderer = <
     (value: PredicateValue) =>
     (disabled: boolean) =>
     (isFakeRow: (_: string) => boolean) =>
-    (
-      onChange: (
-        idx: number,
-        valueRecordUpdater: Updater<ValueRecord>,
-      ) => DispatchOnChange<ValueTable, Flags>,
-    ) =>
     (flags: Flags | undefined) =>
       cellTemplate
         .mapContext<
@@ -348,9 +342,8 @@ export const TableAbstractRenderer = <
                     ),
                   );
 
-            // need to call the custom onChange function provided by the abstract table renderer
-            // to hande updated on "fake" rows (rows that have been optimisticaly added to the table)
-            onChange(idx, valueRecordUpdater)(updater, delta);
+
+            props.foreignMutations.onChange(updater, delta);
           },
         }));
 
@@ -358,12 +351,6 @@ export const TableAbstractRenderer = <
     DetailsRenderer && DetailsRendererRaw
       ? (tableData: OrderedMap<string, any>) =>
           (isFakeRow: (_: string) => boolean) =>
-          (
-            onChange: (
-              idx: number,
-              valueRecordUpdater: Updater<ValueRecord>,
-            ) => DispatchOnChange<ValueTable, Flags>,
-          ) =>
           (flags: Flags | undefined) =>
             DetailsRenderer.mapContext<
               TableAbstractRendererReadonlyContext<
@@ -550,7 +537,7 @@ export const TableAbstractRenderer = <
                       nestedUpdater.kind == "l" ? id : nestedUpdater.value,
                     );
 
-                    onChange(idx, valueRecordUpdater)(updater, delta);
+                    props.foreignMutations.onChange(updater, delta);
                   }
                 },
               }))
@@ -1133,12 +1120,6 @@ export const TableAbstractRenderer = <
               TableAbstractRendererPendingOps.Operations.hasPendingAddOperation(
                 props.context.customFormState.pendingOps,
               ),
-            )(
-              TableAbstractRendererPendingOps.Operations.optimisticUpdate<
-                CustomPresentationContext,
-                Flags,
-                ExtraContext
-              >(props),
             )}
             TableData={embeddedTableData.map((_) =>
               _.map((row) =>
@@ -1146,13 +1127,7 @@ export const TableAbstractRenderer = <
                   TableAbstractRendererPendingOps.Operations.hasPendingAddOperation(
                     props.context.customFormState.pendingOps,
                   ),
-                )(
-                  TableAbstractRendererPendingOps.Operations.optimisticUpdate<
-                    CustomPresentationContext,
-                    Flags,
-                    ExtraContext
-                  >(props),
-                ),
+                )
               ),
             )}
             UnfilteredTableData_Dangerous={embeddedUnfilteredTableData}
