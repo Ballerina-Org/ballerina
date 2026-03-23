@@ -69,10 +69,14 @@
     <Compile Include="TimeSpan/Model.fs" />
     <Compile Include="TimeSpan/Patterns.fs" />
     <Compile Include="TimeSpan/Extension.fs" />
+    <Compile Include="Updater/Model.fs" />
+    <Compile Include="Updater/Patterns.fs" />
+    <Compile Include="Updater/Extension.fs" />
     <Compile Include="StdExtensions.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FSharp.Data" Version="6.6.0" />
+    <PackageReference Include="Nerdbank.MessagePack" Version="1.0.43" />
   </ItemGroup>
   <Import Project="./SmartComponents/SmartComponents.LocalEmbeddings/build/SmartComponents.LocalEmbeddings.targets" />
   <ItemGroup>

@@ -28,7 +28,7 @@ module MemoryDBAPIFactory =
   open Utils
 
   let contextFactory dbFileConfig =
-    stdExtensions (fileDbOps dbFileConfig)
+    stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()) (fileDbOps dbFileConfig)
     |> fun (_, languageContext, querySymbols, queryTypeFactory) -> languageContext, querySymbols, queryTypeFactory
 
   let getSchemaVersion tenantId schemaName draft schemaFileConfig =

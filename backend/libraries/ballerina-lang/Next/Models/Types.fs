@@ -12,6 +12,7 @@ module Model =
   open Ballerina.Errors
   open Ballerina
   open Ballerina.Collections.Sum
+  open Ballerina.Collections.Map
   open Ballerina.Collections.NonEmptyList
 
   type LocalIdentifier = { Name: string }
@@ -553,7 +554,8 @@ module Model =
   and Schema<'valueExt> =
     { DeclaredAtForNominalEquality: Location
       Entities: OrderedMap<SchemaEntityName, SchemaEntity<'valueExt>>
-      Relations: OrderedMap<SchemaRelationName, SchemaRelation<'valueExt>> }
+      Relations: OrderedMap<SchemaRelationName, SchemaRelation<'valueExt>>
+      Included: Option<Schema<'valueExt>> }
 
     override s.ToString() =
       let entities =
@@ -798,6 +800,10 @@ module Model =
       Val: Expr<'T, 'Id, 'valueExt>
       Rest: Expr<'T, 'Id, 'valueExt> }
 
+  and ExprDo<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Val: Expr<'T, 'Id, 'valueExt>
+      Rest: Expr<'T, 'Id, 'valueExt> }
+
   and ExprIf<'T, 'Id, 'valueExt when 'Id: comparison> =
     { Cond: Expr<'T, 'Id, 'valueExt>
       Then: Expr<'T, 'Id, 'valueExt>
@@ -871,14 +877,75 @@ module Model =
       ValueType: TypeValue<'valueExt>
       ValueKind: Kind }
 
-  and ExprQuery<'T, 'Id, 'valueExt when 'Id: comparison> =
+  and SimpleQuery<'T, 'Id, 'valueExt when 'Id: comparison> =
     { Iterators: ExprQueryIterators<'T, 'Id, 'valueExt>
       Joins: Option<NonEmptyList<ExprQueryJoin<'T, 'Id, 'valueExt>>>
       Where: Option<ExprQueryExpr<'T, 'Id, 'valueExt>>
       Select: ExprQueryExpr<'T, 'Id, 'valueExt>
       OrderBy: Option<ExprQueryExpr<'T, 'Id, 'valueExt> * OrderByDirection>
       Closure: Map<ResolvedIdentifier, TypeQueryRow<'valueExt>>
-      DeserializeFrom: TypeQueryRow<'valueExt> }
+      DeserializeFrom: TypeQueryRow<'valueExt>
+      Distinct: Option<ExprQueryExpr<'T, 'Id, 'valueExt>> }
+
+    override q.ToString() =
+      let joins =
+        match q.Joins with
+        | Some joins ->
+          let join_to_str j = $"({j.Left}) = ({j.Right})"
+          let _and = " and "
+          $"\njoins {String.Join(_and, joins |> NonEmptyList.toList |> List.map join_to_str)}"
+        | None -> ""
+
+      let where_to_str =
+        match q.Where with
+        | Some w -> $"\nwhere {w}"
+        | None -> ""
+
+      let select_to_str = $"\nselect {q.Select}"
+
+      let order_by_to_str =
+        match q.OrderBy with
+        | Some(ob, dir) -> $"\norderby {ob} {dir}"
+        | None -> ""
+
+      let iterator_vars q =
+        q.Iterators
+        |> NonEmptyList.map (fun i -> i.Var.Name)
+        |> NonEmptyList.toSeq
+        |> String.join ", "
+
+      let iterator_sources q =
+        q.Iterators
+        |> NonEmptyList.map (fun i -> $"{i.Source}")
+        |> NonEmptyList.toSeq
+        |> String.join ", "
+
+      let distinctStr =
+        match q.Distinct with
+        | Some d -> $"\ndistinct {d}"
+        | None -> ""
+
+      $"""(query {{ 
+  from {iterator_vars q} in {iterator_sources q}{joins}{where_to_str}{select_to_str}{order_by_to_str}}}){distinctStr}"""
+
+
+  and ExprQuery<'T, 'Id, 'valueExt when 'Id: comparison> =
+    | SimpleQuery of SimpleQuery<'T, 'Id, 'valueExt>
+    | UnionQueries of ExprQuery<'T, 'Id, 'valueExt> * ExprQuery<'T, 'Id, 'valueExt>
+
+    member self.Closure =
+      match self with
+      | SimpleQuery q -> q.Closure
+      | UnionQueries(q1, q2) -> Map.merge (fun _ -> id) q1.Closure q2.Closure
+
+    override self.ToString() =
+      match self with
+      | SimpleQuery q -> q.ToString()
+      | UnionQueries(q1, q2) ->
+        let unionStrs =
+          [ q1; q2 ] |> List.map (fun q -> q.ToString()) |> String.join "\nunion\n"
+
+        $"(\n{unionStrs}\n)"
 
   and OrderByDirection =
     | Asc
@@ -920,6 +987,12 @@ module Model =
     | QueryConstant of PrimitiveValue
     | QueryClosureValue of Value<TypeValue<'valueExt>, 'valueExt> * TypeQueryRow<'valueExt>
     | QueryCastTo of ExprQueryExpr<'T, 'Id, 'valueExt> * TypeQueryRow<'valueExt>
+    | QueryCount of ExprQuery<'T, 'Id, 'valueExt>
+    | QueryExists of ExprQuery<'T, 'Id, 'valueExt>
+    | QueryArray of ExprQuery<'T, 'Id, 'valueExt>
+    | QueryCountEvaluated of ValueQuery<'T, 'valueExt>
+    | QueryExistsEvaluated of ValueQuery<'T, 'valueExt>
+    | QueryArrayEvaluated of ValueQuery<'T, 'valueExt>
 
     override self.ToString() =
       match self with
@@ -956,6 +1029,12 @@ module Model =
       | QueryConstant c -> c.ToString()
       | QueryClosureValue(v, _) -> v.ToString()
       | QueryCastTo(v, t) -> $"{v} :: {t}"
+      | QueryCount q -> $"count({q})"
+      | QueryExists q -> $"any({q})"
+      | QueryArray q -> $"array({q})"
+      | QueryCountEvaluated v -> $"count({v})"
+      | QueryExistsEvaluated v -> $"any({v})"
+      | QueryArrayEvaluated v -> $"array({v})"
 
   and QueryCaseHandler<'T, 'Id, 'valueExt when 'Id: comparison> =
     { Param: Var
@@ -1016,6 +1095,7 @@ module Model =
     | FromValue of ExprFromValue<'T, 'Id, 'valueExt>
     | Apply of ExprApply<'T, 'Id, 'valueExt>
     | Let of ExprLet<'T, 'Id, 'valueExt>
+    | Do of ExprDo<'T, 'Id, 'valueExt>
     | If of ExprIf<'T, 'Id, 'valueExt>
     | RecordCons of ExprRecordCons<'T, 'Id, 'valueExt>
     | RecordWith of ExprRecordWith<'T, 'Id, 'valueExt>
@@ -1054,6 +1134,7 @@ module Model =
         match topt with
         | Some t -> $"(let {v.Name}: {t.ToString()} = {e1.ToString()} in {e2.ToString()})"
         | None -> $"(let {v.Name} = {e1.ToString()} in {e2.ToString()})"
+      | Do({ Val = e1; Rest = e2 }) -> $"(do {e1.ToString()}; {e2.ToString()})"
       | TypeLet({ Name = name
                   TypeDef = t
                   Body = body }) -> $"(type {name} = {t.ToString()}; {body.ToString()})"
@@ -1118,41 +1199,8 @@ module Model =
              Then = thenExpr
              Else = elseExpr }) -> $"(if {cond.ToString()} then {thenExpr.ToString()} else {elseExpr.ToString()})"
 
-      | Query q ->
-        let joins =
-          match q.Joins with
-          | Some joins ->
-            let join_to_str j = $"({j.Left}) = ({j.Right})"
-            let _and = " and "
-            $"\njoins {String.Join(_and, joins |> NonEmptyList.toList |> List.map join_to_str)}"
-          | None -> ""
+      | Query q -> q.ToString()
 
-        let where_to_str =
-          match q.Where with
-          | Some w -> $"\nwhere {w}"
-          | None -> ""
-
-        let select_to_str = $"\nselect {q.Select}"
-
-        let order_by_to_str =
-          match q.OrderBy with
-          | Some(ob, dir) -> $"\norderby {ob} {dir}"
-          | None -> ""
-
-        let iterator_vars (q: ExprQuery<_, _, _>) =
-          q.Iterators
-          |> NonEmptyList.map (fun i -> i.Var.ToString())
-          |> NonEmptyList.toSeq
-          |> String.join ", "
-
-        let iterator_sources (q: ExprQuery<_, _, _>) =
-          q.Iterators
-          |> NonEmptyList.map (fun i -> $"({i.Source})")
-          |> NonEmptyList.toSeq
-          |> String.join ", "
-
-        $"""(query {{ 
-from {iterator_vars q} in {iterator_sources q}{joins}{where_to_str}{select_to_str}{order_by_to_str}}})"""
 
   and Expr<'T, 'Id, 'valueExt when 'Id: comparison> =
     { Expr: ExprRec<'T, 'Id, 'valueExt>
@@ -1215,12 +1263,13 @@ from {iterator_vars q} in {iterator_sources q}{joins}{where_to_str}{select_to_st
       VarType: TypeQueryRow<'valueExt>
       Source: Value<'T, 'valueExt> }
 
-  and ValueQuery<'T, 'valueExt> =
+  and ValueQuerySimple<'T, 'valueExt> =
     { Iterators: ValueQueryIterators<'T, 'valueExt>
       Joins: Option<NonEmptyList<ExprQueryJoin<'T, ResolvedIdentifier, 'valueExt>>>
       Where: Option<ExprQueryExpr<'T, ResolvedIdentifier, 'valueExt>>
       Select: ExprQueryExpr<'T, ResolvedIdentifier, 'valueExt>
       OrderBy: Option<ExprQueryExpr<'T, ResolvedIdentifier, 'valueExt> * OrderByDirection>
+      Distinct: Option<ExprQueryExpr<'T, ResolvedIdentifier, 'valueExt>>
       DeserializeFrom: TypeQueryRow<'valueExt> }
 
     override self.ToString() =
@@ -1244,21 +1293,47 @@ from {iterator_vars q} in {iterator_sources q}{joins}{where_to_str}{select_to_st
         | Some(ob, dir) -> $"\norderby {ob} {dir}"
         | None -> ""
 
-      let iterator_vars (q: ValueQuery<_, _>) =
+      let distinctStr =
+        match self.Distinct with
+        | Some d -> $"\ndistinct {d}"
+        | None -> ""
+
+      let iterator_vars (q: ValueQuerySimple<_, _>) =
         q.Iterators
         |> NonEmptyList.map (fun i -> i.Var.Name)
         |> NonEmptyList.toSeq
         |> String.join ", "
 
-      let iterator_sources (q: ValueQuery<_, _>) =
+      let iterator_sources (q: ValueQuerySimple<_, _>) =
         q.Iterators
         |> NonEmptyList.map (fun i -> $"({i.Source})")
         |> NonEmptyList.toSeq
         |> String.join ", "
 
       $"""(query {{ 
-from {iterator_vars self} in {iterator_sources self}{joins}{where_to_str}{select_to_str}{order_by_to_str}}})"""
+from {iterator_vars self} in {iterator_sources self}{joins}{where_to_str}{select_to_str}{order_by_to_str}{distinctStr}}})"""
 
+
+  and ValueQuery<'T, 'valueExt> =
+    | ValueQuerySimple of ValueQuerySimple<'T, 'valueExt>
+    | ValueUnionQueries of
+      ValueQuery<'T, 'valueExt> *
+      ValueQuery<'T, 'valueExt> *
+      DeserializeFrom: TypeQueryRow<'valueExt>
+
+    member self.DeserializeFrom: TypeQueryRow<'valueExt> =
+      match self with
+      | ValueQuerySimple q -> q.DeserializeFrom
+      | ValueUnionQueries(_, _, deserializeFrom) -> deserializeFrom
+
+    override self.ToString() =
+      match self with
+      | ValueQuerySimple q -> q.ToString()
+      | ValueUnionQueries(q1, q2, _) ->
+        let unionStrs =
+          [ q1; q2 ] |> List.map (fun q -> q.ToString()) |> String.join "\nunion\n"
+
+        $"(\n{unionStrs}\n)"
 
   and Value<'T, 'valueExt> =
     | TypeLambda of TypeParameter * Expr<'T, ResolvedIdentifier, 'valueExt>
@@ -1299,39 +1374,5 @@ from {iterator_vars self} in {iterator_sources self}{joins}{where_to_str}{select
       | Sum(selector, value) -> $"{selector.Case}Of{selector.Count}({value.ToString()})"
       | Primitive p -> p.ToString()
       | Var v -> v.Name
-      | Query q ->
-        let joins =
-          match q.Joins with
-          | Some joins ->
-            let join_to_str j = $"({j.Left}) = ({j.Right})"
-            let _and = " and "
-            $"\njoins {String.Join(_and, joins |> NonEmptyList.toList |> List.map join_to_str)}"
-          | None -> ""
-
-        let where_to_str =
-          match q.Where with
-          | Some w -> $"\nwhere {w}"
-          | None -> ""
-
-        let select_to_str = $"\nselect {q.Select}"
-
-        let order_by_to_str =
-          match q.OrderBy with
-          | Some(ob, dir) -> $"\norderby {ob} {dir}"
-          | None -> ""
-
-        let iterator_vars q =
-          q.Iterators
-          |> NonEmptyList.map (fun i -> i.Var.Name)
-          |> NonEmptyList.toSeq
-          |> String.join ", "
-
-        let iterator_sources q =
-          q.Iterators
-          |> NonEmptyList.map (fun i -> $"{i.Source}")
-          |> NonEmptyList.toSeq
-          |> String.join ", "
-
-        $"""(query {{ 
-  from {iterator_vars q} in {iterator_sources q}{joins}{where_to_str}{select_to_str}{order_by_to_str}}})"""
+      | Query q -> q.ToString()
       | Ext(e, _) -> e.ToString()

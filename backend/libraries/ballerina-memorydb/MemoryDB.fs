@@ -22,6 +22,7 @@ open Ballerina.DSL.Next.Runners
 open Ballerina
 open Ballerina.Collections.Option
 open Ballerina.StdLib.String
+open Ballerina.Collections.Map
 open Ballerina.Collections.NonEmptyList
 open Ballerina.DSL.Next.Serialization.ValueSerializer
 open Ballerina.DSL.Next.Serialization.ValueDeserializer
@@ -74,17 +75,20 @@ module MutableMemoryDB =
       FromId: MemoryDBValue<'runtimeContext, 'customExt> *
       ToId: MemoryDBValue<'runtimeContext, 'customExt>
 
-  type EvalQueryContext<'ext when 'ext: comparison> =
-    { Bindings: Map<ResolvedIdentifier, Value<TypeValue<'ext>, 'ext>> }
+  // type EvalQueryContext<'ext when 'ext: comparison> =
+  //   { Bindings: Map<ResolvedIdentifier, Value<TypeValue<'ext>, 'ext>> }
 
   type MemoryDBQueryRunAdapter<'db, 'ext when 'ext: comparison> =
     { GetDbFromEntityRef: EntityRef<'db, 'ext> -> 'db
       GetDbFromRelationRef: RelationRef<'db, 'ext> -> 'db }
 
   let rec private evalQueryExpr
+    (runQuery: ValueQuery<_, _> -> Reader<seq<_> * _, ExprEvalContext<_, _>, Errors<Unit>>)
     (query: ExprQueryExpr<TypeValue<'ext>, ResolvedIdentifier, 'ext>)
-    : Reader<Value<TypeValue<'ext>, 'ext>, EvalQueryContext<'ext>, Errors<Unit>> =
+    : Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<_, _>, Errors<Unit>> =
     reader {
+      let evalQueryExpr = evalQueryExpr runQuery
+
       match query.Expr with
       | ExprQueryExprRec.QueryApply(func, arg) ->
         let! argVal = evalQueryExpr arg
@@ -160,7 +164,7 @@ module MutableMemoryDB =
         let! ctx = reader.GetContext()
 
         return!
-          ctx.Bindings
+          ctx.Scope.Values
           |> Map.tryFind id
           |> sum.OfOption(Errors.Singleton () (fun () -> $"Identifier {id} not found in query context"))
           |> reader.OfSum
@@ -171,6 +175,33 @@ module MutableMemoryDB =
       | ExprQueryExprRec.QueryConstant v -> return Value.Primitive v
       | ExprQueryExprRec.QueryClosureValue(v, _) -> return v
       | ExprQueryExprRec.QueryCastTo(v, _) -> return! evalQueryExpr v
+      | ExprQueryExprRec.QueryCount(_) ->
+        return!
+          (fun () -> "MemoryDB QueryCount Not Implemented")
+          |> Errors.Singleton()
+          |> reader.Throw
+      | ExprQueryExprRec.QueryExists(_) ->
+        return!
+          (fun () -> "MemoryDB QueryAny Not Implemented")
+          |> Errors.Singleton()
+          |> reader.Throw
+      | ExprQueryExprRec.QueryArray(_) ->
+        return!
+          (fun () -> "MemoryDB QueryArray Not Implemented")
+          |> Errors.Singleton()
+          |> reader.Throw
+      | ExprQueryExprRec.QueryCountEvaluated q ->
+        let! res, _ = runQuery q
+        return Value.Primitive(PrimitiveValue.Int32(res |> Seq.length))
+
+      | ExprQueryExprRec.QueryExistsEvaluated q ->
+        let! res, _ = runQuery q
+        return Value.Primitive(PrimitiveValue.Bool(res |> Seq.length > 0))
+      | ExprQueryExprRec.QueryArrayEvaluated(_) ->
+        return!
+          (fun () -> "MemoryDB QueryArrayEvaluated Not Implemented")
+          |> Errors.Singleton()
+          |> reader.Throw
     }
 
   let rec entity_values_restricted_by_can_read
@@ -206,10 +237,10 @@ module MutableMemoryDB =
         return all_values |> Map.filter (fun id _ -> visible_ids |> Set.contains id)
     }
 
-  and runQuery
+  and runSimpleQuery
     (apply_permissions: bool)
     (queryRunAdapter: MemoryDBQueryRunAdapter<_, _>)
-    (query: ValueQuery<_, _>)
+    (query: ValueQuerySimple<_, _>)
     : Reader<seq<Value<_, _>> * MutableMemoryDB<_, _>, ExprEvalContext<'runtimeContext, ValueExt<_, _, _>>, Errors<Unit>> =
     reader {
       let! iterators =
@@ -304,6 +335,8 @@ module MutableMemoryDB =
 
       let all_scopes = vars_with_values |> cross_join_of_sources
 
+      let evalQueryExpr = evalQueryExpr (runQuery apply_permissions queryRunAdapter)
+
       let! all_scopes =
         reader {
           match query.Joins with
@@ -320,12 +353,12 @@ module MutableMemoryDB =
                         let! left =
                           join.Left
                           |> evalQueryExpr
-                          |> Reader.mapContext (replaceWith { Bindings = scope })
+                          |> Reader.mapContext (ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) scope))
 
                         let! right =
                           join.Right
                           |> evalQueryExpr
-                          |> Reader.mapContext (replaceWith { Bindings = scope })
+                          |> Reader.mapContext (ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) scope))
 
                         let! left =
                           left
@@ -397,7 +430,7 @@ module MutableMemoryDB =
                   let! predicate_value =
                     predicate
                     |> evalQueryExpr
-                    |> Reader.mapContext (replaceWith { Bindings = scope })
+                    |> Reader.mapContext (ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) scope))
 
                   let! predicate_value =
                     predicate_value
@@ -428,7 +461,7 @@ module MutableMemoryDB =
             let! return_value =
               query.Select
               |> evalQueryExpr
-              |> Reader.mapContext (replaceWith { Bindings = scope })
+              |> Reader.mapContext (ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) scope))
 
             return scope, return_value
           })
@@ -446,7 +479,7 @@ module MutableMemoryDB =
                   let! ordering_value =
                     ordering
                     |> evalQueryExpr
-                    |> Reader.mapContext (replaceWith { Bindings = scope })
+                    |> Reader.mapContext (ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) scope))
 
                   return scope, return_value, ordering_value
                 })
@@ -471,6 +504,20 @@ module MutableMemoryDB =
       return all_scopes |> Seq.map snd, db
     }
 
+
+  and runQuery
+    (apply_permissions: bool)
+    (queryRunAdapter: MemoryDBQueryRunAdapter<_, _>)
+    (query: ValueQuery<_, _>)
+    : Reader<seq<Value<_, _>> * MutableMemoryDB<_, _>, ExprEvalContext<'runtimeContext, ValueExt<_, _, _>>, Errors<Unit>> =
+    reader {
+      match query with
+      | ValueQuerySimple q -> return! runSimpleQuery apply_permissions queryRunAdapter q
+      | ValueUnionQueries _ ->
+        return!
+          Errors.Singleton () (fun () -> "Unsupported query type ValueUnionQueries")
+          |> reader.Throw
+    }
 
   let db_ops<'runtimeContext, 'customExt when 'customExt: comparison>
     ()

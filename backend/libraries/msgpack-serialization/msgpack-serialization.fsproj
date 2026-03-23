@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Ballerina.Serialization</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Library.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Nerdbank.MessagePack" Version="1.0.43" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../ballerina-cat/ballerina-cat.fsproj" />
+    <ProjectReference Include="../ballerina-stdlib/ballerina-stdlib.fsproj" />
+  </ItemGroup>
+</Project>

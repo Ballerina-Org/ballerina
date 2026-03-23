@@ -15,14 +15,20 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open Ballerina
 
+  type StringTypeClass<'ext> =
+    { print: Value<TypeValue<'ext>, 'ext> -> unit }
+
+    static member Console() : StringTypeClass<'ext> =
+      { print = fun v -> System.Console.WriteLine(v.ToString()) }
+
   let StringExtension<'runtimeContext, 'ext>
+    (string_ops: StringTypeClass<'ext>)
     (operationLens: PartialLens<'ext, StringOperations<'ext>>)
     : OperationsExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
 
     let int32TypeValue = TypeValue.CreateInt32()
     let boolTypeValue = TypeValue.CreateBool()
     let stringTypeValue = TypeValue.CreateString()
-    let unitTypeValue = TypeValue.CreateUnit()
 
 
     let stringPrintId =
@@ -32,7 +38,12 @@ module Extension =
       stringPrintId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(stringTypeValue, unitTypeValue), Kind.Star, StringOperations.Print)
+          <| (TypeValue.CreateLambda(
+                TypeParameter.Create("T", Kind.Schema),
+                TypeExpr.Arrow(TypeExpr.Lookup("T" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Unit)
+              ),
+              Kind.Arrow(Kind.Star, Kind.Star),
+              StringOperations.Print)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -48,19 +59,7 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let! v =
-                v
-                |> Value.AsPrimitive
-                |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                |> reader.OfSum
-
-              let! v =
-                v
-                |> PrimitiveValue.AsString
-                |> sum.MapError(Errors.MapContext(replaceWith loc0))
-                |> reader.OfSum
-
-              do System.Console.WriteLine v
+              do string_ops.print v
 
               return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Unit)
             } }

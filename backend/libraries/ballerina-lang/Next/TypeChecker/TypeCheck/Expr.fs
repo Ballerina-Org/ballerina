@@ -27,6 +27,7 @@ module Expr =
   open Ballerina.DSL.Next.Types.TypeChecker.Apply
   open Ballerina.DSL.Next.Types.TypeChecker.If
   open Ballerina.DSL.Next.Types.TypeChecker.Let
+  open Ballerina.DSL.Next.Types.TypeChecker.Do
   open Ballerina.DSL.Next.Types.TypeChecker.RecordCons
   open Ballerina.DSL.Next.Types.TypeChecker.RecordWith
   open Ballerina.DSL.Next.Types.TypeChecker.RecordDes
@@ -113,6 +114,14 @@ module Expr =
                     (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type), loc0)
                     context_t
                     let_expr
+
+              | ExprRec.Do do_expr ->
+                return!
+                  Expr.TypeCheckDo
+                    (query_type_symbol, mk_query_type)
+                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type), loc0)
+                    context_t
+                    do_expr
 
               | ExprRec.Lambda(lambda) ->
                 return!
@@ -216,13 +225,17 @@ module Expr =
                     $"Error: unexpected expression pattern schema entity and entities (should not occur, are only constructed as record destructuring) ")
                   |> state.Throw
               | ExprRec.Query q ->
-                return!
+                let! q, t, k, ctx =
                   Expr.TypeCheckQuery
                     query_type_symbol
                     mk_query_type
                     (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type), loc0)
                     context_t
+                    Map.empty
+                    Map.empty
                     q
+
+                return Expr.Query q, t, k, ctx
             }
 
           let! expr =

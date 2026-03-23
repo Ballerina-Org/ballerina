@@ -74,6 +74,8 @@ module API =
         |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
       with
       | None ->
+        Console.WriteLine "Serialization is breaking...\n\n\n==================="
+
         do!
           dbFileManager.WriteContent emptyDb
           |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
