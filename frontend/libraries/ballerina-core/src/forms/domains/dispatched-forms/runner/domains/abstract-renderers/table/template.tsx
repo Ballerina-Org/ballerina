@@ -1130,7 +1130,16 @@ export const TableAbstractRenderer = <
                 )
               ),
             )}
-            UnfilteredTableData_Dangerous={embeddedUnfilteredTableData}
+            UnfilteredTableData_Dangerous={embeddedUnfilteredTableData.map(
+              (_) =>
+                _.map((row) =>
+                  row(
+                    TableAbstractRendererPendingOps.Operations.hasPendingAddOperation(
+                      props.context.customFormState.pendingOps,
+                    ),
+                  ),
+                ),
+            )}
             AllowedFilters={EmbeddedAllowedFilters}
             AllowedSorting={props.context.sorting}
             HighlightedFilters={props.context.highlightedFilters}
