@@ -13,6 +13,7 @@ open Ballerina.DSL.Next.StdLib.List.Model
 open Ballerina.DSL.Next.StdLib.Map.Model
 open Ballerina.DSL.Next.StdLib.DB
 open Ballerina.Data.Delta
+open Ballerina.DSL.Next.StdLib.String
 
 type ValueExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> =
   | ValueExt of
@@ -476,6 +477,7 @@ type StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaEx
        > }
 
 let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison>
+  (string_ops: StringTypeClass<ValueExt<'runtimeContext, 'db, 'customExtension>>)
   (db_ops: DBTypeClass<'runtimeContext, 'db, ValueExt<'runtimeContext, 'db, 'customExtension>>)
   : StdExtensions<
       'runtimeContext,
@@ -623,6 +625,7 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
 
   let stringExtension =
     String.Extension.StringExtension<'runtimeContext, ValueExt<'runtimeContext, 'db, 'customExtension>>
+      string_ops
       { Get =
           function
           | ValueExt(Choice3Of7(StringOperations x)) -> Some x
@@ -707,7 +710,7 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
   extensions, context, query_sym, mk_query
 
 let stdExtensions<'runtimeContext, 'db when 'db: comparison> =
-  fun db_ops -> makeExtensions<'runtimeContext, 'db, unit> db_ops
+  fun str_ops db_ops -> makeExtensions<'runtimeContext, 'db, unit> str_ops db_ops
 
 let customStdExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> =
   makeExtensions<'runtimeContext, 'db, 'customExtension>

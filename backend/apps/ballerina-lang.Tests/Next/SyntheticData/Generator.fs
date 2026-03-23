@@ -18,6 +18,7 @@ open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.StdLib.List.Model
 open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 open Ballerina.Errors
+open Ballerina.DSL.Next.StdLib.String
 
 let private emptyContext<'valueExt when 'valueExt: comparison> () : TypeCheckContext<'valueExt> =
   TypeCheckContext.Empty("", "")
@@ -27,7 +28,9 @@ let private emptyState<'valueExt when 'valueExt: comparison> () : TypeCheckState
 let listImportedGenerators<'valueExt when 'valueExt: comparison>
   ()
   : Map<ResolvedIdentifier, ImportedGenerator<ValueExt<unit, MutableMemoryDB<unit, 'valueExt>, 'valueExt>, ListConfig>> =
-  let stdlib, _, _db_query_sym, _make_db_query_type = db_ops () |> stdExtensions
+  let stdlib, _, _db_query_sym, _make_db_query_type =
+    db_ops () |> stdExtensions (StringTypeClass<_>.Console())
+
   let listTypeId = stdlib.List.TypeName |> fst
 
   let generator =

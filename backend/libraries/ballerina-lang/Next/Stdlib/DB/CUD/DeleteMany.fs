@@ -26,7 +26,7 @@ module DeleteMany =
 
   let DBDeleteManyExtension<'runtimeContext, 'db, 'ext when 'ext: comparison>
     (db_ops: DBTypeClass<'runtimeContext, 'db, 'ext>)
-    (mapLens: PartialLens<'ext, Map<Value<TypeValue<'ext>, 'ext>, Value<TypeValue<'ext>, 'ext>>>)
+    (listLens: PartialLens<'ext, List<Value<TypeValue<'ext>, 'ext>>>)
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
     =
 
@@ -47,11 +47,8 @@ module DeleteMany =
                 createSchemaEntityTypeApplication "schema" "entity" "entity_with_props" "entityId",
                 TypeExpr.Arrow(
                   TypeExpr.Apply(
-                    TypeExpr.Apply(
-                      TypeExpr.Lookup("Map" |> Identifier.LocalScope),
-                      TypeExpr.Lookup("entityId" |> Identifier.LocalScope)
-                    ),
-                    TypeExpr.Primitive PrimitiveType.Unit
+                    TypeExpr.Lookup("List" |> Identifier.LocalScope),
+                    TypeExpr.Lookup("entityId" |> Identifier.LocalScope)
                   ),
                   TypeExpr.Primitive PrimitiveType.Unit
                 // TypeExpr.Apply(
@@ -105,11 +102,9 @@ module DeleteMany =
 
                 let! vs =
                   vs
-                  |> mapLens.Get
+                  |> listLens.Get
                   |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
                   |> reader.OfSum
-
-                let vs = vs |> Map.keys |> Seq.toList
 
                 let! deletingValuesWithProps =
                   vs

@@ -149,7 +149,8 @@ entrypoint view aStringRecord : StringRecord {
           Source = "test.forms" } }
 
   let extensions, languageContext, _db_query_sym, _make_db_query_type =
-    db_ops () |> stdExtensions
+    db_ops ()
+    |> stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
 
   let cache =
     memcache (languageContext.TypeCheckContext, languageContext.TypeCheckState)
@@ -631,7 +632,8 @@ entrypoint view letTestRecord : LetTestRecord {
           Source = "test.forms" } }
 
   let extensions, languageContext, _db_query_sym, _make_db_query_type =
-    db_ops () |> stdExtensions
+    db_ops ()
+    |> stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
 
   let cache =
     memcache (languageContext.TypeCheckContext, languageContext.TypeCheckState)
