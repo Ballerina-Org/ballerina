@@ -10,6 +10,8 @@ import {
   Unit,
   CommonAbstractRendererViewOnlyReadonlyContext,
   ValueUnit,
+  PredicateValue,
+  ValueOrErrors,
 } from "../../../../../../../../main";
 import { SumType } from "../../../../deserializer/domains/specification/domains/types/state";
 
@@ -93,5 +95,8 @@ export type SumAbstractRendererView<
       SumAbstractRendererState,
       SumAbstractRendererForeignMutationsExpected<Flags>
     >;
+
+    defaultLeftValue?: () => PredicateValue;
+    defaultRightValue?: () => PredicateValue;
   }
 >;

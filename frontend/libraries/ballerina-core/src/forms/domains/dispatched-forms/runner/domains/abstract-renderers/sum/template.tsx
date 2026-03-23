@@ -12,6 +12,7 @@ import {
   Unit,
   CommonAbstractRendererForeignMutationsExpected,
   NestedRenderer,
+  ValueOrErrors,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
@@ -30,6 +31,8 @@ export const SumAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  defaultLeftValue: ValueOrErrors<PredicateValue, string>,
+  defaultRightValue: ValueOrErrors<PredicateValue, string>,
   leftTemplate?: Template<
     CommonAbstractRendererReadonlyContext<
       DispatchParsedType<any>,
@@ -305,6 +308,16 @@ export const SumAbstractRenderer = <
             }}
             embeddedLeftTemplate={embeddedLeftTemplate}
             embeddedRightTemplate={embeddedRightTemplate}
+            defaultLeftValue={
+              defaultLeftValue.kind == "value"
+                ? () => defaultLeftValue.value
+                : undefined
+            }
+            defaultRightValue={
+              defaultRightValue.kind == "value"
+                ? () => defaultRightValue.value
+                : undefined
+            }
           />
         </IdProvider>
       </>
