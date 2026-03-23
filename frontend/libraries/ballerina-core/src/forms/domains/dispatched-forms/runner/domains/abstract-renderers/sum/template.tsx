@@ -305,6 +305,46 @@ export const SumAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
+              toLeft: (value, flags) => {
+                const leftValue = PredicateValue.Default.sum(
+                  Sum.Default.left(value),
+                );
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(leftValue)),
+                  {
+                    kind: "SumReplace",
+                    replace: leftValue,
+                    flags: flags,
+                    sourceAncestorLookupTypeNames:
+                      props.context.lookupTypeAncestorNames,
+                    state: {
+                      commonFormState: props.context.commonFormState,
+                      customFormState: props.context.customFormState,
+                    },
+                    type: props.context.type.args[0],
+                  },
+                );
+              },
+              toRight: (value, flags) => {
+                const rightValue = PredicateValue.Default.sum(
+                  Sum.Default.right(value),
+                );
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(rightValue)),
+                  {
+                    kind: "SumReplace",
+                    replace: rightValue,
+                    flags: flags,
+                    sourceAncestorLookupTypeNames:
+                      props.context.lookupTypeAncestorNames,
+                    state: {
+                      commonFormState: props.context.commonFormState,
+                      customFormState: props.context.customFormState,
+                    },
+                    type: props.context.type.args[1],
+                  },
+                );
+              },
             }}
             embeddedLeftTemplate={embeddedLeftTemplate}
             embeddedRightTemplate={embeddedRightTemplate}

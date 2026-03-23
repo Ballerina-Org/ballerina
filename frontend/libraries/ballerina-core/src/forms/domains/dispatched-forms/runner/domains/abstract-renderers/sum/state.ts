@@ -59,6 +59,8 @@ export type SumAbstractRendererForeignMutationsExpected<Flags = Unit> = {
 
 export type SumAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
   onChange: DispatchOnChange<ValueSum, Flags>;
+  toRight: (value: PredicateValue, flags: Flags | undefined) => void;
+  toLeft: (value: PredicateValue, flags: Flags | undefined) => void;
 };
 
 export type SumAbstractRendererView<
