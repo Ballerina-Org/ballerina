@@ -14,7 +14,7 @@ import {} from "./initialiseFiltersAndSorting";
 import { InitialiseFiltersAndSorting } from "./initialiseFiltersAndSorting";
 import { TableInfiniteLoader } from "./infiniteLoader";
 import { InitialiseTable } from "./initialiseTable";
-import { ApplyEdits } from "./applyEdits";
+import { AddBatch } from "./applyEdits";
 import { DequeueRemoveOps } from "./dequeueRemoveOps";
 import { TableAbstractRendererPendingOps } from "../domains/pending-operation/state";
 
@@ -95,7 +95,7 @@ export const ApplyEditsRunner = <
   ExtraContext = Unit,
 >() =>
   PendingOperationsCo<CustomPresentationContext, ExtraContext>().Template<any>(
-    ApplyEdits<CustomPresentationContext, ExtraContext>(),
+    AddBatch<CustomPresentationContext, ExtraContext>(),
     {
       interval: 15,
       runFilter: (props) =>

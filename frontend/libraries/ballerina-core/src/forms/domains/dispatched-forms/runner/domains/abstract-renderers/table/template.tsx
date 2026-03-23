@@ -922,8 +922,7 @@ export const TableAbstractRenderer = <
                             List([
                               TableAbstractRendererPendingAddOperation.Default(
                                 // index will be used to match the correct row once we have it in the data
-                                props.context.value.data.size +
-                                  (_.kind == "add" ? _.pending.size : 0),
+                                _.kind == "add" ? _.initialTableSize + _.totalAdded  : props.context.value.data.size,
                                 tempId,
                                 // TODO: use props.context.value.defaultRow
                                 ValueRecord.Default.fromMap(
@@ -934,6 +933,7 @@ export const TableAbstractRenderer = <
                                 flags,
                               ),
                             ]),
+                            props.context.value.data.size,
                           )(_),
                       );
 

@@ -1,8 +1,6 @@
 import {
   Option,
   Unit,
-  ValueTable,
-  MapRepo,
   unit,
   DispatchDelta,
 } from "../../../../../../../../../main";
@@ -10,7 +8,7 @@ import { PendingOperationsCo as Co } from "./builder";
 import { TableAbstractRendererPendingOps } from "../domains/pending-operation/state";
 import { TableAbstractRendererState } from "../state";
 
-export const ApplyEdits = <
+export const AddBatch = <
   CustomPresentationContext = Unit,
   ExtraContext = Unit,
 >() =>

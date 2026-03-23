@@ -36,8 +36,9 @@ export const TableAbstractRendererPendingOps = {
       TableAbstractRendererNoPendingOps.Default(),
     add: (
       pending: TableAbstractRendererPendingAddOps["pending"],
+      initialTableSize: number,
     ): TableAbstractRendererPendingOps =>
-      TableAbstractRendererPendingAddOps.Default.fromList(pending),
+      TableAbstractRendererPendingAddOps.Default.fromList(pending, initialTableSize),
     remove: (
       pending: TableAbstractRendererPendingRemoveOps["pending"],
     ): TableAbstractRendererPendingOps =>
@@ -51,13 +52,14 @@ export const TableAbstractRendererPendingOps = {
         Updater((_) => (_.kind == "add" ? updater(_) : _)),
       pendingAddOperations: (
         pending: TableAbstractRendererPendingAddOps["pending"],
+        initialTableSize: number,
       ): Updater<TableAbstractRendererPendingOps> =>
         Updater((_) =>
           _.kind == "add"
             ? TableAbstractRendererPendingAddOps.Updaters.Core.pending((_) =>
                 _.concat(pending),
-              )(_)
-            : replaceWith(TableAbstractRendererPendingOps.Default.add(pending))(
+              ).then(TableAbstractRendererPendingAddOps.Updaters.Core.totalAdded((_) => _ + pending.size))(_)
+            : replaceWith(TableAbstractRendererPendingOps.Default.add(pending, initialTableSize))(
                 _,
               ),
         ),
@@ -128,7 +130,7 @@ export const TableAbstractRendererPendingOps = {
     ): pendingOps is TableAbstractRendererPendingAddOps =>
       pendingOps.kind == "add" &&
       pendingOps.pending.size > 0 &&
-      data.size > pendingOps.pending.first()!.idx,
+      pendingOps.pending.some((_) => data.size > _.idx),
     /// Returns a list of pending add operations that have completed (got the response)
     getNewDataOrNone: (
       data: OrderedMap<string, ValueRecord>,
