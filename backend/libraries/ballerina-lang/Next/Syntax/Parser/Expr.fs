@@ -309,9 +309,24 @@ module Expr =
 
             do! equalsOperator
             let! value = expr parseAllComplexShapes
-            do! inKeyword
+            do! parser.Any [ inKeyword; semicolonOperator ]
             let! body = expr parseAllComplexShapes
             return Expr.Let(paramName |> Var.Create, paramType, value, body, loc, TypeCheckScope.Empty)
+          }
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+      }
+
+    let exprDo () =
+      parser {
+        do! doKeyword
+        let! loc = parser.Location
+
+        return!
+          parser {
+            let! value = expr parseAllComplexShapes
+            do! parser.Any [ inKeyword; semicolonOperator ]
+            let! body = expr parseAllComplexShapes
+            return Expr.Do(value, body, loc, TypeCheckScope.Empty)
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
@@ -439,7 +454,8 @@ module Expr =
             let! typeDecl = typeDecl parseAllComplexTypeShapes
             // |> parser.DebugErrors "typeDecl in type-let" (fun e -> e.Errors().AsFSharpString)
 
-            do! inKeyword
+            do! parser.Any [ inKeyword; semicolonOperator ]
+
             let! body = expr parseAllComplexShapes
 
             let symbols, symbolsKind =
@@ -574,6 +590,7 @@ module Expr =
         boolLiteral ()
         unitLiteral ()
         exprLet ()
+        exprDo ()
         exprLambda ()
         exprConditional ()
         recordCons ()

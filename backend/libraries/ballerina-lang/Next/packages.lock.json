@@ -272,6 +272,11 @@
           "Microsoft.Extensions.AI.Abstractions": "9.8.0"
         }
       },
+      "Microsoft.NET.StringTools": {
+        "type": "Transitive",
+        "resolved": "18.0.2",
+        "contentHash": "cTZw3GHkAlqZACYGeQT3niS3UfVQ8CH0O5+zUdhxstrg1Z8Q2ViXYFKjSxHmEXTX85mrOT/QnHZOeQhhSsIrkQ=="
+      },
       "Microsoft.SemanticKernel.Abstractions": {
         "type": "Transitive",
         "resolved": "1.71.0",
@@ -302,6 +307,26 @@
           "Microsoft.SemanticKernel.Abstractions": "1.71.0",
           "System.Numerics.Tensors": "10.0.2"
         }
+      },
+      "Microsoft.VisualStudio.Validation": {
+        "type": "Transitive",
+        "resolved": "17.13.22",
+        "contentHash": "fC20ITOxlUpGQ0ltAxITQbeFxwuB6OjLT3lByC4+/Gm46o/Mwv9hlIVrBhiUhnqdQzUUvr4EHkdiYe7WOSMLmw=="
+      },
+      "Nerdbank.MessagePack": {
+        "type": "Transitive",
+        "resolved": "1.0.43",
+        "contentHash": "VH8rrJldy/vc4T1hdqycgVd2vtoP5MHdTIVVs8ZPVbmyQsWKfc5ateM7VDihEHL07GaTvWl7wt4KbaPHk4ZgTw==",
+        "dependencies": {
+          "Microsoft.NET.StringTools": "18.0.2",
+          "Microsoft.VisualStudio.Validation": "17.13.22",
+          "PolyType": "1.0.0"
+        }
+      },
+      "PolyType": {
+        "type": "Transitive",
+        "resolved": "1.0.0",
+        "contentHash": "q8vTQfDoKa/vCNMT+TvKbzsl+Z/s4k/qaP8WQGvNDIILkxKhP+N3NbFAOiglQljNmAj/ei51wO9jwcAI9jhtHw=="
       },
       "System.Configuration.ConfigurationManager": {
         "type": "Transitive",
@@ -403,6 +428,7 @@
         "dependencies": {
           "FSharp.Core": "[10.0.102, )",
           "FSharp.Data": "[6.6.0, )",
+          "Nerdbank.MessagePack": "[1.0.43, )",
           "SmartComponents.LocalEmbeddings": "[1.0.0, )",
           "ballerina-cat": "[1.0.0, )",
           "ballerina-delta-serialization": "[1.0.0, )",

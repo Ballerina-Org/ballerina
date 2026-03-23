@@ -37,6 +37,10 @@ module ToUpdater =
         | Delta.Record(fieldName, fieldDelta) ->
           let! fieldUpdater = Delta.ToUpdater deltaExtensionHandler fieldDelta
 
+          (*
+            IMPROVEMENT: the delta should take resolved identifiers and not just field names so that we can do a lookup in the map 
+            instead of a linear search.
+          *)
           return
             fun (v: Value<TypeValue<'valueExtension>, 'valueExtension>) ->
               sum {

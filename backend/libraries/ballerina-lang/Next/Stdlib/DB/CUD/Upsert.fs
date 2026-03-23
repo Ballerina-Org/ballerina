@@ -44,6 +44,10 @@ module Upsert =
     let memoryDBUpsertId =
       Identifier.FullyQualified([ "DB" ], "upsert") |> TypeCheckScope.Empty.Resolve
 
+    (* 
+      (entityId : [entityId], entity : [entity], entity_with_props : [entity_with_props] -> entity : [entity] -> [entity]) ->
+      () + [entity_with_props]
+    *)
     let memoryDBUpsertType =
       TypeValue.CreateLambda(
         TypeParameter.Create("schema", Kind.Schema),

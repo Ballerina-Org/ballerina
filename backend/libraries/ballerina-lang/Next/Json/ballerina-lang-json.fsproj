@@ -58,6 +58,7 @@
     <Compile Include="Terms\Expr\Primitive.fs" />
     <Compile Include="Terms\Expr\Lookup.fs" />
     <Compile Include="Terms\Expr\Let.fs" />
+    <Compile Include="Terms\Expr\Do.fs" />
     <Compile Include="Terms\Expr\Lambda.fs" />
     <Compile Include="Terms\Expr\If.fs" />
     <Compile Include="Terms\Expr\Apply.fs" />

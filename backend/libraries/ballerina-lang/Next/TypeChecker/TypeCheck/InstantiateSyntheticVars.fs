@@ -82,6 +82,10 @@ module InstantiateSyntheticVars =
           let! value = !value
           let! body = !body
           return Expr.Let(v, t, value, body)
+        | ExprRec.Do({ Val = e1; Rest = e2 }) ->
+          let! e1 = !e1
+          let! e2 = !e2
+          return Expr.Do(e1, e2, loc0, expr.Scope)
         | ExprRec.Lambda({ Param = p
                            Body = b
                            ParamType = pt

@@ -20,6 +20,7 @@ module Program =
   open Ballerina.Collections.NonEmptyList
   open Ballerina.DSL.Next.Runners.Project
   open Ballerina.DSL.Next.StdLib.MutableMemoryDB
+  open Ballerina.DSL.Next.StdLib.String
 
   [<EntryPoint>]
   let main args =
@@ -69,7 +70,7 @@ module Program =
           Directory.CreateDirectory logDirectory |> ignore
 
         let extensions, languageContext, _db_query_sym, _make_db_query_type =
-          db_ops () |> stdExtensions
+          db_ops () |> stdExtensions (StringTypeClass<_>.Console())
 
         let cache =
           memcache (languageContext.TypeCheckContext, languageContext.TypeCheckState)

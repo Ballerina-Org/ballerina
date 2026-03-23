@@ -50,7 +50,8 @@ let private runtimeListOps =
 let private runtimeMapOps = { MapToList = resolveFqId [ "Map" ] "mapToList" }
 
 let private runtimeOps, runtimeContext, _db_query_sym, _make_db_query_type =
-  db_ops () |> stdExtensions
+  db_ops ()
+  |> stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
 
 do ignore runtimeOps
 

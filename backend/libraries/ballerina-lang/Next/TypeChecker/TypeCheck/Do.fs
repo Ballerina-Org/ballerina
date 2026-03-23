@@ -1,0 +1,55 @@
+namespace Ballerina.DSL.Next.Types.TypeChecker
+
+module Do =
+  open Ballerina.StdLib.String
+  open Ballerina
+  open Ballerina.Collections.Sum
+  open Ballerina.State.WithError
+  open Ballerina.Collections.Option
+  open Ballerina.LocalizedErrors
+  open Ballerina.Errors
+  open System
+  open Ballerina.StdLib.Object
+  open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.DSL.Next.Terms.Model
+  open Ballerina.DSL.Next.Terms.Patterns
+  open Ballerina.DSL.Next.Unification
+  open Ballerina.DSL.Next.Types.TypeChecker.AdHocPolymorphicOperators
+  open Ballerina.DSL.Next.Types.TypeChecker.Model
+  open Ballerina.DSL.Next.Types.TypeChecker.Patterns
+  open Ballerina.DSL.Next.Types.TypeChecker.Eval
+  open Ballerina.DSL.Next.Types.TypeChecker.LiftOtherSteps
+  open Ballerina.DSL.Next.Types.TypeChecker.Primitive
+  open Ballerina.DSL.Next.Types.TypeChecker.Lookup
+  open Ballerina.DSL.Next.Types.TypeChecker.Lambda
+  open Ballerina.DSL.Next.Types.TypeChecker.Apply
+  open Ballerina.Fun
+  open Ballerina.StdLib.OrderPreservingMap
+  open Ballerina.Cat.Collections.OrderedMap
+  open Ballerina.Collections.NonEmptyList
+
+  type Expr<'T, 'Id, 've when 'Id: comparison> with
+    static member internal TypeCheckDo<'valueExt when 'valueExt: comparison>
+      (_query_type_symbol, _mk_query_type)
+      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      : TypeChecker<ExprDo<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
+      fun context_t ({ Val = e1; Rest = e2 }) ->
+        let (!) = typeCheckExpr context_t
+        let (=>) c e = typeCheckExpr c e
+
+        let ofSum (p: Sum<'a, Errors<Unit>>) =
+          p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
+
+        state {
+          let! ctx = state.GetContext()
+
+          let! e1, t1, k1, _ = TypeValue.CreateUnit() |> Some => e1
+          let! t1 = t1 |> TypeValue.AsPrimitive |> ofSum
+          do! t1.value |> PrimitiveType.AsUnit |> ofSum
+          do! k1 |> Kind.AsStar |> ofSum
+
+          let! e2, t2, k2, ctx_e2 = !e2
+
+          return Expr.Do(e1, e2, loc0, ctx.Scope), t2, k2, ctx_e2
+        }

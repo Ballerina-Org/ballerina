@@ -728,6 +728,100 @@ module Extension =
                 Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan.FromSeconds(float v)))
             } }
 
+    let timeSpanFromMinutesId =
+      Identifier.FullyQualified([ "timeSpan" ], "fromMinutes")
+      |> TypeCheckScope.Empty.Resolve
+
+    let timeSpanFromMinutes: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+      timeSpanFromMinutesId,
+      { PublicIdentifiers =
+          Some(TypeValue.CreateArrow(decimalTypeValue, timeSpanTypeValue), Kind.Star, TimeSpanOperations.FromMinutes)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | TimeSpanOperations.FromMinutes -> Some(TimeSpanOperations.FromMinutes)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (_, v) ->
+            reader {
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return
+                Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan.FromMinutes(float v)))
+            } }
+
+    let timeSpanFromHoursId =
+      Identifier.FullyQualified([ "timeSpan" ], "fromHours")
+      |> TypeCheckScope.Empty.Resolve
+
+    let timeSpanFromHours: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+      timeSpanFromHoursId,
+      { PublicIdentifiers =
+          Some(TypeValue.CreateArrow(decimalTypeValue, timeSpanTypeValue), Kind.Star, TimeSpanOperations.FromHours)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | TimeSpanOperations.FromHours -> Some(TimeSpanOperations.FromHours)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (_, v) ->
+            reader {
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan.FromHours(float v)))
+            } }
+
+    let timeSpanFromDaysId =
+      Identifier.FullyQualified([ "timeSpan" ], "fromDays")
+      |> TypeCheckScope.Empty.Resolve
+
+    let timeSpanFromDays: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+      timeSpanFromDaysId,
+      { PublicIdentifiers =
+          Some(TypeValue.CreateArrow(decimalTypeValue, timeSpanTypeValue), Kind.Star, TimeSpanOperations.FromDays)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | TimeSpanOperations.FromDays -> Some(TimeSpanOperations.FromDays)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (_, v) ->
+            reader {
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDecimal
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan.FromDays(float v)))
+            } }
+
 
 
     let timeSpanNewId =
@@ -835,6 +929,9 @@ module Extension =
           getTotalMinutesOperation
           getTotalSecondsOperation
           getTotalMillisecondsOperation
+          timeSpanFromDays
+          timeSpanFromHours
+          timeSpanFromMinutes
           timeSpanFromSeconds
           timeSpanNew
           timeSpanZero ]
