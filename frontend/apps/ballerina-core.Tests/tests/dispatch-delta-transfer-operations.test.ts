@@ -210,7 +210,7 @@ describe("DispatchDeltaTransferOperations", () => {
       Replace: { item1: "a" },
     };
     const tupleValue: DispatchDeltaTransferTupleValue<Custom> = {
-      Discriminator: "Item1",
+      Discriminator: "Tuple2Item1",
       Item1: stringReplace,
     };
 

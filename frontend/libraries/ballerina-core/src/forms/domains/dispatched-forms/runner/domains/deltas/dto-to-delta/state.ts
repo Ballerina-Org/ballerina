@@ -20,6 +20,9 @@ export const DispatchDeltaDTOToDelta =
     ) => (
       customDeltaDTO: DispatchDeltaTransferCustom,
     ) => ValueOrErrors<DispatchDeltaCustom<Flags>, string>,
+    resolveLookupType: (
+      lookupName: string,
+    ) => ValueOrErrors<DispatchParsedType<any>, string>,
   ) =>
   (entityType: DispatchParsedType<any>) =>
   (
@@ -126,6 +129,16 @@ export const DispatchDeltaDTOToDelta =
       type: DispatchParsedType<any>,
       deltaDTO: DeltaTransfer<DispatchDeltaTransferCustom>,
     ): ValueOrErrors<DispatchDelta<Flags>, string> => {
+      if (type.kind == "lookup" && resolveLookupType != undefined) {
+        return resolveLookupType(type.name).Then((resolvedType) => {
+          if (resolvedType.kind == "lookup" && resolvedType.name == type.name) {
+            return ValueOrErrors.Default.throwOne<DispatchDelta<Flags>, string>(
+              `Unable to resolve lookup type ${type.name}`,
+            );
+          }
+          return rec(resolvedType, deltaDTO);
+        });
+      }
       if (DispatchDeltaTransferOperations.isNumberReplace(deltaDTO)) {
         if (type.kind != "primitive" || type.name != "number") {
           return ValueOrErrors.Default.throwOne<DispatchDelta<Flags>, string>(
@@ -588,20 +601,25 @@ export const DispatchDeltaDTOToDelta =
             `Union case expected but got ${JSON.stringify(type)}`,
           );
         }
-        const caseName = deltaDTO.Discriminator;
+        const rawCaseName = deltaDTO.Discriminator;
+        // temporary fix
+        const caseName = rawCaseName.startsWith("Case")
+          ? rawCaseName.slice(4)
+          : rawCaseName;
         const caseType = type.args.get(caseName);
         if (caseType == undefined) {
           return ValueOrErrors.Default.throwOne<DispatchDelta<Flags>, string>(
             `Case ${caseName} not found in union type ${JSON.stringify(type)}`,
           );
         }
-        return rec(caseType, deltaDTO[caseName]).Then((value) =>
-          ValueOrErrors.Default.return<DispatchDelta<Flags>, string>(
-            withCommon({
-              kind: "UnionCase",
-              caseName: [caseName, value],
-            }),
-          ),
+        return rec(caseType, deltaDTO[rawCaseName] ?? deltaDTO[caseName]).Then(
+          (value) =>
+            ValueOrErrors.Default.return<DispatchDelta<Flags>, string>(
+              withCommon({
+                kind: "UnionCase",
+                caseName: [caseName, value],
+              }),
+            ),
         );
       }
       if (DispatchDeltaTransferOperations.isTupleReplace(deltaDTO)) {
@@ -719,6 +737,7 @@ export const DispatchDeltaDTOToDelta =
           withCommon({
             kind: "TableRemove",
             id: deltaDTO.RemoveAt,
+            uniqueTableIdentifier: "",
           }),
         );
       }

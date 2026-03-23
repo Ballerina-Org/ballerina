@@ -7,6 +7,7 @@ import {
   TableLayout,
   Expr,
   PredicateComputedOrInlined,
+  DispatchDelta,
   ValueOrErrors,
   TableAbstractRendererReadonlyContext,
   replaceWith,
@@ -60,7 +61,6 @@ import {
   TableAbstractRendererPendingAddOperation,
 } from "./domains/pending-operation/add/state";
 import { TableAbstractRendererPendingRemoveOperation } from "./domains/pending-operation/remove/state";
-import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const TableAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -191,12 +191,6 @@ export const TableAbstractRenderer = <
     (value: PredicateValue) =>
     (disabled: boolean) =>
     (isFakeRow: (_: string) => boolean) =>
-    (
-      onChange: (
-        idx: number,
-        valueRecordUpdater: Updater<ValueRecord>,
-      ) => DispatchOnChange<ValueTable, Flags>,
-    ) =>
     (flags: Flags | undefined) =>
       cellTemplate
         .mapContext<
@@ -348,9 +342,7 @@ export const TableAbstractRenderer = <
                     ),
                   );
 
-            // need to call the custom onChange function provided by the abstract table renderer
-            // to hande updated on "fake" rows (rows that have been optimisticaly added to the table)
-            onChange(idx, valueRecordUpdater)(updater, delta);
+            props.foreignMutations.onChange(updater, delta);
           },
         }));
 
@@ -358,12 +350,6 @@ export const TableAbstractRenderer = <
     DetailsRenderer && DetailsRendererRaw
       ? (tableData: OrderedMap<string, any>) =>
           (isFakeRow: (_: string) => boolean) =>
-          (
-            onChange: (
-              idx: number,
-              valueRecordUpdater: Updater<ValueRecord>,
-            ) => DispatchOnChange<ValueTable, Flags>,
-          ) =>
           (flags: Flags | undefined) =>
             DetailsRenderer.mapContext<
               TableAbstractRendererReadonlyContext<
@@ -550,7 +536,7 @@ export const TableAbstractRenderer = <
                       nestedUpdater.kind == "l" ? id : nestedUpdater.value,
                     );
 
-                    onChange(idx, valueRecordUpdater)(updater, delta);
+                    props.foreignMutations.onChange(updater, delta);
                   }
                 },
               }))
@@ -883,31 +869,43 @@ export const TableAbstractRenderer = <
                       return;
                     }
 
-                    // index of the new "fake" row in the table
-                    const newPendingRowIndex =
-                      props.context.value.data.size +
-                      (props.context.customFormState.pendingOps.kind == "add"
-                        ? props.context.customFormState.pendingOps.pending.size
-                        : 0);
+                    const hasPendingAddOperations =
+                      props.context.customFormState.pendingOps.kind == "add" &&
+                      props.context.customFormState.pendingOps.pending.size > 0;
 
-                    const delta: DispatchDelta<Flags> = {
-                      kind: "TableAddEmpty",
-                      flags,
-                      newIndex: newPendingRowIndex,
-                      uniqueTableIdentifier: domNodeId,
-                      sourceAncestorLookupTypeNames:
-                        props.context.lookupTypeAncestorNames,
-                    };
+                    if (!hasPendingAddOperations) {
+                      // first add operation
+                      // create a delta and call the onChange function
+                      // this means the local queue is free so we can run this operation now
+
+                      // index of the new "fake" row in the table
+                      const newPendingRowIndex =
+                        props.context.value.data.size +
+                        (props.context.customFormState.pendingOps.kind == "add"
+                          ? props.context.customFormState.pendingOps.pending
+                              .size
+                          : 0);
+
+                      const delta: DispatchDelta<Flags> = {
+                        kind: "TableAddEmpty",
+                        flags,
+                        newIndex: newPendingRowIndex,
+                        uniqueTableIdentifier: domNodeId,
+                        sourceAncestorLookupTypeNames:
+                          props.context.lookupTypeAncestorNames,
+                      };
+
+                      // no need to apply the updater to the table here
+                      // the fake row will be added later to the list of extra data
+                      // so we just send the delta
+                      props.foreignMutations.onChange(
+                        Option.Default.none(),
+                        delta,
+                      );
+                    }
+
                     const tempId =
                       `placeholder-${v4()}` as PendingAddOperationId;
-
-                    // no need to apply the updater to the table here
-                    // the fake row will be added later to the list of extra data
-                    // so we just send the delta
-                    props.foreignMutations.onChange(
-                      Option.Default.none(),
-                      delta,
-                    );
 
                     const setModifiedByUser =
                       TableAbstractRendererState.Updaters.Core.commonFormState(
@@ -923,8 +921,9 @@ export const TableAbstractRenderer = <
                             List([
                               TableAbstractRendererPendingAddOperation.Default(
                                 // index will be used to match the correct row once we have it in the data
-                                props.context.value.data.size +
-                                  (_.kind == "add" ? _.pending.size : 0),
+                                _.kind == "add"
+                                  ? _.initialTableSize + _.totalAdded
+                                  : props.context.value.data.size,
                                 tempId,
                                 // TODO: use props.context.value.defaultRow
                                 ValueRecord.Default.fromMap(
@@ -932,8 +931,10 @@ export const TableAbstractRenderer = <
                                     c.GetDefaultValue(),
                                   ).concat([["Id", tempId]]),
                                 ),
+                                flags,
                               ),
                             ]),
+                            props.context.value.data.size,
                           )(_),
                       );
 
@@ -957,17 +958,25 @@ export const TableAbstractRenderer = <
                       return;
                     }
 
-                    const delta: DispatchDelta<Flags> = {
-                      kind: "TableRemove",
-                      id: k,
-                      flags,
-                      sourceAncestorLookupTypeNames:
-                        props.context.lookupTypeAncestorNames,
-                    };
-                    props.foreignMutations.onChange(
-                      Option.Default.none(),
-                      delta,
-                    );
+                    const hasPendingRemoveOperations =
+                      props.context.customFormState.pendingOps.kind ==
+                        "remove" &&
+                      props.context.customFormState.pendingOps.pending.size > 0;
+
+                    if (!hasPendingRemoveOperations) {
+                      const delta: DispatchDelta<Flags> = {
+                        kind: "TableRemove",
+                        id: k,
+                        uniqueTableIdentifier: domNodeId,
+                        flags,
+                        sourceAncestorLookupTypeNames:
+                          props.context.lookupTypeAncestorNames,
+                      };
+                      props.foreignMutations.onChange(
+                        Option.Default.none(),
+                        delta,
+                      );
+                    }
 
                     const setModifiedByUser =
                       TableAbstractRendererState.Updaters.Core.commonFormState(
@@ -981,6 +990,7 @@ export const TableAbstractRenderer = <
                           List([
                             TableAbstractRendererPendingRemoveOperation.Default(
                               k,
+                              flags,
                             ),
                           ]),
                         ),
@@ -1111,12 +1121,6 @@ export const TableAbstractRenderer = <
               TableAbstractRendererPendingOps.Operations.hasPendingAddOperation(
                 props.context.customFormState.pendingOps,
               ),
-            )(
-              TableAbstractRendererPendingOps.Operations.optimisticUpdate<
-                CustomPresentationContext,
-                Flags,
-                ExtraContext
-              >(props),
             )}
             TableData={embeddedTableData.map((_) =>
               _.map((row) =>
@@ -1124,12 +1128,6 @@ export const TableAbstractRenderer = <
                   TableAbstractRendererPendingOps.Operations.hasPendingAddOperation(
                     props.context.customFormState.pendingOps,
                   ),
-                )(
-                  TableAbstractRendererPendingOps.Operations.optimisticUpdate<
-                    CustomPresentationContext,
-                    Flags,
-                    ExtraContext
-                  >(props),
                 ),
               ),
             )}
@@ -1140,12 +1138,6 @@ export const TableAbstractRenderer = <
                     TableAbstractRendererPendingOps.Operations.hasPendingAddOperation(
                       props.context.customFormState.pendingOps,
                     ),
-                  )(
-                    TableAbstractRendererPendingOps.Operations.optimisticUpdate<
-                      CustomPresentationContext,
-                      Flags,
-                      ExtraContext
-                    >(props),
                   ),
                 ),
             )}
@@ -1178,10 +1170,12 @@ export const TableAbstractRenderer = <
     InstantiatedApplyEditsRunner.mapContextFromProps((props) => ({
       ...props.context,
       onChange: props.foreignMutations.onChange,
+      uniqueTableIdentifier: props.context.domNodeAncestorPath,
     })),
     InstantiatedDequeueRemoveOpsRunner.mapContextFromProps((props) => ({
       ...props.context,
       onChange: props.foreignMutations.onChange,
+      uniqueTableIdentifier: props.context.domNodeAncestorPath,
     })),
   ]);
 };

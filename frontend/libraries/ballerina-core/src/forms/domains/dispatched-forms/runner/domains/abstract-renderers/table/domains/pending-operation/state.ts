@@ -36,8 +36,12 @@ export const TableAbstractRendererPendingOps = {
       TableAbstractRendererNoPendingOps.Default(),
     add: (
       pending: TableAbstractRendererPendingAddOps["pending"],
+      initialTableSize: number,
     ): TableAbstractRendererPendingOps =>
-      TableAbstractRendererPendingAddOps.Default.fromList(pending),
+      TableAbstractRendererPendingAddOps.Default.fromList(
+        pending,
+        initialTableSize,
+      ),
     remove: (
       pending: TableAbstractRendererPendingRemoveOps["pending"],
     ): TableAbstractRendererPendingOps =>
@@ -51,15 +55,23 @@ export const TableAbstractRendererPendingOps = {
         Updater((_) => (_.kind == "add" ? updater(_) : _)),
       pendingAddOperations: (
         pending: TableAbstractRendererPendingAddOps["pending"],
+        initialTableSize: number,
       ): Updater<TableAbstractRendererPendingOps> =>
         Updater((_) =>
           _.kind == "add"
             ? TableAbstractRendererPendingAddOps.Updaters.Core.pending((_) =>
                 _.concat(pending),
+              ).then(
+                TableAbstractRendererPendingAddOps.Updaters.Core.totalAdded(
+                  (_) => _ + pending.size,
+                ),
               )(_)
-            : replaceWith(TableAbstractRendererPendingOps.Default.add(pending))(
-                _,
-              ),
+            : replaceWith(
+                TableAbstractRendererPendingOps.Default.add(
+                  pending,
+                  initialTableSize,
+                ),
+              )(_),
         ),
       pendingRemoveOperations: (
         pending: TableAbstractRendererPendingRemoveOps["pending"],
@@ -128,7 +140,7 @@ export const TableAbstractRendererPendingOps = {
     ): pendingOps is TableAbstractRendererPendingAddOps =>
       pendingOps.kind == "add" &&
       pendingOps.pending.size > 0 &&
-      data.size > pendingOps.pending.first()!.idx,
+      pendingOps.pending.some((_) => data.size > _.idx),
     /// Returns a list of pending add operations that have completed (got the response)
     getNewDataOrNone: (
       data: OrderedMap<string, ValueRecord>,
@@ -158,81 +170,6 @@ export const TableAbstractRendererPendingOps = {
         PendingOps.Operations.hasPendingAddOps(pendingOps)
           ? pendingOps.pending.some((_) => _.id == rowId)
           : false,
-    optimisticUpdate:
-      <
-        CusomtPresentationContext = Unit,
-        Flags = Unit,
-        ExtraContext = Unit,
-      >(props: {
-        context: TableAbstractRendererReadonlyContext<
-          CusomtPresentationContext,
-          ExtraContext
-        > &
-          TableAbstractRendererState;
-        setState: BasicFun<BasicUpdater<TableAbstractRendererState>, void>;
-        foreignMutations: TableAbstractRendererForeignMutationsExpected<Flags>;
-      }) =>
-      (idx: number, valueRecordUpdater: Updater<ValueRecord>) =>
-      (
-        updater: Option<BasicUpdater<ValueTable>>,
-        delta: DispatchDelta<Flags>,
-      ) => {
-        // custom onChange function provided to the cell templates to handle updates on "fake" rows
-        if (props.context.customFormState.pendingOps.kind == "add") {
-          // if the index is part of the extra data
-          // apply the updater to the extra data
-
-          const extraDataIdx =
-            idx - props.context.customFormState.pendingOps.pending.first()!.idx;
-
-          if (
-            extraDataIdx >= 0 &&
-            extraDataIdx < props.context.customFormState.pendingOps.pending.size
-          ) {
-            const addEditToApplyUpd =
-              TableAbstractRendererState.Updaters.Core.customFormState.children.pendingOps(
-                TableAbstractRendererPendingOps.Updaters.Core.add(
-                  TableAbstractRendererPendingAddOps.Updaters.Core.pending(
-                    ListRepo.Updaters.update(
-                      extraDataIdx,
-                      Updater<TableAbstractRendererPendingAddOperation>(
-                        (_) => ({
-                          ..._,
-                          // update the record with the new value
-                          record: valueRecordUpdater(_.record),
-                          // store information about the edit to apply it later
-                          // once the real row is added to the table
-                          editsToApply: _.editsToApply.push({
-                            recordUpdater: valueRecordUpdater,
-                            updater:
-                              updater.kind == "l"
-                                ? Updater(id)
-                                : Updater(updater.value),
-                            delta,
-                          }),
-                        }),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-
-            props.setState(addEditToApplyUpd);
-          } else {
-            // index referes to a row in the table data
-            // so we can apply the updater to the row directly
-            // but only locally
-            props.foreignMutations.onChange(updater, {
-              ...delta,
-              flags: { kind: "localOnly" } as Flags,
-            });
-          }
-
-          return;
-        }
-
-        props.foreignMutations.onChange(updater, delta);
-      },
   },
 };
 
