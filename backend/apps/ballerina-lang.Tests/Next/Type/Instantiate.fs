@@ -21,7 +21,10 @@ open Ballerina.DSL.Next.Types.TypeChecker
 
 let private typeCheck, _db_query_sym, _make_db_query_type =
   let _, _, _db_query_sym, _make_db_query_type =
-    db_ops () |> stdExtensions<_, MutableMemoryDB<_, unit>>
+    db_ops ()
+    |> stdExtensions<_, MutableMemoryDB<_, unit>> (
+      Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()
+    )
 
   Expr.TypeCheck(_db_query_sym, _make_db_query_type), _db_query_sym, _make_db_query_type
 

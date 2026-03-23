@@ -222,13 +222,16 @@ module Create =
 
                       return Value.Sum({ Case = 2; Count = 2 }, valueWithProps)
                     }
+                    |> reader.MapContext(ExprEvalContext.Updaters.RootLevelEval(replaceWith false))
 
                   return!
                     reader {
                       let _, _, entity, schema_value = entity_ref
+                      let! ctx = reader.GetContext()
 
-                      match entity.Hooks.CanCreate with
-                      | Some canCreateHook ->
+                      match ctx.RootLevelEval, entity.Hooks.CanCreate with
+                      | false, _ -> return! actual_creation
+                      | _, Some canCreateHook ->
                         match!
                           Expr.Apply(
                             canCreateHook,
@@ -239,7 +242,7 @@ module Create =
                         with
                         | Value.Primitive(PrimitiveValue.Bool canCreate) when canCreate -> return! actual_creation
                         | _ -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
-                      | None -> return! actual_creation
+                      | _, None -> return! actual_creation
                     }
                 | _ ->
                   return!

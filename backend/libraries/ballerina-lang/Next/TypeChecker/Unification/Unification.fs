@@ -298,11 +298,16 @@ module Unification =
           TypeValue.MostSpecific<'valueExt>(loc0, a, b)
 
         match t1, t2 with
+        | TypeValue.QueryRow q1, TypeValue.QueryRow _q2 -> return TypeValue.QueryRow q1
+        | TypeValue.Schema s1, TypeValue.Schema s2 when
+          s1.Entities.Count = s2.Entities.Count && s1.Relations.Count = s2.Relations.Count
+          ->
+          return t1
         | TypeValue.Primitive p1, TypeValue.Primitive p2 when p1.value = p2.value -> return t1
         | TypeValue.Lookup l1, TypeValue.Lookup l2 when l1 = l2 -> return t1
         | TypeValue.Lookup l1, TypeValue.Lookup l2 when l1 <> l2 ->
           return!
-            (fun () -> $"Cannot determine most specific type between {t1} and {t2}")
+            (fun () -> $"Cannot determine most specific type between {t1} and {t2}, they are lookups {l1} and {l2}")
             |> error
             |> reader.Throw
         | TypeValue.Lookup _, _ -> return t2

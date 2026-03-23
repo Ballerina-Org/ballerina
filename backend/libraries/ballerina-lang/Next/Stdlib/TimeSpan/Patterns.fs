@@ -58,3 +58,18 @@ module Patterns =
       match op with
       | TimeSpanOperations.FromSeconds -> sum.Return()
       | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected FromSeconds operation")
+
+    static member AsFromMinutes(op: TimeSpanOperations<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | TimeSpanOperations.FromMinutes -> sum.Return()
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected FromMinutes operation")
+
+    static member AsFromHours(op: TimeSpanOperations<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | TimeSpanOperations.FromHours -> sum.Return()
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected FromHours operation")
+
+    static member AsFromDays(op: TimeSpanOperations<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | TimeSpanOperations.FromDays -> sum.Return()
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected FromDays operation")

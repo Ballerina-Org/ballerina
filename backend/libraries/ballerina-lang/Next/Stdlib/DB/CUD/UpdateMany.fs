@@ -188,13 +188,15 @@ module UpdateMany =
 
                             return Value.Sum({ Case = 2; Count = 2 }, valueWithProps)
                           }
+                          |> reader.MapContext(ExprEvalContext.Updaters.RootLevelEval(replaceWith false))
 
                         return!
                           reader {
                             let _, _, entity, schema_value = entity_ref
+                            let! ctx = reader.GetContext()
 
-                            match entity.Hooks.CanUpdate with
-                            | Some canUpdateHook ->
+                            match ctx.RootLevelEval, entity.Hooks.CanUpdate with
+                            | true, Some canUpdateHook ->
                               match!
                                 Expr.Apply(
                                   canUpdateHook,
@@ -205,7 +207,7 @@ module UpdateMany =
                               with
                               | Value.Primitive(PrimitiveValue.Bool canUpdate) when canUpdate -> return! actual_update
                               | _ -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
-                            | None -> return! actual_update
+                            | _ -> return! actual_update
                           }
 
 

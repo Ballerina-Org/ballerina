@@ -5,6 +5,7 @@ module Model =
   open System
 
   type DateTimeOperations<'ext> =
+    | Plus of {| v1: Option<DateTime> |}
     | Diff of {| v1: Option<DateTime> |}
     | Equal of {| v1: Option<DateTime> |}
     | NotEqual of {| v1: Option<DateTime> |}

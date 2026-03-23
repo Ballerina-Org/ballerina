@@ -22,6 +22,7 @@
     <Compile Include="TypeCheck/If.fs" />
     <Compile Include="TypeCheck/TypeLambda.fs" />
     <Compile Include="TypeCheck/Let.fs" />
+    <Compile Include="TypeCheck/Do.fs" />
     <Compile Include="TypeCheck/RecordCons.fs" />
     <Compile Include="TypeCheck/RecordWith.fs" />
     <Compile Include="TypeCheck/RecordDes.fs" />
