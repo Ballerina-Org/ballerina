@@ -342,7 +342,6 @@ export const TableAbstractRenderer = <
                     ),
                   );
 
-
             props.foreignMutations.onChange(updater, delta);
           },
         }));
@@ -922,7 +921,9 @@ export const TableAbstractRenderer = <
                             List([
                               TableAbstractRendererPendingAddOperation.Default(
                                 // index will be used to match the correct row once we have it in the data
-                                _.kind == "add" ? _.initialTableSize + _.totalAdded  : props.context.value.data.size,
+                                _.kind == "add"
+                                  ? _.initialTableSize + _.totalAdded
+                                  : props.context.value.data.size,
                                 tempId,
                                 // TODO: use props.context.value.defaultRow
                                 ValueRecord.Default.fromMap(
@@ -1127,7 +1128,7 @@ export const TableAbstractRenderer = <
                   TableAbstractRendererPendingOps.Operations.hasPendingAddOperation(
                     props.context.customFormState.pendingOps,
                   ),
-                )
+                ),
               ),
             )}
             UnfilteredTableData_Dangerous={embeddedUnfilteredTableData.map(

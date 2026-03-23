@@ -38,7 +38,10 @@ export const TableAbstractRendererPendingOps = {
       pending: TableAbstractRendererPendingAddOps["pending"],
       initialTableSize: number,
     ): TableAbstractRendererPendingOps =>
-      TableAbstractRendererPendingAddOps.Default.fromList(pending, initialTableSize),
+      TableAbstractRendererPendingAddOps.Default.fromList(
+        pending,
+        initialTableSize,
+      ),
     remove: (
       pending: TableAbstractRendererPendingRemoveOps["pending"],
     ): TableAbstractRendererPendingOps =>
@@ -58,10 +61,17 @@ export const TableAbstractRendererPendingOps = {
           _.kind == "add"
             ? TableAbstractRendererPendingAddOps.Updaters.Core.pending((_) =>
                 _.concat(pending),
-              ).then(TableAbstractRendererPendingAddOps.Updaters.Core.totalAdded((_) => _ + pending.size))(_)
-            : replaceWith(TableAbstractRendererPendingOps.Default.add(pending, initialTableSize))(
-                _,
-              ),
+              ).then(
+                TableAbstractRendererPendingAddOps.Updaters.Core.totalAdded(
+                  (_) => _ + pending.size,
+                ),
+              )(_)
+            : replaceWith(
+                TableAbstractRendererPendingOps.Default.add(
+                  pending,
+                  initialTableSize,
+                ),
+              )(_),
         ),
       pendingRemoveOperations: (
         pending: TableAbstractRendererPendingRemoveOps["pending"],
