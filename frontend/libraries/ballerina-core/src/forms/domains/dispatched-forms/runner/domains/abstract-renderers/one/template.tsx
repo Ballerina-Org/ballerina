@@ -399,17 +399,6 @@ export const OneAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
-              onChange: (updater, delta) => {
-                props.foreignMutations.onChange(updater, delta);
-                props.setState(
-                  OneAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
-                    replaceWith<InitializationStatus>({
-                      kind: "reinitializing",
-                      afterReinitializationAction: () => {},
-                    }),
-                  ),
-                );
-              },
               toggleOpen: () =>
                 props.setState(
                   OneAbstractRendererState.Updaters.Core.customFormState.children
