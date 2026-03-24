@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "ballerina-core": "*",
-    "immutable": "^5.1.4"
+    "immutable": "^5.1.5"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
