@@ -34,7 +34,7 @@ module Apply =
         query_type_symbol: TypeSymbol,
         mk_query_type: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>
       )
-      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprApply<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ F = f_expr; Arg = a_expr }) ->
         let (!) = typeCheckExpr None
@@ -49,6 +49,7 @@ module Apply =
           // do Console.WriteLine($"Argument expression: {a_expr}")
           let f = f_expr
           let! (ctx: TypeCheckContext<_>) = state.GetContext()
+          let loc0 = f_expr.Location
           let error e = Errors.Singleton loc0 e
           // do Console.WriteLine($"t_a: {t_a}")
           // do Console.WriteLine($"a_k: {a_k}")
@@ -56,6 +57,38 @@ module Apply =
 
           let ofSum (p: Sum<'a, Errors<Unit>>) =
             p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
+
+          let rec subtype_schema (fixed_schema: Schema<'valueExt>) (sub: Schema<'valueExt>) =
+            state {
+              if
+                fixed_schema.Entities.Count < sub.Entities.Count
+                || fixed_schema.Relations.Count < sub.Relations.Count
+              then
+                match sub.Included with
+                | Some included_schema -> return! subtype_schema fixed_schema included_schema
+                | None ->
+                  return!
+                    (fun () -> $"Error: cannot unify schemas, {fixed_schema} is not a subtype of {sub}")
+                    |> error
+                    |> state.Throw
+              else
+                return (fixed_schema, sub)
+            }
+
+          let unify_with_schema_subtyping f_input t_a =
+            state {
+              match f_input, t_a with
+              | TypeValue.Schema fixed_schema, TypeValue.Schema sub_schema ->
+                let! (fixed_schema, sub_schema) = subtype_schema fixed_schema sub_schema
+
+                let! res =
+                  TypeValue.Unify(loc0, fixed_schema |> TypeValue.CreateSchema, sub_schema |> TypeValue.CreateSchema)
+                  |> Expr<'T, 'Id, 'valueExt>.liftUnification
+
+                return res
+              | _ -> return! TypeValue.Unify(loc0, f_input, t_a) |> Expr<'T, 'Id, 'valueExt>.liftUnification
+            }
+
 
           let rec pad f_constraint (f_expr: Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>) =
             state {
@@ -131,8 +164,8 @@ module Apply =
 
                       return!
                         state {
-                          let! a, t_a, a_k, _ = None => a_expr
-                          do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
+                          let! a, t_a, _a_k, _ = None => a_expr
+                          // do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
                           let f_i, union_type_parameters, union_cases = union_cons_t
                           let f_o = union_cases |> TypeValue.CreateUnion
                           let f_k = Kind.Star
@@ -234,9 +267,9 @@ module Apply =
                             match context_t with
                             | None -> return t_f
                             | Some context_t ->
-                              do!
-                                TypeValue.Unify(loc0, t_f, context_t)
-                                |> Expr<'T, 'Id, 'valueExt>.liftUnification
+                              do! unify_with_schema_subtyping t_f context_t
+                              // TypeValue.Unify(loc0, t_f, context_t)
+                              // |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
                               let! t_res =
                                 t_f
@@ -248,29 +281,6 @@ module Apply =
 
                               return t_res
                           }
-
-                        // do Console.WriteLine $"after padding, t_f = {t_f}"
-                        // do Console.WriteLine $"after padding, f_k = {f_k}"
-                        // do Console.ReadLine() |> ignore
-
-                        // let! t_f =
-                        //   match context_t with
-                        //   | None -> state { return t_f }
-                        //   | Some context_t ->
-                        //     state {
-                        //       do!
-                        //         TypeValue.Unify(loc0, t_f, context_t)
-                        //         |> Expr<'T, 'Id, 'valueExt>.liftUnification
-
-                        //       let! t_res =
-                        //         t_f
-                        //         |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
-                        //         |> Expr.liftInstantiation
-
-                        //       return t_res
-                        //     }
-
-                        // do Console.WriteLine $"[lookup case] typechecking function expression {f} : {t_f}..."
 
                         return!
                           state.Either
@@ -290,10 +300,11 @@ module Apply =
                                 | TypeValue.Var v when v.Synthetic -> None
                                 | _ -> Some f_input
 
-                              let! a, t_a, a_k, _ = context_a => a_expr
-                              do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
+                              let! a, t_a, _a_k, _ = context_a => a_expr
+                              // do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                              do! TypeValue.Unify(loc0, f_input, t_a) |> Expr<'T, 'Id, 'valueExt>.liftUnification
+                              do! unify_with_schema_subtyping f_input t_a
+
 
                               let! f_output =
                                 f_output
@@ -306,8 +317,8 @@ module Apply =
                               return Expr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx
                             })
                             (state {
-                              let! a, t_a, a_k, _ = None => a_expr
-                              do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
+                              let! a, t_a, _a_k, _ = None => a_expr
+                              // do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                               // do Console.WriteLine $"a = {a}..."
                               // do Console.WriteLine $"t_a = {t_a}..."
@@ -372,7 +383,7 @@ module Apply =
                               //   Console.WriteLine
                               //     $"[lookup case Unifying function input type {f_input} with argument type {t_a}..."
 
-                              do! TypeValue.Unify(loc0, f_input, t_a) |> Expr<'T, 'Id, 'valueExt>.liftUnification
+                              do! unify_with_schema_subtyping f_input t_a
                               // do Console.Write $"unification successful, f_input: {f_input}, t_a: {t_a}"
                               // do Console.WriteLine $" after unification, f_output: {f_output})"
 
@@ -393,8 +404,8 @@ module Apply =
                       | Right _ ->
                         // do Console.WriteLine $"f is a lookup, looking for ad-hoc polymorphic operator resolution for {f_lookup}..."
 
-                        let! a, t_a, a_k, _ = None => a_expr
-                        do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
+                        let! a, t_a, _a_k, _ = None => a_expr
+                        // do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                         if adHocPolymorphismBinaryAllOperatorNames.Contains f_lookup.Name then
                           return!
@@ -489,8 +500,8 @@ module Apply =
                   |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
               })
               (state {
-                let! a, t_a, a_k, _ = None => a_expr
-                do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
+                let! a, t_a, _a_k, _ = None => a_expr
+                // do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                 let! t_a, f_constraint =
                   match t_a with
@@ -534,7 +545,7 @@ module Apply =
                 return!
                   state {
                     // do Console.WriteLine $"Unifying function input type {f_input} with argument type {t_a}..."
-                    do! TypeValue.Unify(loc0, f_input, t_a) |> Expr<'T, 'Id, 'valueExt>.liftUnification
+                    do! unify_with_schema_subtyping f_input t_a
 
                     let! f_output =
                       f_output

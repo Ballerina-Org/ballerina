@@ -16,9 +16,10 @@ open Ballerina.Collections.NonEmptyList
 open Ballerina.DSL.Next.Serialization.ValueSerializer
 open Ballerina.DSL.Next.Serialization.ValueDeserializer
 open Ballerina.DSL.Next.StdLib.MutableMemoryDB
+open Ballerina.DSL.Next.StdLib.String
 
 let _, languageContext, query_type_sym, mk_query_type =
-  stdExtensions<unit, MutableMemoryDB<unit, unit>> (db_ops ())
+  stdExtensions<unit, MutableMemoryDB<unit, unit>> (StringTypeClass<_>.Console()) (db_ops ())
 
 let primitive (v: string) =
   $"""

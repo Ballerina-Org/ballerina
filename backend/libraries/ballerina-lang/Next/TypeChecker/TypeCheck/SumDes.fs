@@ -28,10 +28,17 @@ module SumDes =
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckSumDes<'valueExt when 'valueExt: comparison>
       (query_type_symbol, mk_query_type)
-      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprSumDes<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Handlers = handlers }) ->
         let (!) = typeCheckExpr None
+
+        let loc0 =
+          handlers
+          |> Map.toSeq
+          |> Seq.map (fun (_k, (_var, body)) -> body.Location)
+          |> Seq.tryHead
+          |> Option.defaultValue Location.Unknown
 
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
@@ -83,8 +90,9 @@ module SumDes =
               state {
                 let! var_t =
                   state {
-                    match context_t with
-                    | None ->
+                    match context_t, var with
+                    | None, None -> return TypeValue.CreateUnit()
+                    | None, Some var ->
                       let guid = Guid.CreateVersion7()
 
                       let fresh_var =
@@ -95,7 +103,7 @@ module SumDes =
                       do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists fresh_var))
 
                       return TypeValue.Var fresh_var
-                    | Some(t_i, _t_o) ->
+                    | Some(t_i, _t_o), _ ->
                       return!
                         t_i
                         |> List.tryItem (_k.Case - 1)
@@ -103,13 +111,13 @@ module SumDes =
                         |> state.OfSum
                   }
 
-                let! body, body_t, body_k, _ =
-                  !body
-                  |> state.MapContext(
-                    TypeCheckContext.Updaters.Values(
-                      Map.add (var.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) (var_t, Kind.Star)
-                    )
-                  )
+                let add_var =
+                  var
+                  |> Option.map (fun v ->
+                    Map.add (v.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) (var_t, Kind.Star))
+                  |> Option.defaultValue id
+
+                let! body, body_t, body_k, _ = !body |> state.MapContext(TypeCheckContext.Updaters.Values add_var)
 
                 do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
 

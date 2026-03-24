@@ -35,7 +35,7 @@ module If =
         query_type_symbol: TypeSymbol,
         mk_query_type: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>
       )
-      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprIf<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
@@ -43,6 +43,7 @@ module If =
              Then = thenBranch
              Else = elseBranch }) ->
         let (!) = typeCheckExpr context_t
+        let loc0 = cond.Location
 
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum

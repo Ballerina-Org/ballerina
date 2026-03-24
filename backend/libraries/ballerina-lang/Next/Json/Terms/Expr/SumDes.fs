@@ -40,7 +40,7 @@ module SumDes =
                 return
                   ({ Case = handlerCase
                      Count = handlerCount }),
-                  (handlerVar, handlerBody)
+                  (Some handlerVar, handlerBody)
               })
             |> reader.All
             |> reader.Map(Map.ofSeq)
@@ -58,7 +58,12 @@ module SumDes =
         reader {
           let i = k.Case |> decimal |> JsonValue.Number
           let n = k.Count |> decimal |> JsonValue.Number
-          let v = v.Name |> JsonValue.String
+
+          let v =
+            v
+            |> Option.map (fun var -> var.Name |> JsonValue.String)
+            |> Option.defaultValue (JsonValue.String "()")
+
           let! h = h |> rootToJson
           return [| i; n; v; h |] |> JsonValue.Array
         })

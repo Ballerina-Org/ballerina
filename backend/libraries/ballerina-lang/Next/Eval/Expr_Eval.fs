@@ -48,7 +48,8 @@ module Eval =
   type ExprEvalContext<'runtimeContext, 'valueExtension> =
     { Scope: ExprEvalContextScope<'valueExtension>
       ExtensionOps: ValueExtensionOps<'runtimeContext, 'valueExtension>
-      RuntimeContext: 'runtimeContext }
+      RuntimeContext: 'runtimeContext
+      RootLevelEval: bool }
 
   and ApplicableExtEvalResult<'runtimeContext, 'valueExtension> =
     (Location
@@ -86,7 +87,8 @@ module Eval =
   type ExprEvalContext<'runtimeContext, 'valueExtension> with
     static member Empty: 'runtimeContext -> ExprEvalContext<'runtimeContext, 'valueExtension> =
       fun runtimeContext ->
-        { RuntimeContext = runtimeContext
+        { RootLevelEval = true
+          RuntimeContext = runtimeContext
           Scope =
             { Values = Map.empty
               Symbols = ExprEvalContextSymbols.Empty }
@@ -129,7 +131,11 @@ module Eval =
             { c with
                 Scope =
                   { c.Scope with
-                      Symbols = u (c.Scope.Symbols) } } |}
+                      Symbols = u (c.Scope.Symbols) } }
+         RootLevelEval =
+          fun u (c: ExprEvalContext<'runtimeContext, 'valueExtension>) ->
+            { c with
+                RootLevelEval = u (c.RootLevelEval) } |}
 
   type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member EvalApply (loc0: Location) (rest: List<_>) (fV, argV) =
@@ -207,6 +213,9 @@ module Eval =
             |> reader.MapContext(
               ExprEvalContext.Updaters.Values(Map.add (var.Name |> Identifier.LocalScope |> e.Scope.Resolve) value)
             )
+        | ExprRec.Do { Val = e1; Rest = e2 } ->
+          let! _ = !e1
+          return! !!e2
         | ExprRec.Lookup({ Id = id }) ->
           let! ctx = reader.GetContext()
 
@@ -342,13 +351,12 @@ module Eval =
                     | Some caseHandler ->
                       let caseVar, caseBody = caseHandler
 
-                      return!
-                        !!caseBody
-                        |> reader.MapContext(
-                          ExprEvalContext.Updaters.Values(
-                            Map.add (caseVar.Name |> Identifier.LocalScope |> e.Scope.Resolve) unionV
-                          )
-                        )
+                      let add_var =
+                        match caseVar with
+                        | None -> id
+                        | Some caseVar -> Map.add (caseVar.Name |> Identifier.LocalScope |> e.Scope.Resolve) unionV
+
+                      return! !!caseBody |> reader.MapContext(ExprEvalContext.Updaters.Values add_var)
                     | None ->
                       match fallback with
                       | Some fallback -> return! !fallback
@@ -402,11 +410,12 @@ module Eval =
 
           let caseVar, caseBody = caseHandler
 
-          return!
-            !!caseBody
-            |> reader.MapContext(
-              ExprEvalContext.Updaters.Values(Map.add (caseVar.Name |> Identifier.LocalScope |> e.Scope.Resolve) sumV)
-            )
+          let add_var =
+            match caseVar with
+            | None -> id
+            | Some caseVar -> Map.add (caseVar.Name |> Identifier.LocalScope |> e.Scope.Resolve) sumV
+
+          return! !!caseBody |> reader.MapContext(ExprEvalContext.Updaters.Values(add_var))
 
         | ExprRec.FromValue({ Value = v
                               ValueType = _
@@ -721,100 +730,218 @@ module Eval =
             |> reader.OfSum
 
           return relation_v
+        | ExprRec.Query(UnionQueries(q1, q2)) ->
+          let! v1 = !(Expr.Query q1)
+          let! v2 = !(Expr.Query q2)
+
+          let! v1 =
+            v1
+            |> Value.AsQuery
+            |> sum.MapError(Errors.MapContext(replaceWith loc0))
+            |> reader.OfSum
+
+          let! v2 =
+            v2
+            |> Value.AsQuery
+            |> sum.MapError(Errors.MapContext(replaceWith loc0))
+            |> reader.OfSum
+
+          return Value.Query(ValueQuery.ValueUnionQueries(v1, v2, v1.DeserializeFrom))
         | ExprRec.Query q ->
 
-          let! iterators =
-            q.Iterators
-            |> NonEmptyList.map (fun iterator ->
-              reader {
-                let! sourceV = !iterator.Source
+          let rec replace_closure_lookups closure (e: ExprQueryExpr<_, _, _>) =
+            reader {
+              let (!) = replace_closure_lookups closure
 
-                let! varType =
-                  iterator.VarType
-                  |> sum.OfOption(
-                    (fun () -> $"Error: {iterator.Var.Name} has no type")
-                    |> Errors.Singleton iterator.Source.Location
-                  )
-                  |> reader.OfSum
+              match e.Expr with
+              | ExprQueryExprRec.QueryConstant _
+              | ExprQueryExprRec.QueryIntrinsic _ -> return e
+              | ExprQueryExprRec.QueryTupleCons items ->
+                let! items = items |> List.map (!) |> reader.All
 
                 return
-                  { ValueQueryIterator.Location = iterator.Location
-                    Var = iterator.Var
-                    Source = sourceV
-                    VarType = varType }
-              })
-            |> reader.AllNonEmpty
+                  { e with
+                      Expr = ExprQueryExprRec.QueryTupleCons items }
+              | ExprQueryExprRec.QueryRecordDes(expr, field, isJson) ->
+                let! expr = !expr
 
-          let! ctx = reader.GetContext()
+                return
+                  { e with
+                      Expr = ExprQueryExprRec.QueryRecordDes(expr, field, isJson) }
+              | ExprQueryExprRec.QueryTupleDes(expr, item) ->
+                let! expr = !expr
 
-          let closure =
-            ctx.Scope.Values |> Map.filter (fun k _ -> q.Closure |> Map.containsKey k)
+                return
+                  { e with
+                      Expr = ExprQueryExprRec.QueryTupleDes(expr, item) }
+              | ExprQueryExprRec.QueryConditional(cond, ``then``, ``else``) ->
+                let! cond = !cond
+                let! ``then`` = !``then``
+                let! ``else`` = !``else``
 
-          let closure = closure |> Map.map (fun k v -> v, q.Closure.[k])
+                return
+                  { e with
+                      Expr = ExprQueryExprRec.QueryConditional(cond, ``then``, ``else``) }
+              | ExprQueryExprRec.QueryUnionDes(expr, handlers) ->
+                let! expr = !expr
 
-          let rec replace_closure_lookups (e: ExprQueryExpr<_, _, _>) =
-            let (!) = replace_closure_lookups
+                let! handlers =
+                  handlers
+                  |> Map.map (fun _k handler ->
+                    reader {
+                      let! handlerBody = !handler.Body
 
-            match e.Expr with
-            | ExprQueryExprRec.QueryConstant _
-            | ExprQueryExprRec.QueryIntrinsic _ -> e
-            | ExprQueryExprRec.QueryTupleCons items ->
-              { e with
-                  Expr = ExprQueryExprRec.QueryTupleCons(items |> List.map (!)) }
-            | ExprQueryExprRec.QueryRecordDes(expr, field, isJson) ->
-              { e with
-                  Expr = ExprQueryExprRec.QueryRecordDes((!expr), field, isJson) }
-            | ExprQueryExprRec.QueryTupleDes(expr, item) ->
-              { e with
-                  Expr = ExprQueryExprRec.QueryTupleDes((!expr), item) }
-            | ExprQueryExprRec.QueryConditional(cond, ``then``, ``else``) ->
-              { e with
-                  Expr = ExprQueryExprRec.QueryConditional((!cond), (!``then``), (!``else``)) }
-            | ExprQueryExprRec.QueryUnionDes(expr, handlers) ->
-              { e with
-                  Expr =
-                    ExprQueryExprRec.QueryUnionDes(
-                      (!expr),
-                      handlers |> Map.map (fun _k handler -> { handler with Body = !handler.Body })
-                    ) }
-            | ExprQueryExprRec.QuerySumDes(expr, handlers) ->
-              { e with
-                  Expr =
-                    ExprQueryExprRec.QuerySumDes(
-                      (!expr),
-                      handlers |> Map.map (fun _k handler -> { handler with Body = !handler.Body })
-                    ) }
-            | ExprQueryExprRec.QueryApply(func, arg) ->
-              { e with
-                  Expr = ExprQueryExprRec.QueryApply((!func), (!arg)) }
-            | ExprQueryExprRec.QueryLookup(l) ->
-              match closure |> Map.tryFind l with
-              | None -> e
-              | Some(v, t) ->
-                { e with
-                    Expr = ExprQueryExprRec.QueryClosureValue(v, t) }
-            | ExprQueryExprRec.QueryClosureValue(_, _) -> e
-            | ExprQueryExprRec.QueryCastTo(e, t) ->
-              { e with
-                  Expr = ExprQueryExprRec.QueryCastTo(!e, t) }
+                      return { handler with Body = handlerBody }
+                    })
+                  |> reader.AllMap
 
+                return
+                  { e with
+                      Expr = ExprQueryExprRec.QueryUnionDes(expr, handlers) }
+              | ExprQueryExprRec.QuerySumDes(expr, handlers) ->
+                let! expr = !expr
 
-          let res: Value<_, _> =
-            Value.Query
-              { Iterators = iterators
-                Joins =
+                let! handlers =
+                  handlers
+                  |> Map.map (fun _k handler ->
+                    reader {
+                      let! handlerBody = !handler.Body
+
+                      return { handler with Body = handlerBody }
+                    })
+                  |> reader.AllMap
+
+                return
+                  { e with
+                      Expr = ExprQueryExprRec.QuerySumDes(expr, handlers) }
+              | ExprQueryExprRec.QueryApply(func, arg) ->
+                let! func = !func
+                let! arg = !arg
+
+                return
+                  { e with
+                      Expr = ExprQueryExprRec.QueryApply(func, arg) }
+              | ExprQueryExprRec.QueryLookup(l) ->
+                match closure |> Map.tryFind l with
+                | None -> return e
+                | Some(v, t) ->
+                  return
+                    { e with
+                        Expr = ExprQueryExprRec.QueryClosureValue(v, t) }
+              | ExprQueryExprRec.QueryClosureValue(_, _) -> return e
+              | ExprQueryExprRec.QueryCastTo(e, t) ->
+                let! e = !e
+
+                return
+                  { e with
+                      Expr = ExprQueryExprRec.QueryCastTo(e, t) }
+              | ExprQueryExprRec.QueryCount(q) ->
+                let! q = q |> replace_closure_lookups_query
+
+                return
+                  { e with
+                      Expr = ExprQueryExprRec.QueryCountEvaluated q }
+              | ExprQueryExprRec.QueryExists(q) ->
+                let! q = q |> replace_closure_lookups_query
+
+                return
+                  { e with
+                      Expr = ExprQueryExprRec.QueryExistsEvaluated q }
+              | ExprQueryExprRec.QueryArray(q) ->
+                let! q = q |> replace_closure_lookups_query
+
+                return
+                  { e with
+                      Expr = ExprQueryExprRec.QueryArrayEvaluated q }
+              | ExprQueryExprRec.QueryCountEvaluated(_) -> return e
+              | ExprQueryExprRec.QueryExistsEvaluated(_) -> return e
+              | ExprQueryExprRec.QueryArrayEvaluated(_) -> return e
+            }
+
+          and replace_closure_lookups_query
+            (q: ExprQuery<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>)
+            =
+            reader {
+              match q with
+              | UnionQueries(q1, q2) ->
+                let! q1 = replace_closure_lookups_query q1
+                let! q2 = replace_closure_lookups_query q2
+                return ValueQuery.ValueUnionQueries(q1, q2, q1.DeserializeFrom)
+              | SimpleQuery q ->
+                let! iterators =
+                  q.Iterators
+                  |> NonEmptyList.map (fun iterator ->
+                    reader {
+                      let! sourceV = !iterator.Source
+
+                      let! varType =
+                        iterator.VarType
+                        |> sum.OfOption(
+                          (fun () -> $"Error: {iterator.Var.Name} has no type")
+                          |> Errors.Singleton iterator.Source.Location
+                        )
+                        |> reader.OfSum
+
+                      return
+                        { ValueQueryIterator.Location = iterator.Location
+                          Var = iterator.Var
+                          Source = sourceV
+                          VarType = varType }
+                    })
+                  |> reader.AllNonEmpty
+
+                let! ctx = reader.GetContext()
+
+                let closure =
+                  ctx.Scope.Values |> Map.filter (fun k _ -> q.Closure |> Map.containsKey k)
+
+                let closure = closure |> Map.map (fun k v -> v, q.Closure.[k])
+
+                let! joins =
                   q.Joins
                   |> Option.map (
                     NonEmptyList.map (fun join ->
-                      { join with
-                          Left = join.Left |> replace_closure_lookups })
-                  )
-                Where = q.Where |> Option.map replace_closure_lookups
-                Select = q.Select |> replace_closure_lookups
-                OrderBy = q.OrderBy |> Option.map (fun (v, dir) -> replace_closure_lookups v, dir)
-                DeserializeFrom = q.DeserializeFrom }
+                      reader {
+                        let! leftV = join.Left |> replace_closure_lookups closure
+                        let! rightV = join.Right |> replace_closure_lookups closure
 
-          return res
+                        return
+                          { join with
+                              Left = leftV
+                              Right = rightV }
+                      })
+                    >> reader.AllNonEmpty
+                  )
+                  |> reader.RunOption
+
+                let! where = q.Where |> Option.map (replace_closure_lookups closure) |> reader.RunOption
+
+                let! select = replace_closure_lookups closure q.Select
+
+                let! orderBy =
+                  q.OrderBy
+                  |> Option.map (fun (v, dir) ->
+                    reader {
+                      let! v = replace_closure_lookups closure v
+                      return v, dir
+                    })
+                  |> reader.RunOption
+
+                let! distinct = q.Distinct |> Option.map (replace_closure_lookups closure) |> reader.RunOption
+
+                return
+                  ValueQuery.ValueQuerySimple
+                    { Iterators = iterators
+                      Joins = joins
+                      Where = where
+                      Select = select
+                      OrderBy = orderBy
+                      Distinct = distinct
+                      DeserializeFrom = q.DeserializeFrom }
+            }
+
+          let! q' = replace_closure_lookups_query q
+          return Value.Query q'
         | _ ->
           return!
             (fun () -> $"Cannot eval expression {e}")

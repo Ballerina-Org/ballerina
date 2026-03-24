@@ -19,7 +19,6 @@ module TypeEval =
     static member TypeEval<'valueExt when 'valueExt: comparison>
       (query_sym, mk_query_type)
       : TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt>
-          -> Location
           -> Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>
           -> State<
             Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>,
@@ -28,12 +27,12 @@ module TypeEval =
             Errors<Location>
            >
       =
-      fun typeCheckExpr loc0 expr ->
-        let (!) = Expr.TypeEval (query_sym, mk_query_type) typeCheckExpr loc0
+      fun typeCheckExpr expr ->
+        let (!) = Expr.TypeEval (query_sym, mk_query_type) typeCheckExpr
 
         let (!!) t =
           state {
-            let! t, _ = t |> TypeExpr.Eval query_sym mk_query_type typeCheckExpr None loc0
+            let! t, _ = t |> TypeExpr.Eval query_sym mk_query_type typeCheckExpr None expr.Location
             return t
           }
 
@@ -64,6 +63,10 @@ module TypeEval =
             let! bodyType = !body
             let! var_type = var_type |> Option.map (!!) |> state.RunOption
             return Expr.Let(var, var_type, valueType, bodyType, expr.Location, ctx.Scope)
+          | ExprRec.Do({ Val = e1; Rest = e2 }) ->
+            let! e1Type = !e1
+            let! e2Type = !e2
+            return Expr.Do(e1Type, e2Type, expr.Location, ctx.Scope)
           | ExprRec.RecordWith({ Record = record; Fields = fields }) ->
             let! recordType = !record
 
@@ -141,12 +144,16 @@ module TypeEval =
           | ExprRec.TypeApply({ ExprTypeApply.Func = typeExpr
                                 TypeArg = typeArg }) ->
             let! typeExprType = !typeExpr
-            let! typeArg, _ = typeArg |> TypeExpr.Eval query_sym mk_query_type typeCheckExpr None loc0
+
+            let! typeArg, _ =
+              typeArg
+              |> TypeExpr.Eval query_sym mk_query_type typeCheckExpr None expr.Location
+
             return Expr.TypeApply(typeExprType, typeArg, expr.Location, ctx.Scope)
           | ExprRec.TypeLet({ ExprTypeLet.Name = var
                               TypeDef = value
                               Body = body }) ->
-            let! valueType = value |> TypeExpr.Eval query_sym mk_query_type typeCheckExpr None loc0
+            let! valueType = value |> TypeExpr.Eval query_sym mk_query_type typeCheckExpr None expr.Location
             do! TypeCheckState.bindType (var |> Identifier.LocalScope |> ctx.Scope.Resolve) valueType
 
             let! bodyType = !body
@@ -173,6 +180,7 @@ module TypeEval =
             return Expr.RelationLookupDes(recordType, relation_name, direction, expr.Location, ctx.Scope)
           | ExprRec.Query _q ->
             return!
-              Errors.Singleton loc0 (fun () -> $"Error (typecheck): not yet implemented expression pattern query")
+              Errors.Singleton expr.Location (fun () ->
+                $"Error (typecheck): not yet implemented expression pattern query")
               |> state.Throw
         }

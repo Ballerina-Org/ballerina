@@ -57,7 +57,7 @@ module TypeExtractionExpr =
         state {
           let! caseVar, caseId = freshVar "case"
           let! innerExpr = compileTree childTree (Expr.Lookup caseId)
-          let handlers = Map.ofList [ ctx.Resolve sym, (caseVar, innerExpr) ]
+          let handlers = Map.ofList [ ctx.Resolve sym, (Some caseVar, innerExpr) ]
           let fallback = Some nilExpr
           return Expr.Apply(Expr.UnionDes(handlers, fallback), current)
         }
@@ -75,9 +75,9 @@ module TypeExtractionExpr =
               let selector = { Case = i; Count = count }
 
               if i = case + 1 then
-                selector, (caseVar, innerExpr)
+                selector, (Some caseVar, innerExpr)
               else
-                selector, (dummyVar, nilExpr))
+                selector, (Some dummyVar, nilExpr))
             |> Map.ofList
 
           return Expr.Apply(Expr.SumDes(handlers), current)

@@ -11,6 +11,7 @@ open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 
 open System
+open Ballerina.DSL.Next.StdLib.String
 
 let deltaUpdate
   : Delta<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>, DeltaExt<unit, MutableMemoryDB<unit, unit>, unit>> =
@@ -85,7 +86,8 @@ let roundtrip
     return deltaJson, deserializedDelta
   }
 
-let _, context, _db_query_sym, _make_db_query_type = db_ops () |> stdExtensions
+let _, context, _db_query_sym, _make_db_query_type =
+  db_ops () |> stdExtensions (StringTypeClass<_>.Console())
 
 [<EntryPoint>]
 let main _ =

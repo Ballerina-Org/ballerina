@@ -27,13 +27,14 @@ module TupleDes =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckTupleDes<'valueExt when 'valueExt: comparison>
-      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprTupleDes<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
           ({ ExprTupleDes.Tuple = fields
              Item = fieldName }) ->
         let (!) = typeCheckExpr context_t
+        let loc0 = fields.Location
 
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum

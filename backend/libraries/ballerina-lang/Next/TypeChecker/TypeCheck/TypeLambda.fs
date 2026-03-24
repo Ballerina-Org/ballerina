@@ -31,10 +31,11 @@ module TypeLambda =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckTypeLambda<'valueExt when 'valueExt: comparison>
-      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprTypeLambda<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Param = t_par; Body = body }) ->
         let (!) = typeCheckExpr context_t
+        let loc0 = body.Location
 
         state {
           let! ctx = state.GetContext()

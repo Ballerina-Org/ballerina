@@ -225,8 +225,13 @@ module Update =
                     |> reader.MapError(Errors.MapContext(replaceWith loc0))
                     |> reader.Catch
 
+
                   match existingValue with
-                  | Right _ -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                  | Right _errors ->
+                    // let _, _, entity, _ = entity_ref
+                    // do Console.WriteLine $"Error getting {entity.Name.Name} with id {_entityId}: {errors.Errors()}"
+                    // do Console.ReadLine() |> ignore
+                    return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
                   | Left existingValue ->
                     let actual_update =
                       reader {
@@ -271,13 +276,19 @@ module Update =
 
                         return Value.Sum({ Case = 2; Count = 2 }, valueWithProps)
                       }
+                      |> reader.MapContext(ExprEvalContext.Updaters.RootLevelEval(replaceWith false))
 
                     return!
                       reader {
                         let _, _, entity, schema_value = entity_ref
+                        let! ctx = reader.GetContext()
 
-                        match entity.Hooks.CanUpdate with
-                        | Some canUpdateHook ->
+                        match ctx.RootLevelEval, entity.Hooks.CanUpdate with
+                        | true, Some canUpdateHook ->
+                          // do Console.WriteLine $"Running canUpdate hook for entity {entity.Name}"
+                          // do Console.WriteLine $"Hook itself: {canUpdateHook}"
+                          // do Console.WriteLine $"Existing value: {existingValue}"
+                          // do Console.ReadLine() |> ignore
                           match!
                             Expr.Apply(
                               Expr.Apply(
@@ -293,8 +304,15 @@ module Update =
                             |> Expr.Eval
                           with
                           | Value.Primitive(PrimitiveValue.Bool canUpdate) when canUpdate -> return! actual_update
-                          | _ -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
-                        | None -> return! actual_update
+                          | _res ->
+                            // do Console.WriteLine $"Unexpected result from canUpdate hook: {res}"
+                            // do Console.ReadLine() |> ignore
+
+                            return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                        | _ ->
+                          // do Console.WriteLine $"There is no canUpdate hook for entity {entity.Name}, proceeding with update"
+                          // do Console.ReadLine() |> ignore
+                          return! actual_update
                       }
                 | _ ->
                   return!

@@ -138,6 +138,7 @@ module Common =
   let typeKeyword = parseKeyword Keyword.Type
   let ofKeyword = parseKeyword Keyword.Of
   let letKeyword = parseKeyword Keyword.Let
+  let doKeyword = parseKeyword Keyword.Do
   let withKeyword = parseKeyword Keyword.With
   let inKeyword = parseKeyword Keyword.In
   let ifKeyword = parseKeyword Keyword.If
@@ -160,6 +161,11 @@ module Common =
       | Token.Keyword(Keyword.Can) -> Keyword.Can.ToString() |> Some
       | Token.Keyword(Keyword.And) -> Keyword.And.ToString() |> Some
       | Token.Keyword(Keyword.OrderBy) -> Keyword.OrderBy.ToString() |> Some
+      | Token.Keyword(Keyword.Distinct) -> Keyword.Distinct.ToString() |> Some
+      | Token.Keyword(Keyword.Count) -> Keyword.Count.ToString() |> Some
+      | Token.Keyword(Keyword.Exists) -> Keyword.Exists.ToString() |> Some
+      | Token.Keyword(Keyword.Union) -> Keyword.Union.ToString() |> Some
+      | Token.Keyword(Keyword.Array) -> Keyword.Array.ToString() |> Some
       | Token.Keyword(Keyword.Ascending) -> Keyword.Ascending.ToString() |> Some
       | Token.Keyword(Keyword.Descending) -> Keyword.Descending.ToString() |> Some
       | _ -> None)
@@ -193,6 +199,11 @@ module Common =
   let onKeyword = parseKeyword Keyword.On
   let andKeyword = parseKeyword Keyword.And
   let orderByKeyword = parseKeyword Keyword.OrderBy
+  let distinctKeyword = parseKeyword Keyword.Distinct
+  let countKeyword = parseKeyword Keyword.Count
+  let existsKeyword = parseKeyword Keyword.Exists
+  let unionKeyword = parseKeyword Keyword.Union
+  let arrayKeyword = parseKeyword Keyword.Array
   let ascendingKeyword = parseKeyword Keyword.Ascending
   let descendingKeyword = parseKeyword Keyword.Descending
   let propertyKeyword = softKeyword "property"

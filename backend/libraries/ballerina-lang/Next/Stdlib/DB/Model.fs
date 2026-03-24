@@ -118,6 +118,24 @@ module Model =
           -> int * int
           -> Reader<List<Value<TypeValue<'ext>, 'ext>>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>> }
 
+  let db_nonsense () =
+    { DB = ()
+      BeginTransaction = fun _ -> Left Guid.Empty
+      CommitTransaction = fun _ _ -> Left()
+      RunQuery = fun _ _ -> reader.Return []
+      Create = fun _ args -> reader.Return <| Value.Tuple [ args.Id; args.Value ]
+      Upsert = fun _ args -> reader.Return <| Value.Tuple [ args.Id; args.Value ]
+      Delete = fun _ _ -> reader.Return()
+      DeleteMany = fun _ _ -> reader.Return()
+      Link = fun _ _ -> reader.Return()
+      Unlink = fun _ _ -> reader.Return()
+      IsLinked = fun _ _ -> reader.Return false
+      GetById = fun _ _ -> reader.Throw <| Errors.Singleton () (fun () -> "No such entity")
+      GetMany = fun _ _ -> reader.Return []
+      LookupMaybe = fun _ _ _ -> reader.Return None
+      LookupOne = fun _ _ _ -> reader.Throw <| Errors.Singleton () (fun () -> "No such relation")
+      LookupMany = fun _ _ _ _ -> reader.Return [] }
+
   type DBEvalProperty<'ext> =
     { PropertyName: LocalIdentifier
       Path: SchemaPath<'ext>
