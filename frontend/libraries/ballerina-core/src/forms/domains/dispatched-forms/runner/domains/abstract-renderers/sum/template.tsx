@@ -306,7 +306,7 @@ export const SumAbstractRenderer = <
             foreignMutations={{
               ...props.foreignMutations,
               toLeft: (value, flags) => {
-                const upd = Option.Default.some(replaceWith(value))
+                const upd = Option.Default.some(replaceWith(value));
                 const delta: DispatchDelta<Flags> = {
                   kind: "SumReplace",
                   replace: value,
@@ -318,14 +318,11 @@ export const SumAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                }
-                props.foreignMutations.onChange(
-                  upd,
-                  delta
-                );
+                };
+                props.foreignMutations.onChange(upd, delta);
               },
               toRight: (value, flags) => {
-                const upd = Option.Default.some(replaceWith(value))
+                const upd = Option.Default.some(replaceWith(value));
                 const delta: DispatchDelta<Flags> = {
                   kind: "SumReplace",
                   replace: value,
@@ -337,11 +334,8 @@ export const SumAbstractRenderer = <
                     customFormState: props.context.customFormState,
                   },
                   type: props.context.type,
-                }
-                props.foreignMutations.onChange(
-                  upd,
-                  delta
-                );
+                };
+                props.foreignMutations.onChange(upd, delta);
               },
             }}
             embeddedLeftTemplate={embeddedLeftTemplate}
