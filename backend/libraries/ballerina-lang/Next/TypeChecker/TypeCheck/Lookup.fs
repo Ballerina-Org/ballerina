@@ -33,23 +33,44 @@ module Lookup =
         state {
           let! ctx = state.GetContext()
 
-          let id = ctx.Scope.Resolve id
+          let id_original = TypeCheckScope.Empty.Resolve id
+          let id_resolved = ctx.Scope.Resolve id
 
           let error e = Errors.Singleton loc0 e
 
           // do Console.WriteLine($"TypeCheckLookup: resolving identifier '{id}'")
-          // do Console.WriteLine($"Current Scope: {ctx.Values.AsFSharpString}")
+          // do Console.WriteLine($"Current Scope: {ctx.Scope}")
           // do Console.ReadLine() |> ignore
 
-          let! t_id, id_k =
-            state.Either3
-              (TypeCheckContext.TryFindVar(id, loc0))
-              (TypeCheckState.TryFindType(id, loc0))
-              (fun () -> $"Error: cannot resolve identifier '{id}'."
-               |> error
-               |> Errors<_>.MapPriority(replaceWith ErrorPriority.High)
-               |> state.Throw)
-            |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
+          return!
+            state.Either
+              (state {
+                let! t_id, id_k =
+                  state.Either3
+                    (TypeCheckContext.TryFindVar(id_resolved, loc0))
+                    (TypeCheckState.TryFindType(id_resolved, loc0))
+                    (fun () -> $"Error: cannot resolve identifier '{id_resolved}'/'{id_original}'."
+                     |> error
+                     |> Errors<_>.MapPriority(replaceWith ErrorPriority.High)
+                     |> state.Throw)
+                  |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
 
-          return Expr.Lookup(id, loc0, ctx.Scope), t_id, id_k, ctx
+                return Expr.Lookup(id_resolved, loc0, ctx.Scope), t_id, id_k, ctx
+              })
+              (state {
+                let! t_id, id_k =
+                  state.Either3
+                    (TypeCheckContext.TryFindVar(id_original, loc0))
+                    (TypeCheckState.TryFindType(id_original, loc0))
+                    (fun () -> $"Error: cannot resolve identifier '{id_resolved}'/'{id_original}'."
+                     |> error
+                     |> Errors<_>.MapPriority(replaceWith ErrorPriority.High)
+                     |> state.Throw)
+
+                  |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
+
+                return Expr.Lookup(id_original, loc0, ctx.Scope), t_id, id_k, ctx
+
+              })
+
         }

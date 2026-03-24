@@ -15,6 +15,9 @@ open Ballerina.State.WithError
 open Ballerina.Cat.Collections.OrderedMap
 open Ballerina.DSL.Next.Types.TypeChecker.Model
 open Ballerina.DSL.Next.Types.TypeChecker.Patterns
+open Ballerina.DSL.Next.StdLib.MutableMemoryDB
+
+type private ValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
 
 let private initialClasses = EquivalenceClasses<string, PrimitiveType>.Empty
 let private (!) = Identifier.LocalScope
@@ -144,7 +147,6 @@ let ``LangNext-Unify unifies types without variables`` () =
     [ TypeValue.CreateInt32()
       TypeValue.CreateArrow(TypeValue.CreateInt32(), TypeValue.CreateString())
       TypeValue.CreateSet(TypeValue.CreateInt32())
-      TypeValue.CreateMap(TypeValue.CreateInt32(), TypeValue.CreateString())
       TypeValue.CreateTuple([ TypeValue.CreateInt32(); TypeValue.CreateString() ])
       TypeValue.CreateSum([ TypeValue.CreateInt32(); TypeValue.CreateString() ])
       TypeValue.CreateRecord(

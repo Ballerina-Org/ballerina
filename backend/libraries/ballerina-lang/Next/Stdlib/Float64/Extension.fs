@@ -16,9 +16,9 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
 
 
-  let Float64Extension<'ext>
+  let Float64Extension<'runtimeContext, 'ext>
     (operationLens: PartialLens<'ext, Float64Operations<'ext>>)
-    : OperationsExtension<'ext, Float64Operations<'ext>> =
+    : OperationsExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
     let float64PlusId =
       Identifier.FullyQualified([ "float64" ], "+") |> TypeCheckScope.Empty.Resolve
 
@@ -27,7 +27,7 @@ module Extension =
     let int32TypeValue = TypeValue.CreatePrimitive PrimitiveType.Int32
     let float64TypeValue = TypeValue.CreatePrimitive PrimitiveType.Float64
 
-    let plusOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let plusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64PlusId,
       { PublicIdentifiers =
           Some
@@ -73,7 +73,7 @@ module Extension =
     let float64MinusId =
       Identifier.FullyQualified([ "float64" ], "-") |> TypeCheckScope.Empty.Resolve
 
-    let minusOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let minusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64MinusId,
       { PublicIdentifiers =
           Some
@@ -118,7 +118,7 @@ module Extension =
     let float64DivideId =
       Identifier.FullyQualified([ "float64" ], "/") |> TypeCheckScope.Empty.Resolve
 
-    let divideOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let divideOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64DivideId,
       { PublicIdentifiers =
           Some
@@ -164,7 +164,7 @@ module Extension =
     let float64PowerId =
       Identifier.FullyQualified([ "float64" ], "**") |> TypeCheckScope.Empty.Resolve
 
-    let powerOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let powerOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64PowerId,
       { PublicIdentifiers =
           Some
@@ -216,7 +216,7 @@ module Extension =
     let float64ModId =
       Identifier.FullyQualified([ "float64" ], "%") |> TypeCheckScope.Empty.Resolve
 
-    let modOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let modOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64ModId,
       { PublicIdentifiers =
           Some
@@ -262,7 +262,7 @@ module Extension =
     let float64EqualId =
       Identifier.FullyQualified([ "float64" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64EqualId,
       { PublicIdentifiers =
           Some
@@ -308,7 +308,7 @@ module Extension =
     let float64NotEqualId =
       Identifier.FullyQualified([ "float64" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64NotEqualId,
       { PublicIdentifiers =
           Some
@@ -354,7 +354,7 @@ module Extension =
     let float64GreaterThanId =
       Identifier.FullyQualified([ "float64" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64GreaterThanId,
       { PublicIdentifiers =
           Some
@@ -400,7 +400,8 @@ module Extension =
     let float64GreaterThanOrEqualId =
       Identifier.FullyQualified([ "float64" ], ">=") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let greaterThanOrEqualOperation
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64GreaterThanOrEqualId,
       { PublicIdentifiers =
           Some
@@ -447,7 +448,7 @@ module Extension =
     let float64LessThanId =
       Identifier.FullyQualified([ "float64" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let lessThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64LessThanId,
       { PublicIdentifiers =
           Some
@@ -493,7 +494,8 @@ module Extension =
     let float64LessThanOrEqualId =
       Identifier.FullyQualified([ "float64" ], "<=") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'ext, Float64Operations<'ext>> =
+    let lessThanOrEqualOperation
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64LessThanOrEqualId,
       { PublicIdentifiers =
           Some

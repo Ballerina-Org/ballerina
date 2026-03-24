@@ -74,3 +74,4 @@ module Kind =
         | Kind.Star -> Kind.ToJsonStar
         | Kind.Schema -> Kind.ToJsonSchema
         | Kind.Arrow(param, returnType) -> Kind.ToJsonArrow param returnType
+        | Kind.QueryRow -> failwith "QueryRow kinds should not be serialized as Json kinds"

@@ -14,9 +14,9 @@ module TypeLambdas =
   open Ballerina.DSL.Next.Serialization
   open Ballerina.Collections.Map
 
-  type TypeLambdaExtension<'e, 'extDTO, 'extTypeLambda when 'extDTO: not null and 'extDTO: not struct> with
-    static member RegisterTypeCheckContext<'ext when 'ext: comparison>
-      (ext: TypeLambdaExtension<'ext, 'extDTO, 'extTypeLambda>)
+  type TypeLambdaExtension<'runtimeContext, 'e, 'extDTO, 'extTypeLambda when 'extDTO: not null and 'extDTO: not struct> with
+    static member RegisterTypeCheckContext<'runtimeContext, 'ext when 'ext: comparison>
+      (ext: TypeLambdaExtension<'runtimeContext, 'ext, 'extDTO, 'extTypeLambda>)
       : Updater<TypeCheckContext<'ext>> =
       fun typeCheckContext ->
         let values = typeCheckContext.Values
@@ -28,16 +28,16 @@ module TypeLambdas =
             Values = values }
 
 
-    static member RegisterTypeCheckState<'ext when 'ext: comparison>
-      (ext: TypeLambdaExtension<'ext, 'extDTO, 'extTypeLambda>)
+    static member RegisterTypeCheckState<'runtimeContext, 'ext when 'ext: comparison>
+      (ext: TypeLambdaExtension<'runtimeContext, 'ext, 'extDTO, 'extTypeLambda>)
       : Updater<TypeCheckState<'ext>> =
       fun typeCheckState ->
         { typeCheckState with
             Bindings = typeCheckState.Bindings |> Map.merge (fun _ -> id) ext.ExtraBindings }
 
-    static member RegisterExprEvalContext<'ext when 'ext: comparison>
-      (ext: TypeLambdaExtension<'ext, 'extDTO, 'extTypeLambda>)
-      : Updater<ExprEvalContext<'ext>> =
+    static member RegisterExprEvalContext<'runtimeContext, 'ext when 'ext: comparison>
+      (ext: TypeLambdaExtension<'runtimeContext, 'ext, 'extDTO, 'extTypeLambda>)
+      : Updater<ExprEvalContext<'runtimeContext, 'ext>> =
       fun evalContext ->
         let ops = evalContext.ExtensionOps.Eval
 
@@ -56,14 +56,16 @@ module TypeLambdas =
               { Eval = ops
                 Applicables = evalContext.ExtensionOps.Applicables } }
 
-    static member RegisterLanguageContext<'ext, 'extDTO when 'ext: comparison>
-      (ext: TypeLambdaExtension<'ext, 'extDTO, 'extTypeLambda>)
-      : Updater<LanguageContext<'ext, 'extDTO>> =
+    static member RegisterLanguageContext<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO
+      when 'ext: comparison and 'deltaExtDTO: not null and 'deltaExtDTO: not struct>
+      (ext: TypeLambdaExtension<'runtimeContext, 'ext, 'extDTO, 'extTypeLambda>)
+      : Updater<LanguageContext<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>> =
       fun langCtx ->
         { TypeCheckContext =
             langCtx.TypeCheckContext
             |> (ext |> TypeLambdaExtension.RegisterTypeCheckContext)
-          ExprEvalContext = langCtx.ExprEvalContext |> (ext |> TypeLambdaExtension.RegisterExprEvalContext)
+          ExprEvalContext = langCtx.ExprEvalContext >> (ext |> TypeLambdaExtension.RegisterExprEvalContext)
           TypeCheckedPreludes = langCtx.TypeCheckedPreludes
           TypeCheckState = langCtx.TypeCheckState |> (ext |> TypeLambdaExtension.RegisterTypeCheckState)
-          SerializationContext = langCtx.SerializationContext }
+          SerializationContext = langCtx.SerializationContext
+          ExtTypeChecker = langCtx.ExtTypeChecker }

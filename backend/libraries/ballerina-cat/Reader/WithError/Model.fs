@@ -72,6 +72,11 @@ module WithError =
       : Reader<List<'a>, 'c, 'e> =
       Reader(fun (c: 'c) -> sum.All(readers |> Seq.map (fun (Reader r) -> r c)))
 
+    member inline _.AllNonEmpty<'c, 'a, 'e when 'e: (static member Concat: 'e * 'e -> 'e)>
+      (readers: NonEmptyList<Reader<'a, 'c, 'e>>)
+      : Reader<NonEmptyList<'a>, 'c, 'e> =
+      Reader(fun (c: 'c) -> sum.AllNonEmpty(readers |> NonEmptyList.map (fun (Reader r) -> r c)))
+
     member inline _.Any<'c, 'a, 'e when 'e: (static member Concat: 'e * 'e -> 'e)>
       (readers: NonEmptyList<Reader<'a, 'c, 'e>>)
       : Reader<'a, 'c, 'e> =
@@ -93,6 +98,9 @@ module WithError =
 
     member _.OfSum(s: Sum<'a, 'e>) : Reader<'a, 'c, 'e> = Reader.ofSum s
 
+    member reader.OfOption e v = v |> sum.OfOption e |> reader.OfSum
+
+
     member _.MapContext<'c1, 'c, 'a, 'e>(f: 'c1 -> 'c) : Reader<'a, 'c, 'e> -> Reader<'a, 'c1, 'e> = Reader.mapContext f
 
     member _.Map<'c, 'a, 'b, 'e>(f: 'a -> 'b) : Reader<'a, 'c, 'e> -> Reader<'b, 'c, 'e> = Reader.map f
@@ -102,6 +110,9 @@ module WithError =
     member _.Ignore<'c, 'a, 'e>(r: Reader<'a, 'c, 'e>) : Reader<Unit, 'c, 'e> = Reader.map (fun _ -> ()) r
 
     member _.GetContext() : Reader<'c, 'c, 'e> = Reader(fun c -> sum { return c })
+
+    member _.Zero() : Reader<unit, 'c, 'e> = Reader(fun _ -> Left())
+    member _.Delay f = f ()
 
     member reader.RunOption(p: Option<Reader<'a, 'c, 'e>>) =
       reader {

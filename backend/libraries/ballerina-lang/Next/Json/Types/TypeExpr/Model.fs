@@ -1,4 +1,4 @@
-﻿namespace Ballerina.DSL.Next.Types.Json
+namespace Ballerina.DSL.Next.Types.Json
 
 [<AutoOpen>]
 module TypeExpr =
@@ -12,52 +12,65 @@ module TypeExpr =
   open Ballerina.DSL.Next.Types.Json
 
   type TypeExpr<'valueExt> with
-    static member FromJson(json: JsonValue) : Sum<TypeExpr<'valueExt>, Errors<_>> =
-      sum.Any(
-        TypeExpr.FromJsonPrimitive json,
-        [ TypeExpr.FromJsonApply TypeExpr.FromJson json
-          TypeExpr.FromJsonRotate TypeExpr.FromJson json
-          TypeExpr.FromJsonLambda TypeExpr.FromJson json
-          TypeExpr.FromJsonArrow TypeExpr.FromJson json
-          TypeExpr.FromJsonRecord TypeExpr.FromJson json
-          TypeExpr.FromJsonTuple TypeExpr.FromJson json
-          TypeExpr.FromJsonLookup json
-          TypeExpr.FromJsonUnion TypeExpr.FromJson json
-          TypeExpr.FromJsonSum TypeExpr.FromJson json
-          TypeExpr.FromJsonSet TypeExpr.FromJson json
-          TypeExpr.FromJsonMap TypeExpr.FromJson json
-          TypeExpr.FromJsonKeyOf TypeExpr.FromJson json
-          TypeExpr.FromJsonFlatten TypeExpr.FromJson json
-          TypeExpr.FromJsonExclude TypeExpr.FromJson json
-          fun () -> $"Unknown TypeExpr JSON: {json.AsFSharpString.ReasonablyClamped}"
-          |> Errors.Singleton()
-          |> Errors.MapPriority(replaceWith ErrorPriority.High)
-          |> sum.Throw ]
-      )
-      |> sum.MapError(Errors.HighestPriority)
+    static member FromJsonWith
+      (typeValueFromJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors<_>>)
+      (json: JsonValue)
+      : Sum<TypeExpr<'valueExt>, Errors<_>> =
+      let rec fromJson json =
+        sum.Any(
+          TypeExpr.FromJsonPrimitive json,
+          [ TypeExpr.FromJsonApply fromJson json
+            TypeExpr.FromJsonRotate fromJson json
+            TypeExpr.FromJsonLambda fromJson json
+            TypeExpr.FromJsonArrow fromJson json
+            TypeExpr.FromJsonRecord fromJson json
+            TypeExpr.FromJsonTuple fromJson json
+            TypeExpr.FromJsonLookup json
+            TypeExpr.FromJsonUnion fromJson json
+            TypeExpr.FromJsonSum fromJson json
+            TypeExpr.FromJsonSet fromJson json
+            TypeExpr.FromJsonKeyOf fromJson json
+            TypeExpr.FromJsonFlatten fromJson json
+            TypeExpr.FromJsonExclude fromJson json
+            TypeExpr.FromJsonFromTypeValue typeValueFromJson json
+            fun () -> $"Unknown TypeExpr JSON: {json.AsFSharpString.ReasonablyClamped}"
+            |> Errors.Singleton()
+            |> Errors.MapPriority(replaceWith ErrorPriority.High)
+            |> sum.Throw ]
+        )
+        |> sum.MapError(Errors.HighestPriority)
 
-    static member ToJson: TypeExpr<'valueExt> -> JsonValue =
-      fun typeExpr ->
+      fromJson json
+
+    static member FromJson(json: JsonValue) : Sum<TypeExpr<'valueExt>, Errors<_>> =
+      TypeExpr.FromJsonWith
+        (fun _ ->
+          sum.Throw(Errors.Singleton () (fun () -> "Unexpected TypeExpr.FromTypeValue in TypeExpr-only context")))
+        json
+
+    static member ToJsonWith(typeValueToJson: TypeValue<'valueExt> -> JsonValue) : TypeExpr<'valueExt> -> JsonValue =
+      let toJsonFromTypeValue = TypeExpr.ToJsonFromTypeValue typeValueToJson
+
+      let rec toJson typeExpr =
         match typeExpr with
         | TypeExpr.Primitive p -> TypeExpr.ToJsonPrimitive p
-        | TypeExpr.Apply(a, b) -> TypeExpr.ToJsonApply TypeExpr.ToJson (a, b)
-        | TypeExpr.Rotate r -> TypeExpr.ToJsonRotate TypeExpr.ToJson r
-        | TypeExpr.Lambda(a, b) -> TypeExpr.ToJsonLambda TypeExpr.ToJson (a, b)
-        | TypeExpr.Arrow(a, b) -> TypeExpr.ToJsonArrow TypeExpr.ToJson (a, b)
-        | TypeExpr.Record r -> TypeExpr.ToJsonRecord TypeExpr.ToJson r
-        | TypeExpr.Tuple t -> TypeExpr.ToJsonTuple TypeExpr.ToJson t
+        | TypeExpr.Apply(a, b) -> TypeExpr.ToJsonApply toJson (a, b)
+        | TypeExpr.Rotate r -> TypeExpr.ToJsonRotate toJson r
+        | TypeExpr.Lambda(a, b) -> TypeExpr.ToJsonLambda toJson (a, b)
+        | TypeExpr.Arrow(a, b) -> TypeExpr.ToJsonArrow toJson (a, b)
+        | TypeExpr.Record r -> TypeExpr.ToJsonRecord toJson r
+        | TypeExpr.Tuple t -> TypeExpr.ToJsonTuple toJson t
         | TypeExpr.Lookup l -> TypeExpr.ToJsonLookup l
-        | TypeExpr.Union u -> TypeExpr.ToJsonUnion TypeExpr.ToJson u
-        | TypeExpr.Sum s -> TypeExpr.ToJsonSum TypeExpr.ToJson s
-        | TypeExpr.Set s -> TypeExpr.ToJsonSet TypeExpr.ToJson s
-        | TypeExpr.Map(a, b) -> TypeExpr.ToJsonMap TypeExpr.ToJson (a, b)
-        | TypeExpr.KeyOf k -> TypeExpr.ToJsonKeyOf TypeExpr.ToJson k
-        | TypeExpr.Flatten(a, b) -> TypeExpr.ToJsonFlatten TypeExpr.ToJson (a, b)
-        | TypeExpr.Exclude(a, b) -> TypeExpr.ToJsonExclude TypeExpr.ToJson (a, b)
+        | TypeExpr.Union u -> TypeExpr.ToJsonUnion toJson u
+        | TypeExpr.Sum s -> TypeExpr.ToJsonSum toJson s
+        | TypeExpr.Set s -> TypeExpr.ToJsonSet toJson s
+        | TypeExpr.KeyOf k -> TypeExpr.ToJsonKeyOf toJson k
+        | TypeExpr.Flatten(a, b) -> TypeExpr.ToJsonFlatten toJson (a, b)
+        | TypeExpr.Exclude(a, b) -> TypeExpr.ToJsonExclude toJson (a, b)
         | TypeExpr.NewSymbol _ -> JsonValue.Null
-        | TypeExpr.Let(_, _, rest) -> TypeExpr.ToJson rest
-        | TypeExpr.LetSymbols(_, _, rest) -> TypeExpr.ToJson rest
-        | TypeExpr.FromTypeValue _ -> failwith "Not implemented"
+        | TypeExpr.Let(_, _, rest) -> toJson rest
+        | TypeExpr.LetSymbols(_, _, rest) -> toJson rest
+        | TypeExpr.FromTypeValue tv -> toJsonFromTypeValue tv
         | TypeExpr.Imported _ -> failwith "Imported ToJson not implemented"
         | TypeExpr.Schema _ -> failwith "Schema ToJson not implemented"
         | TypeExpr.Entities _ -> failwith "Entities ToJson not implemented"
@@ -68,3 +81,13 @@ module TypeExpr =
         | TypeExpr.RelationLookupOne _ -> failwith "RelationLookupOne ToJson not implemented"
         | TypeExpr.RelationLookupOption _ -> failwith "RelationLookupOption ToJson not implemented"
         | TypeExpr.RelationLookupMany _ -> failwith "RelationLookupMany ToJson not implemented"
+        | TypeExpr.FromQueryRow -> failwith "FromQueryRow Not Implemented"
+        | TypeExpr.QueryRow(_) -> failwith "QueryRow Not Implemented"
+
+      toJson
+
+    static member ToJson(typeExpr: TypeExpr<'valueExt>) : JsonValue =
+      TypeExpr.ToJsonWith
+        // This lambda should never be called, but is here as a safeguard to prevent accidental use of TypeExpr.ToJson in TypeValue-only context
+        (fun _ -> failwith "Unexpected TypeExpr.FromTypeValue in TypeExpr-only context")
+        typeExpr

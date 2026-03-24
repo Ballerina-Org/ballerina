@@ -52,3 +52,8 @@ module Patterns =
       | _ ->
         sum.Throw
         <| Errors.Singleton () (fun () -> "Expected LessThanOrEqual operation")
+
+    static member AsPrint(op: StringOperations<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | StringOperations.Print -> sum.Return()
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected Print operation")

@@ -30,6 +30,10 @@ module Apply =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckApply<'valueExt when 'valueExt: comparison>
+      (
+        query_type_symbol: TypeSymbol,
+        mk_query_type: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>
+      )
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
       : TypeChecker<ExprApply<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ F = f_expr; Arg = a_expr }) ->
@@ -64,7 +68,8 @@ module Apply =
               // do Console.ReadLine() |> ignore
               match f_k with
               | Kind.Arrow(Kind.Star as input_k, _)
-              | Kind.Arrow(Kind.Schema as input_k, _) ->
+              | Kind.Arrow(Kind.Schema as input_k, _)
+              | Kind.Arrow(Kind.QueryRow as input_k, _) ->
                 let guid = Guid.CreateVersion7()
 
                 let freshVar =
@@ -174,13 +179,24 @@ module Apply =
                               (fun acc tp -> TypeExpr.Apply(acc, tp.Name |> Identifier.LocalScope |> TypeExpr.Lookup))
                               (f_i |> TypeExpr.FromTypeValue)
 
-                          let! f_i, _ = f_i |> TypeExpr.Eval () typeCheckExpr None loc0 |> Expr.liftTypeEval
+                          let! f_i, _ =
+                            f_i
+                            |> TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr None loc0
+                            |> Expr.liftTypeEval
+
                           do! TypeValue.Unify(loc0, f_i, t_a) |> Expr<'T, 'Id, 'valueExt>.liftUnification
-                          let! f_o, _ = f_o |> TypeExpr.Eval () typeCheckExpr None loc0 |> Expr.liftTypeEval
+
+                          let! f_o, _ =
+                            f_o
+                            |> TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr None loc0
+                            |> Expr.liftTypeEval
 
                           let! f_o =
                             f_o
-                            |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+                            |> TypeValue.Instantiate
+                              ()
+                              (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr)
+                              loc0
                             |> Expr.liftInstantiation
 
                           return Expr.Apply(Expr.Lookup f_lookup, a, loc0, ctx.Scope), f_o, f_k, ctx
@@ -192,7 +208,7 @@ module Apply =
 
                       match resolved with
                       | Left _resolved ->
-                        // do Console.WriteLine $"f is a bound variable ({f_lookup} := {resolved})"
+                        // do Console.WriteLine $"f is a bound variable ({f_lookup} := {_resolved})"
 
                         let context_t =
                           context_t
@@ -207,52 +223,175 @@ module Apply =
 
                             TypeValue.CreateArrow(freshVar, ret_t))
 
-                        // do Console.WriteLine $"context_t = {context_t}"
-                        // do Console.ReadLine() |> ignore
+                        // do
+                        //   Console.WriteLine
+                        //     $"Padding and typechecking function expression {f} with context type {context_t}..."
 
-                        let! f, t_f, f_k = pad context_t f
-                        do! f_k |> Kind.AsStar |> ofSum |> state.Ignore
+                        let! f, t_f, f_k = pad None f
 
                         let! t_f =
-                          match context_t with
-                          | None -> state { return t_f }
-                          | Some context_t ->
-                            state {
+                          state {
+                            match context_t with
+                            | None -> return t_f
+                            | Some context_t ->
                               do!
                                 TypeValue.Unify(loc0, t_f, context_t)
                                 |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
                               let! t_res =
                                 t_f
-                                |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+                                |> TypeValue.Instantiate
+                                  ()
+                                  (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr)
+                                  loc0
                                 |> Expr.liftInstantiation
 
                               return t_res
-                            }
+                          }
 
-                        let! f_input, f_output =
-                          TypeValue.AsArrow t_f
-                          |> ofSum
-                          |> state.Map WithSourceMapping.Getters.Value
-                          |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium))
+                        // do Console.WriteLine $"after padding, t_f = {t_f}"
+                        // do Console.WriteLine $"after padding, f_k = {f_k}"
+                        // do Console.ReadLine() |> ignore
 
-                        let context_a =
-                          match f_input with
-                          | TypeValue.Var v when v.Synthetic -> None
-                          | _ -> Some f_input
+                        // let! t_f =
+                        //   match context_t with
+                        //   | None -> state { return t_f }
+                        //   | Some context_t ->
+                        //     state {
+                        //       do!
+                        //         TypeValue.Unify(loc0, t_f, context_t)
+                        //         |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
-                        let! a, t_a, a_k, _ = context_a => a_expr
-                        do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
+                        //       let! t_res =
+                        //         t_f
+                        //         |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
+                        //         |> Expr.liftInstantiation
 
-                        do! TypeValue.Unify(loc0, f_input, t_a) |> Expr<'T, 'Id, 'valueExt>.liftUnification
+                        //       return t_res
+                        //     }
 
-                        let! f_output =
-                          f_output
-                          |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
-                          |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
+                        // do Console.WriteLine $"[lookup case] typechecking function expression {f} : {t_f}..."
 
-                        return Expr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx
+                        return!
+                          state.Either
+                            (state {
+                              do! f_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                              // do Console.WriteLine $"[lookup case] function {f} has type {t_f} with kind {f_k}"
+
+                              let! f_input, f_output =
+                                TypeValue.AsArrow t_f
+                                |> ofSum
+                                |> state.Map WithSourceMapping.Getters.Value
+                                |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium))
+
+                              let context_a =
+                                match f_input with
+                                | TypeValue.Var v when v.Synthetic -> None
+                                | _ -> Some f_input
+
+                              let! a, t_a, a_k, _ = context_a => a_expr
+                              do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                              do! TypeValue.Unify(loc0, f_input, t_a) |> Expr<'T, 'Id, 'valueExt>.liftUnification
+
+                              let! f_output =
+                                f_output
+                                |> TypeValue.Instantiate
+                                  ()
+                                  (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr)
+                                  loc0
+                                |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
+
+                              return Expr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx
+                            })
+                            (state {
+                              let! a, t_a, a_k, _ = None => a_expr
+                              do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                              // do Console.WriteLine $"a = {a}..."
+                              // do Console.WriteLine $"t_a = {t_a}..."
+
+                              let rec strip_type_lambda_args f_t f_k =
+                                state {
+                                  match f_k with
+                                  | Kind.Arrow(input_k, output_k) ->
+                                    let guid = Guid.CreateVersion7()
+
+                                    let freshVar =
+                                      { TypeVar.Name = "fresh_var_application_" + guid.ToString()
+                                        Synthetic = true
+                                        Guid = guid }
+
+                                    do!
+                                      state.SetState(
+                                        TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists freshVar)
+                                      )
+
+                                    do!
+                                      TypeCheckState.bindType
+                                        (freshVar.Name |> Identifier.LocalScope |> ctx.Scope.Resolve)
+                                        (freshVar |> TypeValue.Var, input_k)
+                                      |> Expr.liftTypeEval
+
+                                    let f_t' =
+                                      TypeExpr.Apply(f_t, freshVar.Name |> Identifier.LocalScope |> TypeExpr.Lookup)
+
+                                    let! fresh_vars, f_t'', f_k = strip_type_lambda_args f_t' output_k
+
+
+                                    return (freshVar, input_k) :: fresh_vars, f_t'', f_k
+
+                                  | _ -> return [], f_t, f_k
+                                }
+
+                              // do Console.WriteLine $"before stripping type lambdas {t_f}..."
+                              let! _fresh_vars, t_f', f_k = strip_type_lambda_args (t_f |> TypeExpr.FromTypeValue) f_k
+                              // do Console.WriteLine $"after stripping type lambdas, t_f = {t_f'}"
+                              // do Console.WriteLine $"after stripping type lambdas, f_k = {f_k}"
+                              // do Console.WriteLine $"fresh_vars = {fresh_vars}"
+                              // do Console.ReadLine() |> ignore
+
+                              let! t_f', _ =
+                                t_f'
+                                |> TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr None loc0
+                                |> Expr<'T, 'Id, 'valueExt>.liftTypeEval
+
+                              // do Console.WriteLine $"after evaluating type expression, t_f' = {t_f'}"
+                              // do Console.ReadLine() |> ignore
+
+                              do! f_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                              let! f_input, f_output =
+                                TypeValue.AsArrow t_f'
+                                |> ofSum
+                                |> state.Map WithSourceMapping.Getters.Value
+                                |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium))
+
+                              // do
+                              //   Console.WriteLine
+                              //     $"[lookup case Unifying function input type {f_input} with argument type {t_a}..."
+
+                              do! TypeValue.Unify(loc0, f_input, t_a) |> Expr<'T, 'Id, 'valueExt>.liftUnification
+                              // do Console.Write $"unification successful, f_input: {f_input}, t_a: {t_a}"
+                              // do Console.WriteLine $" after unification, f_output: {f_output})"
+
+                              // do Console.ReadLine() |> ignore
+
+                              let! f_output =
+                                f_output
+                                |> TypeValue.Instantiate
+                                  ()
+                                  (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr)
+                                  loc0
+                                |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
+
+                              // do Console.WriteLine $"after instantiating function output type, f_output = {f_output}"
+
+                              return Expr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx
+                            })
                       | Right _ ->
+                        // do Console.WriteLine $"f is a lookup, looking for ad-hoc polymorphic operator resolution for {f_lookup}..."
 
                         let! a, t_a, a_k, _ = None => a_expr
                         do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
@@ -298,7 +437,10 @@ module Apply =
                                   TypeValue.CreatePrimitive adHocResolution.OtherInput,
                                   TypeValue.CreatePrimitive adHocResolution.Output
                                 )
-                                |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+                                |> TypeValue.Instantiate
+                                  ()
+                                  (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr)
+                                  loc0
                                 |> Expr.liftInstantiation
 
                               let k_res = Kind.Star
@@ -365,7 +507,7 @@ module Apply =
 
                       let! t_a =
                         t_a
-                        |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+                        |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
                         |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
                       return t_a, Some(TypeValue.CreateArrow(t_a, freshVar))
@@ -391,11 +533,12 @@ module Apply =
 
                 return!
                   state {
+                    // do Console.WriteLine $"Unifying function input type {f_input} with argument type {t_a}..."
                     do! TypeValue.Unify(loc0, f_input, t_a) |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
                     let! f_output =
                       f_output
-                      |> TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0
+                      |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
                       |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
                     return Expr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx

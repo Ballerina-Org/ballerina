@@ -1,18 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <ItemGroup>
-        <ProjectReference Include="..\..\ballerina-cat\ballerina-cat.fsproj" />
-        <ProjectReference Include="..\..\ballerina-stdlib\ballerina-stdlib.fsproj" />
-        <ProjectReference Include=".\Models\ballerina-lang-models.fsproj" />
-        <ProjectReference Include=".\TypeChecker\ballerina-lang-typecheck.fsproj" />
-        <ProjectReference Include=".\Eval\ballerina-lang-eval.fsproj" />
-        <ProjectReference Include=".\Stdlib\ballerina-lang-stdlib.fsproj" />
-        <ProjectReference Include=".\Syntax\ballerina-lang-parser.fsproj" />
-        <PackageReference Include="FSharp.SystemTextJson" Version="1.4.36" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Compile Include="Runners/Project.fs" />
-        <Compile Include="Runners/TypeCheck.fs" />
-    </ItemGroup>
-
+  <ItemGroup>
+    <ProjectReference Include="../../ballerina-cat/ballerina-cat.fsproj" />
+    <ProjectReference Include="../../ballerina-stdlib/ballerina-stdlib.fsproj" />
+    <ProjectReference Include="Models/ballerina-lang-models.fsproj" />
+    <ProjectReference Include="TypeChecker/ballerina-lang-typecheck.fsproj" />
+    <ProjectReference Include="Eval/ballerina-lang-eval.fsproj" />
+    <ProjectReference Include="Stdlib/ballerina-lang-stdlib.fsproj" />
+    <ProjectReference Include="Syntax/ballerina-lang-parser.fsproj" />
+    <PackageReference Include="FSharp.SystemTextJson" Version="1.4.36" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Runners/Project.fs" />
+    <Compile Include="Runners/TypeCheck.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="DeltaSerialization/ballerina-delta-serialization.fsproj" />
+  </ItemGroup>
 </Project>

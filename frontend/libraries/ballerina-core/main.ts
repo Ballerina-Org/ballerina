@@ -143,6 +143,9 @@ export * from "./src/forms/domains/dispatched-forms/deserializer/coroutines/runn
 export * from "./src/forms/domains/dispatched-forms/deserializer/state";
 export * from "./src/forms/domains/dispatched-forms/deserializer/domains/specification/domains/serializable/state";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/deltas/state";
+export * from "./src/forms/domains/dispatched-forms/runner/domains/deltas/dispatch-delta/state";
+export * from "./src/forms/domains/dispatched-forms/runner/domains/deltas/dto-to-delta/state";
+export * from "./src/forms/domains/dispatched-forms/runner/domains/deltas/delta-to-dto/state";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/base-64-file/template";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/boolean/template";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/date/template";
@@ -236,6 +239,7 @@ export * from "./src/forms/domains/dispatched-forms/runner/domains/kind/create/s
 export * from "./src/forms/domains/dispatched-forms/runner/domains/kind/edit/state";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/kind/passthrough/state";
 export * from "./src/forms/domains/dispatched-forms/runner/domains/deltas/domains/ballerina-deltas/state";
+export { PendingOps } from "./src/forms/domains/dispatched-forms/runner/domains/abstract-renderers/table/domains/pending-operation/state";
 // import { simpleUpdater, simpleUpdaterWithChildren } from "./src/fun/domains/updater/domains/simpleUpdater/state"
 // import { Updater } from "./src/fun/domains/updater/state"
 

@@ -147,6 +147,11 @@ module Patterns =
       | Value.Var var -> sum.Return var
       | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected a variable type but got {other}"))
 
+    static member AsQuery(v: Value<'T, 'valueExt>) : Sum<ValueQuery<'T, 'valueExt>, Errors<Unit>> =
+      match v with
+      | Value.Query q -> sum.Return q
+      | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected a query type but got {other}"))
+
     static member AsLambda
       (v: Value<'T, 'valueExt>)
       : Sum<
@@ -187,13 +192,21 @@ module Patterns =
     static member TypeApply(e1: Expr<'T, 'Id, 'valueExt>, t: 'T) =
       Expr<'T, 'Id, 'valueExt>.TypeApply(e1, t, Location.Unknown, TypeCheckScope.Empty)
 
-    static member Lambda(v: Var, t: Option<'T>, e: Expr<'T, 'Id, 'valueExt>, loc: Location, scope: TypeCheckScope) =
-      { Expr = ExprRec.Lambda({ Param = v; ParamType = t; Body = e })
+    static member Lambda
+      (v: Var, t: Option<'T>, e: Expr<'T, 'Id, 'valueExt>, r: Option<'T>, loc: Location, scope: TypeCheckScope)
+      =
+      { Expr =
+          ExprRec.Lambda(
+            { Param = v
+              ParamType = t
+              Body = e
+              BodyType = r }
+          )
         Location = loc
         Scope = scope }
 
-    static member Lambda(v: Var, t: Option<'T>, e: Expr<'T, 'Id, 'valueExt>) =
-      Expr<'T, 'Id, 'valueExt>.Lambda(v, t, e, Location.Unknown, TypeCheckScope.Empty)
+    static member Lambda(v: Var, t: Option<'T>, e: Expr<'T, 'Id, 'valueExt>, r: Option<'T>) =
+      Expr<'T, 'Id, 'valueExt>.Lambda(v, t, e, r, Location.Unknown, TypeCheckScope.Empty)
 
     static member Apply
       (f: Expr<'T, 'Id, 'valueExt>, a: Expr<'T, 'Id, 'valueExt>, loc: Location, scope: TypeCheckScope)
@@ -204,6 +217,14 @@ module Patterns =
 
     static member Apply(f: Expr<'T, 'Id, 'valueExt>, a: Expr<'T, 'Id, 'valueExt>) =
       Expr<'T, 'Id, 'valueExt>.Apply(f, a, Location.Unknown, TypeCheckScope.Empty)
+
+    static member Query(q: ExprQuery<'T, 'Id, 'valueExt>, loc: Location, scope: TypeCheckScope) =
+      { Expr = ExprRec.Query(q)
+        Location = loc
+        Scope = scope }
+
+    static member Query(q: ExprQuery<'T, 'Id, 'valueExt>) =
+      Expr<'T, 'Id, 'valueExt>.Query(q, Location.Unknown, TypeCheckScope.Empty)
 
     static member FromValue
       (v: Value<TypeValue<'valueExt>, 'valueExt>, t: TypeValue<'valueExt>, k: Kind, loc: Location, scope: TypeCheckScope) =
@@ -494,9 +515,30 @@ module Patterns =
       | Apply apply -> sum.Return apply
       | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected an apply expression but got {other}"))
 
+    static member AsQuery(e: Expr<'T, 'Id, 'valueExt>) : Sum<ExprQuery<'T, 'Id, 'valueExt>, Errors<Unit>> =
+      match e.Expr with
+      | ExprRec.Query q -> sum.Return q
+      | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected a query expression but got {other}"))
+
     static member AsTerminatedByConstantUnit(e: Expr<'T, 'Id, 'valueExt>) : Sum<Unit, Errors<Unit>> =
       match e.Expr with
       | ExprRec.Primitive PrimitiveValue.Unit -> sum.Return()
       | ExprRec.TypeLet({ Body = rest }) -> Expr<'T, 'Id, 'valueExt>.AsTerminatedByConstantUnit rest
       | ExprRec.Let({ Rest = rest }) -> Expr<'T, 'Id, 'valueExt>.AsTerminatedByConstantUnit rest
       | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected a termination by constant unit but got {other}"))
+
+  type ExprQueryExpr<'T, 'Id, 'valueExt when 'Id: comparison> with
+    static member AsLookup(e: ExprQueryExpr<'T, 'Id, 'valueExt>) =
+      match e.Expr with
+      | QueryLookup r -> sum.Return r
+      | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected a query lookup but got {other}"))
+
+    static member AsTupleCons(e: ExprQueryExpr<'T, 'Id, 'valueExt>) =
+      match e.Expr with
+      | QueryTupleCons items -> sum.Return items
+      | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected a query tuple construct but got {other}"))
+
+    static member AsRecordDes(e: ExprQueryExpr<'T, 'Id, 'valueExt>) =
+      match e.Expr with
+      | QueryRecordDes(r, id, isJson) -> sum.Return(r, id, isJson)
+      | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected a query record destruct but got {other}"))

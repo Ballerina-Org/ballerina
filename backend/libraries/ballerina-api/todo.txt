@@ -1,0 +1,30 @@
+[x] Endpoint to create and drop a schema given a tenant id and schema name. Extend the factory with the methods to do so. This calls
+    the function from the factory to drop the schema.
+    SUGGESTION: In future add create and drop schema in the DB type class. ->
+    Implemented this as a specific method in Ballerina worker. Too specific to be reasonably abstracted.
+[x] Implement the factory for the API registration using postgres. Create a new project in libraries called unbound-api-factory.
+  [x] Language Context factory.
+  [x] DBDescriptor fecther. This fetches/ or re-creates the type check context, state, and eval context. In the case of unbound, 
+      it needs to get the type check context and state from the schema descriptor table in the unbound db, and then generate the eval 
+      context.
+[x] Adjust the worker, so that when you publish a draft it generates the schema in the postgres db.
+[ ] Return better error codes from the API in case of internal evaluation errors.
+[ ] Use Ronald's implementation of messagepack.
+[x] Verify that the procedural schema name is used correctly in all endpoints.
+[ ] Use the runtime factory to inject the procedural schema name in the worker.
+[ ] Serialize the scope of the eval context and rehydrate.
+[ ] On deserialization failure, type check again. 
+[ ] Try-with in all endpoints returning 500.
+[ ] Remove old API version from the playground.
+[x] Use the data source factory in the DBTypeClass for postgres instead of the connection.
+[ ] Use quotes around SQL identifiers to match user input and allow compilation errors due to hyphenation and other special characters.
+[ ] Database creation given a tenant it in the worker.
+
+TO BE DISCUSSED:
+[ ] Create with rate limiting.
+[ ] Update with rate limiting.
+[ ] Create in background with locking --> Talk to Giuseppe, does it make sense to lock?
+
+CODE QUALITY:
+[ ] Constants used in the playground should come from the appsettings.
+[ ] Change the functions in the db type class implementation to return a monadic error (see Giuseppe's remark).

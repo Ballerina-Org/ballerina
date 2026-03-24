@@ -132,6 +132,7 @@ export const CategoryAbstractRenderer = <
             context={{
               ...props.context,
               domNodeId,
+              legacy_domNodeId: domNodeId,
             }}
             foreignMutations={{
               ...props.foreignMutations,

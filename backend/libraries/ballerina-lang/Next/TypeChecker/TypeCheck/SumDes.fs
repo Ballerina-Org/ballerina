@@ -27,6 +27,7 @@ module SumDes =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckSumDes<'valueExt when 'valueExt: comparison>
+      (query_type_symbol, mk_query_type)
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
       : TypeChecker<ExprSumDes<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Handlers = handlers }) ->
@@ -115,7 +116,7 @@ module SumDes =
                 do! TypeValue.Unify(loc0, body_t, result_var_t) |> Expr.liftUnification
 
                 let! var_t =
-                  TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0 var_t
+                  TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0 var_t
                   |> Expr.liftInstantiation
 
                 return (var, body), var_t
@@ -135,14 +136,14 @@ module SumDes =
           let handlerTypes = handlersSorted |> List.map snd
 
           let! result_t =
-            TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0 result_var_t
+            TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0 result_var_t
             |> Expr.liftInstantiation
 
           let sumValue = TypeValue.CreateSum handlerTypes
           let arrowValue = TypeValue.CreateArrow(sumValue, result_t)
 
           let! arrowValue =
-            TypeValue.Instantiate () (TypeExpr.Eval () typeCheckExpr) loc0 arrowValue
+            TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0 arrowValue
             |> Expr.liftInstantiation
 
           // for kv in handler_vars do

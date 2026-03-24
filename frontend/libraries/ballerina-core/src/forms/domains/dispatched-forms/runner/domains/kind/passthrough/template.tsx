@@ -7,20 +7,17 @@ import {
   BasicUpdater,
   Bindings,
   CommonAbstractRendererState,
-  DispatchDelta,
   DispatchFormRunnerState,
   DispatchInjectablesTypes,
   DispatchParsedType,
   Option,
-  PassthroughLauncherRef,
   PredicateValue,
   Template,
   unit,
-  Unit,
-  Updater,
 } from "../../../../../../../../main";
 import { DispatchPassthroughFormRunner } from "./coroutines/runner";
 import { Map } from "immutable";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const DispatchPassthroughFormLauncherTemplate = <
   T extends DispatchInjectablesTypes<T>,
@@ -118,6 +115,7 @@ export const DispatchPassthroughFormLauncherTemplate = <
           customPresentationContext: undefined,
           typeAncestors: [],
           usePreprocessor: props.context.usePreprocessor,
+          preventOneInitialization: false,
         }}
         setState={(stateUpdater: BasicUpdater<CommonAbstractRendererState>) =>
           props.setState(

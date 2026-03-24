@@ -17,9 +17,9 @@ module Operations =
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Serialization
 
-  type OperationsExtension<'e, 'extOperations> with
-    static member RegisterTypeCheckContext<'ext when 'ext: comparison>
-      (opsExt: OperationsExtension<'ext, 'extOperations>)
+  type OperationsExtension<'rtc, 'e, 'extOperations> with
+    static member RegisterTypeCheckContext<'runtimeContext, 'ext when 'ext: comparison>
+      (opsExt: OperationsExtension<'runtimeContext, 'ext, 'extOperations>)
       : Updater<TypeCheckContext<'ext>> =
       fun typeCheckContext ->
         let values = typeCheckContext.Values
@@ -37,14 +37,14 @@ module Operations =
         { typeCheckContext with
             Values = values }
 
-    static member RegisterTypeCheckState<'ext when 'ext: comparison>
-      (_opsExt: OperationsExtension<'ext, 'extOperations>)
+    static member RegisterTypeCheckState<'runtimeContext, 'ext when 'ext: comparison>
+      (_opsExt: OperationsExtension<'runtimeContext, 'ext, 'extOperations>)
       : Updater<TypeCheckState<'ext>> =
       id // leave it here, it will be needed later
 
-    static member RegisterExprEvalContext<'ext when 'ext: comparison>
-      (opsExt: OperationsExtension<'ext, 'extOperations>)
-      : Updater<ExprEvalContext<'ext>> =
+    static member RegisterExprEvalContext<'runtimeContext, 'ext when 'ext: comparison>
+      (opsExt: OperationsExtension<'runtimeContext, 'ext, 'extOperations>)
+      : Updater<ExprEvalContext<'runtimeContext, 'ext>> =
       fun evalContext ->
         let ops = evalContext.ExtensionOps.Eval
 
@@ -52,7 +52,13 @@ module Operations =
           opsExt.Operations
           |> Map.values
           |> Seq.fold
-            (fun (acc: Location -> List<_> -> 'ext -> ExprEvaluator<'ext, ExtEvalResult<'ext>>) caseExt ->
+            (fun
+                 (acc:
+                   Location
+                     -> List<_>
+                     -> 'ext
+                     -> ExprEvaluator<'runtimeContext, 'ext, ExtEvalResult<'runtimeContext, 'ext>>)
+                 caseExt ->
               fun loc0 rest v ->
                 reader.Any(
                   reader {
@@ -84,9 +90,9 @@ module Operations =
                 |> Map.add caseId ((publicIdentifiers |> caseExt.OperationsLens.Set, Some caseId) |> Value.Ext))
             values
 
-        let applicables: Map<ResolvedIdentifier, ApplicableExtEvalResult<'ext>> =
+        let applicables: Map<ResolvedIdentifier, ApplicableExtEvalResult<'runtimeContext, 'ext>> =
           opsExt.Operations
-          |> Map.map (fun (_k: ResolvedIdentifier) (op: OperationExtension<'ext, 'extOperations>) ->
+          |> Map.map (fun (_k: ResolvedIdentifier) (op: OperationExtension<'runtimeContext, 'ext, 'extOperations>) ->
             fun loc0 rest f v ->
               reader {
                 let! f =
@@ -112,8 +118,8 @@ module Operations =
                 Applicables = applicables } }
 
     static member RegisterLanguageContext
-      (opsExt: OperationsExtension<'ext, 'extOperations>)
-      : Updater<LanguageContext<'ext, 'extDTO>> =
+      (opsExt: OperationsExtension<'runtimeContext, 'ext, 'extOperations>)
+      : Updater<LanguageContext<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>> =
       fun langCtx ->
         { TypeCheckContext =
             langCtx.TypeCheckContext
@@ -121,6 +127,7 @@ module Operations =
           TypeCheckState = langCtx.TypeCheckState |> (opsExt |> OperationsExtension.RegisterTypeCheckState)
           ExprEvalContext =
             langCtx.ExprEvalContext
-            |> (opsExt |> OperationsExtension.RegisterExprEvalContext)
+            >> (opsExt |> OperationsExtension.RegisterExprEvalContext)
           TypeCheckedPreludes = langCtx.TypeCheckedPreludes
-          SerializationContext = langCtx.SerializationContext }
+          SerializationContext = langCtx.SerializationContext
+          ExtTypeChecker = langCtx.ExtTypeChecker }

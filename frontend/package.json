@@ -11,13 +11,15 @@
     "compile-ballerina-core": "cd libraries/ballerina-core && yarn build",
     "compile-create-domain": "cd libraries/create-domain && yarn tsc",
     "compile-playground-core": "cd libraries/playground-core && yarn tsc",
-    "compile-all": "yarn compile-web && yarn compile-mobile && yarn compile-test && yarn compile-ballerina-core && yarn compile-create-domain && yarn compile-playground-core"
+    "compile-all": "yarn compile-web && yarn compile-mobile && yarn compile-test && yarn compile-ballerina-core && yarn compile-create-domain && yarn compile-playground-core",
+    "test-ballerina-core": "cd apps/ballerina-core.Tests && yarn test"
   },
   "devDependencies": {
     "prettier": "^3.2.5"
   },
   "workspaces": {
     "packages": [
+      "apps/ballerina-core.Tests",
       "apps/test",
       "apps/web",
       "apps/mobile",

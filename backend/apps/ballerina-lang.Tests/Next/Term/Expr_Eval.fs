@@ -37,6 +37,9 @@ open Ballerina.DSL.Next.StdLib.TimeSpan
 open Ballerina.DSL.Next.StdLib
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.Collections.NonEmptyList
+open Ballerina.DSL.Next.StdLib.MutableMemoryDB
+
+type private ValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
 
 let private (!) = Identifier.LocalScope
 let private (=>) t f = Identifier.FullyQualified([ t ], f)
@@ -52,9 +55,10 @@ do ignore (=>)
 do ignore (!!)
 do ignore (=>>)
 
-let ops, context = stdExtensions
+let ops, context, _db_query_sym, _make_db_query_type = db_ops () |> stdExtensions
+let evalContext = ExprEvalContext.Empty() |> context.ExprEvalContext
 
-let typeCheck = Expr.TypeCheck()
+let typeCheck = Expr.TypeCheck(_db_query_sym, _make_db_query_type)
 
 let private runTypeCheck (program: Expr<TypeExpr<ValueExt>, Identifier, ValueExt>) =
   typeCheck None program
@@ -62,7 +66,7 @@ let private runTypeCheck (program: Expr<TypeExpr<ValueExt>, Identifier, ValueExt
 
 let private eval (program: Expr<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt>) =
   Expr.Eval(NonEmptyList.prependList context.TypeCheckedPreludes (NonEmptyList.One program))
-  |> Reader.Run context.ExprEvalContext
+  |> Reader.Run evalContext
 
 
 [<Test>]

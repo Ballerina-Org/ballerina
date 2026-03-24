@@ -11,7 +11,6 @@ import {
   Unit,
   ValueOrErrors,
   ValueRecord,
-  BaseFlags,
   Sum,
 } from "../../../../../../../../../main";
 import { Map } from "immutable";
@@ -19,6 +18,7 @@ import { Co, DebouncerCo, InitializeCo } from "./builder";
 import { initializeOne } from "./_initializeOne";
 import { initializeStream } from "./_initializeStream";
 import { debouncer } from "./_debouncer";
+import { BaseFlags } from "../../../deltas/delta-to-dto/state";
 
 export const initializeOneRunner = <
   CustomPresentationContext = Unit,
@@ -30,12 +30,9 @@ export const initializeOneRunner = <
   >(initializeOne<CustomPresentationContext, ExtraContext>(), {
     interval: 15,
     runFilter: (props) =>
-      // if the value is some, we already have something to pass to the renderers
-      // -> we don't have to run the initialization coroutine
-      // if the inner value is unit, we are rendering a partial one
-      props.context.value.kind === "option" &&
-      !props.context.value.isSome &&
-      props.context.getApi != undefined,
+      OneAbstractRendererState.Operations.ShouldRunInitialization(
+        props.context,
+      ),
   });
 
 export const initializeStreamRunner = <

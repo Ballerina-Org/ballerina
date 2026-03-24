@@ -1,19 +1,18 @@
 import {
-  BaseFlags,
-  DispatchDelta,
   OneAbstractRendererState,
-  PredicateValue,
   replaceWith,
   Sum,
   Unit,
-  id as IdUpdater,
   ValueInfiniteStreamState,
   ValueOption,
   ValueOrErrors,
   ValueUnit,
   Option,
+  InitializationStatus,
 } from "../../../../../../../../../main";
 import { InitializeCo } from "./builder";
+import { DispatchDelta } from "../../../deltas/dispatch-delta/state";
+import { BaseFlags } from "../../../deltas/delta-to-dto/state";
 
 export const initializeOne = <
   CustomPresentationContext = Unit,
@@ -42,31 +41,52 @@ export const initializeOne = <
           (_) => console.error("error while getting api value for the one", _),
         )
         .then((value) =>
-          InitializeCo<CustomPresentationContext, ExtraContext>().Do(() => {
-            current
-              .fromApiParser(value.value)
-              .Then((result) => {
-                const updater = replaceWith<ValueOption | ValueUnit>(
-                  ValueOption.Default.some(result),
-                );
-                const delta: DispatchDelta<BaseFlags> = {
-                  kind: "OneReplace",
-                  replace: result,
-                  flags: {
-                    kind: "localOnly",
-                  },
-                  type: current.type,
-                  sourceAncestorLookupTypeNames:
-                    current.lookupTypeAncestorNames,
-                };
-                current.onChange(Option.Default.some(updater), delta);
+          InitializeCo<CustomPresentationContext, ExtraContext>()
+            .Do(() => {
+              current
+                .fromApiParser(value.value)
+                .Then((result) => {
+                  const updater = replaceWith<ValueOption | ValueUnit>(
+                    ValueOption.Default.some(result),
+                  );
+                  const delta: DispatchDelta<BaseFlags> = {
+                    kind: "OneReplace",
+                    replace: result,
+                    flags: {
+                      kind: "localOnly",
+                    },
+                    type: current.type,
+                    sourceAncestorLookupTypeNames:
+                      current.lookupTypeAncestorNames,
+                  };
+                  current.onChange(Option.Default.some(updater), delta);
 
-                return ValueOrErrors.Default.return(result);
-              })
-              .MapErrors((_) => {
-                console.error("error while parsing api value for the one", _);
-                return _;
-              });
-          }),
+                  return ValueOrErrors.Default.return(result);
+                })
+                .MapErrors((_) => {
+                  console.error("error while parsing api value for the one", _);
+                  return _;
+                });
+            })
+            .then(() =>
+              InitializeCo<CustomPresentationContext, ExtraContext>().Do(() => {
+                if (
+                  current.customFormState.initializationStatus.kind ===
+                  "reinitializing"
+                ) {
+                  // always true when running this coroutine
+                  current.customFormState.initializationStatus.afterReinitializationAction();
+                }
+              }),
+            ),
+        )
+        .then(() =>
+          InitializeCo<CustomPresentationContext, ExtraContext>().SetState(
+            OneAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
+              replaceWith<InitializationStatus>({
+                kind: "initialized",
+              }),
+            ),
+          ),
         );
     });

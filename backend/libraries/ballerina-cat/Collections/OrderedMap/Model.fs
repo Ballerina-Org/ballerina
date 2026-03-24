@@ -66,6 +66,8 @@ module OrderedMap =
     static member toSeq(om: OrderedMap<'K, 'V>) : seq<'K * 'V> =
       OrderedMap.keys om |> Seq.map (fun k -> k, om.data.[k])
 
+    static member toMap(om: OrderedMap<'K, 'V>) : Map<'K, 'V> = om.data
+
     static member toArray(om: OrderedMap<'K, 'V>) : array<'K * 'V> =
       OrderedMap.keys om |> List.toArray |> Array.map (fun k -> k, om.data.[k])
 

@@ -72,8 +72,6 @@ let ``Dsl:Type:TypeExpr json round-trip`` () =
       """{ "discriminator": "lookup", "value": "MyType" }""", TypeExpr.Lookup("MyType" |> Identifier.LocalScope)
       """{ "discriminator": "set", "value": {"discriminator": "string"} }""",
       TypeExpr.Set(TypeExpr.Primitive PrimitiveType.String)
-      """{ "discriminator": "map", "value": [{"discriminator": "bool"}, {"discriminator": "int32"}] }""",
-      TypeExpr.Map(TypeExpr.Primitive PrimitiveType.Bool, TypeExpr.Primitive PrimitiveType.Int32)
       """{ "discriminator": "keyOf", "value": {"discriminator": "record", "value": [[{"discriminator": "lookup", "value": "foo"}, {"discriminator": "int32"}]]} }""",
       TypeExpr.KeyOf(
         TypeExpr.LetSymbols(
@@ -109,3 +107,28 @@ let ``Dsl:Type:TypeExpr json round-trip`` () =
   for (actualJson, expected) in testCases do
     (expected, JsonValue.Parse actualJson)
     ||> ``Assert TypeExpr -> ToJson -> FromJson -> TypeExpr``
+
+
+[<Test>]
+let ``Dsl:Type:TypeExpr FromTypeValue json round-trip with TypeValue serializer`` () =
+  let normalize (json: JsonValue) =
+    json.ToString JsonSaveOptions.DisableFormatting
+
+  let testCases =
+    [ """{"discriminator":"fromTypeValue","value":{"discriminator":"int32"}}""",
+      TypeExpr.FromTypeValue(TypeValue<Object>.CreateInt32())
+      """{"discriminator":"fromTypeValue","value":{"discriminator":"string"}}""",
+      TypeExpr.FromTypeValue(TypeValue<Object>.CreateString()) ]
+
+  for (actualJson, expected) in testCases do
+    let toJson = TypeExpr.ToJsonWith TypeValue<Object>.ToJson
+    let json = toJson expected
+    let expectedJsonParsed = JsonValue.Parse actualJson
+
+    Assert.That(normalize json, Is.EqualTo(normalize expectedJsonParsed))
+
+    let parsed = TypeExpr.FromJsonWith TypeValue<Object>.FromJson expectedJsonParsed
+
+    match parsed with
+    | Right err -> Assert.Fail $"Parse failed: {err}"
+    | Left result -> Assert.That(result, Is.EqualTo(expected))

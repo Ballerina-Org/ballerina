@@ -1,0 +1,190 @@
+view FriendDetails : Friend {
+  Name as "First Name" string(print);
+  Surname as "Last Name" string(print);
+  tab main with
+    column main with
+      group main with Name, Surname
+}
+
+view(userDetails) UserDetails : User {
+  Name as "First Name" string(print);
+  Surname as "Last Name" string(print);
+  Birthday as "Birthday" date(datePicker);
+  Email as "Email" string(print);
+  SubscribeToNewsletter as "Subscribe to Newsletter" bool(Boolean);
+  FavoriteColor as "FavoriteColor" enum(selectable) single from colors;
+  Friends as "Friends" record(streamingTable) {
+    Name as "First Name" string(print);
+    Surname string(print);
+    FavoriteColor as "Favorite Color" enum(selectable) single from colors;
+  };
+  tab main with
+    column main with
+      group main with Name, Surname, Birthday, Email, SubscribeToNewsletter, FavoriteColor, Friends
+  disable Friends
+}
+
+view LandArea : LandArea {
+  X float64(number);
+  Y float64(number);
+  tab main with
+    column main with
+      group main with X, Y
+}
+
+view PlotInfo : PlotInfo {
+  LandArea view(LandArea);
+  tab main with
+    column main with
+      group main with LandArea
+}
+
+view(Address) Address : Address {
+  StreetNumberAndCity tuple(tuple3) (
+    string(print), 
+    int32(number), 
+    stream(InfiniteStream) from cities  
+  );
+  tab main with
+    column main with
+      group main with StreetNumberAndCity
+}
+
+entrypoint view PersonConfig : PersonConfig {
+  ActiveAddressFields as "addresses tab field selection" enum(enumMultiselect) multi from addressesFields;
+  tab main with
+    column main with
+      group main with ActiveAddressFields
+}
+
+view(personDetails) DeveloperJob : DeveloperJob {
+  Name string(print);
+  Salary float64(number);
+  Language string(print);
+  tab main with
+    column main with
+      group main with Name, Salary, Language
+}
+
+view(personDetails) DesignerJob : DesignerJob {
+  Name string(print);
+  Salary float64(number);
+  DesignTool string(print);
+  Certifications list(List) string(print);
+  tab main with
+    column main with
+      group main with Name, Salary, DesignTool, Certifications
+}
+
+view FriendsTable : User {
+  Name string(print);
+  Surname string(print);
+  FavoriteColor enum(selectable) single from colors;
+  disable Surname
+  details view(userDetails)
+}
+
+view(streamingTable) FriendsFriendsTable : Friend {
+  Name string(print);
+  Surname string(print);
+  FavoriteColor enum(selectable) from colors;
+  disable Surname
+}
+
+entrypoint view(personDetails) Person : Person {
+  Friends view(streamingTable) {
+    Name string(print);
+    Surname string(print);
+    FavoriteColor enum(selectable) single from colors;
+    City stream(InfiniteStream) from cities;
+    StreetNumberAndCity tuple(tuple3) (
+      string(print),
+      int32(number),
+      stream(InfiniteStream) from cities
+    );
+    disable Surname
+    details view(userDetails) {
+      Name as "First Name" string(print);
+      Surname as "Surname" string(print);
+      Birthday as "Birthday" date(datePicker);
+      Email as "Email" string(print);
+      SubscribeToNewsletter as "Subscribe to Newsletter" bool(Boolean);
+      FavoriteColor as "Favorite Color" enum(selectable) from colors;
+      Friends as "Friends" table(friendsFriendsTable) from ActiveFriendsApi;
+    }
+  };
+  Job as "Job" union(job) with
+  | DeveloperJob -> record(job) {
+      Name string(print);
+      Salary float64(number);
+      Language string(print);
+      tab main with
+        column main with
+          group main with Name, Salary, Language
+    }
+  | Designer -> view(DesignerJob);
+  Category as "Category" string(category);
+  FullName as "full Name" tuple(tuple2) (
+    string(print),
+    string(print)
+  );
+  Birthday tooltip "happy Birthday!" date(datePicker);
+  FavoriteColor enum(selectable) single from colors;
+  Gender as "Gender" sum(switch) with
+  | 1of2 -> unit(Unit)
+  | 2of2 -> enum(Gender) single from genders;
+  Dependants as "Dependants" tooltip "someone who depends on you" map(keyValue)
+    string(print),
+    string(Category);
+  FriendsByCategory as "Friend by Category" map(keyValue)
+    string(Category),
+    string(print);
+  Relatives as "Relatives" tooltip "someone who you are related to" list(List) string(Category);
+  SubscribeToNewsletter as "subscribe to newsletter" bool(Bool);
+  Interests as "Interests" enum(enumMultiselect) multi from interests;
+  Departments stream(InfiniteStreamMultiselect) from departments;
+  SchoolAddress as "school address" view(address);
+  MainAddress as "main address" sum(switch) with
+  | 1of2 -> string(print)
+  | 2of2 -> tuple(tuple2) (view(Address), view(PlotInfo));
+  AddressesBy as "addresses by" sum(switch) with
+  | 1of2 -> map(keyValue)
+      enum(selectable) single from colors,
+      view(address)
+  | 2of2 -> map(keyValue) string(print), view(address);
+  ImportantDate as "important date" option(maybeDate) with
+  | 2of2 -> date(datePicker)
+  | 1of2 -> unit(Unit);
+  CutOffDates as "cut off dates" list(List) 
+    option(maybeDate) with
+    | 2of2 -> date(datePicker)
+    | 1of2 -> unit(Unit);
+  Emails as "Emails" list(List) string(print);
+  AddressesAndAddressesWithLabel as "other addresses" tuple(tuple2) (
+    list(List) view(address),
+    map(keyValue) string(print), view(address)
+  );
+  AddressesByCity as "addresses by city" map(keyValue)
+    stream(InfiniteStream) from cities,
+    view(address);
+  AddressesWithColorLabel as "addresses with color label" map(keyValue)
+    enum(selectable) single from colors,
+    view(address);
+  Permissions as "Permissions" map(keyValue)
+    enum(selectable) single from permissions,
+    bool(Boolean);
+  CityByDepartment as "city by department" map(keyValue)
+    stream(InfiniteStream) from departments,
+    stream(InfiniteStream) from cities;
+  ShoeColours as "shoe colours" enum(enumMultiselect) multi from colors;
+  FriendsBirthdays as "Friends birthdays" map(keyValue)
+    string(print),
+    date(datePicker);
+  Holidays as "Holidays" list(List) date(datePicker);
+  FriendsAddresses as "Friends addresses" map(keyValue)
+    string(print),
+    list(List) view(address);
+
+
+  disable ImportantDate
+}

@@ -10,23 +10,19 @@ import {
   DispatchOnChange,
   Option,
   BasicUpdater,
-  DispatchDelta,
   NestedRenderer,
-  BaseFlags,
-  replaceWith,
   ValueReadOnly,
   Updater,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
-import {
-  DispatchParsedType,
-  ReadOnlyType,
-} from "../../../../deserializer/domains/specification/domains/types/state";
+import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
 import {
   ReadOnlyAbstractRendererView,
   ReadOnlyAbstractRendererReadonlyContext,
   ReadOnlyAbstractRendererState,
 } from "./state";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
+import { BaseFlags } from "../../deltas/delta-to-dto/state";
 
 export const ReadOnlyAbstractRenderer = <
   T extends DispatchParsedType<T>,
@@ -89,6 +85,7 @@ export const ReadOnlyAbstractRenderer = <
           preprocessedSpecContext: _.preprocessedSpecContext,
           labelContext,
           usePreprocessor: _.usePreprocessor,
+          preventOneInitialization: _.preventOneInitialization,
         };
       },
     )

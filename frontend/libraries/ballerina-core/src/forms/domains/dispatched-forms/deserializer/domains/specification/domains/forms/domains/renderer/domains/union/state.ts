@@ -7,7 +7,7 @@ import {
 } from "../../../../../../../../../../../../../main";
 import { DispatchIsObject, UnionType } from "../../../../../types/state";
 import { DispatchParsedType } from "../../../../../types/state";
-import { Map } from "immutable";
+import { Map, OrderedMap } from "immutable";
 import { Renderer } from "../../state";
 
 export type SerializedUnionRenderer = {
@@ -19,7 +19,7 @@ export type UnionRenderer<T> = {
   kind: "unionRenderer";
   concreteRenderer: string;
   type: UnionType<T>;
-  cases: Map<string, Renderer<T>>;
+  cases: OrderedMap<string, Renderer<T>>;
 };
 
 export const UnionRenderer = {

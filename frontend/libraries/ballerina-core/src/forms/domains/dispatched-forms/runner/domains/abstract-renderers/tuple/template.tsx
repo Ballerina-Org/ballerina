@@ -8,9 +8,7 @@ import {
 } from "./state";
 import {
   BasicUpdater,
-  Bindings,
   DispatchCommonFormState,
-  DispatchDelta,
   IdWrapperProps,
   PredicateValue,
   replaceWith,
@@ -25,10 +23,8 @@ import {
   CommonAbstractRendererForeignMutationsExpected,
   NestedRenderer,
 } from "../../../../../../../../main";
-import {
-  DispatchParsedType,
-  StringSerializedType,
-} from "../../../../deserializer/domains/specification/domains/types/state";
+import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const DispatchTupleAbstractRenderer = <
   CustomPresentationContext = Unit,
@@ -101,6 +97,7 @@ export const DispatchTupleAbstractRenderer = <
               lookupTypeAncestorNames: _.lookupTypeAncestorNames,
               preprocessedSpecContext: _.preprocessedSpecContext,
               usePreprocessor: _.usePreprocessor,
+              preventOneInitialization: _.preventOneInitialization,
             };
           },
         )

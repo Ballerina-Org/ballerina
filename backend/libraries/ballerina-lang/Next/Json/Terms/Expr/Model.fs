@@ -81,3 +81,4 @@ module ExprJson =
         | ExprRec.EntityDes _ -> failwith "Not implemented"
         | ExprRec.RelationDes _ -> failwith "Not implemented"
         | ExprRec.RelationLookupDes _ -> failwith "Not implemented"
+        | ExprRec.Query _ -> failwith "Not implemented"

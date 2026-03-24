@@ -23,6 +23,7 @@ module ValueSerializer =
   let rec recordToDTO (record: Map<ResolvedIdentifier, Value<'T, 'valueExt>>) =
     record
     |> Map.toList
+    |> List.sortWith (fun (id1, _) (id2, _) -> ResolvedIdentifier.Compare id1 id2)
     |> List.map (fun (identifier, value) ->
       reader {
         let identifierDTO = resolvedIdentifierToDTO identifier
@@ -31,49 +32,51 @@ module ValueSerializer =
       })
     |> reader.All
     |> Reader.map (List.map (fun (key, value) -> { Key = key; Value = value }) >> List.toArray)
-    |> Reader.map ValueDTO<'valueExtDTO>.CreateRecord
+    |> Reader.map (fun r -> new ValueDTO<'valueExtDTO>(r))
 
   and unionCaseToDTO ((identifier, value): ResolvedIdentifier * Value<'T, 'valueExt>) =
     reader {
       let identifierDTO = resolvedIdentifierToDTO identifier
       let! valueDTO = valueToDTO value
 
-      return
+      let unionDTO: UnionCaseDTO<'valueExtDTO> =
         { Case = identifierDTO
           Value = valueDTO }
-        |> ValueDTO<'valueExtDTO>.CreateUnionCase
+
+      return new ValueDTO<'valueExtDTO>(unionDTO)
     }
 
   and tupleToDTO (items: List<Value<'T, 'valueExt>>) =
     items
     |> List.map valueToDTO
     |> reader.All
-    |> reader.Map(List.toArray >> ValueDTO<'valueExtDTO>.CreateTuple)
+    |> reader.Map(List.toArray >> fun t -> new ValueDTO<'valueExtDTO>(t))
 
   and sumToDTO ((selector, value): SumConsSelector * Value<'T, 'valueExt>) =
     reader {
       let! valueDTO = valueToDTO value
 
-      return
+      let sumDTO: SumDTO<'valueExtDTO> =
         { Selector = selector
           Value = valueDTO }
-        |> ValueDTO<'valueExtDTO>.CreateSum
+
+      return new ValueDTO<'valueExtDTO>(sumDTO)
     }
 
   and primitiveToDTO =
     function
-    | Int32 int32 -> PrimitiveValueDTO.CreateInt32 int32
-    | Int64 int64 -> PrimitiveValueDTO.CreateInt64 int64
-    | Float32 float32 -> PrimitiveValueDTO.CreateFloat32 float32
-    | Float64 float64 -> PrimitiveValueDTO.CreateFloat64 float64
-    | Decimal decimal -> PrimitiveValueDTO.CreateDecimal decimal
-    | Bool bool -> PrimitiveValueDTO.CreateBool bool
-    | Guid guid -> PrimitiveValueDTO.CreateGuid guid
-    | String string -> PrimitiveValueDTO.CreateString string
-    | Date date -> PrimitiveValueDTO.CreateDate date
-    | DateTime dateTime -> PrimitiveValueDTO.CreateDateTime dateTime
-    | TimeSpan span -> PrimitiveValueDTO.CreateTimeSpan span
-    | Unit -> PrimitiveValueDTO.Empty
+    | Int32 int32 -> new PrimitiveValueDTO(int32)
+    | Int64 int64 -> new PrimitiveValueDTO(int64)
+    | Float32 float32 -> new PrimitiveValueDTO(float32)
+    | Float64 float64 -> new PrimitiveValueDTO(float64)
+    | Decimal decimal -> new PrimitiveValueDTO(decimal)
+    | Bool bool -> new PrimitiveValueDTO(bool)
+    | Guid guid -> new PrimitiveValueDTO(guid)
+    | String string -> new PrimitiveValueDTO(string)
+    | Date date -> new PrimitiveValueDTO(date)
+    | DateTime dateTime -> new PrimitiveValueDTO(dateTime)
+    | TimeSpan span -> new PrimitiveValueDTO(span)
+    | Unit -> new PrimitiveValueDTO()
 
   and valueToDTO
     (value: Value<'T, 'valueExt>)
@@ -82,13 +85,13 @@ module ValueSerializer =
       match value with
       | Record record -> return! recordToDTO record
       | UnionCase(identifier, value) -> return! unionCaseToDTO (identifier, value)
-      | RecordDes identifier -> return resolvedIdentifierToDTO identifier |> ValueDTO<'valueExtDTO>.CreateRecordDes
+      | RecordDes identifier -> return new ValueDTO<'valueExtDTO>(resolvedIdentifierToDTO identifier)
       | UnionCons(identifier: ResolvedIdentifier) ->
-        return resolvedIdentifierToDTO identifier |> ValueDTO<'valueExtDTO>.CreateUnionCons
+        return new ValueDTO<'valueExtDTO>(resolvedIdentifierToDTO identifier)
       | Tuple items -> return! tupleToDTO items
       | Sum(selector, value) -> return! sumToDTO (selector, value)
-      | Primitive primitive -> return primitiveToDTO primitive |> ValueDTO<'valueExtDTO>.CreatePrimitive
-      | Var var -> return ValueDTO<'valueExtDTO>.CreateVar var
+      | Primitive primitive -> return new ValueDTO<'valueExtDTO>(primitiveToDTO primitive)
+      | Var var -> return new ValueDTO<'valueExtDTO>(var)
       | Ext(ext, applicableId) ->
         let! context = reader.GetContext()
         let applicableIdDTO = applicableId |> Option.map resolvedIdentifierToDTO

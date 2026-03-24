@@ -706,6 +706,98 @@ export const PredicateValue = {
     }),
   },
   Operations: {
+    ToJS: (value: PredicateValue): object => {
+      const toJS = PredicateValue.Operations.ToJS;
+
+      if (PredicateValue.Operations.IsPrimitive(value)) {
+        return {
+          kind: "primitive",
+          value: value,
+        };
+      }
+
+      if (PredicateValue.Operations.IsUnit(value)) {
+        return {};
+      }
+
+      if (PredicateValue.Operations.IsUnionCase(value)) {
+        return {
+          kind: "unionCase",
+          caseName: value.caseName,
+          field: toJS(value.fields),
+        };
+      }
+
+      if (PredicateValue.Operations.IsRecord(value)) {
+        return {
+          kind: "record",
+          fields: value.fields.map(toJS).toArray(),
+        };
+      }
+
+      if (PredicateValue.Operations.IsTuple(value)) {
+        return {
+          kind: "tuple",
+          value: value.values.map(toJS).toArray(),
+        };
+      }
+
+      if (PredicateValue.Operations.IsOption(value)) {
+        return {
+          kind: "option",
+          isSome: value.isSome,
+          value: toJS(value.value),
+        };
+      }
+
+      if (PredicateValue.Operations.IsTable(value)) {
+        return {
+          kind: "table",
+          value: value.data.map(toJS).toArray(),
+        };
+      }
+
+      if (PredicateValue.Operations.IsSum(value)) {
+        return {
+          kind: "sum",
+          isRight: value.value.kind == "r",
+          value: toJS(value.value.value),
+        };
+      }
+
+      if (PredicateValue.Operations.IsSumN(value)) {
+        return {
+          kind: "sumN",
+          case: `${value.caseIndex}of${value.arity}`,
+          value: toJS(value.value),
+        };
+      }
+
+      if (PredicateValue.Operations.IsVarLookup(value)) {
+        return {
+          kind: "varLookup",
+          varName: value.varName,
+        };
+      }
+
+      if (PredicateValue.Operations.IsCustom(value)) {
+        return {
+          kind: "custom",
+          value: value.value,
+        };
+      }
+
+      if (PredicateValue.Operations.IsReadOnly(value)) {
+        return {
+          kind: "readOnly",
+          value: toJS(value.ReadOnly),
+        };
+      }
+
+      return {
+        kind: "other not supported value",
+      };
+    },
     GetKind: (value: PredicateValue): ValueOrErrors<string, string> =>
       typeof value == "object"
         ? "kind" in value

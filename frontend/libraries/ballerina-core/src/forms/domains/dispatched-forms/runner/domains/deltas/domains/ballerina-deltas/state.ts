@@ -1,21 +1,15 @@
 import {
   PredicateValue,
-  unit,
   Unit,
   ValueOrErrors,
 } from "../../../../../../../../../main";
+import { DispatchParsedType } from "../../../../../deserializer/domains/specification/domains/types/state";
+import { DispatchDelta, DispatchDeltaCustom } from "../../dispatch-delta/state";
 import {
-  DispatchParsedType,
-  TupleType,
-} from "../../../../../deserializer/domains/specification/domains/types/state";
-import type {
-  AggregatedFlags,
-  DispatchDelta,
-  DispatchDeltaCustom,
-  DispatchDeltaTransfer as DispatchDeltaTransferType,
+  DeltaTransfer as DispatchDeltaTransferType,
   DispatchDeltaTransferComparand,
-} from "../../state";
-
+} from "../../dispatch-delta-dto/state";
+import { AggregatedFlags } from "../../delta-to-dto/state";
 // Did not implement support for all deltas reasoning:
 // - NumberReplace - we restrict to numbers in extensions
 // - Set deltas - only used in multiselects, not currently supported

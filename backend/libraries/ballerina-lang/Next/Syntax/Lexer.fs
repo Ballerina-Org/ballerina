@@ -30,6 +30,21 @@ module Lexer =
     | If
     | Then
     | Else
+    | Schema
+    | Entity
+    | Relation
+    | Include
+    | Query
+    | From
+    | Select
+    | Where
+    | Join
+    | On
+    | Can
+    | And
+    | OrderBy
+    | Ascending
+    | Descending
 
     override this.ToString() =
       match this with
@@ -44,6 +59,21 @@ module Lexer =
       | If -> "if"
       | Then -> "then"
       | Else -> "else"
+      | Schema -> "schema"
+      | Entity -> "entity"
+      | Relation -> "relation"
+      | Include -> "include"
+      | Query -> "query"
+      | From -> "from"
+      | Select -> "select"
+      | Where -> "where"
+      | Join -> "join"
+      | On -> "on"
+      | Can -> "can"
+      | And -> "and"
+      | OrderBy -> "orderby"
+      | Ascending -> "asc"
+      | Descending -> "desc"
 
   type Operator =
     | Equals
@@ -150,6 +180,8 @@ module Lexer =
     { Token: Token
       Location: Location }
 
+    override this.ToString() = this.Token.ToString()
+
     static member FromKeyword keyword location =
       { Token = keyword |> Token.Keyword
         Location = location }
@@ -231,34 +263,43 @@ module Lexer =
       return! tokenizer.Location
     }
 
+  let private keywords =
+    [ Keyword.Include.ToString(), LocalizedToken.FromKeyword Keyword.Include
+      Keyword.In.ToString(), LocalizedToken.FromKeyword Keyword.In
+      Keyword.Type.ToString(), LocalizedToken.FromKeyword Keyword.Type
+      Keyword.Of.ToString(), LocalizedToken.FromKeyword Keyword.Of
+      Keyword.Function.ToString(), LocalizedToken.FromKeyword Keyword.Function
+      Keyword.Fun.ToString(), LocalizedToken.FromKeyword Keyword.Fun
+      Keyword.Let.ToString(), LocalizedToken.FromKeyword Keyword.Let
+      Keyword.Match.ToString(), LocalizedToken.FromKeyword Keyword.Match
+      Keyword.With.ToString(), LocalizedToken.FromKeyword Keyword.With
+      Keyword.If.ToString(), LocalizedToken.FromKeyword Keyword.If
+      Keyword.And.ToString(), LocalizedToken.FromKeyword Keyword.And
+      Keyword.Then.ToString(), LocalizedToken.FromKeyword Keyword.Then
+      Keyword.Else.ToString(), LocalizedToken.FromKeyword Keyword.Else
+      Keyword.Schema.ToString(), LocalizedToken.FromKeyword Keyword.Schema
+      Keyword.Entity.ToString(), LocalizedToken.FromKeyword Keyword.Entity
+      Keyword.Relation.ToString(), LocalizedToken.FromKeyword Keyword.Relation
+      Keyword.Query.ToString(), LocalizedToken.FromKeyword Keyword.Query
+      Keyword.From.ToString(), LocalizedToken.FromKeyword Keyword.From
+      Keyword.Select.ToString(), LocalizedToken.FromKeyword Keyword.Select
+      Keyword.Where.ToString(), LocalizedToken.FromKeyword Keyword.Where
+      Keyword.Join.ToString(), LocalizedToken.FromKeyword Keyword.Join
+      Keyword.On.ToString(), LocalizedToken.FromKeyword Keyword.On
+      Keyword.Can.ToString(), LocalizedToken.FromKeyword Keyword.Can
+      Keyword.OrderBy.ToString(), LocalizedToken.FromKeyword Keyword.OrderBy
+      Keyword.Ascending.ToString(), LocalizedToken.FromKeyword Keyword.Ascending
+      Keyword.Descending.ToString(), LocalizedToken.FromKeyword Keyword.Descending
+      "true", LocalizedToken.FromBoolLiteral true
+      "false", LocalizedToken.FromBoolLiteral false ]
+    |> List.sortByDescending (fun (w, _) -> w.Length)
+
   let keyword =
     tokenizer {
       let! res =
-        tokenizer.Any
-          [ word (Keyword.Type.ToString())
-            |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.Type)
-            word (Keyword.Of.ToString())
-            |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.Of)
-            word (Keyword.In.ToString())
-            |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.In)
-            word (Keyword.Function.ToString())
-            |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.Function)
-            word (Keyword.Fun.ToString())
-            |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.Fun)
-            word (Keyword.Let.ToString())
-            |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.Let)
-            word (Keyword.Match.ToString())
-            |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.Match)
-            word (Keyword.With.ToString())
-            |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.With)
-            word (Keyword.If.ToString())
-            |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.If)
-            word (Keyword.Then.ToString())
-            |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.Then)
-            word (Keyword.Else.ToString())
-            |> tokenizer.Map(LocalizedToken.FromKeyword Keyword.Else)
-            word "true" |> tokenizer.Map(LocalizedToken.FromBoolLiteral true)
-            word "false" |> tokenizer.Map(LocalizedToken.FromBoolLiteral false) ]
+        keywords
+        |> List.map (fun (w, t) -> w |> word |> tokenizer.Map t)
+        |> tokenizer.Any
 
       do!
         tokenizer.Lookahead(
@@ -315,12 +356,13 @@ module Lexer =
   let letter = tokenizer.Exactly Char.IsLetter
   let digit = tokenizer.Exactly Char.IsDigit
   let underscore = tokenizer.Exactly '_'
+  let tick = tokenizer.Exactly '\''
 
   let identifier =
     tokenizer {
-      let! start = [ letter; underscore ] |> tokenizer.Any
+      let! start = [ letter; underscore; tick ] |> tokenizer.Any
 
-      let! rest = [ letter; digit; underscore ] |> tokenizer.Any |> tokenizer.Many
+      let! rest = [ letter; digit; underscore; tick ] |> tokenizer.Any |> tokenizer.Many
 
       let id = String.Concat(start :: rest)
       let! loc = tokenizer.Location
@@ -340,8 +382,14 @@ module Lexer =
   let stringLiteral =
     tokenizer {
       do! tokenizer.Exactly '\"' |> tokenizer.Ignore
-      let! literal = tokenizer.Many(tokenizer.Exactly(fun c -> c <> '\"'))
+      let! literal = tokenizer.Many(tokenizer.Exactly(fun c -> c <> '\"' && c <> '\n'))
       do! tokenizer.Exactly '\"' |> tokenizer.Ignore
+
+      do!
+        tokenizer.Lookahead(
+          tokenizer.Exactly((fun c -> c |> Char.IsLetter || c = '_' || c = '\'') >> not)
+          |> tokenizer.Ignore
+        )
 
       let! loc = tokenizer.Location
       return LocalizedToken.FromStringLiteral (String.Concat(literal)) loc
@@ -442,7 +490,7 @@ module Lexer =
         else
           let! ofTotal =
             tokenizer {
-              do! word "Of" |> tokenizer.Ignore
+              do! [ word "Of"; word "of" ] |> tokenizer.Any |> tokenizer.Ignore
               return! digit |> tokenizer.Many
 
             }

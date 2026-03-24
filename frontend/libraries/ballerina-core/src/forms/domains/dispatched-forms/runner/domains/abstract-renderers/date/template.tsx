@@ -1,13 +1,11 @@
 import { Template } from "../../../../../../../template/state";
 import {
-  DispatchDelta,
   IdWrapperProps,
   PredicateValue,
   replaceWith,
   ErrorRendererProps,
   Option,
   Unit,
-  StringSerializedType,
 } from "../../../../../../../../main";
 import {
   DateAbstractRendererForeignMutationsExpected,
@@ -15,6 +13,7 @@ import {
   DateAbstractRendererState,
   DateAbstractRendererView,
 } from "./state";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export const DateAbstractRenderer = <
   CustomPresentationContext = Unit,

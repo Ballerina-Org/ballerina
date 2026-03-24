@@ -7,12 +7,11 @@ import {
   Unit,
   ValueOrErrors,
   ValueRecord,
-  BaseFlags,
-  Sum,
   OneAbstractRendererForeignMutationsExpected,
   OneAbstractRendererReadonlyContext,
   OneAbstractRendererState,
 } from "../../../../../../../../../main";
+import { BaseFlags } from "../../../deltas/delta-to-dto/state";
 
 export const Co = <CustomPresentationContext = Unit, ExtraContext = Unit>() =>
   CoTypedFactory<

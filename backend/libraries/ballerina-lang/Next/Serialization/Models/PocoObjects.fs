@@ -5,6 +5,14 @@ module PocoObjects =
   open Ballerina.LocalizedErrors
   open System
   open System.Collections.Generic
+  open System.Text.Json.Serialization
+  open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.Collections.Sum
+  open Ballerina.Errors
+  open Ballerina.DSL.Next.Types.TypeChecker
+  open Ballerina.DSL.Next.Types.TypeChecker.Patterns
+  open Ballerina.State.WithError
+  open Ballerina
 
   type TypeParameterDiscriminator =
     | Symbol = 1
@@ -59,6 +67,15 @@ module PocoObjects =
       Type: string
       Name: string }
 
+    static member FromResolvedIdentifier(identifier: ResolvedIdentifier) : ResolvedIdentifierDTO =
+      { Assembly = identifier.Assembly
+        Module = identifier.Module
+        Type =
+          match identifier.Type with
+          | None -> null
+          | Some t -> t
+        Name = identifier.Name }
+
   type TypeCheckScopeDTO =
     { Assembly: string
       Module: string
@@ -103,88 +120,96 @@ module PocoObjects =
     | TupleDes = 22
     | SumDes = 23
 
-  type PrimitiveValueDTO =
-    { Kind: PrimitiveValueDiscriminator
-      Int32: Nullable<int>
-      Int64: Nullable<int64>
-      Float32: Nullable<float32>
-      Float64: Nullable<float>
-      Decimal: Nullable<decimal>
-      Bool: Nullable<bool>
-      Guid: Nullable<Guid>
-      String: string
-      Date: Nullable<DateOnly>
-      DateTime: Nullable<DateTime>
-      TimeSpan: Nullable<TimeSpan> }
+  type PrimitiveValueDTO() =
+    member val Kind: PrimitiveValueDiscriminator = PrimitiveValueDiscriminator.Unit with get, set
+    member val Int32: Nullable<int> = Nullable() with get, set
+    member val Int64: Nullable<int64> = Nullable() with get, set
+    member val Float32: Nullable<float32> = Nullable() with get, set
+    member val Float64: Nullable<float> = Nullable() with get, set
+    member val Decimal: Nullable<decimal> = Nullable() with get, set
+    member val Bool: Nullable<bool> = Nullable() with get, set
+    member val Guid: Nullable<Guid> = Nullable() with get, set
+    member val String: string = null with get, set
+    member val Date: Nullable<DateOnly> = Nullable() with get, set
+    member val DateTime: Nullable<DateTime> = Nullable() with get, set
+    member val TimeSpan: Nullable<TimeSpan> = Nullable() with get, set
 
-    static member Empty =
-      { Kind = PrimitiveValueDiscriminator.Unit
-        Int32 = Nullable()
-        Int64 = Nullable()
-        Float32 = Nullable()
-        Float64 = Nullable()
-        Decimal = Nullable()
-        Bool = Nullable()
-        Guid = Nullable()
-        String = null
-        Date = Nullable()
-        DateTime = Nullable()
-        TimeSpan = Nullable() }
+    new(int32: int) as this =
+      PrimitiveValueDTO()
 
-    static member CreateInt32 int32 =
-      { PrimitiveValueDTO.Empty with
-          Kind = PrimitiveValueDiscriminator.Int32
-          Int32 = Nullable int32 }
+      then
+        this.Kind <- PrimitiveValueDiscriminator.Int32
+        this.Int32 <- Nullable int32
 
-    static member CreateInt64 int64 =
-      { PrimitiveValueDTO.Empty with
-          Kind = PrimitiveValueDiscriminator.Int64
-          Int64 = Nullable int64 }
+    new(int64: int64) as this =
+      PrimitiveValueDTO()
 
-    static member CreateFloat32 float32 =
-      { PrimitiveValueDTO.Empty with
-          Kind = PrimitiveValueDiscriminator.Float32
-          Float32 = Nullable float32 }
+      then
+        this.Kind <- PrimitiveValueDiscriminator.Int64
+        this.Int64 <- Nullable int64
 
-    static member CreateFloat64 float64 =
-      { PrimitiveValueDTO.Empty with
-          Kind = PrimitiveValueDiscriminator.Float64
-          Float64 = Nullable float64 }
+    new(float32: float32) as this =
+      PrimitiveValueDTO()
 
-    static member CreateDecimal decimal =
-      { PrimitiveValueDTO.Empty with
-          Kind = PrimitiveValueDiscriminator.Decimal
-          Decimal = Nullable decimal }
+      then
+        this.Kind <- PrimitiveValueDiscriminator.Float32
+        this.Float32 <- Nullable float32
 
-    static member CreateBool bool =
-      { PrimitiveValueDTO.Empty with
-          Kind = PrimitiveValueDiscriminator.Bool
-          Bool = Nullable bool }
+    new(float64: float) as this =
+      PrimitiveValueDTO()
 
-    static member CreateGuid guid =
-      { PrimitiveValueDTO.Empty with
-          Kind = PrimitiveValueDiscriminator.Guid
-          Guid = Nullable guid }
+      then
+        this.Kind <- PrimitiveValueDiscriminator.Float64
+        this.Float64 <- Nullable float64
 
-    static member CreateString string =
-      { PrimitiveValueDTO.Empty with
-          Kind = PrimitiveValueDiscriminator.String
-          String = string }
+    new(decimal: decimal) as this =
+      PrimitiveValueDTO()
 
-    static member CreateDate date =
-      { PrimitiveValueDTO.Empty with
-          Kind = PrimitiveValueDiscriminator.Date
-          Date = Nullable date }
+      then
+        this.Kind <- PrimitiveValueDiscriminator.Decimal
+        this.Decimal <- Nullable decimal
 
-    static member CreateDateTime dateTime =
-      { PrimitiveValueDTO.Empty with
-          Kind = PrimitiveValueDiscriminator.DateTime
-          DateTime = Nullable dateTime }
+    new(bool: bool) as this =
+      PrimitiveValueDTO()
 
-    static member CreateTimeSpan span =
-      { PrimitiveValueDTO.Empty with
-          Kind = PrimitiveValueDiscriminator.TimeSpan
-          TimeSpan = Nullable span }
+      then
+        this.Kind <- PrimitiveValueDiscriminator.Bool
+        this.Bool <- Nullable bool
+
+    new(guid: Guid) as this =
+      PrimitiveValueDTO()
+
+      then
+        this.Kind <- PrimitiveValueDiscriminator.Guid
+        this.Guid <- Nullable guid
+
+    new(string: string) as this =
+      PrimitiveValueDTO()
+
+      then
+        this.Kind <- PrimitiveValueDiscriminator.String
+        this.String <- string
+
+    new(date: DateOnly) as this =
+      PrimitiveValueDTO()
+
+      then
+        this.Kind <- PrimitiveValueDiscriminator.Date
+        this.Date <- Nullable date
+
+    new(dateTime: DateTime) as this =
+      PrimitiveValueDTO()
+
+      then
+        this.Kind <- PrimitiveValueDiscriminator.DateTime
+        this.DateTime <- Nullable dateTime
+
+    new(span: TimeSpan) as this =
+      PrimitiveValueDTO()
+
+      then
+        this.Kind <- PrimitiveValueDiscriminator.TimeSpan
+        this.TimeSpan <- Nullable span
 
   and ExprTypeLambdaDTO<'T, 'Id, 'valueExtDTO
     when 'Id: comparison and 'valueExtDTO: not null and 'valueExtDTO: not struct> =
@@ -479,85 +504,120 @@ module PocoObjects =
     { Key: ResolvedIdentifierDTO
       Value: ValueDTO<'valueExt> }
 
-  and ExtDTO<'valueExt> =
-    { Value: 'valueExt
-      ApplicableId: ResolvedIdentifierDTO | null }
+  and ExtDTO<'valueExt when 'valueExt: not null and 'valueExt: not struct> [<JsonConstructor>] (value: 'valueExt) =
+    member val Value: 'valueExt = value with get, set
+    member val ApplicableId: ResolvedIdentifierDTO | null = null with get, set
 
-  and ValueDTO<'valueExt when 'valueExt: not null and 'valueExt: not struct> =
-    { Kind: ValueDiscriminator
-      Record: RecordKeyValueDTO<'valueExt>[] | null
-      UnionCase: UnionCaseDTO<'valueExt> | null
-      RecordDes: ResolvedIdentifierDTO | null
-      UnionCons: ResolvedIdentifierDTO | null
-      Tuple: ValueDTO<'valueExt>[]
-      Sum: SumDTO<'valueExt> | null
-      Primitive: PrimitiveValueDTO | null
-      Var: Var | null
-      Ext: ExtDTO<'valueExt> | null }
+    new(applicableId: ResolvedIdentifierDTO, value: 'valueExt) as this =
+      ExtDTO<'valueExt>(value)
+      then this.ApplicableId <- applicableId
 
-    static member private Empty =
-      { Kind = ValueDiscriminator.Primitive
-        Record = null
-        UnionCase = null
-        RecordDes = null
-        UnionCons = null
-        Tuple = null
-        Sum = null
-        Primitive = null
-        Var = null
-        Ext = null }
+  and ValueDTO<'valueExt when 'valueExt: not null and 'valueExt: not struct>() =
+    member val Kind: ValueDiscriminator = ValueDiscriminator.Primitive with get, set
+    member val Record: RecordKeyValueDTO<'valueExt>[] | null = null with get, set
+    member val UnionCase: UnionCaseDTO<'valueExt> | null = null with get, set
+    member val RecordDes: ResolvedIdentifierDTO | null = null with get, set
+    member val UnionCons: ResolvedIdentifierDTO | null = null with get, set
+    member val Tuple: ValueDTO<'valueExt>[] | null = null with get, set
+    member val Sum: SumDTO<'valueExt> | null = null with get, set
+    member val Primitive: PrimitiveValueDTO | null = null with get, set
+    member val Var: Var | null = null with get, set
+    member val Ext: ExtDTO<'valueExt> | null = null with get, set
 
-    static member CreateRecord(record: RecordKeyValueDTO<'valueExt>[]) =
-      { ValueDTO<'valueExt>.Empty with
-          Kind = ValueDiscriminator.Record
-          Record = record }
+    member this.GetRecordFieldPositions
+      (typeValue: TypeValue<'ext>)
+      : State<Map<TypeSymbol, int>, TypeCheckContext<'ext>, TypeCheckState<'ext>, Errors<Location>> =
+      state {
+        let! record =
+          TypeValue.AsRecord typeValue
+          |> state.OfSum
+          |> state.MapError(Errors.MapContext(replaceWith Location.Unknown))
 
-    static member CreateUnionCase case =
-      { ValueDTO<'valueExt>.Empty with
-          Kind = ValueDiscriminator.UnionCase
-          UnionCase = case }
+        if this.Kind = ValueDiscriminator.Record && isNull this.Record |> not then
+          return!
+            record.data
+            |> Map.toList
+            |> List.map (fun (typeSymbol, _) ->
+              state {
+                let! typeSymbolResolvedIdentifierDTO =
+                  TypeCheckState.TryResolveIdentifier(typeSymbol, Location.Unknown)
+                  |> state.Map ResolvedIdentifierDTO.FromResolvedIdentifier
 
-    static member CreateRecordDes des =
-      { ValueDTO<'valueExt>.Empty with
-          Kind = ValueDiscriminator.RecordDes
-          RecordDes = des }
+                let! index =
+                  this.Record
+                  |> Array.tryFindIndex (fun recordField -> recordField.Key = typeSymbolResolvedIdentifierDTO)
+                  |> sum.OfOption(
+                    Errors.Singleton Location.Unknown (fun _ ->
+                      $"The field {typeSymbol.Name} from the type value was not found in the dto.")
+                  )
+                  |> state.OfSum
 
-    static member CreateUnionCons cons =
-      { ValueDTO<'valueExt>.Empty with
-          Kind = ValueDiscriminator.UnionCons
-          UnionCons = cons }
+                return typeSymbol, index
+              })
+            |> state.All
+            |> state.Map Map.ofList
+        else
+          return! state.Throw(Errors.Singleton Location.Unknown (fun _ -> "The given value dto is not a record."))
+      }
 
-    static member CreateTuple tuple =
-      { ValueDTO<'valueExt>.Empty with
-          Kind = ValueDiscriminator.Tuple
-          Tuple = tuple }
+    new(applicableId: Option<ResolvedIdentifierDTO>, ext: 'valueExt) as this =
+      ValueDTO<'valueExt>()
 
-    static member CreateSum sum =
-      { ValueDTO<'valueExt>.Empty with
-          Kind = ValueDiscriminator.Sum
-          Sum = sum }
+      then
+        this.Kind <- ValueDiscriminator.Ext
 
-    static member CreatePrimitive primitive =
-      { ValueDTO<'valueExt>.Empty with
-          Kind = ValueDiscriminator.Primitive
-          Primitive = primitive }
+        match applicableId with
+        | None -> this.Ext <- new ExtDTO<'valueExt>(ext)
+        | Some id -> this.Ext <- new ExtDTO<'valueExt>(id, ext)
 
-    static member CreateVar var =
-      { ValueDTO<'valueExt>.Empty with
-          Kind = ValueDiscriminator.Var
-          Var = var }
+    new(record: RecordKeyValueDTO<'valueExt>[]) as this =
+      ValueDTO<'valueExt>()
 
-    static member CreateExt (applicableId: Option<ResolvedIdentifierDTO>) (ext: 'valueExt) =
-      { ValueDTO<'valueExt>.Empty with
-          Kind = ValueDiscriminator.Ext
-          Ext =
-            { Value = ext
-              ApplicableId =
-                match applicableId with
-                | Some id -> id
-                | None -> null } }
+      then
+        this.Kind <- ValueDiscriminator.Record
+        this.Record <- record
 
+    new(case: UnionCaseDTO<'valueExt>) as this =
+      ValueDTO<'valueExt>()
 
+      then
+        this.Kind <- ValueDiscriminator.UnionCase
+        this.UnionCase <- case
+
+    new(des: ResolvedIdentifierDTO) as this =
+      ValueDTO<'valueExt>()
+
+      then
+        this.Kind <- ValueDiscriminator.RecordDes
+        this.RecordDes <- des
+
+    new(tuple: ValueDTO<'valueExt> array) as this =
+      ValueDTO<'valueExt>()
+
+      then
+        this.Kind <- ValueDiscriminator.Tuple
+        this.Tuple <- tuple
+
+    new(sum: SumDTO<'valueExt>) as this =
+      ValueDTO<'valueExt>()
+
+      then
+        this.Kind <- ValueDiscriminator.Sum
+        this.Sum <- sum
+
+    new(primitive: PrimitiveValueDTO) as this =
+      ValueDTO<'valueExt>()
+
+      then
+        this.Kind <- ValueDiscriminator.Primitive
+        this.Primitive <- primitive
+
+    new(var: Var) as this =
+      ValueDTO<'valueExt>()
+
+      then
+        this.Kind <- ValueDiscriminator.Var
+        this.Var <- var
 
   and ExprDTO<'T, 'Id, 'valueExt when 'Id: comparison and 'valueExt: not struct and 'valueExt: not null> =
     { Expr: ExprRecDTO<'T, 'Id, 'valueExt>

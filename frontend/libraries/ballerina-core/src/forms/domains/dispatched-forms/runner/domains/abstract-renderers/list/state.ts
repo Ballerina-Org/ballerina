@@ -1,13 +1,10 @@
 import { Map } from "immutable";
 import {
   BasicUpdater,
-  Bindings,
-  CommonAbstractRendererForeignMutationsExpected,
   CommonAbstractRendererReadonlyContext,
   CommonAbstractRendererState,
   CommonAbstractRendererViewOnlyReadonlyContext,
   DispatchCommonFormState,
-  DispatchDelta,
   DispatchOnChange,
   ListType,
   PredicateValue,
@@ -24,6 +21,7 @@ import {
   simpleUpdaterWithChildren,
 } from "../../../../../../../fun/domains/updater/domains/simpleUpdater/state";
 import { ValueTuple } from "../../../../../../../../main";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
 export type ListAbstractRendererReadonlyContext<
   CustomPresentationContext,

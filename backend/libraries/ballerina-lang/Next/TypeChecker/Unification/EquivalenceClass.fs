@@ -272,7 +272,7 @@ module EquivalenceClasses =
           let! winner =
             valueOperations.tryCompare (currentValue, value)
             |> sum.OfOption(
-              (fun () -> $"Error: cannot compare {value} and {currentValue}")
+              (fun () -> $"unification cannot compare {value} and {currentValue}")
               |> Errors.Singleton loc0
             )
             |> state.OfSum

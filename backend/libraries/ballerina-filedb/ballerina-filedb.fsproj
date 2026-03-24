@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ballerina_filedb</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="FileManager.fs" />
+    <Compile Include="FileDB.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../ballerina-memorydb/ballerina-memorydb.fsproj" />
+    <ProjectReference Include="../ballerina-stdlib/ballerina-stdlib.fsproj" />
+    <ProjectReference Include="../ballerina-cat/ballerina-cat.fsproj" />
+    <ProjectReference Include="../ballerina-lang/Next/Stdlib/ballerina-lang-stdlib.fsproj" />
+    <ProjectReference Include="../msgpack-serialization/msgpack-serialization.fsproj" />
+  </ItemGroup>
+</Project>

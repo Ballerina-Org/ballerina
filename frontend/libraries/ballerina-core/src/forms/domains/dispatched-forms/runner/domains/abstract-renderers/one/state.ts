@@ -25,14 +25,13 @@ import {
   VoidCallbackWithOptionalFlags,
   DispatchOnChange,
   CommonAbstractRendererState,
-  DispatchDelta,
   CommonAbstractRendererViewOnlyReadonlyContext,
-  BaseFlags,
   Sum,
   PredicateValue,
-  replaceWith,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
+import { DispatchDelta } from "../../deltas/dispatch-delta/state";
+import { BaseFlags } from "../../deltas/delta-to-dto/state";
 
 export type OneAbstractRendererReadonlyContext<
   CustomPresentationContext,
@@ -48,8 +47,21 @@ export type OneAbstractRendererReadonlyContext<
   remoteEntityVersionIdentifier: string;
 };
 
+export type InitializationStatus =
+  | {
+      kind: "not initialized";
+    }
+  | {
+      kind: "initialized";
+    }
+  | {
+      kind: "reinitializing";
+      afterReinitializationAction: SimpleCallback<void>;
+    };
+
 export type OneAbstractRendererState = CommonAbstractRendererState & {
   customFormState: {
+    initializationStatus: InitializationStatus;
     detailsState: RecordAbstractRendererState;
     previewStates: Map<string, RecordAbstractRendererState>;
     streamParams: Debounced<Value<[Map<string, string>, boolean]>>;
@@ -81,6 +93,9 @@ export const OneAbstractRendererState = {
       status: "closed",
       getChunkWithParams: getChunk,
       stream: Sum.Default.right("not initialized"),
+      initializationStatus: {
+        kind: "not initialized",
+      },
     },
   }),
   Updaters: {
@@ -100,6 +115,9 @@ export const OneAbstractRendererState = {
         ),
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "previewStates",
+        ),
+        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
+          "initializationStatus",
         ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<OneAbstractRendererState>()({
@@ -165,6 +183,29 @@ export const OneAbstractRendererState = {
 
       return ValueOrErrors.Default.return(id);
     },
+    ShouldRunInitialization: <
+      CustomPresentationContext = Unit,
+      ExtraContext = Unit,
+    >(
+      ctx: OneAbstractRendererReadonlyContext<
+        CustomPresentationContext,
+        ExtraContext
+      > &
+        OneAbstractRendererState,
+    ): boolean =>
+      // if the value is some, we already have something to pass to the renderers
+      // -> we don't have to run the initialization coroutine
+      // if the inner value is unit, we are rendering a partial one {
+      {
+        return (
+          (ctx.customFormState.initializationStatus.kind ===
+            "not initialized" ||
+            ctx.customFormState.initializationStatus.kind ===
+              "reinitializing" ||
+            (ctx.value.kind === "option" && !ctx.value.isSome)) &&
+          ctx.getApi != undefined
+        );
+      },
   },
 };
 
@@ -193,6 +234,7 @@ export type OneAbstractRendererViewForeignMutationsExpected<Flags = BaseFlags> =
     clear?: SimpleCallback<void>;
     loadMore: SimpleCallback<void>;
     reinitializeStream: SimpleCallback<void>;
+    reinitializeOne: SimpleCallback<SimpleCallback<void>>;
   };
 
 export type OneAbstractRendererView<
