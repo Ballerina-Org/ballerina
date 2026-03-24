@@ -306,44 +306,36 @@ export const SumAbstractRenderer = <
             foreignMutations={{
               ...props.foreignMutations,
               toLeft: (value, flags) => {
-                const leftValue = PredicateValue.Default.sum(
-                  Sum.Default.left(value),
-                );
-                props.foreignMutations.onChange(
-                  Option.Default.some(replaceWith(leftValue)),
-                  {
-                    kind: "SumReplace",
-                    replace: leftValue,
-                    flags: flags,
-                    sourceAncestorLookupTypeNames:
-                      props.context.lookupTypeAncestorNames,
-                    state: {
-                      commonFormState: props.context.commonFormState,
-                      customFormState: props.context.customFormState,
-                    },
-                    type: props.context.type.args[0],
+                const upd = Option.Default.some(replaceWith(value));
+                const delta: DispatchDelta<Flags> = {
+                  kind: "SumReplace",
+                  replace: value,
+                  flags: flags,
+                  sourceAncestorLookupTypeNames:
+                    props.context.lookupTypeAncestorNames,
+                  state: {
+                    commonFormState: props.context.commonFormState,
+                    customFormState: props.context.customFormState,
                   },
-                );
+                  type: props.context.type,
+                };
+                props.foreignMutations.onChange(upd, delta);
               },
               toRight: (value, flags) => {
-                const rightValue = PredicateValue.Default.sum(
-                  Sum.Default.right(value),
-                );
-                props.foreignMutations.onChange(
-                  Option.Default.some(replaceWith(rightValue)),
-                  {
-                    kind: "SumReplace",
-                    replace: rightValue,
-                    flags: flags,
-                    sourceAncestorLookupTypeNames:
-                      props.context.lookupTypeAncestorNames,
-                    state: {
-                      commonFormState: props.context.commonFormState,
-                      customFormState: props.context.customFormState,
-                    },
-                    type: props.context.type.args[1],
+                const upd = Option.Default.some(replaceWith(value));
+                const delta: DispatchDelta<Flags> = {
+                  kind: "SumReplace",
+                  replace: value,
+                  flags: flags,
+                  sourceAncestorLookupTypeNames:
+                    props.context.lookupTypeAncestorNames,
+                  state: {
+                    commonFormState: props.context.commonFormState,
+                    customFormState: props.context.customFormState,
                   },
-                );
+                  type: props.context.type,
+                };
+                props.foreignMutations.onChange(upd, delta);
               },
             }}
             embeddedLeftTemplate={embeddedLeftTemplate}
