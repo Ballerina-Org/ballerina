@@ -12,6 +12,7 @@ import {
   Unit,
   CommonAbstractRendererForeignMutationsExpected,
   NestedRenderer,
+  ValueOrErrors,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../../main";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
@@ -30,6 +31,8 @@ export const SumAbstractRenderer = <
 >(
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
+  defaultLeftValue: ValueOrErrors<PredicateValue, string>,
+  defaultRightValue: ValueOrErrors<PredicateValue, string>,
   leftTemplate?: Template<
     CommonAbstractRendererReadonlyContext<
       DispatchParsedType<any>,
@@ -302,9 +305,59 @@ export const SumAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
+              toLeft: (value, flags) => {
+                const leftValue = PredicateValue.Default.sum(
+                  Sum.Default.left(value),
+                );
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(leftValue)),
+                  {
+                    kind: "SumReplace",
+                    replace: leftValue,
+                    flags: flags,
+                    sourceAncestorLookupTypeNames:
+                      props.context.lookupTypeAncestorNames,
+                    state: {
+                      commonFormState: props.context.commonFormState,
+                      customFormState: props.context.customFormState,
+                    },
+                    type: props.context.type.args[0],
+                  },
+                );
+              },
+              toRight: (value, flags) => {
+                const rightValue = PredicateValue.Default.sum(
+                  Sum.Default.right(value),
+                );
+                props.foreignMutations.onChange(
+                  Option.Default.some(replaceWith(rightValue)),
+                  {
+                    kind: "SumReplace",
+                    replace: rightValue,
+                    flags: flags,
+                    sourceAncestorLookupTypeNames:
+                      props.context.lookupTypeAncestorNames,
+                    state: {
+                      commonFormState: props.context.commonFormState,
+                      customFormState: props.context.customFormState,
+                    },
+                    type: props.context.type.args[1],
+                  },
+                );
+              },
             }}
             embeddedLeftTemplate={embeddedLeftTemplate}
             embeddedRightTemplate={embeddedRightTemplate}
+            defaultLeftValue={
+              defaultLeftValue.kind == "value"
+                ? () => defaultLeftValue.value
+                : undefined
+            }
+            defaultRightValue={
+              defaultRightValue.kind == "value"
+                ? () => defaultRightValue.value
+                : undefined
+            }
           />
         </IdProvider>
       </>

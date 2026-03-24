@@ -1,5 +1,6 @@
 import {
   DispatchInjectablesTypes,
+  PredicateValue,
   Template,
   ValueOrErrors,
 } from "../../../../../../../../../main";
@@ -54,6 +55,12 @@ export const SumDispatcher = {
                       SumAbstractRenderer(
                         dispatcherContext.IdProvider,
                         dispatcherContext.ErrorRenderer,
+                        ValueOrErrors.Default.return(
+                          PredicateValue.Default.unit(),
+                        ),
+                        ValueOrErrors.Default.return(
+                          PredicateValue.Default.date(),
+                        ),
                         leftForm,
                         rightForm,
                       ).withView(concreteRenderer),
@@ -66,6 +73,14 @@ export const SumDispatcher = {
                       SumAbstractRenderer(
                         dispatcherContext.IdProvider,
                         dispatcherContext.ErrorRenderer,
+                        dispatcherContext.defaultValue(
+                          renderer.type.args[0],
+                          renderer.leftRenderer.renderer,
+                        ),
+                        dispatcherContext.defaultValue(
+                          renderer.type.args[1],
+                          renderer.rightRenderer.renderer,
+                        ),
                         leftForm,
                         rightForm,
                         renderer.leftRenderer,
