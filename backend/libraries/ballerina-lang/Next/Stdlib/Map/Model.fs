@@ -34,14 +34,7 @@ module Model =
 
         $"{{{keyValueStr}}}"
 
-  type MapKind =
-    | Map = 1
-
-  type MapValueDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct> =
-    { Kind: MapKind
-      Map: (ValueDTO<'extDTO> * ValueDTO<'extDTO>) list }
-
-    static member CreateMapFromList l : MapValueDTO<'extDTO> = { Kind = MapKind.Map; Map = l }
+  type MapValueDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct> = (ValueDTO<'extDTO> * ValueDTO<'extDTO>)[]
 
   type MapDeltaExt<'valueExt, 'deltaExt> =
     | UpdateKey of
@@ -52,12 +45,6 @@ module Model =
       key: Model.Value<Model.TypeValue<'valueExt>, 'valueExt> *
       value: Model.Value<Model.TypeValue<'valueExt>, 'valueExt>
     | RemoveItem of key: Model.Value<Model.TypeValue<'valueExt>, 'valueExt>
-
-  type MapDeltaExtDiscriminator =
-    | UpdateKey = 1
-    | UpdateValue = 2
-    | AddItem = 3
-    | RemoveItem = 4
 
   type UpdateMapKeyDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct> =
     { OldKey: ValueDTO<'extDTO>
@@ -74,35 +61,29 @@ module Model =
 
   type MapDeltaExtDTO<'extDTO, 'deltaExtDTO
     when 'extDTO: not null and 'extDTO: not struct and 'deltaExtDTO: not null and 'deltaExtDTO: not struct> =
-    { Discriminator: MapDeltaExtDiscriminator
-      UpdateKey: UpdateMapKeyDTO<'extDTO> | null
+    { UpdateKey: UpdateMapKeyDTO<'extDTO> | null
       UpdateValue: UpdateMapValueDTO<'extDTO, 'deltaExtDTO> | null
       AddItem: AddMapItemDTO<'extDTO> | null
       RemoveItem: ValueDTO<'extDTO> | null }
 
     static member Empty =
-      { Discriminator = MapDeltaExtDiscriminator.UpdateKey
-        UpdateKey = null
+      { UpdateKey = null
         UpdateValue = null
         AddItem = null
         RemoveItem = null }
 
     static member CreateUpdateKey oldKey newKey : MapDeltaExtDTO<'extDTO, 'deltaExtDTO> =
       { MapDeltaExtDTO<'extDTO, 'deltaExtDTO>.Empty with
-          Discriminator = MapDeltaExtDiscriminator.UpdateKey
           UpdateKey = { OldKey = oldKey; NewKey = newKey } }
 
     static member CreateUpdateValue key delta : MapDeltaExtDTO<'extDTO, 'deltaExtDTO> =
       { MapDeltaExtDTO<'extDTO, 'deltaExtDTO>.Empty with
-          Discriminator = MapDeltaExtDiscriminator.UpdateValue
           UpdateValue = { Key = key; Value = delta } }
 
     static member CreateAddItem key value : MapDeltaExtDTO<'extDTO, 'deltaExtDTO> =
       { MapDeltaExtDTO<'extDTO, 'deltaExtDTO>.Empty with
-          Discriminator = MapDeltaExtDiscriminator.AddItem
           AddItem = { Key = key; Value = value } }
 
     static member CreateRemoveItem key : MapDeltaExtDTO<'extDTO, 'deltaExtDTO> =
       { MapDeltaExtDTO<'extDTO, 'deltaExtDTO>.Empty with
-          Discriminator = MapDeltaExtDiscriminator.RemoveItem
           RemoveItem = key }

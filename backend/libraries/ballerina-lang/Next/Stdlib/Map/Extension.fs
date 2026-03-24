@@ -313,12 +313,13 @@ module Extension =
             reader {
               let! kDTO = valueToDTO k
               let! vDTO = valueToDTO v
-              return (kDTO, vDTO)
+              return kDTO, vDTO
             })
           |> reader.All
 
         return
-          MapValueDTO.CreateMapFromList pairs
+          pairs
+          |> List.toArray
           |> valueDTOLens.Set
           |> fun ext -> new ValueDTO<'extDTO>(applicableId, ext)
       }
@@ -335,8 +336,8 @@ module Extension =
           |> reader.OfSum
 
         let! mapElements =
-          mapValueDTO.Map
-          |> List.map (fun (kDTO, vDTO) ->
+          mapValueDTO
+          |> Array.map (fun (kDTO, vDTO) ->
             reader {
               let! k = valueFromDTO kDTO
               let! v = valueFromDTO vDTO
@@ -405,7 +406,7 @@ module Extension =
           return
             MapDeltaExtDTO.CreateUpdateKey oldKeyDTO newKeyDTO
             |> deltaDTOLens.Set
-            |> DeltaDTO.CreateExtension
+            |> fun ext -> new DeltaDTO<'extDTO, 'deltaExtDTO>(ext)
         | UpdateValue(key, delta) ->
           let! keyDTO = valueToDTO key |> reader.MapContext(fun context -> context.SerializationContext)
           let! deltaDTO = deltaToDTO delta
@@ -413,7 +414,7 @@ module Extension =
           return
             MapDeltaExtDTO.CreateUpdateValue keyDTO deltaDTO
             |> deltaDTOLens.Set
-            |> DeltaDTO.CreateExtension
+            |> fun ext -> new DeltaDTO<'extDTO, 'deltaExtDTO>(ext)
         | AddItem(key, value) ->
           let! keyDTO = valueToDTO key |> reader.MapContext(fun context -> context.SerializationContext)
 
@@ -424,14 +425,14 @@ module Extension =
           return
             MapDeltaExtDTO.CreateAddItem keyDTO valueDTO
             |> deltaDTOLens.Set
-            |> DeltaDTO.CreateExtension
+            |> fun ext -> new DeltaDTO<'extDTO, 'deltaExtDTO>(ext)
         | RemoveItem key ->
           let! keyDTO = valueToDTO key |> reader.MapContext(fun context -> context.SerializationContext)
 
           return
             MapDeltaExtDTO.CreateRemoveItem keyDTO
             |> deltaDTOLens.Set
-            |> DeltaDTO.CreateExtension
+            |> fun ext -> new DeltaDTO<'extDTO, 'deltaExtDTO>(ext)
       }
 
     let mapDeltaFromDTO
@@ -449,8 +450,7 @@ module Extension =
           |> sum.OfOption(Errors.Singleton () (fun _ -> "Expected map delta DTO extension in mapDeltaFromDTO."))
           |> reader.OfSum
 
-        match mapDeltaDTO.Discriminator with
-        | MapDeltaExtDiscriminator.UpdateKey when isNull mapDeltaDTO.UpdateKey |> not ->
+        if isNull mapDeltaDTO.UpdateKey |> not then
           let! oldKey =
             valueFromDTO mapDeltaDTO.UpdateKey.OldKey
             |> reader.MapContext(fun context -> context.SerializationContext)
@@ -460,7 +460,7 @@ module Extension =
             |> reader.MapContext(fun context -> context.SerializationContext)
 
           return UpdateKey(oldKey, newKey) |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
-        | MapDeltaExtDiscriminator.UpdateValue when isNull mapDeltaDTO.UpdateValue |> not ->
+        elif isNull mapDeltaDTO.UpdateValue |> not then
           let! key =
             valueFromDTO mapDeltaDTO.UpdateValue.Key
             |> reader.MapContext(fun context -> context.SerializationContext)
@@ -468,7 +468,7 @@ module Extension =
           let! delta = deltaFromDTO mapDeltaDTO.UpdateValue.Value
 
           return UpdateValue(key, delta) |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
-        | MapDeltaExtDiscriminator.AddItem when isNull mapDeltaDTO.AddItem |> not ->
+        elif isNull mapDeltaDTO.AddItem |> not then
           let! key =
             valueFromDTO mapDeltaDTO.AddItem.Key
             |> reader.MapContext(fun context -> context.SerializationContext)
@@ -478,13 +478,14 @@ module Extension =
             |> reader.MapContext(fun context -> context.SerializationContext)
 
           return AddItem(key, value) |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
-        | MapDeltaExtDiscriminator.RemoveItem when isNull mapDeltaDTO.RemoveItem |> not ->
+        elif isNull mapDeltaDTO.RemoveItem |> not then
           let! key =
             valueFromDTO mapDeltaDTO.RemoveItem
             |> reader.MapContext(fun context -> context.SerializationContext)
 
           return RemoveItem key |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
-        | _ -> return! reader.Throw(Errors.Singleton () (fun _ -> "Malformed map delta DTO."))
+        else
+          return! reader.Throw(Errors.Singleton () (fun _ -> "Malformed map delta DTO."))
       }
 
     { TypeName = mapId, mapSymbolId

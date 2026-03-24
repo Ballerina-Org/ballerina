@@ -13,88 +13,47 @@ module ValueDeserializer =
   let nullableToOption (value: 'T | null) : Option<'T> =
     if isNull value then None else Some value
 
-  let assertValue (value: 'T | null) : Reader<'T, 'context, Errors<unit>> =
+  let assertValue (value: 'T | null) (category: string) : Reader<'T, 'context, Errors<unit>> =
     if isNull value then
-      reader.Throw(Errors.Singleton () (fun _ -> "Expected non nullable value"))
+      reader.Throw(Errors.Singleton () (fun _ -> $"Expected non nullable value when parsing {category}."))
     else
       reader.Return value
 
-  let assertNonNullable (nullable: Nullable<'T>) : Reader<Nullable<'T>, 'context, Errors<unit>> =
+  let assertNonNullable (nullable: Nullable<'T>) (category: string) : Reader<'T, 'context, Errors<unit>> =
     if nullable.HasValue |> not then
-      reader.Throw(Errors.Singleton () (fun _ -> "Expected non nullable value"))
+      reader.Throw(Errors.Singleton () (fun _ -> $"Expected non nullable value when parsing {category}."))
     else
-      reader.Return nullable
+      reader.Return nullable.Value
 
-  let resolvedIdentifierFromDTO (identifier: ResolvedIdentifierDTO) : ResolvedIdentifier =
-    { Assembly = identifier.Assembly
-      Module = identifier.Module
-      Type = nullableToOption identifier.Type
-      Name = identifier.Name }
-
-  let tryGetDTOWithKind
-    (expectedKind: 'kind)
-    (dto: 'valueDTO)
-    (kindExtractor: 'valueDTO -> 'kind)
-    (valueExtractor: 'valueDTO -> 'dtoValue)
-    (assertion: 'dtoValue -> Reader<'dtoValue, 'context, Errors<unit>>)
-    : Reader<'dtoValue, 'context, Errors<unit>> =
+  let assertSingleElementDictionary (dictionary: System.Collections.Generic.Dictionary<'k, 'v>) (category: string) =
     reader {
-      let kind = kindExtractor dto
-
-      if expectedKind <> kind then
+      if dictionary.Count <> 1 then
         return!
-          reader.Throw(Errors.Singleton () (fun _ -> $"Error when converting {kind} from DTO. Expected {expectedKind}"))
-      else
-        return! valueExtractor >> assertion <| dto
+          reader.Throw(
+            Errors.Singleton () (fun _ ->
+              $"Invalid structure in {category} DTO. Expected 1 element but found {dictionary.Count}.")
+          )
+
+      let! dto =
+        dictionary
+        |> Seq.tryHead
+        |> reader.OfOption(
+          Errors.Singleton () (fun _ -> $"The {category} DTO was an empty dictionary. Expected 1 element.")
+        )
+
+      return dto.Key, dto.Value
     }
-
-  let tryGetValueDTOWithKind
-    (expectedKind: ValueDiscriminator)
-    (valueExtractor: ValueDTO<'valueExtDTO> -> 'dtoValue)
-    (valueDTO: ValueDTO<'valueExtDTO>)
-    =
-    tryGetDTOWithKind expectedKind valueDTO (fun valueDTO -> valueDTO.Kind) valueExtractor assertValue
-
-  let tryGetPrimitiveDTOWithKind
-    (expectedKind: PrimitiveValueDiscriminator)
-    (valueExtractor: PrimitiveValueDTO -> Nullable<'a>)
-    (primitive: PrimitiveValueDTO)
-    =
-    tryGetDTOWithKind
-      expectedKind
-      primitive
-      (fun (primitive: PrimitiveValueDTO) -> primitive.Kind)
-      valueExtractor
-      assertNonNullable
-    |> reader.Map(fun nullable -> nullable.Value)
-
-  let tryGetString (valueDTO: PrimitiveValueDTO) =
-    tryGetDTOWithKind
-      PrimitiveValueDiscriminator.String
-      valueDTO
-      (fun dto -> dto.Kind)
-      (fun dto -> dto.String)
-      assertValue
-
-  let tryGetUnit (valueDTO: PrimitiveValueDTO) =
-    if valueDTO.Kind <> PrimitiveValueDiscriminator.Unit then
-      reader.Throw(
-        Errors.Singleton () (fun _ ->
-          $"Error when converting {valueDTO.Kind} from DTO. Expected PrimitiveValueKind.Unit.")
-      )
-    else
-      reader.Return PrimitiveValue.Unit
 
 
   let rec recordFromDTO (valueDTO: ValueDTO<'valueExtDTO>) =
     reader {
-      let! recordDTO = tryGetValueDTOWithKind ValueDiscriminator.Record (fun dto -> dto.Record) valueDTO
+      let! recordDTO = assertValue valueDTO.Record "record"
 
       return!
         recordDTO
-        |> Array.map (fun recordKV ->
+        |> Seq.map (fun recordKV ->
           reader {
-            let identifier = resolvedIdentifierFromDTO recordKV.Key
+            let! identifier = ResolvedIdentifier.TryParse recordKV.Key |> reader.OfSum
             let! value = valueFromDTO recordKV.Value
             return identifier, value
           })
@@ -104,23 +63,26 @@ module ValueDeserializer =
 
   and unionCaseFromDTO (valueDTO: ValueDTO<'valueExtDTO>) =
     reader {
-      let! unionCaseDTO = tryGetValueDTOWithKind ValueDiscriminator.UnionCase (fun dto -> dto.UnionCase) valueDTO
-      let identifier = resolvedIdentifierFromDTO unionCaseDTO.Case
-      let! value = valueFromDTO unionCaseDTO.Value
+      let! unionCaseDTO = assertValue valueDTO.UnionCase "union case"
+      let! identifierDTO, valueDTO = assertSingleElementDictionary unionCaseDTO "union case"
+      let! identifier = ResolvedIdentifier.TryParse identifierDTO |> reader.OfSum
+      let! value = valueFromDTO valueDTO
       return UnionCase(identifier, value)
     }
 
   and tupleFromDTO (valueDTO: ValueDTO<'valueExtDTO>) =
     reader {
-      let! itemsDTO = tryGetValueDTOWithKind ValueDiscriminator.Tuple (fun dto -> dto.Tuple) valueDTO
+      let! itemsDTO = assertValue valueDTO.Tuple "tuple"
       return! itemsDTO |> Array.map valueFromDTO |> reader.All |> reader.Map Value.Tuple
     }
 
   and sumFromDTO (valueDTO: ValueDTO<'valueExtDTO>) =
     reader {
-      let! sumDTO = tryGetValueDTOWithKind ValueDiscriminator.Sum (fun dto -> dto.Sum) valueDTO
-      let! value = valueFromDTO sumDTO.Value
-      return Sum(sumDTO.Selector, value)
+      let! sumDTO = assertValue valueDTO.Sum "sum"
+      let! caseDTO, valueDTO = assertSingleElementDictionary sumDTO "sum"
+      let! sumSelector = SumConsSelector.TryParse caseDTO |> reader.OfSum
+      let! value = valueFromDTO valueDTO
+      return Sum(sumSelector, value)
     }
 
   and primitiveValueFromDTO
@@ -128,64 +90,63 @@ module ValueDeserializer =
     : Reader<Value<TypeValue<'valueExt>, 'valueExt>, SerializationContext<'valueExt, 'valueExtDTO>, Errors<unit>> =
     reader.Any(
       NonEmptyList(
-        tryGetPrimitiveDTOWithKind PrimitiveValueDiscriminator.Int32 (fun primitive -> primitive.Int32) primitive
+        assertNonNullable primitive.Int32 "int32"
         |> reader.Map(PrimitiveValue.Int32 >> Primitive),
-        [ tryGetPrimitiveDTOWithKind PrimitiveValueDiscriminator.Int64 (fun primitive -> primitive.Int64) primitive
+        [ assertNonNullable primitive.Int64 "int64"
           |> reader.Map(PrimitiveValue.Int64 >> Primitive)
-          tryGetPrimitiveDTOWithKind PrimitiveValueDiscriminator.Float32 (fun primitive -> primitive.Float32) primitive
+          assertNonNullable primitive.Float32 "float32"
           |> reader.Map(PrimitiveValue.Float32 >> Primitive)
-          tryGetPrimitiveDTOWithKind PrimitiveValueDiscriminator.Float64 (fun primitive -> primitive.Float64) primitive
+          assertNonNullable primitive.Float64 "float64"
           |> reader.Map(PrimitiveValue.Float64 >> Primitive)
-          tryGetPrimitiveDTOWithKind PrimitiveValueDiscriminator.Decimal (fun primitive -> primitive.Decimal) primitive
+          assertNonNullable primitive.Decimal "decimal"
           |> reader.Map(PrimitiveValue.Decimal >> Primitive)
-          tryGetPrimitiveDTOWithKind PrimitiveValueDiscriminator.Bool (fun primitive -> primitive.Bool) primitive
+          assertNonNullable primitive.Bool "bool"
           |> reader.Map(PrimitiveValue.Bool >> Primitive)
-          tryGetPrimitiveDTOWithKind PrimitiveValueDiscriminator.Guid (fun primitive -> primitive.Guid) primitive
+          assertNonNullable primitive.Guid "guid"
           |> reader.Map(PrimitiveValue.Guid >> Primitive)
-          tryGetString primitive |> reader.Map(PrimitiveValue.String >> Primitive)
-          tryGetPrimitiveDTOWithKind PrimitiveValueDiscriminator.Date (fun primitive -> primitive.Date) primitive
+          assertValue primitive.String "string"
+          |> reader.Map(PrimitiveValue.String >> Primitive)
+          assertNonNullable primitive.Date "date"
           |> reader.Map(PrimitiveValue.Date >> Primitive)
-          tryGetPrimitiveDTOWithKind
-            PrimitiveValueDiscriminator.DateTime
-            (fun primitive -> primitive.DateTime)
-            primitive
+          assertNonNullable primitive.DateTime "date time"
           |> reader.Map(PrimitiveValue.DateTime >> Primitive)
-          tryGetPrimitiveDTOWithKind
-            PrimitiveValueDiscriminator.TimeSpan
-            (fun primitive -> primitive.TimeSpan)
-            primitive
+          assertNonNullable primitive.TimeSpan "time span"
           |> reader.Map(PrimitiveValue.TimeSpan >> Primitive)
-          tryGetUnit primitive |> reader.Map Primitive
-          reader.Throw(Errors.Singleton () (fun _ -> $"The primitive {primitive} cannot be converted from DTO.")) ]
+          reader.Return(PrimitiveValue.Unit |> Primitive) ]
       )
     )
 
-  and primitiveFromDTO (valueDTO: ValueDTO<'valueExtDTO>) =
+  and primitiveFromDTO
+    (valueDTO: ValueDTO<'valueExtDTO>)
+    : Reader<Value<TypeValue<'valueExt>, 'valueExt>, SerializationContext<'valueExt, 'valueExtDTO>, Errors<unit>> =
     reader {
-      let! primitiveValueDTO = tryGetValueDTOWithKind ValueDiscriminator.Primitive (fun dto -> dto.Primitive) valueDTO
-      return! primitiveValueFromDTO primitiveValueDTO
+      let! primitiveValue = assertValue valueDTO.Primitive "primitive"
+      return! primitiveValueFromDTO primitiveValue
     }
 
   and varFromDTO
     (valueDTO: ValueDTO<'valueExtDTO>)
     : Reader<Value<TypeValue<'valueExt>, 'valueExt>, SerializationContext<'valueExt, 'valueExtDTO>, Errors<unit>> =
-    tryGetValueDTOWithKind ValueDiscriminator.Var (fun dto -> dto.Var) valueDTO
-    |> reader.Map Var
+    assertValue valueDTO.Var "var" |> reader.Map Var
 
   and extFromDTO
     (valueDTO: ValueDTO<'valueExtDTO>)
     : Reader<Value<TypeValue<'valueExt>, 'valueExt>, SerializationContext<'valueExt, 'valueExtDTO>, Errors<unit>> =
     reader {
-      let! extDTO = tryGetValueDTOWithKind ValueDiscriminator.Ext (fun dto -> dto.Ext) valueDTO
-
-      let applicableId =
-        if isNull extDTO.ApplicableId then
-          None
-        else
-          resolvedIdentifierFromDTO extDTO.ApplicableId |> Some
-
+      let! extDTO = assertValue valueDTO.Ext "extension"
       let! context = reader.GetContext()
-      return! context.FromDTO extDTO.Value applicableId
+      return! context.FromDTO extDTO None
+    }
+
+  and extWithIdFromDTO
+    (valueDTO: ValueDTO<'valueExtDTO>)
+    : Reader<Value<TypeValue<'valueExt>, 'valueExt>, SerializationContext<'valueExt, 'valueExtDTO>, Errors<unit>> =
+    reader {
+      let! extDTO = assertValue valueDTO.ExtWithId "extension with applicable"
+      let! applicableIdDTO, extDTO = assertSingleElementDictionary extDTO "extension with applicable"
+      let! applicableId = ResolvedIdentifier.TryParse applicableIdDTO |> reader.OfSum
+      let! context = reader.GetContext()
+      return! context.FromDTO extDTO (Some applicableId)
     }
 
   and valueFromDTO

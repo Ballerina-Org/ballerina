@@ -2,15 +2,7 @@ namespace Ballerina.Data.Delta.Serialization
 
 module DeltaDTO =
   open Ballerina.DSL.Next.Serialization.PocoObjects
-
-  type DeltaDiscriminator =
-    | Multiple = 1
-    | Replace = 2
-    | Record = 3
-    | Union = 4
-    | Tuple = 5
-    | Sum = 6
-    | Ext = 7
+  open System.Collections.Generic
 
   type RecordDeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO
     when 'valueExtensionDTO: not null
@@ -45,57 +37,45 @@ module DeltaDTO =
       Delta: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO> }
 
   and DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO
-    when 'valueExtensionDTO: not null and 'valueExtensionDTO: not struct> =
-    { Discriminator: DeltaDiscriminator
-      Multiple: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>[]
-      Replace: ValueDTO<'valueExtensionDTO> | null
-      Record: RecordDeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO> | null
-      Union: UnionDeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO> | null
-      Tuple: TupleDeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO> | null
-      Sum: SumDeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO> | null
-      Ext: 'deltaExtensionDTO | null }
+    when 'valueExtensionDTO: not null
+    and 'valueExtensionDTO: not struct
+    and 'deltaExtensionDTO: not null
+    and 'deltaExtensionDTO: not struct>() =
 
-    static member Empty =
-      { Discriminator = DeltaDiscriminator.Multiple
-        Multiple = null
-        Replace = null
-        Record = null
-        Union = null
-        Tuple = null
-        Sum = null
-        Ext = null }
+    member val Multiple: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>[] = null with get, set
+    member val Replace: ValueDTO<'valueExtensionDTO> | null = null with get, set
+    member val Record: Dictionary<string, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>> = null with get, set
+    member val Union: Dictionary<string, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>> = null with get, set
+    member val Tuple: Dictionary<int, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>> = null with get, set
+    member val Sum: Dictionary<int, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>> = null with get, set
+    member val Ext: 'deltaExtensionDTO | null = null with get, set
 
-    static member CreateMultiple deltas : DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO> =
-      { DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>.Empty with
-          Discriminator = DeltaDiscriminator.Multiple
-          Multiple = deltas }
+    new(deltas: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>[]) as this =
+      DeltaDTO()
+      then this.Multiple <- deltas
 
-    static member CreateReplace replace : DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO> =
-      { DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>.Empty with
-          Discriminator = DeltaDiscriminator.Replace
-          Replace = replace }
+    new(replace: ValueDTO<'valueExtensionDTO>) as this =
+      DeltaDTO()
+      then this.Replace <- replace
 
-    static member CreateRecord record : DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO> =
-      { DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>.Empty with
-          Discriminator = DeltaDiscriminator.Record
-          Record = record }
+    new(recordOrUnion: Dictionary<string, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>>, isRecord: bool) as this =
+      DeltaDTO()
 
-    static member CreateUnion union : DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO> =
-      { DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>.Empty with
-          Discriminator = DeltaDiscriminator.Union
-          Union = union }
+      then
+        if isRecord then
+          this.Record <- recordOrUnion
+        else
+          this.Union <- recordOrUnion
 
-    static member CreateTuple tuple : DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO> =
-      { DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>.Empty with
-          Discriminator = DeltaDiscriminator.Tuple
-          Tuple = tuple }
+    new(tupleOrSum: Dictionary<int, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>>, isTuple: bool) as this =
+      DeltaDTO()
 
-    static member CreateSum sum : DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO> =
-      { DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>.Empty with
-          Discriminator = DeltaDiscriminator.Sum
-          Sum = sum }
+      then
+        if isTuple then
+          this.Tuple <- tupleOrSum
+        else
+          this.Sum <- tupleOrSum
 
-    static member CreateExtension extension : DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO> =
-      { DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>.Empty with
-          Discriminator = DeltaDiscriminator.Ext
-          Ext = extension }
+    new(extension: 'deltaExtensionDTO) as this =
+      DeltaDTO()
+      then this.Ext <- extension
