@@ -24,6 +24,7 @@ module ExprJson =
             Expr.FromJsonTypeApply Expr.FromJson json
             Expr.FromJsonApply Expr.FromJson json
             Expr.FromJsonLet Expr.FromJson json
+            Expr.FromJsonDo Expr.FromJson json
             Expr.FromJsonTypeLet Expr.FromJson json
             Expr.FromJsonRecordCons Expr.FromJson json
             Expr.FromJsonTupleCons Expr.FromJson json
@@ -59,6 +60,7 @@ module ExprJson =
                         Type = _
                         Val = e1
                         Rest = e2 }) -> Expr.ToJsonLet Expr.ToJson v e1 e2
+        | ExprRec.Do({ Val = e1; Rest = e2 }) -> Expr.ToJsonDo Expr.ToJson e1 e2
         | ExprRec.TypeLet({ ExprTypeLet.Name = v
                             TypeDef = t
                             Body = e }) -> Expr.ToJsonTypeLet Expr.ToJson v t e

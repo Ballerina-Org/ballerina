@@ -35,11 +35,17 @@ module RecordCons =
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckRecordCons<'valueExt when 'valueExt: comparison>
       (query_type_symbol, mk_query_type)
-      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprRecordCons<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Fields = fields }) ->
         let (!) = typeCheckExpr context_t
         let (=>) c e = typeCheckExpr c e
+
+        let loc0 =
+          fields
+          |> List.map (fun (_, v) -> v.Location)
+          |> List.tryHead
+          |> Option.defaultValue Location.Unknown
 
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum

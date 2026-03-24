@@ -30,7 +30,7 @@ module Lambda =
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckLambda<'valueExt when 'valueExt: comparison>
       (query_type_symbol, mk_query_type)
-      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprLambda<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
@@ -40,6 +40,7 @@ module Lambda =
             BodyType = bt } ->
         // let (!) = typeCheckExpr context_t
         let (=>) c e = typeCheckExpr c e
+        let loc0 = body.Location
 
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum

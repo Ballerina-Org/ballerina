@@ -34,7 +34,7 @@ module UnionDes =
                 let! caseName = caseName |> idFromJson |> reader.OfSum
                 let! handlerVar, handlerBody = handler |> JsonValue.AsPair |> reader.OfSum
                 let! handlerVar = handlerVar |> JsonValue.AsString |> reader.OfSum
-                let handlerVar = Var.Create handlerVar
+                let handlerVar = handlerVar |> Var.Create |> Some
                 let! handlerBody = handlerBody |> fromRootJson
                 return (caseName, (handlerVar, handlerBody))
               })
@@ -60,7 +60,12 @@ module UnionDes =
               let! handlerExpr = rootToJson handlerExpr
 
               let handlerJson =
-                JsonValue.Array [| JsonValue.String handlerVar.Name; handlerExpr |]
+                JsonValue.Array
+                  [| handlerVar
+                     |> Option.map (fun v -> v.Name)
+                     |> Option.defaultValue "@anoynomous"
+                     |> JsonValue.String
+                     handlerExpr |]
 
               return JsonValue.Array [| caseNameJson; handlerJson |]
             })

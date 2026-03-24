@@ -389,8 +389,10 @@ module Type =
             |> parser.Lookahead
             |> parser.Try
 
+          let! loc = parser.Location
+
           match startsWithHookKeyword with
-          | Right _ -> return! parser.Throw(Errors.Singleton Location.Unknown (fun () -> "No hook found"))
+          | Right _ -> return! parser.Throw(Errors.Singleton loc (fun () -> "No hook found"))
           | Left _ ->
             do! letKeyword
             do! onKeyword
@@ -498,8 +500,10 @@ module Type =
             |> parser.Lookahead
             |> parser.Try
 
+          let! loc = parser.Location
+
           match startsWithHookKeyword with
-          | Right _ -> return! parser.Throw(Errors.Singleton Location.Unknown (fun () -> "No hook found"))
+          | Right _ -> return! parser.Throw(Errors.Singleton loc (fun () -> "No hook found"))
           | Left _ ->
             do! letKeyword
             do! preHookKeyword

@@ -726,32 +726,8 @@ module Eval =
                 |> OrderedMap.values
                 |> Seq.map (fun e ->
                   state {
-                    let! id_fields = e.Id |> TypeValue.AsRecord |> ofSum
-
-                    let id_fields =
-                      id_fields
-                      |> OrderedMap.toSeq
-                      |> Seq.map (fun (k, (t, _)) -> (k.Name.LocalName, t))
-                      |> Seq.toList
-
-                    match id_fields with
-                    | [ field_name, field_type ] ->
-                      match field_type with
-                      | TypeValue.Primitive({ value = PrimitiveType.Guid })
-                      | TypeValue.Primitive({ value = PrimitiveType.String })
-                      | TypeValue.Primitive({ value = PrimitiveType.Int32 })
-                      | TypeValue.Primitive({ value = PrimitiveType.Int64 }) -> return field_name, field_type
-                      | _ ->
-                        return!
-                          (fun () ->
-                            $"Error: entity id field type can only be Guid, String, Int32, or Int64, got {field_type}")
-                          |> error
-                          |> state.Throw
-                    | _ ->
-                      return!
-                        (fun () -> $"Error: entity id must be a single field record, got {e.Id}")
-                        |> error
-                        |> state.Throw
+                    let! n, p = e.Id |> TypeValue.AsPrimaryKey |> ofSum
+                    return n, TypeValue.CreatePrimitive p
                   })
                 |> state.All
 
@@ -889,6 +865,11 @@ module Eval =
                         return! validatePath t_arg target rest
                   }
 
+                let all_entities =
+                  match included_schema_entityhooks_relation_hooks with
+                  | Some(s, _, _) -> entities |> OrderedMap.mergeSecondAfterFirst s.Entities
+                  | None -> entities
+
                 let! relations =
                   parsed_schema.Relations
                   |> List.map (fun r ->
@@ -898,18 +879,18 @@ module Eval =
                       let toPath = r.To |> snd
 
                       let! fromEntity =
-                        entities
+                        all_entities
                         |> OrderedMap.tryFind ((r.From |> fst).LocalName |> SchemaEntityName.Create)
                         |> Sum.fromOption (fun () ->
-                          (fun () -> $"Error: cannot find entity {r.From} for relation {r.Name}")
+                          (fun () -> $"Error: cannot find entity {r.From |> fst} for relation {r.Name.Name}")
                           |> Errors.Singleton loc0)
                         |> state.OfSum
 
                       let! toEntity =
-                        entities
+                        all_entities
                         |> OrderedMap.tryFind ((r.To |> fst).LocalName |> SchemaEntityName.Create)
                         |> Sum.fromOption (fun () ->
-                          (fun () -> $"Error: cannot find entity {r.To} for relation {r.Name}")
+                          (fun () -> $"Error: cannot find entity {r.To |> fst} for relation {r.Name.Name}")
                           |> Errors.Singleton loc0)
                         |> state.OfSum
 
@@ -935,6 +916,9 @@ module Eval =
                   |> OrderedMap.ofList
                   |> state.AllMapOrdered
 
+                let included_schema =
+                  included_schema_entityhooks_relation_hooks |> Option.map (fun (s, _, _) -> s)
+
                 let included_entities =
                   included_schema_entityhooks_relation_hooks
                   |> Option.map (fun (s, _, _) -> s.Entities)
@@ -954,7 +938,8 @@ module Eval =
                 let resulting_schema_without_hooks =
                   { DeclaredAtForNominalEquality = loc0
                     Entities = entities |> OrderedMap.mergeSecondAfterFirst included_entities
-                    Relations = relations |> OrderedMap.mergeSecondAfterFirst included_relations }
+                    Relations = relations |> OrderedMap.mergeSecondAfterFirst included_relations
+                    Included = included_schema }
 
                 let typecheck_entity_hooks
                   (e_typechecked: SchemaEntity<'ve>)
@@ -2081,92 +2066,112 @@ module Eval =
             let! f_k_i, f_k_o = f_k |> Kind.AsArrow |> ofSum
 
             return!
-              state.Either6
+              state.Either5
                 (state {
                   let! param, body = f |> TypeValue.AsLambda |> ofSum |> state.Map WithSourceMapping.Getters.Value
 
-                  match param.Kind with
-                  | Kind.Symbol ->
-                    let! a = !!a
+                  return!
+                    state {
 
-                    do!
-                      TypeCheckState.bindTypeSymbol
-                        (param.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
-                        a
+                      match param.Kind with
+                      | Kind.Symbol ->
+                        let! a = !!a
 
-                    let! resultValue, resultKind = !body
-                    return TypeValue.SetSourceMapping(resultValue, source), resultKind
-                  | _ ->
-                    let! a = !a
+                        do!
+                          TypeCheckState.bindTypeSymbol
+                            (param.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
+                            a
 
-                    // do Console.WriteLine($"Applying type lambda param {param} to argument {a |> fst} in {body}")
-                    // do Console.ReadLine() |> ignore
+                        let! resultValue, resultKind = !body
+                        return TypeValue.SetSourceMapping(resultValue, source), resultKind
+                      | _ ->
+                        let! a = !a
 
-                    let! resultValue, resultKind =
-                      !body
-                      |> state.MapContext(TypeCheckContext.Updaters.TypeVariables(Map.add param.Name a))
+                        // do Console.WriteLine($"Applying type lambda param {param} to argument {a |> fst} in {body}")
+                        // do Console.ReadLine() |> ignore
 
-                    // do Console.WriteLine($"Result of type application is {resultValue.AsFSharpString}")
-                    // do Console.ReadLine() |> ignore
+                        let! resultValue, resultKind =
+                          !body
+                          |> state.MapContext(TypeCheckContext.Updaters.TypeVariables(Map.add param.Name a))
 
-                    return TypeValue.SetSourceMapping(resultValue, source), resultKind
+                        // do Console.WriteLine($"Result of type application is {resultValue.AsFSharpString}")
+                        // do Console.ReadLine() |> ignore
+
+                        return TypeValue.SetSourceMapping(resultValue, source), resultKind
+                    }
+                    |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 })
                 (state {
                   let! f_i = f |> TypeValue.AsImported |> ofSum
 
-                  // let! ctx = state.GetContext()
-                  // do Console.WriteLine($"Evaluating argument part {a}")
-                  // do Console.WriteLine($"Context is {ctx.TypeParameters.ToFSharpString}")
-                  // do Console.ReadLine() |> ignore
-                  let! a, a_k = !a
-                  // do Console.WriteLine($"aka {a}")
-                  // do Console.ReadLine() |> ignore
+                  return!
+                    state {
 
-                  if a_k <> f_k_i then
-                    return!
-                      (fun () -> $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}")
-                      |> error
-                      |> state.Throw
-                  else
-                    match f_i.Parameters with
-                    | [] ->
-                      return!
-                        (fun () -> $"Error: cannot apply imported type {f_i.Id.Name} with no parameters")
-                        |> error
-                        |> state.Throw
-                    | _ :: ps ->
-                      return
-                        TypeValue.Imported
-                          { f_i with
-                              Parameters = ps
-                              Arguments = f_i.Arguments @ [ a ] },
-                        f_k_o
+                      // let! ctx = state.GetContext()
+                      // do Console.WriteLine($"Evaluating argument part {a}")
+                      // do Console.WriteLine($"Context is {ctx.TypeParameters.ToFSharpString}")
+                      // do Console.ReadLine() |> ignore
+                      let! a, a_k = !a
+                      // do Console.WriteLine($"aka {a}")
+                      // do Console.ReadLine() |> ignore
+
+                      if a_k <> f_k_i then
+                        return!
+                          (fun () -> $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}")
+                          |> error
+                          |> state.Throw
+                      else
+                        match f_i.Parameters with
+                        | [] ->
+                          return!
+                            (fun () -> $"Error: cannot apply imported type {f_i.Id.Name} with no parameters")
+                            |> error
+                            |> state.Throw
+                        | _ :: ps ->
+                          return
+                            TypeValue.Imported
+                              { f_i with
+                                  Parameters = ps
+                                  Arguments = f_i.Arguments @ [ a ] },
+                            f_k_o
+                    }
+                    |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 })
                 (state {
                   let! f_l = f |> TypeValue.AsLookup |> ofSum
 
-                  let! a, a_k = !a
+                  return!
+                    state {
 
-                  if a_k <> f_k_i then
-                    return!
-                      (fun () -> $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}")
-                      |> error
-                      |> state.Throw
-                  else
-                    return TypeValue.CreateApplication(SymbolicTypeApplication.Lookup(f_l, a)), f_k_o
+                      let! a, a_k = !a
+
+                      if a_k <> f_k_i then
+                        return!
+                          (fun () -> $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}")
+                          |> error
+                          |> state.Throw
+                      else
+                        return TypeValue.CreateApplication(SymbolicTypeApplication.Lookup(f_l, a)), f_k_o
+                    }
+                    |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 })
                 (state {
                   let! { value = f_app } = f |> TypeValue.AsApplication |> ofSum
 
-                  let! a, a_k = !a
+                  return!
+                    state {
 
-                  if a_k <> f_k_i then
-                    return!
-                      (fun () -> $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}")
-                      |> error
-                      |> state.Throw
-                  else
-                    return TypeValue.CreateApplication(SymbolicTypeApplication.Application(f_app, a)), f_k_o
+                      let! a, a_k = !a
+
+                      if a_k <> f_k_i then
+                        return!
+                          (fun () -> $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}")
+                          |> error
+                          |> state.Throw
+                      else
+                        return TypeValue.CreateApplication(SymbolicTypeApplication.Application(f_app, a)), f_k_o
+                    }
+                    |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 })
                 (state {
                   do! f |> TypeValue.AsQueryTypeFunction |> ofSum
@@ -2225,13 +2230,6 @@ module Eval =
                     }
                     |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 })
-                (state {
-                  return!
-                    (fun () -> $"TypeEval(TypeExpr.Apply): cannot evaluate type application {t}")
-                    |> error
-                    |> state.Throw
-                 }
-                 |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High)))
               |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
           | TypeExpr.Lambda(param, bodyExpr) ->
             // let fresh_var_t =

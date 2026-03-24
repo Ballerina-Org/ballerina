@@ -168,8 +168,8 @@ let ``Dsl:Terms:Expr.UnionDes json round-trip`` () =
   let expected: Expr<TypeExpr<ValueExt>, Identifier, ValueExt> =
     Expr.UnionDes(
       Map.ofList
-        [ !"Foo", (Var.Create "x", Expr.Primitive(PrimitiveValue.Int32 1))
-          !"Bar", (Var.Create "y", Expr.Primitive(PrimitiveValue.Int32 2)) ],
+        [ !"Foo", ("x" |> Var.Create |> Some, Expr.Primitive(PrimitiveValue.Int32 1))
+          !"Bar", ("y" |> Var.Create |> Some, Expr.Primitive(PrimitiveValue.Int32 2)) ],
       None
     )
 
@@ -196,8 +196,8 @@ let ``Dsl:Terms:Expr.SumDes json round-trip`` () =
   let expected =
     Expr<TypeExpr<ValueExt>, Identifier, ValueExt>
       .SumDes(
-        [ { Case = 1; Count = 2 }, (Var.Create "a", Expr.Primitive(PrimitiveValue.Int32 1))
-          { Case = 2; Count = 2 }, (Var.Create "b", Expr.Primitive(PrimitiveValue.Int32 2)) ]
+        [ { Case = 1; Count = 2 }, ("a" |> Var.Create |> Some, Expr.Primitive(PrimitiveValue.Int32 1))
+          { Case = 2; Count = 2 }, ("b" |> Var.Create |> Some, Expr.Primitive(PrimitiveValue.Int32 2)) ]
         |> Map.ofList
       )
 

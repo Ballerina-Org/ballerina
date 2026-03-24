@@ -187,6 +187,56 @@ module Unification =
           return vars |> Set.unionMany
       }
 
+    static member MostSpecific<'valueExt when 'valueExt: comparison>
+      (loc0: Location, t1: TypeQueryRow<'valueExt>, t2: TypeQueryRow<'valueExt>)
+      : Reader<TypeQueryRow<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>> =
+      reader {
+        let error e = Errors.Singleton loc0 e
+
+        let (===) a b =
+          TypeValue.MostSpecific<'valueExt>(loc0, a, b)
+
+        let (==) a b =
+          TypeQueryRow.MostSpecific<'valueExt>(loc0, a, b)
+
+        match t1, t2 with
+        | TypeQueryRow.PrimaryKey j1, TypeQueryRow.PrimaryKey j2 ->
+          let! j = j1 === j2
+          return TypeQueryRow.PrimaryKey j
+        | TypeQueryRow.Json j1, TypeQueryRow.Json j2 ->
+          let! j = j1 === j2
+          return TypeQueryRow.Json j
+        | TypeQueryRow.PrimitiveType(p1, is_nullable1), TypeQueryRow.PrimitiveType(p2, is_nullable2) when
+          p1 = p2 && is_nullable1 = is_nullable2
+          ->
+          return TypeQueryRow.PrimitiveType(p1, is_nullable1)
+        | TypeQueryRow.Tuple e1, TypeQueryRow.Tuple e2 when e1.Length = e2.Length ->
+          let! items = List.zip e1 e2 |> Seq.map (fun (v1, v2) -> v1 == v2) |> reader.All
+
+          return TypeQueryRow.Tuple items
+        | TypeQueryRow.Record e1, TypeQueryRow.Record e2 when e1.Count = e2.Count ->
+          let! items =
+            e1
+            |> Map.map (fun k v1 ->
+              reader {
+                let! v2 =
+                  e2
+                  |> Map.tryFindWithError k "query row record field" (fun () -> k.Name) loc0
+                  |> reader.OfSum
+
+                return! v1 == v2
+              })
+            |> reader.AllMap
+
+          return TypeQueryRow.Record items
+        | _ ->
+          return!
+            (fun () -> $"Cannot determine most specific query row type between {t1} and {t2}")
+            |> error
+            |> reader.Throw
+      }
+
+
 
   and TypeValue<'ve> with
     static member FreeVariables<'valueExt when 'valueExt: comparison>
@@ -287,22 +337,51 @@ module Unification =
 
       }
 
-  type TypeValue<'ve> with
+  and TypeValue<'ve> with
     static member MostSpecific<'valueExt when 'valueExt: comparison>
       (loc0: Location, t1: TypeValue<'valueExt>, t2: TypeValue<'valueExt>)
       : Reader<TypeValue<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>> =
       reader {
         let error e = Errors.Singleton loc0 e
 
+        let (===) a b =
+          TypeQueryRow.MostSpecific<'valueExt>(loc0, a, b)
+
         let (==) a b =
           TypeValue.MostSpecific<'valueExt>(loc0, a, b)
 
         match t1, t2 with
+        | TypeValue.QueryRow q1, TypeValue.QueryRow _q2 ->
+          let! q = q1 === _q2
+          return TypeValue.QueryRow q
+        | TypeValue.Schema s1, TypeValue.Schema s2 when
+          s1.Entities.Count = s2.Entities.Count && s1.Relations.Count = s2.Relations.Count
+          ->
+          let! entities =
+            s1.Entities
+            |> OrderedMap.map (fun k v1 ->
+              reader {
+                let ofSum = sum.MapError(Errors.MapContext(replaceWith loc0)) >> reader.OfSum
+                let! v2 = s2.Entities |> OrderedMap.tryFindWithError k "schema entity" k.Name |> ofSum
+
+                let! t = v1.TypeOriginal == v2.TypeOriginal
+                let! tWithProps = v1.TypeWithProps == v2.TypeWithProps
+                let! id = v1.Id == v2.Id
+
+                return
+                  { v1 with
+                      TypeOriginal = t
+                      TypeWithProps = tWithProps
+                      Id = id }
+              })
+            |> reader.AllMapOrdered
+
+          return TypeValue.Schema { s1 with Entities = entities }
         | TypeValue.Primitive p1, TypeValue.Primitive p2 when p1.value = p2.value -> return t1
         | TypeValue.Lookup l1, TypeValue.Lookup l2 when l1 = l2 -> return t1
         | TypeValue.Lookup l1, TypeValue.Lookup l2 when l1 <> l2 ->
           return!
-            (fun () -> $"Cannot determine most specific type between {t1} and {t2}")
+            (fun () -> $"Cannot determine most specific type between {t1} and {t2}, they are lookups {l1} and {l2}")
             |> error
             |> reader.Throw
         | TypeValue.Lookup _, _ -> return t2

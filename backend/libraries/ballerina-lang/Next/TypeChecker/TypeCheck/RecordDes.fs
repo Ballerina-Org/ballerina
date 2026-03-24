@@ -27,13 +27,14 @@ module RecordDes =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckRecordDes<'valueExt when 'valueExt: comparison>
-      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprRecordDes<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
           ({ Expr = record_expr
              Field = fieldName }) ->
         let (!) = typeCheckExpr context_t
+        let loc0 = record_expr.Location
 
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum

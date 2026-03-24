@@ -32,7 +32,7 @@ module UnionDes =
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckUnionDes<'valueExt when 'valueExt: comparison>
       (query_type_symbol, mk_query_type)
-      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprUnionDes<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
@@ -40,6 +40,13 @@ module UnionDes =
              Fallback = fallback }) ->
         let (!) = typeCheckExpr None
         let (=>) c e = typeCheckExpr c e
+
+        let loc0 =
+          handlers
+          |> Map.toSeq
+          |> Seq.map (fun (_, (_var, body)) -> body.Location)
+          |> Seq.tryHead
+          |> Option.defaultValue Location.Unknown
 
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
@@ -152,13 +159,24 @@ module UnionDes =
                       state {
                         //let! var_t = union_t |> OrderedMap.tryFindWithError k_s "cases" k_s.ToFSharpString |> ofSum
 
+                        let! add_var =
+                          state {
+                            match var, cons_t with
+                            | None, TypeValue.Primitive { value = PrimitiveType.Unit } -> return id
+                            | Some var, _ ->
+                              return
+                                Map.add (var.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) (cons_t, Kind.Star)
+                            | _ ->
+                              return!
+                                (fun () ->
+                                  "Error: handlers must have a variable, unless the case constructor has type unit")
+                                |> error
+                                |> state.Throw
+                          }
+
                         let! body, body_t, body_k, _ =
                           None => body // either None, or the instantiation of result_t
-                          |> state.MapContext(
-                            TypeCheckContext.Updaters.Values(
-                              Map.add (var.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) (cons_t, Kind.Star)
-                            )
-                          )
+                          |> state.MapContext(TypeCheckContext.Updaters.Values add_var)
 
                         do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
 

@@ -137,13 +137,33 @@ module Expr =
                       [ identifierLocalOrFullyQualified () |> parser.Map Left
                         caseLiteral () |> parser.Map Right ]
 
-                  do! openRoundBracketOperator
-                  let! paramName = singleIdentifier
+                  let pattern =
+                    parser {
+                      let! paramName =
+                        parser.Any
+                          [ singleIdentifier |> parser.Map Some
+                            unitLiteral () |> parser.Map(fun _ -> None)
+                            parser.Lookahead(parseOperator Operator.SingleArrow)
+                            |> parser.Map("@anonymous" |> Some |> replaceWith)
+                            parser {
+                              let! loc = parser.Location
 
-                  do! parseOperator Operator.SingleArrow
-                  let! body = expr parseAllComplexShapes
-                  do! closeRoundBracketOperator
-                  return id, (Var.Create paramName, body)
+                              return!
+                                (fun () -> "Expected identifier or unit literal as pattern parameter.")
+                                |> Errors.Singleton loc
+                                |> Errors.MapPriority(replaceWith ErrorPriority.High)
+                                |> parser.Throw
+                            } ]
+                        |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+
+                      do! parseOperator Operator.SingleArrow
+                      let! body = expr parseAllComplexShapes
+                      return id, (paramName |> Option.map Var.Create, body)
+                    }
+
+                  return!
+                    parser.Any [ betweenBrackets (fun () -> pattern); pattern ]
+                    |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
                 }
               )
               |> parser.Map(NonEmptyList.ToList)
@@ -305,16 +325,66 @@ module Expr =
                           parser { return None } ]
 
                     return paramName, paramType
-                  } ]
+                  }
+                  (fun () -> "Expected let parameter.")
+                  |> Errors.Singleton loc
+                  |> Errors.MapPriority(replaceWith ErrorPriority.High)
+                  |> parser.Throw ]
+              |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
             do! equalsOperator
-            let! value = expr parseAllComplexShapes
-            do! inKeyword
-            let! body = expr parseAllComplexShapes
+
+            let! loc' = parser.Location
+
+            let! value =
+              expr parseAllComplexShapes
+              |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+
+            do!
+              parser.Any
+                [ inKeyword
+                  semicolonOperator
+                  (fun () -> "Expected 'in', ';' or expression after 'do' expression")
+                  |> Errors.Singleton loc'
+                  |> Errors.MapPriority(replaceWith ErrorPriority.High)
+                  |> parser.Throw ]
+              |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+
+            let! body =
+              expr parseAllComplexShapes
+              |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+
             return Expr.Let(paramName |> Var.Create, paramType, value, body, loc, TypeCheckScope.Empty)
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
+      |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+
+    let exprDo () =
+      parser {
+        do! doKeyword
+        let! loc = parser.Location
+
+        return!
+          parser {
+            let! value = expr parseAllComplexShapes
+
+            do!
+              parser.Any
+                [ inKeyword
+                  semicolonOperator
+                  (fun () -> "Expected 'in', ';' or expression after 'do' expression")
+                  |> Errors.Singleton loc
+                  |> Errors.MapPriority(replaceWith ErrorPriority.High)
+                  |> parser.Throw ]
+              |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+
+            let! body = expr parseAllComplexShapes
+            return Expr.Do(value, body, loc, TypeCheckScope.Empty)
+          }
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+      }
+      |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
     let exprConditional () =
       parser {
@@ -332,6 +402,7 @@ module Expr =
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
+      |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
     let recordCons () =
       parser {
@@ -439,35 +510,41 @@ module Expr =
             let! typeDecl = typeDecl parseAllComplexTypeShapes
             // |> parser.DebugErrors "typeDecl in type-let" (fun e -> e.Errors().AsFSharpString)
 
-            do! inKeyword
-            let! body = expr parseAllComplexShapes
+            return!
+              parser {
 
-            let symbols, symbolsKind =
-              let rec stripLambdas t =
-                match t with
-                | TypeExpr.Lambda(_, t) -> stripLambdas t
-                | _ -> t
+                do! parser.Any [ inKeyword; semicolonOperator ]
 
-              match typeDecl |> stripLambdas with
-              | TypeExpr.Record fields ->
-                fields
-                |> List.map fst
-                |> List.collect (function
-                  | TypeExpr.Lookup(Identifier.LocalScope id) -> [ id ]
-                  | _ -> []),
-                SymbolsKind.RecordFields
-              | TypeExpr.Union cases ->
-                cases
-                |> List.map fst
-                |> List.collect (function
-                  | TypeExpr.Lookup(Identifier.LocalScope id) -> [ id ]
-                  | _ -> []),
-                SymbolsKind.UnionConstructors
-              | _ -> [], SymbolsKind.RecordFields
+                let! body = expr parseAllComplexShapes
 
-            let typeDecl = TypeExpr.LetSymbols(symbols, symbolsKind, typeDecl)
+                let symbols, symbolsKind =
+                  let rec stripLambdas t =
+                    match t with
+                    | TypeExpr.Lambda(_, t) -> stripLambdas t
+                    | _ -> t
 
-            return Expr.TypeLet(id, typeDecl, body, loc, TypeCheckScope.Empty)
+                  match typeDecl |> stripLambdas with
+                  | TypeExpr.Record fields ->
+                    fields
+                    |> List.map fst
+                    |> List.collect (function
+                      | TypeExpr.Lookup(Identifier.LocalScope id) -> [ id ]
+                      | _ -> []),
+                    SymbolsKind.RecordFields
+                  | TypeExpr.Union cases ->
+                    cases
+                    |> List.map fst
+                    |> List.collect (function
+                      | TypeExpr.Lookup(Identifier.LocalScope id) -> [ id ]
+                      | _ -> []),
+                    SymbolsKind.UnionConstructors
+                  | _ -> [], SymbolsKind.RecordFields
+
+                let typeDecl = TypeExpr.LetSymbols(symbols, symbolsKind, typeDecl)
+
+                return Expr.TypeLet(id, typeDecl, body, loc, TypeCheckScope.Empty)
+              }
+              |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
@@ -574,6 +651,7 @@ module Expr =
         boolLiteral ()
         unitLiteral ()
         exprLet ()
+        exprDo ()
         exprLambda ()
         exprConditional ()
         recordCons ()
@@ -582,7 +660,15 @@ module Expr =
         matchWith ()
         query (fun () -> expr parseAllComplexShapes) ()
         identifierLookup ()
-        unaryOperatorIdentifier () ]
+        unaryOperatorIdentifier ()
+        parser {
+          let! loc = parser.Location
+
+          return!
+            (fun () -> "Expected simple expression.")
+            |> Errors.Singleton loc
+            |> parser.Throw
+        } ]
 
     parser {
       // let! s = parser.Stream
@@ -620,7 +706,15 @@ module Expr =
 
         // do Console.ReadLine() |> ignore
 
-        let complexShapes = []
+        let complexShapes =
+          [ parser {
+              let! loc = parser.Location
+
+              return!
+                (fun () -> "Expected composite expression.")
+                |> Errors.Singleton loc
+                |> parser.Throw
+            } ]
 
         let complexShapes =
           if parseComplexShapes.Contains ComplexExpressionKind.ScopedIdentifier then
@@ -652,7 +746,11 @@ module Expr =
           else
             complexShapes
 
-        let! res = complexShapes |> parser.Any |> parser.Many
+        let! res =
+          complexShapes
+          |> parser.Any
+          |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+          |> parser.Many
 
         // do Console.WriteLine $"~~{res.ToFSharpString}"
         // do Console.ReadLine() |> ignore

@@ -42,10 +42,16 @@ module TupleCons =
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckTupleCons<'valueExt when 'valueExt: comparison>
       (query_type_symbol, mk_query_type)
-      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprTupleCons<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Items = fields }) ->
         let (!) = typeCheckExpr context_t
+
+        let loc0 =
+          fields
+          |> List.map (fun v -> v.Location)
+          |> List.tryHead
+          |> Option.defaultValue Location.Unknown
 
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum

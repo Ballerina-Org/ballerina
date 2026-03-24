@@ -43,7 +43,7 @@ module TypeLet =
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckTypeLet<'valueExt when 'valueExt: comparison>
       (query_type_symbol, mk_query_type)
-      (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
+      (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprTypeLet<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
@@ -51,6 +51,7 @@ module TypeLet =
              TypeDef = typeDefinition
              Body = rest }) ->
         let (!) = typeCheckExpr context_t
+        let loc0 = rest.Location
 
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum

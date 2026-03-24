@@ -192,13 +192,17 @@ module Delete =
 
                       return Value.Primitive(PrimitiveValue.Bool(result.IsLeft))
                     }
+                    |> reader.MapContext(ExprEvalContext.Updaters.RootLevelEval(replaceWith false))
 
                   return!
                     reader {
                       let _, _, entity, schema_value = entity_ref
+                      let! ctx = reader.GetContext()
 
-                      match entity.Hooks.CanDelete with
-                      | Some canDeleteHook ->
+                      match ctx.RootLevelEval, entity.Hooks.CanDelete with
+                      | false, _ -> return! actual_delete
+                      | _, None -> return! actual_delete
+                      | _, Some canDeleteHook ->
                         match!
                           Expr.Apply(
                             Expr.Apply(
@@ -215,7 +219,6 @@ module Delete =
                         with
                         | Value.Primitive(PrimitiveValue.Bool canDelete) when canDelete -> return! actual_delete
                         | _ -> return Value.Primitive(PrimitiveValue.Bool(false))
-                      | None -> return! actual_delete
                     }
 
             } }

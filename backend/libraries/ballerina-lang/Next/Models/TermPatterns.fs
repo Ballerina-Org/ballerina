@@ -256,6 +256,14 @@ module Patterns =
     static member Let(v: Var, t: Option<'T>, a: Expr<'T, 'Id, 'valueExt>, e: Expr<'T, 'Id, 'valueExt>) =
       Expr<'T, 'Id, 'valueExt>.Let(v, t, a, e, Location.Unknown, TypeCheckScope.Empty)
 
+    static member Do(a: Expr<'T, 'Id, 'valueExt>, e: Expr<'T, 'Id, 'valueExt>, loc: Location, scope: TypeCheckScope) =
+      { Expr = Do({ Val = a; Rest = e })
+        Location = loc
+        Scope = scope }
+
+    static member Do(a: Expr<'T, 'Id, 'valueExt>, e: Expr<'T, 'Id, 'valueExt>) =
+      Expr<'T, 'Id, 'valueExt>.Do(a, e, Location.Unknown, TypeCheckScope.Empty)
+
     static member TypeLet(name: string, t: 'T, e: Expr<'T, 'Id, 'valueExt>, loc: Location, scope: TypeCheckScope) =
       { Expr = TypeLet({ Name = name; TypeDef = t; Body = e })
         Location = loc
@@ -525,6 +533,7 @@ module Patterns =
       | ExprRec.Primitive PrimitiveValue.Unit -> sum.Return()
       | ExprRec.TypeLet({ Body = rest }) -> Expr<'T, 'Id, 'valueExt>.AsTerminatedByConstantUnit rest
       | ExprRec.Let({ Rest = rest }) -> Expr<'T, 'Id, 'valueExt>.AsTerminatedByConstantUnit rest
+      | ExprRec.Do({ Rest = rest }) -> Expr<'T, 'Id, 'valueExt>.AsTerminatedByConstantUnit rest
       | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected a termination by constant unit but got {other}"))
 
   type ExprQueryExpr<'T, 'Id, 'valueExt when 'Id: comparison> with

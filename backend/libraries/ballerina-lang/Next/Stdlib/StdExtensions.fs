@@ -13,6 +13,7 @@ open Ballerina.DSL.Next.StdLib.List.Model
 open Ballerina.DSL.Next.StdLib.Map.Model
 open Ballerina.DSL.Next.StdLib.DB
 open Ballerina.Data.Delta
+open Ballerina.DSL.Next.StdLib.String
 
 type ValueExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> =
   | ValueExt of
@@ -111,15 +112,17 @@ and CompositeTypeExt<'runtimeContext, 'db, 'customExtension when 'db: comparison
       DateOnlyExt<'runtimeContext, 'db, 'customExtension>,
       DateTimeExt<'runtimeContext, 'db, 'customExtension>,
       GuidExt<'runtimeContext, 'db, 'customExtension>,
-      TimeSpanExt<'runtimeContext, 'db, 'customExtension>
+      TimeSpanExt<'runtimeContext, 'db, 'customExtension>,
+      UpdaterExt<'runtimeContext, 'db, 'customExtension>
      >
 
   override self.ToString() : string =
     match self with
-    | CompositeType(Choice1Of4 ct) -> ct.ToString()
-    | CompositeType(Choice2Of4 ct) -> ct.ToString()
-    | CompositeType(Choice3Of4 ct) -> ct.ToString()
-    | CompositeType(Choice4Of4 ct) -> ct.ToString()
+    | CompositeType(Choice1Of5 ct) -> ct.ToString()
+    | CompositeType(Choice2Of5 ct) -> ct.ToString()
+    | CompositeType(Choice3Of5 ct) -> ct.ToString()
+    | CompositeType(Choice4Of5 ct) -> ct.ToString()
+    | CompositeType(Choice5Of5 ct) -> ct.ToString()
 
 and ListExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> =
   | ListOperations of List.Model.ListOperations<ValueExt<'runtimeContext, 'db, 'customExtension>>
@@ -182,6 +185,9 @@ and TimeSpanExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 
   override self.ToString() : string =
     match self with
     | TimeSpanOperations ops -> ops.ToString()
+
+and UpdaterExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> =
+  | UpdaterOperations of Updater.Model.UpdaterOperations<ValueExt<'runtimeContext, 'db, 'customExtension>>
 
 and PrimitiveExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> =
   | BoolOperations of Bool.Model.BoolOperations<ValueExt<'runtimeContext, 'db, 'customExtension>>
@@ -463,6 +469,7 @@ type StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaEx
     String: OperationsExtension<'runtimeContext, 'valueExt, String.Model.StringOperations<'valueExt>>
     Guid: OperationsExtension<'runtimeContext, 'valueExt, Guid.Model.GuidOperations<'valueExt>>
     TimeSpan: OperationsExtension<'runtimeContext, 'valueExt, TimeSpan.Model.TimeSpanOperations<'valueExt>>
+    Updater: OperationsExtension<'runtimeContext, 'valueExt, Updater.Model.UpdaterOperations<'valueExt>>
     Map:
       TypeExtension<
         'runtimeContext,
@@ -476,6 +483,7 @@ type StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaEx
        > }
 
 let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison>
+  (string_ops: StringTypeClass<ValueExt<'runtimeContext, 'db, 'customExtension>>)
   (db_ops: DBTypeClass<'runtimeContext, 'db, ValueExt<'runtimeContext, 'db, 'customExtension>>)
   : StdExtensions<
       'runtimeContext,
@@ -538,11 +546,11 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
     DateOnly.Extension.DateOnlyExtension<'runtimeContext, ValueExt<'runtimeContext, 'db, 'customExtension>, ValueExtDTO>
       { Get =
           function
-          | ValueExt(Choice4Of7(CompositeType(Choice1Of4(DateOnlyOperations x)))) -> Some x
+          | ValueExt(Choice4Of7(CompositeType(Choice1Of5(DateOnlyOperations x)))) -> Some x
           | _ -> None
         Set =
           DateOnlyOperations
-          >> Choice1Of4
+          >> Choice1Of5
           >> CompositeType
           >> Choice4Of7
           >> ValueExt.ValueExt }
@@ -599,11 +607,11 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
     DateTime.Extension.DateTimeExtension<'runtimeContext, ValueExt<'runtimeContext, 'db, 'customExtension>, ValueExtDTO>
       { Get =
           function
-          | ValueExt(Choice4Of7(CompositeType(Choice2Of4(DateTimeOperations x)))) -> Some x
+          | ValueExt(Choice4Of7(CompositeType(Choice2Of5(DateTimeOperations x)))) -> Some x
           | _ -> None
         Set =
           DateTimeOperations
-          >> Choice2Of4
+          >> Choice2Of5
           >> CompositeType
           >> Choice4Of7
           >> ValueExt.ValueExt }
@@ -612,17 +620,18 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
     TimeSpanExtension<'runtimeContext, ValueExt<'runtimeContext, 'db, 'customExtension>, ValueExtDTO>
       { Get =
           function
-          | ValueExt(Choice4Of7(CompositeType(Choice4Of4(TimeSpanOperations x)))) -> Some x
+          | ValueExt(Choice4Of7(CompositeType(Choice4Of5(TimeSpanOperations x)))) -> Some x
           | _ -> None
         Set =
           TimeSpanOperations
-          >> Choice4Of4
+          >> Choice4Of5
           >> CompositeType
           >> Choice4Of7
           >> ValueExt.ValueExt }
 
   let stringExtension =
     String.Extension.StringExtension<'runtimeContext, ValueExt<'runtimeContext, 'db, 'customExtension>>
+      string_ops
       { Get =
           function
           | ValueExt(Choice3Of7(StringOperations x)) -> Some x
@@ -633,9 +642,22 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
     Guid.Extension.GuidExtension<'runtimeContext, ValueExt<'runtimeContext, 'db, 'customExtension>, ValueExtDTO>
       { Get =
           function
-          | ValueExt(Choice4Of7(CompositeType(Choice3Of4(GuidOperations x)))) -> Some x
+          | ValueExt(Choice4Of7(CompositeType(Choice3Of5(GuidOperations x)))) -> Some x
           | _ -> None
-        Set = GuidOperations >> Choice3Of4 >> CompositeType >> Choice4Of7 >> ValueExt.ValueExt }
+        Set = GuidOperations >> Choice3Of5 >> CompositeType >> Choice4Of7 >> ValueExt.ValueExt }
+
+  let updaterExtension =
+    Updater.Extension.UpdaterExtension<'runtimeContext, ValueExt<'runtimeContext, 'db, 'customExtension>>
+      { Get =
+          function
+          | ValueExt(Choice4Of7(CompositeType(Choice5Of5(UpdaterOperations x)))) -> Some x
+          | _ -> None
+        Set =
+          UpdaterOperations
+          >> Choice5Of5
+          >> CompositeType
+          >> Choice4Of7
+          >> ValueExt.ValueExt }
 
   let mapExtension =
     Map.Extension.MapExtension<
@@ -687,6 +709,7 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
     |> (float64Extension |> OperationsExtension.RegisterLanguageContext)
     |> (decimalExtension |> OperationsExtension.RegisterLanguageContext)
     |> (stringExtension |> OperationsExtension.RegisterLanguageContext)
+    |> (updaterExtension |> OperationsExtension.RegisterLanguageContext)
     |> (mapExtension |> TypeExtension.RegisterLanguageContext)
 
   let extensions =
@@ -702,12 +725,13 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
       String = stringExtension
       Guid = guidExtension
       TimeSpan = timeSpanExtension
-      Map = mapExtension }
+      Map = mapExtension
+      Updater = updaterExtension }
 
   extensions, context, query_sym, mk_query
 
 let stdExtensions<'runtimeContext, 'db when 'db: comparison> =
-  fun db_ops -> makeExtensions<'runtimeContext, 'db, unit> db_ops
+  fun str_ops db_ops -> makeExtensions<'runtimeContext, 'db, unit> str_ops db_ops
 
 let customStdExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> =
   makeExtensions<'runtimeContext, 'db, 'customExtension>
