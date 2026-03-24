@@ -15,7 +15,10 @@ module DeltaSerializer =
     deltas
     |> List.map deltaToDTO
     |> reader.All
-    |> reader.Map(List.toArray >> DeltaDTO.CreateMultiple)
+    |> reader.Map(
+      List.toArray
+      >> fun multiple -> new DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>(multiple)
+    )
 
   and replaceToDTO
     (value:
@@ -28,38 +31,50 @@ module DeltaSerializer =
     =
     valueToDTO value
     |> reader.MapContext(fun deltaContext -> deltaContext.SerializationContext)
-    |> reader.Map DeltaDTO.CreateReplace
+    |> reader.Map(fun replace -> new DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>(replace))
 
   and recordToDTO (field: string) (delta: Delta<'valueExtension, 'deltaExtension>) =
     reader {
       let! deltaDTO = deltaToDTO delta
-      return { Field = field; Delta = deltaDTO } |> DeltaDTO.CreateRecord
+
+      let record =
+        new System.Collections.Generic.Dictionary<string, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>>()
+
+      record.Add(field, deltaDTO)
+      return new DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>(record, true)
     }
 
   and unionToDTO (case: string) (delta: Delta<'valueExtension, 'deltaExtension>) =
     reader {
       let! deltaDTO = deltaToDTO delta
-      return { Case = case; Delta = deltaDTO } |> DeltaDTO.CreateUnion
+
+      let union =
+        new System.Collections.Generic.Dictionary<string, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>>()
+
+      union.Add(case, deltaDTO)
+      return new DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>(union, false)
     }
 
   and tupleToDTO (position: int) (delta: Delta<'valueExtension, 'deltaExtension>) =
     reader {
       let! deltaDTO = deltaToDTO delta
 
-      return
-        { Position = position
-          Delta = deltaDTO }
-        |> DeltaDTO.CreateTuple
+      let tuple =
+        new System.Collections.Generic.Dictionary<int, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>>()
+
+      tuple.Add(position, deltaDTO)
+      return new DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>(tuple, true)
     }
 
   and sumDTO (caseIndex: int) (delta: Delta<'valueExtension, 'deltaExtension>) =
     reader {
-      let! deltaToDTO = deltaToDTO delta
+      let! deltaDTO = deltaToDTO delta
 
-      return
-        { CaseIndex = caseIndex
-          Delta = deltaToDTO }
-        |> DeltaDTO.CreateSum
+      let sum =
+        new System.Collections.Generic.Dictionary<int, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>>()
+
+      sum.Add(caseIndex, deltaDTO)
+      return new DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>(sum, false)
     }
 
   and deltaToDTO

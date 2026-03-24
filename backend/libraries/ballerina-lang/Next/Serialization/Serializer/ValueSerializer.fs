@@ -14,11 +14,13 @@ module ValueSerializer =
     | None -> null
     | Some v -> v
 
-  let resolvedIdentifierToDTO (identifier: ResolvedIdentifier) : ResolvedIdentifierDTO =
-    { Assembly = identifier.Assembly
-      Module = identifier.Module
-      Type = optionToNullable identifier.Type
-      Name = identifier.Name }
+  let listToDictionary (list: List<'key * 'value>) : System.Collections.Generic.Dictionary<'key, 'value> =
+    let dictionary = new System.Collections.Generic.Dictionary<'key, 'value>()
+
+    for key, value in list do
+      dictionary.Add(key, value)
+
+    dictionary
 
   let rec recordToDTO (record: Map<ResolvedIdentifier, Value<'T, 'valueExt>>) =
     record
@@ -26,24 +28,25 @@ module ValueSerializer =
     |> List.sortWith (fun (id1, _) (id2, _) -> ResolvedIdentifier.Compare id1 id2)
     |> List.map (fun (identifier, value) ->
       reader {
-        let identifierDTO = resolvedIdentifierToDTO identifier
+        let identifierDTO = identifier.ToDTO
         let! valueDTO = valueToDTO value
         return identifierDTO, valueDTO
       })
     |> reader.All
-    |> Reader.map (List.map (fun (key, value) -> { Key = key; Value = value }) >> List.toArray)
+    |> Reader.map listToDictionary
     |> Reader.map (fun r -> new ValueDTO<'valueExtDTO>(r))
 
   and unionCaseToDTO ((identifier, value): ResolvedIdentifier * Value<'T, 'valueExt>) =
     reader {
-      let identifierDTO = resolvedIdentifierToDTO identifier
+      let identifierDTO = identifier.ToDTO
       let! valueDTO = valueToDTO value
 
-      let unionDTO: UnionCaseDTO<'valueExtDTO> =
-        { Case = identifierDTO
-          Value = valueDTO }
+      let unionDTO =
+        new System.Collections.Generic.Dictionary<ResolvedIdentifierDTO, ValueDTO<'valueExtDTO>>()
 
-      return new ValueDTO<'valueExtDTO>(unionDTO)
+      unionDTO.Add(identifierDTO, valueDTO)
+
+      return new ValueDTO<'valueExtDTO>(unionDTO, false)
     }
 
   and tupleToDTO (items: List<Value<'T, 'valueExt>>) =
@@ -54,13 +57,15 @@ module ValueSerializer =
 
   and sumToDTO ((selector, value): SumConsSelector * Value<'T, 'valueExt>) =
     reader {
+      let selectorDTO = selector.ToDTO
       let! valueDTO = valueToDTO value
 
-      let sumDTO: SumDTO<'valueExtDTO> =
-        { Selector = selector
-          Value = valueDTO }
+      let sumDTO =
+        new System.Collections.Generic.Dictionary<SumCaseDTO, ValueDTO<'valueExtDTO>>()
 
-      return new ValueDTO<'valueExtDTO>(sumDTO)
+      sumDTO.Add(selectorDTO, valueDTO)
+
+      return new ValueDTO<'valueExtDTO>(sumDTO, true)
     }
 
   and primitiveToDTO =
@@ -85,16 +90,18 @@ module ValueSerializer =
       match value with
       | Record record -> return! recordToDTO record
       | UnionCase(identifier, value) -> return! unionCaseToDTO (identifier, value)
-      | RecordDes identifier -> return new ValueDTO<'valueExtDTO>(resolvedIdentifierToDTO identifier)
-      | UnionCons(identifier: ResolvedIdentifier) ->
-        return new ValueDTO<'valueExtDTO>(resolvedIdentifierToDTO identifier)
+      | RecordDes identifier -> return new ValueDTO<'valueExtDTO>(identifier.ToDTO)
+      | UnionCons(identifier: ResolvedIdentifier) -> return new ValueDTO<'valueExtDTO>(identifier.ToDTO)
       | Tuple items -> return! tupleToDTO items
       | Sum(selector, value) -> return! sumToDTO (selector, value)
       | Primitive primitive -> return new ValueDTO<'valueExtDTO>(primitiveToDTO primitive)
       | Var var -> return new ValueDTO<'valueExtDTO>(var)
       | Ext(ext, applicableId) ->
         let! context = reader.GetContext()
-        let applicableIdDTO = applicableId |> Option.map resolvedIdentifierToDTO
+
+        let applicableIdDTO =
+          applicableId |> Option.map (fun identifier -> identifier.ToDTO)
+
         return! context.ToDTO ext applicableIdDTO
       | _ -> return! reader.Throw(Errors.Singleton () (fun _ -> $"The value {value} cannot be converted to DTO."))
     }

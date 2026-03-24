@@ -10,14 +10,6 @@ module DeltaDeserializer =
   open System.Text.Json
   open Ballerina.DSL.Next.Serialization.SerializerConfig
 
-  let tryGetDeltaDTOWithKind
-    (expectedKind: DeltaDiscriminator)
-    (deltaExtractor: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO> -> 'dtoValue)
-    (deltaDTO: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>)
-    : Reader<'dtoValue, 'context, Errors<unit>> =
-
-    tryGetDTOWithKind expectedKind deltaDTO (fun deltaDTO -> deltaDTO.Discriminator) deltaExtractor assertValue
-
   let rec multipleFromDTO
     (deltaDTO: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>)
     : Reader<
@@ -27,7 +19,7 @@ module DeltaDeserializer =
        >
     =
     reader {
-      let! multipleDTO = tryGetDeltaDTOWithKind DeltaDiscriminator.Multiple (fun delta -> delta.Multiple) deltaDTO
+      let! multipleDTO = assertValue deltaDTO.Multiple "multiple deltas"
       return! multipleDTO |> Array.map deltaFromDTO |> reader.All |> reader.Map Multiple
     }
 
@@ -40,7 +32,7 @@ module DeltaDeserializer =
        >
     =
     reader {
-      let! valueDTO = tryGetDeltaDTOWithKind DeltaDiscriminator.Replace (fun delta -> delta.Replace) deltaDTO
+      let! valueDTO = assertValue deltaDTO.Replace "replace"
 
       return!
         valueFromDTO valueDTO
@@ -57,9 +49,10 @@ module DeltaDeserializer =
        >
     =
     reader {
-      let! recordDTO = tryGetDeltaDTOWithKind DeltaDiscriminator.Record (fun delta -> delta.Record) deltaDTO
-      let! delta = deltaFromDTO recordDTO.Delta
-      return Record(recordDTO.Field, delta)
+      let! recordDTO = assertValue deltaDTO.Record "record delta"
+      let! field, deltaDTO = assertSingleElementDictionary recordDTO "record delta"
+      let! delta = deltaFromDTO deltaDTO
+      return Record(field, delta)
     }
 
   and unionFromDTO
@@ -71,9 +64,10 @@ module DeltaDeserializer =
        >
     =
     reader {
-      let! unionDTO = tryGetDeltaDTOWithKind DeltaDiscriminator.Union (fun delta -> delta.Union) deltaDTO
-      let! delta = deltaFromDTO unionDTO.Delta
-      return Union(unionDTO.Case, delta)
+      let! unionDTO = assertValue deltaDTO.Union "union delta"
+      let! case, deltaDTO = assertSingleElementDictionary unionDTO "union delta"
+      let! delta = deltaFromDTO deltaDTO
+      return Union(case, delta)
     }
 
   and tupleFromDTO
@@ -85,9 +79,10 @@ module DeltaDeserializer =
        >
     =
     reader {
-      let! tupleDTO = tryGetDeltaDTOWithKind DeltaDiscriminator.Tuple (fun delta -> delta.Tuple) deltaDTO
-      let! delta = deltaFromDTO tupleDTO.Delta
-      return Tuple(tupleDTO.Position, delta)
+      let! tupleDTO = assertValue deltaDTO.Tuple "tuple delta"
+      let! position, deltaDTO = assertSingleElementDictionary tupleDTO "tuple delta"
+      let! delta = deltaFromDTO deltaDTO
+      return Tuple(position, delta)
     }
 
   and sumFromDTO
@@ -99,9 +94,10 @@ module DeltaDeserializer =
        >
     =
     reader {
-      let! sumDTO = tryGetDeltaDTOWithKind DeltaDiscriminator.Sum (fun delta -> delta.Sum) deltaDTO
-      let! delta = deltaFromDTO sumDTO.Delta
-      return Sum(sumDTO.CaseIndex, delta)
+      let! sumDTO = assertValue deltaDTO.Sum "sum delta"
+      let! caseIndex, deltaDTO = assertSingleElementDictionary sumDTO "sum delta"
+      let! delta = deltaFromDTO deltaDTO
+      return Sum(caseIndex, delta)
     }
 
   and extFromDTO
@@ -113,7 +109,7 @@ module DeltaDeserializer =
        >
     =
     reader {
-      let! extensionDTO = tryGetDeltaDTOWithKind DeltaDiscriminator.Ext (fun delta -> delta.Ext) deltaDTO
+      let! extensionDTO = assertValue deltaDTO.Ext "extension delta"
       let! context = reader.GetContext()
       return! context.FromDTO extensionDTO
     }

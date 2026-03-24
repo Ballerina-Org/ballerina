@@ -42,19 +42,11 @@ type ValueExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'c
 
   static member Updaters = {| ValueExt = fun u (ValueExt e) -> ValueExt(u e) |}
 
-and ValueExtDTOKind =
-  | List = 1
-  | Map = 2
-
 and ValueExtDTO =
-  { Kind: ValueExtDTOKind
-    List: List.Model.ListValueDTO<ValueExtDTO> | null
-    Map: Map.Model.MapValueDTO<ValueExtDTO> | null }
+  { List: List.Model.ListValueDTO<ValueExtDTO>
+    Map: Map.Model.MapValueDTO<ValueExtDTO> }
 
-  static member Empty =
-    { Kind = ValueExtDTOKind.List
-      List = null
-      Map = null }
+  static member Empty = { List = null; Map = null }
 
 and DBExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> =
   | DBValues of DB.Model.DBValues<'runtimeContext, 'db, ValueExt<'runtimeContext, 'db, 'customExtension>>
@@ -97,13 +89,12 @@ and MapExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'cust
   static member inline ValueDTOLens =
     { Get =
         fun valueExtDTO ->
-          match valueExtDTO.Kind with
-          | ValueExtDTOKind.Map -> Some valueExtDTO.Map
-          | _ -> None
+          match valueExtDTO.Map with
+          | null -> None
+          | map -> Some map
       Set =
         fun mapValueDTO ->
           { ValueExtDTO.Empty with
-              Kind = ValueExtDTOKind.Map
               Map = mapValueDTO } }
 
 and CompositeTypeExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> =
@@ -149,13 +140,12 @@ and ListExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'cus
   static member inline ValueDTOLens =
     { Get =
         fun valueExtDTO ->
-          match valueExtDTO.Kind with
-          | ValueExtDTOKind.List -> Some valueExtDTO.List
-          | _ -> None
+          match valueExtDTO.List with
+          | null -> None
+          | list -> Some list
       Set =
         fun valueExtDTO ->
           { ValueExtDTO.Empty with
-              Kind = ValueExtDTOKind.List
               List = valueExtDTO } }
 
 and DateOnlyExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> =
@@ -234,13 +224,12 @@ and DeltaExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'cu
   static member inline ListDeltaDTOLens =
     { Get =
         fun deltaExtDTO ->
-          match deltaExtDTO.Discriminator with
-          | DeltaExtDiscriminator.List -> Some deltaExtDTO.ListDelta
-          | _ -> None
+          match deltaExtDTO.ListDelta with
+          | null -> None
+          | listDelta -> Some listDelta
       Set =
         fun deltaExtDTO ->
           { DeltaExtDTO.Empty with
-              Discriminator = DeltaExtDiscriminator.List
               ListDelta = deltaExtDTO } }
 
   static member inline MapDeltaLens
@@ -260,13 +249,12 @@ and DeltaExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'cu
   static member inline MapDeltaDTOLens =
     { Get =
         fun deltaExtDTO ->
-          match deltaExtDTO.Discriminator with
-          | DeltaExtDiscriminator.Map -> Some deltaExtDTO.MapDelta
-          | _ -> None
+          match deltaExtDTO.MapDelta with
+          | null -> None
+          | mapDelta -> Some mapDelta
       Set =
         fun deltaExtDTO ->
           { DeltaExtDTO.Empty with
-              Discriminator = DeltaExtDiscriminator.Map
               MapDelta = deltaExtDTO } }
 
   static member Getters = {| DeltaExt = fun (DeltaExtension e) -> e |}
@@ -426,19 +414,11 @@ and TupleDeltaExt<'runtimeContext, 'db, 'customExtension when 'db: comparison an
 
 and OptionDeltaExt = OptionDeltaExt
 
-and DeltaExtDiscriminator =
-  | List = 1
-  | Map = 2
-
 and DeltaExtDTO =
-  { Discriminator: DeltaExtDiscriminator
-    ListDelta: ListDeltaExtDTO<ValueExtDTO, DeltaExtDTO> | null
+  { ListDelta: ListDeltaExtDTO<ValueExtDTO, DeltaExtDTO> | null
     MapDelta: Map.Model.MapDeltaExtDTO<ValueExtDTO, DeltaExtDTO> | null }
 
-  static member Empty =
-    { Discriminator = DeltaExtDiscriminator.List
-      ListDelta = null
-      MapDelta = null }
+  static member Empty = { ListDelta = null; MapDelta = null }
 
 type StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO
   when 'valueExt: comparison
