@@ -26,7 +26,7 @@ module DeleteMany =
 
   let DBDeleteManyExtension<'runtimeContext, 'db, 'ext when 'ext: comparison>
     (db_ops: DBTypeClass<'runtimeContext, 'db, 'ext>)
-    (mapLens: PartialLens<'ext, Map<Value<TypeValue<'ext>, 'ext>, Value<TypeValue<'ext>, 'ext>>>)
+    (listLens: PartialLens<'ext, List<Value<TypeValue<'ext>, 'ext>>>)
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
     =
 
@@ -47,11 +47,8 @@ module DeleteMany =
                 createSchemaEntityTypeApplication "schema" "entity" "entity_with_props" "entityId",
                 TypeExpr.Arrow(
                   TypeExpr.Apply(
-                    TypeExpr.Apply(
-                      TypeExpr.Lookup("Map" |> Identifier.LocalScope),
-                      TypeExpr.Lookup("entityId" |> Identifier.LocalScope)
-                    ),
-                    TypeExpr.Primitive PrimitiveType.Unit
+                    TypeExpr.Lookup("List" |> Identifier.LocalScope),
+                    TypeExpr.Lookup("entityId" |> Identifier.LocalScope)
                   ),
                   TypeExpr.Primitive PrimitiveType.Unit
                 // TypeExpr.Apply(
@@ -105,11 +102,9 @@ module DeleteMany =
 
                 let! vs =
                   vs
-                  |> mapLens.Get
+                  |> listLens.Get
                   |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
                   |> reader.OfSum
-
-                let vs = vs |> Map.keys |> Seq.toList
 
                 let! deletingValuesWithProps =
                   vs
@@ -125,9 +120,10 @@ module DeleteMany =
                       | None -> return _entityId, None
                       | Some currentValueWithProps ->
                         let _, _, entity, schema_value = entity_ref
+                        let! ctx = reader.GetContext()
 
-                        match entity.Hooks.CanDelete with
-                        | Some canDeleteHook ->
+                        match ctx.RootLevelEval, entity.Hooks.CanDelete with
+                        | true, Some canDeleteHook ->
                           match!
                             Expr.Apply(
                               Expr.Apply(
@@ -143,22 +139,25 @@ module DeleteMany =
                             |> Expr.Eval
                           with
                           | Value.Primitive(PrimitiveValue.Bool canDelete) when canDelete ->
-                            do! onDeletingHook db_ops entity_ref loc0 _entityId currentValueWithProps
+                            do!
+                              onDeletingHook db_ops entity_ref loc0 _entityId currentValueWithProps
+                              |> reader.MapContext(ExprEvalContext.Updaters.RootLevelEval(replaceWith false))
 
                             return _entityId, Some currentValueWithProps
                           | _ -> return _entityId, None
-                        | None ->
-                          do! onDeletingHook db_ops entity_ref loc0 _entityId currentValueWithProps
+                        | _ ->
+                          do!
+                            onDeletingHook db_ops entity_ref loc0 _entityId currentValueWithProps
+                            |> reader.MapContext(ExprEvalContext.Updaters.RootLevelEval(replaceWith false))
 
                           return _entityId, Some currentValueWithProps
-
-
                     })
                   |> reader.All
 
                 let! _ =
                   db_ops.DeleteMany entity_ref vs
                   |> reader.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.MapContext(ExprEvalContext.Updaters.RootLevelEval(replaceWith false))
 
                 do!
                   deletingValuesWithProps
@@ -173,6 +172,7 @@ module DeleteMany =
                         return ()
                     })
                   |> reader.All
+                  |> reader.MapContext(ExprEvalContext.Updaters.RootLevelEval(replaceWith false))
                   |> reader.Ignore
 
                 return Value.Primitive(PrimitiveValue.Unit)

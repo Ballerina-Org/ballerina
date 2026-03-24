@@ -726,32 +726,8 @@ module Eval =
                 |> OrderedMap.values
                 |> Seq.map (fun e ->
                   state {
-                    let! id_fields = e.Id |> TypeValue.AsRecord |> ofSum
-
-                    let id_fields =
-                      id_fields
-                      |> OrderedMap.toSeq
-                      |> Seq.map (fun (k, (t, _)) -> (k.Name.LocalName, t))
-                      |> Seq.toList
-
-                    match id_fields with
-                    | [ field_name, field_type ] ->
-                      match field_type with
-                      | TypeValue.Primitive({ value = PrimitiveType.Guid })
-                      | TypeValue.Primitive({ value = PrimitiveType.String })
-                      | TypeValue.Primitive({ value = PrimitiveType.Int32 })
-                      | TypeValue.Primitive({ value = PrimitiveType.Int64 }) -> return field_name, field_type
-                      | _ ->
-                        return!
-                          (fun () ->
-                            $"Error: entity id field type can only be Guid, String, Int32, or Int64, got {field_type}")
-                          |> error
-                          |> state.Throw
-                    | _ ->
-                      return!
-                        (fun () -> $"Error: entity id must be a single field record, got {e.Id}")
-                        |> error
-                        |> state.Throw
+                    let! n, p = e.Id |> TypeValue.AsPrimaryKey |> ofSum
+                    return n, TypeValue.CreatePrimitive p
                   })
                 |> state.All
 
@@ -889,6 +865,11 @@ module Eval =
                         return! validatePath t_arg target rest
                   }
 
+                let all_entities =
+                  match included_schema_entityhooks_relation_hooks with
+                  | Some(s, _, _) -> entities |> OrderedMap.mergeSecondAfterFirst s.Entities
+                  | None -> entities
+
                 let! relations =
                   parsed_schema.Relations
                   |> List.map (fun r ->
@@ -898,18 +879,18 @@ module Eval =
                       let toPath = r.To |> snd
 
                       let! fromEntity =
-                        entities
+                        all_entities
                         |> OrderedMap.tryFind ((r.From |> fst).LocalName |> SchemaEntityName.Create)
                         |> Sum.fromOption (fun () ->
-                          (fun () -> $"Error: cannot find entity {r.From} for relation {r.Name}")
+                          (fun () -> $"Error: cannot find entity {r.From |> fst} for relation {r.Name.Name}")
                           |> Errors.Singleton loc0)
                         |> state.OfSum
 
                       let! toEntity =
-                        entities
+                        all_entities
                         |> OrderedMap.tryFind ((r.To |> fst).LocalName |> SchemaEntityName.Create)
                         |> Sum.fromOption (fun () ->
-                          (fun () -> $"Error: cannot find entity {r.To} for relation {r.Name}")
+                          (fun () -> $"Error: cannot find entity {r.To |> fst} for relation {r.Name.Name}")
                           |> Errors.Singleton loc0)
                         |> state.OfSum
 
@@ -935,6 +916,9 @@ module Eval =
                   |> OrderedMap.ofList
                   |> state.AllMapOrdered
 
+                let included_schema =
+                  included_schema_entityhooks_relation_hooks |> Option.map (fun (s, _, _) -> s)
+
                 let included_entities =
                   included_schema_entityhooks_relation_hooks
                   |> Option.map (fun (s, _, _) -> s.Entities)
@@ -954,7 +938,8 @@ module Eval =
                 let resulting_schema_without_hooks =
                   { DeclaredAtForNominalEquality = loc0
                     Entities = entities |> OrderedMap.mergeSecondAfterFirst included_entities
-                    Relations = relations |> OrderedMap.mergeSecondAfterFirst included_relations }
+                    Relations = relations |> OrderedMap.mergeSecondAfterFirst included_relations
+                    Included = included_schema }
 
                 let typecheck_entity_hooks
                   (e_typechecked: SchemaEntity<'ve>)

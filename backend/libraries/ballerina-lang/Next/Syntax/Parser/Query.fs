@@ -50,11 +50,12 @@ module Query =
   let private parseNoComplexShapes: Set<ComplexExpressionKind> = Set.empty
 
   let rec queryexpr<'valueExt>
+    (query: unit -> _)
     (depth: int)
     (parseComplexShapes: Set<ComplexExpressionKind>)
     : Parser<ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
 
-    let expr = queryexpr (depth + 1)
+    let expr = queryexpr query (depth + 1)
 
     let singleTermIdentifier =
       parser.Exactly(fun t ->
@@ -146,6 +147,48 @@ module Query =
             return
               ExprQueryExprRec.QueryConditional(cond, thenBranch, elseBranch)
               |> ExprQueryExpr.Create loc
+          }
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+      }
+
+    let exprCount () =
+      parser {
+        do! countKeyword
+        let! loc = parser.Location
+
+        return!
+          parser {
+            let! q = query ()
+
+            return ExprQueryExprRec.QueryCount(q) |> ExprQueryExpr.Create loc
+          }
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+      }
+
+    let exprExists () =
+      parser {
+        do! existsKeyword
+        let! loc = parser.Location
+
+        return!
+          parser {
+            let! q = query ()
+
+            return ExprQueryExprRec.QueryExists(q) |> ExprQueryExpr.Create loc
+          }
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+      }
+
+    let exprArray () =
+      parser {
+        do! arrayKeyword
+        let! loc = parser.Location
+
+        return!
+          parser {
+            let! q = query ()
+
+            return ExprQueryExprRec.QueryArray(q) |> ExprQueryExpr.Create loc
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
@@ -278,6 +321,9 @@ module Query =
         unitLiteral ()
         betweenBrackets (fun () -> expr parseAllComplexShapes)
         exprConditional ()
+        exprCount ()
+        exprExists ()
+        exprArray ()
         identifierLookup ()
         unaryOperatorIdentifier () ]
 
@@ -477,8 +523,9 @@ module Query =
     }
 
 
-  let private query_iterators_and_datasources<'valueExt>
+  let rec private query_iterators_and_datasources<'valueExt>
     (expr: unit -> Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>>)
+    query
     =
     parser {
       do! fromKeyword
@@ -487,7 +534,7 @@ module Query =
         parser {
 
           let! loc = parser.Location
-          let! _iterators = queryexpr<'valueExt> 0 parseAllComplexShapes
+          let! _iterators = queryexpr<'valueExt> query 0 parseAllComplexShapes
 
           let! _iterators =
             [ parser {
@@ -580,7 +627,7 @@ module Query =
         |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
 
-  let private query_joins<'valueExt> =
+  let private query_joins<'valueExt> query =
     parser {
       let! loc = parser.Location
       let! starts_with_join = joinKeyword |> parser.Try
@@ -598,7 +645,7 @@ module Query =
                   if i > 0 then
                     do! andKeyword
 
-                  let! join_terms = queryexpr<'valueExt> 0 parseAllComplexShapes
+                  let! join_terms = queryexpr<'valueExt> query 0 parseAllComplexShapes
 
                   let! join_terms =
                     join_terms
@@ -631,7 +678,7 @@ module Query =
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
 
-  let private query_where<'valueExt> =
+  let private query_where<'valueExt> query =
     parser {
       let! starts_with_where = whereKeyword |> parser.Try
 
@@ -640,22 +687,22 @@ module Query =
       | Left _ ->
         return!
           parser {
-            let! predicate = queryexpr<'valueExt> 0 parseAllComplexShapes
+            let! predicate = queryexpr<'valueExt> query 0 parseAllComplexShapes
             return Some predicate
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
 
-  let private query_select<'valueExt> =
+  let private query_select<'valueExt> query =
     parser {
       do! selectKeyword
 
       return!
-        queryexpr<'valueExt> 0 parseAllComplexShapes
+        queryexpr<'valueExt> query 0 parseAllComplexShapes
         |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
 
-  let private query_orderby<'valueExt> =
+  let private query_orderby<'valueExt> query =
     parser {
       let! starts_with_orderby = orderByKeyword |> parser.Try
 
@@ -664,7 +711,7 @@ module Query =
           match starts_with_orderby with
           | Right _ -> return None
           | Left _ ->
-            let! predicate = queryexpr<'valueExt> 0 parseAllComplexShapes
+            let! predicate = queryexpr<'valueExt> query 0 parseAllComplexShapes
             let! is_ascending = ascendingKeyword |> parser.Try
 
             if is_ascending.IsLeft then
@@ -685,39 +732,76 @@ module Query =
         |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
 
-  let query<'valueExt>
+  let private query_distinct<'valueExt> (query) =
+    parser {
+      let! starts_with_distinct = distinctKeyword |> parser.Try
+
+      return!
+        parser {
+          match starts_with_distinct with
+          | Right _ -> return None
+          | Left _ ->
+            return!
+              parser {
+                let! distinction = queryexpr<'valueExt> query 0 parseAllComplexShapes
+                return Some distinction
+              }
+              |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+        }
+        |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+    }
+
+  let rec private query'<'valueExt>
     (expr: unit -> Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>>)
     ()
-    : Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
+    : Parser<ExprQuery<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
     parser {
       do! queryKeyword
-      let! loc = parser.Location
+      let query = query'
 
       return!
         parser {
           do! openCurlyBracketOperator
 
-          let! iterators_with_datasources = query_iterators_and_datasources expr
-          let! joins = query_joins
-          let! where_ = query_where
-          let! select_expr = query_select<'valueExt>
-          let! orderby_ = query_orderby
+          let! iterators_with_datasources = query_iterators_and_datasources expr (query expr)
+          let! joins = query_joins (query expr)
+          let! where_ = query_where (query expr)
+          let! select_expr = query_select<'valueExt> (query expr)
+          let! orderby_ = query_orderby (query expr)
+          let! distinct_ = query_distinct (query expr)
 
           do! closeCurlyBracketOperator
 
           let res =
-            Expr.Query(
-              { Iterators = iterators_with_datasources
-                Joins = joins
-                Where = where_
-                Select = select_expr
-                OrderBy = orderby_
-                // Closure and DeserializeFrom are placeholders, they will be calculated by the type checker
-                Closure = Map.empty
-                DeserializeFrom = TypeQueryRow.PrimitiveType(PrimitiveType.Unit, false) },
-              loc,
-              TypeCheckScope.Empty
-            )
+            { Iterators = iterators_with_datasources
+              Joins = joins
+              Where = where_
+              Select = select_expr
+              OrderBy = orderby_
+              Distinct = distinct_
+              // Closure and DeserializeFrom are placeholders, they will be calculated by the type checker
+              Closure = Map.empty
+              DeserializeFrom = TypeQueryRow.PrimitiveType(PrimitiveType.Unit, false) }
+            |> SimpleQuery
+
+          return res
+        }
+        |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+    }
+
+  let query<'valueExt>
+    (expr: unit -> Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>>)
+    ()
+    : Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
+    parser {
+      let! loc = parser.Location
+
+      return!
+        parser {
+          let! q = query' expr ()
+
+          let res = Expr.Query(q, loc, TypeCheckScope.Empty)
+
 
           return res
         }

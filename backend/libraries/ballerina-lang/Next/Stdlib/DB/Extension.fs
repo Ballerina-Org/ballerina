@@ -40,7 +40,7 @@ module CUD =
       DBUpdateManyExtension db_ops (calculateProps, stripProps) mapLens valueLens
 
     let DBDeleteManyId, DeleteManyOperation =
-      DBDeleteManyExtension db_ops mapLens valueLens
+      DBDeleteManyExtension db_ops listLens valueLens
 
     let DBLinkId, LinkOperation = DBLinkExtension db_ops listLens.Set valueLens
 

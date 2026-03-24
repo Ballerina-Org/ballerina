@@ -25,4 +25,7 @@ module Model =
     | TotalMilliseconds
     | TimeSpan_New
     | TimeSpan_Zero
+    | FromDays
+    | FromHours
+    | FromMinutes
     | FromSeconds
