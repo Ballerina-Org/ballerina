@@ -28,7 +28,7 @@
     "url": "https://github.com/Ballerina-Org/ballerina"
   },
   "peerDependencies": {
-    "immutable": "^5.1.4",
+    "immutable": "^5.1.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "uuid": "^9.0.1"
@@ -39,7 +39,7 @@
     "@types/react-dom": "^18.2.18",
     "@types/uuid": "^9.0.8",
     "prettier": "^3.2.5",
-    "immutable": "^5.1.4",
+    "immutable": "^5.1.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "typescript": "^5.9.3",
