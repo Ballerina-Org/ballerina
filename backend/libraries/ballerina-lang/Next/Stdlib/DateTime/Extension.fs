@@ -121,6 +121,58 @@ module Extension =
             | DateTime_UTCNow -> Some DateTime_UTCNow
             | _ -> None) }
 
+    let dateTimePlusId =
+      Identifier.FullyQualified([ "dateTime" ], "+") |> TypeCheckScope.Empty.Resolve
+
+    let plusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
+      dateTimePlusId,
+      { PublicIdentifiers =
+          Some(
+            TypeValue.CreateArrow(dateTimeTypeValue, TypeValue.CreateArrow(timeSpanTypeValue, dateTimeTypeValue)),
+            Kind.Star,
+            DateTimeOperations.Plus {| v1 = None |}
+          )
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | DateTimeOperations.Plus v -> Some(DateTimeOperations.Plus v)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              let! op =
+                op
+                |> DateTimeOperations.AsPlus
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              match op with
+              | None ->
+                let! dt =
+                  v
+                  |> PrimitiveValue.AsDateTime
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
+
+                return
+                  (DateTimeOperations.Plus({| v1 = Some dt |}) |> operationLens.Set, Some dateTimePlusId)
+                  |> Ext
+              | Some vClosure ->
+                let! ts =
+                  v
+                  |> PrimitiveValue.AsTimeSpan
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
+
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.DateTime(vClosure + ts))
+            } }
+
     let dateTimeDiffId =
       Identifier.FullyQualified([ "dateTime" ], "-") |> TypeCheckScope.Empty.Resolve
 
@@ -644,7 +696,8 @@ module Extension =
 
     { TypeVars = []
       Operations =
-        [ diffOperation
+        [ plusOperation
+          diffOperation
           equalOperation
           notEqualOperation
           greaterThanOperation

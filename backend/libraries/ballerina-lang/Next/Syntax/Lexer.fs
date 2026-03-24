@@ -24,6 +24,7 @@ module Lexer =
     | Function
     | Fun
     | Let
+    | Do
     | In
     | Match
     | With
@@ -43,6 +44,11 @@ module Lexer =
     | Can
     | And
     | OrderBy
+    | Distinct
+    | Count
+    | Exists
+    | Union
+    | Array
     | Ascending
     | Descending
 
@@ -53,6 +59,7 @@ module Lexer =
       | Function -> "function"
       | Fun -> "fun"
       | Let -> "let"
+      | Do -> "do"
       | In -> "in"
       | Match -> "match"
       | With -> "with"
@@ -72,6 +79,11 @@ module Lexer =
       | Can -> "can"
       | And -> "and"
       | OrderBy -> "orderby"
+      | Distinct -> "distinct"
+      | Count -> "count"
+      | Exists -> "exists"
+      | Union -> "union"
+      | Array -> "array"
       | Ascending -> "asc"
       | Descending -> "desc"
 
@@ -271,6 +283,7 @@ module Lexer =
       Keyword.Function.ToString(), LocalizedToken.FromKeyword Keyword.Function
       Keyword.Fun.ToString(), LocalizedToken.FromKeyword Keyword.Fun
       Keyword.Let.ToString(), LocalizedToken.FromKeyword Keyword.Let
+      Keyword.Do.ToString(), LocalizedToken.FromKeyword Keyword.Do
       Keyword.Match.ToString(), LocalizedToken.FromKeyword Keyword.Match
       Keyword.With.ToString(), LocalizedToken.FromKeyword Keyword.With
       Keyword.If.ToString(), LocalizedToken.FromKeyword Keyword.If
@@ -288,6 +301,11 @@ module Lexer =
       Keyword.On.ToString(), LocalizedToken.FromKeyword Keyword.On
       Keyword.Can.ToString(), LocalizedToken.FromKeyword Keyword.Can
       Keyword.OrderBy.ToString(), LocalizedToken.FromKeyword Keyword.OrderBy
+      Keyword.Distinct.ToString(), LocalizedToken.FromKeyword Keyword.Distinct
+      Keyword.Count.ToString(), LocalizedToken.FromKeyword Keyword.Count
+      Keyword.Exists.ToString(), LocalizedToken.FromKeyword Keyword.Exists
+      Keyword.Union.ToString(), LocalizedToken.FromKeyword Keyword.Union
+      Keyword.Array.ToString(), LocalizedToken.FromKeyword Keyword.Array
       Keyword.Ascending.ToString(), LocalizedToken.FromKeyword Keyword.Ascending
       Keyword.Descending.ToString(), LocalizedToken.FromKeyword Keyword.Descending
       "true", LocalizedToken.FromBoolLiteral true

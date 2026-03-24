@@ -4,7 +4,7 @@ module FileDbManager =
   open System
   open Ballerina.Collections.Sum
   open System.IO
-  open Unbound.Serialization.MessagePack
+  open Ballerina.Serialization.MessagePack
   open Ballerina.Errors
 
   type FileContentManager<'content> =

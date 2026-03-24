@@ -24,7 +24,8 @@ open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 type private ValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
 
 let stdExtensions, languageContext, _db_query_sym, _make_db_query_type =
-  db_ops () |> stdExtensions<Unit, _>
+  db_ops ()
+  |> stdExtensions<Unit, _> (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
 
 let ``Assert Value<TypeValue> -> ToJson -> FromJson -> Value<TypeValue>``
   (expression: Value<TypeValue<ValueExt>, ValueExt>)

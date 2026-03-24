@@ -21,10 +21,13 @@ module Upsert =
   open Microsoft.AspNetCore.Http
   open Ballerina.DSL.Next.Serialization.ValueSerializer
   open Ballerina.DSL.Next.StdLib.DB
+  open Ballerina.Data.Delta.Serialization.DeltaDTO
+  open Ballerina.Data.Delta.Serialization.DeltaDeserializer
 
   type EntityWithId =
     { Id: ValueDTO<ValueExtDTO>
-      Entity: ValueDTO<ValueExtDTO> }
+      Entity: ValueDTO<ValueExtDTO>
+      Delta: DeltaDTO<ValueExtDTO, DeltaExtDTO> }
 
   type UpsertPayload =
     { EntityName: string
@@ -45,8 +48,8 @@ module Upsert =
       Func<'tenantId, 'schemaName, bool, UpsertPayload, IResult>(fun tenantId schemaName draft payload ->
         let result =
           sum {
-            let entityName, id, entity =
-              payload.EntityName, payload.EntityWithId.Id, payload.EntityWithId.Entity
+            let entityName, id, entity, delta =
+              payload.EntityName, payload.EntityWithId.Id, payload.EntityWithId.Entity, payload.EntityWithId.Delta
 
             let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
               getDbDescriptor tenantId schemaName draft context
@@ -72,23 +75,16 @@ module Upsert =
             do! typeCheckValue idValue idType languageContext typeCheckContext typeCheckState
             do! typeCheckValue entityValue entityType languageContext typeCheckContext typeCheckState
 
-            let updater
-              : Expr<
-                  TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                  ResolvedIdentifier,
-                  ValueExt<'runtimeContext, 'db, 'customExtension>
-                 > =
-              Expr.Lambda(
-                Var.Create "a'",
-                None,
-                Expr.Lambda(
-                  Var.Create "a",
-                  None,
-                  Expr.FromValue(entityValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
-                  None
-                ),
-                None
-              )
+            let! delta =
+              deltaFromDTO delta
+              |> Reader.Run context.LanguageContext.SerializationContext
+              |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
+              |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+
+            let! updaterLambda =
+              createUpdaterFromDelta delta
+              |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
+              |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
             let! schema =
               dbio.SchemaAsValue
@@ -141,7 +137,7 @@ module Upsert =
                 Expr.TupleCons
                   [ Expr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                     Expr.FromValue(entityValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-                    updater ]
+                    Expr.Lambda(Var.Create "_", None, updaterLambda, None) ]
               )
 
             let! evalResult =
@@ -163,10 +159,11 @@ module Upsert =
     app.MapPost(
       "/{tenantId}/{schemaName}/upsert-many",
       Func<'tenantId, 'schemaName, bool, UpsertManyPayload, IResult>(fun tenantId schemaName draft payload ->
-        let entityName, entitiesWithId = payload.EntityName, payload.Entities
+        let entityName = payload.EntityName
 
         let result =
           sum {
+
             let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
               getDbDescriptor tenantId schemaName draft context
 
@@ -213,30 +210,33 @@ module Upsert =
               |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
             let! upserters =
-              entitiesWithId
+              payload.Entities
               |> Array.map (fun entityWithId ->
                 reader {
-                  let! idValue = valueFromDTO entityWithId.Id
-                  let! entityValue = valueFromDTO entityWithId.Entity
+                  let! delta = deltaFromDTO entityWithId.Delta
+
+                  let! idValue =
+                    valueFromDTO entityWithId.Id
+                    |> reader.MapContext(fun deltaSerializationContext ->
+                      deltaSerializationContext.SerializationContext)
+
+                  let! entityValue =
+                    valueFromDTO entityWithId.Entity
+                    |> reader.MapContext(fun deltaSerializationContext ->
+                      deltaSerializationContext.SerializationContext)
+
+                  let! updaterLambda = createUpdaterFromDelta delta |> reader.OfSum
+
 
                   return
                     idValue,
                     Value.Tuple
                       [ entityValue
-                        Value.Lambda(
-                          Var.Create "b'",
-                          Expr.Lambda(
-                            Var.Create "b",
-                            None,
-                            Expr.FromValue(entityValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
-                            None
-                          ),
-                          Map.empty,
-                          TypeCheckScope.Empty
-                        ) ]
+                        Value.Lambda(Var.Create "_", updaterLambda, Map.empty, TypeCheckScope.Empty) ]
                 })
               |> reader.All
-              |> runDTOConverter languageContext
+              |> Reader.Run languageContext.SerializationContext
+              |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
               |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
             let idType, entityType = _tableDescriptor.Id, _tableDescriptor.TypeOriginal

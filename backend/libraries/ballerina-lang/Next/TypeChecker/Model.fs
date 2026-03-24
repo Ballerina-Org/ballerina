@@ -102,6 +102,19 @@ module Model =
   type ExprTypeChecker<'valueExt when 'valueExt: comparison> =
     TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt>
 
+  type TypeCheckerQuery<'input, 'valueExt when 'valueExt: comparison> =
+    Option<TypeValue<'valueExt>>
+      -> Map<LocalIdentifier, TypeQueryRow<'valueExt>>
+      -> Map<ResolvedIdentifier, TypeQueryRow<'valueExt>>
+      -> 'input
+      -> TypeCheckerResult<
+        ExprQuery<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
+        TypeValue<'valueExt> *
+        Kind *
+        TypeCheckContext<'valueExt>,
+        'valueExt
+       >
+
   type TypeInstantiateContext<'valueExt when 'valueExt: comparison> =
     { VisitedVars: Set<TypeVar>
       Scope: TypeCheckScope

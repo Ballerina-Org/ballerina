@@ -64,6 +64,10 @@ module TypeEval =
             let! bodyType = !body
             let! var_type = var_type |> Option.map (!!) |> state.RunOption
             return Expr.Let(var, var_type, valueType, bodyType, expr.Location, ctx.Scope)
+          | ExprRec.Do({ Val = e1; Rest = e2 }) ->
+            let! e1Type = !e1
+            let! e2Type = !e2
+            return Expr.Do(e1Type, e2Type, expr.Location, ctx.Scope)
           | ExprRec.RecordWith({ Record = record; Fields = fields }) ->
             let! recordType = !record
 

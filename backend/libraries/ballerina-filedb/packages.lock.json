@@ -442,6 +442,7 @@
         "dependencies": {
           "FSharp.Core": "[10.0.102, )",
           "FSharp.Data": "[6.6.0, )",
+          "Nerdbank.MessagePack": "[1.0.43, )",
           "SmartComponents.LocalEmbeddings": "[1.0.0, )",
           "ballerina-cat": "[1.0.0, )",
           "ballerina-delta-serialization": "[1.0.0, )",

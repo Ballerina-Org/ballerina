@@ -14,7 +14,7 @@ module Utils =
   open Model
 
   let contextFactory (dbFileConfig: DbFileConfig) =
-    stdExtensions (fileDbOps dbFileConfig)
+    stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()) (fileDbOps dbFileConfig)
     |> fun (_, languageContext, querySymbols, queryTypeFactory) -> languageContext, querySymbols, queryTypeFactory
 
   let buildSchemaDefinition

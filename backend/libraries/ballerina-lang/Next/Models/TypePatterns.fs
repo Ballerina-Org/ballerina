@@ -353,6 +353,37 @@ module Patterns =
             |> sum.Throw
       }
 
+    static member AsPrimaryKey(t: TypeValue<'ve>) : Sum<(string * PrimitiveType), Errors<unit>> =
+      sum {
+        let! id_fields = t |> TypeValue.AsRecord
+
+        let id_fields =
+          id_fields
+          |> OrderedMap.toSeq
+          |> Seq.map (fun (k, (t, _)) -> (k.Name.LocalName, t))
+          |> Seq.toList
+
+        match id_fields with
+        | [ field_name, field_type ] ->
+          match field_type with
+          | TypeValue.Primitive({ value = PrimitiveType.Guid as p })
+          | TypeValue.Primitive({ value = PrimitiveType.String as p })
+          | TypeValue.Primitive({ value = PrimitiveType.Int32 as p })
+          | TypeValue.Primitive({ value = PrimitiveType.Int64 as p }) -> return field_name, p
+          | _ ->
+            return!
+              (fun () -> $"Error: entity id field type can only be Guid, String, Int32, or Int64, got {field_type}")
+              |> Errors.Singleton()
+              |> sum.Throw
+        | _ ->
+          return!
+            (fun () -> $"Error: entity id must be a single field record, got {t}")
+            |> Errors.Singleton()
+            |> sum.Throw
+      }
+
+
+
     static member AsSchema(t: TypeValue<'valueExt>) =
       sum {
         match t with
@@ -961,6 +992,17 @@ module Patterns =
     static member Create loc expr =
       { ExprQueryExpr.Location = loc
         Expr = expr }
+
+    static member AsTupleConst(t: ExprQueryExpr<'T, 'Id, 'valueExt>) =
+      sum {
+        match t.Expr with
+        | ExprQueryExprRec.QueryTupleCons elements -> return elements
+        | _ ->
+          return!
+            (fun () -> $"Error: expected tuple cons query expression, got {t.Expr})")
+            |> Errors.Singleton()
+            |> sum.Throw
+      }
 
   type TypeQueryRow<'valueExt> with
     static member AsPrimaryKey(t: TypeQueryRow<'valueExt>) =

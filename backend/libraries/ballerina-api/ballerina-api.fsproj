@@ -13,6 +13,7 @@
     <Compile Include="Endpoints/Linking.fs" />
     <Compile Include="Endpoints/Read.fs" />
     <Compile Include="Endpoints/Upsert.fs" />
+    <Compile Include="Endpoints/Update.fs" />
     <Compile Include="APIRegistration.fs" />
   </ItemGroup>
   <ItemGroup>
