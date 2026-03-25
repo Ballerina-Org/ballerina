@@ -694,10 +694,12 @@ export const TableAbstractRenderer = <
     ).toArray();
 
     // append the "fake" rows to the table data
-    const valueTable = AbstractTableRendererValueTable.Operations.withExtraData(
-      props.context.value,
-      props.context.customFormState.pendingOps,
-    );
+    const valueTable = props.context.disableTableOptimisticUpdates
+      ? props.context.value
+      : AbstractTableRendererValueTable.Operations.withExtraData(
+          props.context.value,
+          props.context.customFormState.pendingOps,
+        );
 
     const embeddedTableData =
       props.context.customFormState.loadingState != "loaded"
@@ -873,7 +875,10 @@ export const TableAbstractRenderer = <
                       props.context.customFormState.pendingOps.kind == "add" &&
                       props.context.customFormState.pendingOps.pending.size > 0;
 
-                    if (!hasPendingAddOperations) {
+                    if (
+                      !hasPendingAddOperations ||
+                      props.context.disableTableOptimisticUpdates
+                    ) {
                       // first add operation
                       // create a delta and call the onChange function
                       // this means the local queue is free so we can run this operation now
@@ -939,7 +944,11 @@ export const TableAbstractRenderer = <
                       );
 
                     props.setState(
-                      setModifiedByUser.then(enqueuePendingAddOperation),
+                      setModifiedByUser.then(
+                        props.context.disableTableOptimisticUpdates
+                          ? id
+                          : enqueuePendingAddOperation,
+                      ),
                     );
                   },
               addWholeValue: !props.context.apiMethods.includes("add")
@@ -1013,7 +1022,10 @@ export const TableAbstractRenderer = <
                         "remove" &&
                       props.context.customFormState.pendingOps.pending.size > 0;
 
-                    if (!hasPendingRemoveOperations) {
+                    if (
+                      !hasPendingRemoveOperations ||
+                      props.context.disableTableOptimisticUpdates
+                    ) {
                       const delta: DispatchDelta<Flags> = {
                         kind: "TableRemove",
                         id: k,
@@ -1047,7 +1059,11 @@ export const TableAbstractRenderer = <
                       );
 
                     props.setState(
-                      setModifiedByUser.then(enqueueRemoveOperation),
+                      setModifiedByUser.then(
+                        props.context.disableTableOptimisticUpdates
+                          ? id
+                          : enqueueRemoveOperation,
+                      ),
                     );
                   },
               moveTo: !props.context.apiMethods.includes("move")
