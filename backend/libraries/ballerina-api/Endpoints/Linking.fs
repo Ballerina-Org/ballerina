@@ -133,7 +133,7 @@ module Linking =
               Expr.Eval(
                 NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doLinkExpr, []))
               )
-              |> Reader.Run evalContext
+              |> Reader.Run(evalContext |> context.PermissionHookInjector)
               |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
             return!
@@ -248,7 +248,7 @@ module Linking =
               Expr.Eval(
                 NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doUnlinkExpr, []))
               )
-              |> Reader.Run evalContext
+              |> Reader.Run(evalContext |> context.PermissionHookInjector)
               |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
             return!

@@ -26,6 +26,8 @@ module MemoryDBAPIFactory =
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.Patterns
   open Utils
+  open Ballerina.Collections.Map
+
 
   let contextFactory dbFileConfig =
     stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()) (fileDbOps dbFileConfig)
@@ -107,7 +109,9 @@ module MemoryDBAPIFactory =
       | Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.DBIO dbio))), _) ->
         return
           { DbExtension = dbio
-            EvalContext = evalContext
+            EvalContext =
+              { evalContext with
+                  Scope = dbio.EvalContext }
             TypeCheckContext = typeCheckContext
             TypeCheckState = typeCheckState }
       | _ ->
@@ -141,7 +145,8 @@ module MemoryDBAPIFactory =
             -> Map<
               ResolvedIdentifier,
               (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
-             >
+             >,
+        hookInjector: Updater<ExprEvalContext<_, _>>
       ) : Sum<unit, Errors<Location>> =
       sum {
         let dbFileConfig: DbFileConfig =
@@ -165,7 +170,9 @@ module MemoryDBAPIFactory =
               fun () ->
                 contextFactory dbFileConfig
                 |> (fun (languageContext, _, _) -> languageContext)
-                |> sum.Return }
+                |> sum.Return
+            PermissionHookInjector = hookInjector }
+
 
         this
           .MapPublish(schemaFileConfig, databaseFileConfig, addPermissionHookScope, addBackgroundHookScope)
