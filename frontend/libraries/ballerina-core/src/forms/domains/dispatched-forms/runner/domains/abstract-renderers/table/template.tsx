@@ -964,30 +964,30 @@ export const TableAbstractRenderer = <
                         ),
                       );
                     const tempId =
-                    `placeholder-${v4()}` as PendingAddOperationId;
+                      `placeholder-${v4()}` as PendingAddOperationId;
                     const enqueuePendingAddOperation =
-                    TableAbstractRendererState.Updaters.Core.customFormState.children.pendingOps(
-                      (_) =>
-                        TableAbstractRendererPendingOps.Updaters.Core.pendingAddOperations(
-                          List([
-                            TableAbstractRendererPendingAddOperation.Default(
-                              // index will be used to match the correct row once we have it in the data
-                              _.kind == "add"
-                                ? _.initialTableSize + _.totalAdded
-                                : props.context.value.data.size,
-                              tempId,
-                              // TODO: use props.context.value.defaultRow
-                              ValueRecord.Default.fromMap(
-                                CellTemplates.map((c) =>
-                                  c.GetDefaultValue(),
-                                ).concat([["Id", tempId]]),
+                      TableAbstractRendererState.Updaters.Core.customFormState.children.pendingOps(
+                        (_) =>
+                          TableAbstractRendererPendingOps.Updaters.Core.pendingAddOperations(
+                            List([
+                              TableAbstractRendererPendingAddOperation.Default(
+                                // index will be used to match the correct row once we have it in the data
+                                _.kind == "add"
+                                  ? _.initialTableSize + _.totalAdded
+                                  : props.context.value.data.size,
+                                tempId,
+                                // TODO: use props.context.value.defaultRow
+                                ValueRecord.Default.fromMap(
+                                  CellTemplates.map((c) =>
+                                    c.GetDefaultValue(),
+                                  ).concat([["Id", tempId]]),
+                                ),
+                                flags,
                               ),
-                              flags,
-                            ),
-                          ]),
-                          props.context.value.data.size,
-                        )(_),
-                    );
+                            ]),
+                            props.context.value.data.size,
+                          )(_),
+                      );
                     props.setState(
                       setModifiedByUser.then(enqueuePendingAddOperation),
                     );
