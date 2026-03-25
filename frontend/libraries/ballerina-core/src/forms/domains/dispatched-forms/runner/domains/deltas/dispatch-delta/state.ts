@@ -321,6 +321,7 @@ export type DispatchDeltaTable<T = Unit> =
       value: PredicateValue;
       flags: T | undefined;
       sourceAncestorLookupTypeNames: string[];
+      type?: DispatchParsedType<any>;
     }
   | {
       // incoming-only delta carrying full row payloads
