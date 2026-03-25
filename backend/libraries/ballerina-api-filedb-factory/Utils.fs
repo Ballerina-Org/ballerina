@@ -14,6 +14,8 @@ module Utils =
   open Model
   open Ballerina.Errors
   open Ballerina.LocalizedErrors
+  open Ballerina.DSL.Next.Types.TypeChecker
+  open Ballerina.Collections.Map
 
   let contextFactory (dbFileConfig: DbFileConfig) =
     stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()) (fileDbOps dbFileConfig)
@@ -24,13 +26,36 @@ module Utils =
       LanguageContext<FileDBRuntimeContext, FileDbValueExtension, ValueExtDTO, FileDbDeltaExtension, DeltaExtDTO>)
     dbQuerySymbols
     queryTypeFactory
+    (addPermissionHookScope:
+      Map<
+        ResolvedIdentifier,
+        (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+       >
+        -> Map<
+          ResolvedIdentifier,
+          (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+         >)
+    (addBackgroundHookScope:
+      Map<
+        ResolvedIdentifier,
+        (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+       >
+        -> Map<
+          ResolvedIdentifier,
+          (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+         >)
     (tenantId: Guid)
     (schemaName: string)
     (schemaDefinitions: List<string>)
     =
     sum {
       let build_cache =
-        memcache (languageContext.TypeCheckContext, languageContext.TypeCheckState)
+        memcache (
+          languageContext.TypeCheckContext
+          |> TypeCheckContext.Updaters.BackgroundHooksExtraScope addBackgroundHookScope
+          |> TypeCheckContext.Updaters.PermissionHooksExtraScope addPermissionHookScope,
+          languageContext.TypeCheckState
+        )
 
       let files =
         schemaDefinitions
@@ -57,6 +82,12 @@ module Utils =
 
       let! evalResult =
         Expr.Eval(NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(expr, exprs)))
+        |> Reader.mapContext (
+          ExprEvalContext.Updaters.Values(
+            Map.merge (fun _ -> id) (typeCheckContext.PermissionHooksExtraScope |> Map.map (fun _ -> snd))
+            >> Map.merge (fun _ -> id) (typeCheckContext.BackgroundHooksExtraScope |> Map.map (fun _ -> snd))
+          )
+        )
         |> Reader.Run evalContext
 
       return evalResult, typeCheckContext, typeCheckState, evalContext

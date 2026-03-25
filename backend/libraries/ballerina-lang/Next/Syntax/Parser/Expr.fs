@@ -621,8 +621,7 @@ module Expr =
           parser {
             let! res =
               parser.Any
-                [ expr parseNoComplexShapes // (parseComplexShapes |> Set.remove ComplexExpressionKind.ApplicationArguments)
-                  |> parser.Map Sum.Left
+                [ expr (Set.singleton ComplexExpressionKind.RecordDes) |> parser.Map Sum.Left
                   (fun () -> typeDecl parseAllComplexTypeShapes)
                   |> betweenSquareBrackets
                   |> parser.Map(Sum.Right) ]

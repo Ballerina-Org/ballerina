@@ -67,6 +67,24 @@ module MemoryDBAPIFactory =
     (schemaFileConfig: SchemaFileConfig)
     dbQuerySymbols
     queryTypeFactory
+    (addPermissionHookScope:
+      Map<
+        ResolvedIdentifier,
+        (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+       >
+        -> Map<
+          ResolvedIdentifier,
+          (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+         >)
+    (addBackgroundHookScope:
+      Map<
+        ResolvedIdentifier,
+        (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+       >
+        -> Map<
+          ResolvedIdentifier,
+          (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+         >)
     (tenantId: Guid)
     (schemaName: string)
     (draft: bool)
@@ -79,6 +97,8 @@ module MemoryDBAPIFactory =
           languageContext
           dbQuerySymbols
           queryTypeFactory
+          addPermissionHookScope
+          addBackgroundHookScope
           tenantId
           schemaName
           schemaVersion.Definition
@@ -100,8 +120,29 @@ module MemoryDBAPIFactory =
 
   type WebApplication with
     member this.AddFileDbCRUDApi
-      (schemaFileConfig: SchemaFileConfig, databaseFileConfig: DatabaseFileConfig, routeGroupBuilder: RouteGroupBuilder)
-      : Sum<unit, Errors<Location>> =
+      (
+        schemaFileConfig: SchemaFileConfig,
+        databaseFileConfig: DatabaseFileConfig,
+        routeGroupBuilder: RouteGroupBuilder,
+        addPermissionHookScope:
+          Map<
+            ResolvedIdentifier,
+            (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+           >
+            -> Map<
+              ResolvedIdentifier,
+              (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+             >,
+        addBackgroundHookScope:
+          Map<
+            ResolvedIdentifier,
+            (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+           >
+            -> Map<
+              ResolvedIdentifier,
+              (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+             >
+      ) : Sum<unit, Errors<Location>> =
       sum {
         let dbFileConfig: DbFileConfig =
           { DbDirectory = databaseFileConfig.DbDirectory
@@ -110,7 +151,13 @@ module MemoryDBAPIFactory =
         let languageContext, querySymbols, queryTypeFactory = contextFactory dbFileConfig
 
         let descriptorFetcher =
-          descriptorFetcherFactory languageContext schemaFileConfig querySymbols queryTypeFactory
+          descriptorFetcherFactory
+            languageContext
+            schemaFileConfig
+            querySymbols
+            queryTypeFactory
+            addPermissionHookScope
+            addBackgroundHookScope
 
         let factory =
           { DbDescriptorFetcher = descriptorFetcher
@@ -120,7 +167,9 @@ module MemoryDBAPIFactory =
                 |> (fun (languageContext, _, _) -> languageContext)
                 |> sum.Return }
 
-        this.MapPublish(schemaFileConfig, databaseFileConfig).MapGetSchemaVersions(schemaFileConfig)
+        this
+          .MapPublish(schemaFileConfig, databaseFileConfig, addPermissionHookScope, addBackgroundHookScope)
+          .MapGetSchemaVersions(schemaFileConfig)
         |> ignore
 
         do! routeGroupBuilder.RegisterAPIEndpoints factory
