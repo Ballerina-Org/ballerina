@@ -124,7 +124,7 @@ let main args =
 
           let pluralization = if filePaths.Length > 1 then "s" else ""
           Console.WriteLine $"Publishing schema from file{pluralization} {filePaths}..."
-          do! publish tenantId schemaName payload schemaFileConfig dbFileConfig showEval
+          do! publish tenantId schemaName payload schemaFileConfig dbFileConfig showEval id id
           Console.WriteLine "Done!"
 
         let builder = WebApplication.CreateBuilder args
@@ -136,7 +136,7 @@ let main args =
         let app = builder.Build()
 
         app.UseHttpsRedirection() |> ignore
-        do! app.AddFileDbCRUDApi(schemaFileConfig, dbFileConfig, app.MapGroup "/")
+        do! app.AddFileDbCRUDApi(schemaFileConfig, dbFileConfig, app.MapGroup "/", id, id)
         return app
       }
 
