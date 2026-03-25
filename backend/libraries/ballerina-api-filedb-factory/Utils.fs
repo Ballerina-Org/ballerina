@@ -15,7 +15,6 @@ module Utils =
   open Ballerina.Errors
   open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Types.TypeChecker
-  open Ballerina.Collections.Map
 
   let contextFactory (dbFileConfig: DbFileConfig) =
     stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()) (fileDbOps dbFileConfig)
@@ -82,12 +81,6 @@ module Utils =
 
       let! evalResult =
         Expr.Eval(NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(expr, exprs)))
-        |> Reader.mapContext (
-          ExprEvalContext.Updaters.Values(
-            Map.merge (fun _ -> id) (typeCheckContext.PermissionHooksExtraScope |> Map.map (fun _ -> snd))
-            >> Map.merge (fun _ -> id) (typeCheckContext.BackgroundHooksExtraScope |> Map.map (fun _ -> snd))
-          )
-        )
         |> Reader.Run evalContext
 
       return evalResult, typeCheckContext, typeCheckState, evalContext
