@@ -24,7 +24,7 @@ module API =
   open Ballerina.Reader.WithError
 
   type SchemaAPIPayload =
-    { SchemaDefinition: string
+    { SchemaDefinition: string[]
       IsDraft: bool }
 
   let private runMain
@@ -57,8 +57,8 @@ module API =
 
   let publish tenantId schemaName payload schemaFileConfig (dbFileConfig: DatabaseFileConfig) showMainResult =
     sum {
-      let schemaDirectory, schemaExtension =
-        schemaFileConfig.SchemaDirectory, schemaFileConfig.SchemaExtension
+      let schemaDirectory, schemaExtension, schemaDefinition =
+        schemaFileConfig.SchemaDirectory, schemaFileConfig.SchemaExtension, payload.SchemaDefinition |> List.ofArray
 
       let dbFileManager: FileContentManager<MutableMemoryDB<FileDBRuntimeContext, unit>> =
         FileContentManager<MutableMemoryDB<FileDBRuntimeContext, unit>>
@@ -74,8 +74,6 @@ module API =
         |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
       with
       | None ->
-        Console.WriteLine "Serialization is breaking...\n\n\n==================="
-
         do!
           dbFileManager.WriteContent emptyDb
           |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
@@ -90,13 +88,7 @@ module API =
             DbExtension = dbFileConfig.DbExtension }
 
       let! evalResult, _, _, evalContext =
-        buildSchemaDefinition
-          languageContext
-          dbQuerySymbols
-          queryTypeFactory
-          tenantId
-          schemaName
-          payload.SchemaDefinition
+        buildSchemaDefinition languageContext dbQuerySymbols queryTypeFactory tenantId schemaName schemaDefinition
 
       match evalResult with
       | Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.DBIO dbio))), _) ->
@@ -109,7 +101,7 @@ module API =
         | None ->
           let newVersion =
             { Id = Guid.CreateVersion7()
-              Definition = payload.SchemaDefinition
+              Definition = schemaDefinition
               Version = 1L
               PublishedAt = DateTime.UtcNow }
 
@@ -137,7 +129,7 @@ module API =
             | None ->
               let newVersion =
                 { Id = Guid.CreateVersion7()
-                  Definition = payload.SchemaDefinition
+                  Definition = schemaDefinition
                   Version = 1L
                   PublishedAt = DateTime.UtcNow }
 
@@ -149,7 +141,7 @@ module API =
 
               let newDraft =
                 { draft with
-                    Definition = payload.SchemaDefinition
+                    Definition = schemaDefinition
                     Version = draft.Version + 1L
                     PublishedAt = DateTime.UtcNow }
 
@@ -163,7 +155,7 @@ module API =
           else
             let newVersion =
               { Id = Guid.CreateVersion7()
-                Definition = payload.SchemaDefinition
+                Definition = schemaDefinition
                 Version = 1L
                 PublishedAt = DateTime.UtcNow }
 

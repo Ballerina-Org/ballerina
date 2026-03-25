@@ -1,4 +1,4 @@
-﻿namespace Ballerina.DSL.Next.Json
+namespace Ballerina.DSL.Next.Json
 
 [<AutoOpen>]
 module Keys =

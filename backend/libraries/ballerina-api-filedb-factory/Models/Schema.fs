@@ -8,13 +8,13 @@ module Model =
 
   type SchemaVersion =
     { Id: Guid
-      Definition: string
+      Definition: List<string>
       Version: int64
       PublishedAt: DateTime }
 
     static member Empty =
       { Id = Guid.Empty
-        Definition = ""
+        Definition = []
         Version = Int64.MinValue
         PublishedAt = DateTime.MinValue }
 
