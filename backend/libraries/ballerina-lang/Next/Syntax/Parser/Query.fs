@@ -493,7 +493,7 @@ module Query =
                       (fun acc id ->
                         match id with
                         | Sum.Left id ->
-                          ExprQueryExprRec.QueryRecordDes(acc, id |> Identifier.LocalScope, None)
+                          ExprQueryExprRec.QueryRecordDes(acc, id |> Identifier.LocalScope, false)
                           |> ExprQueryExpr.Create loc
                         | Sum.Right idx ->
                           ExprQueryExprRec.QueryTupleDes(acc, { Index = idx }) |> ExprQueryExpr.Create loc)

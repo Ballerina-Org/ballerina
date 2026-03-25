@@ -25,7 +25,10 @@ let private tryReadFile path =
 [<EntryPoint>]
 let main args =
   let sourceFilePathArg =
-    new Option<string>(name = "--path", Description = "file path of ballerina source file.")
+    new Option<string[]>(name = "--paths", Description = "file paths of ballerina source files.")
+
+  sourceFilePathArg.AllowMultipleArgumentsPerToken <- true
+  sourceFilePathArg.Arity <- ArgumentArity.OneOrMore
 
   let publishArg =
     new Option<bool>(name = "--publish", Description = "specify if the publication from file is published.")
@@ -99,30 +102,32 @@ let main args =
           { DbDirectory = dbDirectory
             DbExtension = dbExtension }
 
-        let sourcePath = parseResult.GetValue sourceFilePathArg
+        let sourcePaths = parseResult.GetValue sourceFilePathArg
 
-        if isNull sourcePath |> not then
+        if isNull sourcePaths |> not && sourcePaths.Length > 0 then
           let isPublished = parseResult.GetValue publishArg
           let tenantId = parseResult.GetRequiredValue tenantIdArg
           let schemaName = parseResult.GetRequiredValue schemaNameArg
           let showEval = parseResult.GetValue showEvalArg
 
           let! definition =
-            tryReadFile sourcePath
+            sourcePaths
+            |> Array.map tryReadFile
+            |> sum.All
             |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
 
           let payload =
-            { SchemaDefinition = definition
+            { SchemaDefinition = definition |> List.toArray
               IsDraft = not isPublished }
 
-          Console.WriteLine $"Publishing schema from file {sourcePath}..."
+          let filePaths = sourcePaths |> Array.reduce (fun x y -> $"{x}, {y}")
+
+          let pluralization = if filePaths.Length > 1 then "s" else ""
+          Console.WriteLine $"Publishing schema from file{pluralization} {filePaths}..."
           do! publish tenantId schemaName payload schemaFileConfig dbFileConfig showEval
           Console.WriteLine "Done!"
 
-
-
-
-        let builder = WebApplication.CreateBuilder(args)
+        let builder = WebApplication.CreateBuilder args
 
         builder.Services.ConfigureHttpJsonOptions(fun options ->
           options.SerializerOptions.DefaultIgnoreCondition <- JsonIgnoreCondition.WhenWritingNull)

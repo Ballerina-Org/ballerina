@@ -12,6 +12,8 @@ module Utils =
   open Ballerina.Reader.WithError
   open Ballerina.DSL.Next.Extensions
   open Model
+  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
 
   let contextFactory (dbFileConfig: DbFileConfig) =
     stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()) (fileDbOps dbFileConfig)
@@ -24,15 +26,24 @@ module Utils =
     queryTypeFactory
     (tenantId: Guid)
     (schemaName: string)
-    (schemaDefinition: string)
+    (schemaDefinitions: List<string>)
     =
     sum {
       let build_cache =
         memcache (languageContext.TypeCheckContext, languageContext.TypeCheckState)
 
+      let files =
+        schemaDefinitions
+        |> List.mapi (fun i def -> FileBuildConfiguration.FromFile($"{schemaName}-{i}.bl", def))
 
-      let project: ProjectBuildConfiguration =
-        { Files = NonEmptyList.OfList(FileBuildConfiguration.FromFile($"{schemaName}.bl", schemaDefinition), []) }
+      let! firstFile =
+        files
+        |> List.tryHead
+        |> sum.OfOption(Errors.Singleton Location.Unknown (fun _ -> "Expected at least one schema definitions."))
+
+      let otherFiles = files |> List.skip 1
+      let files = NonEmptyList.OfList(firstFile, otherFiles)
+      let project: ProjectBuildConfiguration = { Files = files }
 
       let! NonEmptyList(expr, exprs), _, typeCheckContext, typeCheckState =
         ProjectBuildConfiguration.BuildCached dbQuerySymbols queryTypeFactory build_cache project

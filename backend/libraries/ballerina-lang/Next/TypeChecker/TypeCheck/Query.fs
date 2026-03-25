@@ -300,7 +300,7 @@ module Query =
             match k1 = k2, t2 with
             | true, TypeValue.Primitive { value = pt } ->
               let e1 =
-                ExprQueryExprRec.QueryRecordDes(e1, k1.Name.LocalName |> ResolvedIdentifier.Create, Some 0)
+                ExprQueryExprRec.QueryRecordDes(e1, k1.Name.LocalName |> ResolvedIdentifier.Create, true)
                 |> ExprQueryExpr.Create loc0
 
               let e1 =
@@ -318,7 +318,7 @@ module Query =
             match k1 = k2, t1 with
             | true, TypeValue.Primitive { value = pt } ->
               let e2 =
-                ExprQueryExprRec.QueryRecordDes(e2, k2.Name.LocalName |> ResolvedIdentifier.Create, Some 0)
+                ExprQueryExprRec.QueryRecordDes(e2, k2.Name.LocalName |> ResolvedIdentifier.Create, true)
                 |> ExprQueryExpr.Create loc0
 
               let e2 =
@@ -425,7 +425,7 @@ module Query =
                         |> ofSum
 
                       return
-                        ExprQueryExprRec.QueryRecordDes(record_e, field.LocalName |> ResolvedIdentifier.Create, None)
+                        ExprQueryExprRec.QueryRecordDes(record_e, field.LocalName |> ResolvedIdentifier.Create, false)
                         |> ExprQueryExpr.Create expr.Location,
                         field_t
                     }
@@ -454,22 +454,22 @@ module Query =
                             ($"Type checking error: Field {field} not found in record type {record_t}")
                           |> ofSum
 
-                        let field_index =
-                          record_t
-                          |> OrderedMap.toSeq
-                          |> Seq.sort
-                          |> Seq.tryFindIndex (fun (s, _) -> s = field_sym)
-                          |> Option.defaultValue 0
+                        // let field_index =
+                        //   record_t
+                        //   |> OrderedMap.toSeq
+                        //   |> Seq.sort
+                        //   |> Seq.tryFindIndex (fun (s, _) -> s = field_sym)
+                        //   |> Option.defaultValue 0
 
                         return
-                          ExprQueryExprRec.QueryRecordDes(record_e, field_id, field_index |> Some)
+                          ExprQueryExprRec.QueryRecordDes(record_e, field_id, true)
                           |> ExprQueryExpr.Create expr.Location,
                           field_t |> TypeQueryRow.Json
                       })
                       (state {
                         let! record_t = json_t |> TypeValue.AsRecord |> ofSum
 
-                        let! field_sym, (field_t, _) =
+                        let! _, (field_t, _) =
                           record_t
                           |> OrderedMap.toSeq
                           |> Seq.tryFind (fun (field_sym, _) -> field_sym.Name = field)
@@ -479,19 +479,15 @@ module Query =
                           )
                           |> state.OfSum
 
-                        let field_index =
-                          record_t
-                          |> OrderedMap.toSeq
-                          |> Seq.sort
-                          |> Seq.tryFindIndex (fun (s, _) -> s = field_sym)
-                          |> Option.defaultValue 0
+                        // let field_index =
+                        //   record_t
+                        //   |> OrderedMap.toSeq
+                        //   |> Seq.sort
+                        //   |> Seq.tryFindIndex (fun (s, _) -> s = field_sym)
+                        //   |> Option.defaultValue 0
 
                         return
-                          ExprQueryExprRec.QueryRecordDes(
-                            record_e,
-                            field.LocalName |> ResolvedIdentifier.Create,
-                            field_index |> Some
-                          )
+                          ExprQueryExprRec.QueryRecordDes(record_e, field.LocalName |> ResolvedIdentifier.Create, true)
                           |> ExprQueryExpr.Create expr.Location,
                           field_t |> TypeQueryRow.Json
                       })
