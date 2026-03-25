@@ -113,6 +113,10 @@ module API =
           fileManager.TryReadContent()
           |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
 
+        let evalContext =
+          { evalContext with
+              Scope = dbio.EvalContext }
+
 
         match schema with
         | None ->

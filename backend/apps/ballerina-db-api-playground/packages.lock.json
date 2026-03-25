@@ -302,6 +302,16 @@
           "FSharp.Core": "[10.0.102, )"
         }
       },
+      "ballerina-db-api-playground-factory": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.0.102, )",
+          "System.CommandLine": "[2.0.5, )",
+          "ballerina-api-filedb-factory": "[1.0.0, )",
+          "ballerina-filedb": "[1.0.0, )",
+          "ballerina-lang-models": "[1.0.0, )"
+        }
+      },
       "ballerina-delta": {
         "type": "Project",
         "dependencies": {

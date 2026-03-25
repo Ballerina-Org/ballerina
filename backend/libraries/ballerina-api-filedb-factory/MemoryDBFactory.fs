@@ -107,7 +107,9 @@ module MemoryDBAPIFactory =
       | Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.DBIO dbio))), _) ->
         return
           { DbExtension = dbio
-            EvalContext = evalContext
+            EvalContext =
+              { evalContext with
+                  Scope = dbio.EvalContext }
             TypeCheckContext = typeCheckContext
             TypeCheckState = typeCheckState }
       | _ ->
