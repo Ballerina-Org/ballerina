@@ -942,6 +942,56 @@ export const TableAbstractRenderer = <
                       setModifiedByUser.then(enqueuePendingAddOperation),
                     );
                   },
+              addWholeValue: !props.context.apiMethods.includes("add")
+                ? undefined
+                : (value: ValueRecord, flags: Flags | undefined) => {
+                    const delta: DispatchDelta<Flags> = {
+                      kind: "TableAdd",
+                      value,
+                      flags,
+                      sourceAncestorLookupTypeNames:
+                        props.context.lookupTypeAncestorNames,
+                    };
+                    props.foreignMutations.onChange(
+                      Option.Default.none(),
+                      delta,
+                    );
+
+                    const setModifiedByUser =
+                      TableAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      );
+                    const tempId =
+                      `placeholder-${v4()}` as PendingAddOperationId;
+                    const enqueuePendingAddOperation =
+                      TableAbstractRendererState.Updaters.Core.customFormState.children.pendingOps(
+                        (_) =>
+                          TableAbstractRendererPendingOps.Updaters.Core.pendingAddOperations(
+                            List([
+                              TableAbstractRendererPendingAddOperation.Default(
+                                // index will be used to match the correct row once we have it in the data
+                                _.kind == "add"
+                                  ? _.initialTableSize + _.totalAdded
+                                  : props.context.value.data.size,
+                                tempId,
+                                // TODO: use props.context.value.defaultRow
+                                ValueRecord.Default.fromMap(
+                                  CellTemplates.map((c) =>
+                                    c.GetDefaultValue(),
+                                  ).concat([["Id", tempId]]),
+                                ),
+                                flags,
+                              ),
+                            ]),
+                            props.context.value.data.size,
+                          )(_),
+                      );
+                    props.setState(
+                      setModifiedByUser.then(enqueuePendingAddOperation),
+                    );
+                  },
               remove: !props.context.apiMethods.includes("remove")
                 ? undefined
                 : (k: string, flags: Flags | undefined) => {
