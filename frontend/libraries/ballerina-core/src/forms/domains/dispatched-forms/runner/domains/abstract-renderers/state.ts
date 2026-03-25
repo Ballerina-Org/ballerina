@@ -44,6 +44,7 @@ export type CommonAbstractRendererReadonlyContext<
   preprocessedSpecContext?: PreprocessedSpecContext;
   usePreprocessor: boolean;
   preventOneInitialization: boolean;
+  disableTableOptimisticUpdates?: boolean;
 };
 
 export type CommonAbstractRendererViewOnlyReadonlyContext = {

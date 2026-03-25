@@ -129,6 +129,7 @@ export const RecordAbstractRenderer = <
               preprocessedSpecContext: _.preprocessedSpecContext,
               usePreprocessor: _.usePreprocessor,
               preventOneInitialization: _.preventOneInitialization,
+              disableTableOptimisticUpdates: _.disableTableOptimisticUpdates,
             };
           },
         )
