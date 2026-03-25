@@ -926,6 +926,53 @@ export const DispatchDeltaFromDTO =
             : [],
         ]);
       }
+      if (delta.kind == "TableAdd") {
+        const value = delta.value;
+        if(!PredicateValue.Operations.IsRecord(value)) {
+          return ValueOrErrors.Default.throwOne<
+            [
+              DeltaTransfer<DispatchDeltaTransferCustom>,
+              DispatchDeltaTransferComparand,
+              AggregatedFlags<Flags>,
+            ],
+            string
+          >(`Error: table add expected a record but received ${JSON.stringify(delta.value)}`)
+        }
+        if(delta.type == undefined) {
+          return ValueOrErrors.Default.throwOne<
+            [
+              DeltaTransfer<DispatchDeltaTransferCustom>,
+              DispatchDeltaTransferComparand,
+              AggregatedFlags<Flags>,
+            ],
+            string
+          >(`Outgoing delta TableAdd expected a type but received undefined`)
+        }
+        return toRawObject(value, delta.type, {}).Then((res) => { 
+          return ValueOrErrors.Default.return<
+            [
+              DeltaTransfer<DispatchDeltaTransferCustom>,
+              DispatchDeltaTransferComparand,
+              AggregatedFlags<Flags>,
+            ],
+            string
+          >([
+            {
+              Discriminator: "TableAdd",
+              Add: res,
+            },
+            `[TableAdd][${delta.value}]`,
+            delta.flags
+              ? [
+                  [
+                    delta.flags,
+                    `[TableAdd][${delta.value}]`,
+                  ],
+                ]
+              : [],
+          ]);
+        });
+      }
       if (delta.kind == "TableRemove") {
         return ValueOrErrors.Default.return<
           [

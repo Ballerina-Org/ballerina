@@ -942,7 +942,7 @@ export const TableAbstractRenderer = <
                       setModifiedByUser.then(enqueuePendingAddOperation),
                     );
                   },
-              addWholeValue: !props.context.apiMethods.includes("add")
+              addWholeValue: !props.context.apiMethods.includes("add") && !props.context.apiMethods.includes("duplicate")
                 ? undefined
                 : (value: ValueRecord, flags: Flags | undefined) => {
                     const delta: DispatchDelta<Flags> = {
@@ -951,6 +951,7 @@ export const TableAbstractRenderer = <
                       flags,
                       sourceAncestorLookupTypeNames:
                         props.context.lookupTypeAncestorNames,
+                      type: TableEntityType,
                     };
                     props.foreignMutations.onChange(
                       Option.Default.none(),
