@@ -928,7 +928,7 @@ export const DispatchDeltaFromDTO =
       }
       if (delta.kind == "TableAdd") {
         const value = delta.value;
-        if(!PredicateValue.Operations.IsRecord(value)) {
+        if (!PredicateValue.Operations.IsRecord(value)) {
           return ValueOrErrors.Default.throwOne<
             [
               DeltaTransfer<DispatchDeltaTransferCustom>,
@@ -936,9 +936,11 @@ export const DispatchDeltaFromDTO =
               AggregatedFlags<Flags>,
             ],
             string
-          >(`Error: table add expected a record but received ${JSON.stringify(delta.value)}`)
+          >(
+            `Error: table add expected a record but received ${JSON.stringify(delta.value)}`,
+          );
         }
-        if(delta.type == undefined) {
+        if (delta.type == undefined) {
           return ValueOrErrors.Default.throwOne<
             [
               DeltaTransfer<DispatchDeltaTransferCustom>,
@@ -946,9 +948,9 @@ export const DispatchDeltaFromDTO =
               AggregatedFlags<Flags>,
             ],
             string
-          >(`Outgoing delta TableAdd expected a type but received undefined`)
+          >(`Outgoing delta TableAdd expected a type but received undefined`);
         }
-        return toRawObject(value, delta.type, {}).Then((res) => { 
+        return toRawObject(value, delta.type, {}).Then((res) => {
           return ValueOrErrors.Default.return<
             [
               DeltaTransfer<DispatchDeltaTransferCustom>,
@@ -962,14 +964,7 @@ export const DispatchDeltaFromDTO =
               Add: res,
             },
             `[TableAdd][${delta.value}]`,
-            delta.flags
-              ? [
-                  [
-                    delta.flags,
-                    `[TableAdd][${delta.value}]`,
-                  ],
-                ]
-              : [],
+            delta.flags ? [[delta.flags, `[TableAdd][${delta.value}]`]] : [],
           ]);
         });
       }
