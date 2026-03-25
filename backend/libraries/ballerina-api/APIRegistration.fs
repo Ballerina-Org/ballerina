@@ -17,7 +17,10 @@ module APIRegistration =
       =
       sum {
         let! apiContext =
-          APIContext.Create apiRegistrationFactory.LanguageContextFactory apiRegistrationFactory.DbDescriptorFetcher
+          APIContext.Create
+            apiRegistrationFactory.LanguageContextFactory
+            apiRegistrationFactory.DbDescriptorFetcher
+            apiRegistrationFactory.PermissionHookInjector
 
         do create<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName> builder apiContext
         do delete<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName> builder apiContext

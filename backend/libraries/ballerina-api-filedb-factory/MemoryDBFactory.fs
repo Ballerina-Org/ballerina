@@ -26,6 +26,8 @@ module MemoryDBAPIFactory =
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.Patterns
   open Utils
+  open Ballerina.Collections.Map
+
 
   let contextFactory dbFileConfig =
     stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()) (fileDbOps dbFileConfig)
@@ -67,6 +69,24 @@ module MemoryDBAPIFactory =
     (schemaFileConfig: SchemaFileConfig)
     dbQuerySymbols
     queryTypeFactory
+    (addPermissionHookScope:
+      Map<
+        ResolvedIdentifier,
+        (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+       >
+        -> Map<
+          ResolvedIdentifier,
+          (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+         >)
+    (addBackgroundHookScope:
+      Map<
+        ResolvedIdentifier,
+        (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+       >
+        -> Map<
+          ResolvedIdentifier,
+          (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+         >)
     (tenantId: Guid)
     (schemaName: string)
     (draft: bool)
@@ -79,6 +99,8 @@ module MemoryDBAPIFactory =
           languageContext
           dbQuerySymbols
           queryTypeFactory
+          addPermissionHookScope
+          addBackgroundHookScope
           tenantId
           schemaName
           schemaVersion.Definition
@@ -87,7 +109,9 @@ module MemoryDBAPIFactory =
       | Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.DBIO dbio))), _) ->
         return
           { DbExtension = dbio
-            EvalContext = evalContext
+            EvalContext =
+              { evalContext with
+                  Scope = dbio.EvalContext }
             TypeCheckContext = typeCheckContext
             TypeCheckState = typeCheckState }
       | _ ->
@@ -100,8 +124,30 @@ module MemoryDBAPIFactory =
 
   type WebApplication with
     member this.AddFileDbCRUDApi
-      (schemaFileConfig: SchemaFileConfig, databaseFileConfig: DatabaseFileConfig, routeGroupBuilder: RouteGroupBuilder)
-      : Sum<unit, Errors<Location>> =
+      (
+        schemaFileConfig: SchemaFileConfig,
+        databaseFileConfig: DatabaseFileConfig,
+        routeGroupBuilder: RouteGroupBuilder,
+        addPermissionHookScope:
+          Map<
+            ResolvedIdentifier,
+            (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+           >
+            -> Map<
+              ResolvedIdentifier,
+              (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+             >,
+        addBackgroundHookScope:
+          Map<
+            ResolvedIdentifier,
+            (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+           >
+            -> Map<
+              ResolvedIdentifier,
+              (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+             >,
+        hookInjector: Updater<ExprEvalContext<_, _>>
+      ) : Sum<unit, Errors<Location>> =
       sum {
         let dbFileConfig: DbFileConfig =
           { DbDirectory = databaseFileConfig.DbDirectory
@@ -110,7 +156,13 @@ module MemoryDBAPIFactory =
         let languageContext, querySymbols, queryTypeFactory = contextFactory dbFileConfig
 
         let descriptorFetcher =
-          descriptorFetcherFactory languageContext schemaFileConfig querySymbols queryTypeFactory
+          descriptorFetcherFactory
+            languageContext
+            schemaFileConfig
+            querySymbols
+            queryTypeFactory
+            addPermissionHookScope
+            addBackgroundHookScope
 
         let factory =
           { DbDescriptorFetcher = descriptorFetcher
@@ -118,9 +170,13 @@ module MemoryDBAPIFactory =
               fun () ->
                 contextFactory dbFileConfig
                 |> (fun (languageContext, _, _) -> languageContext)
-                |> sum.Return }
+                |> sum.Return
+            PermissionHookInjector = hookInjector }
 
-        this.MapPublish(schemaFileConfig, databaseFileConfig).MapGetSchemaVersions(schemaFileConfig)
+
+        this
+          .MapPublish(schemaFileConfig, databaseFileConfig, addPermissionHookScope, addBackgroundHookScope)
+          .MapGetSchemaVersions(schemaFileConfig)
         |> ignore
 
         do! routeGroupBuilder.RegisterAPIEndpoints factory

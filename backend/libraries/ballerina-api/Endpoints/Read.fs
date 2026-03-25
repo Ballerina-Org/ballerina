@@ -158,7 +158,7 @@ module Read =
               Expr.Eval(
                 NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doLookupExpr, []))
               )
-              |> Reader.Run evalContext
+              |> Reader.Run(evalContext |> context.PermissionHookInjector)
               |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
             let! resultDTO =
@@ -211,7 +211,7 @@ module Read =
                 Expr.Eval(
                   NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doLookupExpr, []))
                 )
-                |> Reader.Run evalContext
+                |> Reader.Run(evalContext |> context.PermissionHookInjector)
                 |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
               let! resultDTO =
@@ -278,7 +278,7 @@ module Read =
               Expr.Eval(
                 NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doLookupExpr, []))
               )
-              |> Reader.Run evalContext
+              |> Reader.Run(evalContext |> context.PermissionHookInjector)
               |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
             let! resultDTO =
@@ -348,7 +348,7 @@ module Read =
               Expr.Eval(
                 NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doLookupExpr, []))
               )
-              |> Reader.Run evalContext
+              |> Reader.Run(evalContext |> context.PermissionHookInjector)
               |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
             let! resultDTO =
@@ -409,7 +409,7 @@ module Read =
               Expr.Eval(
                 NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doLookupExpr, []))
               )
-              |> Reader.Run evalContext
+              |> Reader.Run(evalContext |> context.PermissionHookInjector)
               |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
             let! resultDTO =

@@ -64,6 +64,37 @@ module Extension =
               return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Unit)
             } }
 
+    let stringOfTId =
+      Identifier.FullyQualified([ "string" ], "ofT") |> TypeCheckScope.Empty.Resolve
+
+    let ofTOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
+      stringOfTId,
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateLambda(
+                TypeParameter.Create("T", Kind.Schema),
+                TypeExpr.Arrow(TypeExpr.Lookup("T" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.String)
+              ),
+              Kind.Arrow(Kind.Star, Kind.Star),
+              StringOperations.OfT)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | StringOperations.OfT -> Some(StringOperations.OfT)
+            | _ -> None)
+
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> StringOperations.AsOfT
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.String(v.ToString()))
+            } }
+
     let stringLengthId =
       Identifier.FullyQualified([ "string" ], "length")
       |> TypeCheckScope.Empty.Resolve
@@ -434,6 +465,7 @@ module Extension =
     { TypeVars = []
       Operations =
         [ printOperation
+          ofTOperation
           lengthOperation
           plusOperation
           equalOperation

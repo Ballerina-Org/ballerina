@@ -57,3 +57,8 @@ module Patterns =
       match op with
       | StringOperations.Print -> sum.Return()
       | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected Print operation")
+
+    static member AsOfT(op: StringOperations<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | StringOperations.OfT -> sum.Return()
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected OfT operation")

@@ -55,7 +55,16 @@ module API =
         Console.WriteLine $"EVALUATION RESULT:\n{mainResult}"
     }
 
-  let publish tenantId schemaName payload schemaFileConfig (dbFileConfig: DatabaseFileConfig) showMainResult =
+  let publish
+    tenantId
+    schemaName
+    payload
+    schemaFileConfig
+    (dbFileConfig: DatabaseFileConfig)
+    showMainResult
+    addPermissionHookScope
+    addBackgroundHookScope
+    =
     sum {
       let schemaDirectory, schemaExtension, schemaDefinition =
         schemaFileConfig.SchemaDirectory, schemaFileConfig.SchemaExtension, payload.SchemaDefinition |> List.ofArray
@@ -88,13 +97,25 @@ module API =
             DbExtension = dbFileConfig.DbExtension }
 
       let! evalResult, _, _, evalContext =
-        buildSchemaDefinition languageContext dbQuerySymbols queryTypeFactory tenantId schemaName schemaDefinition
+        buildSchemaDefinition
+          languageContext
+          dbQuerySymbols
+          queryTypeFactory
+          addPermissionHookScope
+          addBackgroundHookScope
+          tenantId
+          schemaName
+          schemaDefinition
 
       match evalResult with
       | Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.DBIO dbio))), _) ->
         let! schema =
           fileManager.TryReadContent()
           |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
+
+        let evalContext =
+          { evalContext with
+              Scope = dbio.EvalContext }
 
 
         match schema with
@@ -180,11 +201,27 @@ module API =
     }
 
   type WebApplication with
-    member app.MapPublish(schemaFileConfig: SchemaFileConfig, dbFileConfig: DatabaseFileConfig) =
+    member app.MapPublish
+      (
+        schemaFileConfig: SchemaFileConfig,
+        dbFileConfig: DatabaseFileConfig,
+        addPermissionHookScope,
+        addBackgroundHookScope
+      ) =
       app.MapPost(
         "/publish/{tenantId}/{schemaName}",
         Func<Guid, string, SchemaAPIPayload, IResult>(fun tenantId schemaName payload ->
-          match publish tenantId schemaName payload schemaFileConfig dbFileConfig false with
+          match
+            publish
+              tenantId
+              schemaName
+              payload
+              schemaFileConfig
+              dbFileConfig
+              false
+              addPermissionHookScope
+              addBackgroundHookScope
+          with
           | Left _ -> Results.Ok()
           | Right errors -> Results.BadRequest(errors.ToString()))
       )
