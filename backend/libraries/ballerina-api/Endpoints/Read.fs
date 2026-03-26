@@ -105,77 +105,78 @@ module Read =
 
     app.MapPost(
       "/{tenantId}/{schemaName}/get-by-id",
-      Func<'tenantId, 'schemaName, bool, GetByIdPayload, IResult>(fun tenantId schemaName draft payload ->
-        let entityName, idDTO = payload.EntityName, payload.Id
+      Func<HttpContext, 'tenantId, 'schemaName, bool, GetByIdPayload, IResult>
+        (fun httpContext tenantId schemaName draft payload ->
+          let entityName, idDTO = payload.EntityName, payload.Id
 
-        let result =
-          sum {
-            let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
-              getDbDescriptor tenantId schemaName draft context
+          let result =
+            sum {
+              let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
+                getDbDescriptor tenantId schemaName draft context
 
-            let! idValue =
-              valueFromDTO >> runDTOConverter languageContext <| idDTO
-              |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+              let! idValue =
+                valueFromDTO >> runDTOConverter languageContext <| idDTO
+                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
-            let! tableDescriptor =
-              dbio.Schema.Entities
-              |> OrderedMap.tryFind (entityName |> SchemaEntityName.Create)
-              |> Sum.fromOption (fun () ->
-                Errors<Location>.Singleton Location.Unknown (fun () ->
-                  $"Entity {entityName} not found in schema {dbio.Schema}."))
-              |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+              let! tableDescriptor =
+                dbio.Schema.Entities
+                |> OrderedMap.tryFind (entityName |> SchemaEntityName.Create)
+                |> Sum.fromOption (fun () ->
+                  Errors<Location>.Singleton Location.Unknown (fun () ->
+                    $"Entity {entityName} not found in schema {dbio.Schema}."))
+                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
-            let idType = tableDescriptor.Id
-            do! typeCheckValue idValue idType languageContext typeCheckContext typeCheckState
+              let idType = tableDescriptor.Id
+              do! typeCheckValue idValue idType languageContext typeCheckContext typeCheckState
 
-            let! entityDescriptor =
-              entityDescriptorFromDb dbio entityName
-              |> sum.MapError(
-                Errors.MapContext(replaceWith Location.Unknown)
-                >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
-              )
+              let! entityDescriptor =
+                entityDescriptorFromDb dbio entityName
+                |> sum.MapError(
+                  Errors.MapContext(replaceWith Location.Unknown)
+                  >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                )
 
 
 
-            let doLookupExpr
-              : Expr<
-                  TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                  ResolvedIdentifier,
-                  ValueExt<'runtimeContext, 'db, 'customExtension>
-                 > =
-              Expr.Apply(
+              let doLookupExpr
+                : Expr<
+                    TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
+                    ResolvedIdentifier,
+                    ValueExt<'runtimeContext, 'db, 'customExtension>
+                   > =
                 Expr.Apply(
-                  Expr.Lookup(
-                    Identifier.FullyQualified([ "DB" ], $"getById")
-                    |> ResolvedIdentifier.FromIdentifier
+                  Expr.Apply(
+                    Expr.Lookup(
+                      Identifier.FullyQualified([ "DB" ], $"getById")
+                      |> ResolvedIdentifier.FromIdentifier
+                    ),
+                    Expr.FromValue(entityDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                   ),
-                  Expr.FromValue(entityDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-                ),
-                Expr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-              )
+                  Expr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                )
 
-            let! evalResult =
-              Expr.Eval(
-                NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doLookupExpr, []))
-              )
-              |> Reader.Run(evalContext |> context.PermissionHookInjector)
-              |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+              let! evalResult =
+                Expr.Eval(
+                  NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doLookupExpr, []))
+                )
+                |> Reader.Run(evalContext |> context.PermissionHookInjector httpContext)
+                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
-            let! resultDTO =
-              valueToDTO >> runDTOConverter languageContext <| evalResult
-              |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+              let! resultDTO =
+                valueToDTO >> runDTOConverter languageContext <| evalResult
+                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
-            return idDTO, resultDTO
-          }
+              return idDTO, resultDTO
+            }
 
-        apiResponseFromSum result id)
+          apiResponseFromSum result id)
     )
     |> ignore
 
     app.MapGet(
       "/{tenantId}/{schemaName}/many",
-      Func<'tenantId, 'schemaName, bool, string, int, int, IResult>
-        (fun tenantId schemaName draft (entityName: string) (offset: int) (limit: int) ->
+      Func<HttpContext, 'tenantId, 'schemaName, bool, string, int, int, IResult>
+        (fun httpContext tenantId schemaName draft (entityName: string) (offset: int) (limit: int) ->
           let result =
             sum {
               let! dbio, languageContext, evalContext, typeCheckContext, _ =
@@ -211,7 +212,7 @@ module Read =
                 Expr.Eval(
                   NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doLookupExpr, []))
                 )
-                |> Reader.Run(evalContext |> context.PermissionHookInjector)
+                |> Reader.Run(evalContext |> context.PermissionHookInjector httpContext)
                 |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
               let! resultDTO =
@@ -233,192 +234,216 @@ module Read =
 
     app.MapPost(
       "/{tenantId}/{schemaName}/lookup-one",
-      Func<'tenantId, 'schemaName, bool, LookupPayload, IResult>(fun tenantId schemaName draft payload ->
+      Func<HttpContext, 'tenantId, 'schemaName, bool, LookupPayload, IResult>
+        (fun httpContext tenantId schemaName draft payload ->
 
-        let result =
-          sum {
-            let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
-              getDbDescriptor tenantId schemaName draft context
+          let result =
+            sum {
+              let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
+                getDbDescriptor tenantId schemaName draft context
 
-            let relationName, direction, payloadId =
-              payload.RelationName, payload.Direction, payload.FromId
+              let relationName, direction, payloadId =
+                payload.RelationName, payload.Direction, payload.FromId
 
-            let! idValue =
-              valueFromDTO >> runDTOConverter languageContext <| payloadId
-              |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+              let! idValue =
+                valueFromDTO >> runDTOConverter languageContext <| payloadId
+                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
-            do!
-              checkRelatedEntityId relationName direction idValue dbio languageContext typeCheckContext typeCheckState
+              do!
+                checkRelatedEntityId
+                  relationName
+                  direction
+                  idValue
+                  dbio
+                  languageContext
+                  typeCheckContext
+                  typeCheckState
 
-            let! lookupDescriptor =
-              lookupDescriptorFromDb dbio relationName direction
-              |> sum.MapError(
-                Errors.MapContext(replaceWith Location.Unknown)
-                >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
-              )
+              let! lookupDescriptor =
+                lookupDescriptorFromDb dbio relationName direction
+                |> sum.MapError(
+                  Errors.MapContext(replaceWith Location.Unknown)
+                  >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                )
 
-            let doLookupExpr
-              : Expr<
-                  TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                  ResolvedIdentifier,
-                  ValueExt<'runtimeContext, 'db, 'customExtension>
-                 > =
-              Expr.Apply(
-                Expr.Apply(
-                  Expr.Lookup(
-                    Identifier.FullyQualified([ "DB" ], $"lookupOne")
-                    |> ResolvedIdentifier.FromIdentifier
-                  ),
-                  Expr.FromValue(lookupDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-                ),
-                Expr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-              )
-
-            let! evalResult =
-              Expr.Eval(
-                NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doLookupExpr, []))
-              )
-              |> Reader.Run(evalContext |> context.PermissionHookInjector)
-              |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
-
-            let! resultDTO =
-              valueToDTO >> runDTOConverter languageContext <| evalResult
-              |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
-
-            return payloadId, resultDTO
-          }
-
-        apiResponseFromSum result (fun (id, result) -> {| Id = id; RelatedEntities = result |}))
-    )
-    |> ignore
-
-    app.MapPost(
-      "/{tenantId}/{schemaName}/lookup-many",
-      Func<'tenantId, 'schemaName, bool, LookupManyPayload, IResult>(fun tenantId schemaName draft payload ->
-
-        let result =
-          sum {
-            let relationName, direction, fromId, offset, limit =
-              payload.Lookup.RelationName,
-              payload.Lookup.Direction,
-              payload.Lookup.FromId,
-              payload.Offset,
-              payload.Limit
-
-            let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
-              getDbDescriptor tenantId schemaName draft context
-
-            let! idValue =
-              valueFromDTO >> runDTOConverter languageContext <| fromId
-              |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
-
-            do!
-              checkRelatedEntityId relationName direction idValue dbio languageContext typeCheckContext typeCheckState
-
-            let! lookupDescriptor =
-              lookupDescriptorFromDb dbio relationName direction
-              |> sum.MapError(
-                Errors.MapContext(replaceWith Location.Unknown)
-                >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
-              )
-
-            let doLookupExpr
-              : Expr<
-                  TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                  ResolvedIdentifier,
-                  ValueExt<'runtimeContext, 'db, 'customExtension>
-                 > =
-              Expr.Apply(
+              let doLookupExpr
+                : Expr<
+                    TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
+                    ResolvedIdentifier,
+                    ValueExt<'runtimeContext, 'db, 'customExtension>
+                   > =
                 Expr.Apply(
                   Expr.Apply(
                     Expr.Lookup(
-                      Identifier.FullyQualified([ "DB" ], $"lookupMany")
+                      Identifier.FullyQualified([ "DB" ], $"lookupOne")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
                     Expr.FromValue(lookupDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                   ),
                   Expr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-                ),
-                Expr.TupleCons
-                  [ Expr.Primitive(PrimitiveValue.Int32(offset))
-                    Expr.Primitive(PrimitiveValue.Int32(limit)) ]
-              )
+                )
 
-            let! evalResult =
-              Expr.Eval(
-                NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doLookupExpr, []))
-              )
-              |> Reader.Run(evalContext |> context.PermissionHookInjector)
-              |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+              let! evalResult =
+                Expr.Eval(
+                  NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doLookupExpr, []))
+                )
+                |> Reader.Run(evalContext |> context.PermissionHookInjector httpContext)
+                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
-            let! resultDTO =
-              valueToDTO >> runDTOConverter languageContext <| evalResult
-              |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+              let! resultDTO =
+                valueToDTO >> runDTOConverter languageContext <| evalResult
+                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
-            return fromId, resultDTO
-          }
+              return payloadId, resultDTO
+            }
 
-        apiResponseFromSum result (fun (id, result) -> {| Id = id; RelatedEntities = result |}))
+          apiResponseFromSum result (fun (id, result) -> {| Id = id; RelatedEntities = result |}))
+    )
+    |> ignore
+
+    app.MapPost(
+      "/{tenantId}/{schemaName}/lookup-many",
+      Func<HttpContext, 'tenantId, 'schemaName, bool, LookupManyPayload, IResult>
+        (fun httpContext tenantId schemaName draft payload ->
+
+          let result =
+            sum {
+              let relationName, direction, fromId, offset, limit =
+                payload.Lookup.RelationName,
+                payload.Lookup.Direction,
+                payload.Lookup.FromId,
+                payload.Offset,
+                payload.Limit
+
+              let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
+                getDbDescriptor tenantId schemaName draft context
+
+              let! idValue =
+                valueFromDTO >> runDTOConverter languageContext <| fromId
+                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+
+              do!
+                checkRelatedEntityId
+                  relationName
+                  direction
+                  idValue
+                  dbio
+                  languageContext
+                  typeCheckContext
+                  typeCheckState
+
+              let! lookupDescriptor =
+                lookupDescriptorFromDb dbio relationName direction
+                |> sum.MapError(
+                  Errors.MapContext(replaceWith Location.Unknown)
+                  >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                )
+
+              let doLookupExpr
+                : Expr<
+                    TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
+                    ResolvedIdentifier,
+                    ValueExt<'runtimeContext, 'db, 'customExtension>
+                   > =
+                Expr.Apply(
+                  Expr.Apply(
+                    Expr.Apply(
+                      Expr.Lookup(
+                        Identifier.FullyQualified([ "DB" ], $"lookupMany")
+                        |> ResolvedIdentifier.FromIdentifier
+                      ),
+                      Expr.FromValue(lookupDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    ),
+                    Expr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                  ),
+                  Expr.TupleCons
+                    [ Expr.Primitive(PrimitiveValue.Int32(offset))
+                      Expr.Primitive(PrimitiveValue.Int32(limit)) ]
+                )
+
+              let! evalResult =
+                Expr.Eval(
+                  NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doLookupExpr, []))
+                )
+                |> Reader.Run(evalContext |> context.PermissionHookInjector httpContext)
+                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+
+              let! resultDTO =
+                valueToDTO >> runDTOConverter languageContext <| evalResult
+                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+
+              return fromId, resultDTO
+            }
+
+          apiResponseFromSum result (fun (id, result) -> {| Id = id; RelatedEntities = result |}))
     )
     |> ignore
 
     app.MapPost(
       "/{tenantId}/{schemaName}/lookup-option",
-      Func<'tenantId, 'schemaName, bool, LookupPayload, IResult>(fun tenantId schemaName draft payload ->
+      Func<HttpContext, 'tenantId, 'schemaName, bool, LookupPayload, IResult>
+        (fun httpContext tenantId schemaName draft payload ->
 
-        let result =
-          sum {
-            let relationName, direction, fromId =
-              payload.RelationName, payload.Direction, payload.FromId
+          let result =
+            sum {
+              let relationName, direction, fromId =
+                payload.RelationName, payload.Direction, payload.FromId
 
-            let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
-              getDbDescriptor tenantId schemaName draft context
+              let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
+                getDbDescriptor tenantId schemaName draft context
 
-            let! idValue =
-              valueFromDTO >> runDTOConverter languageContext <| fromId
-              |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+              let! idValue =
+                valueFromDTO >> runDTOConverter languageContext <| fromId
+                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
-            do!
-              checkRelatedEntityId relationName direction idValue dbio languageContext typeCheckContext typeCheckState
+              do!
+                checkRelatedEntityId
+                  relationName
+                  direction
+                  idValue
+                  dbio
+                  languageContext
+                  typeCheckContext
+                  typeCheckState
 
-            let! lookupDescriptor =
-              lookupDescriptorFromDb dbio relationName direction
-              |> sum.MapError(
-                Errors.MapContext(replaceWith Location.Unknown)
-                >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
-              )
+              let! lookupDescriptor =
+                lookupDescriptorFromDb dbio relationName direction
+                |> sum.MapError(
+                  Errors.MapContext(replaceWith Location.Unknown)
+                  >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                )
 
-            let doLookupExpr
-              : Expr<
-                  TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                  ResolvedIdentifier,
-                  ValueExt<'runtimeContext, 'db, 'customExtension>
-                 > =
-              Expr.Apply(
+              let doLookupExpr
+                : Expr<
+                    TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
+                    ResolvedIdentifier,
+                    ValueExt<'runtimeContext, 'db, 'customExtension>
+                   > =
                 Expr.Apply(
-                  Expr.Lookup(
-                    Identifier.FullyQualified([ "DB" ], $"lookupOption")
-                    |> ResolvedIdentifier.FromIdentifier
+                  Expr.Apply(
+                    Expr.Lookup(
+                      Identifier.FullyQualified([ "DB" ], $"lookupOption")
+                      |> ResolvedIdentifier.FromIdentifier
+                    ),
+                    Expr.FromValue(lookupDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                   ),
-                  Expr.FromValue(lookupDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-                ),
-                Expr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-              )
+                  Expr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                )
 
-            let! evalResult =
-              Expr.Eval(
-                NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doLookupExpr, []))
-              )
-              |> Reader.Run(evalContext |> context.PermissionHookInjector)
-              |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+              let! evalResult =
+                Expr.Eval(
+                  NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doLookupExpr, []))
+                )
+                |> Reader.Run(evalContext |> context.PermissionHookInjector httpContext)
+                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
-            let! resultDTO =
-              valueToDTO >> runDTOConverter languageContext <| evalResult
-              |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+              let! resultDTO =
+                valueToDTO >> runDTOConverter languageContext <| evalResult
+                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
-            return fromId, resultDTO
-          }
+              return fromId, resultDTO
+            }
 
-        apiResponseFromSum result (fun (id, result) -> {| Id = id; RelatedEntities = result |}))
+          apiResponseFromSum result (fun (id, result) -> {| Id = id; RelatedEntities = result |}))
     )
     |> ignore

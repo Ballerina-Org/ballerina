@@ -26,26 +26,14 @@ module Utils =
     dbQuerySymbols
     queryTypeFactory
     (addPermissionHookScope:
-      Map<
-        ResolvedIdentifier,
-        (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
-       >
-        -> Map<
-          ResolvedIdentifier,
-          (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
-         >)
+      Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>
+        -> Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>)
     (addBackgroundHookScope:
-      Map<
-        ResolvedIdentifier,
-        (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
-       >
-        -> Map<
-          ResolvedIdentifier,
-          (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
-         >)
+      Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>
+        -> Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>)
     (tenantId: Guid)
     (schemaName: string)
-    (schemaDefinitions: List<string>)
+    (schemaDefinitions: List<SchemaFileDefinition>)
     =
     sum {
       let build_cache =
@@ -58,7 +46,7 @@ module Utils =
 
       let files =
         schemaDefinitions
-        |> List.mapi (fun i def -> FileBuildConfiguration.FromFile($"{schemaName}-{i}.bl", def))
+        |> List.map (fun def -> FileBuildConfiguration.FromFile(def.Path, def.Content))
 
       let! firstFile =
         files
