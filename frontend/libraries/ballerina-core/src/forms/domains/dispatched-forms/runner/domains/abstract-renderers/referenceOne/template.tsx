@@ -94,7 +94,8 @@ export const ReferenceOneAbstractRenderer = <
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
   DetailsRendererRaw: NestedRenderer<any> | undefined,
   PreviewRendererRaw: NestedRenderer<any> | undefined,
-  referenceOneEntityType: RecordType<any>,
+  referenceOneDetailsType: RecordType<any>,
+  referenceOnePreviewType: RecordType<any>,
 ) => {
   const typedInitializeStreamRunner = initializeStreamRunnerReferenceOne<
     CustomPresentationContext,
@@ -160,7 +161,7 @@ export const ReferenceOneAbstractRenderer = <
           globallyDisabled: _.globallyDisabled,
           bindings: _.bindings,
           extraContext: _.extraContext,
-        type: referenceOneEntityType,
+          type: referenceOneDetailsType,
           customPresentationContext: _.customPresentationContext,
           remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
           typeAncestors: [_.type as DispatchParsedType<any>].concat(
@@ -253,10 +254,10 @@ export const ReferenceOneAbstractRenderer = <
             const state =
               _.customFormState?.previewStates.get(id) ??
               RecordAbstractRendererState.Default.zero();
- 
+
             return {
               ...state,
-              value, //TODO Suzan: value is using details type is used. displayfields may exist in the preview type but not the details type. Check if they are shown properly
+              value, 
               disabled: _.disabled || _.globallyDisabled,
               globallyDisabled: _.globallyDisabled,
               readOnly: _.readOnly || _.globallyReadOnly,
@@ -264,7 +265,7 @@ export const ReferenceOneAbstractRenderer = <
               locked: _.locked,
               bindings: _.bindings,
               extraContext: _.extraContext,
-              type: referenceOneEntityType,
+              type: referenceOnePreviewType,
               customPresentationContext: _.customPresentationContext,
               remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
               typeAncestors: [_.type as DispatchParsedType<any>].concat(

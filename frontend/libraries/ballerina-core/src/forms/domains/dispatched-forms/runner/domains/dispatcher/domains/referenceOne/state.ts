@@ -110,11 +110,61 @@ export const ReferenceOneDispatcher = {
       DispatchParsedType.Operations.ResolveLookupType(
         renderer.type.detailsType.name,
         dispatcherContext.types,
-      ).Then((referenceOneEntityType) =>
-        referenceOneEntityType.kind != "record"
+      ).Then((referenceOneDetailsType) =>
+        referenceOneDetailsType.kind != "record"
           ? ValueOrErrors.Default.throwOne(
+              `expected a record type, but got a ${referenceOneDetailsType.kind} type`,
+            )
+          : DispatchParsedType.Operations.ResolveLookupType(
+              renderer.type.previewType.name,
+              dispatcherContext.types,
+            ).Then((referenceOnePreviewType) =>
+                referenceOnePreviewType.kind != "record"
+                  ? ValueOrErrors.Default.throwOne(
+                      `expected a record type, but got a ${referenceOnePreviewType.kind} type`,
+                    )
+                  : ReferenceOneDispatcher.Operations.DispatchPreviewRenderer(
+                      renderer,
+                      dispatcherContext,
+                      isInlined,
+                    ).Then((previewRenderer) =>
                       ReferenceOneDispatcher.Operations.DispatchDetailsRenderer(
                         renderer,
                         dispatcherContext,
                         isInlined,
+                      ).Then((detailsRenderer) =>
+                        ReferenceOneDispatcher.Operations.GetApi(
+                          renderer.entityName,
+                          dispatcherContext,
+                        ).Then((getApi) =>
+                          dispatcherContext
+                            .getConcreteRenderer("referenceOne", renderer.concreteRenderer)
+                            .Then((concreteRenderer) =>
+                              ValueOrErrors.Default.return(
+                                ReferenceOneAbstractRenderer(
+                                  detailsRenderer,
+                                  previewRenderer,
+                                  dispatcherContext.IdProvider,
+                                  dispatcherContext.ErrorRenderer,
+                                  renderer.detailsRenderer,
+                                  renderer.previewRenderer,
+                                  referenceOneDetailsType,
+                                  referenceOnePreviewType
+                                )
+                                  .mapContext((_: any) => ({
+                                    ..._,
+                                    getApi,
+                                    fromApiParser: dispatcherContext.parseFromApiByType(
+                                      renderer.type.detailsType,
+                                    ),
+                                    type: renderer.type,
+                                  }))
+                                  .withView(concreteRenderer),
+                              ),
+                            ),
+                        ),
+                      ),
+                    ),
+              ),
+  ),},
 };

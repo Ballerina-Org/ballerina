@@ -16,7 +16,7 @@ type TypeInstancesExtractor = BasicFun<PredicateValue, ExtractedTypeInstances>;
 
 export const PredicateValueExtractor = {
   Operations: {
-    ExtractPredicateValue: (
+    ExtractPredicateValue: ( //TODO Suzan: seems unused. Can it be removed?
       lookupName: string,
       typesMap: Map<string, DispatchParsedType<any>>,
       t: DispatchParsedType<any>,
@@ -301,7 +301,7 @@ export const PredicateValueExtractor = {
           const traverseValue: TypeInstancesExtractor = self(
             lookupName,
             typesMap,
-            t.detailsType, //TODO Suzan: should this be details or preview type? see tuple/map. both types should be passed
+            t.previewType, //TODO Suzan: should this be details or preview type? see tuple/map. both types should be passed
             debugPath.concat("referenceOne"),
           );
           return (v): ExtractedTypeInstances =>

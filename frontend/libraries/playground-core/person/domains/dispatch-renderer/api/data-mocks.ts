@@ -628,7 +628,7 @@ const userReferenceOne: DispatchReferenceOneSource = {
   get: (id: Guid) => {
     return PromiseRepo.Default.mock(
       () => ({
-        Id: v4(),
+        Id: "65ea1077-f9fb-4926-a5af-effadcb4dfa5",
         Name: "Tim",
         Surname: "Pool",
         Email: "tim.pool@example.com",
@@ -644,12 +644,21 @@ const userReferenceOne: DispatchReferenceOneSource = {
     (streamParams: Map<string, string>) =>
     ([streamPosition]: [ValueStreamPosition]) => {
       return PromiseRepo.Default.mock(() => ({
-        Values: Range(1, 5)
-          .map((_) => ({
-            Id: v4(),
-            Name: faker.person.firstName(),
-            Surname: faker.person.lastName(),
-          }))
+        Values: Range(1, 6)
+          .map((num) => num == 3
+            ? ({
+              Id: "65ea1077-f9fb-4926-a5af-effadcb4dfa5",
+              Name: "Tim",
+              Surname: "Pool",
+              DisplayValue: `DisplayValue ${num}`,
+            })
+            : ({
+              Id: v4(),
+              Name: faker.person.firstName(),
+              Surname: faker.person.lastName(),
+              DisplayValue: `DisplayValue ${num}`,
+            })
+          )
           .reduce((acc, curr) => {
             acc[curr.Id] = curr;
             return acc;

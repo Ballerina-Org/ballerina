@@ -4,7 +4,8 @@
       "fields": {
         "Id": "guid",
         "Name": "string",
-        "Surname": "string"
+        "Surname": "string", 
+        "DisplayValue": "string"
       }
     },
     "UserDetails": {
@@ -2076,6 +2077,12 @@
                 },
                 "Name": {
                   "renderer": "defaultString"
+                },
+                "DisplayValue": {
+                  "renderer": "defaultString"
+                },
+                "Surname": {
+                  "renderer": "defaultString"
                 }
               },
               "tabs": {
@@ -2083,7 +2090,7 @@
                   "columns": {
                     "main": {
                       "groups": {
-                        "main": ["Id", "Name"]
+                        "main": ["Id", "Name", "DisplayValue", "Surname"]
                       }
                     }
                   }
@@ -2136,6 +2143,9 @@
                 },
                 "Name": {
                   "renderer": "defaultString"
+                },
+                "DisplayValue": {
+                  "renderer": "defaultString"
                 }
               },
               "tabs": {
@@ -2143,7 +2153,7 @@
                   "columns": {
                     "main": {
                       "groups": {
-                        "main": ["Id", "Name"]
+                        "main": ["Id", "Name", "DisplayValue"]
                       }
                     }
                   }

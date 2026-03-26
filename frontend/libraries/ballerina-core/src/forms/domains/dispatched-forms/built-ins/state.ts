@@ -975,9 +975,9 @@ export const dispatchDefaultState =
                         `getMany not provided for ${renderer.entityName} in referenceOne source`,
                       )
                     : MapRepo.Operations.tryFindWithError(
-                      t.detailsType.name,
+                      t.previewType.name,
                       types,
-                      () => `cannot find referenceOne type ${JSON.stringify(t.detailsType.name)} in ${JSON.stringify(t)}`,
+                      () => `cannot find referenceOne type ${JSON.stringify(t.previewType.name)} in ${JSON.stringify(t)}`,
                     ).Then((lookupType) =>
                       ValueOrErrors.Default.return(
                         ReferenceOneAbstractRendererState.Default(
@@ -1645,7 +1645,7 @@ export const dispatchFromAPIRawValue =
         }
 
         return dispatchFromAPIRawValue(
-          t.detailsType,
+          t.previewType, //TODO Suzan: preview or details type, or both?
           types,
           converters,
           injectedPrimitives,
