@@ -16,7 +16,7 @@ type TypeInstancesExtractor = BasicFun<PredicateValue, ExtractedTypeInstances>;
 
 export const PredicateValueExtractor = {
   Operations: {
-    ExtractPredicateValue: ( //TODO Suzan: seems unused. Can it be removed?
+    ExtractPredicateValue: (
       lookupName: string,
       typesMap: Map<string, DispatchParsedType<any>>,
       t: DispatchParsedType<any>,
@@ -298,27 +298,12 @@ export const PredicateValueExtractor = {
                   );
         }
         case "referenceOne": {
-          const traverseValue: TypeInstancesExtractor = self(
-            lookupName,
-            typesMap,
-            t.previewType, //TODO Suzan: should this be details or preview type? see tuple/map. both types should be passed
-            debugPath.concat("referenceOne"),
-          );
           return (v): ExtractedTypeInstances =>
-            PredicateValue.Operations.IsOption(v)
-              ? v.isSome
-                ? traverseValue(v.value)
-                : ValueOrErrors.Default.return([])
-              : PredicateValue.Operations.IsSum(v)
-                ? v.value.kind == "r"
-                  ? traverseValue(v.value.value)
-                  : ValueOrErrors.Default.return([])
-                : ValueOrErrors.Default.throwOne(
-                    Errors.Default.singleton([
-                      "not a ReferenceOne/Option or ReferenceOne/Sum (from referenceOne)",
-                      JSON.stringify(v),
-                    ]),
-                  );
+            ValueOrErrors.Default.throwOne(
+                Errors.Default.singleton([
+                  "ReferenceOne is unsupported (from referenceOne)"
+                ]),
+              );
         }
         case "list": {
           const traverseListField = self(
