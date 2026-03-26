@@ -6,9 +6,11 @@ module Model =
   open Ballerina.DSL.Next.StdLib.FileDB
   open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 
+  type SchemaFileDefinition = { Path: string; Content: string }
+
   type SchemaVersion =
     { Id: Guid
-      Definition: List<string>
+      Definition: List<SchemaFileDefinition>
       Version: int64
       PublishedAt: DateTime }
 

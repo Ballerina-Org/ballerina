@@ -53,10 +53,8 @@ module Model =
       TypeVariables: TypeVariablesScope<'valueExt>
       TypeParameters: TypeParametersScope
       Values: Map<ResolvedIdentifier, TypeValue<'valueExt> * Kind>
-      BackgroundHooksExtraScope:
-        Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind) * Value<TypeValue<'valueExt>, 'valueExt>>
-      PermissionHooksExtraScope:
-        Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind) * Value<TypeValue<'valueExt>, 'valueExt>> }
+      BackgroundHooksExtraScope: Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)>
+      PermissionHooksExtraScope: Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)> }
 
   type UnificationState<'valueExt when 'valueExt: comparison> =
     { Classes: EquivalenceClasses<TypeVar, TypeValue<'valueExt>> }
@@ -121,10 +119,8 @@ module Model =
       TypeVariables: TypeVariablesScope<'valueExt>
       TypeParameters: TypeParametersScope
       Values: Map<ResolvedIdentifier, TypeValue<'valueExt> * Kind>
-      BackgroundHooksExtraScope:
-        Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind) * Value<TypeValue<'valueExt>, 'valueExt>>
-      PermissionHooksExtraScope:
-        Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind) * Value<TypeValue<'valueExt>, 'valueExt>> }
+      BackgroundHooksExtraScope: Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)>
+      PermissionHooksExtraScope: Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)> }
 
   type TypeExprEvalResult<'valueExt when 'valueExt: comparison> =
     State<TypeValue<'valueExt> * Kind, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>>

@@ -27,6 +27,7 @@ module MemoryDBAPIFactory =
   open Ballerina.DSL.Next.Types.Patterns
   open Utils
   open Ballerina.Collections.Map
+  open Microsoft.AspNetCore.Http
 
 
   let contextFactory dbFileConfig =
@@ -69,24 +70,8 @@ module MemoryDBAPIFactory =
     (schemaFileConfig: SchemaFileConfig)
     dbQuerySymbols
     queryTypeFactory
-    (addPermissionHookScope:
-      Map<
-        ResolvedIdentifier,
-        (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
-       >
-        -> Map<
-          ResolvedIdentifier,
-          (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
-         >)
-    (addBackgroundHookScope:
-      Map<
-        ResolvedIdentifier,
-        (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
-       >
-        -> Map<
-          ResolvedIdentifier,
-          (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
-         >)
+    (addPermissionHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>)
+    (addBackgroundHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>)
     (tenantId: Guid)
     (schemaName: string)
     (draft: bool)
@@ -128,25 +113,16 @@ module MemoryDBAPIFactory =
         schemaFileConfig: SchemaFileConfig,
         databaseFileConfig: DatabaseFileConfig,
         routeGroupBuilder: RouteGroupBuilder,
-        addPermissionHookScope:
-          Map<
-            ResolvedIdentifier,
-            (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
-           >
-            -> Map<
-              ResolvedIdentifier,
-              (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
-             >,
-        addBackgroundHookScope:
-          Map<
-            ResolvedIdentifier,
-            (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
-           >
-            -> Map<
-              ResolvedIdentifier,
-              (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
-             >,
-        hookInjector: Updater<ExprEvalContext<_, _>>
+        addPermissionHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>,
+        addBackgroundHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>,
+        hookInjector:
+          HttpContext
+            -> Updater<
+              ExprEvalContext<
+                FileDBRuntimeContext,
+                ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, unit>, unit>
+               >
+             >
       ) : Sum<unit, Errors<Location>> =
       sum {
         let dbFileConfig: DbFileConfig =
