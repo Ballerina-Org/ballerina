@@ -5,6 +5,7 @@ module API =
   open Microsoft.AspNetCore.Builder
   open System
   open Microsoft.AspNetCore.Http
+  open Ballerina.StdLib.String
   open Ballerina.Collections.Sum
   open Model
   open Ballerina.Errors
@@ -22,9 +23,10 @@ module API =
   open Ballerina.DSL.Next.Terms.Eval
   open Ballerina.Collections.NonEmptyList
   open Ballerina.Reader.WithError
+  open System.Text
 
   type SchemaAPIPayload =
-    { SchemaDefinition: string[]
+    { SchemaDefinition: SchemaFileDefinition[]
       IsDraft: bool }
 
   let private runMain
@@ -223,7 +225,33 @@ module API =
               addBackgroundHookScope
           with
           | Left _ -> Results.Ok()
-          | Right errors -> Results.BadRequest(errors.ToString()))
+          | Right errors ->
+            let input_files =
+              payload.SchemaDefinition
+              |> Seq.map (fun def -> def.Path, def.Content)
+              |> Map.ofSeq
+
+            let acc = StringBuilder($"Build errors.\n")
+
+            for e in (Errors<_>.FilterHighestPriorityOnly errors).Errors() do
+              let source =
+                match input_files |> Map.tryFind e.Context.File with
+                | Some file -> file
+                | None -> ""
+
+              let lines =
+                source.Split('\n')
+                |> Seq.skip (e.Context.Line - 1)
+                |> Seq.mapi (fun i line -> let fmt = "000" in $"{(e.Context.Line + i).ToString(fmt)} |   {line}")
+                |> Seq.truncate 3
+                |> Seq.toArray
+
+              let lines = lines |> String.join "\n"
+
+              do acc.Append $"  Error: {e.Message} at line {e.Context.Line}:\n" |> ignore
+              do acc.Append lines |> ignore
+
+            Results.BadRequest(acc.ToString()))
       )
       |> ignore
 

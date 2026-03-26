@@ -11,6 +11,7 @@ open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.Terms.Eval
 open Ballerina.DSL.Next.StdLib.DB
 open Ballerina.Fun
+open Microsoft.AspNetCore.Http
 
 type APITypeError<'runtimeContext, 'db, 'customExtension when 'customExtension: comparison and 'db: comparison> =
   { ExpectedType: TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>
@@ -60,20 +61,23 @@ type APIRegistractionFactory<'runtimeContext, 'db, 'customExtension, 'tenantId, 
   { LanguageContextFactory: unit -> Sum<APILanguageContext<'runtimeContext, 'db, 'customExtension>, Errors<Location>>
     DbDescriptorFetcher:
       'tenantId -> 'schemaName -> bool -> Sum<DbDescriptor<'runtimeContext, 'db, 'customExtension>, Errors<Location>>
-    PermissionHookInjector: Updater<ExprEvalContext<'runtimeContext, ValueExt<'runtimeContext, 'db, 'customExtension>>> }
+    PermissionHookInjector:
+      HttpContext -> Updater<ExprEvalContext<'runtimeContext, ValueExt<'runtimeContext, 'db, 'customExtension>>> }
 
 type APIContext<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
   when 'customExtension: comparison and 'db: comparison> =
   { LanguageContext: APILanguageContext<'runtimeContext, 'db, 'customExtension>
     DbDescriptorFetcher:
       'tenantId -> 'schemaName -> bool -> Sum<DbDescriptor<'runtimeContext, 'db, 'customExtension>, Errors<Location>>
-    PermissionHookInjector: Updater<ExprEvalContext<'runtimeContext, ValueExt<'runtimeContext, 'db, 'customExtension>>> }
+    PermissionHookInjector:
+      HttpContext -> Updater<ExprEvalContext<'runtimeContext, ValueExt<'runtimeContext, 'db, 'customExtension>>> }
 
   static member Create
     (languageContextFactory: unit -> Sum<APILanguageContext<'runtimeContext, 'db, 'customExtension>, Errors<Location>>)
     (dbDescriptorFectcher:
       'tenantId -> 'schemaName -> bool -> Sum<DbDescriptor<'runtimeContext, 'db, 'customExtension>, Errors<Location>>)
-    (permissionHookInjector: Updater<ExprEvalContext<'runtimeContext, ValueExt<'runtimeContext, 'db, 'customExtension>>>)
+    (permissionHookInjector:
+      HttpContext -> Updater<ExprEvalContext<'runtimeContext, ValueExt<'runtimeContext, 'db, 'customExtension>>>)
     =
     sum {
       let! languageContext = languageContextFactory ()

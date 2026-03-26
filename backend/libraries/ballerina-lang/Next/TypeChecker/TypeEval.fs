@@ -1194,7 +1194,7 @@ module Eval =
                                 OnBackground = None }
                         | Some on_background ->
                           let! ctx = state.GetContext()
-                          let extra_scope = ctx.BackgroundHooksExtraScope |> Map.map (fun _ v -> v |> fst)
+                          let extra_scope = ctx.BackgroundHooksExtraScope
 
                           let! on_background_expr, on_background_t, on_background_k, _ =
                             typeCheckExpr None on_background
@@ -1236,7 +1236,7 @@ module Eval =
                         | Some can_create ->
 
                           let! ctx = state.GetContext()
-                          let extra_scope = ctx.PermissionHooksExtraScope |> Map.map (fun _ v -> v |> fst)
+                          let extra_scope = ctx.PermissionHooksExtraScope
 
                           let! can_create_expr, can_create_t, can_create_k, _ =
                             typeCheckExpr None can_create
@@ -1271,7 +1271,7 @@ module Eval =
                         | Some can_read ->
 
                           let! ctx = state.GetContext()
-                          let extra_scope = ctx.PermissionHooksExtraScope |> Map.map (fun _ v -> v |> fst)
+                          let extra_scope = ctx.PermissionHooksExtraScope
 
                           let! can_read_expr, can_read_t, can_read_k, _ =
                             typeCheckExpr None can_read
@@ -1306,7 +1306,7 @@ module Eval =
                         | Some can_update ->
 
                           let! ctx = state.GetContext()
-                          let extra_scope = ctx.PermissionHooksExtraScope |> Map.map (fun _ v -> v |> fst)
+                          let extra_scope = ctx.PermissionHooksExtraScope
 
                           let! can_update_expr, can_update_t, can_update_k, _ =
                             typeCheckExpr None can_update
@@ -1344,7 +1344,7 @@ module Eval =
                         | Some can_delete ->
 
                           let! ctx = state.GetContext()
-                          let extra_scope = ctx.PermissionHooksExtraScope |> Map.map (fun _ v -> v |> fst)
+                          let extra_scope = ctx.PermissionHooksExtraScope
 
                           let! can_delete_expr, can_delete_t, can_delete_k, _ =
                             typeCheckExpr None can_delete
