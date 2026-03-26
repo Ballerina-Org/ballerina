@@ -117,7 +117,7 @@ module Delete =
               Expr.Eval(
                 NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doDeleteExpr, []))
               )
-              |> Reader.Run evalContext
+              |> Reader.Run(evalContext |> context.PermissionHookInjector)
               |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
             return!
@@ -235,7 +235,7 @@ module Delete =
               Expr.Eval(
                 NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doUpdateExpr, []))
               )
-              |> Reader.Run evalContext
+              |> Reader.Run(evalContext |> context.PermissionHookInjector)
               |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
             return!

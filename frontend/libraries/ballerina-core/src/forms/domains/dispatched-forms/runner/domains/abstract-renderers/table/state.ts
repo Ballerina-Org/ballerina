@@ -471,6 +471,9 @@ export type TableAbstractRendererViewForeignMutationsExpected<Flags = Unit> = {
   applyToAll: ValueCallbackWithOptionalFlags<DispatchDelta<Flags>, Flags>;
   removeAll: VoidCallbackWithOptionalFlags<Flags> | undefined;
   add: VoidCallbackWithOptionalFlags<Flags> | undefined;
+  addWholeValue_Dangerous:
+    | ValueCallbackWithOptionalFlags<ValueRecord, Flags>
+    | undefined;
   remove: ValueCallbackWithOptionalFlags<string, Flags> | undefined;
   moveTo:
     | ((key: string, to: string, flags: Flags | undefined) => void)

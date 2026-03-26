@@ -123,7 +123,7 @@ module Create =
               Expr.Eval(
                 NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doUpdateExpr, []))
               )
-              |> Reader.Run evalContext
+              |> Reader.Run(evalContext |> context.PermissionHookInjector)
               |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
             let! result =
@@ -230,7 +230,7 @@ module Create =
                 Expr.Eval(
                   NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doUpdateExpr, []))
                 )
-                |> Reader.Run evalContext
+                |> Reader.Run(evalContext |> context.PermissionHookInjector)
                 |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
               return!

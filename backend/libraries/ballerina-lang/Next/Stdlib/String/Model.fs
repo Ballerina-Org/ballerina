@@ -12,3 +12,4 @@ module Model =
     | LessThanOrEqual of {| v1: Option<string> |}
     | Length
     | Print
+    | OfT
