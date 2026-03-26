@@ -3,6 +3,7 @@
 module Factory =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.API.MemoryDB.Model
+  open Ballerina.StdLib.String
   open System.CommandLine
   open System
   open Ballerina.Collections.Sum
@@ -16,6 +17,8 @@ module Factory =
   open System.Text.Json.Serialization
   open Ballerina.API.MemoryDB.MemoryDBAPIFactory
   open Ballerina.DSL.Next.Terms
+  open Microsoft.AspNetCore.Http
+  open Ballerina.API.MemoryDB.Utils
 
   let private tryReadFile path =
     sum {
@@ -26,25 +29,20 @@ module Factory =
     }
 
   let createAndRunAPI
-    (addPermissionHookScope:
-      Map<
-        ResolvedIdentifier,
-        (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
-       >
-        -> Map<
-          ResolvedIdentifier,
-          (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
+    (addPermissionHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>)
+    (addBackgroundHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>)
+    (hookInjector:
+      HttpContext
+        -> Updater<
+          ExprEvalContext<
+            DSL.Next.StdLib.FileDB.FileDBRuntimeContext,
+            DSL.Next.StdLib.Extensions.ValueExt<
+              DSL.Next.StdLib.FileDB.FileDBRuntimeContext,
+              DSL.Next.StdLib.MutableMemoryDB.MutableMemoryDB<DSL.Next.StdLib.FileDB.FileDBRuntimeContext, unit>,
+              unit
+             >
+           >
          >)
-    (addBackgroundHookScope:
-      Map<
-        ResolvedIdentifier,
-        (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
-       >
-        -> Map<
-          ResolvedIdentifier,
-          (TypeValue<FileDbValueExtension> * Kind) * Value<TypeValue<FileDbValueExtension>, FileDbValueExtension>
-         >)
-    (hookInjector: Updater<_>)
     (args: string[])
     =
 
@@ -137,14 +135,14 @@ module Factory =
             let schemaName = parseResult.GetRequiredValue schemaNameArg
             let showEval = parseResult.GetValue showEvalArg
 
-            let! definition =
+            let! input_files =
               sourcePaths
-              |> Array.map tryReadFile
+              |> Array.map (fun path -> tryReadFile path |> sum.Map(fun res -> { Path = path; Content = res }))
               |> sum.All
               |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
 
             let payload =
-              { SchemaDefinition = definition |> List.toArray
+              { SchemaDefinition = input_files |> Seq.toArray
                 IsDraft = not isPublished }
 
             let filePaths = sourcePaths |> Array.reduce (fun x y -> $"{x}, {y}")
@@ -193,7 +191,8 @@ module Factory =
         app.Run()
         0
       | Right errors ->
-        Console.Error.WriteLine(errors.ToString())
+        do Console.WriteLine $"Errors {errors.Errors()}"
+
         1)
 
     let parseResult = rootCommand.Parse args
