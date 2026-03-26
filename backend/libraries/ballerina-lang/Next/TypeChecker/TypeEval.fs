@@ -969,7 +969,10 @@ module Eval =
                             { typechecked_hooks with
                                 OnCreating = None }
                         | Some on_creating ->
-                          let! on_creating_expr, on_creating_t, on_creating_k, _ = typeCheckExpr None on_creating
+                          let! on_creating_expr, on_creating_t, on_creating_k, _ =
+                            typeCheckExpr None on_creating
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
                           do! on_creating_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                           do!
@@ -1008,7 +1011,10 @@ module Eval =
                             { typechecked_hooks with
                                 OnCreated = None }
                         | Some on_created ->
-                          let! on_created_expr, on_created_t, on_created_k, _ = typeCheckExpr None on_created
+                          let! on_created_expr, on_created_t, on_created_k, _ =
+                            typeCheckExpr None on_created
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
                           do! on_created_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                           do!
@@ -1043,7 +1049,10 @@ module Eval =
                             { typechecked_hooks with
                                 OnUpdating = None }
                         | Some on_updating ->
-                          let! on_updating_expr, on_updating_t, on_updating_k, _ = typeCheckExpr None on_updating
+                          let! on_updating_expr, on_updating_t, on_updating_k, _ =
+                            typeCheckExpr None on_updating
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
                           do! on_updating_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                           do!
@@ -1085,7 +1094,10 @@ module Eval =
                             { typechecked_hooks with
                                 OnUpdated = None }
                         | Some on_updated ->
-                          let! on_updated_expr, on_updated_t, on_updated_k, _ = typeCheckExpr None on_updated
+                          let! on_updated_expr, on_updated_t, on_updated_k, _ =
+                            typeCheckExpr None on_updated
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
                           do! on_updated_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                           do!
@@ -1123,7 +1135,10 @@ module Eval =
                             { typechecked_hooks with
                                 OnDeleting = None }
                         | Some on_deleting ->
-                          let! on_deleting_expr, on_deleting_t, on_deleting_k, _ = typeCheckExpr None on_deleting
+                          let! on_deleting_expr, on_deleting_t, on_deleting_k, _ =
+                            typeCheckExpr None on_deleting
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
                           do! on_deleting_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                           do!
@@ -1158,7 +1173,10 @@ module Eval =
                             { typechecked_hooks with
                                 OnDeleted = None }
                         | Some on_deleted ->
-                          let! on_deleted_expr, on_deleted_t, on_deleted_k, _ = typeCheckExpr None on_deleted
+                          let! on_deleted_expr, on_deleted_t, on_deleted_k, _ =
+                            typeCheckExpr None on_deleted
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
                           do! on_deleted_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                           do!
@@ -1198,7 +1216,10 @@ module Eval =
 
                           let! on_background_expr, on_background_t, on_background_k, _ =
                             typeCheckExpr None on_background
-                            |> state.MapContext(TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope))
+                            |> state.MapContext(
+                              TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope)
+                              >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
+                            )
 
                           do! on_background_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -1240,7 +1261,10 @@ module Eval =
 
                           let! can_create_expr, can_create_t, can_create_k, _ =
                             typeCheckExpr None can_create
-                            |> state.MapContext(TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope))
+                            |> state.MapContext(
+                              TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope)
+                              >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
+                            )
 
                           do! can_create_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -1275,7 +1299,10 @@ module Eval =
 
                           let! can_read_expr, can_read_t, can_read_k, _ =
                             typeCheckExpr None can_read
-                            |> state.MapContext(TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope))
+                            |> state.MapContext(
+                              TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope)
+                              >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
+                            )
 
                           do! can_read_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -1310,7 +1337,10 @@ module Eval =
 
                           let! can_update_expr, can_update_t, can_update_k, _ =
                             typeCheckExpr None can_update
-                            |> state.MapContext(TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope))
+                            |> state.MapContext(
+                              TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope)
+                              >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
+                            )
 
                           do! can_update_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -1348,7 +1378,10 @@ module Eval =
 
                           let! can_delete_expr, can_delete_t, can_delete_k, _ =
                             typeCheckExpr None can_delete
-                            |> state.MapContext(TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope))
+                            |> state.MapContext(
+                              TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope)
+                              >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
+                            )
 
                           do! can_delete_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -1394,7 +1427,11 @@ module Eval =
                         | None -> return { r_typechecked with OnLinking = None }
                         | Some on_linking ->
                           do! assert_no_cardinality
-                          let! on_linking_expr, on_linking_t, on_linking_k, _ = typeCheckExpr None on_linking
+
+                          let! on_linking_expr, on_linking_t, on_linking_k, _ =
+                            typeCheckExpr None on_linking
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
                           do! on_linking_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                           do!
@@ -1413,7 +1450,11 @@ module Eval =
                         | None -> return { r_typechecked with OnLinked = None }
                         | Some on_linked ->
                           do! assert_no_cardinality
-                          let! on_linked_expr, on_linked_t, on_linked_k, _ = typeCheckExpr None on_linked
+
+                          let! on_linked_expr, on_linked_t, on_linked_k, _ =
+                            typeCheckExpr None on_linked
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
                           do! on_linked_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                           do!
@@ -1435,7 +1476,11 @@ module Eval =
                                 OnUnlinking = None }
                         | Some on_unlinking ->
                           do! assert_no_cardinality
-                          let! on_unlinking_expr, on_unlinking_t, on_unlinking_k, _ = typeCheckExpr None on_unlinking
+
+                          let! on_unlinking_expr, on_unlinking_t, on_unlinking_k, _ =
+                            typeCheckExpr None on_unlinking
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
                           do! on_unlinking_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                           do!
@@ -1454,7 +1499,11 @@ module Eval =
                         | None -> return { r_typechecked with OnUnlinked = None }
                         | Some on_unlinked ->
                           do! assert_no_cardinality
-                          let! on_unlinked_expr, on_unlinked_t, on_unlinked_k, _ = typeCheckExpr None on_unlinked
+
+                          let! on_unlinked_expr, on_unlinked_t, on_unlinked_k, _ =
+                            typeCheckExpr None on_unlinked
+                            |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
                           do! on_unlinked_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                           do!
