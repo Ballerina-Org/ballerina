@@ -23,7 +23,7 @@ export type ReferenceOneRenderer<T> = {
   type: ReferenceOneType<T>;
   entityName: string
   concreteRenderer: string; 
-  detailsRenderer: NestedRenderer<T>;
+  detailsRenderer?: NestedRenderer<T>;
   previewRenderer?: NestedRenderer<T>;
 };
 
@@ -32,7 +32,7 @@ export const ReferenceOneRenderer = {
     type: ReferenceOneType<T>,
     concreteRenderer: string, 
     entityName: string, 
-    detailsRenderer: NestedRenderer<T>,
+    detailsRenderer?: NestedRenderer<T>,
     previewRenderer?: NestedRenderer<T>,
   ): ReferenceOneRenderer<T> => ({
     kind: "referenceOneRenderer",
@@ -104,7 +104,7 @@ export const ReferenceOneRenderer = {
             type.previewType,
             serialized.previewRenderer,
             concreteRenderers,
-            "preview renderer",
+            "ReferenceOne preview renderer",
             types,
             forms,
             alreadyParsedForms,
@@ -139,7 +139,7 @@ export const ReferenceOneRenderer = {
             type.detailsType,
             serialized.detailsRenderer,
             concreteRenderers,
-            "details renderer",
+            "ReferenceOne details renderer",
             types,
             forms,
             alreadyParsedForms,
@@ -164,11 +164,10 @@ export const ReferenceOneRenderer = {
     ): ValueOrErrors<[ReferenceOneRenderer<T>, Map<string, Renderer<T>>], string> =>
       ReferenceOneRenderer.Operations.tryAsValidReferenceOneRenderer(serialized).Then(
         (validatedSerialized) => {
-          return NestedRenderer.Operations.DeserializeAs(
-            type.detailsType,
-            validatedSerialized.detailsRenderer,
+          return ReferenceOneRenderer.Operations.DeserializeDetailsRenderer(
+            type,
+            validatedSerialized,
             concreteRenderers,
-            "deserialize reference one details",
             types,
             forms,
             alreadyParsedForms,

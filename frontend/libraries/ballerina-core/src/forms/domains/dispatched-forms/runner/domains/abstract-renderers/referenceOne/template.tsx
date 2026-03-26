@@ -68,15 +68,17 @@ export const ReferenceOneAbstractRenderer = <
   Flags extends BaseFlags = BaseFlags,
   ExtraContext = Unit,
 >(
-  DetailsRenderer: Template<
-    RecordAbstractRendererReadonlyContext<
-      CustomPresentationContext,
-      ExtraContext
-    > &
-      RecordAbstractRendererState,
-    RecordAbstractRendererState,
-    RecordAbstractRendererForeignMutationsExpected<Flags>
-  >,
+  DetailsRenderer: 
+    | Template<
+        RecordAbstractRendererReadonlyContext<
+          CustomPresentationContext,
+          ExtraContext
+        > &
+          RecordAbstractRendererState,
+        RecordAbstractRendererState,
+        RecordAbstractRendererForeignMutationsExpected<Flags>
+      >
+    | undefined,
   PreviewRenderer:
     | Template<
         RecordAbstractRendererReadonlyContext<
@@ -90,7 +92,7 @@ export const ReferenceOneAbstractRenderer = <
     | undefined,
   IdProvider: (props: IdWrapperProps) => React.ReactNode,
   ErrorRenderer: (props: ErrorRendererProps) => React.ReactNode,
-  DetailsRendererRaw: NestedRenderer<any>,
+  DetailsRendererRaw: NestedRenderer<any> | undefined,
   PreviewRendererRaw: NestedRenderer<any> | undefined,
   referenceOneEntityType: RecordType<any>,
 ) => {
@@ -119,117 +121,119 @@ export const ReferenceOneAbstractRenderer = <
   // value is Option<none> -> signal to run the initialization
   // value is Option<some> -> there is a value, we do not care about what's inside
 
-  const embeddedDetailsRenderer = (flags: Flags | undefined) =>
-    DetailsRenderer.mapContext<
-      ReferenceOneAbstractRendererState &
-        ReferenceOneAbstractRendererReadonlyContext<
-          CustomPresentationContext,
-          ExtraContext
-        >
-    >((_) => {
-      const labelContext =
-        CommonAbstractRendererState.Operations.GetLabelContext(
-          _.labelContext,
-          DetailsRendererRaw,
-        );
-      if (PredicateValue.Operations.IsUnit(_.value)) {
-        return undefined;
-      }
+  const embeddedDetailsRenderer = 
+    DetailsRenderer && DetailsRendererRaw
+    ? (flags: Flags | undefined) => DetailsRenderer.mapContext<
+        ReferenceOneAbstractRendererState &
+          ReferenceOneAbstractRendererReadonlyContext<
+            CustomPresentationContext,
+            ExtraContext
+          >
+      >((_) => {
+        const labelContext =
+          CommonAbstractRendererState.Operations.GetLabelContext(
+            _.labelContext,
+            DetailsRendererRaw,
+          );
+        if (PredicateValue.Operations.IsUnit(_.value)) {
+          return undefined;
+        }
 
-      if (!PredicateValue.Operations.IsRecord(_.value.value)) {
-        console.error(
-          `${_.domNodeAncestorPath + "[referenceOne][details]"}: Record expected but got ${JSON.stringify(_.value.value)}`,
-        );
-        return undefined;
-      }
+        if (!PredicateValue.Operations.IsRecord(_.value.value)) {
+          console.error(
+            `${_.domNodeAncestorPath + "[referenceOne][details]"}: Record expected but got ${JSON.stringify(_.value.value)}`,
+          );
+          return undefined;
+        }
 
-      const state =
-        _.customFormState?.detailsState ??
-        RecordAbstractRendererState.Default.zero();
+        const state =
+          _.customFormState?.detailsState ??
+          RecordAbstractRendererState.Default.zero();
 
-      return {
-        value: _.value.value,
-        ...state,
-        readOnly: _.readOnly || _.globallyReadOnly,
-        globallyReadOnly: _.globallyReadOnly,
-        locked: _.locked,
-        disabled: _.disabled || _.globallyDisabled,
-        globallyDisabled: _.globallyDisabled,
-        bindings: _.bindings,
-        extraContext: _.extraContext,
+        return {
+          value: _.value.value,
+          ...state,
+          readOnly: _.readOnly || _.globallyReadOnly,
+          globallyReadOnly: _.globallyReadOnly,
+          locked: _.locked,
+          disabled: _.disabled || _.globallyDisabled,
+          globallyDisabled: _.globallyDisabled,
+          bindings: _.bindings,
+          extraContext: _.extraContext,
         type: referenceOneEntityType,
-        customPresentationContext: _.customPresentationContext,
-        remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
-        typeAncestors: [_.type as DispatchParsedType<any>].concat(
-          _.typeAncestors,
-        ),
-        domNodeAncestorPath: _.domNodeAncestorPath + "[Value]",
-        legacy_domNodeAncestorPath:
-          _.legacy_domNodeAncestorPath + "[referenceOne][details]",
-        predictionAncestorPath: _.predictionAncestorPath + "[Value]",
-        layoutAncestorPath: _.layoutAncestorPath + "[referenceOne][details]",
-        lookupTypeAncestorNames: _.lookupTypeAncestorNames,
-        preprocessedSpecContext: _.preprocessedSpecContext,
-        labelContext,
-        usePreprocessor: _.usePreprocessor,
-      };
-    })
-      .mapState(
-        (
-          _: BasicUpdater<RecordAbstractRendererState>,
-        ): Updater<ReferenceOneAbstractRendererState> =>
-          ReferenceOneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
-            _,
+          customPresentationContext: _.customPresentationContext,
+          remoteEntityVersionIdentifier: _.remoteEntityVersionIdentifier,
+          typeAncestors: [_.type as DispatchParsedType<any>].concat(
+            _.typeAncestors,
           ),
-      )
-      .mapForeignMutationsFromProps<
-        ReferenceOneAbstractRendererViewForeignMutationsExpected<Flags>
-      >((props) => ({
-        onChange: (
-          updater: Option<BasicUpdater<ValueRecord>>,
-          nestedDelta: DispatchDelta<Flags>,
-        ) => {
-          props.setState(
-            ReferenceOneAbstractRendererState.Updaters.Core.commonFormState.children
-              .modifiedByUser(replaceWith(true))
-              .then(
-                ReferenceOneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
-                  RecordAbstractRendererState.Updaters.Core.commonFormState(
-                    DispatchCommonFormState.Updaters.modifiedByUser(
-                      replaceWith(true),
+          domNodeAncestorPath: _.domNodeAncestorPath + "[Value]",
+          legacy_domNodeAncestorPath:
+            _.legacy_domNodeAncestorPath + "[referenceOne][details]",
+          predictionAncestorPath: _.predictionAncestorPath + "[Value]",
+          layoutAncestorPath: _.layoutAncestorPath + "[referenceOne][details]",
+          lookupTypeAncestorNames: _.lookupTypeAncestorNames,
+          preprocessedSpecContext: _.preprocessedSpecContext,
+          labelContext,
+          usePreprocessor: _.usePreprocessor,
+        };
+      })
+        .mapState(
+          (
+            _: BasicUpdater<RecordAbstractRendererState>,
+          ): Updater<ReferenceOneAbstractRendererState> =>
+            ReferenceOneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
+              _,
+            ),
+        )
+        .mapForeignMutationsFromProps<
+          ReferenceOneAbstractRendererViewForeignMutationsExpected<Flags>
+        >((props) => ({
+          onChange: (
+            updater: Option<BasicUpdater<ValueRecord>>,
+            nestedDelta: DispatchDelta<Flags>,
+          ) => {
+            props.setState(
+              ReferenceOneAbstractRendererState.Updaters.Core.commonFormState.children
+                .modifiedByUser(replaceWith(true))
+                .then(
+                  ReferenceOneAbstractRendererState.Updaters.Core.customFormState.children.detailsState(
+                    RecordAbstractRendererState.Updaters.Core.commonFormState(
+                      DispatchCommonFormState.Updaters.modifiedByUser(
+                        replaceWith(true),
+                      ),
                     ),
                   ),
                 ),
-              ),
-          );
+            );
 
-          const delta: DispatchDelta<Flags> = {
-            kind: "ReferenceOneValue",
-            nestedDelta,
-            flags,
-            sourceAncestorLookupTypeNames:
-              nestedDelta.sourceAncestorLookupTypeNames,
-          };
+            const delta: DispatchDelta<Flags> = {
+              kind: "ReferenceOneValue",
+              nestedDelta,
+              flags,
+              sourceAncestorLookupTypeNames:
+                nestedDelta.sourceAncestorLookupTypeNames,
+            };
 
-          // The Option component of the referenceOne is a lazy load signal. 
-          // The value for referenceOne is always provided initially.
-          // Here we always update a some, because if the detail renderer is displayed,
-          // we must already have a value, and the option is a some.
-          props.foreignMutations.onChange(
-            updater.kind == "l"
-              ? Option.Default.none()
-              : Option.Default.some<BasicUpdater<ValueOption | ValueUnit>>(
-                  (__: ValueOption | ValueUnit): ValueOption | ValueUnit =>
-                    __.kind == "unit"
-                      ? ValueUnit.Default()
-                      : !PredicateValue.Operations.IsRecord(__.value)
+            // The Option component of the referenceOne is a lazy load signal. 
+            // The value for referenceOne is always provided initially.
+            // Here we always update a some, because if the detail renderer is displayed,
+            // we must already have a value, and the option is a some.
+            props.foreignMutations.onChange(
+              updater.kind == "l"
+                ? Option.Default.none()
+                : Option.Default.some<BasicUpdater<ValueOption | ValueUnit>>(
+                    (__: ValueOption | ValueUnit): ValueOption | ValueUnit =>
+                      __.kind == "unit"
                         ? ValueUnit.Default()
-                        : ValueOption.Default.some(updater.value(__.value)),
-                ),
-            delta,
-          );
-        },
-      }));
+                        : !PredicateValue.Operations.IsRecord(__.value)
+                          ? ValueUnit.Default()
+                          : ValueOption.Default.some(updater.value(__.value)),
+                  ),
+              delta,
+            );
+          },
+        })) 
+    : undefined;
 
   const embeddedPreviewRenderer =
     PreviewRenderer && PreviewRendererRaw
@@ -252,7 +256,7 @@ export const ReferenceOneAbstractRenderer = <
  
             return {
               ...state,
-              value,
+              value, //TODO Suzan: value is using details type is used. displayfields may exist in the preview type but not the details type. Check if they are shown properly
               disabled: _.disabled || _.globallyDisabled,
               globallyDisabled: _.globallyDisabled,
               readOnly: _.readOnly || _.globallyReadOnly,
@@ -525,7 +529,11 @@ export const ReferenceOneAbstractRenderer = <
                   ),
                 ),
             }}
-            DetailsRenderer={embeddedDetailsRenderer}
+            DetailsRenderer={
+              value.kind === "unit" || value.isSome 
+              ? embeddedDetailsRenderer
+              : undefined
+            }
             PreviewRenderer={
               value.kind === "unit" || value.isSome
                 ? embeddedPreviewRenderer

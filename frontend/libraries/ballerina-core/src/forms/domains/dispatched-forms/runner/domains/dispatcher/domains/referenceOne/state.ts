@@ -36,7 +36,7 @@ export const ReferenceOneDispatcher = {
             "previewRenderer",
             isInlined,
           ),
-    DispatchDetailsRenderer: < //TODO Suzan: unused at time of writing; remove?
+    DispatchDetailsRenderer: <
       T extends DispatchInjectablesTypes<T>,
       Flags,
       CustomPresentationContext,
@@ -113,50 +113,8 @@ export const ReferenceOneDispatcher = {
       ).Then((referenceOneEntityType) =>
         referenceOneEntityType.kind != "record"
           ? ValueOrErrors.Default.throwOne(
-              `expected a record type, but got a ${referenceOneEntityType.kind} type`,
-            )
-          : ReferenceOneDispatcher.Operations.DispatchPreviewRenderer(
-              renderer,
-              dispatcherContext,
-              isInlined,
-            ).Then((previewRenderer) =>
-              NestedDispatcher.Operations.DispatchAs(
-                renderer.detailsRenderer,
-                dispatcherContext,
-                "detailsRenderer",
-                isInlined,
-              ).Then((detailsRenderer) =>
-                ReferenceOneDispatcher.Operations.GetApi(
-                  renderer.entityName,
-                  dispatcherContext,
-                ).Then((getApi) =>
-                  dispatcherContext
-                    .getConcreteRenderer("referenceOne", renderer.concreteRenderer)
-                    .Then((concreteRenderer) =>
-                      ValueOrErrors.Default.return(
-                        ReferenceOneAbstractRenderer(
-                          detailsRenderer,
-                          previewRenderer,
-                          dispatcherContext.IdProvider,
-                          dispatcherContext.ErrorRenderer,
-                          renderer.detailsRenderer,
-                          renderer.previewRenderer,
-                          referenceOneEntityType,
-                        )
-                          .mapContext((_: any) => ({
-                            ..._,
-                            getApi,
-                            fromApiParser: dispatcherContext.parseFromApiByType(
-                              renderer.type.detailsType,
-                            ),
-                            type: renderer.type,
-                          }))
-                          .withView(concreteRenderer),
-                      ),
-                    ),
-                ),
-              ),
-            ),
-      ),
-  },
+                      ReferenceOneDispatcher.Operations.DispatchDetailsRenderer(
+                        renderer,
+                        dispatcherContext,
+                        isInlined,
 };

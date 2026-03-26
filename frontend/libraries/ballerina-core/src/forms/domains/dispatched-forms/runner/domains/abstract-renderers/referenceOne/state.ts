@@ -210,7 +210,7 @@ export type ReferenceOneAbstractRendererView<
   ReferenceOneAbstractRendererState,
   ReferenceOneAbstractRendererViewForeignMutationsExpected<Flags>,
   {
-    DetailsRenderer: (
+    DetailsRenderer?: (
       flags: Flags | undefined,
     ) => Template<
       ReferenceOneAbstractRendererState &
