@@ -8,9 +8,9 @@
     <Compile Include="PlaygroundFactory.fs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\libraries\ballerina-api-filedb-factory\ballerina-api-filedb-factory.fsproj" />
-    <ProjectReference Include="..\..\libraries\ballerina-filedb\ballerina-filedb.fsproj" />
-    <ProjectReference Include="..\..\libraries\ballerina-lang\Next\Models\ballerina-lang-models.fsproj" />
+    <ProjectReference Include="../../libraries/ballerina-api-filedb-factory/ballerina-api-filedb-factory.fsproj" />
+    <ProjectReference Include="../../libraries/ballerina-filedb/ballerina-filedb.fsproj" />
+    <ProjectReference Include="../../libraries/ballerina-lang/Next/Models/ballerina-lang-models.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.CommandLine" Version="2.0.5" />

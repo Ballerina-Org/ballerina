@@ -9,7 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="../../libraries/ballerina-api-filedb-factory/ballerina-api-filedb-factory.fsproj" />
     <ProjectReference Include="../../libraries/ballerina-filedb/ballerina-filedb.fsproj" />
-    <ProjectReference Include="..\ballerina-db-api-playground-factory\ballerina-db-api-playground-factory.fsproj" />
+    <ProjectReference Include="../ballerina-db-api-playground-factory/ballerina-db-api-playground-factory.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.CommandLine" Version="2.0.5" />
