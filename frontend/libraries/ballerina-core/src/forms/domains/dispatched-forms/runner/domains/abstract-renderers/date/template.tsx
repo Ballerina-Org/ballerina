@@ -90,7 +90,7 @@ export const DateAbstractRenderer = <
                       props.context.lookupTypeAncestorNames,
                   };
                   setTimeout(() => {
-                    props.foreignMutations.onChange(
+                    return props.foreignMutations.onChange(
                       Option.Default.some(replaceWith(newValue)),
                       delta,
                     );

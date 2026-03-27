@@ -14,11 +14,17 @@ import {
   Sum,
 } from "../../../../../../../../../main";
 import { Map } from "immutable";
-import { Co, DebouncerCo, InitializeCo } from "./builder";
+import {
+  Co,
+  DebouncerCo,
+  InitializeCo,
+  SetupLazyOneRefetchCo,
+} from "./builder";
 import { initializeOne } from "./_initializeOne";
 import { initializeStream } from "./_initializeStream";
 import { debouncer } from "./_debouncer";
 import { BaseFlags } from "../../../deltas/delta-to-dto/state";
+import { setupLazyOneRefetch } from "./_setupLazyOneRefetch";
 
 export const initializeOneRunner = <
   CustomPresentationContext = Unit,
@@ -91,3 +97,18 @@ export const oneTableLoaderRunner = <
         ),
     },
   );
+
+export const setupLazyOneRefetchRunner = <
+  CustomPresentationContext = Unit,
+  Flags = BaseFlags,
+  ExtraContext = Unit,
+>() =>
+  SetupLazyOneRefetchCo<CustomPresentationContext, ExtraContext>().Template<
+    OneAbstractRendererForeignMutationsExpected<Flags>
+  >(setupLazyOneRefetch<CustomPresentationContext, ExtraContext>(), {
+    interval: 15,
+    runFilter: (props) =>
+      OneAbstractRendererState.Operations.ShouldSetupLazyOneRefetch(
+        props.context,
+      ),
+  });

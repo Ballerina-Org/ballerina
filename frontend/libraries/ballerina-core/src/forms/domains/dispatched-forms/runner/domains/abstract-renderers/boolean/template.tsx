@@ -10,6 +10,7 @@ import {
   ErrorRendererProps,
   Option,
   Unit,
+  CommonAbstractRendererState,
 } from "../../../../../../../../main";
 import { replaceWith } from "../../../../../../../../main";
 import { BoolAbstractRendererState } from "./state";
@@ -84,7 +85,7 @@ export const BoolAbstractRenderer = <
                   sourceAncestorLookupTypeNames:
                     props.context.lookupTypeAncestorNames,
                 };
-                props.foreignMutations.onChange(
+                return props.foreignMutations.onChange(
                   Option.Default.some(replaceWith(value)),
                   delta,
                 );

@@ -141,7 +141,7 @@ export const MapAbstractRenderer = <
               );
             if (keyValuePair.kind == "errors") {
               console.error(keyValuePair.errors.join("\n"));
-              return;
+              return Promise.resolve({ comparand: "" });
             }
             const { key } = keyValuePair.value;
             const delta: DispatchDelta<Flags> = {
@@ -156,7 +156,27 @@ export const MapAbstractRenderer = <
               sourceAncestorLookupTypeNames:
                 nestedDelta.sourceAncestorLookupTypeNames,
             };
-            props.foreignMutations.onChange(
+            props.setState(
+              MapAbstractRendererState.Updaters.Core.commonFormState(
+                DispatchCommonFormState.Updaters.modifiedByUser(
+                  replaceWith(true),
+                ),
+              ).then(
+                MapAbstractRendererState.Updaters.Template.upsertElementKeyFormState(
+                  elementIndex,
+                  GetDefaultKeyFormState(),
+                  GetDefaultValueFormState(),
+                  (_) => ({
+                    ..._,
+                    commonFormState:
+                      DispatchCommonFormState.Updaters.modifiedByUser(
+                        replaceWith(true),
+                      )(_.commonFormState),
+                  }),
+                ),
+              ),
+            );
+            return props.foreignMutations.onChange(
               elementUpdater.kind == "l"
                 ? Option.Default.none()
                 : Option.Default.some(
@@ -181,26 +201,6 @@ export const MapAbstractRenderer = <
                     ),
                   ),
               delta,
-            );
-            props.setState(
-              MapAbstractRendererState.Updaters.Core.commonFormState(
-                DispatchCommonFormState.Updaters.modifiedByUser(
-                  replaceWith(true),
-                ),
-              ).then(
-                MapAbstractRendererState.Updaters.Template.upsertElementKeyFormState(
-                  elementIndex,
-                  GetDefaultKeyFormState(),
-                  GetDefaultValueFormState(),
-                  (_) => ({
-                    ..._,
-                    commonFormState:
-                      DispatchCommonFormState.Updaters.modifiedByUser(
-                        replaceWith(true),
-                      )(_.commonFormState),
-                  }),
-                ),
-              ),
             );
           },
         }));
@@ -284,7 +284,7 @@ export const MapAbstractRenderer = <
                 );
               if (keyValuePair.kind == "errors") {
                 console.error(keyValuePair.errors.join("\n"));
-                return;
+                return Promise.reject(keyValuePair.errors.join("\n"));
               }
               const { key, value } = keyValuePair.value;
               const delta: DispatchDelta<Flags> = {
@@ -298,7 +298,27 @@ export const MapAbstractRenderer = <
                 sourceAncestorLookupTypeNames:
                   nestedDelta.sourceAncestorLookupTypeNames,
               };
-              props.foreignMutations.onChange(
+              props.setState(
+                MapAbstractRendererState.Updaters.Core.commonFormState(
+                  DispatchCommonFormState.Updaters.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                ).then(
+                  MapAbstractRendererState.Updaters.Template.upsertElementValueFormState(
+                    elementIndex,
+                    GetDefaultKeyFormState(),
+                    GetDefaultValueFormState(),
+                    (_) => ({
+                      ..._,
+                      commonFormState:
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        )(_.commonFormState),
+                    }),
+                  ),
+                ),
+              );
+              return props.foreignMutations.onChange(
                 elementUpdater.kind == "l"
                   ? Option.Default.none()
                   : Option.Default.some(
@@ -323,26 +343,6 @@ export const MapAbstractRenderer = <
                       ),
                     ),
                 delta,
-              );
-              props.setState(
-                MapAbstractRendererState.Updaters.Core.commonFormState(
-                  DispatchCommonFormState.Updaters.modifiedByUser(
-                    replaceWith(true),
-                  ),
-                ).then(
-                  MapAbstractRendererState.Updaters.Template.upsertElementValueFormState(
-                    elementIndex,
-                    GetDefaultKeyFormState(),
-                    GetDefaultValueFormState(),
-                    (_) => ({
-                      ..._,
-                      commonFormState:
-                        DispatchCommonFormState.Updaters.modifiedByUser(
-                          replaceWith(true),
-                        )(_.commonFormState),
-                    }),
-                  ),
-                ),
               );
             },
           }),
@@ -408,7 +408,14 @@ export const MapAbstractRenderer = <
                   sourceAncestorLookupTypeNames:
                     props.context.lookupTypeAncestorNames,
                 };
-                props.foreignMutations.onChange(
+                props.setState(
+                  MapAbstractRendererState.Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  ),
+                );
+                return props.foreignMutations.onChange(
                   Option.Default.some(
                     Updater((list) =>
                       PredicateValue.Default.tuple(
@@ -424,13 +431,6 @@ export const MapAbstractRenderer = <
                     ),
                   ),
                   delta,
-                );
-                props.setState(
-                  MapAbstractRendererState.Updaters.Core.commonFormState(
-                    DispatchCommonFormState.Updaters.modifiedByUser(
-                      replaceWith(true),
-                    ),
-                  ),
                 );
               },
               remove: (index, flags) => {
@@ -455,7 +455,14 @@ export const MapAbstractRenderer = <
                   sourceAncestorLookupTypeNames:
                     props.context.lookupTypeAncestorNames,
                 };
-                props.foreignMutations.onChange(
+                props.setState(
+                  MapAbstractRendererState.Updaters.Core.commonFormState(
+                    DispatchCommonFormState.Updaters.modifiedByUser(
+                      replaceWith(true),
+                    ),
+                  ),
+                );
+                return props.foreignMutations.onChange(
                   Option.Default.some(
                     Updater((list) =>
                       PredicateValue.Default.tuple(
@@ -466,13 +473,6 @@ export const MapAbstractRenderer = <
                     ),
                   ),
                   delta,
-                );
-                props.setState(
-                  MapAbstractRendererState.Updaters.Core.commonFormState(
-                    DispatchCommonFormState.Updaters.modifiedByUser(
-                      replaceWith(true),
-                    ),
-                  ),
                 );
               },
             }}

@@ -44,6 +44,7 @@ import {
   initializeStreamRunner,
   oneTableDebouncerRunner,
   oneTableLoaderRunner,
+  setupLazyOneRefetchRunner,
 } from "./coroutines/runner";
 import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 import { BaseFlags } from "../../deltas/delta-to-dto/state";
@@ -99,6 +100,11 @@ export const OneAbstractRenderer = <
     ExtraContext
   >();
   const typedInitializeOneRunner = initializeOneRunner<
+    CustomPresentationContext,
+    Flags,
+    ExtraContext
+  >();
+  const typedSetupLazyOneRefetchRunner = setupLazyOneRefetchRunner<
     CustomPresentationContext,
     Flags,
     ExtraContext
@@ -216,7 +222,7 @@ export const OneAbstractRenderer = <
           // The Option component of the one is a lazy load signal. Either the value is provided initially,
           // or it is loaded lazily. Here we always update a some, because if the detail renderer is displayed,
           // we must already have a value, and the option is a some.
-          props.foreignMutations.onChange(
+          return props.foreignMutations.onChange(
             updater.kind == "l"
               ? Option.Default.none()
               : Option.Default.some<BasicUpdater<ValueOption | ValueUnit>>(
@@ -319,7 +325,7 @@ export const OneAbstractRenderer = <
                     nestedDelta.sourceAncestorLookupTypeNames,
                 };
 
-                props.foreignMutations.onChange(
+                return props.foreignMutations.onChange(
                   updater.kind == "l"
                     ? Option.Default.none()
                     : Option.Default.some<
@@ -350,7 +356,10 @@ export const OneAbstractRenderer = <
   >((props) => {
     const domNodeId = props.context.domNodeAncestorPath;
     const legacy_domNodeId = props.context.legacy_domNodeAncestorPath + "[one]";
-    const value = props.context.value;
+    const value =
+      props.context.customFormState.lastUpdater.kind == "l"
+        ? props.context.value
+        : props.context.customFormState.lastUpdater.value(props.context.value);
 
     if (
       !PredicateValue.Operations.IsUnit(value) &&
@@ -399,6 +408,16 @@ export const OneAbstractRenderer = <
             }}
             foreignMutations={{
               ...props.foreignMutations,
+              onChange: (updater, delta) => {
+                const promise = props.foreignMutations.onChange(updater, delta);
+                props.setState(
+                  OneAbstractRendererState.Updaters.Template.registerOnChangeRequest(
+                    updater,
+                    promise,
+                  ),
+                );
+                return promise;
+              },
               toggleOpen: () =>
                 props.setState(
                   OneAbstractRendererState.Updaters.Core.customFormState.children
@@ -485,19 +504,27 @@ export const OneAbstractRenderer = <
                   ValueOption.Default.some(value),
                 );
 
-                props.foreignMutations.select &&
-                PredicateValue.Operations.IsUnit(props.context.value)
-                  ? props.foreignMutations.select(updater, delta)
-                  : props.foreignMutations.onChange(
-                      Option.Default.some(updater),
-                      delta,
-                    );
+                const promise =
+                  props.foreignMutations.select &&
+                  PredicateValue.Operations.IsUnit(props.context.value)
+                    ? (props.foreignMutations.select(updater, delta),
+                      Promise.resolve({ comparand: "" }))
+                    : props.foreignMutations.onChange(
+                        Option.Default.some(updater),
+                        delta,
+                      );
                 props.setState(
-                  OneAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
-                    replaceWith<InitializationStatus>({
-                      kind: "not initialized",
-                    }),
-                  ),
+                  OneAbstractRendererState.Updaters.Core.customFormState.children
+                    .initializationStatus(
+                      replaceWith<InitializationStatus>({
+                        kind: "not initialized",
+                      }),
+                    )
+                    .then(
+                      OneAbstractRendererState.Updaters.Core.lastOnChangePromise(
+                        replaceWith(Option.Default.some(promise)),
+                      ),
+                    ),
                 );
               },
               create: (value, flags) => {
@@ -514,13 +541,20 @@ export const OneAbstractRenderer = <
                   ValueOption.Default.some(value),
                 );
 
-                props.foreignMutations.select &&
-                PredicateValue.Operations.IsUnit(props.context.value)
-                  ? props.foreignMutations.select(updater, delta)
-                  : props.foreignMutations.onChange(
-                      Option.Default.some(updater),
-                      delta,
-                    );
+                const promise =
+                  props.foreignMutations.select &&
+                  PredicateValue.Operations.IsUnit(props.context.value)
+                    ? (props.foreignMutations.select(updater, delta),
+                      Promise.resolve({ comparand: "" }))
+                    : props.foreignMutations.onChange(
+                        Option.Default.some(updater),
+                        delta,
+                      );
+                props.setState(
+                  OneAbstractRendererState.Updaters.Core.lastOnChangePromise(
+                    replaceWith(Option.Default.some(promise)),
+                  ),
+                );
               },
               reinitializeStream: () =>
                 props.setState(
@@ -563,6 +597,23 @@ export const OneAbstractRenderer = <
     typedInitializeOneRunner.mapContextFromProps((props) => ({
       ...props.context,
       onChange: props.foreignMutations.onChange,
+    })),
+    typedSetupLazyOneRefetchRunner.mapContextFromProps((props) => ({
+      ...props.context,
+      reinitializeLazyOne: () =>
+        props.setState(
+          OneAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
+            replaceWith<InitializationStatus>({
+              kind: "reinitializing",
+              afterReinitializationAction: () =>
+                console.debug("reinitialization action for lazy one"),
+            }),
+          ),
+        ),
+      resetLazyOneRefetchHandlers: () =>
+        props.setState(
+          OneAbstractRendererState.Updaters.Template.clearLastOnChangeRequest(),
+        ),
     })),
     typedOneTableDebouncerRunner.mapContextFromProps((props) => {
       const maybeId = OneAbstractRendererState.Operations.GetIdFromContext(

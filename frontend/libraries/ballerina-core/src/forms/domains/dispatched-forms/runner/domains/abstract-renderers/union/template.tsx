@@ -1,9 +1,11 @@
 import {
   BasicUpdater,
   CommonAbstractRendererReadonlyContext,
+  DispatchCommonFormState,
   DispatchParsedType,
   MapRepo,
   PredicateValue,
+  replaceWith,
   Updater,
   ValueUnionCase,
   IdWrapperProps,
@@ -134,8 +136,8 @@ export const UnionAbstractRenderer = <
                     ValueUnionCase.Updaters.fields(updater.value),
                   )
                 : Option.Default.none<BasicUpdater<ValueUnionCase>>();
-            props.foreignMutations.onChange(caseUpdater, delta);
-            props.setState((_) => ({ ..._, modifiedByUser: true }));
+                props.setState((_) => ({ ..._, modifiedByUser: true }));
+            return props.foreignMutations.onChange(caseUpdater, delta);
           },
         }));
 

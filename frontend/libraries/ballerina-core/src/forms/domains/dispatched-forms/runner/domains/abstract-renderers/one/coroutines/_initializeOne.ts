@@ -46,6 +46,7 @@ export const initializeOne = <
               current
                 .fromApiParser(value.value)
                 .Then((result) => {
+                  console.debug("result", result);
                   const updater = replaceWith<ValueOption | ValueUnit>(
                     ValueOption.Default.some(result),
                   );

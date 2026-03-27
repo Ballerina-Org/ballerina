@@ -122,24 +122,6 @@ export const ListAbstractRenderer = <
               sourceAncestorLookupTypeNames:
                 nestedDelta.sourceAncestorLookupTypeNames,
             };
-            props.foreignMutations.onChange(
-              elementUpdater.kind == "l"
-                ? Option.Default.none()
-                : Option.Default.some(
-                    Updater((list) =>
-                      list.values.has(elementIndex)
-                        ? PredicateValue.Default.tuple(
-                            list.values.update(
-                              elementIndex,
-                              PredicateValue.Default.unit(),
-                              elementUpdater.value,
-                            ),
-                          )
-                        : list,
-                    ),
-                  ),
-              delta,
-            );
             props.setState(
               ListAbstractRendererState.Updaters.Core.commonFormState(
                 DispatchCommonFormState.Updaters.modifiedByUser(
@@ -160,6 +142,24 @@ export const ListAbstractRenderer = <
                   ),
                 ),
               ),
+            );
+            return props.foreignMutations.onChange(
+              elementUpdater.kind == "l"
+                ? Option.Default.none()
+                : Option.Default.some(
+                    Updater((list) =>
+                      list.values.has(elementIndex)
+                        ? PredicateValue.Default.tuple(
+                            list.values.update(
+                              elementIndex,
+                              PredicateValue.Default.unit(),
+                              elementUpdater.value,
+                            ),
+                          )
+                        : list,
+                    ),
+                  ),
+              delta,
             );
           },
         }));
@@ -239,24 +239,6 @@ export const ListAbstractRenderer = <
               sourceAncestorLookupTypeNames:
                 nestedDelta.sourceAncestorLookupTypeNames,
             };
-            props.foreignMutations.onChange(
-              elementUpdater.kind == "l"
-                ? Option.Default.none()
-                : Option.Default.some(
-                    Updater((list) =>
-                      list.values.has(elementIndex)
-                        ? PredicateValue.Default.tuple(
-                            list.values.update(
-                              elementIndex,
-                              PredicateValue.Default.unit(),
-                              elementUpdater.value,
-                            ),
-                          )
-                        : list,
-                    ),
-                  ),
-              delta,
-            );
             props.setState(
               ListAbstractRendererState.Updaters.Core.commonFormState(
                 DispatchCommonFormState.Updaters.modifiedByUser(
@@ -277,6 +259,24 @@ export const ListAbstractRenderer = <
                   ),
                 ),
               ),
+            );
+            return props.foreignMutations.onChange(
+              elementUpdater.kind == "l"
+                ? Option.Default.none()
+                : Option.Default.some(
+                    Updater((list) =>
+                      list.values.has(elementIndex)
+                        ? PredicateValue.Default.tuple(
+                            list.values.update(
+                              elementIndex,
+                              PredicateValue.Default.unit(),
+                              elementUpdater.value,
+                            ),
+                          )
+                        : list,
+                    ),
+                  ),
+              delta,
             );
           },
         }));
@@ -347,7 +347,14 @@ export const ListAbstractRenderer = <
                       sourceAncestorLookupTypeNames:
                         props.context.lookupTypeAncestorNames,
                     };
-                    props.foreignMutations.onChange(
+                    props.setState(
+                      ListAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ),
+                    );
+                    return props.foreignMutations.onChange(
                       Option.Default.some(
                         Updater((list) =>
                           PredicateValue.Default.tuple(
@@ -358,13 +365,6 @@ export const ListAbstractRenderer = <
                         ),
                       ),
                       delta,
-                    );
-                    props.setState(
-                      ListAbstractRendererState.Updaters.Core.commonFormState(
-                        DispatchCommonFormState.Updaters.modifiedByUser(
-                          replaceWith(true),
-                        ),
-                      ),
                     );
                   },
               remove: !methods.includes("remove")
@@ -377,7 +377,14 @@ export const ListAbstractRenderer = <
                       sourceAncestorLookupTypeNames:
                         props.context.lookupTypeAncestorNames,
                     };
-                    props.foreignMutations.onChange(
+                    props.setState(
+                      ListAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ),
+                    );
+                    return props.foreignMutations.onChange(
                       Option.Default.some(
                         Updater((list) =>
                           PredicateValue.Default.tuple(
@@ -389,13 +396,6 @@ export const ListAbstractRenderer = <
                       ),
                       delta,
                     );
-                    props.setState(
-                      ListAbstractRendererState.Updaters.Core.commonFormState(
-                        DispatchCommonFormState.Updaters.modifiedByUser(
-                          replaceWith(true),
-                        ),
-                      ),
-                    );
                   },
               removeAll: !methods.includes("removeAll")
                 ? undefined
@@ -406,16 +406,16 @@ export const ListAbstractRenderer = <
                       sourceAncestorLookupTypeNames:
                         props.context.lookupTypeAncestorNames,
                     };
-                    props.foreignMutations.onChange(
-                      Option.Default.none(),
-                      delta,
-                    );
                     props.setState(
                       ListAbstractRendererState.Updaters.Core.commonFormState(
                         DispatchCommonFormState.Updaters.modifiedByUser(
                           replaceWith(true),
                         ),
                       ),
+                    );
+                    return props.foreignMutations.onChange(
+                      Option.Default.none(),
+                      delta,
                     );
                   },
               move: !methods.includes("move")
@@ -429,7 +429,14 @@ export const ListAbstractRenderer = <
                       sourceAncestorLookupTypeNames:
                         props.context.lookupTypeAncestorNames,
                     };
-                    props.foreignMutations.onChange(
+                    props.setState(
+                      ListAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ),
+                    );
+                    return props.foreignMutations.onChange(
                       Option.Default.some(
                         Updater((list) =>
                           PredicateValue.Default.tuple(
@@ -442,13 +449,6 @@ export const ListAbstractRenderer = <
                       ),
                       delta,
                     );
-                    props.setState(
-                      ListAbstractRendererState.Updaters.Core.commonFormState(
-                        DispatchCommonFormState.Updaters.modifiedByUser(
-                          replaceWith(true),
-                        ),
-                      ),
-                    );
                   },
               duplicate: !methods.includes("duplicate")
                 ? undefined
@@ -460,7 +460,14 @@ export const ListAbstractRenderer = <
                       sourceAncestorLookupTypeNames:
                         props.context.lookupTypeAncestorNames,
                     };
-                    props.foreignMutations.onChange(
+                    props.setState(
+                      ListAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ),
+                    );
+                    return props.foreignMutations.onChange(
                       Option.Default.some(
                         Updater((list) =>
                           PredicateValue.Default.tuple(
@@ -471,13 +478,6 @@ export const ListAbstractRenderer = <
                         ),
                       ),
                       delta,
-                    );
-                    props.setState(
-                      ListAbstractRendererState.Updaters.Core.commonFormState(
-                        DispatchCommonFormState.Updaters.modifiedByUser(
-                          replaceWith(true),
-                        ),
-                      ),
                     );
                   },
               insert: !methods.includes("add")
@@ -492,7 +492,14 @@ export const ListAbstractRenderer = <
                       sourceAncestorLookupTypeNames:
                         props.context.lookupTypeAncestorNames,
                     };
-                    props.foreignMutations.onChange(
+                    props.setState(
+                      ListAbstractRendererState.Updaters.Core.commonFormState(
+                        DispatchCommonFormState.Updaters.modifiedByUser(
+                          replaceWith(true),
+                        ),
+                      ),
+                    );
+                    return props.foreignMutations.onChange(
                       Option.Default.some(
                         Updater((list) =>
                           PredicateValue.Default.tuple(
@@ -504,13 +511,6 @@ export const ListAbstractRenderer = <
                         ),
                       ),
                       delta,
-                    );
-                    props.setState(
-                      ListAbstractRendererState.Updaters.Core.commonFormState(
-                        DispatchCommonFormState.Updaters.modifiedByUser(
-                          replaceWith(true),
-                        ),
-                      ),
                     );
                   },
               setApplyToAll: (applyToAll: boolean) =>
@@ -527,13 +527,9 @@ export const ListAbstractRenderer = <
                   sourceAncestorLookupTypeNames:
                     nestedDelta.sourceAncestorLookupTypeNames,
                 };
-                props.foreignMutations.onChange(Option.Default.none(), delta);
-                props.setState(
-                  ListAbstractRendererState.Updaters.Core.commonFormState(
-                    DispatchCommonFormState.Updaters.modifiedByUser(
-                      replaceWith(true),
-                    ),
-                  ),
+                return props.foreignMutations.onChange(
+                  Option.Default.none(),
+                  delta,
                 );
               },
             }}

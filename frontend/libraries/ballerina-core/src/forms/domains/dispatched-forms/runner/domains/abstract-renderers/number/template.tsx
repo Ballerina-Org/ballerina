@@ -6,6 +6,7 @@ import {
   ErrorRendererProps,
   Option,
   Unit,
+  CommonAbstractRendererState,
 } from "../../../../../../../../main";
 import {
   NumberAbstractRendererForeignMutationsExpected,
@@ -80,7 +81,7 @@ export const NumberAbstractRenderer = <
                   sourceAncestorLookupTypeNames:
                     props.context.lookupTypeAncestorNames,
                 };
-                props.foreignMutations.onChange(
+                return props.foreignMutations.onChange(
                   Option.Default.some(replaceWith(value)),
                   delta,
                 );

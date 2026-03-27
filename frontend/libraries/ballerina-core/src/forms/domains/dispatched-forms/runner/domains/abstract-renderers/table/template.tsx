@@ -40,6 +40,7 @@ import {
   NestedRenderer,
   TableAbstractRendererForeignMutationsExposed,
   DispatchOnChange,
+  DispatchOnChangeResult,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import {
@@ -277,34 +278,6 @@ export const TableAbstractRenderer = <
             nestedUpdater: Option<BasicUpdater<PredicateValue>>,
             nestedDelta: DispatchDelta<Flags>,
           ) => {
-            props.setState(
-              TableAbstractRendererState.Updaters.Core.customFormState.children
-                .rowStates(
-                  MapRepo.Updaters.upsert(
-                    rowId,
-                    () => RecordAbstractRendererState.Default.fieldState(Map()),
-                    RecordAbstractRendererState.Updaters.Core.fieldStates(
-                      MapRepo.Updaters.upsert(
-                        column,
-                        () => CellTemplates.get(column)!.GetDefaultState(),
-                        (__) => ({
-                          ...__,
-                          commonFormState:
-                            DispatchCommonFormState.Updaters.modifiedByUser(
-                              replaceWith(true),
-                            )(__.commonFormState),
-                        }),
-                      ),
-                    ),
-                  ),
-                )
-                .then(
-                  TableAbstractRendererState.Updaters.Core.commonFormState.children.modifiedByUser(
-                    replaceWith(true),
-                  ),
-                ),
-            );
-
             const nestedRecordDelta: DispatchDelta<Flags> = {
               kind: "RecordField",
               field: [column, nestedDelta],
@@ -342,7 +315,35 @@ export const TableAbstractRenderer = <
                     ),
                   );
 
-            props.foreignMutations.onChange(updater, delta);
+            props.setState(
+              TableAbstractRendererState.Updaters.Core.customFormState.children
+                .rowStates(
+                  MapRepo.Updaters.upsert(
+                    rowId,
+                    () => RecordAbstractRendererState.Default.fieldState(Map()),
+                    RecordAbstractRendererState.Updaters.Core.fieldStates(
+                      MapRepo.Updaters.upsert(
+                        column,
+                        () => CellTemplates.get(column)!.GetDefaultState(),
+                        (__) => ({
+                          ...__,
+                          commonFormState:
+                            DispatchCommonFormState.Updaters.modifiedByUser(
+                              replaceWith(true),
+                            )(__.commonFormState),
+                        }),
+                      ),
+                    ),
+                  ),
+                )
+                .then(
+                  TableAbstractRendererState.Updaters.Core.commonFormState.children.modifiedByUser(
+                    replaceWith(true),
+                  ),
+                )
+            );
+
+            return props.foreignMutations.onChange(updater, delta);
           },
         }));
 
@@ -488,7 +489,9 @@ export const TableAbstractRenderer = <
                   ...When rendering table field\n
                   ...${props.context.domNodeAncestorPath}`,
                     );
-                    return id;
+                    return Promise.reject(`Selected detail row is undefined\n
+                      ...When rendering table field\n
+                      ...${props.context.domNodeAncestorPath}`);
                   }
 
                   if (
@@ -500,16 +503,12 @@ export const TableAbstractRenderer = <
                     ...When rendering table field\n
                     ...${props.context.domNodeAncestorPath}`,
                     );
-                    return id;
+                    return Promise.reject(`Selected detail row is not a string or unit\n
+                      ...When rendering table field\n
+                      ...${props.context.domNodeAncestorPath}`);
                   }
 
                   if (PredicateValue.Operations.IsString(selectedDetailRow)) {
-                    props.setState(
-                      TableAbstractRendererState.Updaters.Core.commonFormState.children.modifiedByUser(
-                        replaceWith(true),
-                      ),
-                    );
-
                     const delta: DispatchDelta<Flags> = {
                       kind: "TableValue",
                       id: selectedDetailRow,
@@ -531,13 +530,14 @@ export const TableAbstractRenderer = <
                             ),
                           );
 
-                    const idx = tableData.keySeq().indexOf(selectedDetailRow);
-                    const valueRecordUpdater = Updater<ValueRecord>(
-                      nestedUpdater.kind == "l" ? id : nestedUpdater.value,
-                    );
-
-                    props.foreignMutations.onChange(updater, delta);
+                    return props.foreignMutations.onChange(updater, delta);
                   }
+
+                  return Promise.reject(
+                    new Error(
+                      "Selected detail row is undefined or not a string or unit",
+                    ),
+                  );
                 },
               }))
       : undefined;
@@ -825,13 +825,16 @@ export const TableAbstractRenderer = <
                   sourceAncestorLookupTypeNames:
                     nestedDelta.sourceAncestorLookupTypeNames,
                 };
-                props.foreignMutations.onChange(Option.Default.none(), delta);
                 props.setState(
                   TableAbstractRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
                       replaceWith(true),
                     ),
                   ),
+                );
+                return props.foreignMutations.onChange(
+                  Option.Default.none(),
+                  delta,
                 );
               },
               removeAll: !props.context.apiMethods.includes("removeAll")
@@ -843,16 +846,16 @@ export const TableAbstractRenderer = <
                       sourceAncestorLookupTypeNames:
                         props.context.lookupTypeAncestorNames,
                     };
-                    props.foreignMutations.onChange(
-                      Option.Default.none(),
-                      delta,
-                    );
                     props.setState(
                       TableAbstractRendererState.Updaters.Core.commonFormState(
                         DispatchCommonFormState.Updaters.modifiedByUser(
                           replaceWith(true),
                         ),
                       ),
+                    );
+                    return props.foreignMutations.onChange(
+                      Option.Default.none(),
+                      delta,
                     );
                   },
               add: !props.context.apiMethods.includes("add")
@@ -874,6 +877,10 @@ export const TableAbstractRenderer = <
                     const hasPendingAddOperations =
                       props.context.customFormState.pendingOps.kind == "add" &&
                       props.context.customFormState.pendingOps.pending.size > 0;
+
+                    let dispatchPromise:
+                      | Promise<DispatchOnChangeResult>
+                      | undefined;
 
                     if (
                       !hasPendingAddOperations ||
@@ -903,7 +910,7 @@ export const TableAbstractRenderer = <
                       // no need to apply the updater to the table here
                       // the fake row will be added later to the list of extra data
                       // so we just send the delta
-                      props.foreignMutations.onChange(
+                      dispatchPromise = props.foreignMutations.onChange(
                         Option.Default.none(),
                         delta,
                       );
@@ -950,6 +957,8 @@ export const TableAbstractRenderer = <
                           : enqueuePendingAddOperation,
                       ),
                     );
+
+                    return dispatchPromise;
                   },
               addWholeValue_Dangerous:
                 !props.context.apiMethods.includes("add") &&
@@ -964,7 +973,7 @@ export const TableAbstractRenderer = <
                           props.context.lookupTypeAncestorNames,
                         type: TableEntityType,
                       };
-                      props.foreignMutations.onChange(
+                      return props.foreignMutations.onChange(
                         Option.Default.none(),
                         delta,
                       );
@@ -990,6 +999,10 @@ export const TableAbstractRenderer = <
                         "remove" &&
                       props.context.customFormState.pendingOps.pending.size > 0;
 
+                    let removeDispatchPromise:
+                      | Promise<DispatchOnChangeResult>
+                      | undefined;
+
                     if (
                       !hasPendingRemoveOperations ||
                       props.context.disableTableOptimisticUpdates
@@ -1002,7 +1015,7 @@ export const TableAbstractRenderer = <
                         sourceAncestorLookupTypeNames:
                           props.context.lookupTypeAncestorNames,
                       };
-                      props.foreignMutations.onChange(
+                      removeDispatchPromise = props.foreignMutations.onChange(
                         Option.Default.none(),
                         delta,
                       );
@@ -1033,6 +1046,8 @@ export const TableAbstractRenderer = <
                           : enqueueRemoveOperation,
                       ),
                     );
+
+                    return removeDispatchPromise;
                   },
               moveTo: !props.context.apiMethods.includes("move")
                 ? undefined
@@ -1045,16 +1060,16 @@ export const TableAbstractRenderer = <
                       sourceAncestorLookupTypeNames:
                         props.context.lookupTypeAncestorNames,
                     };
-                    props.foreignMutations.onChange(
-                      Option.Default.none(),
-                      delta,
-                    );
                     props.setState(
                       TableAbstractRendererState.Updaters.Core.commonFormState(
                         DispatchCommonFormState.Updaters.modifiedByUser(
                           replaceWith(true),
                         ),
-                      ),
+                      )
+                    );
+                    return props.foreignMutations.onChange(
+                      Option.Default.none(),
+                      delta,
                     );
                   },
               duplicate: !props.context.apiMethods.includes("duplicate")
@@ -1067,16 +1082,16 @@ export const TableAbstractRenderer = <
                       sourceAncestorLookupTypeNames:
                         props.context.lookupTypeAncestorNames,
                     };
-                    props.foreignMutations.onChange(
-                      Option.Default.none(),
-                      delta,
-                    );
                     props.setState(
                       TableAbstractRendererState.Updaters.Core.commonFormState(
                         DispatchCommonFormState.Updaters.modifiedByUser(
                           replaceWith(true),
                         ),
                       ),
+                    );
+                    return props.foreignMutations.onChange(
+                      Option.Default.none(),
+                      delta,
                     );
                   },
               actionOnAll: !props.context.apiMethods.includes("actionOnAll")
@@ -1090,16 +1105,16 @@ export const TableAbstractRenderer = <
                       sourceAncestorLookupTypeNames:
                         props.context.lookupTypeAncestorNames,
                     };
-                    props.foreignMutations.onChange(
-                      Option.Default.none(),
-                      delta,
-                    );
                     props.setState(
                       TableAbstractRendererState.Updaters.Core.commonFormState(
                         DispatchCommonFormState.Updaters.modifiedByUser(
                           replaceWith(true),
                         ),
                       ),
+                    );
+                    return props.foreignMutations.onChange(
+                      Option.Default.none(),
+                      delta,
                     );
                   },
               updateFilters: (

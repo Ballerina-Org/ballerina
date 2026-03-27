@@ -134,10 +134,14 @@ export type ValueCallbackWithOptionalFlags<Value, Flags = Unit> = (
   flags: Flags | undefined,
 ) => void;
 
+export type DispatchOnChangeResult = {
+  comparand: string;
+};
+
 export type DispatchOnChange<Value, Flags = Unit> = (
   updater: Option<BasicUpdater<Value>>,
   delta: DispatchDelta<Flags>,
-) => void;
+) => Promise<DispatchOnChangeResult>;
 
 type ApiConverter<T> = {
   fromAPIRawValue: BasicFun<any, T>;
@@ -736,6 +740,7 @@ export const dispatchDefaultState =
                       : injectedPrimitives?.get(t.name as keyof T) != undefined
                         ? ValueOrErrors.Default.return({
                             commonFormState: DispatchCommonFormState.Default(),
+                            lastOnChangePromise: Option.Default.none(),
                             ...injectedPrimitives?.get(t.name as keyof T)!
                               .defaultState,
                           })

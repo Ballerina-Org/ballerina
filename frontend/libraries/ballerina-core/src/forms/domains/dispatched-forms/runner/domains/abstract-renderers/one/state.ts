@@ -28,6 +28,8 @@ import {
   CommonAbstractRendererViewOnlyReadonlyContext,
   Sum,
   PredicateValue,
+  Option,
+  replaceWith,
 } from "../../../../../../../../main";
 import { Debounced } from "../../../../../../../debounced/state";
 import { DispatchDelta } from "../../deltas/dispatch-delta/state";
@@ -73,6 +75,7 @@ export type OneAbstractRendererState = CommonAbstractRendererState & {
           BasicFun<Map<string, string>, ValueInfiniteStreamState["getChunk"]>
         >
       | undefined;
+    lastUpdater: Option<BasicUpdater<ValueOption | ValueUnit>>;
   };
 };
 
@@ -96,10 +99,12 @@ export const OneAbstractRendererState = {
       initializationStatus: {
         kind: "not initialized",
       },
+      lastUpdater: Option.Default.none(),
     },
   }),
   Updaters: {
     Core: {
+      ...simpleUpdater<OneAbstractRendererState>()("lastOnChangePromise"),
       ...simpleUpdaterWithChildren<OneAbstractRendererState>()({
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "status",
@@ -118,6 +123,9 @@ export const OneAbstractRendererState = {
         ),
         ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
           "initializationStatus",
+        ),
+        ...simpleUpdater<OneAbstractRendererState["customFormState"]>()(
+          "lastUpdater",
         ),
       })("customFormState"),
       ...simpleUpdaterWithChildren<OneAbstractRendererState>()({
@@ -140,6 +148,26 @@ export const OneAbstractRendererState = {
             ]),
           ),
         ),
+      registerOnChangeRequest: <Flags>(
+        updater: Option<BasicUpdater<ValueOption | ValueUnit>>,
+        promise: ReturnType<DispatchOnChange<ValueOption | ValueUnit, Flags>>,
+      ): Updater<OneAbstractRendererState> =>
+        OneAbstractRendererState.Updaters.Core.customFormState.children
+          .lastUpdater(replaceWith(updater))
+          .then(
+            OneAbstractRendererState.Updaters.Core.lastOnChangePromise(
+              // TODO: check whether we should append this promise to the current one in case it exists
+              replaceWith(Option.Default.some(promise)),
+            ),
+          ),
+      clearLastOnChangeRequest: (): Updater<OneAbstractRendererState> =>
+        OneAbstractRendererState.Updaters.Core.customFormState.children
+          .lastUpdater(replaceWith(Option.Default.none()))
+          .then(
+            OneAbstractRendererState.Updaters.Core.lastOnChangePromise(
+              replaceWith(Option.Default.none()),
+            ),
+          ),
     },
   },
   Operations: {
@@ -206,6 +234,18 @@ export const OneAbstractRendererState = {
           ctx.getApi != undefined
         );
       },
+    ShouldSetupLazyOneRefetch: <
+      CustomPresentationContext = Unit,
+      ExtraContext = Unit,
+    >(
+      ctx: OneAbstractRendererReadonlyContext<
+        CustomPresentationContext,
+        ExtraContext
+      > &
+        OneAbstractRendererState,
+    ): boolean => {
+      return ctx.lastOnChangePromise.kind == "r" && ctx.getApi != undefined;
+    },
   },
 };
 

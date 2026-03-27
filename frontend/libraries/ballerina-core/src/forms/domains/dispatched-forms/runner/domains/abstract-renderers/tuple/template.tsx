@@ -128,24 +128,6 @@ export const DispatchTupleAbstractRenderer = <
                 sourceAncestorLookupTypeNames:
                   nestedDelta.sourceAncestorLookupTypeNames,
               };
-              props.foreignMutations.onChange(
-                elementUpdater.kind == "l"
-                  ? Option.Default.none()
-                  : Option.Default.some(
-                      Updater((tuple) =>
-                        tuple.values.has(itemIndex)
-                          ? PredicateValue.Default.tuple(
-                              tuple.values.update(
-                                itemIndex,
-                                PredicateValue.Default.unit(),
-                                elementUpdater.value,
-                              ),
-                            )
-                          : tuple,
-                      ),
-                    ),
-                delta,
-              );
 
               props.setState(
                 TupleAbstractRendererState.Updaters.Core.commonFormState(
@@ -165,6 +147,24 @@ export const DispatchTupleAbstractRenderer = <
                     }),
                   ),
                 ),
+              );
+              return props.foreignMutations.onChange(
+                elementUpdater.kind == "l"
+                  ? Option.Default.none()
+                  : Option.Default.some(
+                      Updater((tuple) =>
+                        tuple.values.has(itemIndex)
+                          ? PredicateValue.Default.tuple(
+                              tuple.values.update(
+                                itemIndex,
+                                PredicateValue.Default.unit(),
+                                elementUpdater.value,
+                              ),
+                            )
+                          : tuple,
+                      ),
+                    ),
+                delta,
               );
             },
           }),
