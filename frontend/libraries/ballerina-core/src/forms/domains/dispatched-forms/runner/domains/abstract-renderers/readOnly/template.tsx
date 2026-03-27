@@ -117,7 +117,14 @@ export const ReadOnlyAbstractRenderer = <
               nestedDelta.sourceAncestorLookupTypeNames,
           };
 
-          const promise = props.foreignMutations.onChange(
+          props.setState(
+            ReadOnlyAbstractRendererState.Updaters.Core.commonFormState(
+              DispatchCommonFormState.Updaters.modifiedByUser(
+                replaceWith(true),
+              ),
+            )
+          );
+          return props.foreignMutations.onChange(
             elementUpdater.kind == "l"
               ? Option.Default.none()
               : Option.Default.some(
@@ -129,18 +136,6 @@ export const ReadOnlyAbstractRenderer = <
                 ),
             delta,
           );
-          props.setState(
-            ReadOnlyAbstractRendererState.Updaters.Core.commonFormState(
-              DispatchCommonFormState.Updaters.modifiedByUser(
-                replaceWith(true),
-              ),
-            ).then(
-              ReadOnlyAbstractRendererState.Updaters.Core.lastOnChangePromise(
-                replaceWith(Option.Default.some(promise)),
-              ),
-            ),
-          );
-          return promise;
         },
       }),
     );
