@@ -11,7 +11,6 @@ import {
   OneAbstractRendererReadonlyContext,
   OneAbstractRendererState,
 } from "../../../../../../../../../main";
-import { BaseFlags } from "../../../deltas/delta-to-dto/state";
 
 export const Co = <CustomPresentationContext = Unit, ExtraContext = Unit>() =>
   CoTypedFactory<
@@ -50,3 +49,18 @@ export const DebouncedCo = CoTypedFactory<
   { onDebounce: SimpleCallback<void> },
   Value<[Map<string, string>, boolean]>
 >();
+
+export const SetupLazyOneRefetchCo = <
+  CustomPresentationContext = Unit,
+  ExtraContext = Unit,
+>() =>
+  CoTypedFactory<
+    OneAbstractRendererReadonlyContext<
+      CustomPresentationContext,
+      ExtraContext
+    > & {
+      reinitializeLazyOne: SimpleCallback<void>;
+      resetLazyOneRefetchHandlers: SimpleCallback<void>;
+    },
+    OneAbstractRendererState
+  >();

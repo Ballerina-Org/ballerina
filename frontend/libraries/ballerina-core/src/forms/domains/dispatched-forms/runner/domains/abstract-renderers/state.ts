@@ -2,9 +2,11 @@ import { Map, Set } from "immutable";
 import {
   Bindings,
   DispatchOnChange,
+  DispatchOnChangeResult,
   DispatchParsedType,
   FormLayout,
   NestedRenderer,
+  Option,
   PredicateValue,
   Renderer,
   simpleUpdater,
@@ -61,17 +63,20 @@ export type PreprocessedSpecContext = {
 export type CommonAbstractRendererState = {
   commonFormState: DispatchCommonFormState;
   customFormState: unknown;
+  lastOnChangePromise: Option<Promise<DispatchOnChangeResult>>;
 };
 
 export const CommonAbstractRendererState = {
   Default: (): CommonAbstractRendererState => ({
     commonFormState: DispatchCommonFormState.Default(),
     customFormState: {},
+    lastOnChangePromise: Option.Default.none(),
   }),
   Updaters: {
     Core: {
       ...simpleUpdater<CommonAbstractRendererState>()("commonFormState"),
       ...simpleUpdater<CommonAbstractRendererState>()("customFormState"),
+      ...simpleUpdater<CommonAbstractRendererState>()("lastOnChangePromise"),
       ...simpleUpdaterWithChildren<CommonAbstractRendererState>()({
         ...simpleUpdater<CommonAbstractRendererState["commonFormState"]>()(
           "modifiedByUser",

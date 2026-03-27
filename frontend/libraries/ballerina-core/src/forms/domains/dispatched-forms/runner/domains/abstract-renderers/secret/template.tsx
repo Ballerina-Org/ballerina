@@ -12,6 +12,7 @@ import {
   ErrorRendererProps,
   Option,
   Unit,
+  CommonAbstractRendererState,
 } from "../../../../../../../../main";
 import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 
@@ -80,7 +81,7 @@ export const SecretAbstractRenderer = <
                   sourceAncestorLookupTypeNames:
                     props.context.lookupTypeAncestorNames,
                 };
-                props.foreignMutations.onChange(
+                return props.foreignMutations.onChange(
                   Option.Default.some(replaceWith(_)),
                   delta,
                 );

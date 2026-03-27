@@ -8,6 +8,7 @@ import {
   Unit,
   ErrorRendererProps,
   Option,
+  CommonAbstractRendererState,
 } from "../../../../../../../../main";
 import { CoTypedFactory } from "../../../../../../../coroutines/builder";
 import { Template } from "../../../../../../../template/state";
@@ -104,7 +105,7 @@ export const EnumMultiselectAbstractRenderer = <
                     props.context.customFormState.options.sync,
                   )
                 )
-                  return;
+                  return Promise.resolve({ comparand: "" });
                 const options =
                   props.context.customFormState.options.sync.value;
                 const newSelection = value.flatMap((_) => {
@@ -129,7 +130,7 @@ export const EnumMultiselectAbstractRenderer = <
                   sourceAncestorLookupTypeNames:
                     props.context.lookupTypeAncestorNames,
                 };
-                props.foreignMutations.onChange(
+                return props.foreignMutations.onChange(
                   Option.Default.some(
                     replaceWith(
                       PredicateValue.Default.record(OrderedMap(newSelection)),

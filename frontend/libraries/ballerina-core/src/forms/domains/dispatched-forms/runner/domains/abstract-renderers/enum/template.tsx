@@ -94,7 +94,7 @@ export const EnumAbstractRenderer = <
                     props.context.customFormState.options.sync,
                   )
                 )
-                  return;
+                  return Promise.reject(new Error("Options not loaded"));
                 const newSelection =
                   props.context.customFormState.options.sync.value.get(value);
                 if (newSelection == undefined) {

@@ -134,8 +134,10 @@ export const DispatchPassthroughFormLauncherTemplate = <
             updater: Option<BasicUpdater<PredicateValue>>,
             delta: DispatchDelta<Flags>,
           ) => {
-            if (props.context.launcherRef.entity.kind == "r") return;
-            props.context.launcherRef.onEntityChange(updater, delta);
+            if (props.context.launcherRef.entity.kind == "r") {
+              return Promise.reject(new Error("No entity to change"));
+            }
+            return props.context.launcherRef.onEntityChange(updater, delta);
           },
         }}
       />

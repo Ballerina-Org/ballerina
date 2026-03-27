@@ -192,7 +192,7 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                     props.context.lookupTypeAncestorNames,
                   flags,
                 };
-                props.foreignMutations.onChange(
+                return props.foreignMutations.onChange(
                   Option.Default.some(ValueRecord.Updaters.clear()),
                   delta,
                 );
@@ -228,13 +228,13 @@ export const InfiniteMultiselectDropdownFormAbstractRenderer = <
                     props.context.lookupTypeAncestorNames,
                   flags,
                 };
-                props.foreignMutations.onChange(
+                return props.foreignMutations.onChange(
                   Option.Default.some(replaceWith(value)),
                   delta,
                 );
               },
               toggleSelection: (elementRecord: ValueRecord, flags) => {
-                props.context.value.fields.has(
+                const promise = props.context.value.fields.has(
                   elementRecord.fields.get("Id")! as string,
                 )
                   ? props.foreignMutations.onChange(

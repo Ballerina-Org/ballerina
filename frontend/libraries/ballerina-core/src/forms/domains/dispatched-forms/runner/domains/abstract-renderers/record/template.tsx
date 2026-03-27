@@ -164,21 +164,6 @@ export const RecordAbstractRenderer = <
                   nestedDelta.sourceAncestorLookupTypeNames,
               };
 
-              props.foreignMutations.onChange(
-                elementUpdater.kind == "l"
-                  ? Option.Default.none()
-                  : Option.Default.some((current: ValueRecord) =>
-                      PredicateValue.Default.record(
-                        current.fields.update(
-                          fieldName,
-                          PredicateValue.Default.unit(),
-                          elementUpdater.value,
-                        ),
-                      ),
-                    ),
-                delta,
-              );
-
               props.setState(
                 RecordAbstractRendererState.Updaters.Core.commonFormState(
                   DispatchCommonFormState.Updaters.modifiedByUser(
@@ -197,6 +182,21 @@ export const RecordAbstractRenderer = <
                     }),
                   ),
                 ),
+              );
+
+              return props.foreignMutations.onChange(
+                elementUpdater.kind == "l"
+                  ? Option.Default.none()
+                  : Option.Default.some((current: ValueRecord) =>
+                      PredicateValue.Default.record(
+                        current.fields.update(
+                          fieldName,
+                          PredicateValue.Default.unit(),
+                          elementUpdater.value,
+                        ),
+                      ),
+                    ),
+                delta,
               );
             },
           }),

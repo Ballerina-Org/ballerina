@@ -116,7 +116,9 @@ export const DispatchCreateFormLauncherTemplate = <
         foreignMutations={{
           ...props.foreignMutations,
           onChange: (pvUpdater, delta) => {
-            if (pvUpdater.kind == "l") return;
+            if (pvUpdater.kind == "l") {
+              return Promise.reject(new Error("No updater to change"));
+            }
 
             props.setState(
               DispatchCreateFormLauncherState<
@@ -126,6 +128,10 @@ export const DispatchCreateFormLauncherTemplate = <
                 ExtraContext
               >().Updaters.Template.entity(pvUpdater.value),
             );
+
+            return Promise.resolve({
+              comparand: "TODO: comparand for create form",
+            });
           },
         }}
       />
