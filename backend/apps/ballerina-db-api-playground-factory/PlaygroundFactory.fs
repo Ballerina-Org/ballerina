@@ -1,5 +1,12 @@
 ﻿namespace Ballerina.FileDBAPIPlayground
 
+open System.Reactive.Subjects
+open Ballerina.API
+open Ballerina.DSL.Next.StdLib.Extensions
+open Ballerina.DSL.Next.StdLib.FileDB
+open Ballerina.DSL.Next.StdLib.MutableMemoryDB
+open ballerina_db_api_playground
+
 module Factory =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.API.MemoryDB.Model
@@ -28,10 +35,43 @@ module Factory =
         return! sum.Throw(Errors.Singleton () (fun _ -> $"File not found at {path}."))
     }
 
+  let private createFactory
+    schemaFileConfig
+    dbFileConfig
+    addPermissionHookScope
+    addBackgroundHookScope
+    (hookInjector:
+      HttpContext
+        -> Updater<
+          ExprEvalContext<
+            FileDBRuntimeContext,
+            ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, unit>, unit>
+           >
+         >)
+    =
+    let languageContext, querySymbols, queryTypeFactory = contextFactory dbFileConfig
+
+    let descriptorFetcher =
+      descriptorFetcherFactory
+        languageContext
+        schemaFileConfig
+        querySymbols
+        queryTypeFactory
+        addPermissionHookScope
+        addBackgroundHookScope
+
+    { DbDescriptorFetcher = descriptorFetcher
+      LanguageContextFactory =
+        fun () ->
+          contextFactory dbFileConfig
+          |> (fun (languageContext, _, _) -> languageContext)
+          |> sum.Return
+      PermissionHookInjector = hookInjector }
+
   let createAndRunAPI
     (addPermissionHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>)
     (addBackgroundHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>)
-    (hookInjector:
+    (permissionsHookInjector:
       HttpContext
         -> Updater<
           ExprEvalContext<
@@ -43,6 +83,13 @@ module Factory =
              >
            >
          >)
+    (backgroundContextInjector:
+      Updater<
+        ExprEvalContext<
+          FileDBRuntimeContext,
+          ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, unit>, unit>
+         >
+       >)
     (args: string[])
     =
 
@@ -123,14 +170,16 @@ module Factory =
             { SchemaDirectory = schemaDirectory
               SchemaExtension = schemaExtension }
 
-          let dbFileConfig: DatabaseFileConfig =
+          let dbFileConfig: DbFileConfig =
             { DbDirectory = dbDirectory
               DbExtension = dbExtension }
 
           let sourcePaths = parseResult.GetValue sourceFilePathArg
+          let schemaStream = new ReplaySubject<SchemaId> 1
+
+          let isPublished = parseResult.GetValue publishArg
 
           if isNull sourcePaths |> not && sourcePaths.Length > 0 then
-            let isPublished = parseResult.GetValue publishArg
             let tenantId = parseResult.GetRequiredValue tenantIdArg
             let schemaName = parseResult.GetRequiredValue schemaNameArg
             let showEval = parseResult.GetValue showEvalArg
@@ -160,14 +209,41 @@ module Factory =
                 showEval
                 addPermissionHookScope
                 addBackgroundHookScope
+                schemaStream
 
             Console.WriteLine "Done!"
+          else
+            let tenantId = parseResult.GetValue tenantIdArg
+            let schemaName = parseResult.GetValue schemaNameArg
+
+            if tenantId <> Guid.Empty && (not <| String.IsNullOrWhiteSpace schemaName) then
+              schemaStream.OnNext
+                { TenantId = tenantId
+                  SchemaName = schemaName
+                  IsDraft = not isPublished }
 
           let builder = WebApplication.CreateBuilder args
 
           builder.Services.ConfigureHttpJsonOptions(fun options ->
             options.SerializerOptions.DefaultIgnoreCondition <- JsonIgnoreCondition.WhenWritingNull)
           |> ignore
+
+          let factory =
+            createFactory
+              schemaFileConfig
+              dbFileConfig
+              addPermissionHookScope
+              addBackgroundHookScope
+              permissionsHookInjector
+
+          builder.Services.AddHostedService(fun _ ->
+            new MemoryDBBackgroundJobExecutor(
+              factory.DbDescriptorFetcher,
+              backgroundContextInjector,
+              dbFileConfig,
+              (fun () -> DateTimeOffset.UtcNow),
+              schemaStream
+            ))
 
           let app = builder.Build()
 
@@ -180,7 +256,8 @@ module Factory =
               app.MapGroup "/",
               addPermissionHookScope,
               addBackgroundHookScope,
-              hookInjector
+              factory,
+              schemaStream
             )
 
           return app
