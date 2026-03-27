@@ -46,7 +46,6 @@ export const initializeOne = <
               current
                 .fromApiParser(value.value)
                 .Then((result) => {
-                  console.debug("result", result);
                   const updater = replaceWith<ValueOption | ValueUnit>(
                     ValueOption.Default.some(result),
                   );
@@ -76,7 +75,7 @@ export const initializeOne = <
                   "reinitializing"
                 ) {
                   // always true when running this coroutine
-                  current.customFormState.initializationStatus.afterReinitializationAction();
+                  current.customFormState.initializationStatus.afterReinitializationAction?.();
                 }
               }),
             ),

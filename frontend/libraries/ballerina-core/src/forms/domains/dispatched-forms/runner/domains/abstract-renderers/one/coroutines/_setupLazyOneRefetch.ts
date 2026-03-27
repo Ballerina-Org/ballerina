@@ -15,11 +15,7 @@ export const setupLazyOneRefetch = <
         }
 
         current.lastOnChangePromise.value
-          .then((result) => {
-            console.debug(
-              "reinitializing lazy one after change for comparand",
-              result.comparand,
-            );
+          .then((_) => {
             current.reinitializeLazyOne();
           })
           // TODO: handle error case?

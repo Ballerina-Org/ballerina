@@ -58,7 +58,7 @@ export type InitializationStatus =
     }
   | {
       kind: "reinitializing";
-      afterReinitializationAction: SimpleCallback<void>;
+      afterReinitializationAction?: SimpleCallback<void>;
     };
 
 export type OneAbstractRendererState = CommonAbstractRendererState & {
