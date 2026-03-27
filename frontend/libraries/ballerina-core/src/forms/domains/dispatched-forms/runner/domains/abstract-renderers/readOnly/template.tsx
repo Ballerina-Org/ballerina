@@ -122,7 +122,7 @@ export const ReadOnlyAbstractRenderer = <
               DispatchCommonFormState.Updaters.modifiedByUser(
                 replaceWith(true),
               ),
-            )
+            ),
           );
           return props.foreignMutations.onChange(
             elementUpdater.kind == "l"

@@ -340,7 +340,7 @@ export const TableAbstractRenderer = <
                   TableAbstractRendererState.Updaters.Core.commonFormState.children.modifiedByUser(
                     replaceWith(true),
                   ),
-                )
+                ),
             );
 
             return props.foreignMutations.onChange(updater, delta);
@@ -1065,7 +1065,7 @@ export const TableAbstractRenderer = <
                         DispatchCommonFormState.Updaters.modifiedByUser(
                           replaceWith(true),
                         ),
-                      )
+                      ),
                     );
                     return props.foreignMutations.onChange(
                       Option.Default.none(),

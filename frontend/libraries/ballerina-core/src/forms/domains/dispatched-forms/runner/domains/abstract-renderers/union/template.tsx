@@ -136,7 +136,7 @@ export const UnionAbstractRenderer = <
                     ValueUnionCase.Updaters.fields(updater.value),
                   )
                 : Option.Default.none<BasicUpdater<ValueUnionCase>>();
-                props.setState((_) => ({ ..._, modifiedByUser: true }));
+            props.setState((_) => ({ ..._, modifiedByUser: true }));
             return props.foreignMutations.onChange(caseUpdater, delta);
           },
         }));

@@ -604,7 +604,7 @@ export const OneAbstractRenderer = <
         props.setState(
           OneAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
             replaceWith<InitializationStatus>({
-              kind: "reinitializing"
+              kind: "reinitializing",
             }),
           ),
         ),
