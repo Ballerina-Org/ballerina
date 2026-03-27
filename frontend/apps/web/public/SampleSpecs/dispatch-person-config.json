@@ -2102,17 +2102,14 @@
             "renderer": {
               "type": "UserDetails",
               "fields": {
-                "Id": {
-                  "renderer": "defaultString"
-                },
                 "Name": {
-                  "renderer": "defaultString"
+                  "renderer": "viewString"
                 },
                 "Surname": {
-                  "renderer": "defaultString"
+                  "renderer": "viewString"
                 },
                 "Email": {
-                  "renderer": "defaultString"
+                  "renderer": "viewString"
                 }
               },
               "tabs": {
@@ -2138,14 +2135,11 @@
             "renderer": {
               "type": "UserPreview",
               "fields": {
-                "Id": {
-                  "renderer": "defaultString"
-                },
                 "Name": {
-                  "renderer": "defaultString"
+                  "renderer": "viewString"
                 },
                 "DisplayValue": {
-                  "renderer": "defaultString"
+                  "renderer": "viewString"
                 }
               },
               "tabs": {
@@ -2153,7 +2147,7 @@
                   "columns": {
                     "main": {
                       "groups": {
-                        "main": ["Id", "Name", "DisplayValue"]
+                        "main": ["Name", "DisplayValue"]
                       }
                     }
                   }
@@ -2183,7 +2177,7 @@
                   "columns": {
                     "main": {
                       "groups": {
-                        "main": ["Name", "Surname", "Email"]
+                        "main": ["Id", "Name", "Surname", "Email"]
                       }
                     }
                   }

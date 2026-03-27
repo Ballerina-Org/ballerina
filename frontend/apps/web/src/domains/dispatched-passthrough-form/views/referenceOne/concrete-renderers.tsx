@@ -184,17 +184,8 @@ export const ReferenceOneConcreteRenderers: ReferenceOneConcreteRenderersType = 
             disabled={props.context.disabled}
             onClick={() => props.foreignMutations.toggleOpen()}
           >
-            {props?.PreviewRenderer &&
-              props?.PreviewRenderer(optionValue)("unique-id")(undefined)?.({
-                ...props,
-                context: {
-                  ...props.context,
-                },
-                foreignMutations: {
-                  ...props.foreignMutations,
-                },
-                view: unit,
-              })}
+            Update selection
+            <br />
             {props.context.customFormState.status == "open" ? "➖" : "➕"}
           </button>
         </li>
@@ -222,8 +213,12 @@ export const ReferenceOneConcreteRenderers: ReferenceOneConcreteRenderersType = 
                 .entrySeq()
                 .map(([key, chunk]) =>
                   chunk.data.valueSeq().map((element: ValueRecord) => {
-                    console.log("Suzan element:", element) //TODO Suzan: clean up
-                    console.log("Suzan element id:", element.fields.get("Id")) //TODO Suzan: clean up
+                    const maybeId = element.fields.get("Id")
+                    if (maybeId == undefined)
+                      return <>Error: no Id provided</>
+                    if (typeof maybeId != "string")
+                      return <>Error: provided Id is not a string</>
+                    
                     return (
                       <li>
                         <button
@@ -246,7 +241,7 @@ export const ReferenceOneConcreteRenderers: ReferenceOneConcreteRenderersType = 
                             }}
                           />
                           {props?.PreviewRenderer &&
-                            props.PreviewRenderer(element)(key.toString())(
+                            props.PreviewRenderer(element)(maybeId)(
                               undefined,
                             )?.({
                               ...props,

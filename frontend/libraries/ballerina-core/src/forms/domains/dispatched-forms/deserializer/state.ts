@@ -282,11 +282,11 @@ export type DispatchOneSource = {
 
 export type SearchResult = {
   entityId: Guid,
-  entityPreview: any //TODO Suzan: use unknown instead of any
+  entityPreview: any 
 }
 
 export type DispatchReferenceOneSource = {
-  get: BasicFun<Guid, Promise<any>> | undefined; //TODO Suzan: use unknown instead of any
+  get: BasicFun<Guid, Promise<any>> | undefined; 
   search:
     | BasicFun<
         string, 

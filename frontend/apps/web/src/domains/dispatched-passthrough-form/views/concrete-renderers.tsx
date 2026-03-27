@@ -1928,6 +1928,11 @@ export const DispatchPassthroughFormConcreteRenderers: ConcreteRenderers<
         </>
       );
     },
+    viewString: () => (props) => {
+      return (
+        <p>{(typeof props.context.value) != "string" ? "" : props.context.value}</p>
+      );
+    },
   },
   date: {
     defaultDate: () => (props) => {
