@@ -72,6 +72,11 @@ module FileDB =
       return result
     }
 
+  let private updateTarget target source =
+    target.entities <- source.entities
+    target.relations <- source.relations
+    target.backgroundJobs <- source.backgroundJobs
+
   let private entityRefUpdater
     (db: MutableMemoryDB<FileDBRuntimeContext, 'customExt>)
     (entityRef:
@@ -82,8 +87,7 @@ module FileDB =
     : unit =
 
     let _, currentDb, _, _ = entityRef
-    currentDb.entities <- db.entities
-    currentDb.relations <- db.relations
+    db |> updateTarget currentDb
 
   let relationRefUpdater
     (db: MutableMemoryDB<FileDBRuntimeContext, 'customExt>)
@@ -94,9 +98,7 @@ module FileDB =
        >)
     : unit =
     let _, currentDb, _, _, _, _ = relationRef
-    currentDb.entities <- db.entities
-    currentDb.relations <- db.relations
-
+    db |> updateTarget currentDb
 
   let private create<'customExt when 'customExt: comparison>
     directory
@@ -387,6 +389,29 @@ module FileDB =
       (fun dbTypeClass ->
         fun relation_ref (source, dir, skip, truncate) ->
           dbTypeClass.LookupMany relation_ref source dir (skip, truncate))
+
+  let updateFromFileSystem
+    { DbDirectory = directory
+      DbExtension = extension }
+    db
+    =
+    reader {
+      let! fileManager = makeFileManager directory extension
+      let! currentDb = fileManager.GetContent() |> reader.OfSum
+      currentDb |> updateTarget db
+    }
+
+  let updateBackgroundJobs
+    { DbDirectory = directory
+      DbExtension = extension }
+    update
+    =
+    reader {
+      let! fileManager = makeFileManager directory extension
+      let! currentDb = fileManager.GetContent() |> reader.OfSum
+      do currentDb.backgroundJobs <- update currentDb.backgroundJobs
+      do! fileManager.WriteContent currentDb |> reader.OfSum
+    }
 
   let fileDbOps<'customExt when 'customExt: comparison>
     (dbFileConfig: DbFileConfig)

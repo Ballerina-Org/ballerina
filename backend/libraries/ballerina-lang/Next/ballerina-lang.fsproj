@@ -12,6 +12,7 @@
   <ItemGroup>
     <Compile Include="Runners/Project.fs" />
     <Compile Include="Runners/TypeCheck.fs" />
+    <Compile Include="Runners\BackgroundJob.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="DeltaSerialization/ballerina-delta-serialization.fsproj" />
