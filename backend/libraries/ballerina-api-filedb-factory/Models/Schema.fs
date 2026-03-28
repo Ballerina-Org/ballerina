@@ -51,6 +51,7 @@ module Model =
     { SchemaDirectory: string
       SchemaExtension: string }
 
-  type DatabaseFileConfig =
-    { DbDirectory: string
-      DbExtension: string }
+  type SchemaId =
+    { TenantId: Guid
+      SchemaName: string
+      IsDraft: bool }

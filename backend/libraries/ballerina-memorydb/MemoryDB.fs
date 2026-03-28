@@ -28,6 +28,7 @@ open Ballerina.DSL.Next.Serialization.ValueSerializer
 open Ballerina.DSL.Next.Serialization.ValueDeserializer
 open Ballerina.DSL.Next.StdLib.DB
 open Ballerina.LocalizedErrors
+open ballerinalang.Runners.BackgroundJob
 
 module MutableMemoryDB =
 
@@ -47,6 +48,22 @@ module MutableMemoryDB =
         FromTo = Map.empty
         ToFrom = Map.empty }
 
+  and MemoryDBEntityId<'runtimeContext, 'customExt when 'customExt: comparison> =
+    { EntityName: SchemaEntityName
+      EntityId: MemoryDBValue<'runtimeContext, 'customExt> }
+
+  and MemoryDBBackgroundJob =
+    { ScheduledAt: DateTimeOffset Option
+      HasStarted: bool }
+
+    static member ScheduleAt dateTime =
+      { ScheduledAt = Some dateTime
+        HasStarted = false }
+
+    static member Finished =
+      { ScheduledAt = None
+        HasStarted = false }
+
   and MutableMemoryDB<'runtimeContext, 'customExt when 'customExt: comparison> =
     { mutable entities:
         Map<
@@ -54,7 +71,8 @@ module MutableMemoryDB =
           Map<MemoryDBValue<'runtimeContext, 'customExt>, MemoryDBValue<'runtimeContext, 'customExt>>
          >
       mutable relations: Map<SchemaRelationName, MemoryDBRelation<'runtimeContext, 'customExt>>
-      mutable operations: List<DBOperation<'runtimeContext, 'customExt>> }
+      mutable operations: List<DBOperation<'runtimeContext, 'customExt>>
+      mutable backgroundJobs: Map<MemoryDBEntityId<'runtimeContext, 'customExt>, MemoryDBBackgroundJob> }
 
   and DBOperation<'runtimeContext, 'customExt when 'customExt: comparison> =
     | Create of
@@ -100,6 +118,9 @@ module MutableMemoryDB =
         | ExprQueryExprRec.QueryIntrinsic QueryIntrinsic.And,
           Value.Tuple [ Value.Primitive(PrimitiveValue.Bool v1); Value.Primitive(PrimitiveValue.Bool v2) ] ->
           return Value.Primitive(PrimitiveValue.Bool(v1 && v2))
+        | ExprQueryExprRec.QueryIntrinsic QueryIntrinsic.Or,
+          Value.Tuple [ Value.Primitive(PrimitiveValue.Bool v1); Value.Primitive(PrimitiveValue.Bool v2) ] ->
+          return Value.Primitive(PrimitiveValue.Bool(v1 || v2))
         | ExprQueryExprRec.QueryIntrinsic QueryIntrinsic.Multiply,
           Value.Tuple [ Value.Primitive(PrimitiveValue.Int32 v1); Value.Primitive(PrimitiveValue.Int32 v2) ] ->
           return Value.Primitive(PrimitiveValue.Int32(v1 * v2))
@@ -603,7 +624,8 @@ module MutableMemoryDB =
     { DB =
         { entities = Map.empty
           relations = Map.empty
-          operations = [] }
+          operations = []
+          backgroundJobs = Map.empty }
       BeginTransaction = fun _ -> sum { return Guid.CreateVersion7() }
       CommitTransaction = fun _ _ -> sum { return () }
       RunQuery =
@@ -638,6 +660,15 @@ module MutableMemoryDB =
                   | None -> Some(Map.empty |> Map.add entityId value))
 
             do db.operations <- db.operations @ [ Create(entity.Name, create_arg.Id, create_arg.Value) ]
+
+            if entity.Hooks.OnBackground.IsSome then
+              do
+                db.backgroundJobs <-
+                  db.backgroundJobs
+                  |> Map.add
+                    { EntityName = entity.Name
+                      EntityId = create_arg.Id }
+                    (MemoryDBBackgroundJob.ScheduleAt DateTimeOffset.MinValue)
 
             return Value.Tuple [ entityId; value ]
           }
@@ -686,6 +717,13 @@ module MutableMemoryDB =
 
             do db.operations <- db.operations @ [ Delete(entity.Name, id_to_delete) ]
 
+            do
+              db.backgroundJobs <-
+                db.backgroundJobs
+                |> Map.remove
+                  { EntityName = entity.Name
+                    EntityId = id_to_delete }
+
             return ()
           }
 
@@ -712,6 +750,13 @@ module MutableMemoryDB =
                         | None -> None)
 
                   do db.operations <- db.operations @ [ Delete(entity.Name, id_to_delete) ]
+
+                  do
+                    db.backgroundJobs <-
+                      db.backgroundJobs
+                      |> Map.remove
+                        { EntityName = entity.Name
+                          EntityId = id_to_delete }
 
                   return ()
                 })
