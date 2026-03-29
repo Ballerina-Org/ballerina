@@ -755,7 +755,7 @@ module Eval =
 
               match e.Expr with
               | ExprQueryExprRec.QueryConstant _
-              | ExprQueryExprRec.QueryIntrinsic _ -> return e
+              | ExprQueryExprRec.QueryIntrinsic(_, _) -> return e
               | ExprQueryExprRec.QueryTupleCons items ->
                 let! items = items |> List.map (!) |> reader.All
 
@@ -768,12 +768,12 @@ module Eval =
                 return
                   { e with
                       Expr = ExprQueryExprRec.QueryRecordDes(expr, field, isJson) }
-              | ExprQueryExprRec.QueryTupleDes(expr, item) ->
+              | ExprQueryExprRec.QueryTupleDes(expr, item, isJson) ->
                 let! expr = !expr
 
                 return
                   { e with
-                      Expr = ExprQueryExprRec.QueryTupleDes(expr, item) }
+                      Expr = ExprQueryExprRec.QueryTupleDes(expr, item, isJson) }
               | ExprQueryExprRec.QueryConditional(cond, ``then``, ``else``) ->
                 let! cond = !cond
                 let! ``then`` = !``then``

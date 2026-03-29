@@ -975,7 +975,7 @@ module Model =
   and ExprQueryExprRec<'T, 'Id, 'valueExt when 'Id: comparison> =
     | QueryTupleCons of List<ExprQueryExpr<'T, 'Id, 'valueExt>>
     | QueryRecordDes of Expr: ExprQueryExpr<'T, 'Id, 'valueExt> * Field: 'Id * IsJsonField: bool
-    | QueryTupleDes of Expr: ExprQueryExpr<'T, 'Id, 'valueExt> * Item: TupleDesSelector
+    | QueryTupleDes of Expr: ExprQueryExpr<'T, 'Id, 'valueExt> * Item: TupleDesSelector * IsJsonItem: bool
     | QueryConditional of
       Cond: ExprQueryExpr<'T, 'Id, 'valueExt> *
       Then: ExprQueryExpr<'T, 'Id, 'valueExt> *
@@ -988,7 +988,7 @@ module Model =
       Handlers: Map<SumConsSelector, QueryCaseHandler<'T, 'Id, 'valueExt>>
     | QueryApply of Func: ExprQueryExpr<'T, 'Id, 'valueExt> * Arg: ExprQueryExpr<'T, 'Id, 'valueExt>
     | QueryLookup of 'Id
-    | QueryIntrinsic of QueryIntrinsic
+    | QueryIntrinsic of QueryIntrinsic * ExpectedType: TypeQueryRow<'valueExt>
     | QueryConstant of PrimitiveValue
     | QueryClosureValue of Value<TypeValue<'valueExt>, 'valueExt> * TypeQueryRow<'valueExt>
     | QueryCastTo of ExprQueryExpr<'T, 'Id, 'valueExt> * TypeQueryRow<'valueExt>
@@ -1008,7 +1008,10 @@ module Model =
         match isJsonField with
         | false -> $"{e}.{field}"
         | true -> $"{e} -> \"{field}\""
-      | QueryTupleDes(e, item) -> $"{e}.{item.Index}"
+      | QueryTupleDes(e, item, isJsonItem) ->
+        match isJsonItem with
+        | false -> $"{e}.{item.Index}"
+        | true -> $"{e} -> {item.Index - 1}"
       | QueryConditional(cond, thenExpr, elseExpr) -> $"if {cond} then {thenExpr} else {elseExpr}"
       | QueryUnionDes(e, handlers) ->
         let handlerStrs =
@@ -1030,7 +1033,7 @@ module Model =
         $"match {e} with {{ {String.Join(space, handlerStrs)} }}"
       | QueryApply(func, args) -> $"{func}({args})"
       | QueryLookup id -> id.ToString()
-      | QueryIntrinsic intrinsic -> intrinsic.ToString()
+      | QueryIntrinsic(intrinsic, _) -> intrinsic.ToString()
       | QueryConstant c -> c.ToString()
       | QueryClosureValue(v, _) -> v.ToString()
       | QueryCastTo(v, t) -> $"{v} :: {t}"

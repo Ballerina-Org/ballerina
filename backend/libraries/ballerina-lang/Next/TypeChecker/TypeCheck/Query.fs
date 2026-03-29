@@ -405,24 +405,47 @@ module Query =
                   return ExprQueryExprRec.QueryLookup l |> ExprQueryExpr.Create expr.Location, t
                 })
 
-          | ExprQueryExprRec.QueryTupleDes(tuple, item) ->
+          | ExprQueryExprRec.QueryTupleDes(tuple, item, _) ->
             let! tuple_e, tuple_t = !tuple
 
-            let! tuple_t_elements = tuple_t |> TypeQueryRow.AsTuple |> ofSum
+            return!
+              state.Either
+                (state {
+                  let! tuple_t_elements = tuple_t |> TypeQueryRow.AsTuple |> ofSum
 
-            if item.Index - 1 < tuple_t_elements.Length then
-              let item_t = tuple_t_elements.[item.Index - 1]
+                  if item.Index - 1 < tuple_t_elements.Length then
+                    let item_t = tuple_t_elements.[item.Index - 1]
 
-              return
-                ExprQueryExprRec.QueryTupleDes(tuple_e, item)
-                |> ExprQueryExpr.Create expr.Location,
-                item_t
-            else
-              return!
-                (fun () ->
-                  $"Type checking error: Tuple type {tuple_t} has only {tuple_t_elements.Length} elements, but tried to access item {item.Index}")
-                |> Errors.Singleton loc0
-                |> state.Throw
+                    return
+                      ExprQueryExprRec.QueryTupleDes(tuple_e, item, false)
+                      |> ExprQueryExpr.Create expr.Location,
+                      item_t
+                  else
+                    return!
+                      (fun () ->
+                        $"Type checking error: Tuple type {tuple_t} has only {tuple_t_elements.Length} elements, but tried to access item {item.Index}")
+                      |> Errors.Singleton loc0
+                      |> state.Throw
+                })
+                (state {
+                  let! json_t = tuple_t |> TypeQueryRow.AsJson |> ofSum
+                  let! tuple_t_elements = json_t |> TypeValue.AsTuple |> ofSum
+
+                  if item.Index - 1 < tuple_t_elements.Length then
+                    let item_t = tuple_t_elements.[item.Index - 1]
+
+                    return
+                      ExprQueryExprRec.QueryTupleDes(tuple_e, item, true)
+                      |> ExprQueryExpr.Create expr.Location,
+                      item_t |> TypeQueryRow.Json
+                  else
+                    return!
+                      (fun () ->
+                        $"Type checking error: Tuple type {tuple_t} has only {tuple_t_elements.Length} elements, but tried to access item {item.Index}")
+                      |> Errors.Singleton loc0
+                      |> state.Throw
+                })
+              |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
           | ExprQueryExprRec.QueryRecordDes(record, field, _) ->
             let! record_e, record_t = !record
 
@@ -515,7 +538,7 @@ module Query =
               |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
           | ExprQueryExprRec.QueryConstant c -> return! query_constant_to_type expr.Location c
 
-          | ExprQueryExprRec.QueryApply({ Expr = ExprQueryExprRec.QueryIntrinsic(intrinsic) }, arg) ->
+          | ExprQueryExprRec.QueryApply({ Expr = ExprQueryExprRec.QueryIntrinsic(intrinsic, _) }, arg) ->
             return!
               state.Either3
                 (state {
@@ -530,7 +553,10 @@ module Query =
                     | Some arg_e_elements ->
                       let res =
                         ExprQueryExprRec.QueryApply(
-                          ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Equals)
+                          ExprQueryExprRec.QueryIntrinsic(
+                            QueryIntrinsic.Equals,
+                            TypeQueryRow.PrimitiveType(PrimitiveType.Bool, false)
+                          )
                           |> ExprQueryExpr.Create expr.Location,
                           arg_e_elements
                           |> ExprQueryExprRec.QueryTupleCons
@@ -578,7 +604,11 @@ module Query =
 
                           return
                             ExprQueryExprRec.QueryApply(
-                              ExprQueryExprRec.QueryIntrinsic(intrinsic) |> ExprQueryExpr.Create expr.Location,
+                              ExprQueryExprRec.QueryIntrinsic(
+                                intrinsic,
+                                TypeQueryRow.PrimitiveType(expected_primitive_type, is_nullable)
+                              )
+                              |> ExprQueryExpr.Create expr.Location,
                               arg_e
                             )
                             |> ExprQueryExpr.Create expr.Location,
@@ -616,7 +646,11 @@ module Query =
 
                           return
                             ExprQueryExprRec.QueryApply(
-                              ExprQueryExprRec.QueryIntrinsic(intrinsic) |> ExprQueryExpr.Create expr.Location,
+                              ExprQueryExprRec.QueryIntrinsic(
+                                intrinsic,
+                                TypeQueryRow.PrimitiveType(PrimitiveType.Bool, is_nullable)
+                              )
+                              |> ExprQueryExpr.Create expr.Location,
                               arg_e
                             )
                             |> ExprQueryExpr.Create expr.Location,
@@ -732,7 +766,7 @@ module Query =
             | ExprQueryExprRec.QueryRecordDes(expr, _field, _) ->
               let! map = get_lookups_from_context expr
               return map
-            | ExprQueryExprRec.QueryTupleDes(expr, _) ->
+            | ExprQueryExprRec.QueryTupleDes(expr, _, _) ->
               let! map = get_lookups_from_context expr
               return map
             | ExprQueryExprRec.QueryConditional(cond, ``then``, ``else``) ->
@@ -755,7 +789,7 @@ module Query =
               let! func_map = get_lookups_from_context func
               let! arg_map = get_lookups_from_context arg
               return Map.merge (fun _ -> id) func_map arg_map
-            | ExprQueryExprRec.QueryIntrinsic(_) -> return Map.empty
+            | ExprQueryExprRec.QueryIntrinsic(_, _) -> return Map.empty
             | ExprQueryExprRec.QueryConstant(_) -> return Map.empty
             | ExprQueryExprRec.QueryClosureValue(_, _) -> return Map.empty
             | ExprQueryExprRec.QueryCastTo(v, _) -> return! get_lookups_from_context v
