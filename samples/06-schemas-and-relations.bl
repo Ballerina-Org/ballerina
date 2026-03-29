@@ -1,0 +1,176 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// Ballerina Example 06: Schemas and Relations
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Why this sample matters:
+// This is the first step from "single table" thinking to "connected data" thinking.
+// We model entities (Authors, Books, Publishers) and then connect them through relations
+// that encode business rules like one-to-many, one-to-one, many-to-many, and optional links.
+
+// Define IDs first
+// IDs are explicit domain types, not generic strings, so links stay type-safe.
+type AuthorId = { AuthorId: guid };
+type BookId = { BookId: guid };
+type PublisherId = { PublisherId: guid };
+
+// Then define record types
+// Records hold each entity's business attributes.
+type AuthorRecord = { AuthorName: string };
+type BookRecord = { BookTitle: string };
+type PublisherRecord = { PublisherName: string };
+
+// Define schema with different cardinality relations
+// Think of this as a compact data model/ER diagram written in code.
+type LibrarySchema =
+  schema {
+    entity Authors {
+      type AuthorRecord AuthorId
+    }
+    entity Books {
+      type BookRecord BookId
+    }
+    entity Publishers {
+      type PublisherRecord PublisherId
+    }
+    
+    // One author writes many books (1..*)
+    relation AuthorBooks {
+      from Authors
+      to Books
+      cardinality 1..*
+    }
+    
+    // Many books can belong to one publisher (*..1)
+    // This models the common business case: a publisher has a catalog of books.
+    relation BookPublisher {
+      from Books
+      to Publishers
+      cardinality *..1
+    }
+    
+    // Many books from many publishers (*..*)
+    relation PublisherBooks {
+      from Publishers
+      to Books
+      cardinality *..*
+    }
+    
+    // Optional relation (0..1)
+    relation FeaturedBook {
+      from Publishers
+      to Books
+      cardinality 0..1
+    }
+  };
+
+let main = fun (schema: LibrarySchema) ->
+  // Create IDs
+  // Generated GUIDs keep each execution independent.
+  let author_id = { AuthorId = guid::v4() };
+  let book_id_1 = { BookId = guid::v4() };
+  let book_id_2 = { BookId = guid::v4() };
+  let pub_id_1 = { PublisherId = guid::v4() };
+
+  // Create entities
+  // This is example seed data for demonstration.
+  let author = { AuthorName = "Jane Austen" };
+  let book1 = { BookTitle = "Pride and Prejudice" };
+  let book2 = { BookTitle = "Emma" };
+  let pub_1 = { PublisherName = "Penguin Books" };
+
+  // Store entities
+  // DB::create writes one row: (Id, Value).
+  let _ = DB::create[LibrarySchema] (schema.Entities.Authors) (author_id, author);
+  let _ = DB::create[LibrarySchema] (schema.Entities.Books) (book_id_1, book1);
+  let _ = DB::create[LibrarySchema] (schema.Entities.Books) (book_id_2, book2);
+  let _ = DB::create[LibrarySchema] (schema.Entities.Publishers) (pub_id_1, pub_1);
+
+  // Link relations
+  // DB::link writes relation edges between existing entity IDs.
+  let _ = DB::link[LibrarySchema] (schema.Relations.AuthorBooks) (author_id, book_id_1);
+  let _ = DB::link[LibrarySchema] (schema.Relations.AuthorBooks) (author_id, book_id_2);
+  let _ = DB::link[LibrarySchema] (schema.Relations.BookPublisher) (book_id_1, pub_id_1);
+  let _ = DB::link[LibrarySchema] (schema.Relations.BookPublisher) (book_id_2, pub_id_1);
+  let _ = DB::link[LibrarySchema] (schema.Relations.FeaturedBook) (pub_id_1, book_id_1);
+
+  // Query 1: all books.
+  // Returns only IDs, useful as input to downstream processing.
+  let all_books = query{
+    from book in schema.Entities.Books
+    select book.Id
+  };
+
+  // Query 2: all authors.
+  // Again, ID-focused query for lightweight traversal.
+  let all_authors = query{
+    from author in schema.Entities.Authors
+    select author.Id
+  };
+
+  // Query 3: books with publishers via explicit join.
+  // This shows how relation tables connect entities into business-friendly outputs.
+  let books_with_pubs = query{
+    from book, rel, pub in
+      schema.Entities.Books,
+      schema.Relations.BookPublisher,
+      schema.Entities.Publishers
+    join on
+      (book.Id, rel.FromId) and
+      (pub.Id, rel.ToId)
+    select book.Value.BookTitle, pub.Value.PublisherName
+  };
+
+  // Query 4: author-to-book pairs through 1..* relation.
+  let author_books = query{
+    from author, rel, book in
+      schema.Entities.Authors,
+      schema.Relations.AuthorBooks,
+      schema.Entities.Books
+    join on
+      (author.Id, rel.FromId) and
+      (book.Id, rel.ToId)
+    select author.Value.AuthorName, book.Value.BookTitle
+  };
+
+  // Query 5: optional featured book relation (0..1).
+  // If no link exists, result is empty. Here we linked one featured book.
+  let featured_books = query{
+    from pub, rel, book in
+      schema.Entities.Publishers,
+      schema.Relations.FeaturedBook,
+      schema.Entities.Books
+    join on
+      (pub.Id, rel.FromId) and
+      (book.Id, rel.ToId)
+    select pub.Value.PublisherName, book.Value.BookTitle
+  };
+
+  // Run queries and collect concrete results.
+  let run_all_books = DB::runQuery all_books (1Of2 ());
+  let run_all_authors = DB::runQuery all_authors (1Of2 ());
+  let run_books_with_pubs = DB::runQuery books_with_pubs (1Of2 ());
+  let run_author_books = DB::runQuery author_books (1Of2 ());
+  let run_featured_books = DB::runQuery featured_books (1Of2 ());
+
+  // Return both high-level checks and real query outputs.
+  (
+    ("entities_created", 4),
+    ("relations_linked", 5),
+    ("cardinality_1_to_many", true),
+    ("cardinality_many_to_1", true),
+    ("cardinality_many_to_many", true),
+    ("cardinality_optional", true),
+    ("queries_defined", 5),
+    ("all_books", run_all_books),
+    ("all_authors", run_all_authors),
+    ("books_with_publishers", run_books_with_pubs),
+    ("author_books", run_author_books),
+    ("featured_books", run_featured_books),
+    ("all_books_count", List::length run_all_books),
+    ("all_authors_count", List::length run_all_authors),
+    ("books_with_publishers_count", List::length run_books_with_pubs),
+    ("author_books_count", List::length run_author_books),
+    ("featured_books_count", List::length run_featured_books)
+  );
+
+DB::run [LibrarySchema] main

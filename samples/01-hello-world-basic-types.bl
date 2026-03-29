@@ -1,0 +1,156 @@
+// Ballerina Example 01: Hello World & Basic Data Types
+//
+// This example demonstrates:
+// - Primitive data types: Int32, Decimal, Bool, String
+// - Basic arithmetic and logical operations
+// - Type annotations and type inference
+// - Conditional expressions
+// - Variable binding and scoping
+//
+// Int32: 32-bit signed integers.
+// Use for whole-number counts and quantities (orders, items, users).
+let example_int32_1 = 42;
+let example_int32_2 = -100;
+
+// Int64: 64-bit signed integers.
+// Use when whole numbers can exceed int32 range (large IDs, event counters).
+let example_int64_1 = 42l;
+let example_int64_2 = 9223372036854775807l;
+
+// Float32: 32-bit floating point.
+// Use for approximate measurements when small precision loss is acceptable.
+let example_float32_1 = 3.14f;
+
+// Float64: 64-bit floating point.
+// Use for scientific/analytic values needing more precision than float32.
+let example_float64_1 = 3.14159265359d;
+
+// Decimal: exact decimal arithmetic.
+// Use for money, taxes, and totals that must not have approximation errors.
+let example_decimal_1 = 19.99;
+
+// Bool: true/false flags.
+// Use for yes/no business rules (approved, active, paid).
+let example_bool_true = true;
+let example_bool_false = false;
+
+// String: human-readable text.
+// Use for names, notes, labels, and messages shown to users.
+let example_string_1 = "Hello, World!";
+
+// DateTime: date + time timestamp.
+// Use for events with exact moment tracking (order created time, audit logs).
+let example_datetime_utc = dateTime::utcNow();
+
+// DateOnly: calendar date without time.
+// Use for birthdays, due dates, and schedule dates where time is irrelevant.
+let example_date_only = dateOnly::utcNow();
+
+// TimeSpan: duration/interval.
+// Use for SLAs, retry delays, subscription periods, and elapsed time windows.
+let example_timespan = timeSpan::fromHours 36.0;
+let example_timespan_total_hours = timeSpan::totalHours example_timespan;
+
+// Date/time arithmetic examples:
+// - subtract dates
+// - subtract datetimes
+// - add timespans
+// - add datetime and timespan
+let example_today_date = dateOnly::utcNow();
+let example_next_date = dateTime::toDateOnly (dateTime::utcNow() + timeSpan::fromDays 2.0);
+let example_date_minus_now = example_next_date - example_today_date;
+
+let example_datetime_plus_90m = dateTime::utcNow() + timeSpan::fromMinutes 90.0;
+let example_datetime_minus_now = example_datetime_plus_90m - dateTime::utcNow();
+
+let example_timespan_added = timeSpan::fromHours 2.0 + timeSpan::fromMinutes 30.0;
+let example_timespan_added_hours = timeSpan::totalHours example_timespan_added;
+
+// Guid: globally unique identifier.
+// Use for IDs that must be unique across systems and integrations.
+let example_guid = guid::v4();
+
+// Show console output so readers can see string::print in action
+// Tip: string::print is also useful for debugging because you can print
+// intermediate values and execution checkpoints while building a flow.
+do string::print "Hello from the basic types sample!";
+do string::print ("Current UTC dateTime:", example_datetime_utc);
+do string::print ("Current UTC dateOnly:", example_date_only);
+do string::print ("Example duration in hours:", example_timespan_total_hours);
+do string::print ("Date diff in days:", timeSpan::totalDays example_date_minus_now);
+do string::print ("DateTime diff in minutes:", timeSpan::totalMinutes example_datetime_minus_now);
+do string::print ("Added timespan in hours:", example_timespan_added_hours);
+do string::print ("DateTime + TimeSpan:", example_datetime_plus_90m);
+do string::print ("Generated guid:", example_guid);
+
+// Arithmetic operations
+let add_result = 10 + 5;
+let sub_result = 20 - 7;
+let mul_result = 6 * 7;
+let div_result = 20 / 4;
+let mod_result = 17 % 5;
+
+// Logical operations
+let logical_and_true = true && true;
+let logical_and_false = true && false;
+let logical_or_true = false || true;
+let logical_not_true = !true;
+let complex_bool = (10 > 5) && (20 < 30) || !(true && false);
+
+// Comparison operations
+let eq_int = 42 == 42;
+let lt_int = 10 < 20;
+let neq_string = "hello" != "world";
+
+// String operations
+let greeting = "Hello";
+let name = "World";
+let full_greeting = greeting + " " + name + "!";
+do string::print full_greeting;
+
+// Business message examples printed as strings
+do string::print "Use decimal for money-like values where precision matters.";
+do string::print "Use bool for policy flags like IsApproved and IsActive.";
+
+// Type annotations
+let annotated_int: int32 = 42;
+let annotated_bool: bool = true;
+let annotated_decimal: decimal = 3.14;
+
+// Conditional expressions
+let age = 25;
+let is_adult = if age >= 18 then true else false;
+
+let grade = 85;
+let rating = if grade >= 90 then "A"
+           else if grade >= 80 then "B"
+           else "C";
+
+// Variable binding and scoping
+let x = 10;
+let y = 20;
+let sum = x + y;
+
+// Return results as tuple
+(
+  ("int32_value", example_int32_1),
+  ("int64_value", example_int64_1),
+  ("float_value", example_float32_1),
+  ("decimal_value", example_decimal_1),
+  ("datetime_utc", example_datetime_utc),
+  ("date_only", example_date_only),
+  ("timespan_hours", example_timespan_total_hours),
+  ("date_diff_days", timeSpan::totalDays example_date_minus_now),
+  ("datetime_diff_minutes", timeSpan::totalMinutes example_datetime_minus_now),
+  ("timespan_added_hours", example_timespan_added_hours),
+  ("datetime_plus_timespan", example_datetime_plus_90m),
+  ("guid_value", example_guid),
+  ("add_result", add_result),
+  ("mul_result", mul_result),
+  ("div_result", div_result),
+  ("complex_bool", complex_bool),
+  ("full_greeting", full_greeting),
+  ("is_adult", is_adult),
+  ("grade_rating", rating),
+  ("sum", sum)
+)

@@ -1,0 +1,179 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// Ballerina Example 05: Queries
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Why this sample matters:
+// For many analysts, this is the first contact with "schema" and "query" in Ballerina.
+// This file shows the full lifecycle in one place:
+// 1) define a small domain model,
+// 2) define a schema over that model,
+// 3) insert data,
+// 4) run multiple query styles,
+// 5) return concrete results for inspection.
+
+// Business object stored in the database.
+// - Name: human-readable label
+// - Amount: large whole-number quantity (int64, useful for counters/units)
+// - Price: decimal amount (useful for money-like values)
+type Item = { Name: string; Amount: int64; Price: decimal };
+
+// Primary-key object for Item.
+// We keep IDs explicit as their own type for clarity and safety.
+type ItemId = { ItemId: string };
+
+// Schema definition.
+// Think of this as the database contract for this sample.
+// It says: we have one entity table called Items, storing Item rows keyed by ItemId.
+type ItemsSchema = 
+  schema {
+    entity Items {
+      type Item ItemId
+    }
+  };
+
+let main = fun (schema: ItemsSchema) ->
+  // Seed sample data so query outputs are visible and meaningful.
+  // Using generated GUID-backed string keys keeps each run independent.
+  let item_id_1: ItemId = { ItemId = string::ofT (guid::v4 ()) };
+  let item_id_2: ItemId = { ItemId = string::ofT (guid::v4 ()) };
+  let item_id_3: ItemId = { ItemId = string::ofT (guid::v4 ()) };
+
+  // int64 literals in this DSL use lowercase 'l' suffix.
+  // We keep thresholds as named values so query intent is obvious.
+  let amount_1 = 4000l;
+  let amount_2 = 7500l;
+  let amount_3 = 12000l;
+  let amount_low = 5000l;
+  let amount_high = 10000l;
+
+  // Seed records with two products in the same family (Widget) and one different (Gadget).
+  let item_1: Item = { Name = "Widget"; Amount = amount_1; Price = 40.0 };
+  let item_2: Item = { Name = "Widget"; Amount = amount_2; Price = 75.0 };
+  let item_3: Item = { Name = "Gadget"; Amount = amount_3; Price = 120.0 };
+
+  // Persist rows.
+  // DB::create writes one entity row at a time: (id, value).
+  let _ = DB::create[ItemsSchema] (schema.Entities.Items) (item_id_1, item_1);
+  let _ = DB::create[ItemsSchema] (schema.Entities.Items) (item_id_2, item_2);
+  let _ = DB::create[ItemsSchema] (schema.Entities.Items) (item_id_3, item_3);
+
+  // Define queries on the schema.
+  // In each query:
+  // - "from item in ..." introduces an iterator variable.
+  // - item.Id is the primary key.
+  // - item.Value is the record payload (Name, Amount, Price).
+  
+  // Query 1: Get all item IDs.
+  // Use case: feed another process that needs identifiers only.
+  let query_all_ids = query{
+    from item in schema.Entities.Items
+    select item.Id
+  };
+
+  // Query 2: Filter items by name.
+  // Use case: retrieve only a product family/category.
+  let query_by_name = query{
+    from item in schema.Entities.Items
+    where item.Value.Name == "Widget"
+    select item.Id, item.Value.Name
+  };
+
+  // Query 3: Filter by amount range (int64).
+  // Use case: isolate medium-volume items by quantity thresholds.
+  let query_by_amount = query{
+    from item in schema.Entities.Items
+    where item.Value.Amount > amount_low && item.Value.Amount < amount_high
+    select item.Id, item.Value.Amount
+  };
+
+  // Query 4: Filter by price range (decimal).
+  // Use case: price-band analysis.
+  let query_by_price = query{
+    from item in schema.Entities.Items
+    where item.Value.Price > 50.0 && item.Value.Price < 100.0
+    select item.Id, item.Value.Price
+  };
+
+  // Query 5: EXISTS subquery.
+  // This is the standard SQL-style pattern for "include row if related condition has at least one match".
+  // Here it is intentionally simple to show syntax shape.
+  let query_with_exists = query{
+    from item in schema.Entities.Items
+    where exists query{
+      from i in schema.Entities.Items
+      select 1
+    }
+    select item.Id
+  };
+
+  // Query 6: Reuse a previously defined query as an input source.
+  // Useful for staging: build once, reuse in multiple downstream queries.
+  let subquery_result = query_all_ids;
+  let query_nested = query{
+    from id in subquery_result
+    select id
+  };
+
+  // Query 7: Inline subquery directly in the from-clause.
+  // Same idea as Query 6, but expressed inline for one-off composition.
+  let query_from_subquery = query{
+    from id in query{
+      from item in schema.Entities.Items
+      where item.Value.Price >= 50.0
+      select item.Id
+    }
+    select id
+  };
+
+  // Query 8: Count subquery inside select.
+  // Returns "how many rows match" as a computed value.
+  let query_count = query{
+    from item in schema.Entities.Items
+    select count query{
+      from i in schema.Entities.Items
+      select 1
+    }
+  };
+
+  // Query 9: ORDER BY for deterministic sorting.
+  // Use case: ranking or reporting views where row order matters.
+  // Here we sort by highest price first.
+  let query_orderby_price = query{
+    from item in schema.Entities.Items
+    select item.Id, item.Value.Name, item.Value.Price
+    orderby item.Value.Price desc
+  };
+
+  // Run queries.
+  // (1Of2 ()) indicates default/no extra query-range constraints for this sample.
+  let run_all_ids = DB::runQuery query_all_ids (1Of2 ());
+  let run_by_name = DB::runQuery query_by_name (1Of2 ());
+  let run_by_amount = DB::runQuery query_by_amount (1Of2 ());
+  let run_by_price = DB::runQuery query_by_price (1Of2 ());
+  let run_with_exists = DB::runQuery query_with_exists (1Of2 ());
+  let run_nested = DB::runQuery query_nested (1Of2 ());
+  let run_from_subquery = DB::runQuery query_from_subquery (1Of2 ());
+  let run_count = DB::runQuery query_count (1Of2 ());
+  let run_orderby_price = DB::runQuery query_orderby_price (1Of2 ());
+
+  // Return actual query results.
+  // We include both full result sets and compact counts for quick reading.
+  (
+    ("queries_defined", 9),
+    ("query_all_ids", run_all_ids),
+    ("query_by_name", run_by_name),
+    ("query_by_amount", run_by_amount),
+    ("query_by_price", run_by_price),
+    ("query_with_exists", run_with_exists),
+    ("query_nested", run_nested),
+    ("query_from_subquery", run_from_subquery),
+    ("query_count", run_count),
+    ("query_orderby_price", run_orderby_price),
+    ("query_all_ids_count", List::length run_all_ids),
+    ("query_by_name_count", List::length run_by_name),
+    ("query_by_amount_count", List::length run_by_amount),
+    ("query_by_price_count", List::length run_by_price),
+    ("query_orderby_price_count", List::length run_orderby_price)
+  );
+
+DB::run [ItemsSchema] main
