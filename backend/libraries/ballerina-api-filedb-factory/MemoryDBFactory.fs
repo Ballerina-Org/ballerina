@@ -111,47 +111,16 @@ module MemoryDBAPIFactory =
     member this.AddFileDbCRUDApi
       (
         schemaFileConfig: SchemaFileConfig,
-        databaseFileConfig: DatabaseFileConfig,
+        dbFileConfig: DbFileConfig,
         routeGroupBuilder: RouteGroupBuilder,
         addPermissionHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>,
         addBackgroundHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>,
-        hookInjector:
-          HttpContext
-            -> Updater<
-              ExprEvalContext<
-                FileDBRuntimeContext,
-                ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, unit>, unit>
-               >
-             >
+        factory,
+        schemaStream
       ) : Sum<unit, Errors<Location>> =
       sum {
-        let dbFileConfig: DbFileConfig =
-          { DbDirectory = databaseFileConfig.DbDirectory
-            DbExtension = databaseFileConfig.DbExtension }
-
-        let languageContext, querySymbols, queryTypeFactory = contextFactory dbFileConfig
-
-        let descriptorFetcher =
-          descriptorFetcherFactory
-            languageContext
-            schemaFileConfig
-            querySymbols
-            queryTypeFactory
-            addPermissionHookScope
-            addBackgroundHookScope
-
-        let factory =
-          { DbDescriptorFetcher = descriptorFetcher
-            LanguageContextFactory =
-              fun () ->
-                contextFactory dbFileConfig
-                |> (fun (languageContext, _, _) -> languageContext)
-                |> sum.Return
-            PermissionHookInjector = hookInjector }
-
-
         this
-          .MapPublish(schemaFileConfig, databaseFileConfig, addPermissionHookScope, addBackgroundHookScope)
+          .MapPublish(schemaFileConfig, dbFileConfig, addPermissionHookScope, addBackgroundHookScope, schemaStream)
           .MapGetSchemaVersions(schemaFileConfig)
         |> ignore
 

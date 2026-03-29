@@ -1,6 +1,7 @@
 namespace Ballerina.API.MemoryDB
 
 module API =
+  open Ballerina.DSL.Next.Types.TypeChecker
   open Microsoft.AspNetCore.Routing
   open Microsoft.AspNetCore.Builder
   open System
@@ -62,10 +63,11 @@ module API =
     schemaName
     payload
     schemaFileConfig
-    (dbFileConfig: DatabaseFileConfig)
+    (dbFileConfig: DbFileConfig)
     showMainResult
     addPermissionHookScope
     addBackgroundHookScope
+    (schemaStream: SchemaId IObserver)
     =
     sum {
       let schemaDirectory, schemaExtension, schemaDefinition =
@@ -78,7 +80,8 @@ module API =
       let emptyDb =
         { entities = Map.empty
           relations = Map.empty
-          operations = [] }
+          operations = []
+          backgroundJobs = Map.empty }
 
       match!
         dbFileManager.TryReadContent()
@@ -194,6 +197,10 @@ module API =
 
         do! runMain languageContext evalContext dbio showMainResult
 
+        schemaStream.OnNext
+          { TenantId = tenantId
+            SchemaName = schemaName
+            IsDraft = payload.IsDraft }
       | _ ->
         return!
           sum.Throw(
@@ -206,9 +213,10 @@ module API =
     member app.MapPublish
       (
         schemaFileConfig: SchemaFileConfig,
-        dbFileConfig: DatabaseFileConfig,
+        dbFileConfig: DbFileConfig,
         addPermissionHookScope,
-        addBackgroundHookScope
+        addBackgroundHookScope,
+        schemaStream: SchemaId IObserver
       ) =
       app.MapPost(
         "/publish/{tenantId}/{schemaName}",
@@ -223,6 +231,7 @@ module API =
               false
               addPermissionHookScope
               addBackgroundHookScope
+              schemaStream
           with
           | Left _ -> Results.Ok()
           | Right errors ->

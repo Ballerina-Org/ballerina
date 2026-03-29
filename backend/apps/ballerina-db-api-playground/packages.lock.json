@@ -262,6 +262,11 @@
         "resolved": "10.0.2",
         "contentHash": "EzimXy5WX7RJxf1pHBfolBApA4GR7qje1cY9XofD4C+cQepx0a5ZVlZjde8NHk+W1+6kltrbbfa8LIOVpTM6yQ=="
       },
+      "System.Reactive": {
+        "type": "Transitive",
+        "resolved": "6.1.0",
+        "contentHash": "M5cCC1ZMkZr9jbSQGTHnVkb5TDN67qWCV7AP8TAHdGkvDlu0puT5NzemESNn9+HkYIDpWpocP68/i+/ame2/2w=="
+      },
       "System.Runtime.Caching": {
         "type": "Transitive",
         "resolved": "10.0.2",
@@ -307,6 +312,7 @@
         "dependencies": {
           "FSharp.Core": "[10.0.102, )",
           "System.CommandLine": "[2.0.5, )",
+          "System.Reactive": "[6.1.0, )",
           "ballerina-api-filedb-factory": "[1.0.0, )",
           "ballerina-filedb": "[1.0.0, )",
           "ballerina-lang-models": "[1.0.0, )"

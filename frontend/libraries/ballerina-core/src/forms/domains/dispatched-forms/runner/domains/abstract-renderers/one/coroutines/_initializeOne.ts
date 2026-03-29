@@ -75,7 +75,7 @@ export const initializeOne = <
                   "reinitializing"
                 ) {
                   // always true when running this coroutine
-                  current.customFormState.initializationStatus.afterReinitializationAction();
+                  current.customFormState.initializationStatus.afterReinitializationAction?.();
                 }
               }),
             ),

@@ -127,18 +127,6 @@ export const SumAbstractRenderer = <
                     sourceAncestorLookupTypeNames:
                       nestedDelta.sourceAncestorLookupTypeNames,
                   };
-                  props.foreignMutations.onChange(
-                    elementUpdater.kind == "l"
-                      ? Option.Default.none()
-                      : Option.Default.some((_) => ({
-                          ..._,
-                          value: Sum.Updaters.left<
-                            PredicateValue,
-                            PredicateValue
-                          >(elementUpdater.value)(_.value),
-                        })),
-                    delta,
-                  );
                   props.setState(
                     SumAbstractRendererState.Updaters.Core.commonFormState(
                       DispatchCommonFormState.Updaters.modifiedByUser(
@@ -155,6 +143,18 @@ export const SumAbstractRenderer = <
                         }),
                       ),
                     ),
+                  );
+                  return props.foreignMutations.onChange(
+                    elementUpdater.kind == "l"
+                      ? Option.Default.none()
+                      : Option.Default.some((_) => ({
+                          ..._,
+                          value: Sum.Updaters.left<
+                            PredicateValue,
+                            PredicateValue
+                          >(elementUpdater.value)(_.value),
+                        })),
+                    delta,
                   );
                 },
               }),
@@ -225,18 +225,6 @@ export const SumAbstractRenderer = <
                   sourceAncestorLookupTypeNames:
                     nestedDelta.sourceAncestorLookupTypeNames,
                 };
-                props.foreignMutations.onChange(
-                  elementUpdater.kind == "l"
-                    ? Option.Default.none()
-                    : Option.Default.some((_) => ({
-                        ..._,
-                        value: Sum.Updaters.right<
-                          PredicateValue,
-                          PredicateValue
-                        >(elementUpdater.value)(_.value),
-                      })),
-                  delta,
-                );
                 props.setState(
                   SumAbstractRendererState.Updaters.Core.commonFormState(
                     DispatchCommonFormState.Updaters.modifiedByUser(
@@ -253,6 +241,18 @@ export const SumAbstractRenderer = <
                       }),
                     ),
                   ),
+                );
+                return props.foreignMutations.onChange(
+                  elementUpdater.kind == "l"
+                    ? Option.Default.none()
+                    : Option.Default.some((_) => ({
+                        ..._,
+                        value: Sum.Updaters.right<
+                          PredicateValue,
+                          PredicateValue
+                        >(elementUpdater.value)(_.value),
+                      })),
+                  delta,
                 );
               },
             }))
@@ -319,7 +319,7 @@ export const SumAbstractRenderer = <
                   },
                   type: props.context.type,
                 };
-                props.foreignMutations.onChange(upd, delta);
+                return props.foreignMutations.onChange(upd, delta);
               },
               toRight: (value, flags) => {
                 const upd = Option.Default.some(replaceWith(value));
@@ -335,7 +335,7 @@ export const SumAbstractRenderer = <
                   },
                   type: props.context.type,
                 };
-                props.foreignMutations.onChange(upd, delta);
+                return props.foreignMutations.onChange(upd, delta);
               },
             }}
             embeddedLeftTemplate={embeddedLeftTemplate}

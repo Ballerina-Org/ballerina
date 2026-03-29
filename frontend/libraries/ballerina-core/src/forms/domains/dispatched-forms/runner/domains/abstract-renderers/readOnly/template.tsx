@@ -13,6 +13,8 @@ import {
   NestedRenderer,
   ValueReadOnly,
   Updater,
+  replaceWith,
+  DispatchCommonFormState,
 } from "../../../../../../../../main";
 import { Template } from "../../../../../../../template/state";
 import { DispatchParsedType } from "../../../../deserializer/domains/specification/domains/types/state";
@@ -115,7 +117,14 @@ export const ReadOnlyAbstractRenderer = <
               nestedDelta.sourceAncestorLookupTypeNames,
           };
 
-          props.foreignMutations.onChange(
+          props.setState(
+            ReadOnlyAbstractRendererState.Updaters.Core.commonFormState(
+              DispatchCommonFormState.Updaters.modifiedByUser(
+                replaceWith(true),
+              ),
+            ),
+          );
+          return props.foreignMutations.onChange(
             elementUpdater.kind == "l"
               ? Option.Default.none()
               : Option.Default.some(

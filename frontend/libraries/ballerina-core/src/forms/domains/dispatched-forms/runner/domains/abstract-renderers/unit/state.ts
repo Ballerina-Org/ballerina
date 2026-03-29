@@ -10,6 +10,7 @@ import {
   View,
   VoidCallbackWithOptionalFlags,
   CommonAbstractRendererViewOnlyReadonlyContext,
+  Option,
 } from "../../../../../../../../main";
 
 export type UnitAbstractRendererReadonlyContext<
@@ -29,6 +30,7 @@ export type UnitAbstractRendererState = CommonAbstractRendererState & {
 export const UnitAbstractRendererState = {
   Default: (): UnitAbstractRendererState => ({
     commonFormState: DispatchCommonFormState.Default(),
+    lastOnChangePromise: Option.Default.none(),
     customFormState: {},
   }),
   Updaters: {
