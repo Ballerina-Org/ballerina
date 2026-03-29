@@ -1,0 +1,106 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// Ballerina Example 04: Functions and Type Inference
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// What this sample is for:
+// - show how to define reusable business logic with functions
+// - show how function inputs/outputs can stay explicit where it matters
+// - show where the language can infer types so code stays concise
+//
+// Audience note:
+// Think of each function here as a small business rule you can compose with others.
+
+// A record type represents one structured business object.
+// Here, Book is a compact model of catalog information.
+type Book = {
+  Title: string;
+  Author: string;
+  Year: int32;
+  Pages: int32;
+};
+
+// A union type models alternative outcomes for the same process.
+// A review can either provide a numeric rating or explain why rating is missing.
+type ReviewResult =
+| Rated of int32
+| MissingRating of string;
+
+// Curried function: add can be partially applied and reused in pipelines.
+// Business analogy: a generic "combine two numbers" rule.
+let add = fun (x: int32) -> fun (y: int32) -> x + y;
+
+// Another reusable rule to demonstrate custom function composition.
+let triple = fun (x: int32) -> fun (y: int32) -> (x * y) + y;
+
+// Higher-order function: receives another function (f) as input.
+// Business use case: apply different page-related policies to the same book record.
+let mapBookPages = fun (f: int32 -> int32) -> fun (book: Book) -> f book.Pages;
+
+// Pattern matching on union values to normalize downstream behavior.
+// Example business rule: cap ratings at 5 and treat "missing" as 0 for reporting.
+let normalizeRating = fun rating ->
+  match rating with
+  | Rated (n -> if n > 5 then 5 else n)
+  | MissingRating (msg -> 0);
+
+// Sample data, equivalent to rows you might receive from a catalog export.
+// Author note (Dr Giuseppe Maggiore):
+// These examples include two formative reads from my youth:
+// Le Petit Prince (read in French, thanks to my grandmother, wisest woman I ever met)
+// and Il nome della rosa (read in Italian, on my father's advice, eternal echo of his culture).
+let dune: Book = { Title = "Dune"; Author = "Frank Herbert"; Year = 1965; Pages = 688 };
+let hobbit: Book = { Title = "Le Petit Prince"; Author = "Antoine de Saint-Exupery"; Year = 1943; Pages = 96 };
+let modernCpp: Book = { Title = "Il nome della rosa"; Author = "Umberto Eco"; Year = 1980; Pages = 512 };
+
+// Build a list of books for batch operations.
+// Square-bracket type blocks are shown for readability; inference can often derive them.
+let books = List::Cons [Book] (dune, List::Cons [Book] (hobbit, List::Cons [Book] (modernCpp, List::Nil [Book] ())));
+
+// Count records in the collection.
+let totalBooks = List::length [Book] books;
+
+// Direct function calls.
+let addResult = add 10 20;
+let tripleResult = triple 3 4;
+
+// Same higher-order function, different behaviors passed in.
+// Identity: keep original pages.
+let dunePagesIdentity = mapBookPages (fun p -> p) dune;
+// Transformation: double pages (example projection/scenario computation).
+let dunePagesDouble = mapBookPages (fun p -> p * 2) dune;
+
+// Union handling examples.
+let normalizedRated = normalizeRating (Rated 9);
+let normalizedMissing = normalizeRating (MissingRating "not rated");
+
+// Filter books using a business rule (published before year 2000).
+let oldBooks = List::filter [Book] (fun (b: Book) -> b.Year < 2000) books;
+let oldBooksCount = List::length [Book] oldBooks;
+
+// |> (pipe) sends the value on the left into the function on the right.
+// This reads top-to-bottom like a small data flow.
+let oldBooksCountWithPipe =
+  books
+  |> List::filter [Book] (fun (b: Book) -> b.Year < 2000)
+  |> List::length [Book];
+
+// >> (compose) combines two functions into a new function.
+// Business analogy: build one reusable rule from smaller rules.
+let increaseByTen = fun (n: int32) -> n + 10;
+let doubleValue = fun (n: int32) -> n * 2;
+let pricingRule = increaseByTen >> doubleValue;
+let pricingRuleResult = pricingRule 15;
+
+// Return a compact summary for quick verification.
+(
+  ("total_books", totalBooks),
+  ("add_result", addResult),
+  ("triple_result", tripleResult),
+  ("dune_pages_identity", dunePagesIdentity),
+  ("dune_pages_double", dunePagesDouble),
+  ("normalized_rated", normalizedRated),
+  ("normalized_missing", normalizedMissing),
+  ("old_books_count", oldBooksCount),
+  ("old_books_count_pipe", oldBooksCountWithPipe),
+  ("pricing_rule_result", pricingRuleResult)
+)

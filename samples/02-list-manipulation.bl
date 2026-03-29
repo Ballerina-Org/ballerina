@@ -1,0 +1,78 @@
+// Ballerina Example 02: List Manipulation
+//
+// What are lists for?
+// Lists are for working with ordered collections of items:
+// - a set of prices in a cart
+// - steps in a workflow
+// - IDs returned from a query
+//
+// This sample shows the core list operations you will use most often:
+// create, count, transform (map), select (filter), aggregate (fold), and merge (append).
+
+// Create lists.
+// Use List::Cons to add an item at the front, and List::Nil for an empty list.
+// Think of this as building a list one element at a time.
+let nums = List::Cons [int32] (1, List::Cons [int32] (2, List::Cons [int32] (3, List::Nil [int32] ())));
+let strs = List::Cons [string] ("a", List::Cons [string] ("b", List::Nil [string] ()));
+
+// Count items.
+// Useful when validating "do we have any data?" or checking batch sizes.
+let nums_len = List::length [int32] nums;
+let strs_len = List::length [string] strs;
+
+// Transform each item with map.
+// Example use case: convert each amount to a new currency or apply a tax rate.
+let doubled = List::map [int32][int32] (fun (x: int32) -> x * 2) nums;
+
+// Select only items that match a rule with filter.
+// Example use case: keep only eligible orders or active users.
+let gt_1 = List::filter [int32] (fun (x: int32) -> x > 1) nums;
+let evens = List::filter [int32] (fun (x: int32) -> (x % 2) == 0) 
+  (List::Cons [int32] (1, List::Cons [int32] (2, List::Cons [int32] (3, List::Cons [int32] (4, List::Nil [int32] ())))));
+
+// Aggregate a list into one value with fold.
+// Example use case: total revenue, total quantity, or cumulative score.
+let sum_res = List::fold [int32][int32] (fun (acc: int32) -> fun (x: int32) -> acc + x) 0 nums;
+let product_res = List::fold [int32][int32] (fun (acc: int32) -> fun (x: int32) -> acc * x) 1 nums;
+
+// Merge two lists with append.
+// Example use case: combine records from two sources before processing.
+let nums2 = List::Cons [int32] (4, List::Cons [int32] (5, List::Nil [int32] ()));
+let combined = List::append [int32] nums nums2;
+
+// Decompose a list into head + tail.
+// This is useful when you need one-item-at-a-time processing (for example, workflow queues).
+// List::decompose returns a 2-case sum:
+// - 1Of2 (): list was empty
+// - 2Of2 (head, tail): list had at least one item
+let first_num =
+  match List::decompose [int32] nums with
+  | 2Of2 (parts -> parts.1)
+  | 1Of2 (_ -> 0);
+
+let tail_len =
+  match List::decompose [int32] nums with
+  | 2Of2 (parts -> List::length [int32] parts.2)
+  | 1Of2 (_ -> 0);
+
+let empty_nums = List::Nil [int32] ();
+
+let empty_check =
+  match List::decompose [int32] empty_nums with
+  | 2Of2 (parts -> "non-empty: " + string::ofT (parts.1, parts.2))
+  | 1Of2 (_ -> "empty");
+
+// Return summary values so you can verify behavior quickly.
+(
+  ("list_length_nums", nums_len),
+  ("list_length_strs", strs_len),
+  ("doubled_length", List::length [int32] doubled),
+  ("filtered_gt_1_length", List::length [int32] gt_1),
+  ("evens_length", List::length [int32] evens),
+  ("sum_result", sum_res),
+  ("product_result", product_res),
+  ("combined_length", List::length [int32] combined),
+  ("decompose_first_num", first_num),
+  ("decompose_tail_length", tail_len),
+  ("decompose_empty_check", empty_check)
+)

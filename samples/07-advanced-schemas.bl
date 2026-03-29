@@ -1,0 +1,210 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// Ballerina Example 07: Advanced Schemas - Permissions & Advanced Queries
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Why this sample matters:
+// It combines three ideas often needed in real business systems:
+// 1) schema composition (include/reuse),
+// 2) access rules (who can read what),
+// 3) advanced query patterns (joins, count, exists, correlated subqueries).
+
+// Core business entities.
+type User = { Username: string; IsAdmin: bool };
+type UserId = { UserId: guid };
+
+type Post = { Title: string; Content: string };
+type PostId = { PostId: guid };
+
+type Comment = { Text: string };
+type CommentId = { CommentId: guid };
+
+// Base schema structure
+// This base schema is reusable and contains neutral data-model rules.
+type BlogSchemaBase =
+  schema {
+    entity Users {
+      type User UserId
+    }
+    entity Posts {
+      type Post PostId
+    }
+    entity Comments {
+      type Comment CommentId
+    }
+    
+    relation UserPosts {
+      from Users
+      to Posts
+      // One user can write many posts.
+      cardinality 1..*
+    }
+    
+    relation PostComments {
+      from Posts
+      to Comments
+      // One post can have many comments.
+      cardinality 1..*
+    }
+  };
+
+// Permission query: users can only read posts.
+// In larger systems this can include role/tenant filters.
+let can_read_post = fun (schema: BlogSchemaBase) ->
+  query{
+    from post in schema.Entities.Posts
+    select post.Id
+  };
+
+// Schema with permissions
+// We extend the base schema with read permissions on Posts.
+type BlogSchema =
+  schema {
+    include BlogSchemaBase with {
+      entity Posts {
+        let can read = fun (s: BlogSchemaBase) -> can_read_post s
+      }
+    }
+  };
+
+let main = fun (schema: BlogSchema) ->
+  // Create users.
+  let alice_id = { UserId = guid::v4() };
+  let admin_id = { UserId = guid::v4() };
+  let alice = { Username = "alice"; IsAdmin = false };
+  let admin = { Username = "admin"; IsAdmin = true };
+
+  // Create posts.
+  let post1_id = { PostId = guid::v4() };
+  let post2_id = { PostId = guid::v4() };
+  let post1 = { Title = "First Post"; Content = "Hello" };
+  let post2 = { Title = "Second Post"; Content = "Goodbye" };
+
+  // Create comments.
+  let comment_id = { CommentId = guid::v4() };
+  let comment = { Text = "Great post!" };
+
+  // Store entities in DB.
+  let _ = DB::create[BlogSchema] (schema.Entities.Users) (alice_id, alice);
+  let _ = DB::create[BlogSchema] (schema.Entities.Users) (admin_id, admin);
+  let _ = DB::create[BlogSchema] (schema.Entities.Posts) (post1_id, post1);
+  let _ = DB::create[BlogSchema] (schema.Entities.Posts) (post2_id, post2);
+  let _ = DB::create[BlogSchema] (schema.Entities.Comments) (comment_id, comment);
+
+  // Link relations.
+  // Keep UserPosts cardinality-safe: each post is linked to one author in this sample.
+  let _ = DB::link[BlogSchema] (schema.Relations.UserPosts) (alice_id, post1_id);
+  let _ = DB::link[BlogSchema] (schema.Relations.UserPosts) (admin_id, post2_id);
+  let _ = DB::link[BlogSchema] (schema.Relations.PostComments) (post1_id, comment_id);
+
+  // Query 1: all posts (ID + title).
+  let all_posts = query{
+    from post in schema.Entities.Posts
+    select post.Id, post.Value.Title
+  };
+
+  // Query 2: all users (ID + username).
+  let all_users = query{
+    from user in schema.Entities.Users
+    select user.Id, user.Value.Username
+  };
+
+  // Query 3: posts with authors (join across relation table).
+  let posts_with_authors = query{
+    from post, rel, user in
+      schema.Entities.Posts,
+      schema.Relations.UserPosts,
+      schema.Entities.Users
+    join on
+      (post.Id, rel.ToId) and
+      (user.Id, rel.FromId)
+    select post.Value.Title, user.Value.Username
+  };
+
+  // Query 4: posts with comment counts (correlated count subquery).
+  let posts_with_counts = query{
+    from post in schema.Entities.Posts
+    select
+      post.Value.Title,
+      count query{
+        from rel in schema.Relations.PostComments
+        where rel.FromId == post.Id
+        select 1
+      }
+  };
+
+  // Query 5: users with number of authored posts.
+  let user_post_counts = query{
+    from user in schema.Entities.Users
+    select
+      user.Value.Username,
+      count query{
+        from rel in schema.Relations.UserPosts
+        where rel.FromId == user.Id
+        select 1
+      }
+  };
+
+  // Query 6: posts that have at least one comment (exists).
+  let posts_with_comments = query{
+    from post in schema.Entities.Posts
+    where exists query{
+      from rel in schema.Relations.PostComments
+      where rel.FromId == post.Id
+      select 1
+    }
+    select post.Value.Title
+  };
+
+  // Query 7: users who wrote at least one post (exists).
+  let users_with_posts = query{
+    from user in schema.Entities.Users
+    where exists query{
+      from rel in schema.Relations.UserPosts
+      where rel.FromId == user.Id
+      select 1
+    }
+    select user.Value.Username
+  };
+
+  // Query 8: ordered post listing (orderby).
+  // Useful for predictable report outputs.
+  let posts_ordered = query{
+    from post in schema.Entities.Posts
+    select post.Value.Title
+    orderby post.Value.Title asc
+  };
+
+  // Execute queries.
+  let run_all_posts = DB::runQuery all_posts (1Of2 ());
+  let run_all_users = DB::runQuery all_users (1Of2 ());
+  let run_posts_with_authors = DB::runQuery posts_with_authors (1Of2 ());
+  let run_posts_with_counts = DB::runQuery posts_with_counts (1Of2 ());
+  let run_user_post_counts = DB::runQuery user_post_counts (1Of2 ());
+  let run_posts_with_comments = DB::runQuery posts_with_comments (1Of2 ());
+  let run_users_with_posts = DB::runQuery users_with_posts (1Of2 ());
+  let run_posts_ordered = DB::runQuery posts_ordered (1Of2 ());
+
+  // Return real query results plus compact counters.
+  (
+    ("users_created", 2),
+    ("posts_created", 2),
+    ("comments_created", 1),
+    ("relations_linked", 3),
+    ("permission_rules_defined", 1),
+    ("queries_defined", 8),
+    ("all_posts", run_all_posts),
+    ("all_users", run_all_users),
+    ("posts_with_authors", run_posts_with_authors),
+    ("posts_with_counts", run_posts_with_counts),
+    ("user_post_counts", run_user_post_counts),
+    ("posts_with_comments", run_posts_with_comments),
+    ("users_with_posts", run_users_with_posts),
+    ("posts_ordered", run_posts_ordered),
+    ("all_posts_count", List::length run_all_posts),
+    ("all_users_count", List::length run_all_users),
+    ("posts_with_authors_count", List::length run_posts_with_authors),
+    ("posts_with_comments_count", List::length run_posts_with_comments),
+    ("users_with_posts_count", List::length run_users_with_posts)
+  );
+
+DB::run [BlogSchema] main

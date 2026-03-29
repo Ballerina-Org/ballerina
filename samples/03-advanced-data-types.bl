@@ -1,0 +1,150 @@
+// Ballerina Example 03: Advanced Data Types
+//
+// What are advanced data types for?
+// They let you model business concepts directly in code:
+// - records for structured objects (customer, invoice, coordinates)
+// - unions for explicit domain states (Success/Error, Active/Inactive)
+// - + types for values that can be one of multiple primitive shapes
+// - tuples for compact grouped values
+//
+// This sample demonstrates records, unions, + types, tuples, and lists of records.
+//
+// Note on List type arguments:
+// You will often see List functions called with square-bracket type blocks, for example [Person] or [Person][string].
+// In many cases these are optional because type inference can derive them.
+// We keep them in this sample for readability, so the input/output types are obvious while learning.
+
+// Record types: named fields for structured data.
+// Use records when each field has a clear meaning.
+type Person = {
+  Name: string;
+  Age: int32;
+};
+
+type Point = {
+  X: decimal;
+  Y: decimal;
+};
+
+// Union types: named alternatives with explicit constructors.
+// These are great for domain states and workflow outcomes.
+type Result =
+| Success of string
+| Error of string;
+
+type Status =
+| Active of ()
+| Inactive of ()
+| Pending of int32;
+
+// + types (sum types): one of multiple plain types.
+// Example: a value can be either int32 or string.
+type IdOrLabel = int32 + string;
+
+// Create record instances.
+let person1: Person = { Name = "Alice"; Age = 30 };
+let person2: Person = { Name = "Bob"; Age = 25 };
+let point1: Point = { X = 3.14; Y = 2.71 };
+
+// Access record fields directly by name.
+let p1_name = person1.Name;
+let p1_age = person1.Age;
+let pt_x = point1.X;
+
+// Create union instances using their constructors.
+let success_res: Result = Success "Operation completed";
+let error_res: Result = Error "Something failed";
+let active_status: Status = Active ();
+let pending_status: Status = Pending 42;
+
+// Create + type instances with 1Of2 / 2Of2.
+// 1Of2 is the first type (int32), 2Of2 is the second type (string).
+let id_value: IdOrLabel = 1Of2 101;
+let label_value: IdOrLabel = 2Of2 "VIP";
+
+// Pattern match on unions to branch by named domain case.
+let extract_success = match success_res with
+| Success (msg -> msg)
+| Error (msg -> "ERROR:" + msg);
+
+let extract_error = match error_res with
+| Success (msg -> msg)
+| Error (msg -> msg);
+
+let status_text = match active_status with
+| Active (_ -> "ACTIVE")
+| Inactive (_ -> "INACTIVE")
+| Pending (n -> "PENDING");
+
+// Pattern match on + types to branch by positional case (1Of2 / 2Of2).
+let id_value_text = match id_value with
+| 1Of2 (n -> "id=" + string::ofT n)
+| 2Of2 (s -> "label=" + s);
+
+let label_value_text = match label_value with
+| 1Of2 (n -> "id=" + string::ofT n)
+| 2Of2 (s -> "label=" + s);
+
+// Tuples: compact fixed-size grouped values.
+// Useful for quick pair/triple returns without declaring a new record type.
+let t2 = (42, "hello");
+let t3 = (10, 20, 30);
+
+// Access tuple elements (1-indexed).
+let t2_first = t2.1;
+let t2_second = t2.2;
+let t3_second = t3.2;
+
+// List of records: store many structured items and process them as a collection.
+let people = List::Cons [Person] (person1, List::Cons [Person] (person2, List::Nil [Person] ()));
+let people_count = List::length [Person] people;
+
+// Map over records to project one field from each item.
+let names = List::map [Person][string] (fun (p: Person) -> p.Name) people;
+let names_count = List::length [string] names;
+
+// Fold + match together: extract all errors from a list of Result values.
+// This pattern is useful for validation pipelines where you want to collect all failures.
+let workflow_results =
+  List::Cons [Result] (
+    Success "step 1 ok",
+    List::Cons [Result] (
+      Error "missing email",
+      List::Cons [Result] (
+        Success "step 3 ok",
+        List::Cons [Result] (Error "invalid VAT number", List::Nil [Result] ())
+      )
+    )
+  );
+
+let extracted_errors =
+  List::fold [Result][List[string]]
+    (fun (acc: List[string]) -> fun (r: Result) ->
+      match r with
+      | Success (_ -> acc)
+      | Error (msg ->
+        // Append keeps original order from the source list.
+        List::append [string] acc (List::Cons [string] (msg, List::Nil [string] ()))))
+    (List::Nil [string] ())
+    workflow_results;
+
+let extracted_errors_count = List::length [string] extracted_errors;
+let extracted_errors_text = string::ofT extracted_errors;
+
+// Return summary values so behavior is easy to verify.
+(
+  ("person1_name", p1_name),
+  ("person1_age", p1_age),
+  ("point_x", pt_x),
+  ("extract_success", extract_success),
+  ("extract_error", extract_error),
+  ("status_text", status_text),
+  ("id_value_text", id_value_text),
+  ("label_value_text", label_value_text),
+  ("tuple2_first", t2_first),
+  ("tuple3_second", t3_second),
+  ("people_count", people_count),
+  ("names_count", names_count),
+  ("extracted_errors_count", extracted_errors_count),
+  ("extracted_errors", extracted_errors_text)
+)

@@ -84,27 +84,40 @@ module Query =
     [ QueryIntrinsic.Multiply,
       NonEmptyList.ofList<PrimitiveType> (
         PrimitiveType.Int32,
-        [ PrimitiveType.Float32; PrimitiveType.Float64; PrimitiveType.Decimal ]
+        [ PrimitiveType.Int64
+          PrimitiveType.Float32
+          PrimitiveType.Float64
+          PrimitiveType.Decimal ]
       )
       QueryIntrinsic.Divide,
       NonEmptyList.ofList<PrimitiveType> (
         PrimitiveType.Int32,
-        [ PrimitiveType.Float32; PrimitiveType.Float64; PrimitiveType.Decimal ]
+        [ PrimitiveType.Int64
+          PrimitiveType.Float32
+          PrimitiveType.Float64
+          PrimitiveType.Decimal ]
       )
       QueryIntrinsic.Minus,
       NonEmptyList.ofList<PrimitiveType> (
         PrimitiveType.Int32,
-        [ PrimitiveType.Float32; PrimitiveType.Float64; PrimitiveType.Decimal ]
+        [ PrimitiveType.Int64
+          PrimitiveType.Float32
+          PrimitiveType.Float64
+          PrimitiveType.Decimal ]
       )
       QueryIntrinsic.Modulo,
       NonEmptyList.ofList<PrimitiveType> (
         PrimitiveType.Int32,
-        [ PrimitiveType.Float32; PrimitiveType.Float64; PrimitiveType.Decimal ]
+        [ PrimitiveType.Int64
+          PrimitiveType.Float32
+          PrimitiveType.Float64
+          PrimitiveType.Decimal ]
       )
       QueryIntrinsic.Plus,
       NonEmptyList.ofList<PrimitiveType> (
         PrimitiveType.Int32,
-        [ PrimitiveType.Float32
+        [ PrimitiveType.Int64
+          PrimitiveType.Float32
           PrimitiveType.Float64
           PrimitiveType.Decimal
           PrimitiveType.String ]
@@ -118,7 +131,8 @@ module Query =
     [ QueryIntrinsic.GreaterThan,
       NonEmptyList.ofList<PrimitiveType> (
         PrimitiveType.Int32,
-        [ PrimitiveType.Float32
+        [ PrimitiveType.Int64
+          PrimitiveType.Float32
           PrimitiveType.Float64
           PrimitiveType.Decimal
           PrimitiveType.TimeSpan
@@ -128,7 +142,8 @@ module Query =
       QueryIntrinsic.LessThan,
       NonEmptyList.ofList<PrimitiveType> (
         PrimitiveType.Int32,
-        [ PrimitiveType.Float32
+        [ PrimitiveType.Int64
+          PrimitiveType.Float32
           PrimitiveType.Float64
           PrimitiveType.Decimal
           PrimitiveType.TimeSpan
@@ -138,7 +153,8 @@ module Query =
       QueryIntrinsic.GreaterThanOrEqual,
       NonEmptyList.ofList<PrimitiveType> (
         PrimitiveType.Int32,
-        [ PrimitiveType.Float32
+        [ PrimitiveType.Int64
+          PrimitiveType.Float32
           PrimitiveType.Float64
           PrimitiveType.Decimal
           PrimitiveType.TimeSpan
@@ -148,7 +164,8 @@ module Query =
       QueryIntrinsic.LessThanOrEqual,
       NonEmptyList.ofList<PrimitiveType> (
         PrimitiveType.Int32,
-        [ PrimitiveType.Float32
+        [ PrimitiveType.Int64
+          PrimitiveType.Float32
           PrimitiveType.Float64
           PrimitiveType.Decimal
           PrimitiveType.TimeSpan
@@ -158,7 +175,8 @@ module Query =
       QueryIntrinsic.Equals,
       NonEmptyList.ofList<PrimitiveType> (
         PrimitiveType.Int32,
-        [ PrimitiveType.Float32
+        [ PrimitiveType.Int64
+          PrimitiveType.Float32
           PrimitiveType.Float64
           PrimitiveType.Decimal
           PrimitiveType.String
@@ -171,7 +189,8 @@ module Query =
       QueryIntrinsic.NotEquals,
       NonEmptyList.ofList<PrimitiveType> (
         PrimitiveType.Int32,
-        [ PrimitiveType.Float32
+        [ PrimitiveType.Int64
+          PrimitiveType.Float32
           PrimitiveType.Float64
           PrimitiveType.Decimal
           PrimitiveType.String
