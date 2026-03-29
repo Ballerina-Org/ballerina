@@ -496,7 +496,8 @@ module Query =
                           ExprQueryExprRec.QueryRecordDes(acc, id |> Identifier.LocalScope, false)
                           |> ExprQueryExpr.Create loc
                         | Sum.Right idx ->
-                          ExprQueryExprRec.QueryTupleDes(acc, { Index = idx }) |> ExprQueryExpr.Create loc)
+                          ExprQueryExprRec.QueryTupleDes(acc, { Index = idx }, false)
+                          |> ExprQueryExpr.Create loc)
                       acc
                 | TupleCons fields ->
                   return

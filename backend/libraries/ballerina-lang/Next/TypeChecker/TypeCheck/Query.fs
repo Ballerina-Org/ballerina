@@ -405,24 +405,47 @@ module Query =
                   return ExprQueryExprRec.QueryLookup l |> ExprQueryExpr.Create expr.Location, t
                 })
 
-          | ExprQueryExprRec.QueryTupleDes(tuple, item) ->
+          | ExprQueryExprRec.QueryTupleDes(tuple, item, _) ->
             let! tuple_e, tuple_t = !tuple
 
-            let! tuple_t_elements = tuple_t |> TypeQueryRow.AsTuple |> ofSum
+            return!
+              state.Either
+                (state {
+                  let! tuple_t_elements = tuple_t |> TypeQueryRow.AsTuple |> ofSum
 
-            if item.Index - 1 < tuple_t_elements.Length then
-              let item_t = tuple_t_elements.[item.Index - 1]
+                  if item.Index - 1 < tuple_t_elements.Length then
+                    let item_t = tuple_t_elements.[item.Index - 1]
 
-              return
-                ExprQueryExprRec.QueryTupleDes(tuple_e, item)
-                |> ExprQueryExpr.Create expr.Location,
-                item_t
-            else
-              return!
-                (fun () ->
-                  $"Type checking error: Tuple type {tuple_t} has only {tuple_t_elements.Length} elements, but tried to access item {item.Index}")
-                |> Errors.Singleton loc0
-                |> state.Throw
+                    return
+                      ExprQueryExprRec.QueryTupleDes(tuple_e, item, false)
+                      |> ExprQueryExpr.Create expr.Location,
+                      item_t
+                  else
+                    return!
+                      (fun () ->
+                        $"Type checking error: Tuple type {tuple_t} has only {tuple_t_elements.Length} elements, but tried to access item {item.Index}")
+                      |> Errors.Singleton loc0
+                      |> state.Throw
+                })
+                (state {
+                  let! json_t = tuple_t |> TypeQueryRow.AsJson |> ofSum
+                  let! tuple_t_elements = json_t |> TypeValue.AsTuple |> ofSum
+
+                  if item.Index - 1 < tuple_t_elements.Length then
+                    let item_t = tuple_t_elements.[item.Index - 1]
+
+                    return
+                      ExprQueryExprRec.QueryTupleDes(tuple_e, item, true)
+                      |> ExprQueryExpr.Create expr.Location,
+                      item_t |> TypeQueryRow.Json
+                  else
+                    return!
+                      (fun () ->
+                        $"Type checking error: Tuple type {tuple_t} has only {tuple_t_elements.Length} elements, but tried to access item {item.Index}")
+                      |> Errors.Singleton loc0
+                      |> state.Throw
+                })
+              |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
           | ExprQueryExprRec.QueryRecordDes(record, field, _) ->
             let! record_e, record_t = !record
 
@@ -732,7 +755,7 @@ module Query =
             | ExprQueryExprRec.QueryRecordDes(expr, _field, _) ->
               let! map = get_lookups_from_context expr
               return map
-            | ExprQueryExprRec.QueryTupleDes(expr, _) ->
+            | ExprQueryExprRec.QueryTupleDes(expr, _, _) ->
               let! map = get_lookups_from_context expr
               return map
             | ExprQueryExprRec.QueryConditional(cond, ``then``, ``else``) ->

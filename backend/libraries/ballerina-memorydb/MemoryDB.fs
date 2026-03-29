@@ -147,7 +147,7 @@ module MutableMemoryDB =
           return!
             Errors.Singleton () (fun () -> $"Expected a record value for record destructuring, got {recordVal}")
             |> reader.Throw
-      | ExprQueryExprRec.QueryTupleDes(expr, index) ->
+      | ExprQueryExprRec.QueryTupleDes(expr, index, _isJson) ->
         let! tupleVal = evalQueryExpr expr
 
         match tupleVal with

@@ -975,7 +975,7 @@ module Model =
   and ExprQueryExprRec<'T, 'Id, 'valueExt when 'Id: comparison> =
     | QueryTupleCons of List<ExprQueryExpr<'T, 'Id, 'valueExt>>
     | QueryRecordDes of Expr: ExprQueryExpr<'T, 'Id, 'valueExt> * Field: 'Id * IsJsonField: bool
-    | QueryTupleDes of Expr: ExprQueryExpr<'T, 'Id, 'valueExt> * Item: TupleDesSelector
+    | QueryTupleDes of Expr: ExprQueryExpr<'T, 'Id, 'valueExt> * Item: TupleDesSelector * IsJsonItem: bool
     | QueryConditional of
       Cond: ExprQueryExpr<'T, 'Id, 'valueExt> *
       Then: ExprQueryExpr<'T, 'Id, 'valueExt> *
@@ -1008,7 +1008,10 @@ module Model =
         match isJsonField with
         | false -> $"{e}.{field}"
         | true -> $"{e} -> \"{field}\""
-      | QueryTupleDes(e, item) -> $"{e}.{item.Index}"
+      | QueryTupleDes(e, item, isJsonItem) ->
+        match isJsonItem with
+        | false -> $"{e}.{item.Index}"
+        | true -> $"{e} -> {item.Index - 1}"
       | QueryConditional(cond, thenExpr, elseExpr) -> $"if {cond} then {thenExpr} else {elseExpr}"
       | QueryUnionDes(e, handlers) ->
         let handlerStrs =
