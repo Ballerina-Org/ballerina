@@ -463,7 +463,11 @@ module Query =
                                 failwith "DoubleGreaterThan operator is not supported in query expressions"
 
                             ExprQueryExprRec.QueryApply(
-                              query_op |> ExprQueryExprRec.QueryIntrinsic |> ExprQueryExpr.Create loc,
+                              ExprQueryExprRec.QueryIntrinsic(
+                                query_op,
+                                TypeQueryRow.PrimitiveType(PrimitiveType.Unit, false)
+                              )
+                              |> ExprQueryExpr.Create loc,
                               ExprQueryExprRec.QueryTupleCons([ e1; e2 ]) |> ExprQueryExpr.Create loc
                             )
                             |> ExprQueryExpr.Create loc,

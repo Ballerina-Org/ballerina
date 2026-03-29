@@ -112,19 +112,19 @@ module MutableMemoryDB =
         let! argVal = evalQueryExpr arg
 
         match func.Expr, argVal with
-        | ExprQueryExprRec.QueryIntrinsic QueryIntrinsic.GreaterThan,
+        | ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.GreaterThan, _),
           Value.Tuple [ Value.Primitive(PrimitiveValue.Int32 v1); Value.Primitive(PrimitiveValue.Int32 v2) ] ->
           return Value.Primitive(PrimitiveValue.Bool(v1 > v2))
-        | ExprQueryExprRec.QueryIntrinsic QueryIntrinsic.And,
+        | ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.And, _),
           Value.Tuple [ Value.Primitive(PrimitiveValue.Bool v1); Value.Primitive(PrimitiveValue.Bool v2) ] ->
           return Value.Primitive(PrimitiveValue.Bool(v1 && v2))
-        | ExprQueryExprRec.QueryIntrinsic QueryIntrinsic.Or,
+        | ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Or, _),
           Value.Tuple [ Value.Primitive(PrimitiveValue.Bool v1); Value.Primitive(PrimitiveValue.Bool v2) ] ->
           return Value.Primitive(PrimitiveValue.Bool(v1 || v2))
-        | ExprQueryExprRec.QueryIntrinsic QueryIntrinsic.Multiply,
+        | ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Multiply, _),
           Value.Tuple [ Value.Primitive(PrimitiveValue.Int32 v1); Value.Primitive(PrimitiveValue.Int32 v2) ] ->
           return Value.Primitive(PrimitiveValue.Int32(v1 * v2))
-        | ExprQueryExprRec.QueryIntrinsic QueryIntrinsic.Equals, Value.Tuple [ v1; v2 ] ->
+        | ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Equals, _), Value.Tuple [ v1; v2 ] ->
           return Value.Primitive(PrimitiveValue.Bool(v1 = v2))
         | _ ->
           return!
@@ -189,7 +189,7 @@ module MutableMemoryDB =
           |> Map.tryFind id
           |> sum.OfOption(Errors.Singleton () (fun () -> $"Identifier {id} not found in query context"))
           |> reader.OfSum
-      | ExprQueryExprRec.QueryIntrinsic(_) ->
+      | ExprQueryExprRec.QueryIntrinsic(_, _) ->
         return!
           Errors.Singleton () (fun () -> $"Standalone intrinsics are not supported in the query engine")
           |> reader.Throw

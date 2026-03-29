@@ -755,7 +755,7 @@ module Eval =
 
               match e.Expr with
               | ExprQueryExprRec.QueryConstant _
-              | ExprQueryExprRec.QueryIntrinsic _ -> return e
+              | ExprQueryExprRec.QueryIntrinsic(_, _) -> return e
               | ExprQueryExprRec.QueryTupleCons items ->
                 let! items = items |> List.map (!) |> reader.All
 

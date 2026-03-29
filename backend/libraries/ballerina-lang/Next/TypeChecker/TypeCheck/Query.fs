@@ -538,7 +538,7 @@ module Query =
               |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
           | ExprQueryExprRec.QueryConstant c -> return! query_constant_to_type expr.Location c
 
-          | ExprQueryExprRec.QueryApply({ Expr = ExprQueryExprRec.QueryIntrinsic(intrinsic) }, arg) ->
+          | ExprQueryExprRec.QueryApply({ Expr = ExprQueryExprRec.QueryIntrinsic(intrinsic, _) }, arg) ->
             return!
               state.Either3
                 (state {
@@ -553,7 +553,10 @@ module Query =
                     | Some arg_e_elements ->
                       let res =
                         ExprQueryExprRec.QueryApply(
-                          ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Equals)
+                          ExprQueryExprRec.QueryIntrinsic(
+                            QueryIntrinsic.Equals,
+                            TypeQueryRow.PrimitiveType(PrimitiveType.Bool, false)
+                          )
                           |> ExprQueryExpr.Create expr.Location,
                           arg_e_elements
                           |> ExprQueryExprRec.QueryTupleCons
@@ -601,7 +604,11 @@ module Query =
 
                           return
                             ExprQueryExprRec.QueryApply(
-                              ExprQueryExprRec.QueryIntrinsic(intrinsic) |> ExprQueryExpr.Create expr.Location,
+                              ExprQueryExprRec.QueryIntrinsic(
+                                intrinsic,
+                                TypeQueryRow.PrimitiveType(expected_primitive_type, is_nullable)
+                              )
+                              |> ExprQueryExpr.Create expr.Location,
                               arg_e
                             )
                             |> ExprQueryExpr.Create expr.Location,
@@ -639,7 +646,11 @@ module Query =
 
                           return
                             ExprQueryExprRec.QueryApply(
-                              ExprQueryExprRec.QueryIntrinsic(intrinsic) |> ExprQueryExpr.Create expr.Location,
+                              ExprQueryExprRec.QueryIntrinsic(
+                                intrinsic,
+                                TypeQueryRow.PrimitiveType(PrimitiveType.Bool, is_nullable)
+                              )
+                              |> ExprQueryExpr.Create expr.Location,
                               arg_e
                             )
                             |> ExprQueryExpr.Create expr.Location,
@@ -778,7 +789,7 @@ module Query =
               let! func_map = get_lookups_from_context func
               let! arg_map = get_lookups_from_context arg
               return Map.merge (fun _ -> id) func_map arg_map
-            | ExprQueryExprRec.QueryIntrinsic(_) -> return Map.empty
+            | ExprQueryExprRec.QueryIntrinsic(_, _) -> return Map.empty
             | ExprQueryExprRec.QueryConstant(_) -> return Map.empty
             | ExprQueryExprRec.QueryClosureValue(_, _) -> return Map.empty
             | ExprQueryExprRec.QueryCastTo(v, _) -> return! get_lookups_from_context v

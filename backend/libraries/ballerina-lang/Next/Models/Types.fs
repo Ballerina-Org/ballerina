@@ -988,7 +988,7 @@ module Model =
       Handlers: Map<SumConsSelector, QueryCaseHandler<'T, 'Id, 'valueExt>>
     | QueryApply of Func: ExprQueryExpr<'T, 'Id, 'valueExt> * Arg: ExprQueryExpr<'T, 'Id, 'valueExt>
     | QueryLookup of 'Id
-    | QueryIntrinsic of QueryIntrinsic
+    | QueryIntrinsic of QueryIntrinsic * ExpectedType: TypeQueryRow<'valueExt>
     | QueryConstant of PrimitiveValue
     | QueryClosureValue of Value<TypeValue<'valueExt>, 'valueExt> * TypeQueryRow<'valueExt>
     | QueryCastTo of ExprQueryExpr<'T, 'Id, 'valueExt> * TypeQueryRow<'valueExt>
@@ -1033,7 +1033,7 @@ module Model =
         $"match {e} with {{ {String.Join(space, handlerStrs)} }}"
       | QueryApply(func, args) -> $"{func}({args})"
       | QueryLookup id -> id.ToString()
-      | QueryIntrinsic intrinsic -> intrinsic.ToString()
+      | QueryIntrinsic(intrinsic, _) -> intrinsic.ToString()
       | QueryConstant c -> c.ToString()
       | QueryClosureValue(v, _) -> v.ToString()
       | QueryCastTo(v, t) -> $"{v} :: {t}"
