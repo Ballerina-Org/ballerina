@@ -27,13 +27,10 @@ module Eval =
   open Ballerina.DSL.Next.Terms.Patterns
 
   type TypeQueryRowExpr<'valueExt> with
-    static member Eval<'ve when 've: comparison>
-      (query_type_symbol: TypeSymbol)
-      (mk_query_type: Schema<'ve> -> TypeQueryRow<'ve> -> TypeValue<'ve>)
-      : TypeQueryRowExprEval<'ve> =
+    static member Eval<'ve when 've: comparison>(config: TypeEvalConfig<'ve>) : TypeQueryRowExprEval<'ve> =
       fun typeCheckExpr _n loc0 q_row ->
         state {
-          let (!) = TypeExpr.Eval<'ve> query_type_symbol mk_query_type typeCheckExpr None loc0
+          let (!) = TypeExpr.Eval<'ve> config typeCheckExpr None loc0
           // let (!!) = TypeQueryRowExpr.Eval<'ve> () typeCheckExpr None loc0
           // let! ctx = state.GetContext()
 
@@ -83,14 +80,11 @@ module Eval =
         }
 
   and TypeExpr<'valueExt> with
-    static member EvalAsSymbol<'ve when 've: comparison>
-      (query_type_symbol: TypeSymbol)
-      (mk_query_type: Schema<'ve> -> TypeQueryRow<'ve> -> TypeValue<'ve>)
-      : TypeExprSymbolEval<'ve> =
+    static member EvalAsSymbol<'ve when 've: comparison>(config: TypeEvalConfig<'ve>) : TypeExprSymbolEval<'ve> =
       fun exprTypeCheck loc0 t ->
         state {
-          let (!) = TypeExpr.EvalAsSymbol query_type_symbol mk_query_type exprTypeCheck loc0
-          let (!!) = TypeExpr.Eval query_type_symbol mk_query_type exprTypeCheck None loc0
+          let (!) = TypeExpr.EvalAsSymbol config exprTypeCheck loc0
+          let (!!) = TypeExpr.Eval config exprTypeCheck None loc0
           let! ctx = state.GetContext()
 
           let error e = Errors.Singleton loc0 e
@@ -134,19 +128,19 @@ module Eval =
               |> state.Throw
         }
 
-    static member Eval<'ve when 've: comparison>
-      (query_type_symbol: TypeSymbol)
-      (mk_query_type: Schema<'ve> -> TypeQueryRow<'ve> -> TypeValue<'ve>)
-      : TypeExprEval<'ve> =
+    static member Eval<'ve when 've: comparison>(config: TypeEvalConfig<'ve>) : TypeExprEval<'ve> =
       fun typeCheckExpr n loc0 t ->
         state {
-          let (!) = TypeExpr.Eval<'ve> query_type_symbol mk_query_type typeCheckExpr None loc0
+          let { QueryTypeSymbol = _query_type_symbol
+                MkQueryType = mk_query_type
+                MkListType = mk_list_type } =
+            config
 
-          let (!!) =
-            TypeExpr.EvalAsSymbol<'ve> query_type_symbol mk_query_type typeCheckExpr loc0
+          let (!) = TypeExpr.Eval<'ve> config typeCheckExpr None loc0
 
-          let (!!!) =
-            TypeQueryRowExpr.Eval<'ve> query_type_symbol mk_query_type typeCheckExpr None loc0
+          let (!!) = TypeExpr.EvalAsSymbol<'ve> config typeCheckExpr loc0
+
+          let (!!!) = TypeQueryRowExpr.Eval<'ve> config typeCheckExpr None loc0
 
           let! ctx = state.GetContext()
 
@@ -1847,7 +1841,7 @@ module Eval =
 
             let! tv =
               tv
-              |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
+              |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
               |> State.Run(TypeInstantiateContext.FromEvalContext(ctx), s)
               |> sum.Map fst
               |> sum.MapError fst
@@ -2257,6 +2251,9 @@ module Eval =
                                       $"Error: cannot return record query rows, please convert to a tuple first")
                                     |> error
                                     |> state.Throw
+                                | TypeQueryRow.Array inner ->
+                                  let! inner_t, _ = try_convert inner
+                                  return mk_list_type inner_t, Kind.Star
                               }
 
                             let! result, _ = a_t |> try_convert

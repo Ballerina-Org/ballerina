@@ -185,6 +185,7 @@ module Unification =
             |> reader.All
 
           return vars |> Set.unionMany
+        | TypeQueryRow.Array e -> return! TypeQueryRow.FreeVariables e
       }
 
     static member MostSpecific<'valueExt when 'valueExt: comparison>
@@ -1179,5 +1180,8 @@ module Unification =
               |> state.AllMap
 
             return (TypeQueryRow.Record es')
+          | TypeQueryRow.Array e ->
+            let! e' = e |> TypeQueryRow.Instantiate () typeEval loc0
+            return (TypeQueryRow.Array e')
 
         }

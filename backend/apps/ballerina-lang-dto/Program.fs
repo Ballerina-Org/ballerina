@@ -31,7 +31,7 @@ open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.StdLib.String
 
-let _, languageContext, query_type_sym, mk_query_type =
+let _, languageContext, typeEvalConfig =
   stdExtensions<unit, MutableMemoryDB<unit, unit>> (StringTypeClass<_>.Console()) (db_ops ())
 
 let primitive (v: string) =
@@ -144,7 +144,7 @@ let typeCheckProgram (programName: string) (program: string) =
     let project: ProjectBuildConfiguration =
       { Files = NonEmptyList.OfList(FileBuildConfiguration.FromFile($"{programName}.bl", program), []) }
 
-    return! ProjectBuildConfiguration.BuildCached query_type_sym mk_query_type build_cache project
+    return! ProjectBuildConfiguration.BuildCached typeEvalConfig build_cache project
   }
 
 let runProgram expr exprs (st: TypeCheckState<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>) =

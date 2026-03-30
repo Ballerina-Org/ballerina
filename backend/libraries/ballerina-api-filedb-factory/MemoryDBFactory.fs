@@ -32,7 +32,7 @@ module MemoryDBAPIFactory =
 
   let contextFactory dbFileConfig =
     stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()) (fileDbOps dbFileConfig)
-    |> fun (_, languageContext, querySymbols, queryTypeFactory) -> languageContext, querySymbols, queryTypeFactory
+    |> fun (_, languageContext, typeEvalConfig) -> languageContext, typeEvalConfig
 
   let getSchemaVersion tenantId schemaName draft schemaFileConfig =
     sum {
@@ -68,8 +68,7 @@ module MemoryDBAPIFactory =
     (languageContext:
       LanguageContext<FileDBRuntimeContext, FileDbValueExtension, ValueExtDTO, FileDbDeltaExtension, DeltaExtDTO>)
     (schemaFileConfig: SchemaFileConfig)
-    dbQuerySymbols
-    queryTypeFactory
+    typeEvalConfig
     (addPermissionHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>)
     (addBackgroundHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>)
     (tenantId: Guid)
@@ -82,8 +81,7 @@ module MemoryDBAPIFactory =
       let! evalResult, typeCheckContext, typeCheckState, evalContext =
         buildSchemaDefinition
           languageContext
-          dbQuerySymbols
-          queryTypeFactory
+          typeEvalConfig
           addPermissionHookScope
           addBackgroundHookScope
           tenantId

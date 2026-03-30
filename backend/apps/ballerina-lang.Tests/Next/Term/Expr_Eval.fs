@@ -55,12 +55,12 @@ do ignore (=>)
 do ignore (!!)
 do ignore (=>>)
 
-let ops, context, _db_query_sym, _make_db_query_type =
+let ops, context, typeEvalConfig =
   db_ops () |> stdExtensions (StringTypeClass<_>.Console())
 
 let evalContext = ExprEvalContext.Empty() |> context.ExprEvalContext
 
-let typeCheck = Expr.TypeCheck(_db_query_sym, _make_db_query_type)
+let typeCheck = Expr.TypeCheck typeEvalConfig
 
 let private runTypeCheck (program: Expr<TypeExpr<ValueExt>, Identifier, ValueExt>) =
   typeCheck None program

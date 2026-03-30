@@ -31,7 +31,7 @@ module Do =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckDo<'valueExt when 'valueExt: comparison>
-      (_query_type_symbol, _mk_query_type)
+      (_config: TypeEvalConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprDo<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Val = e1; Rest = e2 }) ->

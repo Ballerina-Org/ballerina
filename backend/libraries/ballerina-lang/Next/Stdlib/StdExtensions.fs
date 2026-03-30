@@ -14,6 +14,7 @@ open Ballerina.DSL.Next.StdLib.Map.Model
 open Ballerina.DSL.Next.StdLib.DB
 open Ballerina.Data.Delta
 open Ballerina.DSL.Next.StdLib.String
+open Ballerina.DSL.Next.Types.TypeChecker.Model
 
 type ValueExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> =
   | ValueExt of
@@ -479,10 +480,7 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
       DeltaExt<'runtimeContext, 'db, 'customExtension>,
       DeltaExtDTO
      > *
-    TypeSymbol *
-    (Schema<ValueExt<'runtimeContext, 'db, 'customExtension>>
-      -> TypeQueryRow<ValueExt<'runtimeContext, 'db, 'customExtension>>
-      -> TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>)
+    TypeEvalConfig<ValueExt<'runtimeContext, 'db, 'customExtension>>
   =
 
   let registerDBExtensions, query_sym, mk_query =
@@ -504,7 +502,7 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
         Set = Map.Model.MapValues.Map >> MapValues >> Choice6Of7 >> ValueExt.ValueExt }
       DBExt<_, _, _>.ValueLens
 
-  let listExtension =
+  let listExtension, _list_sym, mk_list_type =
     List.Extension.ListExtension<
       'runtimeContext,
       ValueExt<'runtimeContext, 'db, 'customExtension>,
@@ -708,7 +706,12 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
       Map = mapExtension
       Updater = updaterExtension }
 
-  extensions, context, query_sym, mk_query
+  let typeEvalConfig =
+    { QueryTypeSymbol = query_sym
+      MkQueryType = mk_query
+      MkListType = mk_list_type }
+
+  extensions, context, typeEvalConfig
 
 let stdExtensions<'runtimeContext, 'db when 'db: comparison> =
   fun str_ops db_ops -> makeExtensions<'runtimeContext, 'db, unit> str_ops db_ops

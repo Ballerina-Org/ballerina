@@ -17,7 +17,7 @@ module TypeEval =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member TypeEval<'valueExt when 'valueExt: comparison>
-      (query_sym, mk_query_type)
+      (config: TypeEvalConfig<'valueExt>)
       : TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt>
           -> Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>
           -> State<
@@ -28,11 +28,11 @@ module TypeEval =
            >
       =
       fun typeCheckExpr expr ->
-        let (!) = Expr.TypeEval (query_sym, mk_query_type) typeCheckExpr
+        let (!) = Expr.TypeEval config typeCheckExpr
 
         let (!!) t =
           state {
-            let! t, _ = t |> TypeExpr.Eval query_sym mk_query_type typeCheckExpr None expr.Location
+            let! t, _ = t |> TypeExpr.Eval config typeCheckExpr None expr.Location
             return t
           }
 
@@ -145,15 +145,13 @@ module TypeEval =
                                 TypeArg = typeArg }) ->
             let! typeExprType = !typeExpr
 
-            let! typeArg, _ =
-              typeArg
-              |> TypeExpr.Eval query_sym mk_query_type typeCheckExpr None expr.Location
+            let! typeArg, _ = typeArg |> TypeExpr.Eval config typeCheckExpr None expr.Location
 
             return Expr.TypeApply(typeExprType, typeArg, expr.Location, ctx.Scope)
           | ExprRec.TypeLet({ ExprTypeLet.Name = var
                               TypeDef = value
                               Body = body }) ->
-            let! valueType = value |> TypeExpr.Eval query_sym mk_query_type typeCheckExpr None expr.Location
+            let! valueType = value |> TypeExpr.Eval config typeCheckExpr None expr.Location
             do! TypeCheckState.bindType (var |> Identifier.LocalScope |> ctx.Scope.Resolve) valueType
 
             let! bodyType = !body

@@ -102,10 +102,11 @@ module MutableMemoryDB =
 
   let rec private evalQueryExpr
     (runQuery: ValueQuery<_, _> -> Reader<seq<_> * _, ExprEvalContext<_, _>, Errors<Unit>>)
+    (makeListValue: List<Value<TypeValue<'ext>, 'ext>> -> Value<TypeValue<'ext>, 'ext>)
     (query: ExprQueryExpr<TypeValue<'ext>, ResolvedIdentifier, 'ext>)
     : Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<_, _>, Errors<Unit>> =
     reader {
-      let evalQueryExpr = evalQueryExpr runQuery
+      let evalQueryExpr = evalQueryExpr runQuery makeListValue
 
       match query.Expr with
       | ExprQueryExprRec.QueryApply(func, arg) ->
@@ -218,11 +219,9 @@ module MutableMemoryDB =
       | ExprQueryExprRec.QueryExistsEvaluated q ->
         let! res, _ = runQuery q
         return Value.Primitive(PrimitiveValue.Bool(res |> Seq.length > 0))
-      | ExprQueryExprRec.QueryArrayEvaluated(_) ->
-        return!
-          (fun () -> "MemoryDB QueryArrayEvaluated Not Implemented")
-          |> Errors.Singleton()
-          |> reader.Throw
+      | ExprQueryExprRec.QueryArrayEvaluated q ->
+        let! res, _ = runQuery q
+        return res |> Seq.toList |> makeListValue
     }
 
   let rec entity_values_restricted_by_can_read
@@ -359,7 +358,9 @@ module MutableMemoryDB =
 
       let all_scopes = vars_with_values |> cross_join_of_sources
 
-      let evalQueryExpr = evalQueryExpr (runQuery apply_permissions queryRunAdapter)
+      let evalQueryExpr =
+        evalQueryExpr (runQuery apply_permissions queryRunAdapter) (fun values ->
+          Value.Ext(ListExt<_, _, _>.ValueLens.Set(List.Model.ListValues.List values), None))
 
       let! all_scopes =
         reader {

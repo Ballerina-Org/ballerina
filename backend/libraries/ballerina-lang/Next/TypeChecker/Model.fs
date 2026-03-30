@@ -122,6 +122,11 @@ module Model =
       BackgroundHooksExtraScope: Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)>
       PermissionHooksExtraScope: Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)> }
 
+  type TypeEvalConfig<'valueExt when 'valueExt: comparison> =
+    { QueryTypeSymbol: TypeSymbol
+      MkQueryType: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>
+      MkListType: TypeValue<'valueExt> -> TypeValue<'valueExt> }
+
   type TypeExprEvalResult<'valueExt when 'valueExt: comparison> =
     State<TypeValue<'valueExt> * Kind, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>>
 

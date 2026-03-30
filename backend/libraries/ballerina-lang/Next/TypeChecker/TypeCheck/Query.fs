@@ -673,6 +673,17 @@ module Query =
             return
               ExprQueryExprRec.QueryExists q_e |> ExprQueryExpr.Create expr.Location,
               TypeQueryRow.PrimitiveType(PrimitiveType.Bool, false)
+          | ExprQueryExprRec.QueryArray q ->
+            let! q_e, query_type, _, _ = q |> typeCheckQuery
+
+            match query_type with
+            | TypeValue.Imported { Arguments = [ _; TypeValue.QueryRow row ] } ->
+              return ExprQueryExprRec.QueryArray q_e |> ExprQueryExpr.Create expr.Location, TypeQueryRow.Array row
+            | _ ->
+              return!
+                (fun () -> $"Type checking error: QueryArray expects Query type, got {query_type}")
+                |> Errors.Singleton expr.Location
+                |> state.Throw
           | _ ->
             return!
               (fun () ->
@@ -684,8 +695,7 @@ module Query =
 
   and Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckQuery<'valueExt when 'valueExt: comparison>
-      (query_type_symbol: TypeSymbol)
-      (mk_query_type: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>)
+      (config: TypeEvalConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeCheckerQuery<ExprQuery<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
@@ -693,6 +703,9 @@ module Query =
           (closure_bindings: Map<LocalIdentifier, TypeQueryRow<'valueExt>>)
           initial_lookups
           (query: ExprQuery<TypeExpr<'valueExt>, Identifier, 'valueExt>) ->
+        let { QueryTypeSymbol = query_type_symbol
+              MkQueryType = mk_query_type } =
+          config
         // let (!) = typeCheckExpr context_t
         let (=>) c e = typeCheckExpr c e
         let loc0 = query.Location
@@ -798,13 +811,7 @@ module Query =
             | ExprQueryExprRec.QueryArray q ->
               let! q', _, _, _ =
                 q
-                |> Expr.TypeCheckQuery
-                  query_type_symbol
-                  mk_query_type
-                  typeCheckExpr
-                  _context_t
-                  iterator_bindings
-                  initial_lookups
+                |> Expr.TypeCheckQuery config typeCheckExpr _context_t iterator_bindings initial_lookups
 
               return q'.Closure
             | ExprQueryExprRec.QueryCountEvaluated _
@@ -819,23 +826,11 @@ module Query =
           | UnionQueries(q1, q2) ->
             let! q1_e, q1_t, _q1_k, _ctx =
               q1
-              |> Expr.TypeCheckQuery
-                query_type_symbol
-                mk_query_type
-                typeCheckExpr
-                _context_t
-                closure_bindings
-                initial_lookups
+              |> Expr.TypeCheckQuery config typeCheckExpr _context_t closure_bindings initial_lookups
 
             let! q2_e, q2_t, _q2_k, _ctx =
               q2
-              |> Expr.TypeCheckQuery
-                query_type_symbol
-                mk_query_type
-                typeCheckExpr
-                _context_t
-                closure_bindings
-                initial_lookups
+              |> Expr.TypeCheckQuery config typeCheckExpr _context_t closure_bindings initial_lookups
 
             match q1_t, q2_t with
             | TypeValue.Imported { Sym = sym1
@@ -999,13 +994,7 @@ module Query =
               QueryTypeCheckContext<_>.Create iterator_bindings select_orderby_lookups
 
             let typeCheckQuery =
-              Expr.TypeCheckQuery
-                query_type_symbol
-                mk_query_type
-                typeCheckExpr
-                _context_t
-                iterator_bindings
-                initial_lookups
+              Expr.TypeCheckQuery config typeCheckExpr _context_t iterator_bindings initial_lookups
 
             let! joins_expr' =
               state {

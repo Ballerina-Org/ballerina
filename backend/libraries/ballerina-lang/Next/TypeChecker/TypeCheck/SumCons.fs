@@ -34,7 +34,7 @@ module SumCons =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckSumCons<'valueExt when 'valueExt: comparison>
-      (query_type_symbol, mk_query_type)
+      (config: TypeEvalConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
       : TypeChecker<ExprSumCons<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun _context_t ({ Selector = cons }) ->
@@ -57,7 +57,7 @@ module SumCons =
 
           let! return_t =
             TypeValue.CreateArrow(cases[cons.Case - 1], TypeValue.CreateSum(cases |> List.ofSeq))
-            |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
           return Expr.SumCons(cons, loc0, ctx.Scope), return_t, Kind.Star, ctx

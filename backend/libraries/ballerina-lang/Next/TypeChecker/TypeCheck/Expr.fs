@@ -47,10 +47,8 @@ module Expr =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member TypeCheck<'valueExt when 'valueExt: comparison>
-      (
-        query_type_symbol: TypeSymbol,
-        mk_query_type: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>
-      ) : TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
+      (config: TypeEvalConfig<'valueExt>)
+      : TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t t ->
         let loc0 = t.Location
 
@@ -73,11 +71,7 @@ module Expr =
             state {
               match t.Expr with
               | ExprRec.Primitive(p) ->
-                return!
-                  Expr.TypeCheckPrimitive
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type), t.Location)
-                    context_t
-                    p
+                return! Expr.TypeCheckPrimitive (Expr<'T, 'Id, 'valueExt>.TypeCheck config, t.Location) context_t p
 
               | ExprRec.FromValue({ Value = v
                                     ValueType = t_v
@@ -87,133 +81,68 @@ module Expr =
 
               | ExprRec.Lookup({ Id = id }) ->
                 return!
-                  Expr.TypeCheckLookup
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type), t.Location)
-                    context_t
-                    { Id = id }
+                  Expr.TypeCheckLookup (Expr<'T, 'Id, 'valueExt>.TypeCheck config, t.Location) context_t { Id = id }
 
               | ExprRec.Apply apply ->
-                return!
-                  Expr.TypeCheckApply
-                    (query_type_symbol, mk_query_type)
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type))
-                    context_t
-                    apply
+                return! Expr.TypeCheckApply config (Expr<'T, 'Id, 'valueExt>.TypeCheck config) context_t apply
               | ExprRec.If if_expr ->
-                return!
-                  Expr.TypeCheckIf
-                    (query_type_symbol, mk_query_type)
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type))
-                    context_t
-                    if_expr
+                return! Expr.TypeCheckIf config (Expr<'T, 'Id, 'valueExt>.TypeCheck config) context_t if_expr
 
               | ExprRec.Let let_expr ->
-                return!
-                  Expr.TypeCheckLet
-                    (query_type_symbol, mk_query_type)
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type))
-                    context_t
-                    let_expr
+                return! Expr.TypeCheckLet config (Expr<'T, 'Id, 'valueExt>.TypeCheck config) context_t let_expr
 
               | ExprRec.Do do_expr ->
-                return!
-                  Expr.TypeCheckDo
-                    (query_type_symbol, mk_query_type)
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type))
-                    context_t
-                    do_expr
+                return! Expr.TypeCheckDo config (Expr<'T, 'Id, 'valueExt>.TypeCheck config) context_t do_expr
 
               | ExprRec.Lambda(lambda) ->
                 return!
                   Expr<'T, 'Id, 'valueExt>.TypeCheckLambda
-                    (query_type_symbol, mk_query_type)
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type))
+                    config
+                    (Expr<'T, 'Id, 'valueExt>.TypeCheck config)
                     context_t
                     lambda
               | ExprRec.RecordCons record_cons_expr ->
                 return!
-                  Expr.TypeCheckRecordCons
-                    (query_type_symbol, mk_query_type)
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type))
-                    context_t
-                    record_cons_expr
+                  Expr.TypeCheckRecordCons config (Expr<'T, 'Id, 'valueExt>.TypeCheck config) context_t record_cons_expr
 
               | ExprRec.RecordWith record_with_expr ->
                 return!
-                  Expr.TypeCheckRecordWith
-                    (query_type_symbol, mk_query_type)
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type))
-                    context_t
-                    record_with_expr
+                  Expr.TypeCheckRecordWith config (Expr<'T, 'Id, 'valueExt>.TypeCheck config) context_t record_with_expr
 
               | ExprRec.TupleCons tuple_cons_expr ->
                 return!
-                  Expr.TypeCheckTupleCons
-                    (query_type_symbol, mk_query_type)
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type))
-                    context_t
-                    tuple_cons_expr
+                  Expr.TypeCheckTupleCons config (Expr<'T, 'Id, 'valueExt>.TypeCheck config) context_t tuple_cons_expr
 
               | ExprRec.SumCons sum_cons_expr ->
                 return!
                   Expr.TypeCheckSumCons
-                    (query_type_symbol, mk_query_type)
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type), t.Location)
+                    config
+                    (Expr<'T, 'Id, 'valueExt>.TypeCheck config, t.Location)
                     context_t
                     sum_cons_expr
 
               | ExprRec.RecordDes record_des_expr ->
-                return!
-                  Expr.TypeCheckRecordDes
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type))
-                    context_t
-                    record_des_expr
+                return! Expr.TypeCheckRecordDes (Expr<'T, 'Id, 'valueExt>.TypeCheck config) context_t record_des_expr
 
               | ExprRec.TupleDes tuple_des_expr ->
-                return!
-                  Expr.TypeCheckTupleDes
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type))
-                    context_t
-                    tuple_des_expr
+                return! Expr.TypeCheckTupleDes (Expr<'T, 'Id, 'valueExt>.TypeCheck config) context_t tuple_des_expr
 
               | ExprRec.UnionDes union_des_handlers ->
                 return!
-                  Expr.TypeCheckUnionDes
-                    (query_type_symbol, mk_query_type)
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type))
-                    context_t
-                    union_des_handlers
+                  Expr.TypeCheckUnionDes config (Expr<'T, 'Id, 'valueExt>.TypeCheck config) context_t union_des_handlers
 
               | ExprRec.SumDes sum_des_expr ->
-                return!
-                  Expr.TypeCheckSumDes
-                    (query_type_symbol, mk_query_type)
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type))
-                    context_t
-                    sum_des_expr
+                return! Expr.TypeCheckSumDes config (Expr<'T, 'Id, 'valueExt>.TypeCheck config) context_t sum_des_expr
 
               | ExprRec.TypeLet type_let_expr ->
-                return!
-                  Expr.TypeCheckTypeLet
-                    (query_type_symbol, mk_query_type)
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type))
-                    context_t
-                    type_let_expr
+                return! Expr.TypeCheckTypeLet config (Expr<'T, 'Id, 'valueExt>.TypeCheck config) context_t type_let_expr
 
               | ExprRec.TypeLambda type_lambda_expr ->
-                return!
-                  Expr.TypeCheckTypeLambda
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type))
-                    context_t
-                    type_lambda_expr
+                return! Expr.TypeCheckTypeLambda (Expr<'T, 'Id, 'valueExt>.TypeCheck config) context_t type_lambda_expr
 
               | ExprRec.TypeApply type_apply_expr ->
                 return!
-                  Expr.TypeCheckTypeApply
-                    (query_type_symbol, mk_query_type)
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type))
-                    context_t
-                    type_apply_expr
+                  Expr.TypeCheckTypeApply config (Expr<'T, 'Id, 'valueExt>.TypeCheck config) context_t type_apply_expr
 
               | ExprRec.EntityDes _
               | ExprRec.RelationDes _
@@ -226,23 +155,14 @@ module Expr =
                   |> state.Throw
               | ExprRec.Query q ->
                 let! q, t, k, ctx =
-                  Expr.TypeCheckQuery
-                    query_type_symbol
-                    mk_query_type
-                    (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type))
-                    context_t
-                    Map.empty
-                    Map.empty
-                    q
+                  Expr.TypeCheckQuery config (Expr<'T, 'Id, 'valueExt>.TypeCheck config) context_t Map.empty Map.empty q
 
                 return Expr.Query q, t, k, ctx
             }
 
           let! expr =
             expr
-            |> Expr.InstantiateSyntheticVars
-              (query_type_symbol, mk_query_type)
-              (Expr<'T, 'Id, 'valueExt>.TypeCheck(query_type_symbol, mk_query_type))
+            |> Expr.InstantiateSyntheticVars config (Expr<'T, 'Id, 'valueExt>.TypeCheck config)
 
           return expr, typeValue, kind, ctx
         }
