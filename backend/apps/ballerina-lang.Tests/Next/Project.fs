@@ -39,9 +39,9 @@ let private buildAndEvalFromConfiguredFiles
 
   let context = Term.Expr_Eval.context
   let cache = memcache (context.TypeCheckContext, context.TypeCheckState)
+  let typeEvalConfig = Term.Expr_Eval.typeEvalConfig
 
-  let buildResult =
-    ProjectBuildConfiguration.BuildCached Term.Expr_Eval._db_query_sym Term.Expr_Eval._make_db_query_type cache project
+  let buildResult = ProjectBuildConfiguration.BuildCached typeEvalConfig cache project
 
   match buildResult with
   | Left(exprs, typeValue, _, finalState) ->

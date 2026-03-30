@@ -28,18 +28,14 @@ module InstantiateSyntheticVars =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member InstantiateSyntheticVars<'valueExt when 'valueExt: comparison>
-      (
-        query_type_symbol: TypeSymbol,
-        mk_query_type: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>
-      )
+      (config: TypeEvalConfig<'valueExt>)
       (typeCheckExpr)
       (expr: Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>)
       : TypeCheckerResult<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>, 'valueExt> =
       state {
         let loc0 = expr.Location
 
-        let (!) =
-          Expr.InstantiateSyntheticVars (query_type_symbol, mk_query_type) typeCheckExpr
+        let (!) = Expr.InstantiateSyntheticVars config typeCheckExpr
 
         match expr.Expr with
         | ExprRec.RecordDes({ Expr = r; Field = field }) ->
@@ -107,7 +103,7 @@ module InstantiateSyntheticVars =
 
           let! t_arg =
             t_arg
-            |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
           let res = Expr.TypeApply(e, t_arg)

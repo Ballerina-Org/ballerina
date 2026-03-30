@@ -22,18 +22,13 @@ open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 
 let context = Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval.context
 
-let _db_query_sym =
-  Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval._db_query_sym
-
-let _make_db_query_type =
-  Ballerina.Cat.Tests.BusinessRuleEngine.Next.Term.Expr_Eval._make_db_query_type
+let typeEvalConfig = Term.Expr_Eval.typeEvalConfig
 
 type private ValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
 
 let private run (program: string) : Sum<(Value<TypeValue<ValueExt>, ValueExt> * TypeValue<ValueExt>), string> =
 
-  let typeCheckResult =
-    Expr.TypeCheckString (context, _db_query_sym, _make_db_query_type) program
+  let typeCheckResult = Expr.TypeCheckString (context, typeEvalConfig) program
 
   match typeCheckResult with
   | Left(program, typeValue, typeCheckFinalState) ->

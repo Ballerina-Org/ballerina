@@ -289,8 +289,7 @@ It could be because the cache structure is outdated, and is expected in such cas
 
   type ProjectBuildConfiguration with
     static member BuildCachedWithFileOutputs<'valueExt when 'valueExt: comparison>
-      (query_type_symbol: TypeSymbol)
-      (mk_query_type: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>)
+      (config: TypeEvalConfig<'valueExt>)
       (cache: ProjectCache<'valueExt>)
       (project: ProjectBuildConfiguration)
       : Sum<
@@ -312,7 +311,7 @@ It could be because the cache structure is outdated, and is expected in such cas
               let typeCheckerStopwatch = System.Diagnostics.Stopwatch.StartNew()
 
               let! (typeCheckedExpr, typeValue, _, ctx'), st' =
-                Expr.TypeCheck (query_type_symbol, mk_query_type) None program
+                Expr.TypeCheck config None program
                 |> State.Run(ctx, st)
                 |> sum.MapError fst
                 |> sum.WithErrorContext(fun () -> $"...while typechecking {file.FileName.Path}")
@@ -379,8 +378,7 @@ It could be because the cache structure is outdated, and is expected in such cas
       }
 
     static member BuildCached<'valueExt when 'valueExt: comparison>
-      (query_type_symbol: TypeSymbol)
-      (mk_query_type: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>)
+      (config: TypeEvalConfig<'valueExt>)
       (cache: ProjectCache<'valueExt>)
       (project: ProjectBuildConfiguration)
       : Sum<
@@ -394,7 +392,7 @@ It could be because the cache structure is outdated, and is expected in such cas
 
       sum {
         let! fileOutputs, finalContext, finalState =
-          ProjectBuildConfiguration.BuildCachedWithFileOutputs query_type_symbol mk_query_type cache project
+          ProjectBuildConfiguration.BuildCachedWithFileOutputs config cache project
 
         let expressions = fileOutputs |> NonEmptyList.map _.Expr
 

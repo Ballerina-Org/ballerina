@@ -42,7 +42,7 @@ module TypeLet =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckTypeLet<'valueExt when 'valueExt: comparison>
-      (query_type_symbol, mk_query_type)
+      (config: TypeEvalConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprTypeLet<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
@@ -63,13 +63,7 @@ module TypeLet =
           // do Console.ReadLine() |> ignore
 
           let! typeDefinition =
-            TypeExpr.Eval
-              query_type_symbol
-              mk_query_type
-              typeCheckExpr
-              (Some(ExprTypeLetBindingName typeIdentifier))
-              loc0
-              typeDefinition
+            TypeExpr.Eval config typeCheckExpr (Some(ExprTypeLetBindingName typeIdentifier)) loc0 typeDefinition
             |> Expr.liftTypeEval
             |> state.MapContext(
               TypeCheckContext.Updaters.Scope(TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier)))

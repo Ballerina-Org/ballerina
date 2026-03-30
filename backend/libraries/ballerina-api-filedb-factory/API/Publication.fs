@@ -96,7 +96,7 @@ module API =
       let fileManager: FileContentManager<Schema> =
         FileContentManager<Schema>.Create(schemaDirectory, schemaExtension, tenantId, schemaName)
 
-      let languageContext, dbQuerySymbols, queryTypeFactory =
+      let languageContext, typeEvalConfig =
         contextFactory
           { DbDirectory = dbFileConfig.DbDirectory
             DbExtension = dbFileConfig.DbExtension }
@@ -104,8 +104,7 @@ module API =
       let! evalResult, _, _, evalContext =
         buildSchemaDefinition
           languageContext
-          dbQuerySymbols
-          queryTypeFactory
+          typeEvalConfig
           addPermissionHookScope
           addBackgroundHookScope
           tenantId

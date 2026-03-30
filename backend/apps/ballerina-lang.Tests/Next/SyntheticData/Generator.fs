@@ -28,7 +28,7 @@ let private emptyState<'valueExt when 'valueExt: comparison> () : TypeCheckState
 let listImportedGenerators<'valueExt when 'valueExt: comparison>
   ()
   : Map<ResolvedIdentifier, ImportedGenerator<ValueExt<unit, MutableMemoryDB<unit, 'valueExt>, 'valueExt>, ListConfig>> =
-  let stdlib, _, _db_query_sym, _make_db_query_type =
+  let stdlib, _, _typeEvalConfig =
     db_ops () |> stdExtensions (StringTypeClass<_>.Console())
 
   let listTypeId = stdlib.List.TypeName |> fst
@@ -360,8 +360,7 @@ in let t:T = { A=10; B=true; }
 in t
     """
 
-  let typeCheckResult =
-    Expr.TypeCheckString (context, _db_query_sym, _make_db_query_type) program
+  let typeCheckResult = Expr.TypeCheckString (context, typeEvalConfig) program
 
   match typeCheckResult with
   | Left(_expr, typeValue, finalState) ->
@@ -402,7 +401,7 @@ in let l:L = List::Nil [int32] ()
 in (r, u, t, s, l)
     """
 
-  match Expr.TypeCheckString (context, _db_query_sym, _make_db_query_type) program with
+  match Expr.TypeCheckString (context, typeEvalConfig) program with
   | Left(_expr, _typeValue, finalState) ->
     let config = configWithRandom 9 (Some ListConfig.Default)
     let ctx = context.TypeCheckContext, finalState
@@ -499,7 +498,7 @@ in let o:Outer = { Inner={ X=1; Y=true; }; Tuple=(1, "a"); Choice=1Of2 1; Union=
 in o
     """
 
-  match Expr.TypeCheckString (context, _db_query_sym, _make_db_query_type) program with
+  match Expr.TypeCheckString (context, typeEvalConfig) program with
   | Left(_expr, _typeValue, finalState) ->
     let config = configWithRandom 10 None
     let ctx = context.TypeCheckContext, finalState
@@ -570,7 +569,7 @@ in let inner:Inner = { Rec=r; Tup=t; Choice=s; Union=u; List=l; }
 in inner
     """
 
-  match Expr.TypeCheckString (context, _db_query_sym, _make_db_query_type) program with
+  match Expr.TypeCheckString (context, typeEvalConfig) program with
   | Left(_expr, typeValue, finalState) ->
     let config = configWithRandom 42 (Some ListConfig.Default)
     let ctx = context.TypeCheckContext, finalState

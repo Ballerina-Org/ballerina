@@ -18,13 +18,12 @@ module Utils =
 
   let contextFactory (dbFileConfig: DbFileConfig) =
     stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()) (fileDbOps dbFileConfig)
-    |> fun (_, languageContext, querySymbols, queryTypeFactory) -> languageContext, querySymbols, queryTypeFactory
+    |> fun (_, languageContext, typeEvalConfig) -> languageContext, typeEvalConfig
 
   let buildSchemaDefinition
     (languageContext:
       LanguageContext<FileDBRuntimeContext, FileDbValueExtension, ValueExtDTO, FileDbDeltaExtension, DeltaExtDTO>)
-    dbQuerySymbols
-    queryTypeFactory
+    typeEvalConfig
     (addPermissionHookScope:
       Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>
         -> Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>)
@@ -58,7 +57,7 @@ module Utils =
       let project: ProjectBuildConfiguration = { Files = files }
 
       let! NonEmptyList(expr, exprs), _, typeCheckContext, typeCheckState =
-        ProjectBuildConfiguration.BuildCached dbQuerySymbols queryTypeFactory build_cache project
+        ProjectBuildConfiguration.BuildCached typeEvalConfig build_cache project
 
       let runtimeContext: FileDBRuntimeContext =
         { TenantId = tenantId

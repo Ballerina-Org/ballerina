@@ -69,14 +69,14 @@ module Program =
         if log && Directory.Exists logDirectory |> not then
           Directory.CreateDirectory logDirectory |> ignore
 
-        let extensions, languageContext, _db_query_sym, _make_db_query_type =
+        let extensions, languageContext, typeEvalConfig =
           db_ops () |> stdExtensions (StringTypeClass<_>.Console())
 
         let cache =
           memcache (languageContext.TypeCheckContext, languageContext.TypeCheckState)
 
 
-        match compileForms compilerInput cache languageContext extensions _db_query_sym _make_db_query_type with
+        match compileForms compilerInput cache languageContext extensions typeEvalConfig with
         | Left result ->
           let stringifiedResult = sprintf "%A" result
           Console.WriteLine stringifiedResult

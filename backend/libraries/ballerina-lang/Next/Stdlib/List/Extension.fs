@@ -46,7 +46,9 @@ module Extension =
         Unit,
         ListValues<'ext>,
         ListOperations<'ext>
-       >
+       > *
+      TypeSymbol *
+      (TypeValue<'ext> -> TypeValue<'ext>)
     =
     let listId = Identifier.LocalScope "List"
     let listSymbolId = listId |> TypeSymbol.Create
@@ -55,6 +57,14 @@ module Extension =
 
     let listOf (argName: string) =
       TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope "List"), TypeExpr.Lookup(Identifier.LocalScope argName))
+
+    let make_listType (inner: TypeValue<'ext>) =
+      TypeValue.Imported
+        { Id = listId
+          Sym = listSymbolId
+          Parameters = []
+          Arguments = [ inner ] }
+
     // TypeValue.CreateImported(
     //   { Id = listId
     //     Sym = listSymbolId
@@ -829,31 +839,34 @@ module Extension =
               |> reader.Throw
         }
 
-    { TypeName = listId, listSymbolId
-      TypeVars = [ (aVar, aKind) ]
-      Cases = Map.empty
-      Operations =
-        [ lengthOperation
-          foldOperation
-          filterOperation
-          mapOperation
-          orderByOperation
-          appendOperation
-          consOperation
-          nilOperation
-          decomposeOperation ]
-        |> Map.ofList
-      // Deconstruct =
-      //   fun (v: ListValues<'ext>) ->
-      //     match v with
-      //     | ListValues.List(v :: vs) ->
-      //       Value<TypeValue<'ext>, 'ext>.Tuple([ v; (vs |> ListValues.List |> valueLens.Set, None) |> Ext ])
-      //     | _ -> Value<TypeValue<'ext>, 'ext>.Primitive PrimitiveValue.Unit
-      Serialization =
-        Some
-          { SerializationContext =
-              { ToDTO = listToDTO
-                FromDTO = DTOToList }
-            ToDTO = listDeltaToDTO
-            FromDTO = listDeltaFromDTO }
-      ExtTypeChecker = isListInstanceOf |> Some }
+    let listExtension =
+      { TypeName = listId, listSymbolId
+        TypeVars = [ (aVar, aKind) ]
+        Cases = Map.empty
+        Operations =
+          [ lengthOperation
+            foldOperation
+            filterOperation
+            mapOperation
+            orderByOperation
+            appendOperation
+            consOperation
+            nilOperation
+            decomposeOperation ]
+          |> Map.ofList
+        // Deconstruct =
+        //   fun (v: ListValues<'ext>) ->
+        //     match v with
+        //     | ListValues.List(v :: vs) ->
+        //       Value<TypeValue<'ext>, 'ext>.Tuple([ v; (vs |> ListValues.List |> valueLens.Set, None) |> Ext ])
+        //     | _ -> Value<TypeValue<'ext>, 'ext>.Primitive PrimitiveValue.Unit
+        Serialization =
+          Some
+            { SerializationContext =
+                { ToDTO = listToDTO
+                  FromDTO = DTOToList }
+              ToDTO = listDeltaToDTO
+              FromDTO = listDeltaFromDTO }
+        ExtTypeChecker = isListInstanceOf |> Some }
+
+    listExtension, listSymbolId, make_listType

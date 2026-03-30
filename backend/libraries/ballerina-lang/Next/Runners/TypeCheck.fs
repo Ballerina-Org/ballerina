@@ -22,8 +22,7 @@ module TypeCheck =
         { TypeCheckContext = typeCheckContext
           TypeCheckState = typeCheckState }:
           LanguageContext<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>,
-        _db_query_sym,
-        _make_db_query_type
+        config: TypeEvalConfig<'valueExt>
       )
       (program: string)
       : Sum<
@@ -40,7 +39,7 @@ module TypeCheck =
 
       sum {
         let! typeCheckedExprs, programType, _, typeCheckState =
-          ProjectBuildConfiguration.BuildCached _db_query_sym _make_db_query_type cache project
+          ProjectBuildConfiguration.BuildCached config cache project
 
         match typeCheckedExprs with
         | NonEmptyList(expr, []) -> expr, programType, typeCheckState

@@ -49,7 +49,7 @@ let private runtimeListOps =
 
 let private runtimeMapOps = { MapToList = resolveFqId [ "Map" ] "mapToList" }
 
-let private runtimeOps, runtimeContext, _db_query_sym, _make_db_query_type =
+let private runtimeOps, runtimeContext, typeEvalConfig =
   db_ops ()
   |> stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
 

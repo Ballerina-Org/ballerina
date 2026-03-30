@@ -49,14 +49,13 @@ module Factory =
            >
          >)
     =
-    let languageContext, querySymbols, queryTypeFactory = contextFactory dbFileConfig
+    let languageContext, typeEvalConfig = contextFactory dbFileConfig
 
     let descriptorFetcher =
       descriptorFetcherFactory
         languageContext
         schemaFileConfig
-        querySymbols
-        queryTypeFactory
+        typeEvalConfig
         addPermissionHookScope
         addBackgroundHookScope
 
@@ -64,7 +63,7 @@ module Factory =
       LanguageContextFactory =
         fun () ->
           contextFactory dbFileConfig
-          |> (fun (languageContext, _, _) -> languageContext)
+          |> (fun (languageContext, _) -> languageContext)
           |> sum.Return
       PermissionHookInjector = hookInjector }
 

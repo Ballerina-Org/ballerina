@@ -86,7 +86,7 @@ let roundtrip
     return deltaJson, deserializedDelta
   }
 
-let _, context, _db_query_sym, _make_db_query_type =
+let _, context, typeEvalConfig =
   db_ops () |> stdExtensions (StringTypeClass<_>.Console())
 
 [<EntryPoint>]

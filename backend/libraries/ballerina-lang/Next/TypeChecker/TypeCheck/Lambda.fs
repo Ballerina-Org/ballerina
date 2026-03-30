@@ -29,7 +29,7 @@ module Lambda =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckLambda<'valueExt when 'valueExt: comparison>
-      (query_type_symbol, mk_query_type)
+      (config: TypeEvalConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprLambda<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
@@ -52,7 +52,7 @@ module Lambda =
             t
             |> Option.map (fun t ->
               t
-              |> TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr None loc0
+              |> TypeExpr.Eval config typeCheckExpr None loc0
               |> Expr<'T, 'Id, 'valueExt>.liftTypeEval)
             |> state.RunOption
 
@@ -60,7 +60,7 @@ module Lambda =
             bt
             |> Option.map (fun bt ->
               bt
-              |> TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr None loc0
+              |> TypeExpr.Eval config typeCheckExpr None loc0
               |> Expr<'T, 'Id, 'valueExt>.liftTypeEval)
             |> state.RunOption
 
@@ -109,12 +109,12 @@ module Lambda =
           let! t_x =
             var_type
             |> fst
-            |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
           let! t_body =
             t_body
-            |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
           // do!
@@ -124,7 +124,7 @@ module Lambda =
 
           let! t_res =
             TypeValue.CreateArrow(t_x, t_body)
-            |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
           return Expr.Lambda(x, Some t_x, body, Some t_body, loc0, ctx.Scope), t_res, Kind.Star, ctx

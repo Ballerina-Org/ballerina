@@ -691,6 +691,7 @@ module Model =
     | PrimitiveType of PrimitiveType * IsNullable: bool
     | Tuple of List<TypeQueryRow<'valueExt>>
     | Record of Map<LocalIdentifier, TypeQueryRow<'valueExt>>
+    | Array of TypeQueryRow<'valueExt>
 
     override self.ToString() =
       match self with
@@ -707,6 +708,7 @@ module Model =
           fields |> Map.toList |> List.map (fun (name, typ) -> $"{name}: {typ}")
 
         $"{{{String.Join(comma, fieldStrs)}}}"
+      | Array t -> $"Array[{t}]"
 
   and ExprTypeLetBindingName =
     | ExprTypeLetBindingName of string

@@ -16,6 +16,7 @@ module FormCompiler =
   open Ballerina.DSL.Next.Extensions
   open Ballerina.Collections.NonEmptyList
   open Ballerina.Collections.Map
+  open Ballerina.DSL.Next.Types.TypeChecker.Model
 
   type ProgramInput =
     { Preludes: NonEmptyList<FileBuildConfiguration>
@@ -65,8 +66,7 @@ module FormCompiler =
     (cache: ProjectCache<'valueExt>)
     (languageContext: LanguageContext<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
-    (query_type_symbol: TypeSymbol)
-    (mk_query_type: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>)
+    (config: TypeEvalConfig<'valueExt>)
     =
     sum {
       let formsInitialLocation = Location.Initial input.Forms.Source
@@ -74,7 +74,7 @@ module FormCompiler =
       let! types, _, _, typeCheckState =
         let project = { Files = input.Types.Preludes }
 
-        ProjectBuildConfiguration.BuildCached query_type_symbol mk_query_type cache project
+        ProjectBuildConfiguration.BuildCached config cache project
         |> Sum.mapRight _.ToString()
 
       let! ParserResult(formTokens, _) =

@@ -148,14 +148,14 @@ entrypoint view aStringRecord : StringRecord {
         { Program = formsString
           Source = "test.forms" } }
 
-  let extensions, languageContext, _db_query_sym, _make_db_query_type =
+  let extensions, languageContext, typeEvalConfig =
     db_ops ()
     |> stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
 
   let cache =
     memcache (languageContext.TypeCheckContext, languageContext.TypeCheckState)
 
-  match FormCompiler.compileForms compilerInput cache languageContext extensions _db_query_sym _make_db_query_type with
+  match FormCompiler.compileForms compilerInput cache languageContext extensions typeEvalConfig with
   | Right errors -> Assert.Fail($"Compilation failed: {errors}")
   | Left formDefinitions ->
     let result = FormDefinitions.toV1Json formDefinitions
@@ -631,14 +631,14 @@ entrypoint view letTestRecord : LetTestRecord {
         { Program = formsString
           Source = "test.forms" } }
 
-  let extensions, languageContext, _db_query_sym, _make_db_query_type =
+  let extensions, languageContext, typeEvalConfig =
     db_ops ()
     |> stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
 
   let cache =
     memcache (languageContext.TypeCheckContext, languageContext.TypeCheckState)
 
-  match FormCompiler.compileForms compilerInput cache languageContext extensions _db_query_sym _make_db_query_type with
+  match FormCompiler.compileForms compilerInput cache languageContext extensions typeEvalConfig with
   | Right errors -> Assert.Fail($"Compilation failed: {errors}")
   | Left formDefinitions ->
     let result = FormDefinitions.toV1Json formDefinitions

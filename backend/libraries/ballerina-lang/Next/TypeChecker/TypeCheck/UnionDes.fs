@@ -31,7 +31,7 @@ module UnionDes =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckUnionDes<'valueExt when 'valueExt: comparison>
-      (query_type_symbol, mk_query_type)
+      (config: TypeEvalConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprUnionDes<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
@@ -183,11 +183,7 @@ module UnionDes =
                         do! TypeValue.Unify(loc0, body_t, result_t) |> Expr.liftUnification
 
                         let! var_t =
-                          TypeValue.Instantiate
-                            ()
-                            (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr)
-                            loc0
-                            cons_t
+                          TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0 cons_t
                           |> Expr.liftInstantiation
 
                         return (var, body), (k_s, var_t)
@@ -220,7 +216,7 @@ module UnionDes =
                       return! (fun () -> $"Error: incomplete pattern matching") |> error |> state.Throw
 
                   let! result_t =
-                    TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0 result_t
+                    TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0 result_t
                     |> Expr.liftInstantiation
 
                   // do!
@@ -232,7 +228,7 @@ module UnionDes =
 
                   let! arrowValue =
                     TypeValue.CreateArrow(unionValue, result_t)
-                    |> TypeValue.Instantiate () (TypeExpr.Eval query_type_symbol mk_query_type typeCheckExpr) loc0
+                    |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
                     |> Expr.liftInstantiation
 
                   let handlerExprs =
