@@ -44,7 +44,7 @@ import {
   initializeStreamRunner,
   oneTableDebouncerRunner,
   oneTableLoaderRunner,
-  setupLazyOneRefetchRunner,
+  setupOnAfterChangeRunner,
 } from "./coroutines/runner";
 import { DispatchDelta } from "../../deltas/dispatch-delta/state";
 import { BaseFlags } from "../../deltas/delta-to-dto/state";
@@ -104,7 +104,7 @@ export const OneAbstractRenderer = <
     Flags,
     ExtraContext
   >();
-  const typedSetupLazyOneRefetchRunner = setupLazyOneRefetchRunner<
+  const typedSetupLazyOneRefetchRunner = setupOnAfterChangeRunner<
     CustomPresentationContext,
     Flags,
     ExtraContext
@@ -371,7 +371,7 @@ export const OneAbstractRenderer = <
       return (
         <ErrorRenderer
           message={`${domNodeId}: Option of record or unit expected but got ${JSON.stringify(
-            props.context.value,
+            value,
           )}`}
         />
       );
@@ -506,7 +506,7 @@ export const OneAbstractRenderer = <
 
                 const promise =
                   props.foreignMutations.select &&
-                  PredicateValue.Operations.IsUnit(props.context.value)
+                  PredicateValue.Operations.IsUnit(value)
                     ? (props.foreignMutations.select(updater, delta),
                       Promise.resolve({ comparand: "" }))
                     : props.foreignMutations.onChange(
@@ -521,8 +521,9 @@ export const OneAbstractRenderer = <
                       }),
                     )
                     .then(
-                      OneAbstractRendererState.Updaters.Core.lastOnChangePromise(
-                        replaceWith(Option.Default.some(promise)),
+                      OneAbstractRendererState.Updaters.Template.registerOnChangeRequest(
+                        Option.Default.some(updater),
+                        promise,
                       ),
                     ),
                 );
@@ -543,7 +544,7 @@ export const OneAbstractRenderer = <
 
                 const promise =
                   props.foreignMutations.select &&
-                  PredicateValue.Operations.IsUnit(props.context.value)
+                  PredicateValue.Operations.IsUnit(value)
                     ? (props.foreignMutations.select(updater, delta),
                       Promise.resolve({ comparand: "" }))
                     : props.foreignMutations.onChange(

@@ -18,13 +18,13 @@ import {
   Co,
   DebouncerCo,
   InitializeCo,
-  SetupLazyOneRefetchCo,
+  SetupOnAfterChangeCo,
 } from "./builder";
 import { initializeOne } from "./_initializeOne";
 import { initializeStream } from "./_initializeStream";
 import { debouncer } from "./_debouncer";
 import { BaseFlags } from "../../../deltas/delta-to-dto/state";
-import { setupLazyOneRefetch } from "./_setupLazyOneRefetch";
+import { setupOnAfterChange } from "./_setupOnAfterChange";
 
 export const initializeOneRunner = <
   CustomPresentationContext = Unit,
@@ -98,17 +98,17 @@ export const oneTableLoaderRunner = <
     },
   );
 
-export const setupLazyOneRefetchRunner = <
+export const setupOnAfterChangeRunner = <
   CustomPresentationContext = Unit,
   Flags = BaseFlags,
   ExtraContext = Unit,
 >() =>
-  SetupLazyOneRefetchCo<CustomPresentationContext, ExtraContext>().Template<
+  SetupOnAfterChangeCo<CustomPresentationContext, ExtraContext>().Template<
     OneAbstractRendererForeignMutationsExpected<Flags>
-  >(setupLazyOneRefetch<CustomPresentationContext, ExtraContext>(), {
+  >(setupOnAfterChange<CustomPresentationContext, ExtraContext>(), {
     interval: 15,
     runFilter: (props) =>
-      OneAbstractRendererState.Operations.ShouldSetupLazyOneRefetch(
+      OneAbstractRendererState.Operations.ShouldSetupOnAfterChange(
         props.context,
       ),
   });

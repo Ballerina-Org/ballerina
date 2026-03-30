@@ -86,6 +86,8 @@ export const initializeOne = <
               replaceWith<InitializationStatus>({
                 kind: "initialized",
               }),
+            ).then(
+              OneAbstractRendererState.Updaters.Template.clearLastOnChangeRequest()
             ),
           ),
         );

@@ -50,7 +50,7 @@ export const DebouncedCo = CoTypedFactory<
   Value<[Map<string, string>, boolean]>
 >();
 
-export const SetupLazyOneRefetchCo = <
+export const SetupOnAfterChangeCo = <
   CustomPresentationContext = Unit,
   ExtraContext = Unit,
 >() =>

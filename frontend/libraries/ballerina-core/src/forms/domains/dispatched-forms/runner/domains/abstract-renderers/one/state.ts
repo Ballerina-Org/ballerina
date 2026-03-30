@@ -234,7 +234,10 @@ export const OneAbstractRendererState = {
           ctx.getApi != undefined
         );
       },
-    ShouldSetupLazyOneRefetch: <
+    // this is the run condition for the on after change coroutine
+    // that will take care of reinitializing the one if it is lazy
+    // or to reset the refetch handlers
+    ShouldSetupOnAfterChange: <
       CustomPresentationContext = Unit,
       ExtraContext = Unit,
     >(
@@ -244,7 +247,7 @@ export const OneAbstractRendererState = {
       > &
         OneAbstractRendererState,
     ): boolean => {
-      return ctx.lastOnChangePromise.kind == "r" && ctx.getApi != undefined;
+      return ctx.lastOnChangePromise.kind == "r";
     },
   },
 };
