@@ -7,6 +7,13 @@
 // 1) schema composition (include/reuse),
 // 2) access rules (who can read what),
 // 3) advanced query patterns (joins, count, exists, correlated subqueries).
+//
+// When to prefer array subqueries over flat joins:
+// - Prefer flat joins when each joined row should be shown independently
+//   (tabular/report-style outputs).
+// - Prefer array subqueries when you want one parent row with nested children
+//   (API/detail-view shape).
+// - Array subqueries also preserve stable shape for missing children: [], which usually simplifies consumer code.
 
 // Core business entities.
 type User = { Username: string; IsAdmin: bool };
