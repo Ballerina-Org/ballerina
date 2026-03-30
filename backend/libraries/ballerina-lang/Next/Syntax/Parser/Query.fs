@@ -762,10 +762,10 @@ module Query =
     : Parser<ExprQuery<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
     parser {
       do! queryKeyword
-      let query = query'
 
       return!
         parser {
+          let query = query'
           do! openCurlyBracketOperator
 
           let! iterators_with_datasources = query_iterators_and_datasources expr (query expr)
@@ -801,14 +801,7 @@ module Query =
     parser {
       let! loc = parser.Location
 
-      return!
-        parser {
-          let! q = query' expr ()
-
-          let res = Expr.Query(q, loc, TypeCheckScope.Empty)
-
-
-          return res
-        }
-        |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+      let! q = query' expr ()
+      let res = Expr.Query(q, loc, TypeCheckScope.Empty)
+      return res
     }
