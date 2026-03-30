@@ -174,6 +174,48 @@ let main = fun (schema: BlogSchema) ->
     orderby post.Value.Title asc
   };
 
+  // Query 9: posts with comment texts as an in-row array result.
+  // Demonstrates array subquery materialization.
+  // What is this useful for:
+  // - We keep one output row per post while still traversing a join-like path
+  //   (Post -> PostComments -> Comment) inside the nested query.
+  // - This avoids duplicating the outer post row for each comment, which is
+  //   often easier to consume in APIs/UI payloads.
+  // - For posts with no matching comments, this returns [] (not null), so
+  //   downstream code can iterate safely without null checks.
+  let posts_with_comment_texts = query{
+    from post in schema.Entities.Posts
+    select
+      post.Value.Title,
+      array query{
+        from rel, comment in schema.Relations.PostComments, schema.Entities.Comments
+        join on (rel.ToId, comment.Id)
+        where rel.FromId == post.Id
+        select comment.Value.Text
+      }
+  };
+
+  // Query 10: posts with comment tuples (id + text) as an in-row array result.
+  // Demonstrates non-scalar array elements.
+  // What is this useful for:
+  // - The inner query uses a relation join to return richer child shapes,
+  //   not just scalar values.
+  // - Returning (CommentId, Text) pairs is a common "children projection"
+  //   pattern for detail pages and aggregate read models.
+  // - As above, posts with no related comments still produce an empty list,
+  //   preserving stable output shape for all rows.
+  let posts_with_comment_pairs = query{
+    from post in schema.Entities.Posts
+    select
+      post.Value.Title,
+      array query{
+        from rel, comment in schema.Relations.PostComments, schema.Entities.Comments
+        join on (rel.ToId, comment.Id)
+        where rel.FromId == post.Id
+        select comment.Id, comment.Value.Text
+      }
+  };
+
   // Execute queries.
   let run_all_posts = DB::runQuery all_posts (1Of2 ());
   let run_all_users = DB::runQuery all_users (1Of2 ());
@@ -183,6 +225,8 @@ let main = fun (schema: BlogSchema) ->
   let run_posts_with_comments = DB::runQuery posts_with_comments (1Of2 ());
   let run_users_with_posts = DB::runQuery users_with_posts (1Of2 ());
   let run_posts_ordered = DB::runQuery posts_ordered (1Of2 ());
+  let run_posts_with_comment_texts = DB::runQuery posts_with_comment_texts (1Of2 ());
+  let run_posts_with_comment_pairs = DB::runQuery posts_with_comment_pairs (1Of2 ());
 
   // Return real query results plus compact counters.
   (
@@ -191,7 +235,7 @@ let main = fun (schema: BlogSchema) ->
     ("comments_created", 1),
     ("relations_linked", 3),
     ("permission_rules_defined", 1),
-    ("queries_defined", 8),
+    ("queries_defined", 10),
     ("all_posts", run_all_posts),
     ("all_users", run_all_users),
     ("posts_with_authors", run_posts_with_authors),
@@ -200,11 +244,15 @@ let main = fun (schema: BlogSchema) ->
     ("posts_with_comments", run_posts_with_comments),
     ("users_with_posts", run_users_with_posts),
     ("posts_ordered", run_posts_ordered),
+    ("posts_with_comment_texts", run_posts_with_comment_texts),
+    ("posts_with_comment_pairs", run_posts_with_comment_pairs),
     ("all_posts_count", List::length run_all_posts),
     ("all_users_count", List::length run_all_users),
     ("posts_with_authors_count", List::length run_posts_with_authors),
     ("posts_with_comments_count", List::length run_posts_with_comments),
-    ("users_with_posts_count", List::length run_users_with_posts)
+    ("users_with_posts_count", List::length run_users_with_posts),
+    ("posts_with_comment_texts_count", List::length run_posts_with_comment_texts),
+    ("posts_with_comment_pairs_count", List::length run_posts_with_comment_pairs)
   );
 
 DB::run [BlogSchema] main
