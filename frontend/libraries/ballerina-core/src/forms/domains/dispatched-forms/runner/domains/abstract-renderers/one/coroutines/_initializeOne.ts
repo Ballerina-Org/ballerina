@@ -82,13 +82,15 @@ export const initializeOne = <
         )
         .then(() =>
           InitializeCo<CustomPresentationContext, ExtraContext>().SetState(
-            OneAbstractRendererState.Updaters.Core.customFormState.children.initializationStatus(
-              replaceWith<InitializationStatus>({
-                kind: "initialized",
-              }),
-            ).then(
-              OneAbstractRendererState.Updaters.Template.clearLastOnChangeRequest()
-            ),
+            OneAbstractRendererState.Updaters.Core.customFormState.children
+              .initializationStatus(
+                replaceWith<InitializationStatus>({
+                  kind: "initialized",
+                }),
+              )
+              .then(
+                OneAbstractRendererState.Updaters.Template.clearLastOnChangeRequest(),
+              ),
           ),
         );
     });

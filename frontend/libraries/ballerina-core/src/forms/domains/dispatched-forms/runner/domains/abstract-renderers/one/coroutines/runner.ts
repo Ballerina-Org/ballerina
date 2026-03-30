@@ -14,12 +14,7 @@ import {
   Sum,
 } from "../../../../../../../../../main";
 import { Map } from "immutable";
-import {
-  Co,
-  DebouncerCo,
-  InitializeCo,
-  SetupOnAfterChangeCo,
-} from "./builder";
+import { Co, DebouncerCo, InitializeCo, SetupOnAfterChangeCo } from "./builder";
 import { initializeOne } from "./_initializeOne";
 import { initializeStream } from "./_initializeStream";
 import { debouncer } from "./_debouncer";
