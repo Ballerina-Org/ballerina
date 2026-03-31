@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Models\Schema.fs" />
+    <Compile Include="Models\CompilationCache.fs" />
     <Compile Include="Utils.fs" />
     <Compile Include="API\Publication.fs" />
     <Compile Include="MemoryDBFactory.fs" />

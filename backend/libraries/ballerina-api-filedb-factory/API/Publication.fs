@@ -83,6 +83,8 @@ module API =
           operations = []
           backgroundJobs = Map.empty }
 
+      do compilationCache.Remove(tenantId, schemaName, payload.IsDraft)
+
       match!
         dbFileManager.TryReadContent()
         |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
@@ -109,6 +111,7 @@ module API =
           addBackgroundHookScope
           tenantId
           schemaName
+          payload.IsDraft
           schemaDefinition
 
       match evalResult with

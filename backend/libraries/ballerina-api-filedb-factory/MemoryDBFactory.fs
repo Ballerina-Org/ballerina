@@ -28,7 +28,7 @@ module MemoryDBAPIFactory =
   open Utils
   open Ballerina.Collections.Map
   open Microsoft.AspNetCore.Http
-
+  open CacheCompilation
 
   let contextFactory dbFileConfig =
     stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()) (fileDbOps dbFileConfig)
@@ -79,14 +79,24 @@ module MemoryDBAPIFactory =
       let! schemaVersion = getSchemaVersion tenantId schemaName draft schemaFileConfig
 
       let! evalResult, typeCheckContext, typeCheckState, evalContext =
-        buildSchemaDefinition
-          languageContext
-          typeEvalConfig
-          addPermissionHookScope
-          addBackgroundHookScope
-          tenantId
-          schemaName
-          schemaVersion.Definition
+        match compilationCache.TryFind(tenantId, schemaName, draft) with
+        | None ->
+          buildSchemaDefinition
+            languageContext
+            typeEvalConfig
+            addPermissionHookScope
+            addBackgroundHookScope
+            tenantId
+            schemaName
+            draft
+            schemaVersion.Definition
+        | Some cachedCompilationContext ->
+          sum.Return(
+            cachedCompilationContext.EvalResult,
+            cachedCompilationContext.TypeCheckContext,
+            cachedCompilationContext.TypeCheckState,
+            cachedCompilationContext.EvalContext
+          )
 
       match evalResult with
       | Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.DBIO dbio))), _) ->

@@ -15,6 +15,11 @@ module Utils =
   open Ballerina.Errors
   open Ballerina.LocalizedErrors
   open Ballerina.DSL.Next.Types.TypeChecker
+  open CacheCompilation
+
+  let internal compilationCache: CompilationCache<FileDBRuntimeContext, FileDbValueExtension> =
+    CompilationCache<FileDBRuntimeContext, FileDbValueExtension>.Empty
+
 
   let contextFactory (dbFileConfig: DbFileConfig) =
     stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()) (fileDbOps dbFileConfig)
@@ -32,6 +37,7 @@ module Utils =
         -> Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>)
     (tenantId: Guid)
     (schemaName: string)
+    (isDraft: bool)
     (schemaDefinitions: List<SchemaFileDefinition>)
     =
     sum {
@@ -69,6 +75,13 @@ module Utils =
       let! evalResult =
         Expr.Eval(NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(expr, exprs)))
         |> Reader.Run evalContext
+
+      compilationCache.Add
+        (tenantId, schemaName, isDraft)
+        { EvalResult = evalResult
+          TypeCheckContext = typeCheckContext
+          TypeCheckState = typeCheckState
+          EvalContext = evalContext }
 
       return evalResult, typeCheckContext, typeCheckState, evalContext
     }

@@ -68,6 +68,8 @@ module Factory =
       PermissionHookInjector = hookInjector }
 
   let createAndRunAPI
+    (builderConfiguration: WebApplicationBuilder -> unit)
+    (appConfiguration: WebApplication -> unit)
     (addPermissionHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>)
     (addBackgroundHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>)
     (permissionsHookInjector:
@@ -244,6 +246,8 @@ module Factory =
               schemaStream
             ))
 
+          do builderConfiguration builder
+
           let app = builder.Build()
 
           app.UseHttpsRedirection() |> ignore
@@ -258,6 +262,8 @@ module Factory =
               factory,
               schemaStream
             )
+
+          do appConfiguration app
 
           return app
         }
