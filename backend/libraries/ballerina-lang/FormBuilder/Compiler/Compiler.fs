@@ -72,7 +72,7 @@ module FormCompiler =
       let formsInitialLocation = Location.Initial input.Forms.Source
 
       let! types, _, _, typeCheckState =
-        let project = { Files = input.Types.Preludes }
+        let project: ProjectBuildConfiguration = { Files = input.Types.Preludes }
 
         ProjectBuildConfiguration.BuildCached config cache project
         |> Sum.mapRight _.ToString()
