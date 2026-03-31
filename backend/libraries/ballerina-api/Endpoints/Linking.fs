@@ -148,7 +148,7 @@ module Linking =
     |> ignore
 
     app.MapPost(
-      "/crud/unlink",
+      "/{tenantId}/{schemaName}/unlink",
       Func<HttpContext, 'tenantId, 'schemaName, bool, LinkPayload, IResult>
         (fun httpContext tenantId schemaName draft payload ->
           let relationName, fromId, toId = payload.RelationName, payload.FromId, payload.ToId

@@ -9,6 +9,8 @@ let main args =
   let domain_name = "DOMAIN_NAME"
 
   createAndRunAPI
+    (fun _ -> ())
+    (fun _ -> ())
     (Map.add
       (ResolvedIdentifier.Create(domain_name, "IsAuthorized"))
       (TypeValue.CreatePrimitive PrimitiveType.Bool, Kind.Star))
