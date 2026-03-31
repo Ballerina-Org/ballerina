@@ -152,8 +152,12 @@ export const DispatchTupleAbstractRenderer = <
                 elementUpdater.kind == "l"
                   ? Option.Default.none()
                   : Option.Default.some(
-                      Updater((tuple) =>
-                        tuple.values.has(itemIndex)
+                      Updater((tuple) => {
+                        if (tuple.values == undefined) {
+                          return tuple;
+                        }
+
+                        return tuple.values.has(itemIndex)
                           ? PredicateValue.Default.tuple(
                               tuple.values.update(
                                 itemIndex,
@@ -161,8 +165,8 @@ export const DispatchTupleAbstractRenderer = <
                                 elementUpdater.value,
                               ),
                             )
-                          : tuple,
-                      ),
+                          : tuple;
+                      }),
                     ),
                 delta,
               );
