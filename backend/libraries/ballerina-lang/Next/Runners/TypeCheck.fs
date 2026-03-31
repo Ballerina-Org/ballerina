@@ -35,7 +35,7 @@ module TypeCheck =
       let files =
         NonEmptyList.OfList(FileBuildConfiguration.FromFile("input.bl", program), [])
 
-      let project = { Files = files }
+      let project: ProjectBuildConfiguration = { Files = files }
 
       sum {
         let! typeCheckedExprs, programType, _, typeCheckState =

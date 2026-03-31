@@ -19,18 +19,7 @@ type private ValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
 let private fileFromNameAndContent (name: string) (content: string) : FileBuildConfiguration =
   { FileName = { Path = name }
     Content = fun () -> content
-    Checksum = Checksum.Compute content
-    RequireUnitTermination = true }
-
-let private fileFromNameAndContentWithTermination
-  (name: string)
-  (content: string)
-  (requireUnitTermination: bool)
-  : FileBuildConfiguration =
-  { FileName = { Path = name }
-    Content = fun () -> content
-    Checksum = Checksum.Compute content
-    RequireUnitTermination = requireUnitTermination }
+    Checksum = Checksum.Compute content }
 
 let private buildAndEvalFromConfiguredFiles
   (files: NonEmptyList<FileBuildConfiguration>)
@@ -160,28 +149,6 @@ x * 2
   | Right e -> Assert.That(e, Does.Contain("x"), "Error should mention missing x variable")
 
 [<Test>]
-let ``Non-last project files must terminate with constant unit`` () =
-  let file1 =
-    "file1.bl",
-    """
-1
-    """
-
-  let file2 =
-    "file2.bl",
-    """
-2
-    """
-
-  let result = buildAndEval (NonEmptyList.OfList(file1, [ file2 ]))
-
-  match result with
-  | Left _ -> Assert.Fail "Expected build to fail because non-last file is not terminated by constant unit"
-  | Right e ->
-    Assert.That(e, Does.Contain("file1.bl"), "Error should point to the offending file")
-    Assert.That(e, Does.Contain("terminated by constant unit"), "Error should mention constant unit termination")
-
-[<Test>]
 let ``Last project file can return non-unit`` () =
   let file1 =
     "file1.bl",
@@ -208,17 +175,4 @@ let ``Last project file can return non-unit`` () =
         Assert.Pass "Last file correctly returns a non-unit value"
       | _ -> Assert.Fail $"Expected Int32 type, got {typeValue.AsFSharpString}"
     | _ -> Assert.Fail $"Expected 2, got {value}"
-  | Right e -> Assert.Fail e
-
-[<Test>]
-let ``Non-last project file allows non-unit when RequireUnitTermination is false`` () =
-  let file1 = fileFromNameAndContentWithTermination "file1.bl" "1" false
-  let file2 = fileFromNameAndContentWithTermination "file2.bl" "2" true
-
-  let result = buildAndEvalFromConfiguredFiles (NonEmptyList.OfList(file1, [ file2 ]))
-
-  match result with
-  | Left(_, _, exprCount) ->
-    Assert.That(exprCount, Is.EqualTo(2), "Should have 2 expressions")
-    Assert.Pass "Non-last file with disabled termination requirement should succeed"
   | Right e -> Assert.Fail e

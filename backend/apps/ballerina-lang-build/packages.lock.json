@@ -8,9 +8,22 @@
         "resolved": "10.0.102",
         "contentHash": "umz5pbtOvL/F9U5sibhREzZT2ewAs//nRTMwj8XcOOjMdOP828tipLpEhb2fZNijhiyikJ6Nr/dsMc/lj58W9w=="
       },
-      "FSharp.Data": {
+      "FSharp.SystemTextJson": {
         "type": "Direct",
-        "requested": "[6.6.0, )",
+        "requested": "[1.4.36, )",
+        "resolved": "1.4.36",
+        "contentHash": "1xLk0SBF1nedD74B77rcArjD2d+DeZwbNI7BVCAyKwIBERo1VoX8Mf4AtX0OV2L3ZeM/XS1b6BuhXCyoh0KBnw==",
+        "dependencies": {
+          "FSharp.Core": "4.7.0"
+        }
+      },
+      "FastBertTokenizer": {
+        "type": "Transitive",
+        "resolved": "1.0.28",
+        "contentHash": "7luZ+kHNzGesTIri8FfTEq6hLqPrMkd0Gq4KdFyytqDnqSueuQckxzqb7yYI6FOL9ucEwD7szMJAXDfcaywJ2A=="
+      },
+      "FSharp.Data": {
+        "type": "Transitive",
         "resolved": "6.6.0",
         "contentHash": "AC87/VZV1iGrnK1uG6QhX22HZARlFiCqdlckzPDgdE3+fzc0ZNRR3Y4ny5vbLvfDj2rjFoJdmRZy6kzI1C/sQQ==",
         "dependencies": {
@@ -22,71 +35,6 @@
           "FSharp.Data.Runtime.Utilities": "6.6.0",
           "FSharp.Data.WorldBank.Core": "6.6.0",
           "FSharp.Data.Xml.Core": "6.6.0"
-        }
-      },
-      "FSharp.SystemTextJson": {
-        "type": "Direct",
-        "requested": "[1.4.36, )",
-        "resolved": "1.4.36",
-        "contentHash": "1xLk0SBF1nedD74B77rcArjD2d+DeZwbNI7BVCAyKwIBERo1VoX8Mf4AtX0OV2L3ZeM/XS1b6BuhXCyoh0KBnw==",
-        "dependencies": {
-          "FSharp.Core": "4.7.0"
-        }
-      },
-      "System.CommandLine": {
-        "type": "Direct",
-        "requested": "[2.0.2, )",
-        "resolved": "2.0.2",
-        "contentHash": "zqn6I1IULEJaLEFKejeSFlZrf8HzIUU4qEjuYtEVRx5AsxKMLqLP+t0dQ4fk51A5CzT9Uv8wBLdMHSIYIrCKBw=="
-      },
-      "AWSSDK.BedrockRuntime": {
-        "type": "Transitive",
-        "resolved": "4.0.16",
-        "contentHash": "0+zAdAq7BDSEeKPubm5kyuyDq2HpEpDEkNbg2gypSlbQ2fW6hqmOqZwYnaDIzT0jtrg63aGnmvEYo6BmgR9z1g==",
-        "dependencies": {
-          "AWSSDK.Core": "[4.0.3.12, 5.0.0)"
-        }
-      },
-      "AWSSDK.Core": {
-        "type": "Transitive",
-        "resolved": "4.0.3.12",
-        "contentHash": "/FyE96xV2qJLgJN++ZW8M7udRf2NBLoku9AkEHLQqpH9uv0r0QQK2sw2pF3OvzKnuKsyp+Mx5wYwgFXPLnBb9g=="
-      },
-      "AWSSDK.SecurityToken": {
-        "type": "Transitive",
-        "resolved": "4.0.1.6",
-        "contentHash": "0Y4mgL8zsX26i463M3ab0txFMGTickVL+BVlplXgenF+nHn5UixDfTAgHBz9e7JdAlPspD5YEJO+60Rb7mt/5g==",
-        "dependencies": {
-          "AWSSDK.Core": "[4.0.0.17, 5.0.0)"
-        }
-      },
-      "AWSSDK.SSO": {
-        "type": "Transitive",
-        "resolved": "4.0.2.12",
-        "contentHash": "za62s+z6eZ5ygCD6AJd2fXIvNilM0i8hSx3o/SZPiOPxZvur2kWT58kgJAqC+hA2X5038B3494+LbTO9DlE/Jg==",
-        "dependencies": {
-          "AWSSDK.Core": "[4.0.3.10, 5.0.0)"
-        }
-      },
-      "AWSSDK.SSOOIDC": {
-        "type": "Transitive",
-        "resolved": "4.0.3.13",
-        "contentHash": "5D/ZPQHGIfpbgi+cm10pTpbPyhc+CZuTXVMRdG1n7PLtH+EQep91ZrI1OIPcfhy+daJ+FBBWgeLMlRYm7bwg6g==",
-        "dependencies": {
-          "AWSSDK.Core": "[4.0.3.10, 5.0.0)"
-        }
-      },
-      "FastBertTokenizer": {
-        "type": "Transitive",
-        "resolved": "1.0.28",
-        "contentHash": "7luZ+kHNzGesTIri8FfTEq6hLqPrMkd0Gq4KdFyytqDnqSueuQckxzqb7yYI6FOL9ucEwD7szMJAXDfcaywJ2A=="
-      },
-      "FParsec": {
-        "type": "Transitive",
-        "resolved": "1.1.1",
-        "contentHash": "Wdjf/gCNLEwd+0nUCDh9jAIIcKGwfhRramySTnTcVVgNC6i4Vp5aJklUJJfvFkEZMYNZEDGcI8pCa36/TmwmSg==",
-        "dependencies": {
-          "FSharp.Core": "4.3.4"
         }
       },
       "FSharp.Data.Csv.Core": {
@@ -375,22 +323,6 @@
           "PolyType": "1.0.0"
         }
       },
-      "Npgsql": {
-        "type": "Transitive",
-        "resolved": "10.0.1",
-        "contentHash": "XyUcxEfqlFomhNTG/ZdGlec+uSOQArKz0Mzz8jYKP/Jj9GM2YabU5CVZtp0yiC4f9hRp+tRZTnHMatJeJ3rwgw==",
-        "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "10.0.0"
-        }
-      },
-      "Pgvector": {
-        "type": "Transitive",
-        "resolved": "0.3.2",
-        "contentHash": "n7M5LuNejHUmtWky3zCbNO+tP1Gnjiuv9Qtu4LyvB1602dD8RiBxxCQp9jEjM0ZFDxAZF1oOWkNIkXw46KT00Q==",
-        "dependencies": {
-          "Npgsql": "8.0.5"
-        }
-      },
       "PolyType": {
         "type": "Transitive",
         "resolved": "1.0.0",
@@ -449,52 +381,6 @@
           "FSharp.Core": "[10.0.102, )",
           "ballerina-delta": "[1.0.0, )",
           "ballerina-lang-serialization": "[1.0.0, )"
-        }
-      },
-      "ballerina-forms": {
-        "type": "Project",
-        "dependencies": {
-          "FSharp.Core": "[10.0.102, )",
-          "FSharp.Data": "[6.6.0, )",
-          "FSharp.SystemTextJson": "[1.4.36, )",
-          "Microsoft.EntityFrameworkCore": "[10.0.2, )",
-          "ballerina-cat": "[1.0.0, )",
-          "ballerina-lang": "[1.0.0, )",
-          "ballerina-lang-stdlib": "[1.0.0, )",
-          "ballerina-lang-v1": "[1.0.0, )",
-          "ballerina-memorydb": "[1.0.0, )",
-          "codegen": "[1.0.0, )"
-        }
-      },
-      "ballerina-lang": {
-        "type": "Project",
-        "dependencies": {
-          "FSharp.Core": "[10.0.102, )",
-          "FSharp.SystemTextJson": "[1.4.36, )",
-          "ballerina-cat": "[1.0.0, )",
-          "ballerina-delta-serialization": "[1.0.0, )",
-          "ballerina-lang-build": "[1.0.0, )",
-          "ballerina-lang-eval": "[1.0.0, )",
-          "ballerina-lang-models": "[1.0.0, )",
-          "ballerina-lang-parser": "[1.0.0, )",
-          "ballerina-lang-stdlib": "[1.0.0, )",
-          "ballerina-lang-typecheck": "[1.0.0, )",
-          "ballerina-stdlib": "[1.0.0, )"
-        }
-      },
-      "ballerina-lang-build": {
-        "type": "Project",
-        "dependencies": {
-          "FSharp.Core": "[10.0.102, )",
-          "FSharp.SystemTextJson": "[1.4.36, )",
-          "ballerina-cat": "[1.0.0, )",
-          "ballerina-lang-eval": "[1.0.0, )",
-          "ballerina-lang-models": "[1.0.0, )",
-          "ballerina-lang-parser": "[1.0.0, )",
-          "ballerina-lang-stdlib": "[1.0.0, )",
-          "ballerina-lang-typecheck": "[1.0.0, )",
-          "ballerina-stdlib": "[1.0.0, )",
-          "msgpack-serialization": "[1.0.0, )"
         }
       },
       "ballerina-lang-eval": {
@@ -563,25 +449,6 @@
           "ballerina-stdlib": "[1.0.0, )"
         }
       },
-      "ballerina-lang-v1": {
-        "type": "Project",
-        "dependencies": {
-          "FSharp.Core": "[10.0.102, )",
-          "FSharp.Data": "[6.6.0, )",
-          "ballerina-cat": "[1.0.0, )",
-          "ballerina-stdlib": "[1.0.0, )"
-        }
-      },
-      "ballerina-memorydb": {
-        "type": "Project",
-        "dependencies": {
-          "FSharp.Core": "[10.0.102, )",
-          "ballerina-cat": "[1.0.0, )",
-          "ballerina-lang": "[1.0.0, )",
-          "ballerina-lang-serialization": "[1.0.0, )",
-          "ballerina-stdlib": "[1.0.0, )"
-        }
-      },
       "ballerina-stdlib": {
         "type": "Project",
         "dependencies": {
@@ -589,63 +456,6 @@
           "FSharp.Data": "[6.6.0, )",
           "Microsoft.EntityFrameworkCore": "[10.0.2, )",
           "ballerina-cat": "[1.0.0, )"
-        }
-      },
-      "codegen": {
-        "type": "Project",
-        "dependencies": {
-          "FSharp.Core": "[10.0.102, )",
-          "FSharp.SystemTextJson": "[1.4.36, )",
-          "ballerina-cat": "[1.0.0, )",
-          "ballerina-stdlib": "[1.0.0, )"
-        }
-      },
-      "form-builder-lang-compiler": {
-        "type": "Project",
-        "dependencies": {
-          "FSharp.Core": "[10.0.102, )",
-          "ballerina-cat": "[1.0.0, )",
-          "ballerina-lang": "[1.0.0, )",
-          "ballerina-lang-models": "[1.0.0, )",
-          "ballerina-lang-parser": "[1.0.0, )",
-          "ballerina-lang-stdlib": "[1.0.0, )",
-          "ballerina-lang-typecheck": "[1.0.0, )",
-          "ballerina-stdlib": "[1.0.0, )",
-          "form-builder-lang-parser": "[1.0.0, )",
-          "form-builder-lang-typechecker": "[1.0.0, )",
-          "form-builder-model": "[1.0.0, )"
-        }
-      },
-      "form-builder-lang-parser": {
-        "type": "Project",
-        "dependencies": {
-          "FSharp.Core": "[10.0.102, )",
-          "ballerina-cat": "[1.0.0, )",
-          "ballerina-lang-parser": "[1.0.0, )",
-          "ballerina-lang-v1": "[1.0.0, )",
-          "ballerina-stdlib": "[1.0.0, )",
-          "form-builder-model": "[1.0.0, )"
-        }
-      },
-      "form-builder-lang-typechecker": {
-        "type": "Project",
-        "dependencies": {
-          "FSharp.Core": "[10.0.102, )",
-          "ballerina-cat": "[1.0.0, )",
-          "ballerina-lang-models": "[1.0.0, )",
-          "ballerina-lang-stdlib": "[1.0.0, )",
-          "ballerina-lang-typecheck": "[1.0.0, )",
-          "ballerina-lang-v1": "[1.0.0, )",
-          "ballerina-stdlib": "[1.0.0, )",
-          "form-builder-model": "[1.0.0, )"
-        }
-      },
-      "form-builder-model": {
-        "type": "Project",
-        "dependencies": {
-          "FSharp.Core": "[10.0.102, )",
-          "ballerina-cat": "[1.0.0, )",
-          "ballerina-lang-models": "[1.0.0, )"
         }
       },
       "msgpack-serialization": {
@@ -673,61 +483,6 @@
           "SmartComponents.Inference": "[1.0.0, )",
           "System.Numerics.Tensors": "[10.0.2, )",
           "System.Runtime.Caching": "[10.0.2, )"
-        }
-      },
-      "unbound-ai": {
-        "type": "Project",
-        "dependencies": {
-          "AWSSDK.BedrockRuntime": "[4.0.16, )",
-          "AWSSDK.SSO": "[4.0.2.12, )",
-          "AWSSDK.SSOOIDC": "[4.0.3.13, )",
-          "AWSSDK.SecurityToken": "[4.0.1.6, )",
-          "FParsec": "[1.1.1, )",
-          "FSharp.Core": "[10.0.102, )",
-          "ballerina-cat": "[1.0.0, )",
-          "ballerina-lang": "[1.0.0, )",
-          "unbound-codegen": "[1.0.0, )"
-        }
-      },
-      "unbound-codegen": {
-        "type": "Project",
-        "dependencies": {
-          "FSharp.Core": "[10.0.102, )",
-          "ballerina-forms": "[1.0.0, )",
-          "ballerina-lang": "[1.0.0, )",
-          "ballerina-stdlib": "[1.0.0, )",
-          "codegen": "[1.0.0, )"
-        }
-      },
-      "unbound-core": {
-        "type": "Project",
-        "dependencies": {
-          "FSharp.Core": "[10.0.102, )",
-          "FSharp.Data": "[6.6.0, )",
-          "FSharp.SystemTextJson": "[1.4.36, )",
-          "Microsoft.EntityFrameworkCore": "[10.0.2, )",
-          "Npgsql": "[10.0.1, )",
-          "Pgvector": "[0.3.2, )",
-          "ballerina-delta-serialization": "[1.0.0, )",
-          "ballerina-forms": "[1.0.0, )",
-          "ballerina-lang": "[1.0.0, )",
-          "ballerina-lang-models": "[1.0.0, )",
-          "ballerina-memorydb": "[1.0.0, )",
-          "msgpack-serialization": "[1.0.0, )",
-          "unbound-ai": "[1.0.0, )",
-          "unbound-codegen": "[1.0.0, )"
-        }
-      },
-      "v2-to-v1-bridge": {
-        "type": "Project",
-        "dependencies": {
-          "FSharp.Core": "[10.0.102, )",
-          "FSharp.Data": "[6.6.0, )",
-          "ballerina-cat": "[1.0.0, )",
-          "ballerina-lang": "[1.0.0, )",
-          "ballerina-lang-stdlib": "[1.0.0, )",
-          "ballerina-lang-v1": "[1.0.0, )",
-          "form-builder-model": "[1.0.0, )"
         }
       }
     },
