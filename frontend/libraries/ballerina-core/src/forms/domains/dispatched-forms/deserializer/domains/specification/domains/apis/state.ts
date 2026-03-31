@@ -37,6 +37,7 @@ export type SpecificationApis<T> = {
   streams?: StreamApis;
   tables?: TableApis<T>;
   lookups?: LookupApis;
+  lookupsAsRefs?: LookupsAsRefs;
 };
 
 export type EnumApiName = string;
@@ -473,8 +474,25 @@ export type LookupApiOne = Map<
       create: boolean;
       delete: boolean;
     };
+    asRef: boolean;
   }
 >;
+
+export type LookupsAsRefs = List<[LookupApiName, DispatchTypeName]>;
+export const LookupsAsRefs = {
+  Operations: {
+    FromLookupApis: (lookupApis: LookupApis): LookupsAsRefs => {
+      return List(
+        lookupApis.entrySeq().flatMap(([lookupApiName, value]) =>
+          value.one
+            .entrySeq()
+            .filter(([_, value]) => value.asRef)
+            .map(([_, value]) => [lookupApiName, value.type]),
+        ),
+      );
+    },
+  },
+};
 
 // TODO add many deserialization
 export const LookupApis = {
@@ -486,6 +504,7 @@ export const LookupApis = {
         [key: string]: {
           type: DispatchTypeName;
           methods: Array<string>;
+          asRef?: boolean;
         };
       };
     } =>
@@ -521,6 +540,7 @@ export const LookupApis = {
                     create: value.methods.includes("create"),
                     delete: value.methods.includes("delete"),
                   },
+                  asRef: value.asRef ?? false,
                 },
               ]),
             ),

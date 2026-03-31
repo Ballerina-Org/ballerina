@@ -16,6 +16,7 @@ import {
   MapRepo,
   DispatchInjectablesTypes,
   Unit,
+  LookupsAsRefs,
 } from "../../../../../../../main";
 import { ValueOrErrors } from "../../../../../../collections/domains/valueOrErrors/state";
 import { DispatchParsedType, SerializedType } from "./domains/types/state";
@@ -545,6 +546,11 @@ export const Specification = {
                                         );
                                         const entities: Map<string, EntityApi> =
                                           Map(entityEntries);
+                                        const lookupsAsRefs = lookups
+                                          ? LookupsAsRefs.Operations.FromLookupApis(
+                                              lookups,
+                                            )
+                                          : undefined;
 
                                         return ValueOrErrors.Default.return({
                                           types: allTypes,
@@ -555,6 +561,7 @@ export const Specification = {
                                             entities,
                                             tables,
                                             lookups,
+                                            lookupsAsRefs,
                                           },
                                           launchers,
                                         });
