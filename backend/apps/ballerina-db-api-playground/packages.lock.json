@@ -353,6 +353,21 @@
           "FSharp.SystemTextJson": "[1.4.36, )",
           "ballerina-cat": "[1.0.0, )",
           "ballerina-delta-serialization": "[1.0.0, )",
+          "ballerina-lang-build": "[1.0.0, )",
+          "ballerina-lang-eval": "[1.0.0, )",
+          "ballerina-lang-models": "[1.0.0, )",
+          "ballerina-lang-parser": "[1.0.0, )",
+          "ballerina-lang-stdlib": "[1.0.0, )",
+          "ballerina-lang-typecheck": "[1.0.0, )",
+          "ballerina-stdlib": "[1.0.0, )"
+        }
+      },
+      "ballerina-lang-build": {
+        "type": "Project",
+        "dependencies": {
+          "FSharp.Core": "[10.0.102, )",
+          "FSharp.SystemTextJson": "[1.4.36, )",
+          "ballerina-cat": "[1.0.0, )",
           "ballerina-lang-eval": "[1.0.0, )",
           "ballerina-lang-models": "[1.0.0, )",
           "ballerina-lang-parser": "[1.0.0, )",
