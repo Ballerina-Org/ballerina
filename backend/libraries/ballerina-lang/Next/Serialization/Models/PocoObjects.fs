@@ -96,17 +96,73 @@ module PocoObjects =
         | _ -> return! sum.Throw(Errors.Singleton () (fun _ -> $"Failed to parse resolved identifier DTO."))
       }
 
+  [<RequireQualifiedAccess>]
+  module PrimitiveValueDtoJsonPropertyNames =
+    [<Literal>]
+    let Int32 = "Int32"
+
+    [<Literal>]
+    let Int64 = "Int64"
+
+    [<Literal>]
+    let Float32 = "Float32"
+
+    [<Literal>]
+    let Float64 = "Float64"
+
+    [<Literal>]
+    let Decimal = "Decimal"
+
+    [<Literal>]
+    let Bool = "Bool"
+
+    [<Literal>]
+    let Guid = "Guid"
+
+    [<Literal>]
+    let String = "String"
+
+    [<Literal>]
+    let Date = "Date"
+
+    [<Literal>]
+    let DateTime = "DateTime"
+
+    [<Literal>]
+    let TimeSpan = "TimeSpan"
+
   type PrimitiveValueDTO() =
+    [<JsonPropertyName(PrimitiveValueDtoJsonPropertyNames.Int32)>]
     member val Int32: Nullable<int> = Nullable() with get, set
+
+    [<JsonPropertyName(PrimitiveValueDtoJsonPropertyNames.Int64)>]
     member val Int64: Nullable<int64> = Nullable() with get, set
+
+    [<JsonPropertyName(PrimitiveValueDtoJsonPropertyNames.Float32)>]
     member val Float32: Nullable<float32> = Nullable() with get, set
+
+    [<JsonPropertyName(PrimitiveValueDtoJsonPropertyNames.Float64)>]
     member val Float64: Nullable<float> = Nullable() with get, set
+
+    [<JsonPropertyName(PrimitiveValueDtoJsonPropertyNames.Decimal)>]
     member val Decimal: Nullable<decimal> = Nullable() with get, set
+
+    [<JsonPropertyName(PrimitiveValueDtoJsonPropertyNames.Bool)>]
     member val Bool: Nullable<bool> = Nullable() with get, set
+
+    [<JsonPropertyName(PrimitiveValueDtoJsonPropertyNames.Guid)>]
     member val Guid: Nullable<Guid> = Nullable() with get, set
+
+    [<JsonPropertyName(PrimitiveValueDtoJsonPropertyNames.String)>]
     member val String: string = null with get, set
+
+    [<JsonPropertyName(PrimitiveValueDtoJsonPropertyNames.Date)>]
     member val Date: Nullable<DateOnly> = Nullable() with get, set
+
+    [<JsonPropertyName(PrimitiveValueDtoJsonPropertyNames.DateTime)>]
     member val DateTime: Nullable<DateTime> = Nullable() with get, set
+
+    [<JsonPropertyName(PrimitiveValueDtoJsonPropertyNames.TimeSpan)>]
     member val TimeSpan: Nullable<TimeSpan> = Nullable() with get, set
 
     new(int32: int) as this =
