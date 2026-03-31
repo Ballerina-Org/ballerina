@@ -685,6 +685,11 @@ module Model =
       | QueryTypeFunction -> $"Query"
       | QueryRow q -> $"QueryRow[{q}]"
 
+    static member IsOptionalPrimitive(t: TypeValue<_>) =
+      match t with
+      | TypeValue.Sum({ value = [ TypeValue.Primitive { value = PrimitiveType.Unit }; TypeValue.Primitive _ ] }) -> true
+      | _ -> false
+
   and TypeQueryRow<'valueExt> =
     | PrimaryKey of TypeValue<'valueExt>
     | Json of TypeValue<'valueExt>
