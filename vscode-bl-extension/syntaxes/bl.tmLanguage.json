@@ -1,0 +1,83 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "BL",
+  "scopeName": "source.bl",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#caseLiterals" },
+    { "include": "#numbers" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.bl",
+          "match": "//.*$"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.bl",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.bl",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "caseLiterals": {
+      "patterns": [
+        {
+          "name": "constant.numeric.case.bl",
+          "match": "\\b\\d+Of\\d+\\b"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.bl",
+          "match": "\\b\\d+(?:\\.\\d+)?(?:[fFdDlL])?\\b"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.bl",
+          "match": "\\b(?:type|of|function|fun|let|do|in|match|with|if|then|else|schema|entity|relation|include|query|from|select|where|join|on|can|and|orderby|distinct|count|exists|union|array|asc|desc|true|false)\\b"
+        },
+        {
+          "name": "keyword.other.soft.bl",
+          "match": "\\b(?:property|vector|creating|updating|deleting|created|updated|deleted|background|create|read|update|delete|linking|unlinking|linked|unlinked|to|cardinality|field|map|iterator|case|item)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "storage.type.bl",
+          "match": "\\b(?:bool|int32|int64|float32|float64|decimal|string|guid|dateTime|dateOnly|timeSpan|FromQueryRow)\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.bl",
+          "match": "::|\\|>|>>|=>|->|==|!=|>=|<=|\\|\\||&&|\\.\\.|[=:{}\\[\\](),;<>@*+/%!\\.|-]"
+        }
+      ]
+    }
+  }
+}
