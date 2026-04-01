@@ -20,6 +20,9 @@ const DIAGNOSTIC_SOURCE = "bise-sql";
 const BUILD_DEBOUNCE_MS = 700;
 
 export function activate(context: vscode.ExtensionContext): void {
+  const output = getOutputChannel();
+  output.appendLine("BL Language Tools activated.");
+
   const diagnostics = vscode.languages.createDiagnosticCollection(LANGUAGE_ID);
   context.subscriptions.push(diagnostics);
   const debouncedBuilder = createDebouncedBuildScheduler(diagnostics);
@@ -75,6 +78,8 @@ export function activate(context: vscode.ExtensionContext): void {
       return;
     }
 
+    output.appendLine(`Detected save: ${vscode.workspace.asRelativePath(doc.uri)}`);
+
     await debouncedBuilder.schedule(doc, false);
   });
 
@@ -82,6 +87,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const active = vscode.window.activeTextEditor?.document;
   if (active && isBlOrBlprojDocument(active)) {
+    output.appendLine(`Scheduling initial build: ${vscode.workspace.asRelativePath(active.uri)}`);
     void debouncedBuilder.schedule(active, false);
   }
 }

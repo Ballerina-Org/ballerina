@@ -12,6 +12,9 @@
     "Linters"
   ],
   "main": "./out/extension.js",
+  "activationEvents": [
+    "workspaceContains:**/*.blproj"
+  ],
   "contributes": {
     "languages": [
       {
