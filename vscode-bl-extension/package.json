@@ -1,0 +1,58 @@
+{
+  "name": "bl-language-tools",
+  "displayName": "BL Language Tools",
+  "description": "Syntax highlighting and bise-sql diagnostics for .bl projects",
+  "version": "0.0.1",
+  "publisher": "bise-ai",
+  "engines": {
+    "vscode": "^1.92.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "bl",
+        "aliases": [
+          "BL",
+          "Ballerina DSL"
+        ],
+        "extensions": [
+          ".bl"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "bl",
+        "scopeName": "source.bl",
+        "path": "./syntaxes/bl.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "bl.buildActiveProject",
+        "title": "BL: Build Active Project"
+      },
+      {
+        "command": "bl.showBuildOrder",
+        "title": "BL: Show Active Project Build Order"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package:vsix": "npx @vscode/vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.12",
+    "@types/vscode": "^1.92.0",
+    "typescript": "^5.5.4"
+  }
+}
