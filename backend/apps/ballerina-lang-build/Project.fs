@@ -31,13 +31,6 @@ module Project =
     ) : ProjectCache<'valueExt> =
     MemCache.memcache (ctx0, st0)
 
-  let hardDriveCache<'valueExt when 'valueExt: comparison>
-    (
-      ctx0: Ballerina.DSL.Next.Types.TypeChecker.Model.TypeCheckContext<'valueExt>,
-      st0: Ballerina.DSL.Next.Types.TypeChecker.Model.TypeCheckState<'valueExt>
-    ) : ProjectCache<'valueExt> =
-    HddCache.hardDriveCache (ctx0, st0)
-
   let hardDriveCacheWithTypeEvalConfig<'valueExt when 'valueExt: comparison>
     (typeEvalConfig: Option<Ballerina.DSL.Next.Types.TypeChecker.Model.TypeEvalConfig<'valueExt>>)
     (
