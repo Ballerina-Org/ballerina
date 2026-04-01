@@ -466,6 +466,7 @@ type StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaEx
 let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison>
   (string_ops: StringTypeClass<ValueExt<'runtimeContext, 'db, 'customExtension>>)
   (db_ops: DBTypeClass<'runtimeContext, 'db, ValueExt<'runtimeContext, 'db, 'customExtension>>)
+  (typeEvalConfig: Option<TypeEvalConfig<ValueExt<'runtimeContext, 'db, 'customExtension>>>)
   : StdExtensions<
       'runtimeContext,
       ValueExt<'runtimeContext, 'db, 'customExtension>,
@@ -501,8 +502,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
           | _ -> None
         Set = Map.Model.MapValues.Map >> MapValues >> Choice6Of7 >> ValueExt.ValueExt }
       DBExt<_, _, _>.ValueLens
+      typeEvalConfig
 
-  let listExtension, _list_sym, mk_list_type =
+  let listExtension, list_sym, mk_list_type =
     List.Extension.ListExtension<
       'runtimeContext,
       ValueExt<'runtimeContext, 'db, 'customExtension>,
@@ -519,6 +521,7 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
       ListExt<_, _, _>.ValueDTOLens
       DeltaExt<_, _, _>.ListDeltaLens
       DeltaExt<_, _, _>.ListDeltaDTOLens
+      (typeEvalConfig |> Option.map (fun cfg -> cfg.ListTypeSymbol))
 
   let dateOnlyExtension =
     DateOnly.Extension.DateOnlyExtension<'runtimeContext, ValueExt<'runtimeContext, 'db, 'customExtension>, ValueExtDTO>
@@ -708,13 +711,21 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
 
   let typeEvalConfig =
     { QueryTypeSymbol = query_sym
+      ListTypeSymbol = list_sym
       MkQueryType = mk_query
       MkListType = mk_list_type }
 
   extensions, context, typeEvalConfig
 
 let stdExtensions<'runtimeContext, 'db when 'db: comparison> =
-  fun str_ops db_ops -> makeExtensions<'runtimeContext, 'db, unit> str_ops db_ops
+  fun str_ops db_ops -> makeExtensions<'runtimeContext, 'db, unit> str_ops db_ops None
+
+let stdExtensionsWithTypeEvalConfig<'runtimeContext, 'db when 'db: comparison> =
+  fun str_ops db_ops typeEvalConfig -> makeExtensions<'runtimeContext, 'db, unit> str_ops db_ops typeEvalConfig
 
 let customStdExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> =
+  fun str_ops db_ops -> makeExtensions<'runtimeContext, 'db, 'customExtension> str_ops db_ops None
+
+let customStdExtensionsWithTypeEvalConfig<'runtimeContext, 'db, 'customExtension
+  when 'db: comparison and 'customExtension: comparison> =
   makeExtensions<'runtimeContext, 'db, 'customExtension>

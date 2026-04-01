@@ -9,6 +9,16 @@ module Patterns =
   open Ballerina.DSL.Next.Types
 
   type Float64Operations<'ext> with
+    static member AsToString(op: Float64Operations<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | Float64Operations.String -> () |> sum.Return
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected ToString operation"))
+
+    static member AsTryParse(op: Float64Operations<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | Float64Operations.TryParse -> () |> sum.Return
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected TryParse operation"))
+
     static member AsPlus(op: Float64Operations<'ext>) : Sum<Option<float>, Errors<Unit>> =
       match op with
       | Float64Operations.Plus v -> v.v1 |> sum.Return

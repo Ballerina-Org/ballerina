@@ -3,6 +3,8 @@ namespace Ballerina.DSL.Next.StdLib.Int64
 [<AutoOpen>]
 module Model =
   type Int64Operations<'ext> =
+    | String
+    | TryParse
     | Plus of {| v1: Option<int64> |}
     | Minus of {| v1: Option<int64> |}
     | Divide of {| v1: Option<int64> |}

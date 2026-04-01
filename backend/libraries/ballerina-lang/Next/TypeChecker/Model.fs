@@ -124,6 +124,7 @@ module Model =
 
   type TypeEvalConfig<'valueExt when 'valueExt: comparison> =
     { QueryTypeSymbol: TypeSymbol
+      ListTypeSymbol: TypeSymbol
       MkQueryType: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>
       MkListType: TypeValue<'valueExt> -> TypeValue<'valueExt> }
 

@@ -761,6 +761,11 @@ module Query =
     ()
     : Parser<ExprQuery<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
     parser {
+      let! hasBracket =
+        parser.Any
+          [ openRoundBracketOperator |> parser.Map(replaceWith true)
+            parser.Return false ]
+
       do! queryKeyword
 
       return!
@@ -776,6 +781,9 @@ module Query =
           let! distinct_ = query_distinct (query expr)
 
           do! closeCurlyBracketOperator
+
+          if hasBracket then
+            do! closeRoundBracketOperator
 
           let res =
             { Iterators = iterators_with_datasources

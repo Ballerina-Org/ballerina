@@ -73,3 +73,10 @@ module Patterns =
       match op with
       | TimeSpanOperations.FromDays -> sum.Return()
       | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected FromDays operation")
+
+    static member AsToString(op: TimeSpanOperations<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | TimeSpanOperations.TimeSpan_ToString -> sum.Return()
+      | _ ->
+        sum.Throw
+        <| Errors.Singleton () (fun () -> "Expected TimeSpan_ToString operation")

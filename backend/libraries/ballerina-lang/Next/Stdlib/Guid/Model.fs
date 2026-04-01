@@ -9,3 +9,5 @@ module Model =
     | NotEqual of {| v1: Option<Guid> |}
     | Guid_New
     | Guid_V4
+    | String
+    | TryParse

@@ -37,3 +37,14 @@ module Project =
       st0: Ballerina.DSL.Next.Types.TypeChecker.Model.TypeCheckState<'valueExt>
     ) : ProjectCache<'valueExt> =
     HddCache.hardDriveCache (ctx0, st0)
+
+  let hardDriveCacheWithTypeEvalConfig<'valueExt when 'valueExt: comparison>
+    (typeEvalConfig: Option<Ballerina.DSL.Next.Types.TypeChecker.Model.TypeEvalConfig<'valueExt>>)
+    (
+      ctx0: Ballerina.DSL.Next.Types.TypeChecker.Model.TypeCheckContext<'valueExt>,
+      st0: Ballerina.DSL.Next.Types.TypeChecker.Model.TypeCheckState<'valueExt>
+    ) : ProjectCache<'valueExt> =
+    HddCache.hardDriveCacheWithTypeEvalConfig typeEvalConfig (ctx0, st0)
+
+  let tryLoadTypeEvalConfig<'valueExt when 'valueExt: comparison> () =
+    HddCache.tryLoadTypeEvalConfig<'valueExt> ()

@@ -9,6 +9,22 @@ module Patterns =
   open Ballerina.DSL.Next.Types
 
   type Float32Operations<'ext> with
+    static member AsToString(op: Float32Operations<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | Float32Operations.String -> () |> sum.Return
+      | _ ->
+        (fun () -> $"Error: Expected Float32Operations.String, found {op}")
+        |> Errors.Singleton()
+        |> sum.Throw
+
+    static member AsTryParse(op: Float32Operations<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | Float32Operations.TryParse -> () |> sum.Return
+      | _ ->
+        (fun () -> $"Error: Expected Float32Operations.TryParse, found {op}")
+        |> Errors.Singleton()
+        |> sum.Throw
+
     static member AsPlus(op: Float32Operations<'ext>) : Sum<Option<float32>, Errors<Unit>> =
       match op with
       | Float32Operations.Plus v -> v.v1 |> sum.Return

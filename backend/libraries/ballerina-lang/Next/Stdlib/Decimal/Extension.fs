@@ -27,6 +27,10 @@ module Extension =
       Identifier.FullyQualified([ "decimal" ], "string")
       |> TypeCheckScope.Empty.Resolve
 
+    let decimalToStringAliasId =
+      Identifier.FullyQualified([ "decimal" ], "toString")
+      |> TypeCheckScope.Empty.Resolve
+
     let toStringOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DecimalOperations<'ext>> =
       decimalToStringId,
       { PublicIdentifiers =
@@ -61,6 +65,73 @@ module Extension =
 
 
               return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.String(v |> string))
+            } }
+
+    let decimalToStringByNameOperation
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DecimalOperations<'ext>> =
+      decimalToStringAliasId,
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(decimalTypeValue, TypeValue.CreateString()), Kind.Star, DecimalOperations.String)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | DecimalOperations.String -> Some(DecimalOperations.String)
+            | _ -> None)
+        Apply = snd toStringOperation |> _.Apply }
+
+    let decimalTryParseId =
+      Identifier.FullyQualified([ "decimal" ], "tryParse")
+      |> TypeCheckScope.Empty.Resolve
+
+    let tryParseOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DecimalOperations<'ext>> =
+      decimalTryParseId,
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(
+                TypeValue.CreateString(),
+                TypeValue.CreateSum
+                  [ TypeValue.CreatePrimitive PrimitiveType.Unit
+                    TypeValue.CreatePrimitive PrimitiveType.Decimal ]
+              ),
+              Kind.Star,
+              DecimalOperations.TryParse)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | DecimalOperations.TryParse -> Some(DecimalOperations.TryParse)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> DecimalOperations.AsTryParse
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return
+                match
+                  System.Decimal.TryParse(
+                    v,
+                    System.Globalization.NumberStyles.Number,
+                    System.Globalization.CultureInfo.InvariantCulture
+                  )
+                with
+                | true, result -> Value.Sum({ Case = 2; Count = 2 }, Value.Primitive(PrimitiveValue.Decimal result))
+                | false, _ -> Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit))
             } }
 
     let decimalPlusId =
@@ -630,6 +701,8 @@ module Extension =
     { TypeVars = []
       Operations =
         [ toStringOperation
+          decimalToStringByNameOperation
+          tryParseOperation
           plusOperation
           minusOperation
           divideOperation

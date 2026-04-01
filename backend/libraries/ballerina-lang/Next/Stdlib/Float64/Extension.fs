@@ -26,6 +26,99 @@ module Extension =
     let boolTypeValue = TypeValue.CreatePrimitive PrimitiveType.Bool
     let int32TypeValue = TypeValue.CreatePrimitive PrimitiveType.Int32
     let float64TypeValue = TypeValue.CreatePrimitive PrimitiveType.Float64
+    let stringTypeValue = TypeValue.CreatePrimitive PrimitiveType.String
+
+    let float64ToStringId =
+      Identifier.FullyQualified([ "float64" ], "toString")
+      |> TypeCheckScope.Empty.Resolve
+
+    let toStringOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
+      float64ToStringId,
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(float64TypeValue, stringTypeValue), Kind.Star, Float64Operations.String)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | Float64Operations.String -> Some(Float64Operations.String)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> Float64Operations.AsToString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat64
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.String(v |> string))
+            } }
+
+    let float64TryParseId =
+      Identifier.FullyQualified([ "float64" ], "tryParse")
+      |> TypeCheckScope.Empty.Resolve
+
+    let tryParseOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
+      float64TryParseId,
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(
+                stringTypeValue,
+                TypeValue.CreateSum
+                  [ TypeValue.CreatePrimitive PrimitiveType.Unit
+                    TypeValue.CreatePrimitive PrimitiveType.Float64 ]
+              ),
+              Kind.Star,
+              Float64Operations.TryParse)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | Float64Operations.TryParse -> Some(Float64Operations.TryParse)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> Float64Operations.AsTryParse
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return
+                match
+                  System.Double.TryParse(
+                    v,
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture
+                  )
+                with
+                | true, result -> Value.Sum({ Case = 2; Count = 2 }, Value.Primitive(PrimitiveValue.Float64 result))
+                | false, _ -> Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit))
+            } }
 
     let plusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64PlusId,
@@ -541,7 +634,9 @@ module Extension =
 
     { TypeVars = []
       Operations =
-        [ plusOperation
+        [ toStringOperation
+          tryParseOperation
+          plusOperation
           minusOperation
           divideOperation
           powerOperation

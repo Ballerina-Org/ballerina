@@ -22,3 +22,4 @@ module Model =
     | DateTime_New
     | DateTime_Now
     | DateTime_UTCNow
+    | DateTime_ToString

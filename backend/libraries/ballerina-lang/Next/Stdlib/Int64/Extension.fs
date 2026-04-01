@@ -21,6 +21,93 @@ module Extension =
     let boolTypeValue = TypeValue.CreateBool()
     let int64TypeValue = TypeValue.CreateInt64()
     let int32TypeValue = TypeValue.CreateInt32()
+    let stringTypeValue = TypeValue.CreatePrimitive PrimitiveType.String
+
+    let int64ToStringId =
+      Identifier.FullyQualified([ "int64" ], "toString")
+      |> TypeCheckScope.Empty.Resolve
+
+    let toStringOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int64Operations<'ext>> =
+      int64ToStringId,
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(int64TypeValue, stringTypeValue), Kind.Star, Int64Operations.String)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | Int64Operations.String -> Some(Int64Operations.String)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> Int64Operations.AsToString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsInt64
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.String(v |> string))
+            } }
+
+    let int64TryParseId =
+      Identifier.FullyQualified([ "int64" ], "tryParse")
+      |> TypeCheckScope.Empty.Resolve
+
+    let tryParseOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int64Operations<'ext>> =
+      int64TryParseId,
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(
+                stringTypeValue,
+                TypeValue.CreateSum
+                  [ TypeValue.CreatePrimitive PrimitiveType.Unit
+                    TypeValue.CreatePrimitive PrimitiveType.Int64 ]
+              ),
+              Kind.Star,
+              Int64Operations.TryParse)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | Int64Operations.TryParse -> Some(Int64Operations.TryParse)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> Int64Operations.AsTryParse
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return
+                match System.Int64.TryParse(v) with
+                | true, result -> Value.Sum({ Case = 2; Count = 2 }, Value.Primitive(PrimitiveValue.Int64 result))
+                | false, _ -> Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit))
+            } }
 
     let int64PlusId =
       Identifier.FullyQualified([ "int64" ], "+") |> TypeCheckScope.Empty.Resolve
@@ -540,7 +627,9 @@ module Extension =
 
     { TypeVars = []
       Operations =
-        [ plusOperation
+        [ toStringOperation
+          tryParseOperation
+          plusOperation
           minusOperation
           divideOperation
           powerOperation

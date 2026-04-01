@@ -37,6 +37,7 @@ module Extension =
     (valueDTOLens: PartialLens<'extDTO, ListValueDTO<'extDTO>>)
     (deltaLens: PartialLens<'deltaExt, ListDeltaExt<'ext, 'deltaExt>>)
     (deltaDTOLens: PartialLens<'deltaExtDTO, ListDeltaExtDTO<'extDTO, 'deltaExtDTO>>)
+    (typeSymbol: Option<TypeSymbol>)
     : TypeExtension<
         'runtimeContext,
         'ext,
@@ -51,7 +52,10 @@ module Extension =
       (TypeValue<'ext> -> TypeValue<'ext>)
     =
     let listId = Identifier.LocalScope "List"
-    let listSymbolId = listId |> TypeSymbol.Create
+
+    let listSymbolId =
+      typeSymbol |> Option.defaultWith (fun () -> listId |> TypeSymbol.Create)
+
     let aVar, aKind = TypeVar.Create("a"), Kind.Star
     let listId = listId |> TypeCheckScope.Empty.Resolve
 

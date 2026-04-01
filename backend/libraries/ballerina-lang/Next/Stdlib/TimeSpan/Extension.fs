@@ -24,6 +24,50 @@ module Extension =
     let int32TypeValue = TypeValue.CreateInt32()
     let float64TypeValue = TypeValue.CreateFloat64()
     let decimalTypeValue = TypeValue.CreateDecimal()
+    let stringTypeValue = TypeValue.CreatePrimitive PrimitiveType.String
+
+    let timeSpanToStringId =
+      Identifier.FullyQualified([ "timeSpan" ], "toString")
+      |> TypeCheckScope.Empty.Resolve
+
+    let toStringOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+      timeSpanToStringId,
+      { PublicIdentifiers =
+          Some(
+            TypeValue.CreateArrow(timeSpanTypeValue, stringTypeValue),
+            Kind.Star,
+            TimeSpanOperations.TimeSpan_ToString
+          )
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | TimeSpanOperations.TimeSpan_ToString -> Some(TimeSpanOperations.TimeSpan_ToString)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> TimeSpanOperations.AsToString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsTimeSpan
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return
+                Value<TypeValue<'ext>, 'ext>
+                  .Primitive(PrimitiveValue.String(v.ToString("c", CultureInfo.InvariantCulture)))
+            } }
 
     let TimeSpanPlusId =
       Identifier.FullyQualified([ "timeSpan" ], "+") |> TypeCheckScope.Empty.Resolve
@@ -824,11 +868,12 @@ module Extension =
 
 
 
-    let timeSpanNewId =
-      Identifier.FullyQualified([ "timeSpan" ], "new") |> TypeCheckScope.Empty.Resolve
+    let timeSpanTryParseId =
+      Identifier.FullyQualified([ "timeSpan" ], "tryParse")
+      |> TypeCheckScope.Empty.Resolve
 
-    let timeSpanNew: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
-      timeSpanNewId,
+    let timeSpanTryParse: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+      timeSpanTryParseId,
       { PublicIdentifiers =
           Some(
             TypeValue.CreateArrow(
@@ -911,7 +956,8 @@ module Extension =
 
     { TypeVars = []
       Operations =
-        [ plusOperation
+        [ toStringOperation
+          plusOperation
           minusOperation
           equalOperation
           notEqualOperation
@@ -933,6 +979,6 @@ module Extension =
           timeSpanFromHours
           timeSpanFromMinutes
           timeSpanFromSeconds
-          timeSpanNew
+          timeSpanTryParse
           timeSpanZero ]
         |> Map.ofList }
