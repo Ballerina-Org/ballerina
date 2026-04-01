@@ -175,8 +175,3 @@ module HddCache =
             persistCache cache }
 
     Caching.abstract_build_cache hddCache (ctx0, st0)
-
-  let hardDriveCache<'valueExt when 'valueExt: comparison>
-    (ctx0: TypeCheckContext<'valueExt>, st0: TypeCheckState<'valueExt>)
-    : ProjectModel.ProjectCache<'valueExt> =
-    hardDriveCacheWithTypeEvalConfig None (ctx0, st0)
