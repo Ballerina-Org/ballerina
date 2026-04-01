@@ -18,6 +18,7 @@ type BuildIssue = {
 const LANGUAGE_ID = "bl";
 const DIAGNOSTIC_SOURCE = "bise-sql";
 const BUILD_DEBOUNCE_MS = 700;
+let buildRunSequence = 0;
 
 export function activate(context: vscode.ExtensionContext): void {
   const output = getOutputChannel();
@@ -155,16 +156,37 @@ async function runBuildFromProjectPath(
 
   const output = getOutputChannel();
   output.clear();
-  output.appendLine(`Building ${vscode.workspace.asRelativePath(projectPath)}...`);
+  const runId = ++buildRunSequence;
+  output.appendLine(`[Run #${runId}] Building ${vscode.workspace.asRelativePath(projectPath)}...`);
+  const commandArgs = [
+    "run",
+    "--project",
+    biseSqlProject,
+    "--",
+    "--file",
+    projectPath
+  ];
+  output.appendLine(`[Run #${runId}] Command: ${formatCommandForLog("dotnet", commandArgs)}`);
+  output.appendLine(`[Run #${runId}] Working directory: ${workspaceFolder.uri.fsPath}`);
+  const startedAt = new Date();
+  const startedAtMs = Date.now();
+  output.appendLine(`[Run #${runId}] Started at: ${startedAt.toISOString()}`);
 
   let buildOutput: { stdout: string; stderr: string; exitCode: number };
 
   try {
     buildOutput = await runBiseSqlBuild(biseSqlProject, projectPath, workspaceFolder.uri.fsPath);
   } catch (error) {
+    const elapsedMs = Date.now() - startedAtMs;
+    output.appendLine(`[Run #${runId}] Failed after: ${formatDurationForLog(elapsedMs)}`);
     void vscode.window.showErrorMessage(`Failed to execute bise-sql build: ${toMessage(error)}`);
     return;
   }
+
+  const elapsedMs = Date.now() - startedAtMs;
+  output.appendLine(
+    `[Run #${runId}] Finished in: ${formatDurationForLog(elapsedMs)} (exit code ${buildOutput.exitCode})`
+  );
 
   output.appendLine(buildOutput.stdout);
   if (buildOutput.stderr.trim().length > 0) {
@@ -420,6 +442,30 @@ function toAbsoluteFile(projectPath: string, fileFromOutput: string): string {
   }
 
   return path.resolve(path.dirname(projectPath), fileFromOutput);
+}
+
+function formatCommandForLog(command: string, args: string[]): string {
+  const quote = (value: string): string => {
+    if (value.length === 0) {
+      return '""';
+    }
+
+    if (!/[\s"'\\]/.test(value)) {
+      return value;
+    }
+
+    return `"${value.replace(/(["\\$`])/g, "\\$1")}"`;
+  };
+
+  return [quote(command), ...args.map(quote)].join(" ");
+}
+
+function formatDurationForLog(durationMs: number): string {
+  if (durationMs < 1000) {
+    return `${durationMs}ms`;
+  }
+
+  return `${(durationMs / 1000).toFixed(2)}s`;
 }
 
 function applyDiagnostics(issues: BuildIssue[], diagnostics: vscode.DiagnosticCollection, workspaceRoot: string): void {
