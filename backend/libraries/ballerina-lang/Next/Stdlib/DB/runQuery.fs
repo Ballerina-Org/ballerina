@@ -30,6 +30,7 @@ module DBRunQuery =
     (db_ops: DBTypeClass<'runtimeContext, 'db, 'ext>)
     (listSet: List<Value<TypeValue<'ext>, 'ext>> -> 'ext)
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
+    (queryTypeSymbol: Option<TypeSymbol>)
     : TypeLambdaExtension<'runtimeContext, 'ext, 'extDTO, DBValues<'runtimeContext, 'db, 'ext>> *
       TypeSymbol *
       (Schema<'ext> -> TypeQueryRow<'ext> -> TypeValue<'ext>)
@@ -37,7 +38,9 @@ module DBRunQuery =
 
     let dbQueryId = Identifier.FullyQualified([ "DB" ], "Query")
     let dbQueryResolvedId = dbQueryId |> TypeCheckScope.Empty.Resolve
-    let dbQuerySymbol = dbQueryId |> TypeSymbol.Create
+
+    let dbQuerySymbol =
+      queryTypeSymbol |> Option.defaultWith (fun () -> dbQueryId |> TypeSymbol.Create)
 
     let dbQueryType: TypeValue<'ext> =
       TypeValue.Imported

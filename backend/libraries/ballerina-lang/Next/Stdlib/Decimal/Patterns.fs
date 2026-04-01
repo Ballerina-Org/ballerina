@@ -14,6 +14,11 @@ module Patterns =
       | DecimalOperations.String -> () |> sum.Return
       | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected ToString operation")
 
+    static member AsTryParse(op: DecimalOperations<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | DecimalOperations.TryParse -> () |> sum.Return
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected TryParse operation")
+
     static member AsPlus(op: DecimalOperations<'ext>) : Sum<Option<decimal>, Errors<Unit>> =
       match op with
       | DecimalOperations.Plus v -> v.v1 |> sum.Return

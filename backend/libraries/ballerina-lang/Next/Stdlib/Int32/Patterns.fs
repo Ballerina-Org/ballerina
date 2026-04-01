@@ -14,6 +14,11 @@ module Patterns =
       | Int32Operations.String -> () |> sum.Return
       | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected ToString operation"))
 
+    static member AsTryParse(op: Int32Operations<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | Int32Operations.TryParse -> () |> sum.Return
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected TryParse operation"))
+
     static member AsPlus(op: Int32Operations<'ext>) : Sum<Option<int32>, Errors<Unit>> =
       match op with
       | Int32Operations.Plus v -> v.v1 |> sum.Return

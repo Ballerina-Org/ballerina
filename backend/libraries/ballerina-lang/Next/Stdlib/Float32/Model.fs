@@ -3,6 +3,8 @@ namespace Ballerina.DSL.Next.StdLib.Float32
 [<AutoOpen>]
 module Model =
   type Float32Operations<'ext> =
+    | String
+    | TryParse
     | Plus of {| v1: Option<float32> |}
     | Minus of {| v1: Option<float32> |}
     | Divide of {| v1: Option<float32> |}

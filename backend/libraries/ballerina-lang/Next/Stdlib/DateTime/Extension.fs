@@ -25,11 +25,55 @@ module Extension =
     let boolTypeValue = TypeValue.CreateBool()
     let int32TypeValue = TypeValue.CreateInt32()
 
-    let dateTimeNewId =
-      Identifier.FullyQualified([ "dateTime" ], "new") |> TypeCheckScope.Empty.Resolve
+    let stringTypeValue = TypeValue.CreatePrimitive PrimitiveType.String
 
-    let dateTimeNew: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
-      dateTimeNewId,
+    let dateTimeToStringId =
+      Identifier.FullyQualified([ "dateTime" ], "toString")
+      |> TypeCheckScope.Empty.Resolve
+
+    let toStringOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
+      dateTimeToStringId,
+      { PublicIdentifiers =
+          Some(
+            TypeValue.CreateArrow(dateTimeTypeValue, stringTypeValue),
+            Kind.Star,
+            DateTimeOperations.DateTime_ToString
+          )
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | DateTimeOperations.DateTime_ToString -> Some(DateTimeOperations.DateTime_ToString)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> DateTimeOperations.AsToString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDateTime
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.String(Iso8601.DateTime.printUtc v))
+            } }
+
+    let dateTimeTryParseId =
+      Identifier.FullyQualified([ "dateTime" ], "tryParse")
+      |> TypeCheckScope.Empty.Resolve
+
+    let dateTimeTryParse: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateTimeOperations<'ext>> =
+      dateTimeTryParseId,
       { PublicIdentifiers =
           Some(
             TypeValue.CreateArrow(
@@ -48,8 +92,8 @@ module Extension =
               | Value.Primitive(PrimitiveValue.String v) ->
                 return
                   match Iso8601.DateTime.tryParse v with
-                  | Some date -> Value.Sum({ Case = 0; Count = 1 }, date |> PrimitiveValue.DateTime |> Value.Primitive)
-                  | None -> Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit))
+                  | Some date -> Value.Sum({ Case = 2; Count = 2 }, date |> PrimitiveValue.DateTime |> Value.Primitive)
+                  | None -> Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit))
               | _ -> return! sum.Throw(Errors.Singleton loc0 (fun () -> "Expected a string")) |> reader.OfSum
             }
         OperationsLens =
@@ -696,7 +740,8 @@ module Extension =
 
     { TypeVars = []
       Operations =
-        [ plusOperation
+        [ toStringOperation
+          plusOperation
           diffOperation
           equalOperation
           notEqualOperation
@@ -710,7 +755,7 @@ module Extension =
           dayOperation
           dayOfWeekOperation
           dayOfYearOperation
-          dateTimeNew
+          dateTimeTryParse
           dateTimeNow
           dateTimeUTCNow ]
         |> Map.ofList }

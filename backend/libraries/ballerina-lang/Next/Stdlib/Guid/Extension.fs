@@ -23,12 +23,95 @@ module Extension =
 
     let boolTypeValue = TypeValue.CreatePrimitive PrimitiveType.Bool
     let guidTypeValue = TypeValue.CreatePrimitive PrimitiveType.Guid
+    let stringTypeValue = TypeValue.CreatePrimitive PrimitiveType.String
 
-    // let guidId = Identifier.LocalScope "guid"
-    // let guidSymbolId = guidId |> TypeSymbol.Create
-    // let guidId = guidId |> TypeCheckScope.Empty.Resolve
+    let guidToStringId =
+      Identifier.FullyQualified([ "guid" ], "toString")
+      |> TypeCheckScope.Empty.Resolve
 
-    // let guidConstructors = GuidConstructorsExtension<'ext> consLens
+    let toStringOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
+      guidToStringId,
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(guidTypeValue, stringTypeValue), Kind.Star, GuidOperations.String)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | GuidOperations.String -> Some(GuidOperations.String)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> GuidOperations.AsToString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsGuid
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return
+                Value<TypeValue<'ext>, 'ext>
+                  .Primitive(PrimitiveValue.String(v.ToString("D", System.Globalization.CultureInfo.InvariantCulture)))
+            } }
+
+    let guidTryParseId =
+      Identifier.FullyQualified([ "guid" ], "tryParse")
+      |> TypeCheckScope.Empty.Resolve
+
+    let tryParseOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
+      guidTryParseId,
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(
+                stringTypeValue,
+                TypeValue.CreateSum
+                  [ TypeValue.CreatePrimitive PrimitiveType.Unit
+                    TypeValue.CreatePrimitive PrimitiveType.Guid ]
+              ),
+              Kind.Star,
+              GuidOperations.TryParse)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | GuidOperations.TryParse -> Some(GuidOperations.TryParse)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> GuidOperations.AsTryParse
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return
+                match System.Guid.TryParse(v) with
+                | true, result -> Value.Sum({ Case = 2; Count = 2 }, Value.Primitive(PrimitiveValue.Guid result))
+                | false, _ -> Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit))
+            } }
 
     let guidEqualId =
       Identifier.FullyQualified([ "guid" ], "==") |> TypeCheckScope.Empty.Resolve
@@ -186,4 +269,11 @@ module Extension =
             } }
 
     { TypeVars = []
-      Operations = [ guidNew; guidV4; equalOperation; notEqualOperation ] |> Map.ofList }
+      Operations =
+        [ toStringOperation
+          tryParseOperation
+          guidNew
+          guidV4
+          equalOperation
+          notEqualOperation ]
+        |> Map.ofList }

@@ -27,6 +27,49 @@ module Extension =
     let timeSpanTypeValue = TypeValue.CreateTimeSpan()
     let boolTypeValue = TypeValue.CreateBool()
     let int32TypeValue = TypeValue.CreateInt32()
+    let stringTypeValue = TypeValue.CreatePrimitive PrimitiveType.String
+
+    let dateOnlyToStringId =
+      Identifier.FullyQualified([ "dateOnly" ], "toString")
+      |> TypeCheckScope.Empty.Resolve
+
+    let toStringOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateOnlyOperations<'ext>> =
+      dateOnlyToStringId,
+      { PublicIdentifiers =
+          Some(
+            TypeValue.CreateArrow(dateOnlyTypeValue, stringTypeValue),
+            Kind.Star,
+            DateOnlyOperations.DateOnly_ToString
+          )
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | DateOnlyOperations.DateOnly_ToString -> Some(DateOnlyOperations.DateOnly_ToString)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> DateOnlyOperations.AsToString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsDate
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.String(Iso8601.DateOnly.print v))
+            } }
+
 
     let dateOnlyDiffId =
       Identifier.FullyQualified([ "dateOnly" ], "-") |> TypeCheckScope.Empty.Resolve
@@ -591,11 +634,12 @@ module Extension =
               return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.DayOfYear))
             } }
 
-    let dateOnlyNewId =
-      Identifier.FullyQualified([ "dateOnly" ], "new") |> TypeCheckScope.Empty.Resolve
+    let dateOnlyTryParseId =
+      Identifier.FullyQualified([ "dateOnly" ], "tryParse")
+      |> TypeCheckScope.Empty.Resolve
 
-    let newOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateOnlyOperations<'ext>> =
-      dateOnlyNewId,
+    let dateOnlyTryParse: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, DateOnlyOperations<'ext>> =
+      dateOnlyTryParseId,
       { PublicIdentifiers =
           Some(
             TypeValue.CreateArrow(
@@ -706,7 +750,8 @@ module Extension =
 
     { TypeVars = []
       Operations =
-        [ diffOperation
+        [ toStringOperation
+          diffOperation
           equalOperation
           notEqualOperation
           greaterThanOperation
@@ -719,7 +764,7 @@ module Extension =
           dayOperation
           dayOfWeekOperation
           dayOfYearOperation
-          newOperation
+          dateOnlyTryParse
           nowOperation
           utcNowOperation ]
         |> Map.ofList }

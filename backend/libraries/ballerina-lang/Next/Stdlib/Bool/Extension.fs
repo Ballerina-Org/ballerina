@@ -20,6 +20,93 @@ module Extension =
     : OperationsExtension<'runtimeContext, 'ext, BoolOperations<'ext>> =
 
     let boolTypeValue = TypeValue.CreateBool()
+    let stringTypeValue = TypeValue.CreatePrimitive PrimitiveType.String
+
+    let boolToStringId =
+      Identifier.FullyQualified([ "bool" ], "toString")
+      |> TypeCheckScope.Empty.Resolve
+
+    let toStringOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, BoolOperations<'ext>> =
+      boolToStringId,
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(boolTypeValue, stringTypeValue), Kind.Star, BoolOperations.String)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | BoolOperations.String -> Some(BoolOperations.String)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> BoolOperations.AsToString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsBool
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.String(v |> string))
+            } }
+
+    let boolTryParseId =
+      Identifier.FullyQualified([ "bool" ], "tryParse")
+      |> TypeCheckScope.Empty.Resolve
+
+    let tryParseOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, BoolOperations<'ext>> =
+      boolTryParseId,
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(
+                stringTypeValue,
+                TypeValue.CreateSum
+                  [ TypeValue.CreatePrimitive PrimitiveType.Unit
+                    TypeValue.CreatePrimitive PrimitiveType.Bool ]
+              ),
+              Kind.Star,
+              BoolOperations.TryParse)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | BoolOperations.TryParse -> Some(BoolOperations.TryParse)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> BoolOperations.AsTryParse
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return
+                match System.Boolean.TryParse(v) with
+                | true, result -> Value.Sum({ Case = 2; Count = 2 }, Value.Primitive(PrimitiveValue.Bool result))
+                | false, _ -> Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit))
+            } }
 
     let boolAndId =
       Identifier.FullyQualified([ "bool" ], "&&") |> TypeCheckScope.Empty.Resolve
@@ -148,4 +235,10 @@ module Extension =
             } }
 
     { TypeVars = []
-      Operations = [ andOperation; orOperation; notOperation ] |> Map.ofList }
+      Operations =
+        [ toStringOperation
+          tryParseOperation
+          andOperation
+          orOperation
+          notOperation ]
+        |> Map.ofList }

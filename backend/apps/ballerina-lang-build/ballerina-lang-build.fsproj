@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="../../libraries/ballerina-cat/ballerina-cat.fsproj" />
     <ProjectReference Include="../../libraries/ballerina-stdlib/ballerina-stdlib.fsproj" />

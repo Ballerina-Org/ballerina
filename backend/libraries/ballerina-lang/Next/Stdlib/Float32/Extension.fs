@@ -24,6 +24,99 @@ module Extension =
     let int32TypeValue = TypeValue.CreateInt32()
     let float32TypeValue = TypeValue.CreateFloat32()
     let boolTypeValue = TypeValue.CreateBool()
+    let stringTypeValue = TypeValue.CreatePrimitive PrimitiveType.String
+
+    let float32ToStringId =
+      Identifier.FullyQualified([ "float32" ], "toString")
+      |> TypeCheckScope.Empty.Resolve
+
+    let toStringOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float32Operations<'ext>> =
+      float32ToStringId,
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(float32TypeValue, stringTypeValue), Kind.Star, Float32Operations.String)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | Float32Operations.String -> Some(Float32Operations.String)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> Float32Operations.AsToString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsFloat32
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.String(v |> string))
+            } }
+
+    let float32TryParseId =
+      Identifier.FullyQualified([ "float32" ], "tryParse")
+      |> TypeCheckScope.Empty.Resolve
+
+    let tryParseOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float32Operations<'ext>> =
+      float32TryParseId,
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(
+                stringTypeValue,
+                TypeValue.CreateSum
+                  [ TypeValue.CreatePrimitive PrimitiveType.Unit
+                    TypeValue.CreatePrimitive PrimitiveType.Float32 ]
+              ),
+              Kind.Star,
+              Float32Operations.TryParse)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | Float32Operations.TryParse -> Some(Float32Operations.TryParse)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> Float32Operations.AsTryParse
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return
+                match
+                  System.Single.TryParse(
+                    v,
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture
+                  )
+                with
+                | true, result -> Value.Sum({ Case = 2; Count = 2 }, Value.Primitive(PrimitiveValue.Float32 result))
+                | false, _ -> Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit))
+            } }
 
     let plusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float32Operations<'ext>> =
       float32PlusId,
@@ -540,7 +633,9 @@ module Extension =
 
     { TypeVars = []
       Operations =
-        [ plusOperation
+        [ toStringOperation
+          tryParseOperation
+          plusOperation
           minusOperation
           divideOperation
           powerOperation

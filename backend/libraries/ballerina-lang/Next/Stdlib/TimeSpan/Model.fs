@@ -29,3 +29,4 @@ module Model =
     | FromHours
     | FromMinutes
     | FromSeconds
+    | TimeSpan_ToString

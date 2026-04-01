@@ -4,6 +4,7 @@ namespace Ballerina.DSL.Next.StdLib.Int32
 module Model =
   type Int32Operations<'ext> =
     | String
+    | TryParse
     | Plus of {| v1: Option<int32> |}
     | Times of {| v1: Option<int32> |}
     | Minus of {| v1: Option<int32> |}

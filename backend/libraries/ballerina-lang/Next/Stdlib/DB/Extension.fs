@@ -3,6 +3,7 @@ namespace Ballerina.DSL.Next.StdLib.DB.Extension
 [<AutoOpen>]
 module CUD =
   open Ballerina.DSL.Next.Types
+  open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.StdLib.DB
@@ -86,6 +87,7 @@ module CUD =
     (list_lens: PartialLens<'ext, List<Value<TypeValue<'ext>, 'ext>>>)
     (map_lens: PartialLens<'ext, Map<Value<TypeValue<'ext>, 'ext>, Value<TypeValue<'ext>, 'ext>>>)
     (value_lens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
+    (typeEvalConfig: Option<TypeEvalConfig<'ext>>)
     : (LanguageContext<'runtimeContext, 'ext, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>
         -> LanguageContext<'runtimeContext, 'ext, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>) *
       TypeSymbol *
@@ -103,7 +105,11 @@ module CUD =
       DBRunExtension<'runtimeContext, 'db, 'ext, 'valueExtDTO> db_ops value_lens
 
     let memoryDBRunQueryExtension, query_sym, mk_query =
-      DBRunQueryExtension<'runtimeContext, 'db, 'ext, 'valueExtDTO> db_ops list_lens.Set value_lens
+      DBRunQueryExtension<'runtimeContext, 'db, 'ext, 'valueExtDTO>
+        db_ops
+        list_lens.Set
+        value_lens
+        (typeEvalConfig |> Option.map (fun cfg -> cfg.QueryTypeSymbol))
 
     (fun languageContext ->
       languageContext

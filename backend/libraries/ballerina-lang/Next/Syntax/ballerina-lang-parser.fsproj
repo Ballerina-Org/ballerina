@@ -8,6 +8,8 @@
     <Compile Include="Parser/Precedence.fs" />
     <Compile Include="Parser/Common.fs" />
     <Compile Include="Parser/Kind.fs" />
+    <Compile Include="Parser/Type/HooksAndProperties.fs" />
+    <Compile Include="Parser/Type/Schema.fs" />
     <Compile Include="Parser/Type.fs" />
     <Compile Include="Parser/Query.fs" />
     <Compile Include="Parser/Expr.fs" />

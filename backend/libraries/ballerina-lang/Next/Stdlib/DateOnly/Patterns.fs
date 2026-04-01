@@ -24,6 +24,14 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
+    static member AsToString(op: DateOnlyOperations<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | DateOnlyOperations.DateOnly_ToString -> () |> sum.Return
+      | _ ->
+        (fun () -> $"Error: Expected DateOnlyOperations.DateOnly_ToString, found {op}")
+        |> Errors.Singleton()
+        |> sum.Throw
+
     static member AsEqual(op: DateOnlyOperations<'ext>) : Sum<Option<DateOnly>, Errors<Unit>> =
       match op with
       | DateOnlyOperations.Equal v -> v.v1 |> sum.Return

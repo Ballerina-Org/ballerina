@@ -11,6 +11,11 @@ module Patterns =
 
   type DateTimeOperations<'ext> with
 
+    static member AsToString(op: DateTimeOperations<'ext>) : Sum<Unit, Errors<Unit>> =
+      match op with
+      | DateTimeOperations.DateTime_ToString -> () |> sum.Return
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected ToString operation"))
+
     static member AsPlus(op: DateTimeOperations<'ext>) : Sum<Option<DateTime>, Errors<Unit>> =
       match op with
       | DateTimeOperations.Plus v -> v.v1 |> sum.Return

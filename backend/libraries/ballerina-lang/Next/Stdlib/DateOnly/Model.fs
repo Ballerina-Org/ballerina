@@ -21,3 +21,4 @@ module Model =
     | DateOnly_New
     | DateOnly_Now
     | DateOnly_UTCNow
+    | DateOnly_ToString

@@ -810,7 +810,7 @@ let ``LangNext-Integration Decimal operations work`` () =
 
 [<Test>]
 let ``LangNext-Integration DateOnly constructor builds a DateOnly value`` () =
-  let program = "let x = dateOnly::new(\"2021-02-01\") in x"
+  let program = "let x = dateOnly::tryParse(\"2021-02-01\") in x"
 
   let actual = program |> run
 
@@ -851,7 +851,7 @@ let ``LangNext-Integration DateOnly (utcNow) constructor builds a DateOnly value
 
 [<Test>]
 let ``LangNext-Integration DateOnly constructor fails with an error if the string is not a valid date`` () =
-  let program = "let x = dateOnly::new(\"GHSBR\") in x"
+  let program = "let x = dateOnly::tryParse(\"GHSBR\") in x"
 
   let actual = program |> run
 
@@ -864,14 +864,14 @@ let ``LangNext-Integration DateOnly constructor fails with an error if the strin
 
 [<Test>]
 let ``LangNext-Integration DateTime constructor builds a DateTime value`` () =
-  let program = "let x = dateTime::new(\"2021-02-01T12:00:00\") in x"
+  let program = "let x = dateTime::tryParse(\"2021-02-01T12:00:00\") in x"
 
   let actual = program |> run
 
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Sum({ Case = 0; Count = 1 }, Value.Primitive(PrimitiveValue.DateTime(d))) when
+    | Value.Sum({ Case = 2; Count = 2 }, Value.Primitive(PrimitiveValue.DateTime(d))) when
       d = System.DateTime(2021, 2, 1, 12, 0, 0)
       ->
       Assert.Pass $"Correctly evaluated to 2021-02-01"
@@ -907,14 +907,14 @@ let ``LangNext-Integration DateTime (utcNow) constructor builds a DateTime value
 
 [<Test>]
 let ``LangNext-Integration DateTime constructor fails with an error if the string is not a valid date`` () =
-  let program = "let x = dateTime::new(\"GHSBR\") in x"
+  let program = "let x = dateTime::tryParse(\"GHSBR\") in x"
 
   let actual = program |> run
 
   match actual with
   | Left(value, _typeValue) ->
     match value with
-    | Value.Sum({ Case = 1; Count = 1 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
+    | Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit)) -> Assert.Pass()
     | _ -> Assert.Fail $"Expected an error, got {value}"
   | Right e -> Assert.Fail $"Run failed: {e.AsFSharpString}"
 
@@ -963,7 +963,7 @@ let ``LangNext-Integration Guid constructor fails with an error if the string is
 
 [<Test>]
 let ``LangNext-Integration TimeSpan constructor builds a TimeSpan value from "02:00:00"`` () =
-  let program = "let x = timeSpan::new(\"02:00:00\") in x"
+  let program = "let x = timeSpan::tryParse(\"02:00:00\") in x"
 
   let actual = program |> run
 
@@ -979,7 +979,7 @@ let ``LangNext-Integration TimeSpan constructor builds a TimeSpan value from "02
 
 [<Test>]
 let ``LangNext-Integration TimeSpan constructor builds a TimeSpan value from "6"`` () =
-  let program = "let x = timeSpan::new(\"6\") in x"
+  let program = "let x = timeSpan::tryParse(\"6\") in x"
 
   let actual = program |> run
 
@@ -1009,7 +1009,7 @@ let ``LangNext-Integration TimeSpan constructor builds TimeSpan zero value`` () 
 
 [<Test>]
 let ``LangNext-Integration TimeSpan constructor fails with an error if the string is not a valid time span`` () =
-  let program = "let x = timeSpan::new(\"GHSBR\") in x"
+  let program = "let x = timeSpan::tryParse(\"GHSBR\") in x"
 
   let actual = program |> run
 
@@ -1022,7 +1022,7 @@ let ``LangNext-Integration TimeSpan constructor fails with an error if the strin
 
 [<Test>]
 let ``LangNext-Integration TimeSpan constructor fails with an error if the parsed value overflows`` () =
-  let program = "let x = timeSpan::new(\"6:34:14:45\") in x"
+  let program = "let x = timeSpan::tryParse(\"6:34:14:45\") in x"
 
   let actual = program |> run
 
@@ -1035,7 +1035,7 @@ let ``LangNext-Integration TimeSpan constructor fails with an error if the parse
 
 [<Test>]
 let ``LangNext-Integration TimeSpan constructor fails with an error if value has a wrong format`` () =
-  let program = "let x = timeSpan::new(\"6:12:14:45,3448\") in x"
+  let program = "let x = timeSpan::tryParse(\"6:12:14:45,3448\") in x"
 
   let actual = program |> run
 
@@ -1293,7 +1293,7 @@ in let x:guid = guid::v4()
 in let x:()+guid = guid::new("")
 in let x:dateTime = dateTime::now()
 in let x:dateOnly = dateOnly::now()
-in let x:()+timeSpan = timeSpan::new("6:12:30:45")
+in let x:()+timeSpan = timeSpan::tryParse("6:12:30:45")
 in x
       """
 

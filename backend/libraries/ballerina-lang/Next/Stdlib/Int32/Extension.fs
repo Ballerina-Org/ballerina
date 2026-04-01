@@ -60,6 +60,54 @@ module Extension =
               return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.String(v |> string))
             } }
 
+    let int32TryParseId =
+      Identifier.FullyQualified([ "int32" ], "tryParse")
+      |> TypeCheckScope.Empty.Resolve
+
+    let tryParseOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
+      int32TryParseId,
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(
+                stringTypeValue,
+                TypeValue.CreateSum
+                  [ TypeValue.CreatePrimitive PrimitiveType.Unit
+                    TypeValue.CreatePrimitive PrimitiveType.Int32 ]
+              ),
+              Kind.Star,
+              Int32Operations.TryParse)
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | Int32Operations.TryParse -> Some(Int32Operations.TryParse)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              do!
+                op
+                |> Int32Operations.AsTryParse
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              return
+                match System.Int32.TryParse(v) with
+                | true, result -> Value.Sum({ Case = 2; Count = 2 }, Value.Primitive(PrimitiveValue.Int32 result))
+                | false, _ -> Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit))
+            } }
+
     let int32PlusId =
       Identifier.FullyQualified([ "int32" ], "+") |> TypeCheckScope.Empty.Resolve
 
@@ -621,6 +669,7 @@ module Extension =
     { TypeVars = []
       Operations =
         [ toStringOperation
+          tryParseOperation
           plusOperation
           minusOperation
           timesOperation
