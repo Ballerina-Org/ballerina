@@ -1,0 +1,418 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// Ballerina Example 08: Hooks And Permissions
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Why this sample matters:
+// It shows how a schema can mix lifecycle hooks with permission hooks in a
+// small webshop-inspired domain made of users, movies, licenses, and reviews.
+//
+// This sample intentionally uses only hook and permission patterns that are
+// already demonstrated in existing .bl files in this repository.
+//
+// Try switching demo_session between alice_session, anonymous_session, and
+// manager_session to see how can-read hooks affect both entity reads and
+// relation traversals.
+
+// A small user model. The IsManager field is a simple business property.
+type User = {
+  Email: string;
+  DisplayName: string;
+  IsManager: bool;
+};
+type UserId = { UserId: string };
+
+// Movies expose a few realistic business properties.
+type Movie = {
+  Imdb: string;
+  Title: string;
+  RentalPrice: decimal;
+  IsPublic: bool;
+  RequiresLicense: bool;
+};
+type MovieId = { MovieId: string };
+
+// A license grants access to one movie for one user until a given date.
+type License = {
+  Label: string;
+  ValidUntil: dateTime;
+  AutoRenew: bool;
+};
+type LicenseId = { LicenseId: string };
+
+// Reviews illustrate hooks that validate or rewrite user input.
+type Review = {
+  AuthorUserId: UserId;
+  Rating: int32;
+  Body: string;
+  IsVisible: bool;
+};
+type ReviewId = { ReviewId: string };
+
+// Standalone samples need to declare the Error payload used by 2Of2/2Of3 hook returns.
+type Error = { Message: string };
+
+// A tiny session model, inspired by the webshop examples.
+type Session = | Anonymous of () | User of UserId | ShopManager of UserId;
+
+let alice_user_id = { UserId = "user-alice" };
+let bob_user_id = { UserId = "user-bob" };
+let manager_user_id = { UserId = "user-manager" };
+
+let anonymous_session = Anonymous();
+let alice_session = User(alice_user_id);
+let manager_session = ShopManager(manager_user_id);
+
+// Change this value to test the permission hooks under another session.
+let demo_session = alice_session;
+
+// Base schema: only entities and relations, without access-control behavior.
+type WebshopSchemaStructure =
+  schema {
+    entity Users {
+      type User UserId
+    }
+    entity Movies {
+      type Movie MovieId
+    }
+    entity Licenses {
+      type License LicenseId
+    }
+    entity Reviews {
+      type Review ReviewId
+    }
+
+    relation LicenseUser {
+      from Licenses
+      to Users
+      cardinality *..1
+    }
+
+    relation LicenseMovie {
+      from Licenses
+      to Movies
+      cardinality *..1
+    }
+
+    relation MovieReviews {
+      from Movies
+      to Reviews
+      cardinality 1..*
+    }
+
+    relation ReviewAuthor {
+      from Reviews
+      to Users
+      cardinality *..1
+    }
+  };
+
+let can_manage_catalog = fun (session: Session) (schema: WebshopSchemaStructure) ->
+  match session with
+  | ShopManager (_ -> true)
+  | (* -> false);
+
+let user_has_any_license = fun (session: Session) (schema: WebshopSchemaStructure) ->
+  match session with
+  | User (user_id ->
+    DB::runQuery query{
+      from license_user in schema.Relations.LicenseUser
+      where license_user.ToId == user_id
+      select 1
+    } (2Of2(0, 1)) |> List::length > 0)
+  | ShopManager (_ -> true)
+  | (* -> false);
+
+// Helper type before partial application:
+//   Session -> WebshopSchemaStructure -> query<MovieId>
+// Hook type once demo_session is captured:
+//   WebshopSchemaStructure -> query<MovieId>
+let can_read_movies = fun (session: Session) (schema: WebshopSchemaStructure) ->
+  let all_movies = query{
+    from movie in schema.Entities.Movies
+    select movie.Id
+  };
+  match session with
+  | Anonymous (_ ->
+    query{
+      from movie in schema.Entities.Movies
+      where movie.Value.IsPublic == true
+      select movie.Id
+    })
+  | User (user_id ->
+    query{
+      from movie in schema.Entities.Movies
+      where movie.Value.IsPublic == true || (exists query{
+        from license_movie, license_user in schema.Relations.LicenseMovie, schema.Relations.LicenseUser
+        join on (license_movie.FromId, license_user.FromId)
+        where license_movie.ToId == movie.Id && license_user.ToId == user_id
+        select 1
+      })
+      select movie.Id
+    })
+  | ShopManager (_ -> all_movies)
+  | (* -> all_movies);
+
+// Helper type before partial application:
+//   Session -> WebshopSchemaStructure -> query<LicenseId>
+// Hook type once demo_session is captured:
+//   WebshopSchemaStructure -> query<LicenseId>
+let can_read_licenses = fun (session: Session) (schema: WebshopSchemaStructure) ->
+  let all_licenses = query{
+    from license in schema.Entities.Licenses
+    select license.Id
+  };
+  let no_licenses = query{
+    from license in schema.Entities.Licenses
+    where false
+    select license.Id
+  };
+  match session with
+  | User (user_id ->
+    query{
+      from license, license_user in schema.Entities.Licenses, schema.Relations.LicenseUser
+      join on (license.Id, license_user.FromId)
+      where license_user.ToId == user_id
+      select license.Id
+    })
+  | ShopManager (_ -> all_licenses)
+  | Anonymous (_ -> no_licenses)
+  | (* -> no_licenses);
+
+// Helper type before partial application:
+//   Session -> WebshopSchemaStructure -> query<ReviewId>
+// Hook type once demo_session is captured:
+//   WebshopSchemaStructure -> query<ReviewId>
+let can_read_reviews = fun (session: Session) (schema: WebshopSchemaStructure) ->
+  let all_reviews = query{
+    from review in schema.Entities.Reviews
+    select review.Id
+  };
+  let no_reviews = query{
+    from review in schema.Entities.Reviews
+    where false
+    select review.Id
+  };
+  match session with
+  | Anonymous (_ ->
+    query{
+      from review in schema.Entities.Reviews
+      where review.Value.IsVisible == true && (exists query{
+        from movie_review, movie in schema.Relations.MovieReviews, schema.Entities.Movies
+        join on (movie_review.FromId, movie.Id)
+        where movie_review.ToId == review.Id && movie.Value.IsPublic == true
+        select 1
+      })
+      select review.Id
+    })
+  | User (user_id ->
+    query{
+      from review in schema.Entities.Reviews
+      where review.Value.AuthorUserId == user_id || ((review.Value.IsVisible == true) && (exists query{
+        from movie_review, movie in schema.Relations.MovieReviews, schema.Entities.Movies
+        join on (movie_review.FromId, movie.Id)
+        where movie_review.ToId == review.Id && (movie.Value.IsPublic == true || (exists query{
+          from license_movie, license_user in schema.Relations.LicenseMovie, schema.Relations.LicenseUser
+          join on (license_movie.FromId, license_user.FromId)
+          where license_movie.ToId == movie.Id && license_user.ToId == user_id
+          select 1
+        }))
+        select 1
+      }))
+      select review.Id
+    })
+  | ShopManager (_ -> all_reviews)
+  | (* -> no_reviews);
+
+// Helper type before partial application:
+//   Session -> WebshopSchemaStructure -> bool
+// Hook type once demo_session is captured:
+//   WebshopSchemaStructure -> bool
+let can_create_review = fun (session: Session) (schema: WebshopSchemaStructure) ->
+  user_has_any_license session schema;
+
+// Helper type before partial application:
+//   Session -> WebshopSchemaStructure -> ReviewId -> WebshopSchemaStructure::Reviews -> bool
+// Hook type once demo_session is captured:
+//   WebshopSchemaStructure -> ReviewId -> WebshopSchemaStructure::Reviews -> bool
+let is_own_review = fun (session: Session) (schema: WebshopSchemaStructure) (review_id: ReviewId) (review: WebshopSchemaStructure::Reviews) ->
+  match session with
+  | User (user_id -> user_id.UserId == review.AuthorUserId.UserId)
+  | ShopManager (_ -> true)
+  | (* -> false);
+
+// Hook type:
+//   WebshopSchemaStructure -> ReviewId -> Review -> WebshopSchemaStructure::Reviews -> 1Of3 () | 2Of3 Error | 3Of3 Review
+let on_creating_review = fun (schema: WebshopSchemaStructure) (review_id: ReviewId) (original: Review) (review: WebshopSchemaStructure::Reviews) ->
+  if review.Rating < 1 then
+    2Of3({ Error::Message = "Rating must be between 1 and 5." })
+  else if review.Rating > 5 then
+    2Of3({ Error::Message = "Rating must be between 1 and 5." })
+  else if review.Rating <= 2 then
+    // Low-rated reviews are still stored, but hidden until moderation.
+    3Of3({ review with Review::IsVisible = false })
+  else
+    1Of3();
+
+// Hook type:
+//   WebshopSchemaStructure -> MovieId -> WebshopSchemaStructure::Movies -> WebshopSchemaStructure::Movies -> 1Of2 () | 2Of2 Error
+let on_updated_movie = fun (schema: WebshopSchemaStructure) (movie_id: MovieId) (previous_value: WebshopSchemaStructure::Movies) (current_value: WebshopSchemaStructure::Movies) ->
+  let review_count = DB::runQuery query{
+    from movie_review in schema.Relations.MovieReviews
+    where movie_review.FromId == movie_id
+    select 1
+  } (2Of2(0, 50)) |> List::length;
+  do string::print ("Movie", movie_id, "was updated from", previous_value.RentalPrice, "to", current_value.RentalPrice, "and currently has", review_count, "reviews.");
+  1Of2();
+
+// Hook type:
+//   WebshopSchemaStructure -> MovieId -> WebshopSchemaStructure::Movies -> 1Of2 () | 2Of2 Error
+let on_deleted_movie = fun (schema: WebshopSchemaStructure) (movie_id: MovieId) (movie: WebshopSchemaStructure::Movies) ->
+  let related_license_ids = DB::runQuery query{
+    from license_movie in schema.Relations.LicenseMovie
+    where license_movie.ToId == movie_id
+    select license_movie.FromId
+  } (1Of2());
+  let related_review_ids = DB::runQuery query{
+    from movie_review in schema.Relations.MovieReviews
+    where movie_review.FromId == movie_id
+    select movie_review.ToId
+  } (1Of2());
+  do DB::deleteMany[WebshopSchemaStructure] (schema.Entities.Licenses) related_license_ids;
+  do DB::deleteMany[WebshopSchemaStructure] (schema.Entities.Reviews) related_review_ids;
+  do string::print ("Deleted movie", movie_id, movie.Title, "together with its related licenses and reviews.");
+  1Of2();
+
+// Hook type:
+//   WebshopSchemaStructure -> LicenseId -> WebshopSchemaStructure::Licenses -> 1Of2 () | 2Of2 timeSpan
+let on_license_background = fun (schema: WebshopSchemaStructure) (license_id: LicenseId) (license: WebshopSchemaStructure::Licenses) ->
+  let diff = license.ValidUntil - dateTime::utcNow();
+  if timeSpan::totalDays diff <= 0.0d then
+    let _ = DB::delete[WebshopSchemaStructure] (schema.Entities.Licenses) license_id;
+    do string::print ("License", license_id, license.Label, "expired and was removed by the background hook.");
+    1Of2()
+  else
+    do string::print ("License", license_id, license.Label, "will be checked again in", timeSpan::totalDays diff, "days.");
+    2Of2(diff + timeSpan::fromSeconds 1.0);
+
+// Hooked schema: the base model plus lifecycle hooks and permission rules.
+type WebshopHooksSchema =
+  schema {
+    include WebshopSchemaStructure with {
+      entity Movies {
+        let can read = can_read_movies demo_session
+        let can create = can_manage_catalog demo_session
+        let can update = fun (schema: WebshopSchemaStructure) _ _ -> can_manage_catalog demo_session schema
+        let can delete = fun (schema: WebshopSchemaStructure) _ _ -> can_manage_catalog demo_session schema
+        let on updated = on_updated_movie
+        let on deleted = on_deleted_movie
+      }
+
+      entity Licenses {
+        let can read = can_read_licenses demo_session
+        let can create = can_manage_catalog demo_session
+        let can update = fun (schema: WebshopSchemaStructure) _ _ -> can_manage_catalog demo_session schema
+        let can delete = fun (schema: WebshopSchemaStructure) _ _ -> can_manage_catalog demo_session schema
+        let on background = on_license_background
+      }
+
+      entity Reviews {
+        let can read = can_read_reviews demo_session
+        let can create = can_create_review demo_session
+        let can update = is_own_review demo_session
+        let can delete = is_own_review demo_session
+        let on creating = on_creating_review
+      }
+    }
+  };
+
+let main = fun (schema: WebshopHooksSchema) ->
+  let alice = { Email = "alice@demo.local"; DisplayName = "Alice"; IsManager = false };
+  let bob = { Email = "bob@demo.local"; DisplayName = "Bob"; IsManager = false };
+  let manager = { Email = "manager@demo.local"; DisplayName = "Manager"; IsManager = true };
+
+  let public_movie_id = { MovieId = "movie-interstellar" };
+  let private_movie_id = { MovieId = "movie-the-dark-knight" };
+
+  let public_movie = {
+    Imdb = "tt0816692";
+    Title = "Interstellar";
+    RentalPrice = 3.99;
+    IsPublic = true;
+    RequiresLicense = false
+  };
+
+  let private_movie = {
+    Imdb = "tt0468569";
+    Title = "The Dark Knight";
+    RentalPrice = 4.99;
+    IsPublic = false;
+    RequiresLicense = true
+  };
+
+  let alice_license_id = { LicenseId = "license-alice-pro-pack" };
+  let alice_license = {
+    Label = "Alice Dark Knight Access";
+    ValidUntil = dateTime::utcNow() + timeSpan::fromDays 30.0;
+    AutoRenew = true
+  };
+
+  let alice_review_id = { ReviewId = "review-alice-dark-knight" };
+  let public_review_id = { ReviewId = "review-bob-interstellar" };
+
+  let alice_review = {
+    AuthorUserId = alice_user_id;
+    Rating = 5;
+    Body = "The Dark Knight is an absolute masterpiece.";
+    IsVisible = true
+  };
+
+  let public_review = {
+    AuthorUserId = bob_user_id;
+    Rating = 4;
+    Body = "Interstellar is stunning and freely available.";
+    IsVisible = true
+  };
+
+  // Seed data through the base schema so setup is not blocked by permissions.
+  let _ = DB::create[WebshopSchemaStructure] (schema.Entities.Users) (alice_user_id, alice);
+  let _ = DB::create[WebshopSchemaStructure] (schema.Entities.Users) (bob_user_id, bob);
+  let _ = DB::create[WebshopSchemaStructure] (schema.Entities.Users) (manager_user_id, manager);
+
+  let _ = DB::create[WebshopSchemaStructure] (schema.Entities.Movies) (public_movie_id, public_movie);
+  let _ = DB::create[WebshopSchemaStructure] (schema.Entities.Movies) (private_movie_id, private_movie);
+
+  let _ = DB::create[WebshopSchemaStructure] (schema.Entities.Licenses) (alice_license_id, alice_license);
+  let _ = DB::create[WebshopSchemaStructure] (schema.Entities.Reviews) (alice_review_id, alice_review);
+  let _ = DB::create[WebshopSchemaStructure] (schema.Entities.Reviews) (public_review_id, public_review);
+
+  let _ = DB::link[WebshopSchemaStructure] (schema.Relations.LicenseUser) (alice_license_id, alice_user_id);
+  let _ = DB::link[WebshopSchemaStructure] (schema.Relations.LicenseMovie) (alice_license_id, private_movie_id);
+  let _ = DB::link[WebshopSchemaStructure] (schema.Relations.MovieReviews) (private_movie_id, alice_review_id);
+  let _ = DB::link[WebshopSchemaStructure] (schema.Relations.MovieReviews) (public_movie_id, public_review_id);
+  let _ = DB::link[WebshopSchemaStructure] (schema.Relations.ReviewAuthor) (alice_review_id, alice_user_id);
+  let _ = DB::link[WebshopSchemaStructure] (schema.Relations.ReviewAuthor) (public_review_id, bob_user_id);
+
+  // alice_license links to alice and to the private movie
+  let _ = DB::link[WebshopSchemaStructure] (schema.Relations.LicenseUser) (alice_license_id, alice_user_id);
+
+  // These reads go through the hooked schema, so can-read restrictions apply.
+  let sample_visible_movies = DB::getMany[WebshopHooksSchema] (schema.Entities.Movies) (0, 10);
+  let sample_visible_licenses = DB::getMany[WebshopHooksSchema] (schema.Entities.Licenses) (0, 10);
+  let sample_alice_licenses = DB::lookupMany[WebshopHooksSchema] (schema.Relations.LicenseUser.From) (alice_user_id) (0, 10);
+  let sample_private_movie_reviews = DB::lookupMany[WebshopHooksSchema] (schema.Relations.MovieReviews.To) (private_movie_id) (0, 10);
+  let sample_public_movie_reviews = DB::lookupMany[WebshopHooksSchema] (schema.Relations.MovieReviews.To) (public_movie_id) (0, 10);
+
+  (
+    ("users_created", 3),
+    ("movies_created", 2),
+    ("licenses_created", 1),
+    ("reviews_created", 2),
+    ("hooked_entities", 3),
+    ("visibleMovies", sample_visible_movies),
+    ("visibleLicenses", sample_visible_licenses),
+    ("aliceLicenses", sample_alice_licenses),
+    ("privateMovieReviews", sample_private_movie_reviews),
+    ("publicMovieReviews", sample_public_movie_reviews)
+  );
+
+DB::run [WebshopHooksSchema] main
