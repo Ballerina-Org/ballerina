@@ -9,6 +9,7 @@ module APIRegistration =
   open Upsert
   open Ballerina.Collections.Sum
   open Update
+  open OpenAPI
 
   type RouteGroupBuilder with
     member builder.RegisterAPIEndpoints<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
@@ -29,4 +30,5 @@ module APIRegistration =
         do lookup<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName> builder apiContext
         do upsert<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName> builder apiContext
         do update<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName> builder apiContext
+        do openApi<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName> builder apiContext
       }

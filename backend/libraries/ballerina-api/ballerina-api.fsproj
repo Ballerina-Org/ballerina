@@ -8,12 +8,14 @@
     <Compile Include="Model/Model.fs" />
     <!-- <Compile Include="Common/SyntheticData.fs" /> -->
     <Compile Include="Common/Utils.fs" />
+    <Compile Include="Common/OpenAPI.fs" />
     <Compile Include="Endpoints/Create.fs" />
     <Compile Include="Endpoints/Delete.fs" />
     <Compile Include="Endpoints/Linking.fs" />
     <Compile Include="Endpoints/Read.fs" />
     <Compile Include="Endpoints/Upsert.fs" />
     <Compile Include="Endpoints/Update.fs" />
+    <Compile Include="Endpoints/OpenAPI.fs" />
     <Compile Include="APIRegistration.fs" />
   </ItemGroup>
   <ItemGroup>
