@@ -85,7 +85,7 @@
     <ProjectReference Include="../Models/ballerina-lang-models.fsproj" />
     <ProjectReference Include="../TypeChecker/ballerina-lang-typecheck.fsproj" />
     <ProjectReference Include="../Eval/ballerina-lang-eval.fsproj" />
-    <ProjectReference Include="SmartComponents/SmartComponents.LocalEmbeddings/SmartComponents.LocalEmbeddings.csproj" />
+    <ProjectReference Include="SmartComponents/SmartComponents.LocalEmbeddings/SmartComponents.LocalEmbeddings.fsproj" />
     <ProjectReference Include="../Serialization/ballerina-lang-serialization.fsproj" />
     <ProjectReference Include="../DeltaSerialization/ballerina-delta-serialization.fsproj" />
   </ItemGroup>

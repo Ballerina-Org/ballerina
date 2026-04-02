@@ -2,6 +2,12 @@
   "version": 1,
   "dependencies": {
     "net10.0": {
+      "FSharp.Core": {
+        "type": "Direct",
+        "requested": "[10.0.102, )",
+        "resolved": "10.0.102",
+        "contentHash": "umz5pbtOvL/F9U5sibhREzZT2ewAs//nRTMwj8XcOOjMdOP828tipLpEhb2fZNijhiyikJ6Nr/dsMc/lj58W9w=="
+      },
       "Microsoft.Bcl.Numerics": {
         "type": "Direct",
         "requested": "[10.0.2, )",
@@ -72,14 +78,6 @@
         "type": "Transitive",
         "resolved": "10.0.2",
         "contentHash": "WIRPDa/qoKHmJhTAPCO/zLu9kRLQ2Fd6HD5tzgdXJ3xGEVXDHP6FvakKJjynwKrVDld8H4G4tcbW53wuC/wxMQ==",
-        "dependencies": {
-          "Microsoft.Extensions.Primitives": "10.0.2"
-        }
-      },
-      "Microsoft.Extensions.Configuration.Abstractions": {
-        "type": "Transitive",
-        "resolved": "10.0.2",
-        "contentHash": "KC5PslaTDnTuTvyke0KYAVBYdZ7IVTsU3JhHe69BpEbHLcj1YThP3bIGtZNOkZfast2AuLnul5lk4rZKxAdUGQ==",
         "dependencies": {
           "Microsoft.Extensions.Primitives": "10.0.2"
         }
@@ -189,13 +187,6 @@
         "type": "Transitive",
         "resolved": "10.0.2",
         "contentHash": "me7W69hkjdu5EzHXCQSXv9OS3uAkMXT26oZuWTaabeoO5BPxSVuRVJ2FSfIW8xyGxBb6mKCE6ZKg7TLk3IzJBQ=="
-      },
-      "smartcomponents.inference": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Extensions.Configuration.Abstractions": "[10.0.2, )",
-          "Microsoft.Extensions.Logging.Abstractions": "[10.0.2, )"
-        }
       }
     },
     "net10.0/linux-arm64": {

@@ -25,7 +25,7 @@ module DBRun =
   open Ballerina
   open Ballerina.DSL.Next.StdLib.DB
 
-  let internal MemoryDBSchemaToDescriptors<'runtimeContext, 'db, 'ext when 'ext: comparison>
+  let MemoryDBSchemaToDescriptors<'runtimeContext, 'db, 'ext when 'ext: comparison>
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
     (db: 'db)
     (schema: Schema<'ext>)

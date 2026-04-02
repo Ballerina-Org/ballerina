@@ -65,6 +65,12 @@ module Model =
           Type = None
           Name = name }
 
+    static member FromLocalIdentifier(id: LocalIdentifier) : ResolvedIdentifier =
+      { Assembly = ""
+        Module = ""
+        Type = None
+        Name = id.Name }
+
     static member Create(name: string) : ResolvedIdentifier =
       { Assembly = ""
         Module = ""

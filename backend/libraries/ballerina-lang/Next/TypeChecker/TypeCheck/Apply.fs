@@ -131,7 +131,7 @@ module Apply =
                 let f_lookup = ctx.Scope.Resolve f_lookup
 
                 return!
-                  state.Either
+                  state.Either3
                     (state {
                       let! (union_cons_t:
                         TypeValue<'valueExt> * TypeParameter list * OrderedMap<TypeSymbol, TypeValue<'valueExt>>) =
@@ -244,10 +244,6 @@ module Apply =
 
                             TypeValue.CreateArrow(freshVar, ret_t))
 
-                        // do
-                        //   Console.WriteLine
-                        //     $"Padding and typechecking function expression {f} with context type {context_t}..."
-
                         let! f, t_f, f_k = pad None f
 
                         let! t_f =
@@ -268,7 +264,7 @@ module Apply =
                           }
 
                         return!
-                          state.Either
+                          state.Either3
                             (state {
                               do! f_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -380,9 +376,12 @@ module Apply =
 
                               return Expr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx
                             })
+                            ((fun () -> $"Error: cannot resolve application, found variable {f_lookup}")
+                             |> error
+                             |> state.Throw
+                             |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium)))
+                          |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
                       | Right _ ->
-                        // do Console.WriteLine $"f is a lookup, looking for ad-hoc polymorphic operator resolution for {f_lookup}..."
-
                         let! a, t_a, _a_k, _ = None => a_expr
                         // do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -473,53 +472,53 @@ module Apply =
                             |> state.Throw
                             |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Low))
                     })
+                    ((fun () -> $"Error: cannot resolve application, found variable {f_lookup}")
+                     |> error
+                     |> state.Throw
+                     |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium)))
                   |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
               })
               (state {
                 let! a, t_a, _a_k, _ = None => a_expr
                 // do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                let! t_a, f_constraint =
-                  match t_a with
-                  | TypeValue.Var v when v.Synthetic -> state { t_a, None }
-                  | _ ->
-                    state {
-                      let guid = Guid.CreateVersion7()
-
-                      let freshVar =
-                        { TypeVar.Name = "_application_" + guid.ToString()
-                          Synthetic = true
-                          Guid = guid }
-                        |> TypeValue.Var
-
-                      let! t_a =
-                        t_a
-                        |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
-                        |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
-
-                      return t_a, Some(TypeValue.CreateArrow(t_a, freshVar))
-                    }
-
-                // do Console.WriteLine($"t_a: {t_a}")
-                // do Console.WriteLine($"a_expr: {a_expr}")
-                // do Console.WriteLine($"f_expr: {f_expr}")
-                // do Console.WriteLine($"f_constraint: {f_constraint}")
-                // do Console.ReadLine() |> ignore
-                // do Console.WriteLine($"Padding and typechecking function expression {f}...")
-                let! f, t_f, f_k = pad f_constraint f
-                // do Console.WriteLine($"t_f: {t_f}")
-                // do Console.WriteLine($"f_k: {f_k}")
-                // do Console.ReadLine() |> ignore
-                do! f_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-                let! (f_input, f_output) =
-                  TypeValue.AsArrow t_f
-                  |> ofSum
-                  |> state.Map WithSourceMapping.Getters.Value
-                  |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium))
-
                 return!
                   state {
+                    let! t_a, f_constraint =
+                      match t_a with
+                      | TypeValue.Var v when v.Synthetic -> state { t_a, None }
+                      | _ ->
+                        state {
+                          let guid = Guid.CreateVersion7()
+
+                          let freshVar =
+                            { TypeVar.Name = "_application_" + guid.ToString()
+                              Synthetic = true
+                              Guid = guid }
+                            |> TypeValue.Var
+
+                          let! t_a =
+                            t_a
+                            |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
+                            |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
+
+                          return t_a, Some(TypeValue.CreateArrow(t_a, freshVar))
+                        }
+
+                    // do Console.WriteLine($"t_a: {t_a}")
+                    // do Console.WriteLine($"a_expr: {a_expr}")
+                    // do Console.WriteLine($"f_expr: {f_expr}")
+                    // do Console.WriteLine($"f_constraint: {f_constraint}")
+                    // do Console.ReadLine() |> ignore
+                    let! f, t_f, f_k = pad f_constraint f
+                    // do Console.WriteLine($"t_f: {t_f}")
+                    // do Console.WriteLine($"f_k: {f_k}")
+                    // do Console.ReadLine() |> ignore
+                    do! f_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                    let! (f_input, f_output) =
+                      TypeValue.AsArrow t_f |> ofSum |> state.Map WithSourceMapping.Getters.Value
+
                     // do Console.WriteLine $"Unifying function input type {f_input} with argument type {t_a}..."
                     do! unify_with_schema_subtyping f_input t_a
 
@@ -537,7 +536,6 @@ module Apply =
               // |> state.MapError(Errors.MapPriority(replaceWith  ErrorPriority.Medium))
               })
             |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
-
-
+            |> state.MapError(Errors.Map(fun e -> $"{e} branch XYZ"))
         }
         |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
