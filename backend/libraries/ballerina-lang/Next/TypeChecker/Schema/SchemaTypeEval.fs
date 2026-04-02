@@ -442,41 +442,41 @@ module SchemaTypeEval =
                     })
                   (state { return t })
 
-              let rec (+) (t: TypeValue<'ve>) (name: LocalIdentifier) =
-                state {
-                  let! fields = t |> TypeValue.AsRecord |> ofSum
+              // let rec (+) (t: TypeValue<'ve>) (name: LocalIdentifier) =
+              //   state {
+              //     let! fields = t |> TypeValue.AsRecord |> ofSum
 
-                  let vector_name_already_exists =
-                    fields
-                    |> OrderedMap.toSeq
-                    |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = name.Name)
+              //     let vector_name_already_exists =
+              //       fields
+              //       |> OrderedMap.toSeq
+              //       |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = name.Name)
 
-                  if vector_name_already_exists.IsSome then
-                    return!
-                      (fun () ->
-                        $"Error: a field with the same name as vector {name.Name} already exists in record type {t}")
-                      |> Errors.Singleton loc0
-                      |> state.Throw
+              //     if vector_name_already_exists.IsSome then
+              //       return!
+              //         (fun () ->
+              //           $"Error: a field with the same name as vector {name.Name} already exists in record type {t}")
+              //         |> Errors.Singleton loc0
+              //         |> state.Throw
 
-                  else
-                    let fields =
-                      fields
-                      |> OrderedMap.add
-                        (name.Name |> Identifier.LocalScope |> TypeSymbol.Create)
-                        (TypeValue.CreatePrimitive PrimitiveType.Vector, Kind.Star)
+              //     else
+              //       let fields =
+              //         fields
+              //         |> OrderedMap.add
+              //           (name.Name |> Identifier.LocalScope |> TypeSymbol.Create)
+              //           (TypeValue.CreatePrimitive PrimitiveType.Vector, Kind.Star)
 
-                    return TypeValue.CreateRecord fields
-                }
+              //       return TypeValue.CreateRecord fields
+              //   }
 
-              let! t_with_props =
-                vectors
-                |> Seq.fold
-                  (fun acc (p: SchemaEntityVector<'ve>) ->
-                    state {
-                      let! t = acc
-                      return! t + p.VectorName
-                    })
-                  (state { return t_with_props })
+              // let! t_with_props =
+              //   vectors
+              //   |> Seq.fold
+              //     (fun acc (p: SchemaEntityVector<'ve>) ->
+              //       state {
+              //         let! t = acc
+              //         return! t + p.VectorName
+              //       })
+              //     (state { return t_with_props })
 
               return
                 { SchemaEntity.Name = e.Name

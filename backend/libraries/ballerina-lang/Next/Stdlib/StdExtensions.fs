@@ -15,6 +15,7 @@ open Ballerina.DSL.Next.StdLib.DB
 open Ballerina.Data.Delta
 open Ballerina.DSL.Next.StdLib.String
 open Ballerina.DSL.Next.Types.TypeChecker.Model
+open Ballerina.DSL.Next.StdLib.DB.Extension.DBRun
 
 type ValueExt<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> =
   | ValueExt of

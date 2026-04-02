@@ -43,34 +43,28 @@ module Lookup =
           // do Console.ReadLine() |> ignore
 
           return!
-            state.Either
+            state.Either3
               (state {
                 let! t_id, id_k =
-                  state.Either3
+                  state.Either
                     (TypeCheckContext.TryFindVar(id_resolved, loc0))
                     (TypeCheckState.TryFindType(id_resolved, loc0))
-                    (fun () -> $"Error: cannot resolve identifier '{id_resolved}'/'{id_original}'."
-                     |> error
-                     |> Errors<_>.MapPriority(replaceWith ErrorPriority.High)
-                     |> state.Throw)
-                  |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
 
                 return Expr.Lookup(id_resolved, loc0, ctx.Scope), t_id, id_k, ctx
               })
               (state {
                 let! t_id, id_k =
-                  state.Either3
+                  state.Either
                     (TypeCheckContext.TryFindVar(id_original, loc0))
                     (TypeCheckState.TryFindType(id_original, loc0))
-                    (fun () -> $"Error: cannot resolve identifier '{id_resolved}'/'{id_original}'."
-                     |> error
-                     |> Errors<_>.MapPriority(replaceWith ErrorPriority.High)
-                     |> state.Throw)
-
-                  |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
 
                 return Expr.Lookup(id_original, loc0, ctx.Scope), t_id, id_k, ctx
 
               })
+              (fun () -> $"Error: cannot resolve identifier '{id_resolved}'/'{id_original}'."
+               |> error
+               |> Errors<_>.MapPriority(replaceWith ErrorPriority.High)
+               |> state.Throw)
+            |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
 
         }
