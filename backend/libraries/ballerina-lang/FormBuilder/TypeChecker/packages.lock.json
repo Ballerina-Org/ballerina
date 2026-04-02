@@ -164,14 +164,6 @@
           "Microsoft.Extensions.Primitives": "10.0.2"
         }
       },
-      "Microsoft.Extensions.Configuration.Abstractions": {
-        "type": "Transitive",
-        "resolved": "10.0.2",
-        "contentHash": "KC5PslaTDnTuTvyke0KYAVBYdZ7IVTsU3JhHe69BpEbHLcj1YThP3bIGtZNOkZfast2AuLnul5lk4rZKxAdUGQ==",
-        "dependencies": {
-          "Microsoft.Extensions.Primitives": "10.0.2"
-        }
-      },
       "Microsoft.Extensions.DependencyInjection": {
         "type": "Transitive",
         "resolved": "10.0.2",
@@ -456,20 +448,13 @@
           "ballerina-lang-models": "[1.0.0, )"
         }
       },
-      "smartcomponents.inference": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Extensions.Configuration.Abstractions": "[10.0.2, )",
-          "Microsoft.Extensions.Logging.Abstractions": "[10.0.2, )"
-        }
-      },
       "smartcomponents.localembeddings": {
         "type": "Project",
         "dependencies": {
+          "FSharp.Core": "[10.0.102, )",
           "Microsoft.Bcl.Numerics": "[10.0.2, )",
           "Microsoft.Extensions.ObjectPool": "[10.0.2, )",
           "Microsoft.SemanticKernel.Connectors.Onnx": "[1.71.0-alpha, )",
-          "SmartComponents.Inference": "[1.0.0, )",
           "System.Numerics.Tensors": "[10.0.2, )",
           "System.Runtime.Caching": "[10.0.2, )"
         }

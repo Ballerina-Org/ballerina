@@ -415,15 +415,12 @@
           "ballerina-stdlib": "[1.0.0, )"
         }
       },
-      "smartcomponents.inference": {
-        "type": "Project"
-      },
       "smartcomponents.localembeddings": {
         "type": "Project",
         "dependencies": {
+          "FSharp.Core": "[10.0.102, )",
           "Microsoft.Bcl.Numerics": "[10.0.2, )",
           "Microsoft.SemanticKernel.Connectors.Onnx": "[1.71.0-alpha, )",
-          "SmartComponents.Inference": "[1.0.0, )",
           "System.Numerics.Tensors": "[10.0.2, )",
           "System.Runtime.Caching": "[10.0.2, )"
         }
