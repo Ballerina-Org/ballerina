@@ -29,14 +29,6 @@ module Upsert =
       Entity: ValueDTO<ValueExtDTO>
       Delta: DeltaDTO<ValueExtDTO, DeltaExtDTO> }
 
-  type UpsertPayload =
-    { EntityName: string
-      EntityWithId: EntityWithId }
-
-  type UpsertManyPayload =
-    { EntityName: string
-      Entities: EntityWithId[] }
-
   let upsert<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
     when 'customExtension: comparison and 'db: comparison>
     (app: IEndpointRouteBuilder)
@@ -44,13 +36,12 @@ module Upsert =
     =
 
     app.MapPost(
-      "/{tenantId}/{schemaName}/upsert",
-      Func<HttpContext, 'tenantId, 'schemaName, bool, UpsertPayload, IResult>
-        (fun httpContext tenantId schemaName draft payload ->
+      "/{tenantId}/{schemaName}/{entityName}/upsert",
+      Func<HttpContext, 'tenantId, 'schemaName, string, bool, EntityWithId, IResult>
+        (fun httpContext tenantId schemaName entityName draft payload ->
           let result =
             sum {
-              let entityName, id, entity, delta =
-                payload.EntityName, payload.EntityWithId.Id, payload.EntityWithId.Entity, payload.EntityWithId.Delta
+              let id, entity, delta = payload.Id, payload.Entity, payload.Delta
 
               let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
                 getDbDescriptor tenantId schemaName draft context
@@ -158,11 +149,9 @@ module Upsert =
     |> ignore
 
     app.MapPost(
-      "/{tenantId}/{schemaName}/upsert-many",
-      Func<HttpContext, 'tenantId, 'schemaName, bool, UpsertManyPayload, IResult>
-        (fun httpContext tenantId schemaName draft payload ->
-          let entityName = payload.EntityName
-
+      "/{tenantId}/{schemaName}/{entityName}/upsert-many",
+      Func<HttpContext, 'tenantId, 'schemaName, string, bool, EntityWithId[], IResult>
+        (fun httpContext tenantId schemaName entityName draft payload ->
           let result =
             sum {
 
@@ -212,7 +201,7 @@ module Upsert =
                 |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
               let! upserters =
-                payload.Entities
+                payload
                 |> Array.map (fun entityWithId ->
                   reader {
                     let! delta = deltaFromDTO entityWithId.Delta

@@ -21,14 +21,6 @@ module Delete =
   open Microsoft.AspNetCore.Http
   open Ballerina.DSL.Next.Serialization.ValueSerializer
 
-  type DeletePayload =
-    { EntityName: string
-      Id: ValueDTO<ValueExtDTO> }
-
-  type DeleteManyPayload =
-    { EntityName: string
-      Ids: ValueDTO<ValueExtDTO>[] }
-
   let delete<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
     when 'customExtension: comparison and 'db: comparison>
     (app: IEndpointRouteBuilder)
@@ -36,10 +28,10 @@ module Delete =
     =
 
     app.MapPost(
-      "/{tenantId}/{schemaName}/delete",
-      Func<HttpContext, 'tenantId, 'schemaName, bool, DeletePayload, IResult>
-        (fun httpContext tenantId schemaName draft payload ->
-          let entityName, entityId = payload.EntityName, payload.Id
+      "/{tenantId}/{schemaName}/{entityName}/delete",
+      Func<HttpContext, 'tenantId, 'schemaName, string, bool, ValueDTO<ValueExtDTO>, IResult>
+        (fun httpContext tenantId schemaName entityName draft payload ->
+          let entityId = payload
 
           let result =
             sum {
@@ -131,12 +123,12 @@ module Delete =
     |> ignore
 
     app.MapPost(
-      "/{tenantId}/{schemaName}/delete-many",
-      Func<HttpContext, 'tenantId, 'schemaName, bool, DeleteManyPayload, IResult>
-        (fun httpContext tenantId schemaName draft payload ->
+      "/{tenantId}/{schemaName}/{entityName}/delete-many",
+      Func<HttpContext, 'tenantId, 'schemaName, string, bool, ValueDTO<ValueExtDTO>[], IResult>
+        (fun httpContext tenantId schemaName entityName draft payload ->
           let result =
             sum {
-              let entityName, ids = payload.EntityName, payload.Ids
+              let ids = payload
 
               let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
                 getDbDescriptor tenantId schemaName draft context

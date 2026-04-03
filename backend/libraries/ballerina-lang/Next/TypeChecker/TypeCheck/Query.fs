@@ -55,6 +55,7 @@ module Query =
   open Ballerina.DSL.Next.Types.TypeChecker.QueryCaseTupleDes
   open Ballerina.DSL.Next.Types.TypeChecker.QueryCaseRecordDes
   open Ballerina.DSL.Next.Types.TypeChecker.QueryCaseApplyIntrinsic
+  open Ballerina.DSL.Next.Types.TypeChecker.QueryCaseConditional
 
   type QueryTypeCheckContext<'valueExt> =
     { Iterators: Map<LocalIdentifier, TypeQueryRow<'valueExt>>
@@ -116,6 +117,8 @@ module Query =
           | ExprQueryExprRec.QueryCount q -> return! typeCheckQueryCount typeCheckQuery expr q
           | ExprQueryExprRec.QueryExists q -> return! typeCheckQueryExists typeCheckQuery expr q
           | ExprQueryExprRec.QueryArray q -> return! typeCheckQueryArray typeCheckQuery expr q
+          | ExprQueryExprRec.QueryConditional(cond, thenExpr, elseExpr) ->
+            return! typeCheckQueryConditional loc0 (fun arg -> !arg) expr cond thenExpr elseExpr
           | _ -> return! typeCheckQueryUnsupported expr
         }
 

@@ -536,6 +536,5 @@ module Apply =
               // |> state.MapError(Errors.MapPriority(replaceWith  ErrorPriority.Medium))
               })
             |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
-            |> state.MapError(Errors.Map(fun e -> $"{e} branch XYZ"))
         }
         |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
