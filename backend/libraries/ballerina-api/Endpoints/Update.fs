@@ -32,26 +32,17 @@ module Update =
     { Id: ValueDTO<ValueExtDTO>
       Delta: DeltaDTO<ValueExtDTO, DeltaExtDTO> }
 
-  type UpdatePayload =
-    { EntityName: string
-      Updater: UpdateDeltaWithId }
-
-  type UpdateManyPayload =
-    { EntityName: string
-      Updaters: UpdateDeltaWithId[] }
-
   let update<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
     when 'customExtension: comparison and 'db: comparison>
     (app: IEndpointRouteBuilder)
     (context: APIContext<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
     =
     app.MapPost(
-      "/{tenantId}/{schemaName}/update",
-      Func<HttpContext, 'tenantId, 'schemaName, bool, UpdatePayload, IResult>
-        (fun httpContext tenantId schemaName draft payload ->
-          let entityName = payload.EntityName
-          let entityId = payload.Updater.Id
-          let delta = payload.Updater.Delta
+      "/{tenantId}/{schemaName}/{entityName}/update",
+      Func<HttpContext, 'tenantId, 'schemaName, string, bool, UpdateDeltaWithId, IResult>
+        (fun httpContext tenantId schemaName entityName draft payload ->
+          let entityId = payload.Id
+          let delta = payload.Delta
 
           let result =
             sum {
@@ -153,11 +144,9 @@ module Update =
     |> ignore
 
     app.MapPost(
-      "/{tenantId}/{schemaName}/update-many",
-      Func<HttpContext, 'tenantId, 'schemaName, bool, UpdateManyPayload, IResult>
-        (fun httpContext tenantId schemaName draft payload ->
-          let entityName = payload.EntityName
-
+      "/{tenantId}/{schemaName}/{entityName}/update-many",
+      Func<HttpContext, 'tenantId, 'schemaName, string, bool, UpdateDeltaWithId[], IResult>
+        (fun httpContext tenantId schemaName entityName draft payload ->
           let result =
             sum {
               let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
@@ -202,7 +191,7 @@ module Update =
                 |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
               let! updaters =
-                payload.Updaters
+                payload
                 |> Array.map (fun updater ->
                   reader {
                     let! delta = deltaFromDTO updater.Delta

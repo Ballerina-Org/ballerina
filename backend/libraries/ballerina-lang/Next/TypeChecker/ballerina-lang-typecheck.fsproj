@@ -61,6 +61,7 @@
     <Compile Include="TypeCheck/Query/Cases/QueryTupleDes.fs" />
     <Compile Include="TypeCheck/Query/Cases/QueryRecordDes.fs" />
     <Compile Include="TypeCheck/Query/Cases/QueryApplyIntrinsic.fs" />
+    <Compile Include="TypeCheck/Query/Cases/QueryCaseConditional.fs" />
     <Compile Include="TypeCheck/Query.fs" />
     <Compile Include="TypeCheck/Expr.fs" />
     <Compile Include="TypeCheck/Value.fs" />

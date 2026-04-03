@@ -22,8 +22,7 @@ module Linking =
   open Ballerina.DSL.Next.Serialization.ValueSerializer
 
   type LinkPayload =
-    { RelationName: string
-      FromId: ValueDTO<ValueExtDTO>
+    { FromId: ValueDTO<ValueExtDTO>
       ToId: ValueDTO<ValueExtDTO> }
 
   let link<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
@@ -33,10 +32,10 @@ module Linking =
     =
 
     app.MapPost(
-      "/{tenantId}/{schemaName}/link",
-      Func<HttpContext, 'tenantId, 'schemaName, bool, LinkPayload, IResult>
-        (fun httpContext tenantId schemaName draft payload ->
-          let relationName, fromId, toId = payload.RelationName, payload.FromId, payload.ToId
+      "/{tenantId}/{schemaName}/{relationName}/link",
+      Func<HttpContext, 'tenantId, 'schemaName, string, bool, LinkPayload, IResult>
+        (fun httpContext tenantId schemaName relationName draft payload ->
+          let fromId, toId = payload.FromId, payload.ToId
 
           let result =
             sum {
@@ -148,10 +147,10 @@ module Linking =
     |> ignore
 
     app.MapPost(
-      "/{tenantId}/{schemaName}/unlink",
-      Func<HttpContext, 'tenantId, 'schemaName, bool, LinkPayload, IResult>
-        (fun httpContext tenantId schemaName draft payload ->
-          let relationName, fromId, toId = payload.RelationName, payload.FromId, payload.ToId
+      "/{tenantId}/{schemaName}/{relationName}/unlink",
+      Func<HttpContext, 'tenantId, 'schemaName, string, bool, LinkPayload, IResult>
+        (fun httpContext tenantId schemaName relationName draft payload ->
+          let fromId, toId = payload.FromId, payload.ToId
 
           let result =
             sum {
