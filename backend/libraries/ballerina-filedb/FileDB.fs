@@ -150,7 +150,7 @@ module FileDB =
       memoryDbOps
       true
       entityRefUpdater
-      (fun dbTypeClass -> dbTypeClass.Upsert)
+      (fun dbTypeClass -> dbTypeClass.Update)
 
   let private delete<'customExt when 'customExt: comparison>
     directory
@@ -429,7 +429,7 @@ module FileDB =
       BeginTransaction = memoryDbOps.BeginTransaction
       CommitTransaction = memoryDbOps.CommitTransaction
       Create = create directory extension memoryDbOps
-      Upsert = upsert directory extension memoryDbOps
+      Update = upsert directory extension memoryDbOps
       Delete = delete directory extension memoryDbOps
       DeleteMany = deleteMany directory extension memoryDbOps
       Link = link directory extension memoryDbOps

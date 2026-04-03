@@ -42,6 +42,7 @@ module Model =
 
   type UpsertArgs<'runtimeContext, 'db, 'ext when 'ext: comparison> =
     { Id: Value<TypeValue<'ext>, 'ext>
+      Previous: Value<TypeValue<'ext>, 'ext>
       Value: Value<TypeValue<'ext>, 'ext> }
 
   type LinkArgs<'runtimeContext, 'db, 'ext when 'ext: comparison> =
@@ -69,7 +70,7 @@ module Model =
         EntityRef<'db, 'ext>
           -> CreateArgs<'runtimeContext, 'db, 'ext>
           -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
-      Upsert:
+      Update:
         EntityRef<'db, 'ext>
           -> UpsertArgs<'runtimeContext, 'db, 'ext>
           -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
@@ -124,7 +125,7 @@ module Model =
       CommitTransaction = fun _ _ -> Left()
       RunQuery = fun _ _ -> reader.Return []
       Create = fun _ args -> reader.Return <| Value.Tuple [ args.Id; args.Value ]
-      Upsert = fun _ args -> reader.Return <| Value.Tuple [ args.Id; args.Value ]
+      Update = fun _ args -> reader.Return <| Value.Tuple [ args.Id; args.Previous; args.Value ]
       Delete = fun _ _ -> reader.Return()
       DeleteMany = fun _ _ -> reader.Return()
       Link = fun _ _ -> reader.Return()
