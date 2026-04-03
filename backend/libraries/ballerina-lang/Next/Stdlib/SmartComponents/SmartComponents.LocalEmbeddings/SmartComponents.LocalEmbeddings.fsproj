@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <LangVersion>preview</LangVersion>
     <IsPackable>true</IsPackable>
@@ -6,7 +6,6 @@
     <Nullable>enable</Nullable>
     <NoWarn>FS57;FS66;FS760;FS3261;FS3391;FS0044;FS0057;FS1182;FS3387;FS3389;FS3535;CS0618;CS1573;CS1572;CS1591;CS1734;CA2252;SKEXP0001;SKEXP0070;$(NoWarn)</NoWarn>
   </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="IEmbedding.fs" />
     <Compile Include="VectorCompat.fs" />
@@ -15,7 +14,6 @@
     <Compile Include="EmbeddingI8.fs" />
     <Compile Include="LocalEmbedder.fs" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.Bcl.Numerics" Version="10.0.2" />
     <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="10.0.2" />
@@ -23,7 +21,6 @@
     <PackageReference Include="System.Runtime.Caching" Version="10.0.2" />
     <PackageReference Include="Microsoft.SemanticKernel.Connectors.Onnx" Version="1.71.0-alpha" />
   </ItemGroup>
-
   <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
     <ItemGroup>
       <_PackageFiles Include="build\**" BuildAction="Content" PackagePath="build" />

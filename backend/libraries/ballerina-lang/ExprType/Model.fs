@@ -19,6 +19,9 @@ module Model =
 
   and TypeBindings = Map<ExprTypeId, ExprType>
 
+  let typeBindingsOfContext (ctx: TypeContext) : TypeBindings =
+    ctx |> Map.values |> Seq.map (fun v -> v.TypeId, v.Type) |> Map.ofSeq
+
   type TypeBinding with
     static member Id(t: TypeBinding) = { TypeId = t.TypeId }
 
