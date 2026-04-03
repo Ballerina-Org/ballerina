@@ -17,7 +17,7 @@ type BuildIssue = {
 
 const LANGUAGE_ID = "bl";
 const DIAGNOSTIC_SOURCE = "bise-sql";
-const BUILD_DEBOUNCE_MS = 700;
+const BUILD_DEBOUNCE_MS = 50;
 let buildRunSequence = 0;
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -79,12 +79,28 @@ export function activate(context: vscode.ExtensionContext): void {
       return;
     }
 
+    if (debouncedBuilder.isSuppressedSave(doc)) {
+      return;
+    }
+
     output.appendLine(`Detected save: ${vscode.workspace.asRelativePath(doc.uri)}`);
 
     await debouncedBuilder.schedule(doc, false);
   });
 
-  context.subscriptions.push(buildActiveDisposable, showOrderDisposable, saveDisposable);
+  const changeDisposable = vscode.workspace.onDidChangeTextDocument(async (event: vscode.TextDocumentChangeEvent) => {
+    if (!isBlOrBlprojDocument(event.document)) {
+      return;
+    }
+
+    if (event.contentChanges.length === 0) {
+      return;
+    }
+
+    await debouncedBuilder.schedule(event.document, false);
+  });
+
+  context.subscriptions.push(buildActiveDisposable, showOrderDisposable, saveDisposable, changeDisposable);
 
   const active = vscode.window.activeTextEditor?.document;
   if (active && isBlOrBlprojDocument(active)) {
@@ -171,6 +187,8 @@ async function runBuildFromProjectPath(
   const startedAt = new Date();
   const startedAtMs = Date.now();
   output.appendLine(`[Run #${runId}] Started at: ${startedAt.toISOString()}`);
+  output.appendLine(`[Run #${runId}] Typechecking started.`);
+  const typecheckStartedAtMs = Date.now();
 
   let buildOutput: { stdout: string; stderr: string; exitCode: number };
 
@@ -184,9 +202,11 @@ async function runBuildFromProjectPath(
   }
 
   const elapsedMs = Date.now() - startedAtMs;
+  const typecheckElapsedMs = Date.now() - typecheckStartedAtMs;
   output.appendLine(
     `[Run #${runId}] Finished in: ${formatDurationForLog(elapsedMs)} (exit code ${buildOutput.exitCode})`
   );
+  output.appendLine(`[Run #${runId}] Typechecking completed in: ${formatDurationForLog(typecheckElapsedMs)}`);
 
   output.appendLine(buildOutput.stdout);
   if (buildOutput.stderr.trim().length > 0) {
@@ -212,10 +232,14 @@ async function runBuildFromProjectPath(
 
 function createDebouncedBuildScheduler(diagnostics: vscode.DiagnosticCollection): {
   schedule: (doc: vscode.TextDocument, notifyOnSuccess: boolean) => Promise<void>;
+  isSuppressedSave: (doc: vscode.TextDocument) => boolean;
   dispose: () => void;
 } {
+  const output = getOutputChannel();
   const timers = new Map<string, number>();
   const generations = new Map<string, number>();
+  const scheduledAtMs = new Map<string, number>();
+  const suppressedSaveUris = new Set<string>();
   const timerApi = globalThis as unknown as {
     setTimeout: (handler: () => void, timeoutMs: number) => number;
     clearTimeout: (timerId: number) => void;
@@ -239,6 +263,8 @@ function createDebouncedBuildScheduler(diagnostics: vscode.DiagnosticCollection)
         timerApi.clearTimeout(previousTimer);
       }
 
+      scheduledAtMs.set(key, Date.now());
+
       const timer = timerApi.setTimeout(() => {
         timers.delete(key);
 
@@ -246,10 +272,29 @@ function createDebouncedBuildScheduler(diagnostics: vscode.DiagnosticCollection)
           return;
         }
 
-        void runBuildFromProjectPath(projectPath, diagnostics, notifyOnSuccess);
+        const scheduledAt = scheduledAtMs.get(key);
+        scheduledAtMs.delete(key);
+        const debounceDelayMs = scheduledAt ? Date.now() - scheduledAt : BUILD_DEBOUNCE_MS;
+        output.appendLine(
+          `[Debounce] Triggering build for ${vscode.workspace.asRelativePath(projectPath)} after ${formatDurationForLog(debounceDelayMs)}`
+        );
+
+        void (async () => {
+          await saveDirtyDocumentsForProject(projectPath, suppressedSaveUris);
+          await runBuildFromProjectPath(projectPath, diagnostics, notifyOnSuccess);
+        })();
       }, BUILD_DEBOUNCE_MS);
 
       timers.set(key, timer);
+    },
+    isSuppressedSave: (doc: vscode.TextDocument): boolean => {
+      const uri = doc.uri.toString();
+      if (!suppressedSaveUris.has(uri)) {
+        return false;
+      }
+
+      suppressedSaveUris.delete(uri);
+      return true;
     },
     dispose: (): void => {
       for (const timer of timers.values()) {
@@ -257,8 +302,44 @@ function createDebouncedBuildScheduler(diagnostics: vscode.DiagnosticCollection)
       }
       timers.clear();
       generations.clear();
+      scheduledAtMs.clear();
+      suppressedSaveUris.clear();
     }
   };
+}
+
+async function saveDirtyDocumentsForProject(projectPath: string, suppressedSaveUris: Set<string>): Promise<void> {
+  const normalizedProjectPath = normalizePath(projectPath);
+  let sourceFiles = new Set<string>();
+
+  try {
+    const orderedSources = await computeBuildOrder(projectPath);
+    sourceFiles = new Set(orderedSources.map((entry) => normalizePath(entry)));
+  } catch {
+    // If the project is malformed while typing, still try to save the project file itself.
+  }
+
+  for (const doc of vscode.workspace.textDocuments) {
+    if (!isBlOrBlprojDocument(doc) || !doc.isDirty) {
+      continue;
+    }
+
+    const normalizedDocPath = normalizePath(doc.uri.fsPath);
+    const shouldSave = isBlprojDocument(doc)
+      ? normalizedDocPath === normalizedProjectPath
+      : sourceFiles.has(normalizedDocPath);
+
+    if (!shouldSave) {
+      continue;
+    }
+
+    const uri = doc.uri.toString();
+    suppressedSaveUris.add(uri);
+    const saved = await doc.save();
+    if (!saved) {
+      suppressedSaveUris.delete(uri);
+    }
+  }
 }
 
 async function resolveProjectForDocument(filePath: string): Promise<string | undefined> {
