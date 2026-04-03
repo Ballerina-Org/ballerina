@@ -45,7 +45,17 @@
         "command": "bl.showBuildOrder",
         "title": "BL: Show Active Project Build Order"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "BL Language Tools",
+      "properties": {
+        "bl.compilerCommand": {
+          "type": "string",
+          "default": "ballerina",
+          "description": "Command used to invoke the BL compiler from PATH."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

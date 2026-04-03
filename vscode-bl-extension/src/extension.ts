@@ -18,6 +18,8 @@ type BuildIssue = {
 const LANGUAGE_ID = "bl";
 const DIAGNOSTIC_SOURCE = "bise-sql";
 const BUILD_DEBOUNCE_MS = 50;
+const DEFAULT_COMPILER_COMMAND = "ballerina";
+const COMPILER_COMMAND_SETTING = "bl.compilerCommand";
 let buildRunSequence = 0;
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -161,28 +163,14 @@ async function runBuildFromProjectPath(
     return;
   }
 
-  const biseSqlProject = path.join(workspaceFolder.uri.fsPath, "src", "playgrounds", "bise-sql", "bise-sql.fsproj");
-
-  try {
-    await fs.access(biseSqlProject);
-  } catch {
-    void vscode.window.showWarningMessage("Could not find bise-sql.fsproj under src/playgrounds/bise-sql.");
-    return;
-  }
+  const compilerCommand = getCompilerCommand();
 
   const output = getOutputChannel();
   output.clear();
   const runId = ++buildRunSequence;
   output.appendLine(`[Run #${runId}] Building ${vscode.workspace.asRelativePath(projectPath)}...`);
-  const commandArgs = [
-    "run",
-    "--project",
-    biseSqlProject,
-    "--",
-    "--file",
-    projectPath
-  ];
-  output.appendLine(`[Run #${runId}] Command: ${formatCommandForLog("dotnet", commandArgs)}`);
+  const commandArgs = ["-f", projectPath];
+  output.appendLine(`[Run #${runId}] Command: ${formatCommandForLog(compilerCommand, commandArgs)}`);
   output.appendLine(`[Run #${runId}] Working directory: ${workspaceFolder.uri.fsPath}`);
   const startedAt = new Date();
   const startedAtMs = Date.now();
@@ -193,11 +181,11 @@ async function runBuildFromProjectPath(
   let buildOutput: { stdout: string; stderr: string; exitCode: number };
 
   try {
-    buildOutput = await runBiseSqlBuild(biseSqlProject, projectPath, workspaceFolder.uri.fsPath);
+    buildOutput = await runBallerinaCompilerBuild(compilerCommand, projectPath, workspaceFolder.uri.fsPath);
   } catch (error) {
     const elapsedMs = Date.now() - startedAtMs;
     output.appendLine(`[Run #${runId}] Failed after: ${formatDurationForLog(elapsedMs)}`);
-    void vscode.window.showErrorMessage(`Failed to execute bise-sql build: ${toMessage(error)}`);
+    void vscode.window.showErrorMessage(`Failed to execute BL build with '${compilerCommand}': ${toMessage(error)}`);
     return;
   }
 
@@ -448,25 +436,18 @@ async function readProjectFile(projectPath: string): Promise<ProjectFileDto> {
   return parsed;
 }
 
-async function runBiseSqlBuild(
-  biseSqlProjectPath: string,
+async function runBallerinaCompilerBuild(
+  compilerCommand: string,
   projectFilePath: string,
   cwd: string
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   return new Promise((resolve, reject) => {
-    const args = [
-      "run",
-      "--project",
-      biseSqlProjectPath,
-      "--",
-      "--file",
-      projectFilePath
-    ];
+    const args = ["-f", projectFilePath];
 
     const env = (
       (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env
     ) ?? undefined;
-    const child = spawn("dotnet", args, { cwd, env });
+    const child = spawn(compilerCommand, args, { cwd, env });
 
     let stdout = "";
     let stderr = "";
@@ -491,6 +472,12 @@ async function runBiseSqlBuild(
       });
     });
   });
+}
+
+function getCompilerCommand(): string {
+  const configured = vscode.workspace.getConfiguration("bl").get<string>("compilerCommand");
+  const value = configured?.trim();
+  return value && value.length > 0 ? value : DEFAULT_COMPILER_COMMAND;
 }
 
 function parseIssues(output: string, projectPath: string): BuildIssue[] {
