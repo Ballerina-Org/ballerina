@@ -266,9 +266,10 @@ module Update =
                             valueWithProps
 
                         let! _ =
-                          db_ops.Upsert
+                          db_ops.Update
                             entity_ref
                             { Id = _entityId
+                              Previous = existingValue
                               Value = valueWithProps }
                           |> reader.MapError(Errors.MapContext(replaceWith loc0))
 

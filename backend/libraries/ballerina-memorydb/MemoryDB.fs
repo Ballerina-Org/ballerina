@@ -673,7 +673,7 @@ module MutableMemoryDB =
 
             return Value.Tuple [ entityId; value ]
           }
-      Upsert =
+      Update =
         fun
             (entity_ref:
               EntityRef<
