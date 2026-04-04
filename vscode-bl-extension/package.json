@@ -1,9 +1,14 @@
 {
   "name": "bl-language-tools",
-  "displayName": "BL Language Tools",
-  "description": "Syntax highlighting and bise-sql diagnostics for .bl projects",
+  "displayName": "Ballerina Language Tools",
+  "description": "Syntax highlighting and error diagnostics for .bl projects",
   "version": "0.0.1",
-  "publisher": "bise-ai",
+  "publisher": "GiuseppeMaggiore",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ballerina-Org/ballerina"
+  },
+  "license": "MIT",
   "engines": {
     "vscode": "^1.92.0"
   },
@@ -61,7 +66,10 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "package:vsix": "npx @vscode/vsce package"
+    "package:vsix": "npx @vscode/vsce package",
+    "publish:pre": "npx @vscode/vsce publish --pre-release",
+    "publish:stable": "npx @vscode/vsce publish",
+    "publish:patch": "npx @vscode/vsce publish patch"
   },
   "devDependencies": {
     "@types/node": "^20.14.12",
