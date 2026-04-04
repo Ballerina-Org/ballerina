@@ -226,7 +226,12 @@ module TypeSchema =
       (parser {
         let! entityName = singleIdentifier
         do! openCurlyBracketOperator
-        do! typeKeyword
+
+        do!
+          typeKeyword
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+          |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+
         let! entityType = parseTypeDecl ()
         let! idType = parseTypeDecl ()
 
@@ -246,6 +251,26 @@ module TypeSchema =
         let canRead = hooks |> Map.tryFind SchemaEntityHook.CanRead
         let canUpdate = hooks |> Map.tryFind SchemaEntityHook.CanUpdate
         let canDelete = hooks |> Map.tryFind SchemaEntityHook.CanDelete
+
+        let! hasUnexpectedLet = letKeyword |> parser.Lookahead |> parser.Try
+
+        match hasUnexpectedLet with
+        | Left _ ->
+          let! loc = parser.Location
+          let! stream = parser.Stream
+
+          let loc =
+            match stream |> Seq.tryHead with
+            | Some token -> token.Location
+            | None -> loc
+
+          return!
+            (fun () ->
+              "Error: unexpected declaration in entity body. Expected property, vector, hook, or closing brace")
+            |> Errors.Singleton loc
+            |> Errors.MapPriority(replaceWith ErrorPriority.High)
+            |> parser.Throw
+        | Right _ -> ()
 
         let entityHooksExpr: SchemaEntityHooksExpr<'valueExt> =
           { OnCreating = onCreating
@@ -320,6 +345,100 @@ module TypeSchema =
     afterKeyword
       schemaKeyword
       (parser {
+        let rec parseEntityOrRelationExtensions () =
+          parser {
+            let! hasClosed = closeCurlyBracketOperator |> parser.Lookahead |> parser.Try
+
+            match hasClosed with
+            | Left _ -> return []
+            | Right _ ->
+              let! head =
+                parser {
+                  let! isEntity = entityKeyword |> parser.Lookahead |> parser.Try
+
+                  match isEntity with
+                  | Left _ ->
+                    return!
+                      entity_extension parseExpr ()
+                      |> parser.Map Sum.Left
+                      |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+                  | Right _ ->
+                    let! isRelation = relationKeyword |> parser.Lookahead |> parser.Try
+
+                    match isRelation with
+                    | Left _ ->
+                      return!
+                        relation_extension parseExpr ()
+                        |> parser.Map Sum.Right
+                        |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+                    | Right _ ->
+                      let! loc = parser.Location
+                      let! stream = parser.Stream
+
+                      let loc =
+                        match stream |> Seq.tryHead with
+                        | Some token -> token.Location
+                        | None -> loc
+
+                      return!
+                        (fun () -> "Expected 'entity' or 'relation' in schema include extensions")
+                        |> Errors.Singleton loc
+                        |> Errors.MapPriority(replaceWith ErrorPriority.High)
+                        |> parser.Throw
+                }
+                |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+
+              let! tail = parseEntityOrRelationExtensions ()
+              return head :: tail
+          }
+
+        let rec parseEntitiesAndRelations () =
+          parser {
+            let! hasClosed = closeCurlyBracketOperator |> parser.Lookahead |> parser.Try
+
+            match hasClosed with
+            | Left _ -> return []
+            | Right _ ->
+              let! head =
+                parser {
+                  let! isEntity = entityKeyword |> parser.Lookahead |> parser.Try
+
+                  match isEntity with
+                  | Left _ ->
+                    return!
+                      entity parseExpr parseTypeDecl ()
+                      |> parser.Map Sum.Left
+                      |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+                  | Right _ ->
+                    let! isRelation = relationKeyword |> parser.Lookahead |> parser.Try
+
+                    match isRelation with
+                    | Left _ ->
+                      return!
+                        relation parseExpr ()
+                        |> parser.Map Sum.Right
+                        |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+                    | Right _ ->
+                      let! loc = parser.Location
+                      let! stream = parser.Stream
+
+                      let loc =
+                        match stream |> Seq.tryHead with
+                        | Some token -> token.Location
+                        | None -> loc
+
+                      return!
+                        (fun () -> "Expected 'entity' or 'relation' in schema body")
+                        |> Errors.Singleton loc
+                        |> Errors.MapPriority(replaceWith ErrorPriority.High)
+                        |> parser.Throw
+                }
+                |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+
+              let! tail = parseEntitiesAndRelations ()
+              return head :: tail
+          }
+
         let! loc = parser.Location
         do! openCurlyBracketOperator
 
@@ -340,13 +459,7 @@ module TypeSchema =
                   parser {
                     do! openCurlyBracketOperator
 
-                    let! entitiesAndRelations =
-                      parser.Many(
-                        parser.Any
-                          [ entity_extension parseExpr () |> parser.Map Sum.Left
-                            relation_extension parseExpr () |> parser.Map Sum.Right ]
-                      )
-                      |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+                    let! entitiesAndRelations = parseEntityOrRelationExtensions ()
 
                     let entities =
                       entitiesAndRelations
@@ -368,13 +481,7 @@ module TypeSchema =
               return (schemaName |> LocalIdentifier.Create, entities, relations) |> Some
           }
 
-        let! entitiesAndRelations =
-          parser.Many(
-            parser.Any
-              [ entity parseExpr parseTypeDecl () |> parser.Map Sum.Left
-                relation parseExpr () |> parser.Map Sum.Right ]
-          )
-          |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+        let! entitiesAndRelations = parseEntitiesAndRelations ()
 
         let entities =
           entitiesAndRelations
