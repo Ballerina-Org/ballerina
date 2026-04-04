@@ -104,6 +104,56 @@ in tri.A.X + tri.B.X + tri.C.X
 
 
 [<Test>]
+let ``Project accepts int as int32 alias`` () =
+  let file1 =
+    "file1.bl",
+    """
+type Counter = { Value: int; }
+in let counter: Counter = { Value = 7; }
+in counter.Value + 5
+    """
+
+  let result = buildAndEval (NonEmptyList.OfList(file1, []))
+
+  match result with
+  | Left(value, typeValue, exprCount) ->
+    Assert.That(exprCount, Is.EqualTo(1), "Should have 1 expression")
+
+    match value with
+    | Value.Primitive(Int32 12) ->
+      match typeValue with
+      | TypeValue.Primitive({ value = PrimitiveType.Int32 }) -> Assert.Pass "int alias correctly evaluates as Int32"
+      | _ -> Assert.Fail $"Expected Int32 type, got {typeValue.AsFSharpString}"
+    | _ -> Assert.Fail $"Expected 12, got {value}"
+  | Right e -> Assert.Fail e
+
+
+[<Test>]
+let ``Project accepts legacy primitive aliases`` () =
+  let file1 =
+    "file1.bl",
+    """
+type Aliases = { Count: number; IsActive: boolean; CreatedOn: date; }
+in let value: Aliases = { Count = 7; IsActive = true; CreatedOn = dateOnly::now(); }
+in if value.IsActive then value.Count + 5 else 0
+    """
+
+  let result = buildAndEval (NonEmptyList.OfList(file1, []))
+
+  match result with
+  | Left(value, typeValue, exprCount) ->
+    Assert.That(exprCount, Is.EqualTo(1), "Should have 1 expression")
+
+    match value with
+    | Value.Primitive(Int32 12) ->
+      match typeValue with
+      | TypeValue.Primitive({ value = PrimitiveType.Int32 }) -> Assert.Pass "legacy primitive aliases correctly evaluate"
+      | _ -> Assert.Fail $"Expected Int32 type, got {typeValue.AsFSharpString}"
+    | _ -> Assert.Fail $"Expected 12, got {value}"
+  | Right e -> Assert.Fail e
+
+
+[<Test>]
 let ``Project file order matters - wrong order fails`` () =
   let file1 =
     "file1.bl",

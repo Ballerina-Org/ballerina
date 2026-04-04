@@ -65,12 +65,13 @@ module Type =
         let! id = singleIdentifier
 
         match id with
+        | "boolean" -> return TypeExpr.Primitive PrimitiveType.Bool
         | "bool" -> return TypeExpr.Primitive PrimitiveType.Bool
         | _ ->
           let! loc = parser.Location
 
           return!
-            (fun () -> $"Error: expected bool, got {id}")
+            (fun () -> $"Error: expected bool or boolean, got {id}")
             |> Errors.Singleton loc
             |> parser.Throw
       }
@@ -80,12 +81,14 @@ module Type =
         let! id = singleIdentifier
 
         match id with
+        | "int" -> return TypeExpr.Primitive PrimitiveType.Int32
+        | "number" -> return TypeExpr.Primitive PrimitiveType.Int32
         | "int32" -> return TypeExpr.Primitive PrimitiveType.Int32
         | _ ->
           let! loc = parser.Location
 
           return!
-            (fun () -> $"Error: expected int32, got {id}")
+            (fun () -> $"Error: expected int, number, or int32, got {id}")
             |> Errors.Singleton loc
             |> parser.Throw
       }
@@ -200,12 +203,13 @@ module Type =
         let! id = singleIdentifier
 
         match id with
+        | "date" -> return TypeExpr.Primitive PrimitiveType.DateOnly
         | "dateOnly" -> return TypeExpr.Primitive PrimitiveType.DateOnly
         | _ ->
           let! loc = parser.Location
 
           return!
-            (fun () -> $"Error: expected dateOnly, got {id}")
+            (fun () -> $"Error: expected date or dateOnly, got {id}")
             |> Errors.Singleton loc
             |> parser.Throw
       }
