@@ -124,7 +124,20 @@ module TypeHooksAndProperties =
     parser.Many(
       parser {
         do! letKeyword
-        do! vectorKeyword
+        let! loc = parser.Location
+        let! stream = parser.Stream
+
+        let loc =
+          match stream |> Seq.tryHead with
+          | Some token -> token.Location
+          | None -> loc
+
+        do!
+          vectorKeyword
+          |> parser.MapError(Errors.MapContext(replaceWith loc))
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+          |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+
         let! vectorName = singleIdentifier
         do! equalsOperator
         let! vectorBody = parseExpr
