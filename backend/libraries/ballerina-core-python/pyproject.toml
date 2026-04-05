@@ -20,7 +20,7 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 [tool.poetry.group.dev.dependencies]
 ruff = "0.15.9"
 # Keep in sync with the extension! https://marketplace.visualstudio.com/items?itemName=ms-python.mypy-type-checker
-mypy = "1.19.1"
+mypy = "1.20.0"
 pytest = "9.0.2"
 
 [tool.ruff]
