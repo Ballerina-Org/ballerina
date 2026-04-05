@@ -36,14 +36,17 @@ module Unlink =
 
       match relation.Hooks.OnUnlinking with
       | None -> return ()
-      | Some(hookExpr: Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext>) ->
+      | Some(hookExpr: TypeCheckedExpr<'ext>) ->
         let! run_hook_result =
-          Expr.Apply(
-            Expr.Apply(
-              Expr.Apply(hookExpr, Expr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)),
-              Expr.FromValue(_fromId, TypeValue.CreateUnit(), Kind.Star)
+          TypeCheckedExpr.Apply(
+            TypeCheckedExpr.Apply(
+              TypeCheckedExpr.Apply(
+                hookExpr,
+                TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
+              ),
+              TypeCheckedExpr.FromValue(_fromId, TypeValue.CreateUnit(), Kind.Star)
             ),
-            Expr.FromValue(_toId, TypeValue.CreateUnit(), Kind.Star)
+            TypeCheckedExpr.FromValue(_toId, TypeValue.CreateUnit(), Kind.Star)
           )
           |> NonEmptyList.One
           |> Expr.Eval
@@ -79,14 +82,17 @@ module Unlink =
 
       match relation.Hooks.OnUnlinked with
       | None -> return ()
-      | Some(hookExpr: Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext>) ->
+      | Some(hookExpr: TypeCheckedExpr<'ext>) ->
         let! run_hook_result =
-          Expr.Apply(
-            Expr.Apply(
-              Expr.Apply(hookExpr, Expr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)),
-              Expr.FromValue(_fromId, TypeValue.CreateUnit(), Kind.Star)
+          TypeCheckedExpr.Apply(
+            TypeCheckedExpr.Apply(
+              TypeCheckedExpr.Apply(
+                hookExpr,
+                TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
+              ),
+              TypeCheckedExpr.FromValue(_fromId, TypeValue.CreateUnit(), Kind.Star)
             ),
-            Expr.FromValue(_toId, TypeValue.CreateUnit(), Kind.Star)
+            TypeCheckedExpr.FromValue(_toId, TypeValue.CreateUnit(), Kind.Star)
           )
           |> NonEmptyList.One
           |> Expr.Eval

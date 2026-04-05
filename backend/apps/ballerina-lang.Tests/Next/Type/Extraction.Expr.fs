@@ -55,13 +55,13 @@ let private runtimeOps, runtimeContext, typeEvalConfig =
 
 do ignore runtimeOps
 
-let private evalTyped (program: Expr<TypeValue<RuntimeExt>, ResolvedIdentifier, RuntimeExt>) =
+let private evalTyped (program: TypeCheckedExpr<RuntimeExt>) =
   let evalContext = ExprEvalContext.Empty() |> runtimeContext.ExprEvalContext
 
   Expr.Eval(NonEmptyList.prependList runtimeContext.TypeCheckedPreludes (NonEmptyList.One program))
   |> Reader.Run evalContext
 
-let private assertEvalInt (expected: int) (program: Expr<TypeValue<RuntimeExt>, ResolvedIdentifier, RuntimeExt>) =
+let private assertEvalInt (expected: int) (program: TypeCheckedExpr<RuntimeExt>) =
   match evalTyped program with
   | Left(Value.Primitive(PrimitiveValue.Int32 actual)) -> Assert.That(actual, Is.EqualTo(expected))
   | Left other -> Assert.Fail $"Expected int32 {expected}, got {other}"
@@ -88,15 +88,15 @@ let ``buildExtractionExpr with empty tree returns lambda wrapping Nil`` () =
     buildExtractionExpr<IComparable> listOps mapOps Map.empty emptyExtractionTree
 
   match expr.Expr with
-  | ExprRec.Lambda { Body = body } ->
+  | TypeCheckedExprRec.Lambda { Body = body } ->
     match body.Expr with
-    | ExprRec.Apply { F = nilLookup; Arg = unitArg } ->
+    | TypeCheckedExprRec.Apply { F = nilLookup; Arg = unitArg } ->
       match nilLookup.Expr with
-      | ExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(listOps.Nil))
+      | TypeCheckedExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(listOps.Nil))
       | other -> Assert.Fail $"Expected Nil lookup, got {other}"
 
       match unitArg.Expr with
-      | ExprRec.Primitive PrimitiveValue.Unit -> Assert.Pass()
+      | TypeCheckedExprRec.Primitive PrimitiveValue.Unit -> Assert.Pass()
       | other -> Assert.Fail $"Expected Unit primitive arg for Nil, got {other}"
     | other -> Assert.Fail $"Expected Apply(Nil, Unit) in body, got {other}"
   | other -> Assert.Fail $"Expected Lambda, got {other}"
@@ -112,29 +112,29 @@ let ``buildExtractionExpr with single RecordField branch generates RecordDes wra
   let expr = buildExtractionExpr<IComparable> listOps mapOps symbolResolver tree
 
   match expr.Expr with
-  | ExprRec.Lambda { Body = body } ->
+  | TypeCheckedExprRec.Lambda { Body = body } ->
     match body.Expr with
-    | ExprRec.Apply { F = consLookup; Arg = tupleArg } ->
+    | TypeCheckedExprRec.Apply { F = consLookup; Arg = tupleArg } ->
       match consLookup.Expr with
-      | ExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(listOps.Cons))
+      | TypeCheckedExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(listOps.Cons))
       | other -> Assert.Fail $"Expected Cons lookup, got {other}"
 
       match tupleArg.Expr with
-      | ExprRec.TupleCons { Items = items } ->
+      | TypeCheckedExprRec.TupleCons { Items = items } ->
         match items with
         | [ recordDes; nilExpr ] ->
           match recordDes.Expr with
-          | ExprRec.RecordDes { Field = field } -> Assert.That(field, Is.EqualTo(fieldResolved))
+          | TypeCheckedExprRec.RecordDes { Field = field } -> Assert.That(field, Is.EqualTo(fieldResolved))
           | other -> Assert.Fail $"Expected RecordDes, got {other}"
 
           match nilExpr.Expr with
-          | ExprRec.Apply { F = nilLookup; Arg = unitArg } ->
+          | TypeCheckedExprRec.Apply { F = nilLookup; Arg = unitArg } ->
             match nilLookup.Expr with
-            | ExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(listOps.Nil))
+            | TypeCheckedExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(listOps.Nil))
             | other -> Assert.Fail $"Expected Nil lookup, got {other}"
 
             match unitArg.Expr with
-            | ExprRec.Primitive PrimitiveValue.Unit -> Assert.Pass()
+            | TypeCheckedExprRec.Primitive PrimitiveValue.Unit -> Assert.Pass()
             | other -> Assert.Fail $"Expected Unit primitive arg for Nil, got {other}"
           | other -> Assert.Fail $"Expected Apply(Nil, Unit), got {other}"
         | other -> Assert.Fail $"Expected tuple [record; nil], got {other}"
@@ -149,9 +149,9 @@ let ``buildExtractionExpr with ContainerElement self-match returns host directly
   let expr = buildExtractionExpr<IComparable> listOps mapOps Map.empty tree
 
   match expr.Expr with
-  | ExprRec.Lambda { Body = body } ->
+  | TypeCheckedExprRec.Lambda { Body = body } ->
     match body.Expr with
-    | ExprRec.Lookup _ -> Assert.Pass()
+    | TypeCheckedExprRec.Lookup _ -> Assert.Pass()
     | other -> Assert.Fail $"Expected Lookup(host) for pass-through, got {other}"
   | other -> Assert.Fail $"Expected Lambda, got {other}"
 
@@ -166,15 +166,15 @@ let ``buildExtractionExpr with ContainerElement plus RecordField uses Fold`` () 
   let expr = buildExtractionExpr<IComparable> listOps mapOps symbolResolver tree
 
   match expr.Expr with
-  | ExprRec.Lambda { Body = body } ->
+  | TypeCheckedExprRec.Lambda { Body = body } ->
     match body.Expr with
-    | ExprRec.Apply { F = foldApplied } ->
+    | TypeCheckedExprRec.Apply { F = foldApplied } ->
       match foldApplied.Expr with
-      | ExprRec.Apply { F = foldWithInit } ->
+      | TypeCheckedExprRec.Apply { F = foldWithInit } ->
         match foldWithInit.Expr with
-        | ExprRec.Apply { F = foldLookup } ->
+        | TypeCheckedExprRec.Apply { F = foldLookup } ->
           match foldLookup.Expr with
-          | ExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(listOps.Fold))
+          | TypeCheckedExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(listOps.Fold))
           | other -> Assert.Fail $"Expected Fold lookup, got {other}"
         | other -> Assert.Fail $"Expected Apply(Fold, fn), got {other}"
       | other -> Assert.Fail $"Expected Apply(Apply(Fold, fn), init), got {other}"
@@ -189,23 +189,23 @@ let ``buildExtractionExpr with Map container uses MapToList before Fold`` () =
   let expr = buildExtractionExpr<IComparable> listOps mapOps Map.empty tree
 
   match expr.Expr with
-  | ExprRec.Lambda { Body = body } ->
+  | TypeCheckedExprRec.Lambda { Body = body } ->
     match body.Expr with
-    | ExprRec.Apply { F = foldApplied; Arg = mappedHost } ->
+    | TypeCheckedExprRec.Apply { F = foldApplied; Arg = mappedHost } ->
       match foldApplied.Expr with
-      | ExprRec.Apply { F = foldWithInit } ->
+      | TypeCheckedExprRec.Apply { F = foldWithInit } ->
         match foldWithInit.Expr with
-        | ExprRec.Apply { F = foldLookup } ->
+        | TypeCheckedExprRec.Apply { F = foldLookup } ->
           match foldLookup.Expr with
-          | ExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(listOps.Fold))
+          | TypeCheckedExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(listOps.Fold))
           | other -> Assert.Fail $"Expected Fold lookup, got {other}"
         | other -> Assert.Fail $"Expected Apply(Fold, fn), got {other}"
       | other -> Assert.Fail $"Expected Apply(Apply(Fold, fn), init), got {other}"
 
       match mappedHost.Expr with
-      | ExprRec.Apply { F = mapToListLookup } ->
+      | TypeCheckedExprRec.Apply { F = mapToListLookup } ->
         match mapToListLookup.Expr with
-        | ExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(mapOps.MapToList))
+        | TypeCheckedExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(mapOps.MapToList))
         | other -> Assert.Fail $"Expected MapToList lookup, got {other}"
       | other -> Assert.Fail $"Expected Apply(MapToList, host), got {other}"
     | other -> Assert.Fail $"Expected Apply(Fold..., mappedHost), got {other}"
@@ -222,13 +222,13 @@ let ``buildExtractionExpr with multiple branches uses Append`` () =
   let expr = buildExtractionExpr<IComparable> listOps mapOps symbolResolver tree
 
   match expr.Expr with
-  | ExprRec.Lambda { Body = body } ->
+  | TypeCheckedExprRec.Lambda { Body = body } ->
     match body.Expr with
-    | ExprRec.Apply { F = appendApplied } ->
+    | TypeCheckedExprRec.Apply { F = appendApplied } ->
       match appendApplied.Expr with
-      | ExprRec.Apply { F = appendLookup } ->
+      | TypeCheckedExprRec.Apply { F = appendLookup } ->
         match appendLookup.Expr with
-        | ExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(listOps.Append))
+        | TypeCheckedExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(listOps.Append))
         | other -> Assert.Fail $"Expected Append lookup, got {other}"
       | other -> Assert.Fail $"Expected Apply(Append, list1), got {other}"
     | other -> Assert.Fail $"Expected Apply(Apply(Append, ...), list2), got {other}"
@@ -245,12 +245,12 @@ let ``buildExtractionExpr with UnionCase branch generates UnionDes with fallback
   let expr = buildExtractionExpr<IComparable> listOps mapOps symbolResolver tree
 
   match expr.Expr with
-  | ExprRec.Lambda { Body = body } ->
+  | TypeCheckedExprRec.Lambda { Body = body } ->
     match body.Expr with
-    | ExprRec.Apply { F = unionDes } ->
+    | TypeCheckedExprRec.Apply { F = unionDes } ->
       match unionDes.Expr with
-      | ExprRec.UnionDes { Handlers = handlers
-                           Fallback = fallback } ->
+      | TypeCheckedExprRec.UnionDes { Handlers = handlers
+                                      Fallback = fallback } ->
         Assert.That(handlers |> Map.containsKey caseResolved, Is.True, "Should have handler for matching case")
         Assert.That(fallback.IsSome, Is.True, "Should have a fallback (Nil)")
       | other -> Assert.Fail $"Expected UnionDes, got {other}"
@@ -275,6 +275,7 @@ let ``buildExtractionExpr runtime: extracts single int field to one-element list
 
   let extractor =
     buildExtractionExpr<RuntimeExt> runtimeListOps runtimeMapOps symbolResolver tree
+    |> unbox<TypeCheckedExpr<RuntimeExt>>
 
   let hostType =
     TypeValue.CreateRecord(OrderedMap.ofList [ evidenceSym, (TypeValue.CreateInt32(), Kind.Star) ])
@@ -283,9 +284,11 @@ let ``buildExtractionExpr runtime: extracts single int field to one-element list
     Value.Record(Map.ofList [ evidenceId, Value.Primitive(PrimitiveValue.Int32 42) ])
 
   let extracted =
-    Expr.Apply(extractor, Expr.FromValue(hostValue, hostType, Kind.Star))
+    TypeCheckedExpr.Apply(extractor, TypeCheckedExpr.FromValue(hostValue, hostType, Kind.Star))
 
-  let listLength = Expr.Apply(Expr.Lookup(resolveFqId [ "List" ] "length"), extracted)
+  let listLength =
+    TypeCheckedExpr.Apply(TypeCheckedExpr.Lookup(resolveFqId [ "List" ] "length"), extracted)
+
   assertEvalInt 1 listLength
 
 [<Test>]
@@ -299,6 +302,7 @@ let ``buildExtractionExpr runtime: extracts multiple int fields with correct agg
 
   let extractor =
     buildExtractionExpr<RuntimeExt> runtimeListOps runtimeMapOps symbolResolver tree
+    |> unbox<TypeCheckedExpr<RuntimeExt>>
 
   let hostType =
     TypeValue.CreateRecord(
@@ -315,23 +319,35 @@ let ``buildExtractionExpr runtime: extracts multiple int fields with correct agg
     )
 
   let extracted =
-    Expr.Apply(extractor, Expr.FromValue(hostValue, hostType, Kind.Star))
+    TypeCheckedExpr.Apply(extractor, TypeCheckedExpr.FromValue(hostValue, hostType, Kind.Star))
 
-  let listLength = Expr.Apply(Expr.Lookup(resolveFqId [ "List" ] "length"), extracted)
+  let listLength =
+    TypeCheckedExpr.Apply(TypeCheckedExpr.Lookup(resolveFqId [ "List" ] "length"), extracted)
+
   assertEvalInt 2 listLength
 
   let accVar = Var.Create "acc"
   let xVar, xId = Var.Create "x", resolveId "x"
-  let foldFnBody = Expr.Lookup xId
+  let foldFnBody = TypeCheckedExpr.Lookup xId
 
   let foldFn =
-    Expr.Lambda(accVar, None, Expr.Lambda(xVar, None, foldFnBody, None), None)
+    TypeCheckedExpr.Lambda(
+      accVar,
+      TypeValue.CreatePrimitive PrimitiveType.Unit,
+      TypeCheckedExpr.Lambda(
+        xVar,
+        TypeValue.CreatePrimitive PrimitiveType.Unit,
+        foldFnBody,
+        TypeValue.CreatePrimitive PrimitiveType.Unit
+      ),
+      TypeValue.CreatePrimitive PrimitiveType.Unit
+    )
 
   let sumExpr =
-    Expr.Apply(
-      Expr.Apply(
-        Expr.Apply(Expr.Lookup(resolveFqId [ "List" ] "fold"), foldFn),
-        Expr.Primitive(PrimitiveValue.Int32 -1)
+    TypeCheckedExpr.Apply(
+      TypeCheckedExpr.Apply(
+        TypeCheckedExpr.Apply(TypeCheckedExpr.Lookup(resolveFqId [ "List" ] "fold"), foldFn),
+        TypeCheckedExpr.Primitive(PrimitiveValue.Int32 -1)
       ),
       extracted
     )

@@ -99,23 +99,22 @@ module Create =
 
               do! typeCheckValue entityValue entityType languageContext typeCheckContext typeCheckState
 
-              let doUpdateExpr
-                : Expr<
-                    TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                    ResolvedIdentifier,
-                    ValueExt<'runtimeContext, 'db, 'customExtension>
-                   > =
-                Expr.Apply(
-                  Expr.Apply(
-                    Expr.Lookup(
+              let doUpdateExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                TypeCheckedExpr.Apply(
+                  TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.Lookup(
                       Identifier.FullyQualified([ "DB" ], "create")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    Expr.FromValue(entityDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    TypeCheckedExpr.FromValue(
+                      entityDescriptor,
+                      TypeValue.CreatePrimitive PrimitiveType.Unit,
+                      Kind.Star
+                    )
                   ),
-                  Expr.TupleCons
-                    [ Expr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-                      Expr.FromValue(entityValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star) ]
+                  TypeCheckedExpr.TupleCons
+                    [ TypeCheckedExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                      TypeCheckedExpr.FromValue(entityValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star) ]
                 )
 
               let! evalResult =

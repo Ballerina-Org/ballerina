@@ -128,21 +128,20 @@ module Read =
 
 
 
-              let doLookupExpr
-                : Expr<
-                    TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                    ResolvedIdentifier,
-                    ValueExt<'runtimeContext, 'db, 'customExtension>
-                   > =
-                Expr.Apply(
-                  Expr.Apply(
-                    Expr.Lookup(
+              let doLookupExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                TypeCheckedExpr.Apply(
+                  TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.Lookup(
                       Identifier.FullyQualified([ "DB" ], $"getById")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    Expr.FromValue(entityDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    TypeCheckedExpr.FromValue(
+                      entityDescriptor,
+                      TypeValue.CreatePrimitive PrimitiveType.Unit,
+                      Kind.Star
+                    )
                   ),
-                  Expr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                  TypeCheckedExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                 )
 
               let! evalResult =
@@ -179,23 +178,22 @@ module Read =
                   >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
                 )
 
-              let doLookupExpr
-                : Expr<
-                    TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                    ResolvedIdentifier,
-                    ValueExt<'runtimeContext, 'db, 'customExtension>
-                   > =
-                Expr.Apply(
-                  Expr.Apply(
-                    Expr.Lookup(
+              let doLookupExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                TypeCheckedExpr.Apply(
+                  TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.Lookup(
                       Identifier.FullyQualified([ "DB" ], $"getMany")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    Expr.FromValue(entityDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    TypeCheckedExpr.FromValue(
+                      entityDescriptor,
+                      TypeValue.CreatePrimitive PrimitiveType.Unit,
+                      Kind.Star
+                    )
                   ),
-                  Expr.TupleCons
-                    [ Expr.Primitive(PrimitiveValue.Int32 offset, Location.Unknown, typeCheckContext.Scope)
-                      Expr.Primitive(PrimitiveValue.Int32 limit, Location.Unknown, typeCheckContext.Scope) ]
+                  TypeCheckedExpr.TupleCons
+                    [ TypeCheckedExpr.Primitive(PrimitiveValue.Int32 offset, Location.Unknown, typeCheckContext.Scope)
+                      TypeCheckedExpr.Primitive(PrimitiveValue.Int32 limit, Location.Unknown, typeCheckContext.Scope) ]
                 )
 
               let! evalResult =
@@ -253,21 +251,20 @@ module Read =
                   >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
                 )
 
-              let doLookupExpr
-                : Expr<
-                    TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                    ResolvedIdentifier,
-                    ValueExt<'runtimeContext, 'db, 'customExtension>
-                   > =
-                Expr.Apply(
-                  Expr.Apply(
-                    Expr.Lookup(
+              let doLookupExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                TypeCheckedExpr.Apply(
+                  TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.Lookup(
                       Identifier.FullyQualified([ "DB" ], $"lookupOne")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    Expr.FromValue(lookupDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    TypeCheckedExpr.FromValue(
+                      lookupDescriptor,
+                      TypeValue.CreatePrimitive PrimitiveType.Unit,
+                      Kind.Star
+                    )
                   ),
-                  Expr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                  TypeCheckedExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                 )
 
               let! evalResult =
@@ -321,26 +318,25 @@ module Read =
                   >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
                 )
 
-              let doLookupExpr
-                : Expr<
-                    TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                    ResolvedIdentifier,
-                    ValueExt<'runtimeContext, 'db, 'customExtension>
-                   > =
-                Expr.Apply(
-                  Expr.Apply(
-                    Expr.Apply(
-                      Expr.Lookup(
+              let doLookupExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                TypeCheckedExpr.Apply(
+                  TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.Apply(
+                      TypeCheckedExpr.Lookup(
                         Identifier.FullyQualified([ "DB" ], $"lookupMany")
                         |> ResolvedIdentifier.FromIdentifier
                       ),
-                      Expr.FromValue(lookupDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                      TypeCheckedExpr.FromValue(
+                        lookupDescriptor,
+                        TypeValue.CreatePrimitive PrimitiveType.Unit,
+                        Kind.Star
+                      )
                     ),
-                    Expr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    TypeCheckedExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                   ),
-                  Expr.TupleCons
-                    [ Expr.Primitive(PrimitiveValue.Int32(offset))
-                      Expr.Primitive(PrimitiveValue.Int32(limit)) ]
+                  TypeCheckedExpr.TupleCons
+                    [ TypeCheckedExpr.Primitive(PrimitiveValue.Int32(offset))
+                      TypeCheckedExpr.Primitive(PrimitiveValue.Int32(limit)) ]
                 )
 
               let! evalResult =
@@ -392,21 +388,20 @@ module Read =
                   >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
                 )
 
-              let doLookupExpr
-                : Expr<
-                    TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                    ResolvedIdentifier,
-                    ValueExt<'runtimeContext, 'db, 'customExtension>
-                   > =
-                Expr.Apply(
-                  Expr.Apply(
-                    Expr.Lookup(
+              let doLookupExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                TypeCheckedExpr.Apply(
+                  TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.Lookup(
                       Identifier.FullyQualified([ "DB" ], $"lookupOption")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    Expr.FromValue(lookupDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    TypeCheckedExpr.FromValue(
+                      lookupDescriptor,
+                      TypeValue.CreatePrimitive PrimitiveType.Unit,
+                      Kind.Star
+                    )
                   ),
-                  Expr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                  TypeCheckedExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                 )
 
               let! evalResult =

@@ -114,20 +114,21 @@ module Linking =
                   Location.Unknown
                 |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
-              let doLinkExpr
-                : Expr<
-                    TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                    ResolvedIdentifier,
-                    ValueExt<'runtimeContext, 'db, 'customExtension>
-                   > =
-                Expr.Apply(
-                  Expr.Apply(
-                    Expr.Lookup(Identifier.FullyQualified([ "DB" ], "link") |> ResolvedIdentifier.FromIdentifier),
-                    Expr.FromValue(relationDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+              let doLinkExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                TypeCheckedExpr.Apply(
+                  TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.Lookup(
+                      Identifier.FullyQualified([ "DB" ], "link") |> ResolvedIdentifier.FromIdentifier
+                    ),
+                    TypeCheckedExpr.FromValue(
+                      relationDescriptor,
+                      TypeValue.CreatePrimitive PrimitiveType.Unit,
+                      Kind.Star
+                    )
                   ),
-                  Expr.TupleCons
-                    [ Expr.FromValue(fromIdValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-                      Expr.FromValue(toIdValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star) ]
+                  TypeCheckedExpr.TupleCons
+                    [ TypeCheckedExpr.FromValue(fromIdValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                      TypeCheckedExpr.FromValue(toIdValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star) ]
                 )
 
               let! evalResult =
@@ -228,23 +229,22 @@ module Linking =
                   Location.Unknown
                 |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
-              let doUnlinkExpr
-                : Expr<
-                    TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                    ResolvedIdentifier,
-                    ValueExt<'runtimeContext, 'db, 'customExtension>
-                   > =
-                Expr.Apply(
-                  Expr.Apply(
-                    Expr.Lookup(
+              let doUnlinkExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                TypeCheckedExpr.Apply(
+                  TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.Lookup(
                       Identifier.FullyQualified([ "DB" ], "unlink")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    Expr.FromValue(relationDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    TypeCheckedExpr.FromValue(
+                      relationDescriptor,
+                      TypeValue.CreatePrimitive PrimitiveType.Unit,
+                      Kind.Star
+                    )
                   ),
-                  Expr.TupleCons
-                    [ Expr.FromValue(fromIdValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-                      Expr.FromValue(toIdValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star) ]
+                  TypeCheckedExpr.TupleCons
+                    [ TypeCheckedExpr.FromValue(fromIdValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                      TypeCheckedExpr.FromValue(toIdValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star) ]
                 )
 
               let! evalResult =

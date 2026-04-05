@@ -45,18 +45,21 @@ module Update =
       match _entity.Hooks.OnUpdating with
       | Some hookExpr ->
         let _doRunHookExpr =
-          Expr.Apply(
-            Expr.Apply(
-              Expr.Apply(
-                Expr.Apply(
-                  Expr.Apply(hookExpr, Expr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)),
-                  Expr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
+          TypeCheckedExpr.Apply(
+            TypeCheckedExpr.Apply(
+              TypeCheckedExpr.Apply(
+                TypeCheckedExpr.Apply(
+                  TypeCheckedExpr.Apply(
+                    hookExpr,
+                    TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
+                  ),
+                  TypeCheckedExpr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
                 ),
-                Expr.FromValue(previousValueWithProps, TypeValue.CreateUnit(), Kind.Star)
+                TypeCheckedExpr.FromValue(previousValueWithProps, TypeValue.CreateUnit(), Kind.Star)
               ),
-              Expr.FromValue(current_value, TypeValue.CreateUnit(), Kind.Star)
+              TypeCheckedExpr.FromValue(current_value, TypeValue.CreateUnit(), Kind.Star)
             ),
-            Expr.FromValue(currentValueWithProps, TypeValue.CreateUnit(), Kind.Star)
+            TypeCheckedExpr.FromValue(currentValueWithProps, TypeValue.CreateUnit(), Kind.Star)
           )
 
         let! run_hook_result = _doRunHookExpr |> NonEmptyList.One |> Expr.Eval
@@ -100,15 +103,18 @@ module Update =
       match _entity.Hooks.OnUpdated with
       | Some hookExpr ->
         let _doRunHookExpr =
-          Expr.Apply(
-            Expr.Apply(
-              Expr.Apply(
-                Expr.Apply(hookExpr, Expr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)),
-                Expr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
+          TypeCheckedExpr.Apply(
+            TypeCheckedExpr.Apply(
+              TypeCheckedExpr.Apply(
+                TypeCheckedExpr.Apply(
+                  hookExpr,
+                  TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
+                ),
+                TypeCheckedExpr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
               ),
-              Expr.FromValue(previousValueWithProps, TypeValue.CreateUnit(), Kind.Star)
+              TypeCheckedExpr.FromValue(previousValueWithProps, TypeValue.CreateUnit(), Kind.Star)
             ),
-            Expr.FromValue(currentValueWithProps, TypeValue.CreateUnit(), Kind.Star)
+            TypeCheckedExpr.FromValue(currentValueWithProps, TypeValue.CreateUnit(), Kind.Star)
           )
 
         let! run_hook_result = _doRunHookExpr |> NonEmptyList.One |> Expr.Eval
@@ -238,12 +244,20 @@ module Update =
                         let! existingValueWithoutProps = stripProps db_ops existingValue entity_ref
 
                         let! updatedValue =
-                          Expr.Apply(
-                            Expr.Apply(
-                              Expr.FromValue(updateFunc, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
-                              Expr.FromValue(existingValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                          TypeCheckedExpr.Apply(
+                            TypeCheckedExpr.Apply(
+                              TypeCheckedExpr.FromValue(
+                                updateFunc,
+                                TypeValue.CreatePrimitive PrimitiveType.Unit,
+                                Kind.Star
+                              ),
+                              TypeCheckedExpr.FromValue(
+                                existingValue,
+                                TypeValue.CreatePrimitive PrimitiveType.Unit,
+                                Kind.Star
+                              )
                             ),
-                            Expr.FromValue(
+                            TypeCheckedExpr.FromValue(
                               existingValueWithoutProps,
                               TypeValue.CreatePrimitive PrimitiveType.Unit,
                               Kind.Star
@@ -291,15 +305,15 @@ module Update =
                           // do Console.WriteLine $"Existing value: {existingValue}"
                           // do Console.ReadLine() |> ignore
                           match!
-                            Expr.Apply(
-                              Expr.Apply(
-                                Expr.Apply(
+                            TypeCheckedExpr.Apply(
+                              TypeCheckedExpr.Apply(
+                                TypeCheckedExpr.Apply(
                                   canUpdateHook,
-                                  Expr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
+                                  TypeCheckedExpr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
                                 ),
-                                Expr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
+                                TypeCheckedExpr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
                               ),
-                              Expr.FromValue(existingValue, TypeValue.CreateUnit(), Kind.Star)
+                              TypeCheckedExpr.FromValue(existingValue, TypeValue.CreateUnit(), Kind.Star)
                             )
                             |> NonEmptyList.One
                             |> Expr.Eval

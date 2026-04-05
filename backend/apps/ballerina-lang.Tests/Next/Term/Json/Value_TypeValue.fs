@@ -17,8 +17,10 @@ open Ballerina.DSL.Next.Json
 open Ballerina.DSL.Next.StdLib
 open Ballerina.Collections.NonEmptyList
 open Ballerina.DSL.Next.Terms.Json
+open Ballerina.DSL.Next.Terms.Json.TypeCheckedExpr
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.StdLib.MutableMemoryDB
+open Ballerina.Errors
 
 
 type private ValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
@@ -35,7 +37,8 @@ let ``Assert Value<TypeValue> -> ToJson -> FromJson -> Value<TypeValue>``
     j.ToString(JsonSaveOptions.DisableFormatting)
 
   let rootExprEncoder =
-    Expr.ToJson >> Reader.Run(TypeValue.ToJson, ResolvedIdentifier.ToJson)
+    TypeCheckedExpr.ToJson
+    >> Reader.Run(TypeValue.ToJson, ResolvedIdentifier.ToJson)
 
   let rootToJson =
     Json.buildRootEncoder<TypeValue<ValueExt>, ValueExt> (
@@ -50,7 +53,8 @@ let ``Assert Value<TypeValue> -> ToJson -> FromJson -> Value<TypeValue>``
     Assert.That(toStr json, Is.EqualTo(toStr expectedJson))
 
     let rootExprFromJson =
-      Expr.FromJson >> Reader.Run(TypeValue.FromJson, ResolvedIdentifier.FromJson)
+      TypeCheckedExpr.FromJson
+      >> Reader.Run(TypeValue.FromJson, ResolvedIdentifier.FromJson)
 
     let rootFromJson =
       Json.buildRootParser<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt> (
@@ -101,9 +105,14 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
       """{"discriminator": "sum", "value": [3, 3, {"discriminator":"int32","value":"42"}]}""",
       Value.Sum({ Case = 3; Count = 3 }, PrimitiveValue.Int32 42 |> Value.Primitive)
       """{"discriminator": "type-lambda", "value":[{"name":"T", "kind":{"discriminator":"star"}}, {"discriminator":"int32","value":"42"}]}""",
-      Value.TypeLambda({ Name = "T"; Kind = Kind.Star }, PrimitiveValue.Int32 42 |> Expr.Primitive)
+      Value.TypeLambda({ Name = "T"; Kind = Kind.Star }, PrimitiveValue.Int32 42 |> TypeCheckedExpr.Primitive)
       """{"discriminator": "lambda", "value": ["x", {"discriminator":"int32","value":"42"}]}""",
-      Value.Lambda(Var.Create "x", PrimitiveValue.Int32 42 |> Expr.Primitive, Map.empty, TypeCheckScope.Empty)
+      Value.Lambda(
+        Var.Create "x",
+        PrimitiveValue.Int32 42 |> TypeCheckedExpr.Primitive,
+        Map.empty,
+        TypeCheckScope.Empty
+      )
       """{"discriminator": "list", "value":[{"discriminator":"int32","value":"1"},{"discriminator":"int32","value":"2"}]}""",
       Value.Ext(
         ValueExt(

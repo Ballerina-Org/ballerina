@@ -208,15 +208,7 @@ module APIUtils =
 
   let createUpdaterFromDelta
     (delta: Delta<ValueExt<'runtimeContext, 'db, 'customExtension>, DeltaExt<'runtimeContext, 'db, 'customExtension>>)
-    : Sum<
-        Expr<
-          TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-          ResolvedIdentifier,
-          ValueExt<'runtimeContext, 'db, 'customExtension>
-         >,
-        Errors<unit>
-       >
-    =
+    : Sum<TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>>, Errors<unit>> =
     sum {
 
       let! updater = delta |> Delta.ToUpdater DeltaExt.ToUpdater
@@ -225,7 +217,7 @@ module APIUtils =
         ValueExt(Choice4Of7(CompositeType(Choice5Of5(UpdaterOperations(Apply { Updater = updater })))))
 
       return
-        Expr.FromValue(
+        TypeCheckedExpr.FromValue(
           Value.Ext(
             updaterExtension,
             Identifier.FullyQualified([ "@updater" ], "apply")

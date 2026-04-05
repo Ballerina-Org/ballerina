@@ -73,5 +73,5 @@ module Let =
               TypeCheckContext.Updaters.Values(Map.add (x.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) (t1, k1))
             )
 
-          return Expr.Let(x, None, e1, e2, loc0, ctx.Scope), t2, k2, ctx_e2
+          return TypeCheckedExpr.Let(x, t1, e1, e2, loc0, ctx.Scope), t2, k2, ctx_e2
         }

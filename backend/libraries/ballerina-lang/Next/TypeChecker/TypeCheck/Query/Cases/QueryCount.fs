@@ -12,23 +12,17 @@ module QueryCaseCount =
     (typeCheckQuery:
       ExprQuery<TypeExpr<'valueExt>, Identifier, 'valueExt>
         -> TypeCheckerResult<
-          (ExprQuery<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
-          TypeValue<'valueExt> *
-          Kind *
-          TypeCheckContext<'valueExt>),
+          (TypeCheckedExprQuery<'valueExt> * TypeValue<'valueExt> * Kind * TypeCheckContext<'valueExt>),
           'valueExt
          >)
     (expr: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
     q
-    : TypeCheckerResult<
-        (ExprQueryExpr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeQueryRow<'valueExt>),
-        'valueExt
-       >
-    =
+    : TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt> =
     state {
       let! q_e, _, _, _ = q |> typeCheckQuery
 
       return
-        ExprQueryExprRec.QueryCount q_e |> ExprQueryExpr.Create expr.Location,
+        TypeCheckedExprQueryExprRec.QueryCount q_e
+        |> TypeCheckedExprQueryExpr.Create expr.Location,
         TypeQueryRow.PrimitiveType(PrimitiveType.Int32, false)
     }

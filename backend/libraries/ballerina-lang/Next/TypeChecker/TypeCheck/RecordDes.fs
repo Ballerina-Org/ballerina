@@ -66,7 +66,7 @@ module RecordDes =
                         (TypeCheckState.TryResolveIdentifier(field_n, loc0))
                         (state { return fieldName |> ctx.Scope.Resolve })
 
-                    return Expr.RecordDes(record_v, fieldName, loc0, ctx.Scope), field_t, field_k, ctx
+                    return TypeCheckedExpr.RecordDes(record_v, fieldName, loc0, ctx.Scope), field_t, field_k, ctx
                   }
                   |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
@@ -102,10 +102,13 @@ module RecordDes =
 
                     if fieldName.LocalName = "Entities" then
                       return
-                        Expr.EntitiesDes(schema_v, loc0, ctx.Scope), TypeValue.CreateEntities(schema_t), Kind.Star, ctx
+                        TypeCheckedExpr.EntitiesDes(schema_v, loc0, ctx.Scope),
+                        TypeValue.CreateEntities(schema_t),
+                        Kind.Star,
+                        ctx
                     elif fieldName.LocalName = "Relations" then
                       return
-                        Expr.RelationsDes(schema_v, loc0, ctx.Scope),
+                        TypeCheckedExpr.RelationsDes(schema_v, loc0, ctx.Scope),
                         TypeValue.CreateRelations(schema_t),
                         Kind.Star,
                         ctx
@@ -133,7 +136,7 @@ module RecordDes =
                       |> ofSum
 
                     return
-                      Expr.EntityDes(schema_v, fieldName, loc0, ctx.Scope),
+                      TypeCheckedExpr.EntityDes(schema_v, fieldName, loc0, ctx.Scope),
                       TypeValue.CreateEntity(schema_t, entity.TypeOriginal, entity.TypeWithProps, entity.Id),
                       Kind.Star,
                       ctx
@@ -172,7 +175,7 @@ module RecordDes =
                       |> ofSum
 
                     return
-                      Expr.RelationDes(schema_v, fieldName, loc0, ctx.Scope),
+                      TypeCheckedExpr.RelationDes(schema_v, fieldName, loc0, ctx.Scope),
                       (match relation.Cardinality with
                        | None ->
                          TypeValue.CreateForeignKeyRelation(
@@ -235,7 +238,7 @@ module RecordDes =
                         from_id, to', to_id, cardinality.To
 
                     let result =
-                      Expr.RelationLookupDes(
+                      TypeCheckedExpr.RelationLookupDes(
                         record_v,
                         relation_name,
                         (if flipped then

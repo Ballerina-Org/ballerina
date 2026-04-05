@@ -11,11 +11,7 @@ module QueryCaseUnsupported =
 
   let typeCheckQueryUnsupported<'valueExt when 'valueExt: comparison>
     (expr: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
-    : TypeCheckerResult<
-        (ExprQueryExpr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeQueryRow<'valueExt>),
-        'valueExt
-       >
-    =
+    : TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt> =
     state {
       return!
         (fun () -> $"Type checking error: Unsupported query expression {expr.Expr.AsFSharpString.ReasonablyClamped}")

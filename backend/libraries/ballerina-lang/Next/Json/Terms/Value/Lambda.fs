@@ -28,7 +28,7 @@ module Lambda =
 
     static member ToJsonLambda
       (var: Var)
-      (body: Expr<'T, ResolvedIdentifier, 'valueExtension>)
+      (body: TypeCheckedExpr<'valueExtension>)
       : ValueEncoderReader<'T, 'valueExtension> =
       reader {
         let! rootExprEncoder, _ = reader.GetContext()

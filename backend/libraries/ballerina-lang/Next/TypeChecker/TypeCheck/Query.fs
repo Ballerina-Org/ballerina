@@ -71,20 +71,14 @@ module Query =
   type QueryTypeChecker<'input, 'valueExt when 'valueExt: comparison> =
     QueryTypeCheckContext<'valueExt>
       -> 'input
-      -> QueryTypeCheckerResult<
-        ExprQueryExpr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeQueryRow<'valueExt>,
-        'valueExt
-       >
+      -> QueryTypeCheckerResult<TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>, 'valueExt>
 
   type ExprQueryExpr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckQueryExpr<'valueExt when 'valueExt: comparison>
       (typeCheckQuery:
         ExprQuery<TypeExpr<'valueExt>, Identifier, 'valueExt>
           -> TypeCheckerResult<
-            (ExprQuery<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
-            TypeValue<'valueExt> *
-            Kind *
-            TypeCheckContext<'valueExt>),
+            (TypeCheckedExprQuery<'valueExt> * TypeValue<'valueExt> * Kind * TypeCheckContext<'valueExt>),
             'valueExt
            >)
       (depth: int)
@@ -176,7 +170,7 @@ module Query =
               let return_type = mk_query_type schema1 query_row1
               let! ctx = state.GetContext()
 
-              return ExprQuery.UnionQueries(q1_e, q2_e), return_type, Kind.Star, ctx
+              return TypeCheckedExprQuery.UnionQueries(q1_e, q2_e), return_type, Kind.Star, ctx
             | _ ->
               return!
                 (fun () ->
@@ -365,10 +359,12 @@ module Query =
                           TypeValue.Unify(join_expr.Location, left_t, right_t)
                           |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
-                        return
+                        let res: TypeCheckedExprQueryJoin<'valueExt> =
                           { Location = join_expr.Location
                             Left = left_e
                             Right = right_e }
+
+                        res
                       })
                     |> state.All
 
@@ -432,22 +428,22 @@ module Query =
                   return Some distinct_expr'
               }
 
-            let return_expr =
-              { Iterators =
+            let return_expr: TypeCheckedExprQuery<'valueExt> =
+              { TypeCheckedSimpleQuery.Iterators =
                   iterators
                   |> NonEmptyList.map (fun (_, v, source_expr, q_row_t) ->
-                    { Location = source_expr.Location
-                      Var = v
-                      VarType = q_row_t |> Some
-                      Source = source_expr })
-                Joins = joins_expr'
-                Where = where_expr'
-                Select = select_expr'
-                OrderBy = orderby_expr'
-                Distinct = distinct_expr'
-                Closure = select_orderby_lookups
-                DeserializeFrom = select_expr'_t }
-              |> SimpleQuery
+                    { TypeCheckedExprQueryIterator.Location = source_expr.Location
+                      TypeCheckedExprQueryIterator.Var = v
+                      TypeCheckedExprQueryIterator.VarType = q_row_t
+                      TypeCheckedExprQueryIterator.Source = source_expr })
+                TypeCheckedSimpleQuery.Joins = joins_expr'
+                TypeCheckedSimpleQuery.Where = where_expr'
+                TypeCheckedSimpleQuery.Select = select_expr'
+                TypeCheckedSimpleQuery.OrderBy = orderby_expr'
+                TypeCheckedSimpleQuery.Distinct = distinct_expr'
+                TypeCheckedSimpleQuery.Closure = select_orderby_lookups
+                TypeCheckedSimpleQuery.DeserializeFrom = select_expr'_t }
+              |> TypeCheckedExprQuery.SimpleQuery
 
             let return_type = mk_query_type schema select_expr'_t
 

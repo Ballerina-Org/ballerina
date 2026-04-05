@@ -21,18 +21,11 @@ module QueryCaseRecordDes =
     loc0
     (recur:
       ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>
-        -> TypeCheckerResult<
-          (ExprQueryExpr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeQueryRow<'valueExt>),
-          'valueExt
-         >)
+        -> TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt>)
     (expr: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
     (record: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
     (field: Identifier)
-    : TypeCheckerResult<
-        (ExprQueryExpr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeQueryRow<'valueExt>),
-        'valueExt
-       >
-    =
+    : TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt> =
     let ofSum (p: Sum<'a, Errors<Unit>>) =
       p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
@@ -56,8 +49,12 @@ module QueryCaseRecordDes =
                   |> ofSum
 
                 return
-                  ExprQueryExprRec.QueryRecordDes(record_e, field.LocalName |> ResolvedIdentifier.Create, false)
-                  |> ExprQueryExpr.Create expr.Location,
+                  TypeCheckedExprQueryExprRec.QueryRecordDes(
+                    record_e,
+                    field.LocalName |> ResolvedIdentifier.Create,
+                    false
+                  )
+                  |> TypeCheckedExprQueryExpr.Create expr.Location,
                   field_t
               }
               |> state.MapError(Errors<_>.MapPriority(replaceWith ErrorPriority.High))
@@ -86,8 +83,8 @@ module QueryCaseRecordDes =
                     |> ofSum
 
                   return
-                    ExprQueryExprRec.QueryRecordDes(record_e, field_id, true)
-                    |> ExprQueryExpr.Create expr.Location,
+                    TypeCheckedExprQueryExprRec.QueryRecordDes(record_e, field_id, true)
+                    |> TypeCheckedExprQueryExpr.Create expr.Location,
                     field_t |> TypeQueryRow.Json
                 })
                 (state {
@@ -104,8 +101,12 @@ module QueryCaseRecordDes =
                     |> state.OfSum
 
                   return
-                    ExprQueryExprRec.QueryRecordDes(record_e, field.LocalName |> ResolvedIdentifier.Create, true)
-                    |> ExprQueryExpr.Create expr.Location,
+                    TypeCheckedExprQueryExprRec.QueryRecordDes(
+                      record_e,
+                      field.LocalName |> ResolvedIdentifier.Create,
+                      true
+                    )
+                    |> TypeCheckedExprQueryExpr.Create expr.Location,
                     field_t |> TypeQueryRow.Json
                 })
               |> state.MapError(Errors<_>.MapPriority(replaceWith ErrorPriority.High))

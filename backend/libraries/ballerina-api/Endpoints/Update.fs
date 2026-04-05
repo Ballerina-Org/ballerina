@@ -105,24 +105,28 @@ module Update =
                 |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
                 |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
-              let doUpdateExpr
-                : Expr<
-                    TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                    ResolvedIdentifier,
-                    ValueExt<'runtimeContext, 'db, 'customExtension>
-                   > =
+              let doUpdateExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
 
-                Expr.Apply(
-                  Expr.Apply(
-                    Expr.Lookup(
+                TypeCheckedExpr.Apply(
+                  TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.Lookup(
                       Identifier.FullyQualified([ "DB" ], "update")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    Expr.FromValue(entityDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    TypeCheckedExpr.FromValue(
+                      entityDescriptor,
+                      TypeValue.CreatePrimitive PrimitiveType.Unit,
+                      Kind.Star
+                    )
                   ),
-                  Expr.TupleCons
-                    [ Expr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-                      Expr.Lambda(Var.Create "_", None, updaterLambda, None) ]
+                  TypeCheckedExpr.TupleCons
+                    [ TypeCheckedExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                      TypeCheckedExpr.Lambda(
+                        Var.Create "_",
+                        TypeValue.CreatePrimitive PrimitiveType.Unit,
+                        updaterLambda,
+                        TypeValue.CreatePrimitive PrimitiveType.Unit
+                      ) ]
                 )
 
               let! evalResult =
@@ -229,21 +233,20 @@ module Update =
 
               let updaters = Value.Ext(updaters, None)
 
-              let doUpdateExpr
-                : Expr<
-                    TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                    ResolvedIdentifier,
-                    ValueExt<'runtimeContext, 'db, 'customExtension>
-                   > =
-                Expr.Apply(
-                  Expr.Apply(
-                    Expr.Lookup(
+              let doUpdateExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                TypeCheckedExpr.Apply(
+                  TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.Lookup(
                       Identifier.FullyQualified([ "DB" ], "updateMany")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    Expr.FromValue(entityDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    TypeCheckedExpr.FromValue(
+                      entityDescriptor,
+                      TypeValue.CreatePrimitive PrimitiveType.Unit,
+                      Kind.Star
+                    )
                   ),
-                  Expr.FromValue(updaters, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                  TypeCheckedExpr.FromValue(updaters, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                 )
 
               let! evalResult =

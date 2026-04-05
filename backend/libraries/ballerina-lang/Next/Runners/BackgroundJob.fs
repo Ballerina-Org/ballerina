@@ -22,15 +22,15 @@ let executeBackgroundJob
   =
   sum {
     let backgroundJobExpr =
-      Expr.Apply(
-        Expr.Apply(
-          Expr.Apply(
+      TypeCheckedExpr.Apply(
+        TypeCheckedExpr.Apply(
+          TypeCheckedExpr.Apply(
             backgroundJob,
-            Expr.FromValue(dbio.SchemaAsValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+            TypeCheckedExpr.FromValue(dbio.SchemaAsValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
           ),
-          Expr.FromValue(entityId, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+          TypeCheckedExpr.FromValue(entityId, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
         ),
-        Expr.FromValue(value, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+        TypeCheckedExpr.FromValue(value, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
       )
 
     let backgroundJobResult =

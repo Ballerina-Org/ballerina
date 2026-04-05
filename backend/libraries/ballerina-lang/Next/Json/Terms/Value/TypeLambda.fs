@@ -27,7 +27,7 @@ module TypeLambda =
 
     static member ToJsonTypeLambda
       (typeParam: TypeParameter)
-      (body: Expr<'T, ResolvedIdentifier, 'valueExtension>)
+      (body: TypeCheckedExpr<'valueExtension>)
       : ValueEncoderReader<'T, 'valueExtension> =
       reader {
         let! rootExprEncoder, _ = reader.GetContext()

@@ -89,21 +89,20 @@ module Delete =
 
               do! typeCheckValue idValue idType languageContext typeCheckContext typeCheckState
 
-              let doDeleteExpr
-                : Expr<
-                    TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                    ResolvedIdentifier,
-                    ValueExt<'runtimeContext, 'db, 'customExtension>
-                   > =
-                Expr.Apply(
-                  Expr.Apply(
-                    Expr.Lookup(
+              let doDeleteExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                TypeCheckedExpr.Apply(
+                  TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.Lookup(
                       Identifier.FullyQualified([ "DB" ], "delete")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    Expr.FromValue(entityDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    TypeCheckedExpr.FromValue(
+                      entityDescriptor,
+                      TypeValue.CreatePrimitive PrimitiveType.Unit,
+                      Kind.Star
+                    )
                   ),
-                  Expr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                  TypeCheckedExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                 )
 
               let! evalResult =
@@ -208,21 +207,20 @@ module Delete =
                    > =
                 Ext(deleters, None)
 
-              let doUpdateExpr
-                : Expr<
-                    TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                    ResolvedIdentifier,
-                    ValueExt<'runtimeContext, 'db, 'customExtension>
-                   > =
-                Expr.Apply(
-                  Expr.Apply(
-                    Expr.Lookup(
+              let doUpdateExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                TypeCheckedExpr.Apply(
+                  TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.Lookup(
                       Identifier.FullyQualified([ "DB" ], "deleteMany")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    Expr.FromValue(entityDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    TypeCheckedExpr.FromValue(
+                      entityDescriptor,
+                      TypeValue.CreatePrimitive PrimitiveType.Unit,
+                      Kind.Star
+                    )
                   ),
-                  Expr.FromValue(deleters, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                  TypeCheckedExpr.FromValue(deleters, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                 )
 
               let! evalResult =

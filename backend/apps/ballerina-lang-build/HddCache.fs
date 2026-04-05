@@ -15,7 +15,7 @@ module HddCache =
   type BuildCacheDto<'valueExt when 'valueExt: comparison> =
     { Checksum: ProjectModel.Checksum
       PrevFilesChecksums: ProjectModel.Checksum array
-      Expr: Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>
+      Expr: TypeCheckedExpr<'valueExt>
       TypeValue: TypeValue<'valueExt>
       Context: TypeCheckContext<'valueExt>
       State: TypeCheckState<'valueExt> }
@@ -42,7 +42,7 @@ module HddCache =
       ProjectModel.FileName,
       ProjectModel.Checksum *
       List<ProjectModel.Checksum> *
-      Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
+      TypeCheckedExpr<'valueExt> *
       TypeValue<'valueExt> *
       TypeCheckContext<'valueExt> *
       TypeCheckState<'valueExt>
@@ -155,7 +155,7 @@ module HddCache =
           ProjectModel.FileName,
           ProjectModel.Checksum *
           List<ProjectModel.Checksum> *
-          Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
+          TypeCheckedExpr<'valueExt> *
           TypeValue<'valueExt> *
           TypeCheckContext<'valueExt> *
           TypeCheckState<'valueExt>

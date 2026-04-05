@@ -103,38 +103,38 @@ module MutableMemoryDB =
   let rec private evalQueryExpr
     (runQuery: ValueQuery<_, _> -> Reader<seq<_> * _, ExprEvalContext<_, _>, Errors<Unit>>)
     (makeListValue: List<Value<TypeValue<'ext>, 'ext>> -> Value<TypeValue<'ext>, 'ext>)
-    (query: ExprQueryExpr<TypeValue<'ext>, ResolvedIdentifier, 'ext>)
+    (query: TypeCheckedExprQueryExpr<'ext>)
     : Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<_, _>, Errors<Unit>> =
     reader {
       let evalQueryExpr = evalQueryExpr runQuery makeListValue
 
       match query.Expr with
-      | ExprQueryExprRec.QueryApply(func, arg) ->
+      | TypeCheckedExprQueryExprRec.QueryApply(func, arg) ->
         let! argVal = evalQueryExpr arg
 
         match func.Expr, argVal with
-        | ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.GreaterThan, _),
+        | TypeCheckedExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.GreaterThan, _),
           Value.Tuple [ Value.Primitive(PrimitiveValue.Int32 v1); Value.Primitive(PrimitiveValue.Int32 v2) ] ->
           return Value.Primitive(PrimitiveValue.Bool(v1 > v2))
-        | ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.And, _),
+        | TypeCheckedExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.And, _),
           Value.Tuple [ Value.Primitive(PrimitiveValue.Bool v1); Value.Primitive(PrimitiveValue.Bool v2) ] ->
           return Value.Primitive(PrimitiveValue.Bool(v1 && v2))
-        | ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Or, _),
+        | TypeCheckedExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Or, _),
           Value.Tuple [ Value.Primitive(PrimitiveValue.Bool v1); Value.Primitive(PrimitiveValue.Bool v2) ] ->
           return Value.Primitive(PrimitiveValue.Bool(v1 || v2))
-        | ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Multiply, _),
+        | TypeCheckedExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Multiply, _),
           Value.Tuple [ Value.Primitive(PrimitiveValue.Int32 v1); Value.Primitive(PrimitiveValue.Int32 v2) ] ->
           return Value.Primitive(PrimitiveValue.Int32(v1 * v2))
-        | ExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Equals, _), Value.Tuple [ v1; v2 ] ->
+        | TypeCheckedExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Equals, _), Value.Tuple [ v1; v2 ] ->
           return Value.Primitive(PrimitiveValue.Bool(v1 = v2))
         | _ ->
           return!
             Errors.Singleton () (fun () -> $"Not implemented intrinsic {func} in query")
             |> reader.Throw
-      | ExprQueryExprRec.QueryTupleCons items ->
+      | TypeCheckedExprQueryExprRec.QueryTupleCons items ->
         let! items = items |> Seq.map evalQueryExpr |> reader.All
         return Value.Tuple(Seq.toList items)
-      | ExprQueryExprRec.QueryRecordDes(expr, field, _isJson) ->
+      | TypeCheckedExprQueryExprRec.QueryRecordDes(expr, field, _isJson) ->
         let! recordVal = evalQueryExpr expr
 
         match recordVal with
@@ -148,7 +148,7 @@ module MutableMemoryDB =
           return!
             Errors.Singleton () (fun () -> $"Expected a record value for record destructuring, got {recordVal}")
             |> reader.Throw
-      | ExprQueryExprRec.QueryTupleDes(expr, index, _isJson) ->
+      | TypeCheckedExprQueryExprRec.QueryTupleDes(expr, index, _isJson) ->
         let! tupleVal = evalQueryExpr expr
 
         match tupleVal with
@@ -164,7 +164,7 @@ module MutableMemoryDB =
           return!
             Errors.Singleton () (fun () -> $"Expected a tuple value for tuple destructuring, got {tupleVal}")
             |> reader.Throw
-      | ExprQueryExprRec.QueryConditional(cond, ``then``, ``else``) ->
+      | TypeCheckedExprQueryExprRec.QueryConditional(cond, ``then``, ``else``) ->
         let! condVal = evalQueryExpr cond
 
         match condVal with
@@ -174,15 +174,15 @@ module MutableMemoryDB =
           return!
             Errors.Singleton () (fun () -> $"Expected a boolean value for conditional expression, got {condVal}")
             |> reader.Throw
-      | ExprQueryExprRec.QueryUnionDes(_expr, _handlers) ->
+      | TypeCheckedExprQueryExprRec.QueryUnionDes(_expr, _handlers) ->
         return!
           Errors.Singleton () (fun () -> $"Union destructuring not implemented yet")
           |> reader.Throw
-      | ExprQueryExprRec.QuerySumDes(_expr, _handlers) ->
+      | TypeCheckedExprQueryExprRec.QuerySumDes(_expr, _handlers) ->
         return!
           Errors.Singleton () (fun () -> $"Sum destructuring not implemented yet")
           |> reader.Throw
-      | ExprQueryExprRec.QueryLookup id ->
+      | TypeCheckedExprQueryExprRec.QueryLookup id ->
         let! ctx = reader.GetContext()
 
         return!
@@ -190,36 +190,36 @@ module MutableMemoryDB =
           |> Map.tryFind id
           |> sum.OfOption(Errors.Singleton () (fun () -> $"Identifier {id} not found in query context"))
           |> reader.OfSum
-      | ExprQueryExprRec.QueryIntrinsic(_, _) ->
+      | TypeCheckedExprQueryExprRec.QueryIntrinsic(_, _) ->
         return!
           Errors.Singleton () (fun () -> $"Standalone intrinsics are not supported in the query engine")
           |> reader.Throw
-      | ExprQueryExprRec.QueryConstant v -> return Value.Primitive v
-      | ExprQueryExprRec.QueryClosureValue(v, _) -> return v
-      | ExprQueryExprRec.QueryCastTo(v, _) -> return! evalQueryExpr v
-      | ExprQueryExprRec.QueryCount(_) ->
+      | TypeCheckedExprQueryExprRec.QueryConstant v -> return Value.Primitive v
+      | TypeCheckedExprQueryExprRec.QueryClosureValue(v, _) -> return v
+      | TypeCheckedExprQueryExprRec.QueryCastTo(v, _) -> return! evalQueryExpr v
+      | TypeCheckedExprQueryExprRec.QueryCount(_) ->
         return!
           (fun () -> "MemoryDB QueryCount Not Implemented")
           |> Errors.Singleton()
           |> reader.Throw
-      | ExprQueryExprRec.QueryExists(_) ->
+      | TypeCheckedExprQueryExprRec.QueryExists(_) ->
         return!
           (fun () -> "MemoryDB QueryAny Not Implemented")
           |> Errors.Singleton()
           |> reader.Throw
-      | ExprQueryExprRec.QueryArray(_) ->
+      | TypeCheckedExprQueryExprRec.QueryArray(_) ->
         return!
           (fun () -> "MemoryDB QueryArray Not Implemented")
           |> Errors.Singleton()
           |> reader.Throw
-      | ExprQueryExprRec.QueryCountEvaluated q ->
+      | TypeCheckedExprQueryExprRec.QueryCountEvaluated q ->
         let! res, _ = runQuery q
         return Value.Primitive(PrimitiveValue.Int32(res |> Seq.length))
 
-      | ExprQueryExprRec.QueryExistsEvaluated q ->
+      | TypeCheckedExprQueryExprRec.QueryExistsEvaluated q ->
         let! res, _ = runQuery q
         return Value.Primitive(PrimitiveValue.Bool(res |> Seq.length > 0))
-      | ExprQueryExprRec.QueryArrayEvaluated q ->
+      | TypeCheckedExprQueryExprRec.QueryArrayEvaluated q ->
         let! res, _ = runQuery q
         return res |> Seq.toList |> makeListValue
     }
@@ -242,7 +242,10 @@ module MutableMemoryDB =
       | _, None -> return all_values
       | _, Some can_read_hook ->
         let can_read_query_expr =
-          Expr.Apply(can_read_hook, Expr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star))
+          TypeCheckedExpr.Apply(
+            can_read_hook,
+            TypeCheckedExpr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
+          )
 
         let! can_read_query =
           can_read_query_expr

@@ -22,7 +22,7 @@ module ProjectModel =
 
   and FileTypeCheckedOutput<'valueExt when 'valueExt: comparison> =
     { File: FileBuildConfiguration
-      Expr: Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>
+      Expr: TypeCheckedExpr<'valueExt>
       TypeValue: TypeValue<'valueExt> }
 
   and FileName = { Path: string }
@@ -49,13 +49,13 @@ module ProjectModel =
         NonEmptyList<FileBuildConfiguration>
           -> (FileBuildConfiguration * int
             -> State<
-              Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeValue<'valueExt>,
+              TypeCheckedExpr<'valueExt> * TypeValue<'valueExt>,
               Unit,
               TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
               Errors<Location>
              >)
           -> Sum<
-            NonEmptyList<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeValue<'valueExt>> *
+            NonEmptyList<TypeCheckedExpr<'valueExt> * TypeValue<'valueExt>> *
             TypeCheckContext<'valueExt> *
             TypeCheckState<'valueExt>,
             Errors<Location>
@@ -152,7 +152,7 @@ module ProjectModel =
       (cache: ProjectCache<'valueExt>)
       (project: ProjectBuildConfiguration)
       : Sum<
-          NonEmptyList<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>> *
+          NonEmptyList<TypeCheckedExpr<'valueExt>> *
           TypeValue<'valueExt> *
           TypeCheckContext<'valueExt> *
           TypeCheckState<'valueExt>,

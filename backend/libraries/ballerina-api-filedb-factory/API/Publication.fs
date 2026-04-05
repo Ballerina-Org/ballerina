@@ -45,9 +45,9 @@ module API =
     =
     sum {
       let mainExpr =
-        Expr.Apply(
-          Expr.FromValue(dbio.Main, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
-          Expr.FromValue(dbio.SchemaAsValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+        TypeCheckedExpr.Apply(
+          TypeCheckedExpr.FromValue(dbio.Main, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
+          TypeCheckedExpr.FromValue(dbio.SchemaAsValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
         )
 
       let! mainResult =

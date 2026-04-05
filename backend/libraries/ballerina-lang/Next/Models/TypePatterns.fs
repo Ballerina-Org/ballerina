@@ -1004,6 +1004,22 @@ module Patterns =
             |> sum.Throw
       }
 
+  type TypeCheckedExprQueryExpr<'valueExt> with
+    static member Create loc expr =
+      { TypeCheckedExprQueryExpr.Location = loc
+        TypeCheckedExprQueryExpr.Expr = expr }
+
+    static member AsTupleCons(t: TypeCheckedExprQueryExpr<'valueExt>) =
+      sum {
+        match t.Expr with
+        | TypeCheckedExprQueryExprRec.QueryTupleCons elements -> return elements
+        | _ ->
+          return!
+            (fun () -> $"Error: expected tuple cons query expression, got {t.Expr})")
+            |> Errors.Singleton()
+            |> sum.Throw
+      }
+
   type TypeQueryRow<'valueExt> with
     static member AsPrimaryKey(t: TypeQueryRow<'valueExt>) =
       sum {

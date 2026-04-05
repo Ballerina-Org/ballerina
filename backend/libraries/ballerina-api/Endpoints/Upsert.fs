@@ -112,24 +112,28 @@ module Upsert =
                   Location.Unknown
                 |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
-              let doUpsertExpr
-                : Expr<
-                    TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                    ResolvedIdentifier,
-                    ValueExt<'runtimeContext, 'db, 'customExtension>
-                   > =
-                Expr.Apply(
-                  Expr.Apply(
-                    Expr.Lookup(
+              let doUpsertExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                TypeCheckedExpr.Apply(
+                  TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.Lookup(
                       Identifier.FullyQualified([ "DB" ], "upsert")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    Expr.FromValue(entityDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    TypeCheckedExpr.FromValue(
+                      entityDescriptor,
+                      TypeValue.CreatePrimitive PrimitiveType.Unit,
+                      Kind.Star
+                    )
                   ),
-                  Expr.TupleCons
-                    [ Expr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-                      Expr.FromValue(entityValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-                      Expr.Lambda(Var.Create "_", None, updaterLambda, None) ]
+                  TypeCheckedExpr.TupleCons
+                    [ TypeCheckedExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                      TypeCheckedExpr.FromValue(entityValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                      TypeCheckedExpr.Lambda(
+                        Var.Create "_",
+                        TypeValue.CreatePrimitive PrimitiveType.Unit,
+                        updaterLambda,
+                        TypeValue.CreatePrimitive PrimitiveType.Unit
+                      ) ]
                 )
 
               let! evalResult =
@@ -258,21 +262,20 @@ module Upsert =
 
               let upserters = Value.Ext(upserters, None)
 
-              let doUpdateExpr
-                : Expr<
-                    TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
-                    ResolvedIdentifier,
-                    ValueExt<'runtimeContext, 'db, 'customExtension>
-                   > =
-                Expr.Apply(
-                  Expr.Apply(
-                    Expr.Lookup(
+              let doUpdateExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                TypeCheckedExpr.Apply(
+                  TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.Lookup(
                       Identifier.FullyQualified([ "DB" ], "upsertMany")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    Expr.FromValue(entityDescriptor, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    TypeCheckedExpr.FromValue(
+                      entityDescriptor,
+                      TypeValue.CreatePrimitive PrimitiveType.Unit,
+                      Kind.Star
+                    )
                   ),
-                  Expr.FromValue(upserters, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                  TypeCheckedExpr.FromValue(upserters, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                 )
 
               let! evalResult =

@@ -57,5 +57,5 @@ module TupleDes =
             )
             |> state.OfSum
 
-          return Expr.TupleDes(fields, fieldName, loc0, ctx.Scope), t_field, Kind.Star, ctx
+          return TypeCheckedExpr.TupleDes(fields, fieldName, loc0, ctx.Scope), t_field, Kind.Star, ctx
         }

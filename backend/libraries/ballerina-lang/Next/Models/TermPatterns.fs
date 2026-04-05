@@ -155,7 +155,7 @@ module Patterns =
     static member AsLambda
       (v: Value<'T, 'valueExt>)
       : Sum<
-          Var * Expr<'T, ResolvedIdentifier, 'valueExt> * Map<ResolvedIdentifier, Value<'T, 'valueExt>> * TypeCheckScope,
+          Var * TypeCheckedExpr<'valueExt> * Map<ResolvedIdentifier, Value<'T, 'valueExt>> * TypeCheckScope,
           Errors<Unit>
          >
       =
@@ -163,9 +163,7 @@ module Patterns =
       | Value.Lambda(v, e, closure, scope) -> sum.Return(v, e, closure, scope)
       | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected a lambda but got {other}"))
 
-    static member AsTypeLamba
-      (v: Value<'T, 'valueExt>)
-      : Sum<TypeParameter * Expr<'T, ResolvedIdentifier, 'valueExt>, Errors<Unit>> =
+    static member AsTypeLamba(v: Value<'T, 'valueExt>) : Sum<TypeParameter * TypeCheckedExpr<'valueExt>, Errors<Unit>> =
       match v with
       | Value.TypeLambda(v, t) -> sum.Return(v, t)
       | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected a type lambda but got {other}"))
@@ -551,3 +549,333 @@ module Patterns =
       match e.Expr with
       | QueryRecordDes(r, id, isJson) -> sum.Return(r, id, isJson)
       | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected a query record destruct but got {other}"))
+
+  type TypeCheckedExpr<'valueExt> with
+    static member TypeLambda(p: TypeParameter, e: TypeCheckedExpr<'valueExt>, loc: Location, scope: TypeCheckScope) =
+      { TypeCheckedExpr.Expr =
+          TypeCheckedExprRec.TypeLambda(
+            { TypeCheckedExprTypeLambda.Param = p
+              Body = e }
+          )
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member TypeLambda(p: TypeParameter, e: TypeCheckedExpr<'valueExt>) =
+      TypeCheckedExpr<'valueExt>.TypeLambda(p, e, Location.Unknown, TypeCheckScope.Empty)
+
+    static member TypeApply
+      (e1: TypeCheckedExpr<'valueExt>, t: TypeValue<'valueExt>, loc: Location, scope: TypeCheckScope)
+      =
+      { TypeCheckedExpr.Expr =
+          TypeCheckedExprRec.TypeApply(
+            { TypeCheckedExprTypeApply.Func = e1
+              TypeArg = t }
+          )
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member TypeApply(e1: TypeCheckedExpr<'valueExt>, t: TypeValue<'valueExt>) =
+      TypeCheckedExpr<'valueExt>.TypeApply(e1, t, Location.Unknown, TypeCheckScope.Empty)
+
+    static member Lambda
+      (
+        v: Var,
+        t: TypeValue<'valueExt>,
+        e: TypeCheckedExpr<'valueExt>,
+        r: TypeValue<'valueExt>,
+        loc: Location,
+        scope: TypeCheckScope
+      ) =
+      { TypeCheckedExpr.Expr =
+          TypeCheckedExprRec.Lambda(
+            { TypeCheckedExprLambda.Param = v
+              ParamType = t
+              Body = e
+              BodyType = r }
+          )
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member Lambda(v: Var, t: TypeValue<'valueExt>, e: TypeCheckedExpr<'valueExt>, r: TypeValue<'valueExt>) =
+      TypeCheckedExpr<'valueExt>.Lambda(v, t, e, r, Location.Unknown, TypeCheckScope.Empty)
+
+    static member Apply
+      (f: TypeCheckedExpr<'valueExt>, a: TypeCheckedExpr<'valueExt>, loc: Location, scope: TypeCheckScope)
+      =
+      { TypeCheckedExpr.Expr = TypeCheckedExprRec.Apply({ TypeCheckedExprApply.F = f; Arg = a })
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member Apply(f: TypeCheckedExpr<'valueExt>, a: TypeCheckedExpr<'valueExt>) =
+      TypeCheckedExpr<'valueExt>.Apply(f, a, Location.Unknown, TypeCheckScope.Empty)
+
+    static member Query(q: TypeCheckedExprQuery<'valueExt>, loc: Location, scope: TypeCheckScope) =
+      { TypeCheckedExpr.Expr = TypeCheckedExprRec.Query(q)
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member Query(q: TypeCheckedExprQuery<'valueExt>) =
+      TypeCheckedExpr<'valueExt>.Query(q, Location.Unknown, TypeCheckScope.Empty)
+
+    static member FromValue
+      (v: Value<TypeValue<'valueExt>, 'valueExt>, t: TypeValue<'valueExt>, k: Kind, loc: Location, scope: TypeCheckScope) =
+      { TypeCheckedExpr.Expr =
+          TypeCheckedExprRec.FromValue(
+            { TypeCheckedExprFromValue.Value = v
+              ValueType = t
+              ValueKind = k }
+          )
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member FromValue(v: Value<TypeValue<'valueExt>, 'valueExt>, t: TypeValue<'valueExt>, k: Kind) =
+      TypeCheckedExpr<'valueExt>.FromValue(v, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member Let
+      (
+        v: Var,
+        t: TypeValue<'valueExt>,
+        a: TypeCheckedExpr<'valueExt>,
+        e: TypeCheckedExpr<'valueExt>,
+        loc: Location,
+        scope: TypeCheckScope
+      ) =
+      { TypeCheckedExpr.Expr =
+          TypeCheckedExprRec.Let(
+            { TypeCheckedExprLet.Var = v
+              Type = t
+              Val = a
+              Rest = e }
+          )
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member Let(v: Var, t: TypeValue<'valueExt>, a: TypeCheckedExpr<'valueExt>, e: TypeCheckedExpr<'valueExt>) =
+      TypeCheckedExpr<'valueExt>.Let(v, t, a, e, Location.Unknown, TypeCheckScope.Empty)
+
+    static member Do
+      (a: TypeCheckedExpr<'valueExt>, e: TypeCheckedExpr<'valueExt>, loc: Location, scope: TypeCheckScope)
+      =
+      { TypeCheckedExpr.Expr = TypeCheckedExprRec.Do({ TypeCheckedExprDo.Val = a; Rest = e })
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member Do(a: TypeCheckedExpr<'valueExt>, e: TypeCheckedExpr<'valueExt>) =
+      TypeCheckedExpr<'valueExt>.Do(a, e, Location.Unknown, TypeCheckScope.Empty)
+
+    static member TypeLet
+      (name: string, t: TypeValue<'valueExt>, e: TypeCheckedExpr<'valueExt>, loc: Location, scope: TypeCheckScope)
+      =
+      { TypeCheckedExpr.Expr =
+          TypeCheckedExprRec.TypeLet(
+            { TypeCheckedExprTypeLet.Name = name
+              TypeDef = t
+              Body = e }
+          )
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member TypeLet(name: string, t: TypeValue<'valueExt>, e: TypeCheckedExpr<'valueExt>) =
+      TypeCheckedExpr<'valueExt>.TypeLet(name, t, e, Location.Unknown, TypeCheckScope.Empty)
+
+    static member RecordCons
+      (fields: List<ResolvedIdentifier * TypeCheckedExpr<'valueExt>>, loc: Location, scope: TypeCheckScope)
+      =
+      { TypeCheckedExpr.Expr = TypeCheckedExprRec.RecordCons({ TypeCheckedExprRecordCons.Fields = fields })
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member RecordCons(fields: List<ResolvedIdentifier * TypeCheckedExpr<'valueExt>>) =
+      TypeCheckedExpr<'valueExt>.RecordCons(fields, Location.Unknown, TypeCheckScope.Empty)
+
+    static member RecordWith
+      (
+        record: TypeCheckedExpr<'valueExt>,
+        fields: List<ResolvedIdentifier * TypeCheckedExpr<'valueExt>>,
+        loc: Location,
+        scope: TypeCheckScope
+      ) =
+      { TypeCheckedExpr.Expr =
+          TypeCheckedExprRec.RecordWith(
+            { TypeCheckedExprRecordWith.Record = record
+              Fields = fields }
+          )
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member RecordWith
+      (record: TypeCheckedExpr<'valueExt>, fields: List<ResolvedIdentifier * TypeCheckedExpr<'valueExt>>)
+      =
+      TypeCheckedExpr<'valueExt>.RecordWith(record, fields, Location.Unknown, TypeCheckScope.Empty)
+
+    static member TupleCons(elements: List<TypeCheckedExpr<'valueExt>>, loc: Location, scope: TypeCheckScope) =
+      { TypeCheckedExpr.Expr = TypeCheckedExprRec.TupleCons({ TypeCheckedExprTupleCons.Items = elements })
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member TupleCons(elements: List<TypeCheckedExpr<'valueExt>>) =
+      TypeCheckedExpr<'valueExt>.TupleCons(elements, Location.Unknown, TypeCheckScope.Empty)
+
+    static member SumCons(selector: SumConsSelector, loc: Location, scope: TypeCheckScope) =
+      { TypeCheckedExpr.Expr = TypeCheckedExprRec.SumCons({ TypeCheckedExprSumCons.Selector = selector })
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member SumCons(selector: SumConsSelector) =
+      TypeCheckedExpr<'valueExt>.SumCons(selector, Location.Unknown, TypeCheckScope.Empty)
+
+    static member RecordDes
+      (e: TypeCheckedExpr<'valueExt>, id: ResolvedIdentifier, loc: Location, scope: TypeCheckScope)
+      =
+      { TypeCheckedExpr.Expr =
+          TypeCheckedExprRec.RecordDes(
+            { TypeCheckedExprRecordDes.Expr = e
+              Field = id }
+          )
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member RecordDes(e: TypeCheckedExpr<'valueExt>, id: ResolvedIdentifier) =
+      TypeCheckedExpr<'valueExt>.RecordDes(e, id, Location.Unknown, TypeCheckScope.Empty)
+
+    static member EntitiesDes(e: TypeCheckedExpr<'valueExt>, loc: Location, scope: TypeCheckScope) =
+      { TypeCheckedExpr.Expr = TypeCheckedExprRec.EntitiesDes({ TypeCheckedExprEntitiesDes.Expr = e })
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member EntitiesDes(e: TypeCheckedExpr<'valueExt>) =
+      TypeCheckedExpr<'valueExt>.EntitiesDes(e, Location.Unknown, TypeCheckScope.Empty)
+
+    static member RelationsDes(e: TypeCheckedExpr<'valueExt>, loc: Location, scope: TypeCheckScope) =
+      { TypeCheckedExpr.Expr = TypeCheckedExprRec.RelationsDes({ TypeCheckedExprRelationsDes.Expr = e })
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member RelationsDes(e: TypeCheckedExpr<'valueExt>) =
+      TypeCheckedExpr<'valueExt>.RelationsDes(e, Location.Unknown, TypeCheckScope.Empty)
+
+    static member EntityDes(e: TypeCheckedExpr<'valueExt>, n: SchemaEntityName, loc: Location, scope: TypeCheckScope) =
+      { TypeCheckedExpr.Expr =
+          TypeCheckedExprRec.EntityDes(
+            { TypeCheckedExprEntityDes.Expr = e
+              EntityName = n }
+          )
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member EntityDes(e: TypeCheckedExpr<'valueExt>, n: SchemaEntityName) =
+      TypeCheckedExpr<'valueExt>.EntityDes(e, n, Location.Unknown, TypeCheckScope.Empty)
+
+    static member RelationDes
+      (e: TypeCheckedExpr<'valueExt>, n: SchemaRelationName, loc: Location, scope: TypeCheckScope)
+      =
+      { TypeCheckedExpr.Expr =
+          TypeCheckedExprRec.RelationDes(
+            { TypeCheckedExprRelationDes.Expr = e
+              RelationName = n }
+          )
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member RelationDes(e: TypeCheckedExpr<'valueExt>, n: SchemaRelationName) =
+      TypeCheckedExpr<'valueExt>.RelationDes(e, n, Location.Unknown, TypeCheckScope.Empty)
+
+    static member RelationLookupDes
+      (
+        e: TypeCheckedExpr<'valueExt>,
+        n: SchemaRelationName,
+        d: RelationLookupDirection,
+        loc: Location,
+        scope: TypeCheckScope
+      ) =
+      { TypeCheckedExpr.Expr =
+          TypeCheckedExprRec.RelationLookupDes(
+            { TypeCheckedExprRelationLookupDes.Expr = e
+              RelationName = n
+              Direction = d }
+          )
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member RelationLookupDes(e: TypeCheckedExpr<'valueExt>, n: SchemaRelationName, d: RelationLookupDirection) =
+      TypeCheckedExpr<'valueExt>.RelationLookupDes(e, n, d, Location.Unknown, TypeCheckScope.Empty)
+
+    static member UnionDes
+      (
+        cases: Map<ResolvedIdentifier, TypeCheckedCaseHandler<'valueExt>>,
+        fallback: Option<TypeCheckedExpr<'valueExt>>,
+        loc: Location,
+        scope: TypeCheckScope
+      ) =
+      { TypeCheckedExpr.Expr =
+          TypeCheckedExprRec.UnionDes(
+            { TypeCheckedExprUnionDes.Handlers = cases
+              Fallback = fallback }
+          )
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member UnionDes
+      (cases: Map<ResolvedIdentifier, TypeCheckedCaseHandler<'valueExt>>, fallback: Option<TypeCheckedExpr<'valueExt>>)
+      =
+      TypeCheckedExpr<'valueExt>.UnionDes(cases, fallback, Location.Unknown, TypeCheckScope.Empty)
+
+    static member TupleDes
+      (e: TypeCheckedExpr<'valueExt>, selector: TupleDesSelector, loc: Location, scope: TypeCheckScope)
+      =
+      { TypeCheckedExpr.Expr =
+          TypeCheckedExprRec.TupleDes(
+            { TypeCheckedExprTupleDes.Tuple = e
+              Item = selector }
+          )
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member TupleDes(e: TypeCheckedExpr<'valueExt>, selector: TupleDesSelector) =
+      TypeCheckedExpr<'valueExt>.TupleDes(e, selector, Location.Unknown, TypeCheckScope.Empty)
+
+    static member SumDes
+      (cases: Map<SumConsSelector, TypeCheckedCaseHandler<'valueExt>>, loc: Location, scope: TypeCheckScope)
+      =
+      { TypeCheckedExpr.Expr = TypeCheckedExprRec.SumDes({ TypeCheckedExprSumDes.Handlers = cases })
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member SumDes(cases: Map<SumConsSelector, TypeCheckedCaseHandler<'valueExt>>) =
+      TypeCheckedExpr<'valueExt>.SumDes(cases, Location.Unknown, TypeCheckScope.Empty)
+
+    static member Primitive(p: PrimitiveValue, loc: Location, scope: TypeCheckScope) =
+      { TypeCheckedExpr.Expr = TypeCheckedExprRec.Primitive(p)
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member Primitive(p: PrimitiveValue) =
+      TypeCheckedExpr<'valueExt>.Primitive(p, Location.Unknown, TypeCheckScope.Empty)
+
+    static member Lookup(id: ResolvedIdentifier, loc: Location, scope: TypeCheckScope) =
+      { TypeCheckedExpr.Expr = TypeCheckedExprRec.Lookup({ TypeCheckedExprLookup.Id = id })
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member Lookup(id: ResolvedIdentifier) =
+      TypeCheckedExpr<'valueExt>.Lookup(id, Location.Unknown, TypeCheckScope.Empty)
+
+    static member If
+      (
+        c: TypeCheckedExpr<'valueExt>,
+        t: TypeCheckedExpr<'valueExt>,
+        f: TypeCheckedExpr<'valueExt>,
+        loc: Location,
+        scope: TypeCheckScope
+      ) =
+      { TypeCheckedExpr.Expr =
+          TypeCheckedExprRec.If(
+            { TypeCheckedExprIf.Cond = c
+              Then = t
+              Else = f }
+          )
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member If(c: TypeCheckedExpr<'valueExt>, t: TypeCheckedExpr<'valueExt>, f: TypeCheckedExpr<'valueExt>) =
+      TypeCheckedExpr<'valueExt>.If(c, t, f, Location.Unknown, TypeCheckScope.Empty)

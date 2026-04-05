@@ -29,16 +29,14 @@ module FormCompiler =
       ApiTypes: Map<TypeValue<'valueExt>, string * TypeValue<'valueExt>>
       Forms: FormsInput }
 
-  let memoizeTypes (expr: Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>) =
-    let rec memoizeTypeRec
-      (expr: Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>)
-      (table: Map<string, TypeValue<'valueExt>>)
-      =
+  let memoizeTypes (expr: TypeCheckedExpr<'valueExt>) =
+    let rec memoizeTypeRec (expr: TypeCheckedExpr<'valueExt>) (table: Map<string, TypeValue<'valueExt>>) =
       sum {
         match expr.Expr with
-        | TypeLet typeLet -> return! memoizeTypeRec typeLet.Body (table.Add(typeLet.Name, typeLet.TypeDef))
-        | ExprRec.Let letExpr -> return! memoizeTypeRec letExpr.Rest table
-        | ExprRec.Primitive PrimitiveValue.Unit -> return table
+        | TypeCheckedExprRec.TypeLet typeLet ->
+          return! memoizeTypeRec typeLet.Body (table.Add(typeLet.Name, typeLet.TypeDef))
+        | TypeCheckedExprRec.Let letExpr -> return! memoizeTypeRec letExpr.Rest table
+        | TypeCheckedExprRec.Primitive PrimitiveValue.Unit -> return table
         | _ ->
           return!
             Right(

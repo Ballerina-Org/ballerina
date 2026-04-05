@@ -178,7 +178,7 @@ module Types =
             (fun
                  (acc:
                    Location
-                     -> List<Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext>>
+                     -> List<TypeCheckedExpr<'ext>>
                      -> 'ext
                      -> ExprEvaluator<'runtimeContext, 'ext, ExtEvalResult<'runtimeContext, 'ext>>)
                  caseExt ->
