@@ -86,7 +86,7 @@ module TypeLambda =
           // do Console.WriteLine($"TypeLambda body type: {t_body}")
 
           return
-            Expr.TypeLambda(t_par, body, loc0, ctx.Scope),
+            TypeCheckedExpr.TypeLambda(t_par, body, loc0, ctx.Scope),
             TypeValue.CreateLambda(t_par, t_body.AsExpr),
             Kind.Arrow(t_par.Kind, body_k),
             ctx

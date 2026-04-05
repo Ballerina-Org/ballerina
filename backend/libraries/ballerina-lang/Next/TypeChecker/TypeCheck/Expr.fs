@@ -77,7 +77,7 @@ module Expr =
                                     ValueType = t_v
                                     ValueKind = k }) ->
                 let! ctx = state.GetContext()
-                return Expr.FromValue(v, t_v, k, t.Location, t.Scope), t_v, k, ctx
+                return TypeCheckedExpr.FromValue(v, t_v, k, t.Location, t.Scope), t_v, k, ctx
 
               | ExprRec.Lookup({ Id = id }) ->
                 return!
@@ -157,12 +157,12 @@ module Expr =
                 let! q, t, k, ctx =
                   Expr.TypeCheckQuery config (Expr<'T, 'Id, 'valueExt>.TypeCheck config) context_t Map.empty Map.empty q
 
-                return Expr.Query q, t, k, ctx
+                return TypeCheckedExpr.Query q, t, k, ctx
             }
 
           let! expr =
             expr
-            |> Expr.InstantiateSyntheticVars config (Expr<'T, 'Id, 'valueExt>.TypeCheck config)
+            |> TypeCheckedExpr.InstantiateSyntheticVars config (Expr<'T, 'Id, 'valueExt>.TypeCheck config)
 
           return expr, typeValue, kind, ctx
         }

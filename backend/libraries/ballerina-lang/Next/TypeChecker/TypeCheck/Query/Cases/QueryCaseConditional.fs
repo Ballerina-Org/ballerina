@@ -14,19 +14,12 @@ module QueryCaseConditional =
     loc0
     (recur:
       ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>
-        -> TypeCheckerResult<
-          (ExprQueryExpr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeQueryRow<'valueExt>),
-          'valueExt
-         >)
+        -> TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt>)
     (expr: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
     cond
     thenExpr
     elseExpr
-    : TypeCheckerResult<
-        (ExprQueryExpr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeQueryRow<'valueExt>),
-        'valueExt
-       >
-    =
+    : TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt> =
     state {
       let! cond_e, cond_t = recur cond
 
@@ -36,8 +29,8 @@ module QueryCaseConditional =
         | TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Bool }) ->
           state {
             return
-              ExprQueryExprRec.QueryCastTo(cond_e, TypeQueryRow.PrimitiveType(PrimitiveType.Bool, false))
-              |> ExprQueryExpr.Create expr.Location
+              TypeCheckedExprQueryExprRec.QueryCastTo(cond_e, TypeQueryRow.PrimitiveType(PrimitiveType.Bool, false))
+              |> TypeCheckedExprQueryExpr.Create expr.Location
           }
         | _ ->
           (fun () -> $"Type checking error: condition of if expression in query must be bool, but got {cond_t}")
@@ -54,8 +47,8 @@ module QueryCaseConditional =
             let cast_t = TypeQueryRow.PrimitiveType(pt, false)
 
             return
-              ExprQueryExprRec.QueryCastTo(then_e, cast_t)
-              |> ExprQueryExpr.Create expr.Location,
+              TypeCheckedExprQueryExprRec.QueryCastTo(then_e, cast_t)
+              |> TypeCheckedExprQueryExpr.Create expr.Location,
               else_e,
               TypeQueryRow.PrimitiveType(pt, n)
           }
@@ -65,8 +58,8 @@ module QueryCaseConditional =
 
             return
               then_e,
-              ExprQueryExprRec.QueryCastTo(else_e, cast_t)
-              |> ExprQueryExpr.Create expr.Location,
+              TypeCheckedExprQueryExprRec.QueryCastTo(else_e, cast_t)
+              |> TypeCheckedExprQueryExpr.Create expr.Location,
               TypeQueryRow.PrimitiveType(pt, n)
           }
         | _ ->
@@ -79,7 +72,7 @@ module QueryCaseConditional =
           }
 
       return
-        ExprQueryExprRec.QueryConditional(cond_e, then_e_final, else_e_final)
-        |> ExprQueryExpr.Create expr.Location,
+        TypeCheckedExprQueryExprRec.QueryConditional(cond_e, then_e_final, else_e_final)
+        |> TypeCheckedExprQueryExpr.Create expr.Location,
         result_t
     }

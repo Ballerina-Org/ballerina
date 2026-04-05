@@ -68,5 +68,5 @@ module If =
             |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
-          return Expr.If(cond, thenBranch, elseBranch, loc0, ctx.Scope), t_then, Kind.Star, ctx
+          return TypeCheckedExpr.If(cond, thenBranch, elseBranch, loc0, ctx.Scope), t_then, Kind.Star, ctx
         }

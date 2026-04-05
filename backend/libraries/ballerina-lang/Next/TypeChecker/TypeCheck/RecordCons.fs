@@ -107,5 +107,5 @@ module RecordCons =
             |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
-          return Expr.RecordCons(fieldsExpr, loc0, ctx.Scope), return_t, Kind.Star, ctx
+          return TypeCheckedExpr.RecordCons(fieldsExpr, loc0, ctx.Scope), return_t, Kind.Star, ctx
         }

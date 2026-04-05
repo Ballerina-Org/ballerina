@@ -20,10 +20,7 @@ module QueryLookups =
     (typeCheckNestedQuery:
       ExprQuery<TypeExpr<'valueExt>, Identifier, 'valueExt>
         -> TypeCheckerResult<
-          (ExprQuery<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
-          TypeValue<'valueExt> *
-          Kind *
-          TypeCheckContext<'valueExt>),
+          (TypeCheckedExprQuery<'valueExt> * TypeValue<'valueExt> * Kind * TypeCheckContext<'valueExt>),
           'valueExt
          >)
     loc0

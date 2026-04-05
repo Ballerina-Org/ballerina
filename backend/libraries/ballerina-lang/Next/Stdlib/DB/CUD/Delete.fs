@@ -38,12 +38,15 @@ module Delete =
       match _entity.Hooks.OnDeleting with
       | Some hookExpr ->
         let _doRunHookExpr =
-          Expr.Apply(
-            Expr.Apply(
-              Expr.Apply(hookExpr, Expr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)),
-              Expr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
+          TypeCheckedExpr.Apply(
+            TypeCheckedExpr.Apply(
+              TypeCheckedExpr.Apply(
+                hookExpr,
+                TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
+              ),
+              TypeCheckedExpr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
             ),
-            Expr.FromValue(currentValueWithProps, TypeValue.CreateUnit(), Kind.Star)
+            TypeCheckedExpr.FromValue(currentValueWithProps, TypeValue.CreateUnit(), Kind.Star)
           )
 
         let! run_hook_result = _doRunHookExpr |> NonEmptyList.One |> Expr.Eval
@@ -82,12 +85,15 @@ module Delete =
       match _entity.Hooks.OnDeleted with
       | Some hookExpr ->
         let _doRunHookExpr =
-          Expr.Apply(
-            Expr.Apply(
-              Expr.Apply(hookExpr, Expr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)),
-              Expr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
+          TypeCheckedExpr.Apply(
+            TypeCheckedExpr.Apply(
+              TypeCheckedExpr.Apply(
+                hookExpr,
+                TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
+              ),
+              TypeCheckedExpr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
             ),
-            Expr.FromValue(currentValueWithProps, TypeValue.CreateUnit(), Kind.Star)
+            TypeCheckedExpr.FromValue(currentValueWithProps, TypeValue.CreateUnit(), Kind.Star)
           )
 
         let! run_hook_result = _doRunHookExpr |> NonEmptyList.One |> Expr.Eval
@@ -204,15 +210,15 @@ module Delete =
                       | _, None -> return! actual_delete
                       | _, Some canDeleteHook ->
                         match!
-                          Expr.Apply(
-                            Expr.Apply(
-                              Expr.Apply(
+                          TypeCheckedExpr.Apply(
+                            TypeCheckedExpr.Apply(
+                              TypeCheckedExpr.Apply(
                                 canDeleteHook,
-                                Expr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
+                                TypeCheckedExpr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
                               ),
-                              Expr.FromValue(entityId, TypeValue.CreateUnit(), Kind.Star)
+                              TypeCheckedExpr.FromValue(entityId, TypeValue.CreateUnit(), Kind.Star)
                             ),
-                            Expr.FromValue(currentValueWithProps, TypeValue.CreateUnit(), Kind.Star)
+                            TypeCheckedExpr.FromValue(currentValueWithProps, TypeValue.CreateUnit(), Kind.Star)
                           )
                           |> NonEmptyList.One
                           |> Expr.Eval

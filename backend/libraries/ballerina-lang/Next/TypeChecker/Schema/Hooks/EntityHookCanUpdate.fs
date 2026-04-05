@@ -20,13 +20,7 @@ module SchemaEntityHookCanUpdate =
     (schema: Schema<'ve>)
     (e: SchemaEntity<'ve>)
     (canUpdate: Option<Expr<TypeExpr<'ve>, Identifier, 've>>)
-    : State<
-        Option<Expr<TypeValue<'ve>, ResolvedIdentifier, 've>>,
-        TypeCheckContext<'ve>,
-        TypeCheckState<'ve>,
-        Errors<Location>
-       >
-    =
+    : State<Option<TypeCheckedExpr<'ve>>, TypeCheckContext<'ve>, TypeCheckState<'ve>, Errors<Location>> =
     state {
       match canUpdate with
       | None -> return None

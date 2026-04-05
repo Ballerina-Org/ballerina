@@ -220,7 +220,8 @@ module Apply =
                             |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
                             |> Expr.liftInstantiation
 
-                          return Expr.Apply(Expr.Lookup f_lookup, a, loc0, ctx.Scope), f_o, f_k, ctx
+                          return
+                            TypeCheckedExpr.Apply(TypeCheckedExpr.Lookup f_lookup, a, loc0, ctx.Scope), f_o, f_k, ctx
                         }
                         |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                     })
@@ -292,7 +293,7 @@ module Apply =
                                 |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
                                 |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
-                              return Expr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx
+                              return TypeCheckedExpr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx
                             })
                             (state {
                               let! a, t_a, _a_k, _ = None => a_expr
@@ -374,7 +375,7 @@ module Apply =
 
                               // do Console.WriteLine $"after instantiating function output type, f_output = {f_output}"
 
-                              return Expr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx
+                              return TypeCheckedExpr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx
                             })
                             ((fun () -> $"Error: cannot resolve application, found variable {f_lookup}")
                              |> error
@@ -430,7 +431,7 @@ module Apply =
                                 |> Expr.liftInstantiation
 
                               let k_res = Kind.Star
-                              return Expr.Apply(adhoc_op, a, loc0, ctx.Scope), t_res, k_res, ctx
+                              return TypeCheckedExpr.Apply(adhoc_op, a, loc0, ctx.Scope), t_res, k_res, ctx
                             }
                             |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium))
                         elif f_lookup.Name = "!" then
@@ -460,7 +461,7 @@ module Apply =
 
                                   let t_res = TypeValue.CreatePrimitive PrimitiveType.Bool
                                   let k_res = Kind.Star
-                                  return Expr.Apply(bool_op, a, loc0, ctx.Scope), t_res, k_res, ctx
+                                  return TypeCheckedExpr.Apply(bool_op, a, loc0, ctx.Scope), t_res, k_res, ctx
                                 }
                                 |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
@@ -527,7 +528,7 @@ module Apply =
                       |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
                       |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
-                    return Expr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx
+                    return TypeCheckedExpr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx
                   }
                   |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
               // $"Error: cannot resolve application"

@@ -15,18 +15,11 @@ module QueryCaseTupleDes =
     loc0
     (recur:
       ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>
-        -> TypeCheckerResult<
-          (ExprQueryExpr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeQueryRow<'valueExt>),
-          'valueExt
-         >)
+        -> TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt>)
     (expr: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
     tuple
     item
-    : TypeCheckerResult<
-        (ExprQueryExpr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeQueryRow<'valueExt>),
-        'valueExt
-       >
-    =
+    : TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt> =
     let ofSum (p: Sum<'a, Errors<Unit>>) =
       p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
@@ -42,8 +35,8 @@ module QueryCaseTupleDes =
               let item_t = tuple_t_elements.[item.Index - 1]
 
               return
-                ExprQueryExprRec.QueryTupleDes(tuple_e, item, false)
-                |> ExprQueryExpr.Create expr.Location,
+                TypeCheckedExprQueryExprRec.QueryTupleDes(tuple_e, item, false)
+                |> TypeCheckedExprQueryExpr.Create expr.Location,
                 item_t
             else
               return!
@@ -60,8 +53,8 @@ module QueryCaseTupleDes =
               let item_t = tuple_t_elements.[item.Index - 1]
 
               return
-                ExprQueryExprRec.QueryTupleDes(tuple_e, item, true)
-                |> ExprQueryExpr.Create expr.Location,
+                TypeCheckedExprQueryExprRec.QueryTupleDes(tuple_e, item, true)
+                |> TypeCheckedExprQueryExpr.Create expr.Location,
                 item_t |> TypeQueryRow.Json
             else
               return!

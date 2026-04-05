@@ -15,14 +15,19 @@ open Keys
 type JsonParser<'T> = JsonValue -> Sum<'T, Errors<Unit>>
 
 type ValueParserReader<'T, 'Id, 'valueExt when 'Id: comparison> =
-  Reader<Value<'T, 'valueExt>, JsonParser<Expr<'T, 'Id, 'valueExt>> * JsonParser<'T> * JsonParser<'Id>, Errors<Unit>>
+  Reader<Value<'T, 'valueExt>, JsonParser<TypeCheckedExpr<'valueExt>> * JsonParser<'T> * JsonParser<'Id>, Errors<Unit>>
 
 type ExprParserReader<'T, 'Id, 'valueExt when 'Id: comparison> =
   Reader<Expr<'T, 'Id, 'valueExt>, JsonParser<'T> * JsonParser<'Id>, Errors<Unit>>
 
+type TypeCheckedExprParserReader<'valueExt> =
+  Reader<TypeCheckedExpr<'valueExt>, JsonParser<TypeValue<'valueExt>> * JsonParser<ResolvedIdentifier>, Errors<Unit>>
+
 type ValueParser<'T, 'Id, 'valueExt when 'Id: comparison> = JsonValue -> ValueParserReader<'T, 'Id, 'valueExt>
 
 type ExprParser<'T, 'Id, 'valueExt when 'Id: comparison> = JsonValue -> ExprParserReader<'T, 'Id, 'valueExt>
+
+type TypeCheckedExprParser<'valueExt> = JsonValue -> TypeCheckedExprParserReader<'valueExt>
 
 type TypeExprParser<'valueExt> = JsonParser<TypeExpr<'valueExt>>
 
@@ -36,8 +41,13 @@ type JsonEncoderWithError<'T> = 'T -> Sum<JsonValue, Errors<Unit>>
 type ExprEncoderReader<'T, 'Id> = Reader<JsonValue, JsonEncoder<'T> * JsonEncoder<'Id>, Errors<Unit>>
 type ExprEncoder<'T, 'Id, 'valueExt when 'Id: comparison> = Expr<'T, 'Id, 'valueExt> -> ExprEncoderReader<'T, 'Id>
 
+type TypeCheckedExprEncoderReader<'valueExt> =
+  Reader<JsonValue, JsonEncoder<TypeValue<'valueExt>> * JsonEncoder<ResolvedIdentifier>, Errors<Unit>>
+
+type TypeCheckedExprEncoder<'valueExt> = TypeCheckedExpr<'valueExt> -> TypeCheckedExprEncoderReader<'valueExt>
+
 type ValueEncoderReader<'T, 'valueExt> =
-  Reader<JsonValue, JsonEncoderWithError<Expr<'T, ResolvedIdentifier, 'valueExt>> * JsonEncoder<'T>, Errors<Unit>>
+  Reader<JsonValue, JsonEncoderWithError<TypeCheckedExpr<'valueExt>> * JsonEncoder<'T>, Errors<Unit>>
 
 type ValueEncoder<'T, 'valueExt> = Value<'T, 'valueExt> -> ValueEncoderReader<'T, 'valueExt>
 

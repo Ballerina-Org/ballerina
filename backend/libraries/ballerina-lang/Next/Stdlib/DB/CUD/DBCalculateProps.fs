@@ -64,14 +64,14 @@ module CalculateProps =
                     |> reader.OfSum
 
                   let! valueWithProps =
-                    Expr.Apply(
-                      Expr.FromValue(
+                    TypeCheckedExpr.Apply(
+                      TypeCheckedExpr.FromValue(
                         (DBValues.EvalProperty { op with Path = ps } |> valueLens.Set, Some memoryDBCalculatePropertyId)
                         |> Ext,
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star
                       ),
-                      Expr.FromValue(vField, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                      TypeCheckedExpr.FromValue(vField, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                     )
                     |> fun e -> NonEmptyList.OfList(e, _rest)
                     |> Expr.Eval
@@ -100,14 +100,14 @@ module CalculateProps =
                     |> reader.OfSum
 
                   let! valueWithProps =
-                    Expr.Apply(
-                      Expr.FromValue(
+                    TypeCheckedExpr.Apply(
+                      TypeCheckedExpr.FromValue(
                         (DBValues.EvalProperty { op with Path = ps } |> valueLens.Set, Some memoryDBCalculatePropertyId)
                         |> Ext,
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star
                       ),
-                      Expr.FromValue(vField, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                      TypeCheckedExpr.FromValue(vField, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                     )
                     |> fun e -> NonEmptyList.OfList(e, _rest)
                     |> Expr.Eval
@@ -139,15 +139,15 @@ module CalculateProps =
                     return v
                   else
                     let! vCaseContentWithProps =
-                      Expr.Apply(
-                        Expr.FromValue(
+                      TypeCheckedExpr.Apply(
+                        TypeCheckedExpr.FromValue(
                           (DBValues.EvalProperty { op with Path = ps } |> valueLens.Set,
                            Some memoryDBCalculatePropertyId)
                           |> Ext,
                           TypeValue.CreatePrimitive PrimitiveType.Unit,
                           Kind.Star
                         ),
-                        Expr.FromValue(vCaseContent, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                        TypeCheckedExpr.FromValue(vCaseContent, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                       )
                       |> fun e -> NonEmptyList.OfList(e, _rest)
                       |> Expr.Eval
@@ -174,15 +174,15 @@ module CalculateProps =
                     return v
                   else
                     let! vCaseContentWithProps =
-                      Expr.Apply(
-                        Expr.FromValue(
+                      TypeCheckedExpr.Apply(
+                        TypeCheckedExpr.FromValue(
                           (DBValues.EvalProperty { op with Path = ps } |> valueLens.Set,
                            Some memoryDBCalculatePropertyId)
                           |> Ext,
                           TypeValue.CreatePrimitive PrimitiveType.Unit,
                           Kind.Star
                         ),
-                        Expr.FromValue(vCaseContent, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                        TypeCheckedExpr.FromValue(vCaseContent, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                       )
                       |> fun e -> NonEmptyList.OfList(e, _rest)
                       |> Expr.Eval
@@ -207,26 +207,28 @@ module CalculateProps =
                     | None -> "item"
 
                   let! res =
-                    Expr.Apply(
-                      Expr.Apply(
+                    TypeCheckedExpr.Apply(
+                      TypeCheckedExpr.Apply(
                         iterator.Mapper,
-                        Expr.Lambda(
+                        TypeCheckedExpr.Lambda(
                           Var.Create lambda_var_name,
-                          None,
-                          Expr.Apply(
-                            Expr.FromValue(
+                          TypeValue.CreatePrimitive PrimitiveType.Unit,
+                          TypeCheckedExpr.Apply(
+                            TypeCheckedExpr.FromValue(
                               (DBValues.EvalProperty { op with Path = ps } |> valueLens.Set,
                                Some memoryDBCalculatePropertyId)
                               |> Ext,
                               TypeValue.CreatePrimitive PrimitiveType.Unit,
                               Kind.Star
                             ),
-                            Expr.Lookup(lambda_var_name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
+                            TypeCheckedExpr.Lookup(
+                              lambda_var_name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve
+                            )
                           ),
-                          None
+                          TypeValue.CreatePrimitive PrimitiveType.Unit
                         )
                       ),
-                      Expr.FromValue(v, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                      TypeCheckedExpr.FromValue(v, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                     )
                     |> fun e -> NonEmptyList.OfList(e, _rest)
                     |> Expr.Eval
@@ -262,8 +264,8 @@ module CalculateProps =
             let! valueSoFar = acc
 
             return!
-              Expr.Apply(
-                Expr.FromValue(
+              TypeCheckedExpr.Apply(
+                TypeCheckedExpr.FromValue(
                   (DBValues.EvalProperty
                     { PropertyName = prop.PropertyName
                       Path = prop.Path
@@ -274,7 +276,7 @@ module CalculateProps =
                   TypeValue.CreatePrimitive PrimitiveType.Unit,
                   Kind.Star
                 ),
-                Expr.FromValue(valueSoFar, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                TypeCheckedExpr.FromValue(valueSoFar, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
               )
               |> NonEmptyList.One
               |> Expr.Eval

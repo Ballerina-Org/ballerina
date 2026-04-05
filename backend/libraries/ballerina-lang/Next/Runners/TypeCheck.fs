@@ -25,11 +25,7 @@ module TypeCheck =
         config: TypeEvalConfig<'valueExt>
       )
       (program: string)
-      : Sum<
-          Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeValue<'valueExt> * TypeCheckState<'valueExt>,
-          Errors<Location>
-         >
-      =
+      : Sum<TypeCheckedExpr<'valueExt> * TypeValue<'valueExt> * TypeCheckState<'valueExt>, Errors<Location>> =
       let cache = memcache (typeCheckContext, typeCheckState)
 
       let files =

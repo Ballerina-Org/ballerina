@@ -33,12 +33,12 @@ module QueryCaseApplyIntrinsic =
       match k1 = k2, t2 with
       | true, TypeValue.Primitive { value = pt } ->
         let e1 =
-          ExprQueryExprRec.QueryRecordDes(e1, k1.Name.LocalName |> ResolvedIdentifier.Create, true)
-          |> ExprQueryExpr.Create loc0
+          TypeCheckedExprQueryExprRec.QueryRecordDes(e1, k1.Name.LocalName |> ResolvedIdentifier.Create, true)
+          |> TypeCheckedExprQueryExpr.Create loc0
 
         let e1 =
-          ExprQueryExprRec.QueryCastTo(e1, TypeQueryRow.PrimitiveType(pt, false))
-          |> ExprQueryExpr.Create loc0
+          TypeCheckedExprQueryExprRec.QueryCastTo(e1, TypeQueryRow.PrimitiveType(pt, false))
+          |> TypeCheckedExprQueryExpr.Create loc0
 
         Some([ e1; e2 ])
       | _ -> None
@@ -50,12 +50,12 @@ module QueryCaseApplyIntrinsic =
       match k1 = k2, t1 with
       | true, TypeValue.Primitive { value = pt } ->
         let e2 =
-          ExprQueryExprRec.QueryRecordDes(e2, k2.Name.LocalName |> ResolvedIdentifier.Create, true)
-          |> ExprQueryExpr.Create loc0
+          TypeCheckedExprQueryExprRec.QueryRecordDes(e2, k2.Name.LocalName |> ResolvedIdentifier.Create, true)
+          |> TypeCheckedExprQueryExpr.Create loc0
 
         let e2 =
-          ExprQueryExprRec.QueryCastTo(e2, TypeQueryRow.PrimitiveType(pt, false))
-          |> ExprQueryExpr.Create loc0
+          TypeCheckedExprQueryExprRec.QueryCastTo(e2, TypeQueryRow.PrimitiveType(pt, false))
+          |> TypeCheckedExprQueryExpr.Create loc0
 
         Some([ e1; e2 ])
       | _ -> None
@@ -65,18 +65,11 @@ module QueryCaseApplyIntrinsic =
     loc0
     (recur:
       ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>
-        -> TypeCheckerResult<
-          (ExprQueryExpr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeQueryRow<'valueExt>),
-          'valueExt
-         >)
+        -> TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt>)
     (expr: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
     intrinsic
     arg
-    : TypeCheckerResult<
-        (ExprQueryExpr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeQueryRow<'valueExt>),
-        'valueExt
-       >
-    =
+    : TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt> =
     let ofSum (p: Sum<'a, Errors<Unit>>) =
       p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
@@ -89,22 +82,22 @@ module QueryCaseApplyIntrinsic =
             | QueryIntrinsic.NotEquals ->
               let! arg_e, arg_t = recur arg
               let! arg_t_elements = arg_t |> TypeQueryRow.AsTuple |> ofSum
-              let! arg_e_elements = arg_e |> ExprQueryExpr.AsTupleCons |> ofSum
+              let! arg_e_elements = arg_e |> TypeCheckedExprQueryExpr.AsTupleCons |> ofSum
 
               match two_primary_keys loc0 arg_t_elements arg_e_elements with
               | Some arg_e_elements ->
                 let res =
-                  ExprQueryExprRec.QueryApply(
-                    ExprQueryExprRec.QueryIntrinsic(
+                  TypeCheckedExprQueryExprRec.QueryApply(
+                    TypeCheckedExprQueryExprRec.QueryIntrinsic(
                       QueryIntrinsic.Equals,
                       TypeQueryRow.PrimitiveType(PrimitiveType.Bool, false)
                     )
-                    |> ExprQueryExpr.Create expr.Location,
+                    |> TypeCheckedExprQueryExpr.Create expr.Location,
                     arg_e_elements
-                    |> ExprQueryExprRec.QueryTupleCons
-                    |> ExprQueryExpr.Create expr.Location
+                    |> TypeCheckedExprQueryExprRec.QueryTupleCons
+                    |> TypeCheckedExprQueryExpr.Create expr.Location
                   )
-                  |> ExprQueryExpr.Create expr.Location
+                  |> TypeCheckedExprQueryExpr.Create expr.Location
 
                 return res, TypeQueryRow.PrimitiveType(PrimitiveType.Bool, false)
               | None ->
@@ -145,15 +138,15 @@ module QueryCaseApplyIntrinsic =
                       |> state.OfSum
 
                     return
-                      ExprQueryExprRec.QueryApply(
-                        ExprQueryExprRec.QueryIntrinsic(
+                      TypeCheckedExprQueryExprRec.QueryApply(
+                        TypeCheckedExprQueryExprRec.QueryIntrinsic(
                           intrinsic,
                           TypeQueryRow.PrimitiveType(expected_primitive_type, is_nullable)
                         )
-                        |> ExprQueryExpr.Create expr.Location,
+                        |> TypeCheckedExprQueryExpr.Create expr.Location,
                         arg_e
                       )
-                      |> ExprQueryExpr.Create expr.Location,
+                      |> TypeCheckedExprQueryExpr.Create expr.Location,
                       TypeQueryRow.PrimitiveType(expected_primitive_type, is_nullable)
                   })
               )
@@ -187,15 +180,15 @@ module QueryCaseApplyIntrinsic =
                       |> state.OfSum
 
                     return
-                      ExprQueryExprRec.QueryApply(
-                        ExprQueryExprRec.QueryIntrinsic(
+                      TypeCheckedExprQueryExprRec.QueryApply(
+                        TypeCheckedExprQueryExprRec.QueryIntrinsic(
                           intrinsic,
                           TypeQueryRow.PrimitiveType(PrimitiveType.Bool, is_nullable)
                         )
-                        |> ExprQueryExpr.Create expr.Location,
+                        |> TypeCheckedExprQueryExpr.Create expr.Location,
                         arg_e
                       )
-                      |> ExprQueryExpr.Create expr.Location,
+                      |> TypeCheckedExprQueryExpr.Create expr.Location,
                       TypeQueryRow.PrimitiveType(PrimitiveType.Bool, is_nullable)
                   })
               )

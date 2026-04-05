@@ -90,10 +90,7 @@ module Model =
     Option<TypeValue<'valueExt>>
       -> 'input
       -> TypeCheckerResult<
-        Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
-        TypeValue<'valueExt> *
-        Kind *
-        TypeCheckContext<'valueExt>,
+        TypeCheckedExpr<'valueExt> * TypeValue<'valueExt> * Kind * TypeCheckContext<'valueExt>,
         'valueExt
        >
 
@@ -106,10 +103,7 @@ module Model =
       -> Map<ResolvedIdentifier, TypeQueryRow<'valueExt>>
       -> 'input
       -> TypeCheckerResult<
-        ExprQuery<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
-        TypeValue<'valueExt> *
-        Kind *
-        TypeCheckContext<'valueExt>,
+        TypeCheckedExprQuery<'valueExt> * TypeValue<'valueExt> * Kind * TypeCheckContext<'valueExt>,
         'valueExt
        >
 

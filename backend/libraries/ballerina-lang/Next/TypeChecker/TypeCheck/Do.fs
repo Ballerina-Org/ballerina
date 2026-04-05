@@ -52,5 +52,5 @@ module Do =
 
           let! e2, t2, k2, ctx_e2 = !e2
 
-          return Expr.Do(e1, e2, loc0, ctx.Scope), t2, k2, ctx_e2
+          return TypeCheckedExpr.Do(e1, e2, loc0, ctx.Scope), t2, k2, ctx_e2
         }

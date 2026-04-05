@@ -50,7 +50,7 @@ module Lookup =
                     (TypeCheckContext.TryFindVar(id_resolved, loc0))
                     (TypeCheckState.TryFindType(id_resolved, loc0))
 
-                return Expr.Lookup(id_resolved, loc0, ctx.Scope), t_id, id_k, ctx
+                return TypeCheckedExpr.Lookup(id_resolved, loc0, ctx.Scope), t_id, id_k, ctx
               })
               (state {
                 let! t_id, id_k =
@@ -58,7 +58,7 @@ module Lookup =
                     (TypeCheckContext.TryFindVar(id_original, loc0))
                     (TypeCheckState.TryFindType(id_original, loc0))
 
-                return Expr.Lookup(id_original, loc0, ctx.Scope), t_id, id_k, ctx
+                return TypeCheckedExpr.Lookup(id_original, loc0, ctx.Scope), t_id, id_k, ctx
 
               })
               (fun () -> $"Error: cannot resolve identifier '{id_resolved}'/'{id_original}'."

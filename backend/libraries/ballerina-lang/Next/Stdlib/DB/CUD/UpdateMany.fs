@@ -146,16 +146,20 @@ module UpdateMany =
                             let! existingValueWithoutProps = stripProps db_ops existingValue entity_ref
 
                             let! updatedValue =
-                              Expr.Apply(
-                                Expr.Apply(
-                                  Expr.FromValue(updateFunc, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
-                                  Expr.FromValue(
+                              TypeCheckedExpr.Apply(
+                                TypeCheckedExpr.Apply(
+                                  TypeCheckedExpr.FromValue(
+                                    updateFunc,
+                                    TypeValue.CreatePrimitive PrimitiveType.Unit,
+                                    Kind.Star
+                                  ),
+                                  TypeCheckedExpr.FromValue(
                                     existingValue,
                                     TypeValue.CreatePrimitive PrimitiveType.Unit,
                                     Kind.Star
                                   )
                                 ),
-                                Expr.FromValue(
+                                TypeCheckedExpr.FromValue(
                                   existingValueWithoutProps,
                                   TypeValue.CreatePrimitive PrimitiveType.Unit,
                                   Kind.Star
@@ -199,9 +203,13 @@ module UpdateMany =
                             match ctx.RootLevelEval, entity.Hooks.CanUpdate with
                             | true, Some canUpdateHook ->
                               match!
-                                Expr.Apply(
+                                TypeCheckedExpr.Apply(
                                   canUpdateHook,
-                                  Expr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
+                                  TypeCheckedExpr.FromValue(
+                                    schema_value.Value.Value,
+                                    TypeValue.CreateUnit(),
+                                    Kind.Star
+                                  )
                                 )
                                 |> NonEmptyList.One
                                 |> Expr.Eval

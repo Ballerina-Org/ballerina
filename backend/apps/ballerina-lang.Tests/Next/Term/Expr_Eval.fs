@@ -66,7 +66,7 @@ let private runTypeCheck (program: Expr<TypeExpr<ValueExt>, Identifier, ValueExt
   typeCheck None program
   |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
-let private eval (program: Expr<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt>) =
+let private eval (program: TypeCheckedExpr<ValueExt>) =
   Expr.Eval(NonEmptyList.prependList context.TypeCheckedPreludes (NonEmptyList.One program))
   |> Reader.Run evalContext
 

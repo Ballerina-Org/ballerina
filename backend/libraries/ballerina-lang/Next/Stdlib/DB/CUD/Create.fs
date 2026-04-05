@@ -45,15 +45,18 @@ module Create =
       match _entity.Hooks.OnCreating with
       | Some hookExpr ->
         let _doRunHookExpr =
-          Expr.Apply(
-            Expr.Apply(
-              Expr.Apply(
-                Expr.Apply(hookExpr, Expr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)),
-                Expr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
+          TypeCheckedExpr.Apply(
+            TypeCheckedExpr.Apply(
+              TypeCheckedExpr.Apply(
+                TypeCheckedExpr.Apply(
+                  hookExpr,
+                  TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
+                ),
+                TypeCheckedExpr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
               ),
-              Expr.FromValue(v, TypeValue.CreateUnit(), Kind.Star)
+              TypeCheckedExpr.FromValue(v, TypeValue.CreateUnit(), Kind.Star)
             ),
-            Expr.FromValue(valueWithProps, TypeValue.CreateUnit(), Kind.Star)
+            TypeCheckedExpr.FromValue(valueWithProps, TypeValue.CreateUnit(), Kind.Star)
           )
 
         let! run_hook_result = _doRunHookExpr |> NonEmptyList.One |> Expr.Eval
@@ -100,12 +103,15 @@ module Create =
       match _entity.Hooks.OnCreated with
       | Some hookExpr ->
         let _doRunHookExpr =
-          Expr.Apply(
-            Expr.Apply(
-              Expr.Apply(hookExpr, Expr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)),
-              Expr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
+          TypeCheckedExpr.Apply(
+            TypeCheckedExpr.Apply(
+              TypeCheckedExpr.Apply(
+                hookExpr,
+                TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
+              ),
+              TypeCheckedExpr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
             ),
-            Expr.FromValue(valueWithProps, TypeValue.CreateUnit(), Kind.Star)
+            TypeCheckedExpr.FromValue(valueWithProps, TypeValue.CreateUnit(), Kind.Star)
           )
 
         let! run_hook_result = _doRunHookExpr |> NonEmptyList.One |> Expr.Eval
@@ -233,9 +239,9 @@ module Create =
                       | false, _ -> return! actual_creation
                       | _, Some canCreateHook ->
                         match!
-                          Expr.Apply(
+                          TypeCheckedExpr.Apply(
                             canCreateHook,
-                            Expr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
+                            TypeCheckedExpr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
                           )
                           |> NonEmptyList.One
                           |> Expr.Eval

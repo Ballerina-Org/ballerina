@@ -53,7 +53,7 @@ module Eval =
 
   and ApplicableExtEvalResult<'runtimeContext, 'valueExtension> =
     (Location
-      -> List<Expr<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>>
+      -> List<TypeCheckedExpr<'valueExtension>>
       -> 'valueExtension
       -> Value<TypeValue<'valueExtension>, 'valueExtension>
       -> ExprEvaluator<'runtimeContext, 'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
@@ -68,12 +68,12 @@ module Eval =
       (TypeValue<'valueExtension>
         -> ExprEvaluator<'runtimeContext, 'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
     | Matchable of
-      (Map<ResolvedIdentifier, CaseHandler<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>>
+      (Map<ResolvedIdentifier, TypeCheckedCaseHandler<'valueExtension>>
         -> ExprEvaluator<'runtimeContext, 'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
 
   and ExtensionEvaluator<'runtimeContext, 'valueExtension> =
     Location
-      -> List<Expr<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>>
+      -> List<TypeCheckedExpr<'valueExtension>>
       -> 'valueExtension
       -> ExprEvaluator<'runtimeContext, 'valueExtension, ExtEvalResult<'runtimeContext, 'valueExtension>>
 
@@ -172,7 +172,7 @@ module Eval =
 
     // NOTE: expressions are concatenated in the order of the input (the returned value is of the type of the last expression)
     static member Eval<'runtimeContext, 'valueExtension>
-      (NonEmptyList(e, rest): NonEmptyList<Expr<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>>)
+      (NonEmptyList(e, rest): NonEmptyList<TypeCheckedExpr<'valueExtension>>)
       : ExprEvaluator<'runtimeContext, 'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>> =
       let (!) = NonEmptyList.One >> Expr.Eval<'runtimeContext, 'valueExtension>
 
@@ -183,15 +183,15 @@ module Eval =
 
       reader {
         match e.Expr with
-        | ExprRec.Primitive PrimitiveValue.Unit ->
+        | TypeCheckedExprRec.Primitive PrimitiveValue.Unit ->
 
           match rest with
           | [] -> return Value.Primitive PrimitiveValue.Unit
           | p :: rest -> return! Expr.Eval(NonEmptyList.OfList(p, rest))
-        | ExprRec.Primitive v -> return Value.Primitive v
-        | ExprRec.If { Cond = cond
-                       Then = thenBody
-                       Else = elseBody } ->
+        | TypeCheckedExprRec.Primitive v -> return Value.Primitive v
+        | TypeCheckedExprRec.If { Cond = cond
+                                  Then = thenBody
+                                  Else = elseBody } ->
           let! condV = !cond
 
           match condV with
@@ -202,10 +202,10 @@ module Eval =
               (fun () -> $"expected boolean in if condition, got {v}")
               |> Errors.Singleton loc0
               |> reader.Throw
-        | ExprRec.Let { Var = var
-                        Type = _varType
-                        Val = valueExpr
-                        Rest = body } ->
+        | TypeCheckedExprRec.Let { Var = var
+                                   Type = _varType
+                                   Val = valueExpr
+                                   Rest = body } ->
           let! value = !valueExpr
 
           return!
@@ -213,10 +213,10 @@ module Eval =
             |> reader.MapContext(
               ExprEvalContext.Updaters.Values(Map.add (var.Name |> Identifier.LocalScope |> e.Scope.Resolve) value)
             )
-        | ExprRec.Do { Val = e1; Rest = e2 } ->
+        | TypeCheckedExprRec.Do { Val = e1; Rest = e2 } ->
           let! _ = !e1
           return! !!e2
-        | ExprRec.Lookup({ Id = id }) ->
+        | TypeCheckedExprRec.Lookup({ Id = id }) ->
           let! ctx = reader.GetContext()
 
           let! res =
@@ -228,7 +228,7 @@ module Eval =
           match res with
           | Left v -> return v
           | Right err -> return! err |> reader.Throw
-        | ExprRec.RecordCons { Fields = fields } ->
+        | TypeCheckedExprRec.RecordCons { Fields = fields } ->
           // let! ctx = reader.GetContext()
 
           let! fields =
@@ -243,7 +243,7 @@ module Eval =
             |> reader.Map Map.ofList
 
           return Value.Record(fields)
-        | ExprRec.RecordWith({ Record = record; Fields = fields }) ->
+        | TypeCheckedExprRec.RecordWith({ Record = record; Fields = fields }) ->
           let! recordV = !record
 
           let! recordV =
@@ -267,8 +267,8 @@ module Eval =
           let fields = Map.fold (fun acc k v -> Map.add k v acc) recordV fields
 
           return Value.Record(fields)
-        | ExprRec.RecordDes({ ExprRecordDes.Expr = recordExpr
-                              Field = fieldId }) ->
+        | TypeCheckedExprRec.RecordDes({ TypeCheckedExprRecordDes.Expr = recordExpr
+                                         Field = fieldId }) ->
           let! recordV = !recordExpr
 
           let! recordV =
@@ -289,12 +289,12 @@ module Eval =
             |> Map.tryFindWithError fieldId "record field" (fun () -> fieldId.AsFSharpString) loc0
             |> reader.OfSum
 
-        | ExprRec.TupleCons { Items = fields } ->
+        | TypeCheckedExprRec.TupleCons { Items = fields } ->
           let! fields = fields |> List.map (!) |> reader.All
 
           return Value.Tuple(fields)
-        | ExprRec.TupleDes { ExprTupleDes.Tuple = recordExpr
-                             Item = fieldId } ->
+        | TypeCheckedExprRec.TupleDes { TypeCheckedExprTupleDes.Tuple = recordExpr
+                                        Item = fieldId } ->
           let! recordV = !recordExpr
 
           let! recordV =
@@ -311,21 +311,24 @@ module Eval =
               |> Errors.Singleton loc0
             )
             |> reader.OfSum
-        | ExprRec.SumCons({ Selector = selector }) ->
+        | TypeCheckedExprRec.SumCons({ Selector = selector }) ->
           return
             Value.Lambda(
               Var.Create "x",
-              Expr.Apply(Expr.SumCons(selector), Expr.Lookup("x" |> Identifier.LocalScope |> e.Scope.Resolve)),
+              TypeCheckedExpr.Apply(
+                TypeCheckedExpr.SumCons(selector),
+                TypeCheckedExpr.Lookup("x" |> Identifier.LocalScope |> e.Scope.Resolve)
+              ),
               Map.empty,
               e.Scope
             )
-        | ExprRec.Apply({ F = { Expr = ExprRec.SumCons selector }
-                          Arg = valueE }) ->
+        | TypeCheckedExprRec.Apply({ F = { Expr = TypeCheckedExprRec.SumCons selector }
+                                     Arg = valueE }) ->
           let! valueV = !valueE
           return Value.Sum(selector.Selector, valueV)
-        | ExprRec.Apply({ F = { Expr = ExprRec.UnionDes({ Handlers = cases
-                                                          Fallback = fallback }) }
-                          Arg = unionE }) ->
+        | TypeCheckedExprRec.Apply({ F = { Expr = TypeCheckedExprRec.UnionDes({ Handlers = cases
+                                                                                Fallback = fallback }) }
+                                     Arg = unionE }) ->
           let! unionV = !unionE
 
           return!
@@ -393,8 +396,8 @@ module Eval =
               })
             |> reader.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
-        | ExprRec.Apply({ F = { Expr = ExprRec.SumDes cases }
-                          Arg = sumE }) ->
+        | TypeCheckedExprRec.Apply({ F = { Expr = TypeCheckedExprRec.SumDes cases }
+                                     Arg = sumE }) ->
           let! sumV = !sumE
 
           let! sumVCase, sumV =
@@ -417,11 +420,11 @@ module Eval =
 
           return! !!caseBody |> reader.MapContext(ExprEvalContext.Updaters.Values(add_var))
 
-        | ExprRec.FromValue({ Value = v
-                              ValueType = _
-                              ValueKind = _ }) -> return v
+        | TypeCheckedExprRec.FromValue({ Value = v
+                                         ValueType = _
+                                         ValueKind = _ }) -> return v
 
-        | ExprRec.Apply({ F = f; Arg = argE }) ->
+        | TypeCheckedExprRec.Apply({ F = f; Arg = argE }) ->
           let! fV = !f
           let! argV = !argE
 
@@ -526,15 +529,15 @@ module Eval =
             )
             |> reader.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
-        | ExprRec.Lambda { Param = var
-                           ParamType = _
-                           Body = body } ->
+        | TypeCheckedExprRec.Lambda { Param = var
+                                      ParamType = _
+                                      Body = body } ->
           let! context = reader.GetContext()
           return Value.Lambda(var, body, context.Scope.Values, e.Scope)
-        | ExprRec.TypeLambda({ Param = _tp; Body = body }) -> return! !body
-        | ExprRec.TypeLet({ ExprTypeLet.Name = typeName
-                            TypeDef = typeDefinition
-                            Body = body }) ->
+        | TypeCheckedExprRec.TypeLambda({ Param = _tp; Body = body }) -> return! !body
+        | TypeCheckedExprRec.TypeLet({ TypeCheckedExprTypeLet.Name = typeName
+                                       TypeDef = typeDefinition
+                                       Body = body }) ->
 
           let scope = e.Scope |> TypeCheckScope.Updaters.Type(replaceWith (Some typeName))
 
@@ -599,8 +602,8 @@ module Eval =
           return!
             !!body
             |> reader.MapContext(ExprEvalContext.Updaters.Values(bind_definition_cases >> bind_definition_fields))
-        | ExprRec.TypeApply({ ExprTypeApply.Func = typeLambda
-                              TypeArg = typeArg }) ->
+        | TypeCheckedExprRec.TypeApply({ TypeCheckedExprTypeApply.Func = typeLambda
+                                         TypeArg = typeArg }) ->
           return!
             reader.Any(
               // Note: ordering matters here, the most specific branch needs to be evaluated first
@@ -628,7 +631,7 @@ module Eval =
               [ !!typeLambda ]
             )
 
-        | ExprRec.EntitiesDes({ Expr = s }) ->
+        | TypeCheckedExprRec.EntitiesDes({ Expr = s }) ->
           let! s_v = !s
 
           let! s_v =
@@ -647,7 +650,7 @@ module Eval =
             |> reader.OfSum
 
           return entities_v
-        | ExprRec.RelationsDes({ Expr = s }) ->
+        | TypeCheckedExprRec.RelationsDes({ Expr = s }) ->
           let! s_v = !s
 
           let! s_v =
@@ -666,7 +669,7 @@ module Eval =
             |> reader.OfSum
 
           return relations_v
-        | ExprRec.EntityDes({ Expr = s; EntityName = entityName }) ->
+        | TypeCheckedExprRec.EntityDes({ Expr = s; EntityName = entityName }) ->
           let! s_v = !s
 
           let! s_v =
@@ -685,8 +688,8 @@ module Eval =
             |> reader.OfSum
 
           return entity_v
-        | ExprRec.RelationDes({ Expr = s
-                                RelationName = relationName }) ->
+        | TypeCheckedExprRec.RelationDes({ Expr = s
+                                           RelationName = relationName }) ->
           let! s_v = !s
 
           let! s_v =
@@ -705,9 +708,9 @@ module Eval =
             |> reader.OfSum
 
           return relation_v
-        | ExprRec.RelationLookupDes({ Expr = record_v
-                                      RelationName = _relation_name
-                                      Direction = direction }) ->
+        | TypeCheckedExprRec.RelationLookupDes({ Expr = record_v
+                                                 RelationName = _relation_name
+                                                 Direction = direction }) ->
           let! record_v = !record_v
 
           let! record_v =
@@ -730,9 +733,9 @@ module Eval =
             |> reader.OfSum
 
           return relation_v
-        | ExprRec.Query(UnionQueries(q1, q2)) ->
-          let! v1 = !(Expr.Query q1)
-          let! v2 = !(Expr.Query q2)
+        | TypeCheckedExprRec.Query(TypeCheckedExprQuery.UnionQueries(q1, q2)) ->
+          let! v1 = !(TypeCheckedExpr.Query q1)
+          let! v2 = !(TypeCheckedExpr.Query q2)
 
           let! v1 =
             v1
@@ -747,42 +750,42 @@ module Eval =
             |> reader.OfSum
 
           return Value.Query(ValueQuery.ValueUnionQueries(v1, v2, v1.DeserializeFrom))
-        | ExprRec.Query q ->
+        | TypeCheckedExprRec.Query q ->
 
-          let rec replace_closure_lookups closure (e: ExprQueryExpr<_, _, _>) =
+          let rec replace_closure_lookups closure (e: TypeCheckedExprQueryExpr<_>) =
             reader {
               let (!) = replace_closure_lookups closure
 
               match e.Expr with
-              | ExprQueryExprRec.QueryConstant _
-              | ExprQueryExprRec.QueryIntrinsic(_, _) -> return e
-              | ExprQueryExprRec.QueryTupleCons items ->
+              | TypeCheckedExprQueryExprRec.QueryConstant _
+              | TypeCheckedExprQueryExprRec.QueryIntrinsic(_, _) -> return e
+              | TypeCheckedExprQueryExprRec.QueryTupleCons items ->
                 let! items = items |> List.map (!) |> reader.All
 
                 return
                   { e with
-                      Expr = ExprQueryExprRec.QueryTupleCons items }
-              | ExprQueryExprRec.QueryRecordDes(expr, field, isJson) ->
+                      Expr = TypeCheckedExprQueryExprRec.QueryTupleCons items }
+              | TypeCheckedExprQueryExprRec.QueryRecordDes(expr, field, isJson) ->
                 let! expr = !expr
 
                 return
                   { e with
-                      Expr = ExprQueryExprRec.QueryRecordDes(expr, field, isJson) }
-              | ExprQueryExprRec.QueryTupleDes(expr, item, isJson) ->
+                      Expr = TypeCheckedExprQueryExprRec.QueryRecordDes(expr, field, isJson) }
+              | TypeCheckedExprQueryExprRec.QueryTupleDes(expr, item, isJson) ->
                 let! expr = !expr
 
                 return
                   { e with
-                      Expr = ExprQueryExprRec.QueryTupleDes(expr, item, isJson) }
-              | ExprQueryExprRec.QueryConditional(cond, ``then``, ``else``) ->
+                      Expr = TypeCheckedExprQueryExprRec.QueryTupleDes(expr, item, isJson) }
+              | TypeCheckedExprQueryExprRec.QueryConditional(cond, ``then``, ``else``) ->
                 let! cond = !cond
                 let! ``then`` = !``then``
                 let! ``else`` = !``else``
 
                 return
                   { e with
-                      Expr = ExprQueryExprRec.QueryConditional(cond, ``then``, ``else``) }
-              | ExprQueryExprRec.QueryUnionDes(expr, handlers) ->
+                      Expr = TypeCheckedExprQueryExprRec.QueryConditional(cond, ``then``, ``else``) }
+              | TypeCheckedExprQueryExprRec.QueryUnionDes(expr, handlers) ->
                 let! expr = !expr
 
                 let! handlers =
@@ -797,8 +800,8 @@ module Eval =
 
                 return
                   { e with
-                      Expr = ExprQueryExprRec.QueryUnionDes(expr, handlers) }
-              | ExprQueryExprRec.QuerySumDes(expr, handlers) ->
+                      Expr = TypeCheckedExprQueryExprRec.QueryUnionDes(expr, handlers) }
+              | TypeCheckedExprQueryExprRec.QuerySumDes(expr, handlers) ->
                 let! expr = !expr
 
                 let! handlers =
@@ -813,74 +816,68 @@ module Eval =
 
                 return
                   { e with
-                      Expr = ExprQueryExprRec.QuerySumDes(expr, handlers) }
-              | ExprQueryExprRec.QueryApply(func, arg) ->
+                      Expr = TypeCheckedExprQueryExprRec.QuerySumDes(expr, handlers) }
+              | TypeCheckedExprQueryExprRec.QueryApply(func, arg) ->
                 let! func = !func
                 let! arg = !arg
 
                 return
                   { e with
-                      Expr = ExprQueryExprRec.QueryApply(func, arg) }
-              | ExprQueryExprRec.QueryLookup(l) ->
+                      Expr = TypeCheckedExprQueryExprRec.QueryApply(func, arg) }
+              | TypeCheckedExprQueryExprRec.QueryLookup(l) ->
                 match closure |> Map.tryFind l with
                 | None -> return e
                 | Some(v, t) ->
                   return
                     { e with
-                        Expr = ExprQueryExprRec.QueryClosureValue(v, t) }
-              | ExprQueryExprRec.QueryClosureValue(_, _) -> return e
-              | ExprQueryExprRec.QueryCastTo(e, t) ->
+                        Expr = TypeCheckedExprQueryExprRec.QueryClosureValue(v, t) }
+              | TypeCheckedExprQueryExprRec.QueryClosureValue(_, _) -> return e
+              | TypeCheckedExprQueryExprRec.QueryCastTo(e, t) ->
                 let! e = !e
 
                 return
                   { e with
-                      Expr = ExprQueryExprRec.QueryCastTo(e, t) }
-              | ExprQueryExprRec.QueryCount(q) ->
+                      Expr = TypeCheckedExprQueryExprRec.QueryCastTo(e, t) }
+              | TypeCheckedExprQueryExprRec.QueryCount(q) ->
                 let! q = q |> replace_closure_lookups_query
 
                 return
                   { e with
-                      Expr = ExprQueryExprRec.QueryCountEvaluated q }
-              | ExprQueryExprRec.QueryExists(q) ->
+                      Expr = TypeCheckedExprQueryExprRec.QueryCountEvaluated q }
+              | TypeCheckedExprQueryExprRec.QueryExists(q) ->
                 let! q = q |> replace_closure_lookups_query
 
                 return
                   { e with
-                      Expr = ExprQueryExprRec.QueryExistsEvaluated q }
-              | ExprQueryExprRec.QueryArray(q) ->
+                      Expr = TypeCheckedExprQueryExprRec.QueryExistsEvaluated q }
+              | TypeCheckedExprQueryExprRec.QueryArray(q) ->
                 let! q = q |> replace_closure_lookups_query
 
                 return
                   { e with
-                      Expr = ExprQueryExprRec.QueryArrayEvaluated q }
-              | ExprQueryExprRec.QueryCountEvaluated(_) -> return e
-              | ExprQueryExprRec.QueryExistsEvaluated(_) -> return e
-              | ExprQueryExprRec.QueryArrayEvaluated(_) -> return e
+                      Expr = TypeCheckedExprQueryExprRec.QueryArrayEvaluated q }
+              | TypeCheckedExprQueryExprRec.QueryCountEvaluated(_) -> return e
+              | TypeCheckedExprQueryExprRec.QueryExistsEvaluated(_) -> return e
+              | TypeCheckedExprQueryExprRec.QueryArrayEvaluated(_) -> return e
             }
 
           and replace_closure_lookups_query
-            (q: ExprQuery<TypeValue<'valueExtension>, ResolvedIdentifier, 'valueExtension>)
+            (q: TypeCheckedExprQuery<_>) // : Reader<ValueQuery<_, _>, _, _>
             =
             reader {
               match q with
-              | UnionQueries(q1, q2) ->
+              | TypeCheckedExprQuery.UnionQueries(q1, q2) ->
                 let! q1 = replace_closure_lookups_query q1
                 let! q2 = replace_closure_lookups_query q2
                 return ValueQuery.ValueUnionQueries(q1, q2, q1.DeserializeFrom)
-              | SimpleQuery q ->
+              | TypeCheckedExprQuery.SimpleQuery q ->
                 let! iterators =
                   q.Iterators
                   |> NonEmptyList.map (fun iterator ->
                     reader {
                       let! sourceV = !iterator.Source
 
-                      let! varType =
-                        iterator.VarType
-                        |> sum.OfOption(
-                          (fun () -> $"Error: {iterator.Var.Name} has no type")
-                          |> Errors.Singleton iterator.Source.Location
-                        )
-                        |> reader.OfSum
+                      let varType = iterator.VarType
 
                       return
                         { ValueQueryIterator.Location = iterator.Location

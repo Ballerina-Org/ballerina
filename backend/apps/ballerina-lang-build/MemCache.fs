@@ -18,7 +18,7 @@ module MemCache =
             ProjectModel.FileName,
             ProjectModel.Checksum *
             List<ProjectModel.Checksum> *
-            Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
+            TypeCheckedExpr<'valueExt> *
             TypeValue<'valueExt> *
             TypeCheckContext<'valueExt> *
             TypeCheckState<'valueExt>

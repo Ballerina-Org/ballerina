@@ -77,5 +77,5 @@ module TupleCons =
             |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
-          return Expr.TupleCons(fieldsExpr, loc0, ctx.Scope), return_t, Kind.Star, ctx
+          return TypeCheckedExpr.TupleCons(fieldsExpr, loc0, ctx.Scope), return_t, Kind.Star, ctx
         }

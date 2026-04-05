@@ -20,7 +20,7 @@ module Caching =
           -> Option<
             ProjectModel.Checksum *
             List<ProjectModel.Checksum> *
-            Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
+            TypeCheckedExpr<'valueExt> *
             TypeValue<'valueExt> *
             TypeCheckContext<'valueExt> *
             TypeCheckState<'valueExt>
@@ -30,7 +30,7 @@ module Caching =
           -> Fun<
             ProjectModel.Checksum *
             List<ProjectModel.Checksum> *
-            Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> *
+            TypeCheckedExpr<'valueExt> *
             TypeValue<'valueExt> *
             TypeCheckContext<'valueExt> *
             TypeCheckState<'valueExt>,
@@ -45,7 +45,7 @@ module Caching =
       (typeCheck:
         ProjectModel.FileBuildConfiguration * int
           -> State<
-            Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeValue<'valueExt>,
+            TypeCheckedExpr<'valueExt> * TypeValue<'valueExt>,
             Unit,
             TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
             Errors<Location>
@@ -55,9 +55,7 @@ module Caching =
       (st: TypeCheckState<'valueExt>)
       (file: ProjectModel.FileBuildConfiguration, index: int)
       : Sum<
-          (Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeValue<'valueExt>) *
-          TypeCheckContext<'valueExt> *
-          TypeCheckState<'valueExt>,
+          (TypeCheckedExpr<'valueExt> * TypeValue<'valueExt>) * TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
           Errors<Location>
          >
       =
@@ -89,7 +87,7 @@ module Caching =
             (typeCheck:
               ProjectModel.FileBuildConfiguration * int
                 -> State<
-                  Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeValue<'valueExt>,
+                  TypeCheckedExpr<'valueExt> * TypeValue<'valueExt>,
                   Unit,
                   TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
                   Errors<Location>
@@ -101,7 +99,7 @@ module Caching =
             (fun
                  (acc:
                    Sum<
-                     NonEmptyList<Expr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeValue<'valueExt>> *
+                     NonEmptyList<TypeCheckedExpr<'valueExt> * TypeValue<'valueExt>> *
                      List<ProjectModel.Checksum> *
                      TypeCheckContext<'valueExt> *
                      TypeCheckState<'valueExt>,

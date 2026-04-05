@@ -20,13 +20,7 @@ module SchemaEntityHookCanDelete =
     (schema: Schema<'ve>)
     (e: SchemaEntity<'ve>)
     (canDelete: Option<Expr<TypeExpr<'ve>, Identifier, 've>>)
-    : State<
-        Option<Expr<TypeValue<'ve>, ResolvedIdentifier, 've>>,
-        TypeCheckContext<'ve>,
-        TypeCheckState<'ve>,
-        Errors<Location>
-       >
-    =
+    : State<Option<TypeCheckedExpr<'ve>>, TypeCheckContext<'ve>, TypeCheckState<'ve>, Errors<Location>> =
     state {
       match canDelete with
       | None -> return None

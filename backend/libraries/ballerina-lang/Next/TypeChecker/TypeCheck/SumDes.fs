@@ -165,5 +165,5 @@ module SumDes =
           //       |> TypeValue.EquivalenceClassesOp
           //       |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
-          return Expr.SumDes(handlerExprs, loc0, ctx.Scope), arrowValue, Kind.Star, ctx
+          return TypeCheckedExpr.SumDes(handlerExprs, loc0, ctx.Scope), arrowValue, Kind.Star, ctx
         }

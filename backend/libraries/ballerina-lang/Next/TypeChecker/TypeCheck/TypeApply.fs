@@ -84,7 +84,7 @@ module TypeApply =
 
             // do Console.WriteLine($"TypeApply: f_res = {f_res}")
 
-            let res = Expr.TypeApply(f, t_val, loc0, ctx.Scope), f_res, f_k_o, ctx
+            let res = TypeCheckedExpr.TypeApply(f, t_val, loc0, ctx.Scope), f_res, f_k_o, ctx
             // do Console.WriteLine($"TypeApply: {res}")
             // do Console.ReadLine() |> ignore
             return res

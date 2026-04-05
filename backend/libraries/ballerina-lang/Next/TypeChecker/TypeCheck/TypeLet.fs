@@ -198,7 +198,7 @@ module TypeLet =
             |> state.MapContext(TypeCheckContext.Updaters.Values(bind_definition_cases >> bind_definition_fields))
 
           return
-            Expr.TypeLet(
+            TypeCheckedExpr.TypeLet(
               typeIdentifier,
               typeDefinition |> fst,
               rest,

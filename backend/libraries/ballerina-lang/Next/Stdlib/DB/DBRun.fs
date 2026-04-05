@@ -162,7 +162,7 @@ module DBRun =
 
     let evalToTypeApplicable
       (loc0: Location)
-      (_rest: List<Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext>>)
+      (_rest: List<TypeCheckedExpr<'ext>>)
       (v: 'ext)
       : ExprEvaluator<'runtimeContext, 'ext, ExtEvalResult<'runtimeContext, 'ext>> =
       reader {
@@ -185,7 +185,7 @@ module DBRun =
       (schema: Schema<'ext>)
       (db: 'db)
       (value: Value<TypeValue<'ext>, 'ext>)
-      (_rest: List<Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext>>)
+      (_rest: List<TypeCheckedExpr<'ext>>)
       : ExprEvaluator<'runtimeContext, 'ext, Value<TypeValue<'ext>, 'ext>> =
       reader {
 
@@ -214,7 +214,7 @@ module DBRun =
 
     let evalToApplicable
       (loc0: Location)
-      (_rest: List<Expr<TypeValue<'ext>, ResolvedIdentifier, 'ext>>)
+      (_rest: List<TypeCheckedExpr<'ext>>)
       (v: 'ext)
       : ExprEvaluator<'runtimeContext, 'ext, ExtEvalResult<'runtimeContext, 'ext>> =
       reader {

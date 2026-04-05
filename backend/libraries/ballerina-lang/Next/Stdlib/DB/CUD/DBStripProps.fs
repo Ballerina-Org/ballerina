@@ -70,14 +70,14 @@ module StripProps =
                     |> reader.OfSum
 
                   let! valueWithProps =
-                    Expr.Apply(
-                      Expr.FromValue(
+                    TypeCheckedExpr.Apply(
+                      TypeCheckedExpr.FromValue(
                         (DBValues.StripProperty { op with Path = ps } |> valueLens.Set, Some memoryDBStripPropertyId)
                         |> Ext,
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star
                       ),
-                      Expr.FromValue(vField, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                      TypeCheckedExpr.FromValue(vField, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                     )
                     |> fun e -> NonEmptyList.OfList(e, _rest)
                     |> Expr.Eval
@@ -106,14 +106,14 @@ module StripProps =
                     |> reader.OfSum
 
                   let! valueWithProps =
-                    Expr.Apply(
-                      Expr.FromValue(
+                    TypeCheckedExpr.Apply(
+                      TypeCheckedExpr.FromValue(
                         (DBValues.StripProperty { op with Path = ps } |> valueLens.Set, Some memoryDBStripPropertyId)
                         |> Ext,
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star
                       ),
-                      Expr.FromValue(vField, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                      TypeCheckedExpr.FromValue(vField, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                     )
                     |> fun e -> NonEmptyList.OfList(e, _rest)
                     |> Expr.Eval
@@ -145,14 +145,14 @@ module StripProps =
                     return v
                   else
                     let! vCaseContentWithProps =
-                      Expr.Apply(
-                        Expr.FromValue(
+                      TypeCheckedExpr.Apply(
+                        TypeCheckedExpr.FromValue(
                           (DBValues.StripProperty { op with Path = ps } |> valueLens.Set, Some memoryDBStripPropertyId)
                           |> Ext,
                           TypeValue.CreatePrimitive PrimitiveType.Unit,
                           Kind.Star
                         ),
-                        Expr.FromValue(vCaseContent, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                        TypeCheckedExpr.FromValue(vCaseContent, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                       )
                       |> fun e -> NonEmptyList.OfList(e, _rest)
                       |> Expr.Eval
@@ -179,14 +179,14 @@ module StripProps =
                     return v
                   else
                     let! vCaseContentWithProps =
-                      Expr.Apply(
-                        Expr.FromValue(
+                      TypeCheckedExpr.Apply(
+                        TypeCheckedExpr.FromValue(
                           (DBValues.StripProperty { op with Path = ps } |> valueLens.Set, Some memoryDBStripPropertyId)
                           |> Ext,
                           TypeValue.CreatePrimitive PrimitiveType.Unit,
                           Kind.Star
                         ),
-                        Expr.FromValue(vCaseContent, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                        TypeCheckedExpr.FromValue(vCaseContent, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                       )
                       |> fun e -> NonEmptyList.OfList(e, _rest)
                       |> Expr.Eval
@@ -211,26 +211,28 @@ module StripProps =
                     | None -> "item"
 
                   let! res =
-                    Expr.Apply(
-                      Expr.Apply(
+                    TypeCheckedExpr.Apply(
+                      TypeCheckedExpr.Apply(
                         iterator.Mapper,
-                        Expr.Lambda(
+                        TypeCheckedExpr.Lambda(
                           Var.Create lambda_var_name,
-                          None,
-                          Expr.Apply(
-                            Expr.FromValue(
+                          TypeValue.CreatePrimitive PrimitiveType.Unit,
+                          TypeCheckedExpr.Apply(
+                            TypeCheckedExpr.FromValue(
                               (DBValues.StripProperty { op with Path = ps } |> valueLens.Set,
                                Some memoryDBStripPropertyId)
                               |> Ext,
                               TypeValue.CreatePrimitive PrimitiveType.Unit,
                               Kind.Star
                             ),
-                            Expr.Lookup(lambda_var_name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
+                            TypeCheckedExpr.Lookup(
+                              lambda_var_name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve
+                            )
                           ),
-                          None
+                          TypeValue.CreatePrimitive PrimitiveType.Unit
                         )
                       ),
-                      Expr.FromValue(v, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                      TypeCheckedExpr.FromValue(v, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                     )
                     |> fun e -> NonEmptyList.OfList(e, _rest)
                     |> Expr.Eval
@@ -260,8 +262,8 @@ module StripProps =
             let! valueSoFar = acc
 
             return!
-              Expr.Apply(
-                Expr.FromValue(
+              TypeCheckedExpr.Apply(
+                TypeCheckedExpr.FromValue(
                   (DBValues.StripProperty
                     { PropertyName = prop.PropertyName
                       Path = prop.Path
@@ -272,7 +274,7 @@ module StripProps =
                   TypeValue.CreatePrimitive PrimitiveType.Unit,
                   Kind.Star
                 ),
-                Expr.FromValue(valueSoFar, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                TypeCheckedExpr.FromValue(valueSoFar, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
               )
               |> NonEmptyList.One
               |> Expr.Eval

@@ -127,6 +127,6 @@ module Lambda =
             |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
-          return Expr.Lambda(x, Some t_x, body, Some t_body, loc0, ctx.Scope), t_res, Kind.Star, ctx
+          return TypeCheckedExpr.Lambda(x, t_x, body, t_body, loc0, ctx.Scope), t_res, Kind.Star, ctx
         }
 // |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `fun {x.Name} -> ...`"))

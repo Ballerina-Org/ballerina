@@ -12,9 +12,10 @@ module QueryCaseClosureValue =
     (expr: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
     v
     t
-    : TypeCheckerResult<
-        (ExprQueryExpr<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt> * TypeQueryRow<'valueExt>),
-        'valueExt
-       >
-    =
-    state { return ExprQueryExprRec.QueryClosureValue(v, t) |> ExprQueryExpr.Create expr.Location, t }
+    : TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt> =
+    state {
+      return
+        TypeCheckedExprQueryExprRec.QueryClosureValue(v, t)
+        |> TypeCheckedExprQueryExpr.Create expr.Location,
+        t
+    }

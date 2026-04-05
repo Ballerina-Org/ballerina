@@ -237,7 +237,7 @@ module UnionDes =
                     |> Seq.map (fun (k, v) -> k, v)
                     |> Seq.fold (fun state (k, v) -> Map.add k v state) handlerExprs
 
-                  return Expr.UnionDes(handlerExprs, fallback, loc0, ctx.Scope), arrowValue, Kind.Star, ctx
+                  return TypeCheckedExpr.UnionDes(handlerExprs, fallback, loc0, ctx.Scope), arrowValue, Kind.Star, ctx
                 }
                 |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
             }
