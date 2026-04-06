@@ -43,7 +43,9 @@ module TupleDes =
 
         state {
           let! ctx = state.GetContext()
-          let! fields, t_fields, fields_k, _ = !fields
+          let! fields, _ = !fields
+          let t_fields = fields.Type
+          let fields_k = fields.Kind
           do! fields_k |> Kind.AsStar |> ofSum |> state.Ignore
 
           let! t_fields = t_fields |> TypeValue.AsTuple |> ofSum
@@ -57,5 +59,5 @@ module TupleDes =
             )
             |> state.OfSum
 
-          return TypeCheckedExpr.TupleDes(fields, fieldName, loc0, ctx.Scope), t_field, Kind.Star, ctx
+          return TypeCheckedExpr.TupleDes(fields, fieldName, t_field, Kind.Star, loc0, ctx.Scope), ctx
         }

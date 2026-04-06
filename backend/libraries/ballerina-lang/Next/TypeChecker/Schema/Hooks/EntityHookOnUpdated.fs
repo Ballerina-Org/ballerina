@@ -29,9 +29,14 @@ module SchemaEntityHookOnUpdated =
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
-        let! on_updated_expr, on_updated_t, on_updated_k, _ =
+        let! on_updated_expr, _ =
           typeCheckExpr None on_updated
           |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+        let on_updated_t = on_updated_expr.Type
+
+        let on_updated_k = on_updated_expr.Kind
+
 
         do! on_updated_k |> Kind.AsStar |> ofSum |> state.Ignore
 

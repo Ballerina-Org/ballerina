@@ -9,6 +9,7 @@ module RecordCons =
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Types.Json
   open Ballerina.Errors
@@ -38,7 +39,7 @@ module RecordCons =
               })
             |> reader.All
 
-          return TypeCheckedExpr.RecordCons(fields)
+          return TypeCheckedExpr.RecordCons(fields, TypeValue.CreateUnit(), Kind.Star)
         })
 
     static member ToJsonRecordCons

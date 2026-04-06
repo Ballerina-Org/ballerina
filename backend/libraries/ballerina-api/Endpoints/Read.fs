@@ -129,9 +129,9 @@ module Read =
 
 
               let doLookupExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
-                TypeCheckedExpr.Apply(
-                  TypeCheckedExpr.Apply(
-                    TypeCheckedExpr.Lookup(
+                TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], $"getById")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
@@ -168,8 +168,7 @@ module Read =
         (fun httpContext tenantId schemaName entityName draft (offset: int) (limit: int) ->
           let result =
             sum {
-              let! dbio, languageContext, evalContext, typeCheckContext, _ =
-                getDbDescriptor tenantId schemaName draft context
+              let! dbio, languageContext, evalContext, _, _ = getDbDescriptor tenantId schemaName draft context
 
               let! entityDescriptor =
                 entityDescriptorFromDb dbio entityName
@@ -179,9 +178,9 @@ module Read =
                 )
 
               let doLookupExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
-                TypeCheckedExpr.Apply(
-                  TypeCheckedExpr.Apply(
-                    TypeCheckedExpr.Lookup(
+                TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], $"getMany")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
@@ -191,9 +190,9 @@ module Read =
                       Kind.Star
                     )
                   ),
-                  TypeCheckedExpr.TupleCons
-                    [ TypeCheckedExpr.Primitive(PrimitiveValue.Int32 offset, Location.Unknown, typeCheckContext.Scope)
-                      TypeCheckedExpr.Primitive(PrimitiveValue.Int32 limit, Location.Unknown, typeCheckContext.Scope) ]
+                  TypeCheckedExpr.UnsafeTupleConsForUntypedEval
+                    [ TypeCheckedExpr.UnsafePrimitiveForUntypedEval(PrimitiveValue.Int32 offset)
+                      TypeCheckedExpr.UnsafePrimitiveForUntypedEval(PrimitiveValue.Int32 limit) ]
                 )
 
               let! evalResult =
@@ -252,9 +251,9 @@ module Read =
                 )
 
               let doLookupExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
-                TypeCheckedExpr.Apply(
-                  TypeCheckedExpr.Apply(
-                    TypeCheckedExpr.Lookup(
+                TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], $"lookupOne")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
@@ -319,10 +318,10 @@ module Read =
                 )
 
               let doLookupExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
-                TypeCheckedExpr.Apply(
-                  TypeCheckedExpr.Apply(
-                    TypeCheckedExpr.Apply(
-                      TypeCheckedExpr.Lookup(
+                TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                    TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                      TypeCheckedExpr.UnsafeLookupForUntypedEval(
                         Identifier.FullyQualified([ "DB" ], $"lookupMany")
                         |> ResolvedIdentifier.FromIdentifier
                       ),
@@ -334,9 +333,9 @@ module Read =
                     ),
                     TypeCheckedExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                   ),
-                  TypeCheckedExpr.TupleCons
-                    [ TypeCheckedExpr.Primitive(PrimitiveValue.Int32(offset))
-                      TypeCheckedExpr.Primitive(PrimitiveValue.Int32(limit)) ]
+                  TypeCheckedExpr.UnsafeTupleConsForUntypedEval
+                    [ TypeCheckedExpr.UnsafePrimitiveForUntypedEval(PrimitiveValue.Int32(offset))
+                      TypeCheckedExpr.UnsafePrimitiveForUntypedEval(PrimitiveValue.Int32(limit)) ]
                 )
 
               let! evalResult =
@@ -389,9 +388,9 @@ module Read =
                 )
 
               let doLookupExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
-                TypeCheckedExpr.Apply(
-                  TypeCheckedExpr.Apply(
-                    TypeCheckedExpr.Lookup(
+                TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], $"lookupOption")
                       |> ResolvedIdentifier.FromIdentifier
                     ),

@@ -146,8 +146,8 @@ module UpdateMany =
                             let! existingValueWithoutProps = stripProps db_ops existingValue entity_ref
 
                             let! updatedValue =
-                              TypeCheckedExpr.Apply(
-                                TypeCheckedExpr.Apply(
+                              TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                                TypeCheckedExpr.UnsafeApplyForUntypedEval(
                                   TypeCheckedExpr.FromValue(
                                     updateFunc,
                                     TypeValue.CreatePrimitive PrimitiveType.Unit,
@@ -203,7 +203,7 @@ module UpdateMany =
                             match ctx.RootLevelEval, entity.Hooks.CanUpdate with
                             | true, Some canUpdateHook ->
                               match!
-                                TypeCheckedExpr.Apply(
+                                TypeCheckedExpr.UnsafeApplyForUntypedEval(
                                   canUpdateHook,
                                   TypeCheckedExpr.FromValue(
                                     schema_value.Value.Value,

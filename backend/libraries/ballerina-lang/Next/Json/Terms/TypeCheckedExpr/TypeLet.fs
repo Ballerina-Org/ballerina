@@ -29,7 +29,7 @@ module TypeLet =
           let! ctx, _ = reader.GetContext()
           let! typeArg = typeArg |> ctx |> reader.OfSum
           let! body = body |> fromRootJson
-          return TypeCheckedExpr.TypeLet(typeId, typeArg, body)
+          return TypeCheckedExpr.TypeLet(typeId, typeArg, body, TypeValue.CreateUnit(), Kind.Star)
         })
 
     static member ToJsonTypeLet

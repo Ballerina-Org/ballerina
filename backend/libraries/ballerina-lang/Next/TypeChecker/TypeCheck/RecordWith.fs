@@ -46,7 +46,9 @@ module RecordWith =
 
         state {
           let! ctx = state.GetContext()
-          let! record, t_record, k_record, _ = !record
+          let! record, _ = !record
+          let t_record = record.Type
+          let k_record = record.Kind
           do! k_record |> Kind.AsStar |> ofSum |> state.Ignore
 
           let! t_record = t_record |> TypeValue.AsRecord |> ofSum
@@ -56,7 +58,9 @@ module RecordWith =
             |> List.map (fun (k, v) ->
               state {
                 let! id = TypeCheckState.TryResolveIdentifier(k, loc0)
-                let! v, t_v, _v_k, _ = !v
+                let! v, _ = !v
+                let t_v = v.Type
+                let _v_k = v.Kind
                 // do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
                 let! k_s = TypeCheckState.TryFindRecordFieldSymbol(id, loc0)
 
@@ -76,5 +80,5 @@ module RecordWith =
             |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
-          return TypeCheckedExpr.RecordWith(record, fieldsExpr, loc0, ctx.Scope), t_record, Kind.Star, ctx
+          return TypeCheckedExpr.RecordWith(record, fieldsExpr, t_record, Kind.Star, loc0, ctx.Scope), ctx
         }

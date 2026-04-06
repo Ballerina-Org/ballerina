@@ -100,9 +100,9 @@ module Create =
               do! typeCheckValue entityValue entityType languageContext typeCheckContext typeCheckState
 
               let doUpdateExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
-                TypeCheckedExpr.Apply(
-                  TypeCheckedExpr.Apply(
-                    TypeCheckedExpr.Lookup(
+                TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], "create")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
@@ -112,7 +112,7 @@ module Create =
                       Kind.Star
                     )
                   ),
-                  TypeCheckedExpr.TupleCons
+                  TypeCheckedExpr.UnsafeTupleConsForUntypedEval
                     [ TypeCheckedExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                       TypeCheckedExpr.FromValue(entityValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star) ]
                 )

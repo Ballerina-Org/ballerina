@@ -45,10 +45,10 @@ module Create =
       match _entity.Hooks.OnCreating with
       | Some hookExpr ->
         let _doRunHookExpr =
-          TypeCheckedExpr.Apply(
-            TypeCheckedExpr.Apply(
-              TypeCheckedExpr.Apply(
-                TypeCheckedExpr.Apply(
+          TypeCheckedExpr.UnsafeApplyForUntypedEval(
+            TypeCheckedExpr.UnsafeApplyForUntypedEval(
+              TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                TypeCheckedExpr.UnsafeApplyForUntypedEval(
                   hookExpr,
                   TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
                 ),
@@ -103,9 +103,9 @@ module Create =
       match _entity.Hooks.OnCreated with
       | Some hookExpr ->
         let _doRunHookExpr =
-          TypeCheckedExpr.Apply(
-            TypeCheckedExpr.Apply(
-              TypeCheckedExpr.Apply(
+          TypeCheckedExpr.UnsafeApplyForUntypedEval(
+            TypeCheckedExpr.UnsafeApplyForUntypedEval(
+              TypeCheckedExpr.UnsafeApplyForUntypedEval(
                 hookExpr,
                 TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
               ),
@@ -239,7 +239,7 @@ module Create =
                       | false, _ -> return! actual_creation
                       | _, Some canCreateHook ->
                         match!
-                          TypeCheckedExpr.Apply(
+                          TypeCheckedExpr.UnsafeApplyForUntypedEval(
                             canCreateHook,
                             TypeCheckedExpr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
                           )

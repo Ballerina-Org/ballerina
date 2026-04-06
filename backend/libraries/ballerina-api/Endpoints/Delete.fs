@@ -90,9 +90,9 @@ module Delete =
               do! typeCheckValue idValue idType languageContext typeCheckContext typeCheckState
 
               let doDeleteExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
-                TypeCheckedExpr.Apply(
-                  TypeCheckedExpr.Apply(
-                    TypeCheckedExpr.Lookup(
+                TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], "delete")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
@@ -208,9 +208,9 @@ module Delete =
                 Ext(deleters, None)
 
               let doUpdateExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
-                TypeCheckedExpr.Apply(
-                  TypeCheckedExpr.Apply(
-                    TypeCheckedExpr.Lookup(
+                TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], "deleteMany")
                       |> ResolvedIdentifier.FromIdentifier
                     ),

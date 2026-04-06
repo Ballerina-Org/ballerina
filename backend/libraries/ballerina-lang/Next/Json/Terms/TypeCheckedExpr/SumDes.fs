@@ -7,6 +7,7 @@ module SumDes =
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.Errors
   open Ballerina.DSL.Next.Json
@@ -45,7 +46,7 @@ module SumDes =
             |> reader.All
             |> reader.Map(Map.ofSeq)
 
-          return TypeCheckedExpr.SumDes(caseHandlers)
+          return TypeCheckedExpr.SumDes(caseHandlers, TypeValue.CreateUnit(), Kind.Star)
         })
 
     static member ToJsonSumDes

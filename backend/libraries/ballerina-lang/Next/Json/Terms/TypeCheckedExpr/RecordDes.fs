@@ -9,6 +9,7 @@ module RecordDes =
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.Errors
   open Ballerina.DSL.Next.Types.Json
@@ -28,7 +29,7 @@ module RecordDes =
           let! expr = expr |> fromRootJson
           let! _, ctx = reader.GetContext()
           let! field = field |> ctx |> reader.OfSum
-          return TypeCheckedExpr.RecordDes(expr, field)
+          return TypeCheckedExpr.RecordDes(expr, field, TypeValue.CreateUnit(), Kind.Star)
         })
 
     static member ToJsonRecordDes

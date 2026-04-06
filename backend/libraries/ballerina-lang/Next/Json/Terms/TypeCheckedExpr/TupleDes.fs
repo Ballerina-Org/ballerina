@@ -26,7 +26,8 @@ module TupleDes =
           let! (expr, index) = tupleDesJson |> JsonValue.AsPair |> reader.OfSum
           let! expr = expr |> fromRootJson
           let! index = index |> JsonValue.AsInt |> reader.OfSum
-          return TypeCheckedExpr.TupleDes(expr, { Index = index })
+
+          return TypeCheckedExpr.TupleDes(expr, { Index = index }, TypeValue.CreateUnit(), Kind.Star)
         })
 
     static member ToJsonTupleDes

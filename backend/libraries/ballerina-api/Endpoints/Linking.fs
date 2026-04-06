@@ -115,9 +115,9 @@ module Linking =
                 |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
               let doLinkExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
-                TypeCheckedExpr.Apply(
-                  TypeCheckedExpr.Apply(
-                    TypeCheckedExpr.Lookup(
+                TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], "link") |> ResolvedIdentifier.FromIdentifier
                     ),
                     TypeCheckedExpr.FromValue(
@@ -126,7 +126,7 @@ module Linking =
                       Kind.Star
                     )
                   ),
-                  TypeCheckedExpr.TupleCons
+                  TypeCheckedExpr.UnsafeTupleConsForUntypedEval
                     [ TypeCheckedExpr.FromValue(fromIdValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                       TypeCheckedExpr.FromValue(toIdValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star) ]
                 )
@@ -230,9 +230,9 @@ module Linking =
                 |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
               let doUnlinkExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
-                TypeCheckedExpr.Apply(
-                  TypeCheckedExpr.Apply(
-                    TypeCheckedExpr.Lookup(
+                TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], "unlink")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
@@ -242,7 +242,7 @@ module Linking =
                       Kind.Star
                     )
                   ),
-                  TypeCheckedExpr.TupleCons
+                  TypeCheckedExpr.UnsafeTupleConsForUntypedEval
                     [ TypeCheckedExpr.FromValue(fromIdValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                       TypeCheckedExpr.FromValue(toIdValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star) ]
                 )

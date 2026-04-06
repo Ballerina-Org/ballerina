@@ -35,86 +35,50 @@ module Primitive =
 
           match p with
           | PrimitiveValue.Int32 v ->
-            return
-              TypeCheckedExpr.Primitive(PrimitiveValue.Int32 v, loc0, ctx.Scope),
-              TypeValue.CreatePrimitive PrimitiveType.Int32,
-              Kind.Star,
-              ctx
+            let t = TypeValue.CreatePrimitive PrimitiveType.Int32
+            return TypeCheckedExpr.Primitive(PrimitiveValue.Int32 v, t, Kind.Star, loc0, ctx.Scope), ctx
 
           | (PrimitiveValue.Int64 v) ->
-            return
-              TypeCheckedExpr.Primitive(PrimitiveValue.Int64 v, loc0, ctx.Scope),
-              TypeValue.CreatePrimitive PrimitiveType.Int64,
-              Kind.Star,
-              ctx
+            let t = TypeValue.CreatePrimitive PrimitiveType.Int64
+            return TypeCheckedExpr.Primitive(PrimitiveValue.Int64 v, t, Kind.Star, loc0, ctx.Scope), ctx
 
           | (PrimitiveValue.Float32 v) ->
-            return
-              TypeCheckedExpr.Primitive(PrimitiveValue.Float32 v, loc0, ctx.Scope),
-              TypeValue.CreatePrimitive PrimitiveType.Float32,
-              Kind.Star,
-              ctx
+            let t = TypeValue.CreatePrimitive PrimitiveType.Float32
+            return TypeCheckedExpr.Primitive(PrimitiveValue.Float32 v, t, Kind.Star, loc0, ctx.Scope), ctx
 
           | (PrimitiveValue.Float64 v) ->
-            return
-              TypeCheckedExpr.Primitive(PrimitiveValue.Float64 v, loc0, ctx.Scope),
-              TypeValue.CreatePrimitive PrimitiveType.Float64,
-              Kind.Star,
-              ctx
+            let t = TypeValue.CreatePrimitive PrimitiveType.Float64
+            return TypeCheckedExpr.Primitive(PrimitiveValue.Float64 v, t, Kind.Star, loc0, ctx.Scope), ctx
 
           | (PrimitiveValue.Bool v) ->
-            return
-              TypeCheckedExpr.Primitive(PrimitiveValue.Bool v, loc0, ctx.Scope),
-              TypeValue.CreatePrimitive PrimitiveType.Bool,
-              Kind.Star,
-              ctx
+            let t = TypeValue.CreatePrimitive PrimitiveType.Bool
+            return TypeCheckedExpr.Primitive(PrimitiveValue.Bool v, t, Kind.Star, loc0, ctx.Scope), ctx
 
           | (PrimitiveValue.Date v) ->
-            return
-              TypeCheckedExpr.Primitive(PrimitiveValue.Date v, loc0, ctx.Scope),
-              TypeValue.CreatePrimitive PrimitiveType.DateOnly,
-              Kind.Star,
-              ctx
+            let t = TypeValue.CreatePrimitive PrimitiveType.DateOnly
+            return TypeCheckedExpr.Primitive(PrimitiveValue.Date v, t, Kind.Star, loc0, ctx.Scope), ctx
 
           | (PrimitiveValue.DateTime v) ->
-            return
-              TypeCheckedExpr.Primitive(PrimitiveValue.DateTime v, loc0, ctx.Scope),
-              TypeValue.CreatePrimitive PrimitiveType.DateTime,
-              Kind.Star,
-              ctx
+            let t = TypeValue.CreatePrimitive PrimitiveType.DateTime
+            return TypeCheckedExpr.Primitive(PrimitiveValue.DateTime v, t, Kind.Star, loc0, ctx.Scope), ctx
 
           | (PrimitiveValue.TimeSpan v) ->
-            return
-              TypeCheckedExpr.Primitive(PrimitiveValue.TimeSpan v, loc0, ctx.Scope),
-              TypeValue.CreatePrimitive PrimitiveType.TimeSpan,
-              Kind.Star,
-              ctx
+            let t = TypeValue.CreatePrimitive PrimitiveType.TimeSpan
+            return TypeCheckedExpr.Primitive(PrimitiveValue.TimeSpan v, t, Kind.Star, loc0, ctx.Scope), ctx
 
           | (PrimitiveValue.Decimal v) ->
-            return
-              TypeCheckedExpr.Primitive(PrimitiveValue.Decimal v, loc0, ctx.Scope),
-              TypeValue.CreatePrimitive PrimitiveType.Decimal,
-              Kind.Star,
-              ctx
+            let t = TypeValue.CreatePrimitive PrimitiveType.Decimal
+            return TypeCheckedExpr.Primitive(PrimitiveValue.Decimal v, t, Kind.Star, loc0, ctx.Scope), ctx
 
           | (PrimitiveValue.Guid v) ->
-            return
-              TypeCheckedExpr.Primitive(PrimitiveValue.Guid v, loc0, ctx.Scope),
-              TypeValue.CreatePrimitive PrimitiveType.Guid,
-              Kind.Star,
-              ctx
+            let t = TypeValue.CreatePrimitive PrimitiveType.Guid
+            return TypeCheckedExpr.Primitive(PrimitiveValue.Guid v, t, Kind.Star, loc0, ctx.Scope), ctx
 
           | (PrimitiveValue.String v) ->
-            return
-              TypeCheckedExpr.Primitive(PrimitiveValue.String v, loc0, ctx.Scope),
-              TypeValue.CreatePrimitive PrimitiveType.String,
-              Kind.Star,
-              ctx
+            let t = TypeValue.CreatePrimitive PrimitiveType.String
+            return TypeCheckedExpr.Primitive(PrimitiveValue.String v, t, Kind.Star, loc0, ctx.Scope), ctx
 
           | (PrimitiveValue.Unit) ->
-            return
-              TypeCheckedExpr.Primitive(PrimitiveValue.Unit, loc0, ctx.Scope),
-              TypeValue.CreatePrimitive PrimitiveType.Unit,
-              Kind.Star,
-              ctx
+            let t = TypeValue.CreatePrimitive PrimitiveType.Unit
+            return TypeCheckedExpr.Primitive(PrimitiveValue.Unit, t, Kind.Star, loc0, ctx.Scope), ctx
         }

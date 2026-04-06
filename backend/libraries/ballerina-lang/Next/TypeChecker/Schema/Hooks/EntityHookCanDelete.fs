@@ -31,12 +31,17 @@ module SchemaEntityHookCanDelete =
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
-        let! can_delete_expr, can_delete_t, can_delete_k, _ =
+        let! can_delete_expr, _ =
           typeCheckExpr None can_delete
           |> state.MapContext(
             TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope)
             >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
           )
+
+        let can_delete_t = can_delete_expr.Type
+
+        let can_delete_k = can_delete_expr.Kind
+
 
         do! can_delete_k |> Kind.AsStar |> ofSum |> state.Ignore
 

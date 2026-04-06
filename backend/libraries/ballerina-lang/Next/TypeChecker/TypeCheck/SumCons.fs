@@ -60,5 +60,5 @@ module SumCons =
             |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
-          return TypeCheckedExpr.SumCons(cons, loc0, ctx.Scope), return_t, Kind.Star, ctx
+          return TypeCheckedExpr.SumCons(cons, return_t, Kind.Star, loc0, ctx.Scope), ctx
         }

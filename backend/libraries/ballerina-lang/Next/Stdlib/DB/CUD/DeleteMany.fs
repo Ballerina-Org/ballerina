@@ -125,9 +125,9 @@ module DeleteMany =
                         match ctx.RootLevelEval, entity.Hooks.CanDelete with
                         | true, Some canDeleteHook ->
                           match!
-                            TypeCheckedExpr.Apply(
-                              TypeCheckedExpr.Apply(
-                                TypeCheckedExpr.Apply(
+                            TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                              TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                                TypeCheckedExpr.UnsafeApplyForUntypedEval(
                                   canDeleteHook,
                                   TypeCheckedExpr.FromValue(
                                     schema_value.Value.Value,

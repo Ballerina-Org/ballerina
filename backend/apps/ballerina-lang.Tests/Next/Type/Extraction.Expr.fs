@@ -284,10 +284,20 @@ let ``buildExtractionExpr runtime: extracts single int field to one-element list
     Value.Record(Map.ofList [ evidenceId, Value.Primitive(PrimitiveValue.Int32 42) ])
 
   let extracted =
-    TypeCheckedExpr.Apply(extractor, TypeCheckedExpr.FromValue(hostValue, hostType, Kind.Star))
+    TypeCheckedExpr.Apply(
+      extractor,
+      TypeCheckedExpr.FromValue(hostValue, hostType, Kind.Star),
+      TypeValue.CreatePrimitive PrimitiveType.Unit,
+      Kind.Star
+    )
 
   let listLength =
-    TypeCheckedExpr.Apply(TypeCheckedExpr.Lookup(resolveFqId [ "List" ] "length"), extracted)
+    TypeCheckedExpr.Apply(
+      TypeCheckedExpr.Lookup(resolveFqId [ "List" ] "length", TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
+      extracted,
+      TypeValue.CreatePrimitive PrimitiveType.Unit,
+      Kind.Star
+    )
 
   assertEvalInt 1 listLength
 
@@ -319,16 +329,28 @@ let ``buildExtractionExpr runtime: extracts multiple int fields with correct agg
     )
 
   let extracted =
-    TypeCheckedExpr.Apply(extractor, TypeCheckedExpr.FromValue(hostValue, hostType, Kind.Star))
+    TypeCheckedExpr.Apply(
+      extractor,
+      TypeCheckedExpr.FromValue(hostValue, hostType, Kind.Star),
+      TypeValue.CreatePrimitive PrimitiveType.Unit,
+      Kind.Star
+    )
 
   let listLength =
-    TypeCheckedExpr.Apply(TypeCheckedExpr.Lookup(resolveFqId [ "List" ] "length"), extracted)
+    TypeCheckedExpr.Apply(
+      TypeCheckedExpr.Lookup(resolveFqId [ "List" ] "length", TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
+      extracted,
+      TypeValue.CreatePrimitive PrimitiveType.Unit,
+      Kind.Star
+    )
 
   assertEvalInt 2 listLength
 
   let accVar = Var.Create "acc"
   let xVar, xId = Var.Create "x", resolveId "x"
-  let foldFnBody = TypeCheckedExpr.Lookup xId
+
+  let foldFnBody =
+    TypeCheckedExpr.Lookup(xId, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
 
   let foldFn =
     TypeCheckedExpr.Lambda(
@@ -338,18 +360,31 @@ let ``buildExtractionExpr runtime: extracts multiple int fields with correct agg
         xVar,
         TypeValue.CreatePrimitive PrimitiveType.Unit,
         foldFnBody,
-        TypeValue.CreatePrimitive PrimitiveType.Unit
+        TypeValue.CreatePrimitive PrimitiveType.Unit,
+        TypeValue.CreatePrimitive PrimitiveType.Unit,
+        Kind.Star
       ),
-      TypeValue.CreatePrimitive PrimitiveType.Unit
+      TypeValue.CreatePrimitive PrimitiveType.Unit,
+      TypeValue.CreatePrimitive PrimitiveType.Unit,
+      Kind.Star
     )
 
   let sumExpr =
     TypeCheckedExpr.Apply(
       TypeCheckedExpr.Apply(
-        TypeCheckedExpr.Apply(TypeCheckedExpr.Lookup(resolveFqId [ "List" ] "fold"), foldFn),
-        TypeCheckedExpr.Primitive(PrimitiveValue.Int32 -1)
+        TypeCheckedExpr.Apply(
+          TypeCheckedExpr.Lookup(resolveFqId [ "List" ] "fold", TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
+          foldFn,
+          TypeValue.CreatePrimitive PrimitiveType.Unit,
+          Kind.Star
+        ),
+        TypeCheckedExpr.Primitive(PrimitiveValue.Int32 -1, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
+        TypeValue.CreatePrimitive PrimitiveType.Unit,
+        Kind.Star
       ),
-      extracted
+      extracted,
+      TypeValue.CreatePrimitive PrimitiveType.Unit,
+      Kind.Star
     )
 
   assertEvalInt 7 sumExpr

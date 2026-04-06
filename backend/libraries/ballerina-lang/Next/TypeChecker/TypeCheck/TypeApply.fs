@@ -57,7 +57,9 @@ module TypeApply =
         state {
           let! ctx = state.GetContext()
           // do Console.WriteLine($"TypeApply: fExpr = {fExpr}")
-          let! f, f_t, f_k, _ = !fExpr
+          let! f, _ = !fExpr
+          let f_t = f.Type
+          let f_k = f.Kind
 
           let! f_k_i, f_k_o = f_k |> Kind.AsArrow |> ofSum
 
@@ -84,7 +86,7 @@ module TypeApply =
 
             // do Console.WriteLine($"TypeApply: f_res = {f_res}")
 
-            let res = TypeCheckedExpr.TypeApply(f, t_val, loc0, ctx.Scope), f_res, f_k_o, ctx
+            let res = TypeCheckedExpr.TypeApply(f, t_val, f_res, f_k_o, loc0, ctx.Scope), ctx
             // do Console.WriteLine($"TypeApply: {res}")
             // do Console.ReadLine() |> ignore
             return res

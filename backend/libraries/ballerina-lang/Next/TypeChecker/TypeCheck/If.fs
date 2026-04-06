@@ -47,15 +47,22 @@ module If =
 
         state {
           let! ctx = state.GetContext()
-          let! cond, t_cond, cond_k, _ = !cond
+          let! cond, _ = !cond
+          let t_cond = cond.Type
+          let cond_k = cond.Kind
           do! cond_k |> Kind.AsStar |> ofSum |> state.Ignore
 
           do!
             TypeValue.Unify(loc0, t_cond, TypeValue.CreatePrimitive PrimitiveType.Bool)
             |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
-          let! thenBranch, t_then, then_k, _ = !thenBranch
-          let! elseBranch, t_else, else_k, _ = !elseBranch
+          let! thenBranch, _ = !thenBranch
+          let t_then = thenBranch.Type
+          let then_k = thenBranch.Kind
+
+          let! elseBranch, _ = !elseBranch
+          let t_else = elseBranch.Type
+          let else_k = elseBranch.Kind
           do! then_k |> Kind.AsStar |> ofSum |> state.Ignore
           do! else_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -68,5 +75,5 @@ module If =
             |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
-          return TypeCheckedExpr.If(cond, thenBranch, elseBranch, loc0, ctx.Scope), t_then, Kind.Star, ctx
+          return TypeCheckedExpr.If(cond, thenBranch, elseBranch, t_then, Kind.Star, loc0, ctx.Scope), ctx
         }

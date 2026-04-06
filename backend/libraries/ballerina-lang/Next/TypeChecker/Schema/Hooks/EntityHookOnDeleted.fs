@@ -29,9 +29,14 @@ module SchemaEntityHookOnDeleted =
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
-        let! on_deleted_expr, on_deleted_t, on_deleted_k, _ =
+        let! on_deleted_expr, _ =
           typeCheckExpr None on_deleted
           |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+        let on_deleted_t = on_deleted_expr.Type
+
+        let on_deleted_k = on_deleted_expr.Kind
+
 
         do! on_deleted_k |> Kind.AsStar |> ofSum |> state.Ignore
 

@@ -27,7 +27,7 @@ module Do =
           let! (value, body) = doJson |> JsonValue.AsPair |> reader.OfSum
           let! value = value |> fromRootJson
           let! body = body |> fromRootJson
-          return TypeCheckedExpr.Do(value, body)
+          return TypeCheckedExpr.Do(value, body, TypeValue.CreateUnit(), Kind.Star)
         })
 
     static member ToJsonDo

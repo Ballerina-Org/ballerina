@@ -61,7 +61,9 @@ module RecordCons =
                   fields
                   |> List.map (fun (k, v) ->
                     state {
-                      let! v, t_v, v_k, _ = !v
+                      let! v, _ = !v
+                      let t_v = v.Type
+                      let v_k = v.Kind
                       // do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
                       let! id = TypeCheckState.TryResolveIdentifier(k, loc0)
                       let! k_s = TypeCheckState.TryFindRecordFieldSymbol(id, loc0)
@@ -87,7 +89,9 @@ module RecordCons =
                         |> OrderedMap.tryFindWithError k "fields" k.AsFSharpString
                         |> ofSum
 
-                      let! v, t_v, v_k, _ = (Some k_t_v) => v
+                      let! v, _ = (Some k_t_v) => v
+                      let t_v = v.Type
+                      let v_k = v.Kind
                       // do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                       do! TypeValue.Unify(loc0, t_v, k_t_v) |> Expr.liftUnification
@@ -107,5 +111,5 @@ module RecordCons =
             |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
-          return TypeCheckedExpr.RecordCons(fieldsExpr, loc0, ctx.Scope), return_t, Kind.Star, ctx
+          return TypeCheckedExpr.RecordCons(fieldsExpr, return_t, Kind.Star, loc0, ctx.Scope), ctx
         }

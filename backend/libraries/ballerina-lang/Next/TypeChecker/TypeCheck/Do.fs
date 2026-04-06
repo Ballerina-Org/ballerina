@@ -45,12 +45,16 @@ module Do =
         state {
           let! ctx = state.GetContext()
 
-          let! e1, t1, k1, _ = TypeValue.CreateUnit() |> Some => e1
+          let! e1, _ = TypeValue.CreateUnit() |> Some => e1
+          let t1 = e1.Type
+          let k1 = e1.Kind
           let! t1 = t1 |> TypeValue.AsPrimitive |> ofSum
           do! t1.value |> PrimitiveType.AsUnit |> ofSum
           do! k1 |> Kind.AsStar |> ofSum
 
-          let! e2, t2, k2, ctx_e2 = !e2
+          let! e2, ctx_e2 = !e2
+          let t2 = e2.Type
+          let k2 = e2.Kind
 
-          return TypeCheckedExpr.Do(e1, e2, loc0, ctx.Scope), t2, k2, ctx_e2
+          return TypeCheckedExpr.Do(e1, e2, t2, k2, loc0, ctx.Scope), ctx_e2
         }

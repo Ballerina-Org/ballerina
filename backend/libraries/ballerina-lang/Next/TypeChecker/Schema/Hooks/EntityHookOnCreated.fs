@@ -29,9 +29,14 @@ module SchemaEntityHookOnCreated =
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
-        let! on_created_expr, on_created_t, on_created_k, _ =
+        let! on_created_expr, _ =
           typeCheckExpr None on_created
           |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+        let on_created_t = on_created_expr.Type
+
+        let on_created_k = on_created_expr.Kind
+
 
         do! on_created_k |> Kind.AsStar |> ofSum |> state.Ignore
 

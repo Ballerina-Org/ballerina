@@ -1927,6 +1927,8 @@ module Model =
   and [<RequireQualifiedAccess>] TypeCheckedExpr<'valueExt> =
     { Expr: TypeCheckedExprRec<'valueExt>
       Location: Location
+      Type: TypeValue<'valueExt>
+      Kind: Kind
       Scope: TypeCheckScope }
 
     override self.ToString() : string = self.Expr.ToString()

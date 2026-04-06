@@ -8,6 +8,7 @@ open Ballerina.Collections.Sum
 open Ballerina.Reader.WithError
 
 open Ballerina.DSL.Next.Types.Model
+open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.DSL.Next.Terms
 open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.Terms.Json.Value
@@ -105,11 +106,14 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
       """{"discriminator": "sum", "value": [3, 3, {"discriminator":"int32","value":"42"}]}""",
       Value.Sum({ Case = 3; Count = 3 }, PrimitiveValue.Int32 42 |> Value.Primitive)
       """{"discriminator": "type-lambda", "value":[{"name":"T", "kind":{"discriminator":"star"}}, {"discriminator":"int32","value":"42"}]}""",
-      Value.TypeLambda({ Name = "T"; Kind = Kind.Star }, PrimitiveValue.Int32 42 |> TypeCheckedExpr.Primitive)
+      Value.TypeLambda(
+        { Name = "T"; Kind = Kind.Star },
+        TypeCheckedExpr.Primitive(PrimitiveValue.Int32 42, TypeValue.CreateUnit(), Kind.Star)
+      )
       """{"discriminator": "lambda", "value": ["x", {"discriminator":"int32","value":"42"}]}""",
       Value.Lambda(
         Var.Create "x",
-        PrimitiveValue.Int32 42 |> TypeCheckedExpr.Primitive,
+        TypeCheckedExpr.Primitive(PrimitiveValue.Int32 42, TypeValue.CreateUnit(), Kind.Star),
         Map.empty,
         TypeCheckScope.Empty
       )

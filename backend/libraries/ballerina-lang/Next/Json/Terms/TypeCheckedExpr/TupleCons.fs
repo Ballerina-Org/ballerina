@@ -25,7 +25,7 @@ module TupleCons =
         reader {
           let! elements = elementsJson |> JsonValue.AsArray |> reader.OfSum
           let! elements = elements |> Seq.map fromRootJson |> reader.All
-          return TypeCheckedExpr.TupleCons(elements)
+          return TypeCheckedExpr.TupleCons(elements, TypeValue.CreateUnit(), Kind.Star)
         })
 
     static member ToJsonTupleCons

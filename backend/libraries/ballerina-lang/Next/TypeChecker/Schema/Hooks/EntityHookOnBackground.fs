@@ -31,12 +31,17 @@ module SchemaEntityHookOnBackground =
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
-        let! on_background_expr, on_background_t, on_background_k, _ =
+        let! on_background_expr, _ =
           typeCheckExpr None on_background
           |> state.MapContext(
             TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope)
             >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
           )
+
+        let on_background_t = on_background_expr.Type
+
+        let on_background_k = on_background_expr.Kind
+
 
         do! on_background_k |> Kind.AsStar |> ofSum |> state.Ignore
 

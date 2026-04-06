@@ -36,16 +36,46 @@ module TypeExtractionExpr =
     : State<TypeCheckedExpr<'valueExt>, CompileContext<'valueExt>, int> =
 
     state {
+      let unitT = TypeValue.CreatePrimitive(PrimitiveType.Unit)
+      let starK = Kind.Star
+
+      let mkLookup id =
+        TypeCheckedExpr.Lookup(id, unitT, starK)
+
+      let mkPrimitive p =
+        TypeCheckedExpr.Primitive(p, unitT, starK)
+
+      let mkApply f a =
+        TypeCheckedExpr.Apply(f, a, unitT, starK)
+
+      let mkTupleCons items =
+        TypeCheckedExpr.TupleCons(items, unitT, starK)
+
+      let mkUnionDes handlers fallback =
+        TypeCheckedExpr.UnionDes(handlers, fallback, unitT, starK)
+
+      let mkSumDes handlers =
+        TypeCheckedExpr.SumDes(handlers, unitT, starK)
+
+      let mkRecordDes e id =
+        TypeCheckedExpr.RecordDes(e, id, unitT, starK)
+
+      let mkTupleDes e selector =
+        TypeCheckedExpr.TupleDes(e, selector, unitT, starK)
+
+      let mkLambda p pt body bt =
+        TypeCheckedExpr.Lambda(p, pt, body, bt, unitT, starK)
+
       let! ctx = state.GetContext()
 
       let nilExpr: TypeCheckedExpr<'valueExt> =
-        TypeCheckedExpr.Apply(TypeCheckedExpr.Lookup(ctx.ListOps.Nil), TypeCheckedExpr.Primitive(PrimitiveValue.Unit))
+        mkApply (mkLookup ctx.ListOps.Nil) (mkPrimitive PrimitiveValue.Unit)
 
       let singleton value =
-        TypeCheckedExpr.Apply(TypeCheckedExpr.Lookup(ctx.ListOps.Cons), TypeCheckedExpr.TupleCons([ value; nilExpr ]))
+        mkApply (mkLookup ctx.ListOps.Cons) (mkTupleCons [ value; nilExpr ])
 
       let appendTwo left right =
-        TypeCheckedExpr.Apply(TypeCheckedExpr.Apply(TypeCheckedExpr.Lookup(ctx.ListOps.Append), left), right)
+        mkApply (mkApply (mkLookup ctx.ListOps.Append) left) right
 
       let appendMany (lists: TypeCheckedExpr<'valueExt> list) =
         match lists with
@@ -57,16 +87,16 @@ module TypeExtractionExpr =
       let compileUnionCase sym childTree =
         state {
           let! caseVar, caseId = freshVar "case"
-          let! innerExpr = compileTree childTree (TypeCheckedExpr.Lookup caseId)
+          let! innerExpr = compileTree childTree (mkLookup caseId)
           let handlers = Map.ofList [ ctx.Resolve sym, (Some caseVar, innerExpr) ]
           let fallback = Some nilExpr
-          return TypeCheckedExpr.Apply(TypeCheckedExpr.UnionDes(handlers, fallback), current)
+          return mkApply (mkUnionDes handlers fallback) current
         }
 
       let compileSumAlternative case count childTree =
         state {
           let! caseVar, caseId = freshVar "case"
-          let! innerExpr = compileTree childTree (TypeCheckedExpr.Lookup caseId)
+          let! innerExpr = compileTree childTree (mkLookup caseId)
           let! dummyVar, _ = freshVar "unused"
 
           let handlers =
@@ -81,15 +111,14 @@ module TypeExtractionExpr =
                 selector, (Some dummyVar, nilExpr))
             |> Map.ofList
 
-          return TypeCheckedExpr.Apply(TypeCheckedExpr.SumDes(handlers), current)
+          return mkApply (mkSumDes handlers) current
         }
 
       let compileContainer kind childTree =
         let current', childTree' =
           match kind with
           | ImportedContainer(containerId, argIndex) when containerId.Name = "Map" ->
-            let mapAsList =
-              TypeCheckedExpr.Apply(TypeCheckedExpr.Lookup(ctx.MapOps.MapToList), current)
+            let mapAsList = mkApply (mkLookup ctx.MapOps.MapToList) current
 
             let liftedTree =
               { SelfMatch = false
@@ -108,32 +137,24 @@ module TypeExtractionExpr =
 
             let! accVar, accId = freshVar "acc"
             let! xVar, xId = freshVar "x"
-            let! innerList = compileTree childOnlyTree (TypeCheckedExpr.Lookup xId)
+            let! innerList = compileTree childOnlyTree (mkLookup xId)
 
             let appendExpr =
-              TypeCheckedExpr.Apply(
-                TypeCheckedExpr.Apply(TypeCheckedExpr.Lookup(ctx.ListOps.Append), TypeCheckedExpr.Lookup(accId)),
-                innerList
-              )
+              mkApply (mkApply (mkLookup ctx.ListOps.Append) (mkLookup accId)) innerList
 
             let foldFn =
-              TypeCheckedExpr.Lambda(
-                accVar,
-                TypeValue.CreatePrimitive(PrimitiveType.Unit),
-                TypeCheckedExpr.Lambda(
-                  xVar,
-                  TypeValue.CreatePrimitive(PrimitiveType.Unit),
-                  appendExpr,
-                  TypeValue.CreatePrimitive(PrimitiveType.Unit)
-                ),
-                TypeValue.CreatePrimitive(PrimitiveType.Unit)
-              )
+              mkLambda
+                accVar
+                (TypeValue.CreatePrimitive(PrimitiveType.Unit))
+                (mkLambda
+                  xVar
+                  (TypeValue.CreatePrimitive(PrimitiveType.Unit))
+                  appendExpr
+                  (TypeValue.CreatePrimitive(PrimitiveType.Unit)))
+                (TypeValue.CreatePrimitive(PrimitiveType.Unit))
 
             let foldedMatches =
-              TypeCheckedExpr.Apply(
-                TypeCheckedExpr.Apply(TypeCheckedExpr.Apply(TypeCheckedExpr.Lookup(ctx.ListOps.Fold), foldFn), nilExpr),
-                current'
-              )
+              mkApply (mkApply (mkApply (mkLookup ctx.ListOps.Fold) foldFn) nilExpr) current'
 
             return appendMany (directMatches @ [ foldedMatches ])
         }
@@ -146,9 +167,9 @@ module TypeExtractionExpr =
           | (step, childTree) :: restGroups ->
             let! compiled =
               match step with
-              | RecordField sym -> compileTree childTree (TypeCheckedExpr.RecordDes(current, ctx.Resolve sym))
+              | RecordField sym -> compileTree childTree (mkRecordDes current (ctx.Resolve sym))
 
-              | TupleElement i -> compileTree childTree (TypeCheckedExpr.TupleDes(current, { Index = i + 1 }))
+              | TupleElement i -> compileTree childTree (mkTupleDes current { Index = i + 1 })
 
               | UnionCase sym -> compileUnionCase sym childTree
 
@@ -204,14 +225,18 @@ module TypeExtractionExpr =
     let expressionState =
       state {
         let! hostVar, hostId = freshVar "host"
-        let! body = compileTree tree (TypeCheckedExpr.Lookup hostId)
+
+        let! body =
+          compileTree tree (TypeCheckedExpr.Lookup(hostId, TypeValue.CreatePrimitive(PrimitiveType.Unit), Kind.Star))
 
         return
           TypeCheckedExpr.Lambda(
             hostVar,
             TypeValue.CreatePrimitive(PrimitiveType.Unit),
             body,
-            TypeValue.CreatePrimitive(PrimitiveType.Unit)
+            TypeValue.CreatePrimitive(PrimitiveType.Unit),
+            TypeValue.CreatePrimitive(PrimitiveType.Unit),
+            Kind.Star
           )
       }
 

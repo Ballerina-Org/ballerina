@@ -70,7 +70,7 @@ module StripProps =
                     |> reader.OfSum
 
                   let! valueWithProps =
-                    TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.UnsafeApplyForUntypedEval(
                       TypeCheckedExpr.FromValue(
                         (DBValues.StripProperty { op with Path = ps } |> valueLens.Set, Some memoryDBStripPropertyId)
                         |> Ext,
@@ -106,7 +106,7 @@ module StripProps =
                     |> reader.OfSum
 
                   let! valueWithProps =
-                    TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.UnsafeApplyForUntypedEval(
                       TypeCheckedExpr.FromValue(
                         (DBValues.StripProperty { op with Path = ps } |> valueLens.Set, Some memoryDBStripPropertyId)
                         |> Ext,
@@ -145,7 +145,7 @@ module StripProps =
                     return v
                   else
                     let! vCaseContentWithProps =
-                      TypeCheckedExpr.Apply(
+                      TypeCheckedExpr.UnsafeApplyForUntypedEval(
                         TypeCheckedExpr.FromValue(
                           (DBValues.StripProperty { op with Path = ps } |> valueLens.Set, Some memoryDBStripPropertyId)
                           |> Ext,
@@ -179,7 +179,7 @@ module StripProps =
                     return v
                   else
                     let! vCaseContentWithProps =
-                      TypeCheckedExpr.Apply(
+                      TypeCheckedExpr.UnsafeApplyForUntypedEval(
                         TypeCheckedExpr.FromValue(
                           (DBValues.StripProperty { op with Path = ps } |> valueLens.Set, Some memoryDBStripPropertyId)
                           |> Ext,
@@ -211,13 +211,13 @@ module StripProps =
                     | None -> "item"
 
                   let! res =
-                    TypeCheckedExpr.Apply(
-                      TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                      TypeCheckedExpr.UnsafeApplyForUntypedEval(
                         iterator.Mapper,
-                        TypeCheckedExpr.Lambda(
+                        TypeCheckedExpr.UnsafeLambdaForUntypedEval(
                           Var.Create lambda_var_name,
                           TypeValue.CreatePrimitive PrimitiveType.Unit,
-                          TypeCheckedExpr.Apply(
+                          TypeCheckedExpr.UnsafeApplyForUntypedEval(
                             TypeCheckedExpr.FromValue(
                               (DBValues.StripProperty { op with Path = ps } |> valueLens.Set,
                                Some memoryDBStripPropertyId)
@@ -225,7 +225,7 @@ module StripProps =
                               TypeValue.CreatePrimitive PrimitiveType.Unit,
                               Kind.Star
                             ),
-                            TypeCheckedExpr.Lookup(
+                            TypeCheckedExpr.UnsafeLookupForUntypedEval(
                               lambda_var_name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve
                             )
                           ),
@@ -262,7 +262,7 @@ module StripProps =
             let! valueSoFar = acc
 
             return!
-              TypeCheckedExpr.Apply(
+              TypeCheckedExpr.UnsafeApplyForUntypedEval(
                 TypeCheckedExpr.FromValue(
                   (DBValues.StripProperty
                     { PropertyName = prop.PropertyName

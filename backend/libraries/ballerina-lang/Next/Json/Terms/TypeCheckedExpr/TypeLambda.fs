@@ -11,6 +11,7 @@ module TypeLambda =
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.Errors
   open Ballerina.DSL.Next.Json.Keys
   open Ballerina.DSL.Next.Terms.Patterns
@@ -27,7 +28,7 @@ module TypeLambda =
           let! (typeParam, body) = typeParamJson |> JsonValue.AsPair |> reader.OfSum
           let! typeParam = typeParam |> TypeParameter.FromJson |> reader.OfSum
           let! body = body |> fromRootJson
-          return TypeCheckedExpr.TypeLambda(typeParam, body)
+          return TypeCheckedExpr.TypeLambda(typeParam, body, TypeValue.CreateUnit(), Kind.Star)
         })
 
     static member ToJsonTypeLambda

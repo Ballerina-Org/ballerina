@@ -27,7 +27,7 @@ module TypeApply =
           let! f = f |> fromRootJson
           let! ctx, _ = reader.GetContext()
           let! arg = arg |> ctx |> reader.OfSum
-          return TypeCheckedExpr.TypeApply(f, arg)
+          return TypeCheckedExpr.TypeApply(f, arg, TypeValue.CreateUnit(), Kind.Star)
         })
 
     static member ToJsonTypeApply

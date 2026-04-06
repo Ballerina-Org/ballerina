@@ -30,12 +30,17 @@ module SchemaEntityHookCanCreate =
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
-        let! can_create_expr, can_create_t, can_create_k, _ =
+        let! can_create_expr, _ =
           typeCheckExpr None can_create
           |> state.MapContext(
             TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope)
             >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
           )
+
+        let can_create_t = can_create_expr.Type
+
+        let can_create_k = can_create_expr.Kind
+
 
         do! can_create_k |> Kind.AsStar |> ofSum |> state.Ignore
 

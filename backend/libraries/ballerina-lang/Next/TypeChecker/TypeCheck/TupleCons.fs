@@ -63,7 +63,9 @@ module TupleCons =
             fields
             |> List.map (fun (v) ->
               state {
-                let! v, t_v, v_k, _ = !v
+                let! v, _ = !v
+                let t_v = v.Type
+                let v_k = v.Kind
                 do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
                 return v, t_v
               })
@@ -77,5 +79,5 @@ module TupleCons =
             |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
-          return TypeCheckedExpr.TupleCons(fieldsExpr, loc0, ctx.Scope), return_t, Kind.Star, ctx
+          return TypeCheckedExpr.TupleCons(fieldsExpr, return_t, Kind.Star, loc0, ctx.Scope), ctx
         }
