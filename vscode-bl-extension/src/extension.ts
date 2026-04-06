@@ -1,7 +1,8 @@
 import * as vscode from "vscode";
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
-import { spawn } from "node:child_process";
+import * as fs from "fs/promises";
+import * as path from "path";
+import { spawn, type ChildProcessWithoutNullStreams } from "child_process";
+import { createInterface, type Interface } from "readline";
 
 type ProjectFileDto = {
   name?: string;
@@ -13,14 +14,27 @@ type BuildIssue = {
   message: string;
   file: string;
   line: number;
+  column?: number;
+};
+
+type BuildErrorDto = {
+  message?: string;
+  file?: string;
+  line?: number;
+  column?: number;
+};
+
+type BuildResultDto = {
+  success?: boolean;
+  errors?: BuildErrorDto[];
 };
 
 const LANGUAGE_ID = "bl";
 const DIAGNOSTIC_SOURCE = "bise-sql";
 const BUILD_DEBOUNCE_MS = 50;
-const DEFAULT_COMPILER_COMMAND = "ballerina";
-const COMPILER_COMMAND_SETTING = "bl.compilerCommand";
 let buildRunSequence = 0;
+let buildServerClient: BuildServerClient | undefined;
+let buildServerClientKey: string | undefined;
 
 export function activate(context: vscode.ExtensionContext): void {
   const output = getOutputChannel();
@@ -112,6 +126,7 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export function deactivate(): void {
+  disposeBuildServerClient();
   getOutputChannel().dispose();
 }
 
@@ -163,29 +178,49 @@ async function runBuildFromProjectPath(
     return;
   }
 
-  const compilerCommand = getCompilerCommand();
+  const biseSqlProject = path.join(workspaceFolder.uri.fsPath, "src", "playgrounds", "bise-sql", "bise-sql.fsproj");
+
+  try {
+    await fs.access(biseSqlProject);
+  } catch {
+    void vscode.window.showWarningMessage("Could not find bise-sql.fsproj under src/playgrounds/bise-sql.");
+    return;
+  }
 
   const output = getOutputChannel();
   output.clear();
   const runId = ++buildRunSequence;
   output.appendLine(`[Run #${runId}] Building ${vscode.workspace.asRelativePath(projectPath)}...`);
-  const commandArgs = ["-f", projectPath];
-  output.appendLine(`[Run #${runId}] Command: ${formatCommandForLog(compilerCommand, commandArgs)}`);
+  const commandArgs = [
+    "run",
+    "--project",
+    biseSqlProject,
+    "--",
+    "--file",
+    projectPath
+  ];
+  output.appendLine(`[Run #${runId}] Command: ${formatCommandForLog("dotnet", commandArgs)}`);
   output.appendLine(`[Run #${runId}] Working directory: ${workspaceFolder.uri.fsPath}`);
   const startedAt = new Date();
   const startedAtMs = Date.now();
   output.appendLine(`[Run #${runId}] Started at: ${startedAt.toISOString()}`);
-  output.appendLine(`[Run #${runId}] Typechecking started.`);
+  output.appendLine(`[Run #${runId}] Typechecking started (server mode).`);
   const typecheckStartedAtMs = Date.now();
 
-  let buildOutput: { stdout: string; stderr: string; exitCode: number };
+  let buildOutput: { stdout: string; stderr: string; exitCode: number; serverResult?: BuildResultDto };
 
   try {
-    buildOutput = await runBallerinaCompilerBuild(compilerCommand, projectPath, workspaceFolder.uri.fsPath);
+    buildOutput = await runBiseSqlBuild(
+      biseSqlProject,
+      projectPath,
+      workspaceFolder.uri.fsPath,
+      output,
+      runId
+    );
   } catch (error) {
     const elapsedMs = Date.now() - startedAtMs;
     output.appendLine(`[Run #${runId}] Failed after: ${formatDurationForLog(elapsedMs)}`);
-    void vscode.window.showErrorMessage(`Failed to execute BL build with '${compilerCommand}': ${toMessage(error)}`);
+    void vscode.window.showErrorMessage(`Failed to execute bise-sql build: ${toMessage(error)}`);
     return;
   }
 
@@ -201,7 +236,9 @@ async function runBuildFromProjectPath(
     output.appendLine(buildOutput.stderr);
   }
 
-  const issues = parseIssues(buildOutput.stdout + "\n" + buildOutput.stderr, projectPath);
+  const issues = buildOutput.serverResult
+    ? parseIssuesFromServerResult(buildOutput.serverResult, projectPath)
+    : parseIssues(buildOutput.stdout + "\n" + buildOutput.stderr, projectPath);
 
   applyDiagnostics(issues, diagnostics, workspaceFolder.uri.fsPath);
 
@@ -436,18 +473,53 @@ async function readProjectFile(projectPath: string): Promise<ProjectFileDto> {
   return parsed;
 }
 
-async function runBallerinaCompilerBuild(
-  compilerCommand: string,
+async function runBiseSqlBuild(
+  biseSqlProjectPath: string,
+  projectFilePath: string,
+  cwd: string,
+  output: vscode.OutputChannel,
+  runId: number
+): Promise<{ stdout: string; stderr: string; exitCode: number; serverResult?: BuildResultDto }> {
+  const serverClient = getBuildServerClient(biseSqlProjectPath, cwd, output);
+
+  try {
+    const serverResult = await serverClient.build(projectFilePath);
+    const errors = Array.isArray(serverResult.errors) ? serverResult.errors.length : 0;
+    const summary = serverResult.success
+      ? `[Run #${runId}] Server response: success.`
+      : `[Run #${runId}] Server response: failed with ${errors} error(s).`;
+
+    return {
+      stdout: summary,
+      stderr: "",
+      exitCode: serverResult.success ? 0 : 1,
+      serverResult
+    };
+  } catch (serverError) {
+    output.appendLine(`[Run #${runId}] Server mode failed; falling back to one-shot build: ${toMessage(serverError)}`);
+    return runBiseSqlBuildOneShot(biseSqlProjectPath, projectFilePath, cwd);
+  }
+}
+
+async function runBiseSqlBuildOneShot(
+  biseSqlProjectPath: string,
   projectFilePath: string,
   cwd: string
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   return new Promise((resolve, reject) => {
-    const args = ["-f", projectFilePath];
+    const args = [
+      "run",
+      "--project",
+      biseSqlProjectPath,
+      "--",
+      "--file",
+      projectFilePath
+    ];
 
     const env = (
       (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env
     ) ?? undefined;
-    const child = spawn(compilerCommand, args, { cwd, env });
+    const child = spawn("dotnet", args, { cwd, env });
 
     let stdout = "";
     let stderr = "";
@@ -474,10 +546,32 @@ async function runBallerinaCompilerBuild(
   });
 }
 
-function getCompilerCommand(): string {
-  const configured = vscode.workspace.getConfiguration("bl").get<string>("compilerCommand");
-  const value = configured?.trim();
-  return value && value.length > 0 ? value : DEFAULT_COMPILER_COMMAND;
+function parseIssuesFromServerResult(serverResult: BuildResultDto, projectPath: string): BuildIssue[] {
+  const errors = Array.isArray(serverResult.errors) ? serverResult.errors : [];
+  const issues: BuildIssue[] = [];
+  const seen = new Set<string>();
+
+  for (const error of errors) {
+    const message = (error.message ?? "Build failed").trim();
+    const file = toAbsoluteFile(projectPath, error.file ?? "");
+    const line = Number.isFinite(error.line) ? Number(error.line) : 1;
+    const column = Number.isFinite(error.column) ? Number(error.column) : 1;
+    const key = `${file}:${line}:${column}:${message}`;
+
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    issues.push({
+      message,
+      file,
+      line,
+      column
+    });
+  }
+
+  return issues;
 }
 
 function parseIssues(output: string, projectPath: string): BuildIssue[] {
@@ -497,7 +591,7 @@ function parseIssues(output: string, projectPath: string): BuildIssue[] {
 
     if (!seen.has(key)) {
       seen.add(key);
-      issues.push({ message, file: absoluteFile, line });
+      issues.push({ message, file: absoluteFile, line, column: 1 });
     }
   }
 
@@ -505,6 +599,10 @@ function parseIssues(output: string, projectPath: string): BuildIssue[] {
 }
 
 function toAbsoluteFile(projectPath: string, fileFromOutput: string): string {
+  if (fileFromOutput.length === 0) {
+    return projectPath;
+  }
+
   if (path.isAbsolute(fileFromOutput)) {
     return fileFromOutput;
   }
@@ -549,7 +647,9 @@ function applyDiagnostics(issues: BuildIssue[], diagnostics: vscode.DiagnosticCo
     }
 
     const line = Math.max(0, issue.line - 1);
-    const range = new vscode.Range(line, 0, line, 200);
+    const column = Math.max(0, (issue.column ?? 1) - 1);
+    const endColumn = Math.max(column + 1, 200);
+    const range = new vscode.Range(line, column, line, endColumn);
 
     const diagnostic = new vscode.Diagnostic(range, issue.message, vscode.DiagnosticSeverity.Error);
     diagnostic.source = DIAGNOSTIC_SOURCE;
@@ -566,6 +666,165 @@ function applyDiagnostics(issues: BuildIssue[], diagnostics: vscode.DiagnosticCo
 
 function normalizePath(p: string): string {
   return path.normalize(p).toLowerCase();
+}
+
+function getBuildServerClient(
+  biseSqlProjectPath: string,
+  cwd: string,
+  output: vscode.OutputChannel
+): BuildServerClient {
+  const nextKey = `${normalizePath(biseSqlProjectPath)}::${normalizePath(cwd)}`;
+
+  if (!buildServerClient || buildServerClientKey !== nextKey) {
+    disposeBuildServerClient();
+    buildServerClient = new BuildServerClient(biseSqlProjectPath, cwd, output);
+    buildServerClientKey = nextKey;
+  }
+
+  return buildServerClient;
+}
+
+function disposeBuildServerClient(): void {
+  if (!buildServerClient) {
+    return;
+  }
+
+  buildServerClient.dispose();
+  buildServerClient = undefined;
+  buildServerClientKey = undefined;
+}
+
+class BuildServerClient {
+  private child: ChildProcessWithoutNullStreams | undefined;
+  private stdoutReader: Interface | undefined;
+  private readonly stderrLines: string[] = [];
+  private requestChain: Promise<void> = Promise.resolve();
+
+  constructor(
+    private readonly biseSqlProjectPath: string,
+    private readonly cwd: string,
+    private readonly output: vscode.OutputChannel
+  ) {}
+
+  build(projectFilePath: string): Promise<BuildResultDto> {
+    const work = async (): Promise<BuildResultDto> => {
+      await this.ensureStarted();
+      return this.sendRequest(projectFilePath);
+    };
+
+    const promise = this.requestChain.then(work, work);
+    this.requestChain = promise.then(() => undefined, () => undefined);
+    return promise;
+  }
+
+  dispose(): void {
+    this.stdoutReader?.close();
+    this.stdoutReader = undefined;
+
+    if (this.child && !this.child.killed) {
+      this.child.kill();
+    }
+
+    this.child = undefined;
+    this.stderrLines.length = 0;
+  }
+
+  private async ensureStarted(): Promise<void> {
+    if (this.child && !this.child.killed) {
+      return;
+    }
+
+    const args = ["run", "--project", this.biseSqlProjectPath, "--", "server"];
+    const env = (
+      (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env
+    ) ?? undefined;
+    const child = spawn("dotnet", args, { cwd: this.cwd, env, stdio: "pipe" });
+
+    this.output.appendLine(`[Server] Starting: ${formatCommandForLog("dotnet", args)}`);
+
+    const stdoutReader = createInterface({ input: child.stdout });
+    this.stdoutReader = stdoutReader;
+    this.child = child;
+    this.stderrLines.length = 0;
+
+    child.stderr.on("data", (chunk: Uint8Array | string) => {
+      const text = chunk.toString();
+      this.stderrLines.push(text);
+      if (this.stderrLines.length > 40) {
+        this.stderrLines.shift();
+      }
+    });
+
+    child.on("error", (err: unknown) => {
+      this.output.appendLine(`[Server] Process error: ${toMessage(err)}`);
+      this.child = undefined;
+      this.stdoutReader?.close();
+      this.stdoutReader = undefined;
+    });
+
+    child.on("close", (code: number | null) => {
+      this.output.appendLine(`[Server] Exited with code ${code ?? -1}.`);
+      this.child = undefined;
+      this.stdoutReader?.close();
+      this.stdoutReader = undefined;
+    });
+  }
+
+  private async sendRequest(projectFilePath: string): Promise<BuildResultDto> {
+    const child = this.child;
+    const stdoutReader = this.stdoutReader;
+
+    if (!child || !stdoutReader || child.killed) {
+      throw new Error("Build server is not running.");
+    }
+
+    return new Promise<BuildResultDto>((resolve, reject) => {
+      const onLine = (line: string): void => {
+        const trimmed = line.trim();
+
+        if (trimmed.length === 0) {
+          return;
+        }
+
+        cleanup();
+
+        try {
+          const parsed = JSON.parse(trimmed) as BuildResultDto;
+          resolve(parsed);
+        } catch {
+          reject(new Error(`Unexpected server response: ${trimmed}`));
+        }
+      };
+
+      const onClose = (): void => {
+        cleanup();
+        const stderrTail = this.stderrLines.join("").trim();
+        reject(new Error(stderrTail.length > 0 ? stderrTail : "Build server exited before responding."));
+      };
+
+      const onError = (err: unknown): void => {
+        cleanup();
+        reject(err instanceof Error ? err : new Error(String(err)));
+      };
+
+      const cleanup = (): void => {
+        stdoutReader.off("line", onLine);
+        child.off("close", onClose);
+        child.off("error", onError);
+      };
+
+      stdoutReader.on("line", onLine);
+      child.once("close", onClose);
+      child.once("error", onError);
+
+      child.stdin.write(`${projectFilePath}\n`, (err?: Error | null) => {
+        if (err) {
+          cleanup();
+          reject(err);
+        }
+      });
+    });
+  }
 }
 
 function toMessage(error: unknown): string {

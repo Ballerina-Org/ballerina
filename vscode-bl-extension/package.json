@@ -1,7 +1,7 @@
 {
   "name": "bl-language-tools",
   "displayName": "Ballerina Language Tools",
-  "description": "Syntax highlighting and error diagnostics for .bl projects",
+  "description": "Syntax highlighting and diagnostics for .bl projects using bise-sql server mode",
   "version": "0.0.1",
   "publisher": "GiuseppeMaggiore",
   "repository": {
@@ -50,17 +50,7 @@
         "command": "bl.showBuildOrder",
         "title": "BL: Show Active Project Build Order"
       }
-    ],
-    "configuration": {
-      "title": "BL Language Tools",
-      "properties": {
-        "bl.compilerCommand": {
-          "type": "string",
-          "default": "ballerina",
-          "description": "Command used to invoke the BL compiler from PATH."
-        }
-      }
-    }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

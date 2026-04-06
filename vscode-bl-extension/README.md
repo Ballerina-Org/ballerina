@@ -5,7 +5,7 @@ Features:
 - Basic syntax highlighting for `.bl` files (keywords/operators from the lexer/parser).
 - `.blproj` discovery for the active `.bl` file.
 - Recursive build-order resolution (`inputProjects` first, then `sources`).
-- Build with the BL compiler from PATH (default command: `ballerina`) and publish diagnostics to the Problems pane.
+- Build through the persistent `bise-sql server` mode and publish diagnostics to the Problems pane.
 
 ## Commands
 
@@ -14,7 +14,6 @@ Features:
 
 ## Notes
 
-- Default build command executed:
-  `ballerina -f <project.blproj>`
-- Compiler command is configurable via VS Code setting:
-  `bl.compilerCommand`
+- Default build command executed (persistent process):
+  `dotnet run --project <workspace>/src/playgrounds/bise-sql/bise-sql.fsproj -- server`
+- For each build, the extension writes `<project.blproj>` to server stdin and reads a JSON result from stdout.
