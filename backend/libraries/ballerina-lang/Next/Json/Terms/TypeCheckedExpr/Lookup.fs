@@ -9,6 +9,7 @@ module Lookup =
   open Ballerina.Errors
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.Reader.WithError
   open Ballerina.DSL.Next.Json.Keys
@@ -22,7 +23,7 @@ module Lookup =
         reader {
           let! _, ctx = reader.GetContext()
           let! (res: ResolvedIdentifier) = nameJson |> ctx |> reader.OfSum
-          return TypeCheckedExpr.Lookup res
+          return TypeCheckedExpr.Lookup(res, TypeValue.CreateUnit(), Kind.Star)
         })
 
     static member ToJsonLookup(id: TypeCheckedExprLookup<'valueExt>) : TypeCheckedExprEncoderReader<'valueExt> =

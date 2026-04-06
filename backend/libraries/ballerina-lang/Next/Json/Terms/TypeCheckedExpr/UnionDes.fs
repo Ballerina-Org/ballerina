@@ -7,6 +7,7 @@ module UnionDes =
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.DSL.Next.Json
   open Ballerina.DSL.Next.Types.Json
@@ -41,7 +42,7 @@ module UnionDes =
             |> reader.All
             |> reader.Map Map.ofSeq
 
-          return TypeCheckedExpr.UnionDes(caseHandlers, None)
+          return TypeCheckedExpr.UnionDes(caseHandlers, None, TypeValue.CreateUnit(), Kind.Star)
         })
 
     static member ToJsonUnionDes

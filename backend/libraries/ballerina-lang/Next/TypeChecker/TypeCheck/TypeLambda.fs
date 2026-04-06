@@ -62,9 +62,12 @@ module TypeLambda =
           //     (TypeValue.Var fresh_t_par_var, t_par.Kind)
           //   |> Expr.liftTypeEval
 
-          let! body, t_body, body_k, _ =
+          let! body, _ =
             !body
             |> state.MapContext(TypeCheckContext.Updaters.TypeParameters(Map.add t_par.Name t_par.Kind))
+
+          let t_body = body.Type
+          let body_k = body.Kind
 
           // // pop binding
           // match t_par_type with
@@ -85,9 +88,8 @@ module TypeLambda =
 
           // do Console.WriteLine($"TypeLambda body type: {t_body}")
 
-          return
-            TypeCheckedExpr.TypeLambda(t_par, body, loc0, ctx.Scope),
-            TypeValue.CreateLambda(t_par, t_body.AsExpr),
-            Kind.Arrow(t_par.Kind, body_k),
-            ctx
+          let t_res = TypeValue.CreateLambda(t_par, t_body.AsExpr)
+          let k_res = Kind.Arrow(t_par.Kind, body_k)
+
+          return TypeCheckedExpr.TypeLambda(t_par, body, t_res, k_res, loc0, ctx.Scope), ctx
         }

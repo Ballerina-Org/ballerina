@@ -312,12 +312,17 @@ module Eval =
             )
             |> reader.OfSum
         | TypeCheckedExprRec.SumCons({ Selector = selector }) ->
+          let t_unit = TypeValue.CreateUnit()
+          let k_star = Kind.Star
+
           return
             Value.Lambda(
               Var.Create "x",
               TypeCheckedExpr.Apply(
-                TypeCheckedExpr.SumCons(selector),
-                TypeCheckedExpr.Lookup("x" |> Identifier.LocalScope |> e.Scope.Resolve)
+                TypeCheckedExpr.SumCons(selector, t_unit, k_star),
+                TypeCheckedExpr.Lookup("x" |> Identifier.LocalScope |> e.Scope.Resolve, t_unit, k_star),
+                t_unit,
+                k_star
               ),
               Map.empty,
               e.Scope
@@ -734,8 +739,8 @@ module Eval =
 
           return relation_v
         | TypeCheckedExprRec.Query(TypeCheckedExprQuery.UnionQueries(q1, q2)) ->
-          let! v1 = !(TypeCheckedExpr.Query q1)
-          let! v2 = !(TypeCheckedExpr.Query q2)
+          let! v1 = !(TypeCheckedExpr.Query(q1, e.Type, e.Kind))
+          let! v2 = !(TypeCheckedExpr.Query(q2, e.Type, e.Kind))
 
           let! v1 =
             v1

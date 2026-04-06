@@ -93,11 +93,14 @@ module Lambda =
             | Some(TypeValue.Arrow({ value = _, ret_t })) -> Some ret_t
             | _ -> bt |> Option.map fst
 
-          let! body, t_body, body_k, _ =
+          let! body, _ =
             body_constraint_t => body
             |> state.MapContext(
               TypeCheckContext.Updaters.Values(Map.add (x.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) var_type)
             )
+
+          let t_body = body.Type
+          let body_k = body.Kind
 
           do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -127,6 +130,6 @@ module Lambda =
             |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
-          return TypeCheckedExpr.Lambda(x, t_x, body, t_body, loc0, ctx.Scope), t_res, Kind.Star, ctx
+          return TypeCheckedExpr.Lambda(x, t_x, body, t_body, t_res, Kind.Star, loc0, ctx.Scope), ctx
         }
 // |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `fun {x.Name} -> ...`"))

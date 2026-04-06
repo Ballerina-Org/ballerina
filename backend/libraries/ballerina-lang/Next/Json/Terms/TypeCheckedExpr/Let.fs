@@ -29,7 +29,8 @@ module Let =
           let var = Var.Create var
           let! value = value |> fromRootJson
           let! body = body |> fromRootJson
-          return TypeCheckedExpr.Let(var, Unchecked.defaultof<TypeValue<'valueExt>>, value, body)
+
+          return TypeCheckedExpr.Let(var, TypeValue.CreateUnit(), value, body, TypeValue.CreateUnit(), Kind.Star)
         })
 
     static member ToJsonLet

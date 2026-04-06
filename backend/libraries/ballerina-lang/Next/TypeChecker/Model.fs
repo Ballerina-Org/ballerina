@@ -89,10 +89,7 @@ module Model =
   type TypeChecker<'input, 'valueExt when 'valueExt: comparison> =
     Option<TypeValue<'valueExt>>
       -> 'input
-      -> TypeCheckerResult<
-        TypeCheckedExpr<'valueExt> * TypeValue<'valueExt> * Kind * TypeCheckContext<'valueExt>,
-        'valueExt
-       >
+      -> TypeCheckerResult<TypeCheckedExpr<'valueExt> * TypeCheckContext<'valueExt>, 'valueExt>
 
   type ExprTypeChecker<'valueExt when 'valueExt: comparison> =
     TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt>

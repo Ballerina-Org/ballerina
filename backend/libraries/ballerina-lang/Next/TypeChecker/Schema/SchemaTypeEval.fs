@@ -239,7 +239,7 @@ module SchemaTypeEval =
                               | (maybe_var_name, SchemaPathTypeDecompositionExpr.Iterator it) ->
                                 let! container, _ = it.Container |> TypeExpr.Lookup |> (!)
                                 let! t_arg, _ = it.TypeDef |> TypeExpr.Lookup |> (!)
-                                let! mapper, _, _, _ = typeCheckExpr None (it.Mapper |> Expr.Lookup)
+                                let! mapper, _ = typeCheckExpr None (it.Mapper |> Expr.Lookup)
 
                                 let next_t = t_arg
 
@@ -270,7 +270,7 @@ module SchemaTypeEval =
                         |> List.map (fun (id, (t, k)) -> Map.add id (t, k))
                         |> List.fold (>>) (fun x -> x)
 
-                      let! body_e, body_t, body_k, _ =
+                      let! body_e, _ =
                         typeCheckExpr (Some p_decl_t) p.Body
                         |> state.MapContext(
                           TypeCheckContext.Updaters.Values(
@@ -279,6 +279,10 @@ module SchemaTypeEval =
                           )
                           >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
                         )
+
+                      let body_t = body_e.Type
+
+                      let body_k = body_e.Kind
 
                       do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -306,7 +310,7 @@ module SchemaTypeEval =
                         |> state.Throw
                     else
 
-                      let! body_e, body_t, body_k, _ =
+                      let! body_e, _ =
                         typeCheckExpr (Some(TypeValue.CreatePrimitive(PrimitiveType.String))) p.Body
                         |> state.MapContext(
                           TypeCheckContext.Updaters.Values(
@@ -314,6 +318,10 @@ module SchemaTypeEval =
                           )
                           >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
                         )
+
+                      let body_t = body_e.Type
+
+                      let body_k = body_e.Kind
 
                       do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -740,9 +748,13 @@ module SchemaTypeEval =
                   | Some on_linking ->
                     do! assert_no_cardinality
 
-                    let! on_linking_expr, on_linking_t, on_linking_k, _ =
+                    let! on_linking_expr, _ =
                       typeCheckExpr None on_linking
                       |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                    let on_linking_t = on_linking_expr.Type
+
+                    let on_linking_k = on_linking_expr.Kind
 
                     do! on_linking_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -763,9 +775,13 @@ module SchemaTypeEval =
                   | Some on_linked ->
                     do! assert_no_cardinality
 
-                    let! on_linked_expr, on_linked_t, on_linked_k, _ =
+                    let! on_linked_expr, _ =
                       typeCheckExpr None on_linked
                       |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                    let on_linked_t = on_linked_expr.Type
+
+                    let on_linked_k = on_linked_expr.Kind
 
                     do! on_linked_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -789,9 +805,13 @@ module SchemaTypeEval =
                   | Some on_unlinking ->
                     do! assert_no_cardinality
 
-                    let! on_unlinking_expr, on_unlinking_t, on_unlinking_k, _ =
+                    let! on_unlinking_expr, _ =
                       typeCheckExpr None on_unlinking
                       |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                    let on_unlinking_t = on_unlinking_expr.Type
+
+                    let on_unlinking_k = on_unlinking_expr.Kind
 
                     do! on_unlinking_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -812,9 +832,13 @@ module SchemaTypeEval =
                   | Some on_unlinked ->
                     do! assert_no_cardinality
 
-                    let! on_unlinked_expr, on_unlinked_t, on_unlinked_k, _ =
+                    let! on_unlinked_expr, _ =
                       typeCheckExpr None on_unlinked
                       |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+
+                    let on_unlinked_t = on_unlinked_expr.Type
+
+                    let on_unlinked_k = on_unlinked_expr.Kind
 
                     do! on_unlinked_k |> Kind.AsStar |> ofSum |> state.Ignore
 

@@ -92,7 +92,9 @@ module Apply =
               // do Console.WriteLine($"typechecking function expression {f_expr}...")
               // do Console.WriteLine($"with constraint {f_constraint}...")
               // do Console.ReadLine() |> ignore
-              let! f, t_f, f_k, _ = f_constraint => f_expr
+              let! f, _ = f_constraint => f_expr
+              let t_f = f.Type
+              let f_k = f.Kind
               // do Console.WriteLine($"t_f: {t_f}")
               // do Console.WriteLine($"f_k: {f_k}")
               // do Console.ReadLine() |> ignore
@@ -161,7 +163,9 @@ module Apply =
 
                       return!
                         state {
-                          let! a, t_a, _a_k, _ = None => a_expr
+                          let! a, _ = None => a_expr
+                          let t_a = a.Type
+                          let _a_k = a.Kind
                           // do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
                           let f_i, union_type_parameters, union_cases = union_cons_t
                           let f_o = union_cases |> TypeValue.CreateUnion
@@ -220,8 +224,18 @@ module Apply =
                             |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
                             |> Expr.liftInstantiation
 
+                          let f_lookup_t = TypeValue.CreateArrow(f_i, f_o)
+
                           return
-                            TypeCheckedExpr.Apply(TypeCheckedExpr.Lookup f_lookup, a, loc0, ctx.Scope), f_o, f_k, ctx
+                            TypeCheckedExpr.Apply(
+                              TypeCheckedExpr.Lookup(f_lookup, f_lookup_t, Kind.Star),
+                              a,
+                              f_o,
+                              f_k,
+                              loc0,
+                              ctx.Scope
+                            ),
+                            ctx
                         }
                         |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                     })
@@ -282,7 +296,9 @@ module Apply =
                                 | TypeValue.Var v when v.Synthetic -> None
                                 | _ -> Some f_input
 
-                              let! a, t_a, _a_k, _ = context_a => a_expr
+                              let! a, _ = context_a => a_expr
+                              let t_a = a.Type
+                              let _a_k = a.Kind
                               // do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                               do! unify_with_schema_subtyping f_input t_a
@@ -293,10 +309,12 @@ module Apply =
                                 |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
                                 |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
-                              return TypeCheckedExpr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx
+                              return TypeCheckedExpr.Apply(f, a, f_output, Kind.Star, loc0, ctx.Scope), ctx
                             })
                             (state {
-                              let! a, t_a, _a_k, _ = None => a_expr
+                              let! a, _ = None => a_expr
+                              let t_a = a.Type
+                              let _a_k = a.Kind
                               // do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                               // do Console.WriteLine $"a = {a}..."
@@ -375,7 +393,7 @@ module Apply =
 
                               // do Console.WriteLine $"after instantiating function output type, f_output = {f_output}"
 
-                              return TypeCheckedExpr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx
+                              return TypeCheckedExpr.Apply(f, a, f_output, Kind.Star, loc0, ctx.Scope), ctx
                             })
                             ((fun () -> $"Error: cannot resolve application, found variable {f_lookup}")
                              |> error
@@ -383,7 +401,9 @@ module Apply =
                              |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium)))
                           |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
                       | Right _ ->
-                        let! a, t_a, _a_k, _ = None => a_expr
+                        let! a, _ = None => a_expr
+                        let t_a = a.Type
+                        let _a_k = a.Kind
                         // do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                         if adHocPolymorphismBinaryAllOperatorNames.Contains f_lookup.Name then
@@ -401,10 +421,14 @@ module Apply =
                                   loc0
                                 |> state.OfSum
 
-                              let! adhoc_op, adhoc_op_t, adhoc_op_k, _ =
+                              let! adhoc_op, _ =
                                 !Expr.Lookup(Identifier.FullyQualified([ adHocResolution.Namespace ], f_lookup.Name),
                                              loc0,
                                              ctx.Scope)
+
+                              let adhoc_op_t = adhoc_op.Type
+
+                              let adhoc_op_k = adhoc_op.Kind
 
                               do! adhoc_op_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -431,7 +455,7 @@ module Apply =
                                 |> Expr.liftInstantiation
 
                               let k_res = Kind.Star
-                              return TypeCheckedExpr.Apply(adhoc_op, a, loc0, ctx.Scope), t_res, k_res, ctx
+                              return TypeCheckedExpr.Apply(adhoc_op, a, t_res, k_res, loc0, ctx.Scope), ctx
                             }
                             |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium))
                         elif f_lookup.Name = "!" then
@@ -443,8 +467,12 @@ module Apply =
 
                               return!
                                 state {
-                                  let! bool_op, bool_op_t, bool_op_k, _ =
+                                  let! bool_op, _ =
                                     !Expr.Lookup(Identifier.FullyQualified([ "bool" ], f_lookup.Name), loc0, ctx.Scope)
+
+                                  let bool_op_t = bool_op.Type
+
+                                  let bool_op_k = bool_op.Kind
 
                                   do! bool_op_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -461,7 +489,7 @@ module Apply =
 
                                   let t_res = TypeValue.CreatePrimitive PrimitiveType.Bool
                                   let k_res = Kind.Star
-                                  return TypeCheckedExpr.Apply(bool_op, a, loc0, ctx.Scope), t_res, k_res, ctx
+                                  return TypeCheckedExpr.Apply(bool_op, a, t_res, k_res, loc0, ctx.Scope), ctx
                                 }
                                 |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
@@ -480,7 +508,9 @@ module Apply =
                   |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
               })
               (state {
-                let! a, t_a, _a_k, _ = None => a_expr
+                let! a, _ = None => a_expr
+                let t_a = a.Type
+                let _a_k = a.Kind
                 // do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                 return!
@@ -528,7 +558,7 @@ module Apply =
                       |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
                       |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
-                    return TypeCheckedExpr.Apply(f, a, loc0, ctx.Scope), f_output, Kind.Star, ctx
+                    return TypeCheckedExpr.Apply(f, a, f_output, Kind.Star, loc0, ctx.Scope), ctx
                   }
                   |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
               // $"Error: cannot resolve application"

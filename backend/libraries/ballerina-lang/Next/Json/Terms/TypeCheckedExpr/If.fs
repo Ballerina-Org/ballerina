@@ -26,7 +26,7 @@ module If =
           let! cond = cond |> fromRootJson
           let! thenBranch = thenBranch |> fromRootJson
           let! elseBranch = elseBranch |> fromRootJson
-          return TypeCheckedExpr.If(cond, thenBranch, elseBranch)
+          return TypeCheckedExpr.If(cond, thenBranch, elseBranch, TypeValue.CreateUnit(), Kind.Star)
         })
 
     static member ToJsonIf

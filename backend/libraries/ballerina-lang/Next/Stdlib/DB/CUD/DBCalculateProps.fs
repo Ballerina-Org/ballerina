@@ -64,7 +64,7 @@ module CalculateProps =
                     |> reader.OfSum
 
                   let! valueWithProps =
-                    TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.UnsafeApplyForUntypedEval(
                       TypeCheckedExpr.FromValue(
                         (DBValues.EvalProperty { op with Path = ps } |> valueLens.Set, Some memoryDBCalculatePropertyId)
                         |> Ext,
@@ -100,7 +100,7 @@ module CalculateProps =
                     |> reader.OfSum
 
                   let! valueWithProps =
-                    TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.UnsafeApplyForUntypedEval(
                       TypeCheckedExpr.FromValue(
                         (DBValues.EvalProperty { op with Path = ps } |> valueLens.Set, Some memoryDBCalculatePropertyId)
                         |> Ext,
@@ -139,7 +139,7 @@ module CalculateProps =
                     return v
                   else
                     let! vCaseContentWithProps =
-                      TypeCheckedExpr.Apply(
+                      TypeCheckedExpr.UnsafeApplyForUntypedEval(
                         TypeCheckedExpr.FromValue(
                           (DBValues.EvalProperty { op with Path = ps } |> valueLens.Set,
                            Some memoryDBCalculatePropertyId)
@@ -174,7 +174,7 @@ module CalculateProps =
                     return v
                   else
                     let! vCaseContentWithProps =
-                      TypeCheckedExpr.Apply(
+                      TypeCheckedExpr.UnsafeApplyForUntypedEval(
                         TypeCheckedExpr.FromValue(
                           (DBValues.EvalProperty { op with Path = ps } |> valueLens.Set,
                            Some memoryDBCalculatePropertyId)
@@ -207,13 +207,13 @@ module CalculateProps =
                     | None -> "item"
 
                   let! res =
-                    TypeCheckedExpr.Apply(
-                      TypeCheckedExpr.Apply(
+                    TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                      TypeCheckedExpr.UnsafeApplyForUntypedEval(
                         iterator.Mapper,
-                        TypeCheckedExpr.Lambda(
+                        TypeCheckedExpr.UnsafeLambdaForUntypedEval(
                           Var.Create lambda_var_name,
                           TypeValue.CreatePrimitive PrimitiveType.Unit,
-                          TypeCheckedExpr.Apply(
+                          TypeCheckedExpr.UnsafeApplyForUntypedEval(
                             TypeCheckedExpr.FromValue(
                               (DBValues.EvalProperty { op with Path = ps } |> valueLens.Set,
                                Some memoryDBCalculatePropertyId)
@@ -221,7 +221,7 @@ module CalculateProps =
                               TypeValue.CreatePrimitive PrimitiveType.Unit,
                               Kind.Star
                             ),
-                            TypeCheckedExpr.Lookup(
+                            TypeCheckedExpr.UnsafeLookupForUntypedEval(
                               lambda_var_name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve
                             )
                           ),
@@ -264,7 +264,7 @@ module CalculateProps =
             let! valueSoFar = acc
 
             return!
-              TypeCheckedExpr.Apply(
+              TypeCheckedExpr.UnsafeApplyForUntypedEval(
                 TypeCheckedExpr.FromValue(
                   (DBValues.EvalProperty
                     { PropertyName = prop.PropertyName

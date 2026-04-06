@@ -26,11 +26,17 @@ let executeBackgroundJob
         TypeCheckedExpr.Apply(
           TypeCheckedExpr.Apply(
             backgroundJob,
-            TypeCheckedExpr.FromValue(dbio.SchemaAsValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+            TypeCheckedExpr.FromValue(dbio.SchemaAsValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
+            TypeValue.CreatePrimitive PrimitiveType.Unit,
+            Kind.Star
           ),
-          TypeCheckedExpr.FromValue(entityId, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+          TypeCheckedExpr.FromValue(entityId, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
+          TypeValue.CreatePrimitive PrimitiveType.Unit,
+          Kind.Star
         ),
-        TypeCheckedExpr.FromValue(value, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+        TypeCheckedExpr.FromValue(value, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
+        TypeValue.CreatePrimitive PrimitiveType.Unit,
+        Kind.Star
       )
 
     let backgroundJobResult =

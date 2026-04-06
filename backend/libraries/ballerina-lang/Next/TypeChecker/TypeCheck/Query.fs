@@ -188,7 +188,9 @@ module Query =
               iterators
               |> Seq.map (fun iterator ->
                 state {
-                  let! type_checked_source_expr, t, _k, _ctx = None => iterator.Source
+                  let! type_checked_source_expr, _ctx = None => iterator.Source
+                  let t = type_checked_source_expr.Type
+                  let _k = type_checked_source_expr.Kind
 
                   return!
                     state {

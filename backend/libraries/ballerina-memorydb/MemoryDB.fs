@@ -244,7 +244,9 @@ module MutableMemoryDB =
         let can_read_query_expr =
           TypeCheckedExpr.Apply(
             can_read_hook,
-            TypeCheckedExpr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
+            TypeCheckedExpr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star),
+            TypeValue.CreateUnit(),
+            Kind.Star
           )
 
         let! can_read_query =

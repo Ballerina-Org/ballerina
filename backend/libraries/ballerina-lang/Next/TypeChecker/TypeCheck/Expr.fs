@@ -67,7 +67,7 @@ module Expr =
         // let error e = Errors.Singleton loc0 e
 
         state {
-          let! expr, typeValue, kind, ctx =
+          let! expr, ctx =
             state {
               match t.Expr with
               | ExprRec.Primitive(p) ->
@@ -77,7 +77,7 @@ module Expr =
                                     ValueType = t_v
                                     ValueKind = k }) ->
                 let! ctx = state.GetContext()
-                return TypeCheckedExpr.FromValue(v, t_v, k, t.Location, t.Scope), t_v, k, ctx
+                return TypeCheckedExpr.FromValue(v, t_v, k, t.Location, t.Scope), ctx
 
               | ExprRec.Lookup({ Id = id }) ->
                 return!
@@ -157,12 +157,12 @@ module Expr =
                 let! q, t, k, ctx =
                   Expr.TypeCheckQuery config (Expr<'T, 'Id, 'valueExt>.TypeCheck config) context_t Map.empty Map.empty q
 
-                return TypeCheckedExpr.Query q, t, k, ctx
+                return TypeCheckedExpr.Query(q, t, k), ctx
             }
 
           let! expr =
             expr
             |> TypeCheckedExpr.InstantiateSyntheticVars config (Expr<'T, 'Id, 'valueExt>.TypeCheck config)
 
-          return expr, typeValue, kind, ctx
+          return expr, ctx
         }

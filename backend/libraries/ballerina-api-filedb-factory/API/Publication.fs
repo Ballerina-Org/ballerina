@@ -47,7 +47,9 @@ module API =
       let mainExpr =
         TypeCheckedExpr.Apply(
           TypeCheckedExpr.FromValue(dbio.Main, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
-          TypeCheckedExpr.FromValue(dbio.SchemaAsValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+          TypeCheckedExpr.FromValue(dbio.SchemaAsValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
+          TypeValue.CreatePrimitive PrimitiveType.Unit,
+          Kind.Star
         )
 
       let! mainResult =

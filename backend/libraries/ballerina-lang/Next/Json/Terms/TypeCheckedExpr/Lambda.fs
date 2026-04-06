@@ -31,9 +31,11 @@ module Lambda =
           return
             TypeCheckedExpr.Lambda(
               var,
-              Unchecked.defaultof<TypeValue<'valueExt>>,
+              TypeValue.CreateUnit(),
               body,
-              Unchecked.defaultof<TypeValue<'valueExt>>
+              TypeValue.CreateUnit(),
+              TypeValue.CreateUnit(),
+              Kind.Star
             )
         })
 

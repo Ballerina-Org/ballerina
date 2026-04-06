@@ -193,19 +193,23 @@ module TypeLet =
             |> state.RunOption
             |> state.Ignore
 
-          let! rest, rest_t, rest_k, ctx_rest =
+          let! rest, ctx_rest =
             !rest
             |> state.MapContext(TypeCheckContext.Updaters.Values(bind_definition_cases >> bind_definition_fields))
+
+          let rest_t = rest.Type
+
+          let rest_k = rest.Kind
 
           return
             TypeCheckedExpr.TypeLet(
               typeIdentifier,
               typeDefinition |> fst,
               rest,
+              rest_t,
+              rest_k,
               loc0,
               ctx.Scope |> TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier))
             ),
-            rest_t,
-            rest_k,
             ctx_rest
         }

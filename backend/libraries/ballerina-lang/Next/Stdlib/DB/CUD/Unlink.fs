@@ -38,9 +38,9 @@ module Unlink =
       | None -> return ()
       | Some(hookExpr: TypeCheckedExpr<'ext>) ->
         let! run_hook_result =
-          TypeCheckedExpr.Apply(
-            TypeCheckedExpr.Apply(
-              TypeCheckedExpr.Apply(
+          TypeCheckedExpr.UnsafeApplyForUntypedEval(
+            TypeCheckedExpr.UnsafeApplyForUntypedEval(
+              TypeCheckedExpr.UnsafeApplyForUntypedEval(
                 hookExpr,
                 TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
               ),
@@ -84,9 +84,9 @@ module Unlink =
       | None -> return ()
       | Some(hookExpr: TypeCheckedExpr<'ext>) ->
         let! run_hook_result =
-          TypeCheckedExpr.Apply(
-            TypeCheckedExpr.Apply(
-              TypeCheckedExpr.Apply(
+          TypeCheckedExpr.UnsafeApplyForUntypedEval(
+            TypeCheckedExpr.UnsafeApplyForUntypedEval(
+              TypeCheckedExpr.UnsafeApplyForUntypedEval(
                 hookExpr,
                 TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
               ),

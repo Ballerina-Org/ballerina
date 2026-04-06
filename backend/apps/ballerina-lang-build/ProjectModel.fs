@@ -83,12 +83,14 @@ module ProjectModel =
 
               let! ctx, st = state.GetState()
 
-              let! (typeCheckedExpr, typeValue, _, ctx'), st' =
+              let! (typeCheckedExpr, ctx'), st' =
                 Expr.TypeCheck config None program
                 |> State.Run(ctx, st)
                 |> sum.MapError fst
                 |> sum.WithErrorContext(fun () -> $"...while typechecking {file.FileName.Path}")
                 |> state.OfSum
+
+              let typeValue = typeCheckedExpr.Type
 
               if index < project.Files.Tail.Length then
                 match typeValue with

@@ -117,7 +117,9 @@ module SumDes =
                     Map.add (v.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) (var_t, Kind.Star))
                   |> Option.defaultValue id
 
-                let! body, body_t, body_k, _ = !body |> state.MapContext(TypeCheckContext.Updaters.Values add_var)
+                let! body, _ = !body |> state.MapContext(TypeCheckContext.Updaters.Values add_var)
+                let body_t = body.Type
+                let body_k = body.Kind
 
                 do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -165,5 +167,5 @@ module SumDes =
           //       |> TypeValue.EquivalenceClassesOp
           //       |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
-          return TypeCheckedExpr.SumDes(handlerExprs, loc0, ctx.Scope), arrowValue, Kind.Star, ctx
+          return TypeCheckedExpr.SumDes(handlerExprs, arrowValue, Kind.Star, loc0, ctx.Scope), ctx
         }

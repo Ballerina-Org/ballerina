@@ -45,11 +45,11 @@ module Update =
       match _entity.Hooks.OnUpdating with
       | Some hookExpr ->
         let _doRunHookExpr =
-          TypeCheckedExpr.Apply(
-            TypeCheckedExpr.Apply(
-              TypeCheckedExpr.Apply(
-                TypeCheckedExpr.Apply(
-                  TypeCheckedExpr.Apply(
+          TypeCheckedExpr.UnsafeApplyForUntypedEval(
+            TypeCheckedExpr.UnsafeApplyForUntypedEval(
+              TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
                     hookExpr,
                     TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
                   ),
@@ -103,10 +103,10 @@ module Update =
       match _entity.Hooks.OnUpdated with
       | Some hookExpr ->
         let _doRunHookExpr =
-          TypeCheckedExpr.Apply(
-            TypeCheckedExpr.Apply(
-              TypeCheckedExpr.Apply(
-                TypeCheckedExpr.Apply(
+          TypeCheckedExpr.UnsafeApplyForUntypedEval(
+            TypeCheckedExpr.UnsafeApplyForUntypedEval(
+              TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                TypeCheckedExpr.UnsafeApplyForUntypedEval(
                   hookExpr,
                   TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
                 ),
@@ -244,8 +244,8 @@ module Update =
                         let! existingValueWithoutProps = stripProps db_ops existingValue entity_ref
 
                         let! updatedValue =
-                          TypeCheckedExpr.Apply(
-                            TypeCheckedExpr.Apply(
+                          TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                            TypeCheckedExpr.UnsafeApplyForUntypedEval(
                               TypeCheckedExpr.FromValue(
                                 updateFunc,
                                 TypeValue.CreatePrimitive PrimitiveType.Unit,
@@ -305,9 +305,9 @@ module Update =
                           // do Console.WriteLine $"Existing value: {existingValue}"
                           // do Console.ReadLine() |> ignore
                           match!
-                            TypeCheckedExpr.Apply(
-                              TypeCheckedExpr.Apply(
-                                TypeCheckedExpr.Apply(
+                            TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                              TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                                TypeCheckedExpr.UnsafeApplyForUntypedEval(
                                   canUpdateHook,
                                   TypeCheckedExpr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
                                 ),

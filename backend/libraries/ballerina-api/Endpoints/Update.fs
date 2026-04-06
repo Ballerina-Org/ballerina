@@ -107,9 +107,9 @@ module Update =
 
               let doUpdateExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
 
-                TypeCheckedExpr.Apply(
-                  TypeCheckedExpr.Apply(
-                    TypeCheckedExpr.Lookup(
+                TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], "update")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
@@ -119,9 +119,9 @@ module Update =
                       Kind.Star
                     )
                   ),
-                  TypeCheckedExpr.TupleCons
+                  TypeCheckedExpr.UnsafeTupleConsForUntypedEval
                     [ TypeCheckedExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-                      TypeCheckedExpr.Lambda(
+                      TypeCheckedExpr.UnsafeLambdaForUntypedEval(
                         Var.Create "_",
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         updaterLambda,
@@ -234,9 +234,9 @@ module Update =
               let updaters = Value.Ext(updaters, None)
 
               let doUpdateExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
-                TypeCheckedExpr.Apply(
-                  TypeCheckedExpr.Apply(
-                    TypeCheckedExpr.Lookup(
+                TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], "updateMany")
                       |> ResolvedIdentifier.FromIdentifier
                     ),

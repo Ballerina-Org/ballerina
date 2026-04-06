@@ -174,9 +174,13 @@ module UnionDes =
                                 |> state.Throw
                           }
 
-                        let! body, body_t, body_k, _ =
+                        let! body, _ =
                           None => body // either None, or the instantiation of result_t
                           |> state.MapContext(TypeCheckContext.Updaters.Values add_var)
+
+                        let body_t = body.Type
+
+                        let body_k = body.Kind
 
                         do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
 
@@ -200,7 +204,10 @@ module UnionDes =
                     state {
                       match fallback with
                       | None -> return None
-                      | Some(fallback, fallbackT, fallbackK, _) ->
+                      | Some(fallback, _) ->
+                        let fallbackT = fallback.Type
+                        let fallbackK = fallback.Kind
+
                         do! fallbackK |> Kind.AsStar |> ofSum |> state.Ignore
                         do! TypeValue.Unify(loc0, fallbackT, result_t) |> Expr.liftUnification
                         return fallback |> Some
@@ -237,7 +244,7 @@ module UnionDes =
                     |> Seq.map (fun (k, v) -> k, v)
                     |> Seq.fold (fun state (k, v) -> Map.add k v state) handlerExprs
 
-                  return TypeCheckedExpr.UnionDes(handlerExprs, fallback, loc0, ctx.Scope), arrowValue, Kind.Star, ctx
+                  return TypeCheckedExpr.UnionDes(handlerExprs, fallback, arrowValue, Kind.Star, loc0, ctx.Scope), ctx
                 }
                 |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
             }

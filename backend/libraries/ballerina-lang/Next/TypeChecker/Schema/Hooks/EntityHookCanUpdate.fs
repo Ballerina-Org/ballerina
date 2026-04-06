@@ -31,12 +31,17 @@ module SchemaEntityHookCanUpdate =
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
-        let! can_update_expr, can_update_t, can_update_k, _ =
+        let! can_update_expr, _ =
           typeCheckExpr None can_update
           |> state.MapContext(
             TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope)
             >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
           )
+
+        let can_update_t = can_update_expr.Type
+
+        let can_update_k = can_update_expr.Kind
+
 
         do! can_update_k |> Kind.AsStar |> ofSum |> state.Ignore
 

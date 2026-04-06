@@ -192,7 +192,7 @@ module UpsertMany =
                               match ctx.RootLevelEval, entity.Hooks.CanCreate with
                               | true, Some canCreateHook ->
                                 match!
-                                  TypeCheckedExpr.Apply(
+                                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
                                     canCreateHook,
                                     TypeCheckedExpr.FromValue(
                                       schema_value.Value.Value,
@@ -215,8 +215,8 @@ module UpsertMany =
                               let! existingValueWithoutProps = stripProps db_ops existingValue entity_ref
 
                               let! updatedValue =
-                                TypeCheckedExpr.Apply(
-                                  TypeCheckedExpr.Apply(
+                                TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
                                     TypeCheckedExpr.FromValue(
                                       updateFunc,
                                       TypeValue.CreatePrimitive PrimitiveType.Unit,
@@ -272,9 +272,9 @@ module UpsertMany =
                               match ctx.RootLevelEval, entity.Hooks.CanUpdate with
                               | true, Some canUpdateHook ->
                                 match!
-                                  TypeCheckedExpr.Apply(
-                                    TypeCheckedExpr.Apply(
-                                      TypeCheckedExpr.Apply(
+                                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                                    TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                                      TypeCheckedExpr.UnsafeApplyForUntypedEval(
                                         canUpdateHook,
                                         TypeCheckedExpr.FromValue(
                                           schema_value.Value.Value,

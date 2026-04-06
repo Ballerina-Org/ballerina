@@ -9,6 +9,7 @@ module SumCons =
   open Ballerina.Reader.WithError
   open Ballerina.StdLib.Json.Reader
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Terms.Model
   open Ballerina.Errors
   open Ballerina.DSL.Next.Json.Keys
@@ -26,7 +27,8 @@ module SumCons =
           let! (case, count) = elementsJson |> JsonValue.AsPair |> reader.OfSum
           let! case = case |> JsonValue.AsInt |> reader.OfSum
           let! count = count |> JsonValue.AsInt |> reader.OfSum
-          return TypeCheckedExpr.SumCons({ Case = case; Count = count })
+
+          return TypeCheckedExpr.SumCons({ Case = case; Count = count }, TypeValue.CreateUnit(), Kind.Star)
         })
 
     static member ToJsonSumCons

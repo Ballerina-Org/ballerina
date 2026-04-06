@@ -41,7 +41,9 @@ module RecordDes =
 
         state {
           let! ctx = state.GetContext()
-          let! record_v, record_t, record_k, _ = !record_expr
+          let! record_v, _ = !record_expr
+          let record_t = record_v.Type
+          let record_k = record_v.Kind
 
           return!
             state.Either5
@@ -66,7 +68,7 @@ module RecordDes =
                         (TypeCheckState.TryResolveIdentifier(field_n, loc0))
                         (state { return fieldName |> ctx.Scope.Resolve })
 
-                    return TypeCheckedExpr.RecordDes(record_v, fieldName, loc0, ctx.Scope), field_t, field_k, ctx
+                    return TypeCheckedExpr.RecordDes(record_v, fieldName, field_t, field_k, loc0, ctx.Scope), ctx
                   }
                   |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
@@ -101,17 +103,15 @@ module RecordDes =
                     let schema_v = record_v
 
                     if fieldName.LocalName = "Entities" then
-                      return
-                        TypeCheckedExpr.EntitiesDes(schema_v, loc0, ctx.Scope),
-                        TypeValue.CreateEntities(schema_t),
-                        Kind.Star,
-                        ctx
+                      let t_res = TypeValue.CreateEntities(schema_t)
+                      let k_res = Kind.Star
+
+                      return TypeCheckedExpr.EntitiesDes(schema_v, t_res, k_res, loc0, ctx.Scope), ctx
                     elif fieldName.LocalName = "Relations" then
-                      return
-                        TypeCheckedExpr.RelationsDes(schema_v, loc0, ctx.Scope),
-                        TypeValue.CreateRelations(schema_t),
-                        Kind.Star,
-                        ctx
+                      let t_res = TypeValue.CreateRelations(schema_t)
+                      let k_res = Kind.Star
+
+                      return TypeCheckedExpr.RelationsDes(schema_v, t_res, k_res, loc0, ctx.Scope), ctx
                     else
 
                       return!
@@ -135,11 +135,12 @@ module RecordDes =
                       |> OrderedMap.tryFindWithError fieldName "entity" fieldName.Name
                       |> ofSum
 
-                    return
-                      TypeCheckedExpr.EntityDes(schema_v, fieldName, loc0, ctx.Scope),
-                      TypeValue.CreateEntity(schema_t, entity.TypeOriginal, entity.TypeWithProps, entity.Id),
-                      Kind.Star,
-                      ctx
+                    let t_res =
+                      TypeValue.CreateEntity(schema_t, entity.TypeOriginal, entity.TypeWithProps, entity.Id)
+
+                    let k_res = Kind.Star
+
+                    return TypeCheckedExpr.EntityDes(schema_v, fieldName, t_res, k_res, loc0, ctx.Scope), ctx
                   }
                   |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
               })
@@ -174,34 +175,35 @@ module RecordDes =
                         relation.To.LocalName
                       |> ofSum
 
-                    return
-                      TypeCheckedExpr.RelationDes(schema_v, fieldName, loc0, ctx.Scope),
-                      (match relation.Cardinality with
-                       | None ->
-                         TypeValue.CreateForeignKeyRelation(
-                           schema_t,
-                           fieldName,
-                           from.TypeOriginal,
-                           from.TypeWithProps,
-                           from.Id,
-                           to_.TypeOriginal,
-                           to_.TypeWithProps,
-                           to_.Id
-                         )
-                       | Some _ ->
-                         TypeValue.CreateRelation(
-                           schema_t,
-                           fieldName,
-                           relation.Cardinality,
-                           from.TypeOriginal,
-                           from.TypeWithProps,
-                           from.Id,
-                           to_.TypeOriginal,
-                           to_.TypeWithProps,
-                           to_.Id
-                         )),
-                      Kind.Star,
-                      ctx
+                    let t_res =
+                      match relation.Cardinality with
+                      | None ->
+                        TypeValue.CreateForeignKeyRelation(
+                          schema_t,
+                          fieldName,
+                          from.TypeOriginal,
+                          from.TypeWithProps,
+                          from.Id,
+                          to_.TypeOriginal,
+                          to_.TypeWithProps,
+                          to_.Id
+                        )
+                      | Some _ ->
+                        TypeValue.CreateRelation(
+                          schema_t,
+                          fieldName,
+                          relation.Cardinality,
+                          from.TypeOriginal,
+                          from.TypeWithProps,
+                          from.Id,
+                          to_.TypeOriginal,
+                          to_.TypeWithProps,
+                          to_.Id
+                        )
+
+                    let k_res = Kind.Star
+
+                    return TypeCheckedExpr.RelationDes(schema_v, fieldName, t_res, k_res, loc0, ctx.Scope), ctx
                   }
                   |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
               })
@@ -245,20 +247,40 @@ module RecordDes =
                            RelationLookupDirection.ToFrom
                          else
                            RelationLookupDirection.FromTo),
+                        TypeValue.CreateUnit(),
+                        Kind.Star,
                         loc0,
                         ctx.Scope
                       )
 
                     match target_cardinality with
                     | Cardinality.Zero ->
+                      let t_res = TypeValue.RelationLookupOption(schema_t, source_id, target', target_id)
+                      let k_res = Kind.Star
+
                       return
-                        result, TypeValue.RelationLookupOption(schema_t, source_id, target', target_id), Kind.Star, ctx
+                        { result with
+                            Type = t_res
+                            Kind = k_res },
+                        ctx
                     | Cardinality.One ->
+                      let t_res = TypeValue.RelationLookupOne(schema_t, source_id, target', target_id)
+                      let k_res = Kind.Star
+
                       return
-                        result, TypeValue.RelationLookupOne(schema_t, source_id, target', target_id), Kind.Star, ctx
+                        { result with
+                            Type = t_res
+                            Kind = k_res },
+                        ctx
                     | Cardinality.Many ->
+                      let t_res = TypeValue.RelationLookupMany(schema_t, source_id, target', target_id)
+                      let k_res = Kind.Star
+
                       return
-                        result, TypeValue.RelationLookupMany(schema_t, source_id, target', target_id), Kind.Star, ctx
+                        { result with
+                            Type = t_res
+                            Kind = k_res },
+                        ctx
                   }
                   |> state.MapError(Errors<_>.MapPriority(replaceWith ErrorPriority.High))
               })
