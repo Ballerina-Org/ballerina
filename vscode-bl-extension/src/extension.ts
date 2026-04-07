@@ -24,9 +24,18 @@ type BuildErrorDto = {
   column?: number;
 };
 
+type BuildInlayHintDto = {
+  identifier?: string;
+  type?: string;
+  file?: string;
+  line?: number;
+  column?: number;
+};
+
 type BuildResultDto = {
   success?: boolean;
   errors?: BuildErrorDto[];
+  inlayHints?: BuildInlayHintDto[];
 };
 
 const LANGUAGE_ID = "bl";
@@ -41,8 +50,16 @@ export function activate(context: vscode.ExtensionContext): void {
   output.appendLine("BL Language Tools activated.");
 
   const diagnostics = vscode.languages.createDiagnosticCollection(LANGUAGE_ID);
+  const inlayHints = new InlayHintStore();
   context.subscriptions.push(diagnostics);
-  const debouncedBuilder = createDebouncedBuildScheduler(diagnostics);
+  context.subscriptions.push(inlayHints);
+  const inlayHintsDisposable = vscode.languages.registerInlayHintsProvider(
+    { language: LANGUAGE_ID, scheme: "file" },
+    new BlInlayHintsProvider(inlayHints)
+  );
+  context.subscriptions.push(inlayHintsDisposable);
+
+  const debouncedBuilder = createDebouncedBuildScheduler(diagnostics, inlayHints);
   context.subscriptions.push({ dispose: () => debouncedBuilder.dispose() });
 
   const buildActiveDisposable = vscode.commands.registerCommand("bl.buildActiveProject", async () => {
@@ -53,7 +70,7 @@ export function activate(context: vscode.ExtensionContext): void {
       return;
     }
 
-    await runBuildFromDocument(doc, diagnostics, true);
+    await runBuildFromDocument(doc, diagnostics, inlayHints, true);
   });
 
   const showOrderDisposable = vscode.commands.registerCommand("bl.showBuildOrder", async () => {
@@ -155,21 +172,24 @@ function isBlOrBlprojDocument(doc: vscode.TextDocument): boolean {
 async function runBuildFromDocument(
   doc: vscode.TextDocument,
   diagnostics: vscode.DiagnosticCollection,
+  inlayHints: InlayHintStore,
   notifyOnSuccess: boolean
 ): Promise<void> {
   const projectPath = await resolveProjectForDocument(doc.uri.fsPath);
 
   if (!projectPath) {
     diagnostics.clear();
+    inlayHints.clearFile(doc.uri.fsPath);
     return;
   }
 
-  await runBuildFromProjectPath(projectPath, diagnostics, notifyOnSuccess);
+  await runBuildFromProjectPath(projectPath, diagnostics, inlayHints, notifyOnSuccess);
 }
 
 async function runBuildFromProjectPath(
   projectPath: string,
   diagnostics: vscode.DiagnosticCollection,
+  inlayHints: InlayHintStore,
   notifyOnSuccess: boolean
 ): Promise<void> {
 
@@ -221,6 +241,8 @@ async function runBuildFromProjectPath(
     ? parseIssuesFromServerResult(buildOutput.serverResult, projectPath)
     : parseIssues(buildOutput.stdout + "\n" + buildOutput.stderr, projectPath);
 
+  inlayHints.replaceProjectHints(projectPath, buildOutput.serverResult);
+
   applyDiagnostics(issues, diagnostics, workspaceFolder.uri.fsPath);
 
   if (buildOutput.exitCode === 0) {
@@ -236,7 +258,10 @@ async function runBuildFromProjectPath(
   }
 }
 
-function createDebouncedBuildScheduler(diagnostics: vscode.DiagnosticCollection): {
+function createDebouncedBuildScheduler(
+  diagnostics: vscode.DiagnosticCollection,
+  inlayHints: InlayHintStore
+): {
   schedule: (doc: vscode.TextDocument, notifyOnSuccess: boolean) => Promise<void>;
   isSuppressedSave: (doc: vscode.TextDocument) => boolean;
   dispose: () => void;
@@ -257,10 +282,11 @@ function createDebouncedBuildScheduler(diagnostics: vscode.DiagnosticCollection)
 
       if (!projectPath) {
         diagnostics.clear();
+        inlayHints.clearFile(doc.uri.fsPath);
         return;
       }
 
-      const key = normalizePath(projectPath);
+      const key = normalizePathKey(projectPath);
       const nextGeneration = (generations.get(key) ?? 0) + 1;
       generations.set(key, nextGeneration);
 
@@ -287,7 +313,7 @@ function createDebouncedBuildScheduler(diagnostics: vscode.DiagnosticCollection)
 
         void (async () => {
           await saveDirtyDocumentsForProject(projectPath, suppressedSaveUris);
-          await runBuildFromProjectPath(projectPath, diagnostics, notifyOnSuccess);
+          await runBuildFromProjectPath(projectPath, diagnostics, inlayHints, notifyOnSuccess);
         })();
       }, BUILD_DEBOUNCE_MS);
 
@@ -315,12 +341,12 @@ function createDebouncedBuildScheduler(diagnostics: vscode.DiagnosticCollection)
 }
 
 async function saveDirtyDocumentsForProject(projectPath: string, suppressedSaveUris: Set<string>): Promise<void> {
-  const normalizedProjectPath = normalizePath(projectPath);
+  const normalizedProjectPath = normalizePathKey(projectPath);
   let sourceFiles = new Set<string>();
 
   try {
     const orderedSources = await computeBuildOrder(projectPath);
-    sourceFiles = new Set(orderedSources.map((entry) => normalizePath(entry)));
+    sourceFiles = new Set(orderedSources.map((entry) => normalizePathKey(entry)));
   } catch {
     // If the project is malformed while typing, still try to save the project file itself.
   }
@@ -330,7 +356,7 @@ async function saveDirtyDocumentsForProject(projectPath: string, suppressedSaveU
       continue;
     }
 
-    const normalizedDocPath = normalizePath(doc.uri.fsPath);
+    const normalizedDocPath = normalizePathKey(doc.uri.fsPath);
     const shouldSave = isBlprojDocument(doc)
       ? normalizedDocPath === normalizedProjectPath
       : sourceFiles.has(normalizedDocPath);
@@ -386,13 +412,13 @@ async function findNearestBlproj(filePath: string): Promise<string | undefined> 
 }
 
 async function findProjectContainingSource(filePath: string): Promise<string | undefined> {
-  const normalizedSource = normalizePath(filePath);
+  const normalizedSource = normalizePathKey(filePath);
   const allProjects = await vscode.workspace.findFiles("**/*.blproj", "**/{node_modules,.git,out,bin,obj}/**");
 
   for (const candidate of allProjects) {
     try {
       const ordered = await computeBuildOrder(candidate.fsPath);
-      const match = ordered.some((entry) => normalizePath(entry) === normalizedSource);
+      const match = ordered.some((entry) => normalizePathKey(entry) === normalizedSource);
       if (match) {
         return candidate.fsPath;
       }
@@ -410,7 +436,7 @@ async function computeBuildOrder(projectPath: string): Promise<string[]> {
 }
 
 async function collectProjectSources(projectPath: string, visited: Set<string>): Promise<string[]> {
-  const normalizedProjectPath = normalizePath(projectPath);
+  const normalizedProjectPath = normalizePathKey(projectPath);
 
   if (visited.has(normalizedProjectPath)) {
     throw new Error(`Circular inputProjects reference detected at ${projectPath}`);
@@ -573,11 +599,13 @@ function applyDiagnostics(issues: BuildIssue[], diagnostics: vscode.DiagnosticCo
   diagnostics.clear();
 
   const grouped = new Map<string, vscode.Diagnostic[]>();
+  const workspaceRootKey = normalizePathKey(workspaceRoot);
 
   for (const issue of issues) {
     const filePath = normalizePath(issue.file);
+    const filePathKey = normalizePathKey(filePath);
 
-    if (!filePath.startsWith(normalizePath(workspaceRoot))) {
+    if (!filePathKey.startsWith(workspaceRootKey)) {
       continue;
     }
 
@@ -600,14 +628,109 @@ function applyDiagnostics(issues: BuildIssue[], diagnostics: vscode.DiagnosticCo
 }
 
 function normalizePath(p: string): string {
-  return path.normalize(p).toLowerCase();
+  return path.normalize(p);
+}
+
+function normalizePathKey(p: string): string {
+  return normalizePath(p).toLowerCase();
+}
+
+class InlayHintStore implements vscode.Disposable {
+  private readonly hintsByFile = new Map<string, vscode.InlayHint[]>();
+  private readonly projectFiles = new Map<string, Set<string>>();
+  private readonly onDidChangeEmitter = new vscode.EventEmitter<void>();
+
+  public readonly onDidChangeInlayHints: vscode.Event<void> = this.onDidChangeEmitter.event;
+
+  replaceProjectHints(projectPath: string, serverResult: BuildResultDto | undefined): void {
+    const projectKey = normalizePathKey(projectPath);
+
+    for (const fileKey of this.projectFiles.get(projectKey) ?? []) {
+      this.hintsByFile.delete(fileKey);
+    }
+
+    const nextFiles = new Set<string>();
+    const dtoHints = Array.isArray(serverResult?.inlayHints) ? serverResult.inlayHints : [];
+
+    for (const dto of dtoHints) {
+      const file = toAbsoluteFile(projectPath, dto.file ?? "");
+      const line = Number.isFinite(dto.line) ? Number(dto.line) : 1;
+      const column = Number.isFinite(dto.column) ? Number(dto.column) : 1;
+      const hintType = typeof dto.type === "string" ? dto.type.trim() : "";
+
+      if (hintType.length === 0) {
+        continue;
+      }
+
+      const identifier = typeof dto.identifier === "string" ? dto.identifier.trim() : "";
+      const label = identifier.length > 0 ? `${identifier}: ${hintType}` : hintType;
+      const position = new vscode.Position(Math.max(0, line - 1), Math.max(0, column - 1));
+      const hint = new vscode.InlayHint(position, label, vscode.InlayHintKind.Type);
+
+      hint.paddingLeft = true;
+
+      const fileKey = normalizePathKey(file);
+      const existing = this.hintsByFile.get(fileKey) ?? [];
+      existing.push(hint);
+      this.hintsByFile.set(fileKey, existing);
+      nextFiles.add(fileKey);
+    }
+
+    this.projectFiles.set(projectKey, nextFiles);
+    this.onDidChangeEmitter.fire();
+  }
+
+  clearFile(filePath: string): void {
+    const fileKey = normalizePathKey(filePath);
+
+    if (!this.hintsByFile.delete(fileKey)) {
+      return;
+    }
+
+    for (const fileSet of this.projectFiles.values()) {
+      fileSet.delete(fileKey);
+    }
+
+    this.onDidChangeEmitter.fire();
+  }
+
+  getHintsForFile(filePath: string, range: vscode.Range): vscode.InlayHint[] {
+    const fileKey = normalizePathKey(filePath);
+    const hints = this.hintsByFile.get(fileKey) ?? [];
+
+    if (hints.length === 0) {
+      return [];
+    }
+
+    return hints.filter((hint) => range.contains(hint.position));
+  }
+
+  dispose(): void {
+    this.hintsByFile.clear();
+    this.projectFiles.clear();
+    this.onDidChangeEmitter.dispose();
+  }
+}
+
+class BlInlayHintsProvider implements vscode.InlayHintsProvider {
+  constructor(private readonly inlayHints: InlayHintStore) {}
+
+  readonly onDidChangeInlayHints: vscode.Event<void> = this.inlayHints.onDidChangeInlayHints;
+
+  provideInlayHints(document: vscode.TextDocument, range: vscode.Range): vscode.InlayHint[] {
+    if (!isBlDocument(document)) {
+      return [];
+    }
+
+    return this.inlayHints.getHintsForFile(document.uri.fsPath, range);
+  }
 }
 
 function getBuildServerClient(
   cwd: string,
   output: vscode.OutputChannel
 ): BuildServerClient {
-  const nextKey = `${normalizePath(cwd)}`;
+  const nextKey = `${normalizePathKey(cwd)}`;
 
   if (!buildServerClient || buildServerClientKey !== nextKey) {
     disposeBuildServerClient();
