@@ -7,13 +7,12 @@ module OpenAPI =
   open Ballerina.Collections.Sum
   open APIUtils
   open Microsoft.AspNetCore.Http
-  open Ballerina.DSL.Next.OpenAPI
   open Ballerina.State.WithError
   open Ballerina.Errors
   open Ballerina.LocalizedErrors
   open Ballerina
-  open System.IO
   open System.Text
+  open Ballerina.DSL.Next.OpenAPIGeneration
 
   let openApi<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
     when 'customExtension: comparison and 'db: comparison>
@@ -28,41 +27,22 @@ module OpenAPI =
           sum {
             let! dbio, _, _, typeCheckContext, typeCheckState = getDbDescriptor tenantId schemaName draft context
 
-            let! _, dataModel =
-              generate_data_models dbio.Schema
-              |> State.Run((typeCheckContext, typeCheckState), Map.empty)
+            let generationState :  OpenAPIGenerationState = {
+              DataModel = Map.empty
+              Endpoints = []
+            }
+
+            let generationContext: OpenApiGenerationContext<'runtimeContext, 'db, 'customExtension> = {
+              TypeCheckContext = typeCheckContext
+              TypeCheckState = typeCheckState
+            }
+
+            return!
+              generateOpenAPI dbio.Schema (tenantId.ToString()) (schemaName.ToString()) $"DB API {tenantId}-{schemaName}" "1.0.0"
+              |> State.Run(generationContext, generationState)
               |> sum.MapError(fun (errors, _) -> errors |> Errors.MapContext(replaceWith Location.Unknown))
               |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
-
-            let! dataModels =
-              dataModel
-              |> sum.OfOption(
-                Errors.Singleton Location.Unknown (fun _ ->
-                  "Failed to generate OpenAPI data models: no state produced")
-              )
-              |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
-
-            let! _, endpoints =
-              generate_endpoints dbio.Schema
-              |> State.Run(((typeCheckContext, typeCheckState), dataModels), [])
-              |> sum.MapError(fun (errors, _) -> errors |> Errors.MapContext(replaceWith Location.Unknown))
-              |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
-
-            let! endpoints =
-              endpoints
-              |> sum.OfOption(
-                Errors.Singleton Location.Unknown (fun _ ->
-                  "Failed to generate OpenAPI data models: no state produced")
-              )
-              |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
-
-            let openApiSpec =
-              { Title = $"DB API {tenantId}-{schemaName}"
-                Version = "1.0.0"
-                Endpoints = endpoints
-                DataModels = dataModels }
-
-            return to_yaml openApiSpec
+              |> sum.Map fst
 
           }
 
