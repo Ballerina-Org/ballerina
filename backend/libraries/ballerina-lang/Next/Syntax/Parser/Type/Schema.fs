@@ -163,138 +163,168 @@ module TypeSchema =
     (parseExpr: TypeExprParser<'valueExt>)
     ()
     : Parser<SchemaRelationExpr<'valueExt>, LocalizedToken, Location, Errors<Location>> =
-    afterKeyword
-      relationKeyword
-      (parser {
-        let! relationName = singleIdentifier
-        do! openCurlyBracketOperator
-        do! fromKeyword
-        let! fromEntity = identifierLocalOrFullyQualified ()
-        let! fromPath = schemaPath ()
+    parser {
+      let! loc_fallback = parser.Location
+      let! stream = parser.Stream
 
-        do! toKeyword
-        let! toEntity = identifierLocalOrFullyQualified ()
-        let! toPath = schemaPath ()
+      let loc =
+        stream
+        |> Seq.tryHead
+        |> Option.map (fun t -> t.Location)
+        |> Option.defaultValue loc_fallback
 
-        let! hasCardinality = cardinalityKeyword |> parser.Try
+      do! relationKeyword
 
-        let! cardinality =
-          match hasCardinality with
-          | Right _ -> parser { return None }
-          | Left() ->
-            parser {
-              let! from = cardinality ()
-              do! doubleDotOperator
-              let! to_ = cardinality ()
+      return!
+        (parser {
+          let! relationName = singleIdentifier
+          do! openCurlyBracketOperator
+          do! fromKeyword
+          let! fromEntity = identifierLocalOrFullyQualified ()
+          let! fromPath = schemaPath ()
 
-              return
-                Some(
-                  { SchemaRelationCardinality.From = from
-                    To = to_ }
-                )
-            }
+          do! toKeyword
+          let! toEntity = identifierLocalOrFullyQualified ()
+          let! toPath = schemaPath ()
+
+          let! hasCardinality = cardinalityKeyword |> parser.Try
+
+          let! cardinality =
+            match hasCardinality with
+            | Right _ -> parser { return None }
+            | Left() ->
+              parser {
+                let! from = cardinality ()
+                do! doubleDotOperator
+                let! to_ = cardinality ()
+
+                return
+                  Some(
+                    { SchemaRelationCardinality.From = from
+                      To = to_ }
+                  )
+              }
 
 
-        let! hooks = TypeHooksAndProperties.relation_hooks parseExpr ()
+          let! hooks = TypeHooksAndProperties.relation_hooks parseExpr ()
 
-        let onLinking = hooks |> Map.tryFind SchemaRelationHook.Linking
-        let onLinked = hooks |> Map.tryFind SchemaRelationHook.Linked
-        let onUnlinking = hooks |> Map.tryFind SchemaRelationHook.Unlinking
-        let onUnlinked = hooks |> Map.tryFind SchemaRelationHook.Unlinked
+          let onLinking = hooks |> Map.tryFind SchemaRelationHook.Linking
+          let onLinked = hooks |> Map.tryFind SchemaRelationHook.Linked
+          let onUnlinking = hooks |> Map.tryFind SchemaRelationHook.Unlinking
+          let onUnlinked = hooks |> Map.tryFind SchemaRelationHook.Unlinked
 
-        do! closeCurlyBracketOperator
+          do! closeCurlyBracketOperator
 
-        return
-          { SchemaRelationExpr.Name = { SchemaRelationName.Name = relationName }
-            From = (fromEntity, fromPath)
-            To = (toEntity, toPath)
-            Cardinality = cardinality
-            Hooks =
-              { OnLinking = onLinking
-                OnLinked = onLinked
-                OnUnlinking = onUnlinking
-                OnUnlinked = onUnlinked } }
-      })
+          return
+            { SchemaRelationExpr.Name = { SchemaRelationName.Name = relationName }
+              Location = loc
+              From = (fromEntity, fromPath)
+              To = (toEntity, toPath)
+              Cardinality = cardinality
+              Hooks =
+                { OnLinking = onLinking
+                  OnLinked = onLinked
+                  OnUnlinking = onUnlinking
+                  OnUnlinked = onUnlinked } }
+        })
+        |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+    }
+    |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
   let entity
     (parseExpr: TypeExprParser<'valueExt>)
     (parseTypeDecl: unit -> TypeDeclParser<'valueExt>)
     ()
     : Parser<SchemaEntityExpr<'valueExt>, LocalizedToken, Location, Errors<Location>> =
-    afterKeyword
-      entityKeyword
-      (parser {
-        let! entityName = singleIdentifier
-        do! openCurlyBracketOperator
+    parser {
+      let! loc_fallback = parser.Location
+      let! stream = parser.Stream
 
-        do!
-          typeKeyword
-          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
-          |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+      let loc =
+        stream
+        |> Seq.tryHead
+        |> Option.map (fun t -> t.Location)
+        |> Option.defaultValue loc_fallback
 
-        let! entityType = parseTypeDecl ()
-        let! idType = parseTypeDecl ()
+      do! entityKeyword
 
-        let! properties = TypeHooksAndProperties.entity_properties parseExpr schemaPath parseTypeDecl ()
+      return!
+        (parser {
+          let! entityName = singleIdentifier
+          do! openCurlyBracketOperator
 
-        let! vectors = TypeHooksAndProperties.entity_vectors parseExpr ()
+          do!
+            typeKeyword
+            |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+            |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
-        let! hooks = TypeHooksAndProperties.entity_hooks parseExpr ()
-        let onCreating = hooks |> Map.tryFind SchemaEntityHook.Creating
-        let onCreated = hooks |> Map.tryFind SchemaEntityHook.Created
-        let onUpdating = hooks |> Map.tryFind SchemaEntityHook.Updating
-        let onUpdated = hooks |> Map.tryFind SchemaEntityHook.Updated
-        let onDeleting = hooks |> Map.tryFind SchemaEntityHook.Deleting
-        let onDeleted = hooks |> Map.tryFind SchemaEntityHook.Deleted
-        let onBackground = hooks |> Map.tryFind SchemaEntityHook.Background
-        let canCreate = hooks |> Map.tryFind SchemaEntityHook.CanCreate
-        let canRead = hooks |> Map.tryFind SchemaEntityHook.CanRead
-        let canUpdate = hooks |> Map.tryFind SchemaEntityHook.CanUpdate
-        let canDelete = hooks |> Map.tryFind SchemaEntityHook.CanDelete
+          let! entityType = parseTypeDecl ()
+          let! idType = parseTypeDecl ()
 
-        let! hasUnexpectedLet = letKeyword |> parser.Lookahead |> parser.Try
+          let! properties = TypeHooksAndProperties.entity_properties parseExpr schemaPath parseTypeDecl ()
 
-        match hasUnexpectedLet with
-        | Left _ ->
-          let! loc = parser.Location
-          let! stream = parser.Stream
+          let! vectors = TypeHooksAndProperties.entity_vectors parseExpr ()
 
-          let loc =
-            match stream |> Seq.tryHead with
-            | Some token -> token.Location
-            | None -> loc
+          let! hooks = TypeHooksAndProperties.entity_hooks parseExpr ()
+          let onCreating = hooks |> Map.tryFind SchemaEntityHook.Creating
+          let onCreated = hooks |> Map.tryFind SchemaEntityHook.Created
+          let onUpdating = hooks |> Map.tryFind SchemaEntityHook.Updating
+          let onUpdated = hooks |> Map.tryFind SchemaEntityHook.Updated
+          let onDeleting = hooks |> Map.tryFind SchemaEntityHook.Deleting
+          let onDeleted = hooks |> Map.tryFind SchemaEntityHook.Deleted
+          let onBackground = hooks |> Map.tryFind SchemaEntityHook.Background
+          let canCreate = hooks |> Map.tryFind SchemaEntityHook.CanCreate
+          let canRead = hooks |> Map.tryFind SchemaEntityHook.CanRead
+          let canUpdate = hooks |> Map.tryFind SchemaEntityHook.CanUpdate
+          let canDelete = hooks |> Map.tryFind SchemaEntityHook.CanDelete
 
-          return!
-            (fun () ->
-              "Error: unexpected declaration in entity body. Expected property, vector, hook, or closing brace")
-            |> Errors.Singleton loc
-            |> Errors.MapPriority(replaceWith ErrorPriority.High)
-            |> parser.Throw
-        | Right _ -> ()
+          let! hasUnexpectedLet = letKeyword |> parser.Lookahead |> parser.Try
 
-        let entityHooksExpr: SchemaEntityHooksExpr<'valueExt> =
-          { OnCreating = onCreating
-            OnCreated = onCreated
-            OnUpdating = onUpdating
-            OnUpdated = onUpdated
-            OnDeleting = onDeleting
-            OnDeleted = onDeleted
-            OnBackground = onBackground
-            CanCreate = canCreate
-            CanRead = canRead
-            CanUpdate = canUpdate
-            CanDelete = canDelete }
+          match hasUnexpectedLet with
+          | Left _ ->
+            let! loc = parser.Location
+            let! stream = parser.Stream
 
-        do! closeCurlyBracketOperator
+            let loc =
+              match stream |> Seq.tryHead with
+              | Some token -> token.Location
+              | None -> loc
 
-        return
-          { SchemaEntityExpr.Name = { SchemaEntityName.Name = entityName }
-            Type = entityType
-            Id = idType
-            Properties = properties
-            Vectors = vectors
-            Hooks = entityHooksExpr }
-      })
+            return!
+              (fun () ->
+                "Error: unexpected declaration in entity body. Expected property, vector, hook, or closing brace")
+              |> Errors.Singleton loc
+              |> Errors.MapPriority(replaceWith ErrorPriority.High)
+              |> parser.Throw
+          | Right _ -> ()
+
+          let entityHooksExpr: SchemaEntityHooksExpr<'valueExt> =
+            { OnCreating = onCreating
+              OnCreated = onCreated
+              OnUpdating = onUpdating
+              OnUpdated = onUpdated
+              OnDeleting = onDeleting
+              OnDeleted = onDeleted
+              OnBackground = onBackground
+              CanCreate = canCreate
+              CanRead = canRead
+              CanUpdate = canUpdate
+              CanDelete = canDelete }
+
+          do! closeCurlyBracketOperator
+
+          return
+            { SchemaEntityExpr.Name = { SchemaEntityName.Name = entityName }
+              Location = loc
+              Type = entityType
+              Id = idType
+              Properties = properties
+              Vectors = vectors
+              Hooks = entityHooksExpr }
+        })
+        |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+    }
+    |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
   let entity_extension
     (parseExpr: TypeExprParser<'valueExt>)

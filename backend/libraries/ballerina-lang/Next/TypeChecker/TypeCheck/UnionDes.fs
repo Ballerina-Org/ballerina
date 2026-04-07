@@ -220,7 +220,7 @@ module UnionDes =
                     let union_cases = union_t |> OrderedMap.keys |> Set.ofSeq
 
                     if handlers.Count <> union_cases.Count then
-                      return! (fun () -> $"Error: incomplete pattern matching") |> error |> state.Throw
+                      return! (fun () -> "Error: incomplete union matching") |> error |> state.Throw
 
                   let! result_t =
                     TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0 result_t

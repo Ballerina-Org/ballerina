@@ -1,6 +1,7 @@
 namespace Ballerina.DSL.Next.Types.TypeChecker
 
 module QueryCaseRecordDes =
+  open System
   open Ballerina
   open Ballerina.State.WithError
   open Ballerina.Collections.Map
@@ -16,6 +17,13 @@ module QueryCaseRecordDes =
   open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.DSL.Next.Types.TypeChecker.Eval
   open Ballerina.DSL.Next.Types.TypeChecker.LiftOtherSteps
+
+  let private formatAvailableFieldNames (fieldNames: seq<string>) : string =
+    let names = fieldNames |> Seq.distinct |> Seq.sort |> Seq.toList
+
+    match names with
+    | [] -> "none"
+    | _ -> String.Join(", ", names)
 
   let typeCheckQueryRecordDes<'valueExt when 'valueExt: comparison>
     loc0
@@ -40,11 +48,18 @@ module QueryCaseRecordDes =
             return!
               state {
                 let! field_t =
+                  let availableFields =
+                    record_t
+                    |> Map.toSeq
+                    |> Seq.map (fun (fieldId, _fieldType) -> fieldId.Name)
+                    |> formatAvailableFieldNames
+
                   record_t
                   |> Map.tryFindWithError
                     (field.LocalName |> LocalIdentifier.Create)
-                    "field in query record desugarization"
-                    (fun () -> $"Type checking error: Field {field} not found")
+                    "field in query record lookup"
+                    (fun () ->
+                      $"Type checking error: record lookup failed, field %s{field.LocalName} not found. Available fields: %s{availableFields}")
                     ()
                   |> ofSum
 
@@ -75,11 +90,17 @@ module QueryCaseRecordDes =
                     |> Expr.liftTypeEval
 
                   let! field_t, _ =
+                    let availableFields =
+                      record_t
+                      |> OrderedMap.toSeq
+                      |> Seq.map (fun (fieldSym, _fieldType) -> fieldSym.Name.LocalName)
+                      |> formatAvailableFieldNames
+
                     record_t
                     |> OrderedMap.tryFindWithError
                       field_sym
-                      "field in query record desugarization"
-                      ($"Type checking error: Field {field} not found in record type {record_t}")
+                      "field in query record lookup"
+                      ($"Type checking error: record lookup failed, field %s{field.LocalName} not found. Available fields: %s{availableFields}")
                     |> ofSum
 
                   return
@@ -91,12 +112,18 @@ module QueryCaseRecordDes =
                   let! record_t = json_t |> TypeValue.AsRecord |> ofSum
 
                   let! _, (field_t, _) =
+                    let availableFields =
+                      record_t
+                      |> OrderedMap.toSeq
+                      |> Seq.map (fun (fieldSym, _fieldType) -> fieldSym.Name.LocalName)
+                      |> formatAvailableFieldNames
+
                     record_t
                     |> OrderedMap.toSeq
                     |> Seq.tryFind (fun (field_sym, _) -> field_sym.Name = field)
                     |> sum.OfOption(
                       Errors.Singleton loc0 (fun () ->
-                        $"Type checking error: Field {field} not found in record type {record_t}")
+                        $"Type checking error: record lookup failed, field %s{field.LocalName} not found. Available fields: %s{availableFields}")
                     )
                     |> state.OfSum
 

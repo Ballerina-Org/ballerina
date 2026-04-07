@@ -559,12 +559,14 @@ module SchemaTypeEval =
                 let fromPath = r.From |> snd
                 let toPath = r.To |> snd
 
+                let r_loc = r.Location
+
                 let! fromEntity =
                   all_entities
                   |> OrderedMap.tryFind ((r.From |> fst).LocalName |> SchemaEntityName.Create)
                   |> Sum.fromOption (fun () ->
                     (fun () -> $"Error: cannot find entity {r.From |> fst} for relation {r.Name.Name}")
-                    |> Errors.Singleton loc0)
+                    |> Errors.Singleton r_loc)
                   |> state.OfSum
 
                 let! toEntity =
@@ -572,17 +574,17 @@ module SchemaTypeEval =
                   |> OrderedMap.tryFind ((r.To |> fst).LocalName |> SchemaEntityName.Create)
                   |> Sum.fromOption (fun () ->
                     (fun () -> $"Error: cannot find entity {r.To |> fst} for relation {r.Name.Name}")
-                    |> Errors.Singleton loc0)
+                    |> Errors.Singleton r_loc)
                   |> state.OfSum
 
                 match fromPath with
                 | Some fromPath ->
-                  do! SchemaPathValidation.validatePath (!) context loc0 fromEntity.TypeOriginal toEntity.Id fromPath
+                  do! SchemaPathValidation.validatePath (!) context r_loc fromEntity.TypeOriginal toEntity.Id fromPath
                 | None -> ()
 
                 match toPath with
                 | Some toPath ->
-                  do! SchemaPathValidation.validatePath (!) context loc0 toEntity.TypeOriginal fromEntity.Id toPath
+                  do! SchemaPathValidation.validatePath (!) context r_loc toEntity.TypeOriginal fromEntity.Id toPath
                 | None -> ()
 
                 return
