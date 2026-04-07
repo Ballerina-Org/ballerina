@@ -122,7 +122,8 @@ module Patterns =
         UnionCases = Map.empty
         RecordFields = Map.empty
         Symbols = TypeExprEvalSymbols.Empty
-        Vars = UnificationState.Empty }
+        Vars = UnificationState.Empty
+        InlayHints = Map.empty }
 
     static member Create(bindings: TypeBindings<'valueExt>, symbols: TypeExprEvalSymbols) : TypeCheckState<'valueExt> =
       { TypeCheckState.Empty with
@@ -241,6 +242,10 @@ module Patterns =
       {| Vars =
           fun (u: Updater<UnificationState<'valueExt>>) (c: TypeCheckState<'valueExt>) -> { c with Vars = c.Vars |> u }
          Bindings = fun u (c: TypeCheckState<'valueExt>) -> { c with Bindings = c.Bindings |> u }
+         InlayHints =
+          fun u (c: TypeCheckState<'valueExt>) ->
+            { c with
+                InlayHints = c.InlayHints |> u }
          UnionCases =
           fun u (c: TypeCheckState<'valueExt>) ->
             { c with
@@ -320,6 +325,19 @@ module Patterns =
       state {
         do! state.SetState(TypeCheckState.Updaters.Symbols.ResolvedIdentifiers(Map.add t_x x))
         do! state.SetState(TypeCheckState.Updaters.Symbols.Types(Map.add x t_x))
+      }
+
+    static member bindInlayHint(location: Location, identifier: string, hintType: TypeValue<'valueExt>) =
+      state {
+        do!
+          state.SetState(
+            TypeCheckState.Updaters.InlayHints(
+              Map.add
+                location
+                { Identifier = identifier
+                  Type = hintType }
+            )
+          )
       }
 
   type UnificationContext<'valueExt when 'valueExt: comparison> with

@@ -11,6 +11,7 @@ open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.Runners
 open Ballerina.Errors
 open Ballerina.LocalizedErrors
+open Ballerina.DSL.Next.Types.TypeChecker.Model
 
 type BuildErrorDTO =
   { Message: string
@@ -18,9 +19,17 @@ type BuildErrorDTO =
     Line: int
     Column: int }
 
+type InlayHintDTO =
+  { Identifier: string
+    Type: string
+    File: string
+    Line: int
+    Column: int }
+
 type BuildResultDTO =
   { Success: bool
-    Errors: BuildErrorDTO[] }
+    Errors: BuildErrorDTO[]
+    InlayHints: InlayHintDTO[] }
 
 module Cli =
 
@@ -73,13 +82,16 @@ module BuildServer =
       |> Sum.Right
 
   let buildResultFromPath
-    (buildProjectOnly: ProjectBuildConfiguration -> Sum<unit, Errors<Location>>)
+    (buildProjectOnly: ProjectBuildConfiguration -> Sum<InlayHintDTO[], Errors<Location>>)
     (path: string)
     : BuildResultDTO =
     match projectFromPath path with
     | Left project ->
       match buildProjectOnly project with
-      | Left() -> { Success = true; Errors = [||] }
+      | Left inlayHints ->
+        { Success = true
+          Errors = [||]
+          InlayHints = inlayHints }
       | Right errors ->
         let errorDtos =
           (Errors<_>.FilterHighestPriorityOnly errors).Errors()
@@ -91,7 +103,9 @@ module BuildServer =
               Column = e.Context.Column })
           |> List.toArray
 
-        { Success = false; Errors = errorDtos }
+        { Success = false
+          Errors = errorDtos
+          InlayHints = [||] }
     | Right errors ->
       let errorDtos =
         (Errors<_>.FilterHighestPriorityOnly errors).Errors()
@@ -103,7 +117,21 @@ module BuildServer =
             Column = e.Context.Column })
         |> List.toArray
 
-      { Success = false; Errors = errorDtos }
+      { Success = false
+        Errors = errorDtos
+        InlayHints = [||] }
+
+  let inlayHintDtosFromTypeCheckState (state: TypeCheckState<'valueExt>) : InlayHintDTO[] =
+    state.InlayHints
+    |> Map.toList
+    |> List.sortBy (fun (loc, _) -> loc.File, loc.Line, loc.Column)
+    |> List.map (fun (loc, hint) ->
+      { Identifier = hint.Identifier
+        Type = hint.Type.ToString()
+        File = loc.File
+        Line = loc.Line
+        Column = loc.Column })
+    |> List.toArray
 
   let runServerLoop (buildResultForPath: string -> BuildResultDTO) : int =
     let jsonOptions =

@@ -59,12 +59,17 @@ module Model =
   type UnificationState<'valueExt when 'valueExt: comparison> =
     { Classes: EquivalenceClasses<TypeVar, TypeValue<'valueExt>> }
 
+  type InlayHint<'valueExt when 'valueExt: comparison> =
+    { Identifier: string
+      Type: TypeValue<'valueExt> }
+
   type TypeCheckState<'valueExt when 'valueExt: comparison> =
     { Bindings: TypeBindings<'valueExt>
       UnionCases: UnionCaseConstructorBindings<'valueExt>
       RecordFields: RecordFieldBindings<'valueExt>
       Symbols: TypeExprEvalSymbols
-      Vars: UnificationState<'valueExt> }
+      Vars: UnificationState<'valueExt>
+      InlayHints: Map<Location, InlayHint<'valueExt>> }
 
   type TypeValueKindEval<'valueExt when 'valueExt: comparison> =
     Option<ExprTypeLetBindingName>

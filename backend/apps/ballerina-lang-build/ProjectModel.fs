@@ -9,7 +9,11 @@ module ProjectModel =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.TypeChecker.Model
+  open Ballerina.DSL.Next.Types.TypeChecker.Patterns
+  open Ballerina.DSL.Next.Types.TypeChecker.Eval
   open Ballerina.DSL.Next.Types.TypeChecker.Expr
+  open Ballerina.DSL.Next.Types.TypeChecker.LiftOtherSteps
+  open Ballerina.DSL.Next.Unification
   open Ballerina.Parser
   open Ballerina.DSL.Next.Syntax
   open System.IO
@@ -61,6 +65,59 @@ module ProjectModel =
             Errors<Location>
            > }
 
+  type InlayHint<'valueExt when 'valueExt: comparison> with
+    member this.AsString() =
+      $"%s{this.Identifier}: %s{this.Type.ToString()}"
+
+  type TypeCheckState<'valueExt when 'valueExt: comparison> with
+    static member InstantiateInlayHints
+      (config: TypeEvalConfig<'valueExt>)
+      : State<TypeCheckState<'valueExt>, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>> =
+      state {
+        let typeCheckExpr =
+          Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>.TypeCheck config
+
+        let! initialState = state.GetState()
+
+        let! inlayHints =
+          initialState.InlayHints
+          |> Map.toList
+          |> List.map (fun (location, hint) ->
+            state {
+              let! currentState = state.GetState()
+              let! currentContext = state.GetContext()
+
+              let instantiatedHint =
+                hint.Type
+                |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) location
+                |> State.Run(TypeInstantiateContext.FromEvalContext(currentContext), currentState)
+
+              match instantiatedHint with
+              | Left(instantiatedType, nextState) ->
+                do!
+                  nextState
+                  |> Option.map (fun updatedState -> state.SetState(replaceWith updatedState))
+                  |> state.RunOption
+                  |> state.Map ignore
+
+                return location, { hint with Type = instantiatedType }
+              | Right _ -> return location, hint
+            })
+          |> state.All
+          |> state.Map Map.ofList
+
+        let! currentState = state.GetState()
+
+        let nextState =
+          currentState |> TypeCheckState.Updaters.InlayHints(replaceWith inlayHints)
+
+        do! state.SetState(replaceWith nextState)
+        return nextState
+      }
+
+    static member RenderInlayHints(state: TypeCheckState<'valueExt>) : Map<Location, string> =
+      state.InlayHints |> Map.map (fun _ hint -> hint.AsString())
+
   type ProjectBuildConfiguration with
     static member BuildCachedWithFileOutputs<'valueExt when 'valueExt: comparison>
       (config: TypeEvalConfig<'valueExt>)
@@ -110,6 +167,12 @@ module ProjectModel =
 
         let expressionsWithTypesInOrder =
           expressionsWithTypes |> NonEmptyList.rev |> NonEmptyList.ToList
+
+        let! finalState =
+          TypeCheckState.InstantiateInlayHints config
+          |> State.Run(finalContext, finalState)
+          |> sum.MapError fst
+          |> sum.Map fst
 
         let filesInOrder = project.Files |> NonEmptyList.ToList
 
