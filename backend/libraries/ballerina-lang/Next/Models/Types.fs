@@ -310,6 +310,7 @@ module Model =
 
   and SchemaEntityExpr<'valueExt> =
     { Name: SchemaEntityName
+      Location: Location
       Type: TypeExpr<'valueExt>
       Id: TypeExpr<'valueExt>
       Properties: List<SchemaEntityPropertyExpr<'valueExt>>
@@ -404,6 +405,7 @@ module Model =
 
   and SchemaRelationExpr<'valueExt> =
     { Name: SchemaRelationName
+      Location: Location
       From: Identifier * Option<SchemaPathExpr>
       To: Identifier * Option<SchemaPathExpr>
       Cardinality: Option<SchemaRelationCardinality>

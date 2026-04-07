@@ -82,37 +82,45 @@ module Query =
             'valueExt
            >)
       (depth: int)
-      (loc0: Location)
+      (_loc0: Location)
       : QueryTypeChecker<ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun identifiers_context expr ->
-        let (!) =
-          ExprQueryExpr.TypeCheckQueryExpr typeCheckQuery (depth + 1) loc0 identifiers_context
+        let recurExpr
+          (nextExpr: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
+          : QueryTypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt> =
+          ExprQueryExpr.TypeCheckQueryExpr typeCheckQuery (depth + 1) nextExpr.Location identifiers_context nextExpr
         // let (=>) c e = typeCheckExpr c e
 
         state {
           match expr.Expr with
-          | ExprQueryExprRec.QueryTupleCons args -> return! typeCheckQueryTupleCons (fun arg -> !arg) expr args
+          | ExprQueryExprRec.QueryTupleCons args -> return! typeCheckQueryTupleCons recurExpr expr args
           | ExprQueryExprRec.QueryLookup(Identifier.FullyQualified _ as l) ->
-            return! typeCheckQueryLookupFullyQualified loc0 identifiers_context.Closure expr l
+            return! typeCheckQueryLookupFullyQualified expr.Location identifiers_context.Closure expr l
           | ExprQueryExprRec.QueryLookup(Identifier.LocalScope v as l) ->
             return!
-              typeCheckQueryLookupLocalScope loc0 identifiers_context.Iterators identifiers_context.Closure expr v l
+              typeCheckQueryLookupLocalScope
+                expr.Location
+                identifiers_context.Iterators
+                identifiers_context.Closure
+                expr
+                v
+                l
 
           | ExprQueryExprRec.QueryTupleDes(tuple, item, _) ->
-            return! typeCheckQueryTupleDes loc0 (fun arg -> !arg) expr tuple item
+            return! typeCheckQueryTupleDes expr.Location recurExpr expr tuple item
           | ExprQueryExprRec.QueryRecordDes(record, field, _) ->
-            return! typeCheckQueryRecordDes loc0 (fun arg -> !arg) expr record field
+            return! typeCheckQueryRecordDes expr.Location recurExpr expr record field
           | ExprQueryExprRec.QueryConstant c -> return! typeCheckQueryConstant expr c
 
           | ExprQueryExprRec.QueryApply({ Expr = ExprQueryExprRec.QueryIntrinsic(intrinsic, _) }, arg) ->
-            return! typeCheckQueryApplyIntrinsic loc0 (fun arg -> !arg) expr intrinsic arg
+            return! typeCheckQueryApplyIntrinsic expr.Location recurExpr expr intrinsic arg
 
           | ExprQueryExprRec.QueryClosureValue(v, t) -> return! typeCheckQueryClosureValue expr v t
           | ExprQueryExprRec.QueryCount q -> return! typeCheckQueryCount typeCheckQuery expr q
           | ExprQueryExprRec.QueryExists q -> return! typeCheckQueryExists typeCheckQuery expr q
           | ExprQueryExprRec.QueryArray q -> return! typeCheckQueryArray typeCheckQuery expr q
           | ExprQueryExprRec.QueryConditional(cond, thenExpr, elseExpr) ->
-            return! typeCheckQueryConditional loc0 (fun arg -> !arg) expr cond thenExpr elseExpr
+            return! typeCheckQueryConditional expr.Location recurExpr expr cond thenExpr elseExpr
           | _ -> return! typeCheckQueryUnsupported expr
         }
 
@@ -342,7 +350,7 @@ module Query =
                           ExprQueryExpr.TypeCheckQueryExpr
                             typeCheckQuery
                             0
-                            loc0
+                            join_expr.Left.Location
                             queryTypeCheckingContext
                             join_expr.Left
 
@@ -350,7 +358,7 @@ module Query =
                           ExprQueryExpr.TypeCheckQueryExpr
                             typeCheckQuery
                             0
-                            loc0
+                            join_expr.Right.Location
                             queryTypeCheckingContext
                             join_expr.Right
 
@@ -392,7 +400,12 @@ module Query =
                 | Some where_expr ->
 
                   let! where_expr', where_expr'_t =
-                    ExprQueryExpr.TypeCheckQueryExpr typeCheckQuery 0 loc0 queryTypeCheckingContext where_expr
+                    ExprQueryExpr.TypeCheckQueryExpr
+                      typeCheckQuery
+                      0
+                      where_expr.Location
+                      queryTypeCheckingContext
+                      where_expr
 
                   match where_expr'_t with
                   | TypeQueryRow.PrimitiveType(PrimitiveType.Bool, _)
@@ -406,7 +419,12 @@ module Query =
               }
 
             let! select_expr', select_expr'_t =
-              ExprQueryExpr.TypeCheckQueryExpr typeCheckQuery 0 loc0 queryTypeCheckingContext select_expr
+              ExprQueryExpr.TypeCheckQueryExpr
+                typeCheckQuery
+                0
+                select_expr.Location
+                queryTypeCheckingContext
+                select_expr
 
             let! orderby_expr' =
               state {
@@ -414,7 +432,12 @@ module Query =
                 | None -> return None
                 | Some(orderby_expr, direction) ->
                   let! orderby_expr', _ =
-                    ExprQueryExpr.TypeCheckQueryExpr typeCheckQuery 0 loc0 queryTypeCheckingContext orderby_expr
+                    ExprQueryExpr.TypeCheckQueryExpr
+                      typeCheckQuery
+                      0
+                      orderby_expr.Location
+                      queryTypeCheckingContext
+                      orderby_expr
 
                   return Some(orderby_expr', direction)
               }
@@ -425,7 +448,12 @@ module Query =
                 | None -> return None
                 | Some distinct_expr ->
                   let! distinct_expr', _distinct_expr_t =
-                    ExprQueryExpr.TypeCheckQueryExpr typeCheckQuery 0 loc0 queryTypeCheckingContext distinct_expr
+                    ExprQueryExpr.TypeCheckQueryExpr
+                      typeCheckQuery
+                      0
+                      distinct_expr.Location
+                      queryTypeCheckingContext
+                      distinct_expr
 
                   return Some distinct_expr'
               }
