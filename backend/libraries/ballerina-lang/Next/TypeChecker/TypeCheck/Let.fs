@@ -78,5 +78,7 @@ module Let =
           let t2 = e2.Type
           let k2 = e2.Kind
 
+          do! TypeCheckState.bindInlayHint (loc0, x.Name, t1)
+
           return TypeCheckedExpr.Let(x, t1, e1, e2, t2, k2, loc0, ctx.Scope), ctx_e2
         }

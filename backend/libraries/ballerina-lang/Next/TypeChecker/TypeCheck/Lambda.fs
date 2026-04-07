@@ -130,6 +130,8 @@ module Lambda =
             |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
+          do! TypeCheckState.bindInlayHint (loc0, x.Name, fst var_type)
+
           return TypeCheckedExpr.Lambda(x, t_x, body, t_body, t_res, Kind.Star, loc0, ctx.Scope), ctx
         }
 // |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `fun {x.Name} -> ...`"))
