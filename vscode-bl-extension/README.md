@@ -15,5 +15,6 @@ Features:
 ## Notes
 
 - Default build command executed (persistent process):
-  `dotnet run --project <workspace>/src/playgrounds/bise-sql/bise-sql.fsproj -- server`
+  `ballerina server`
+- The `ballerina` executable must be installed and available in the `PATH`
 - For each build, the extension writes `<project.blproj>` to server stdin and reads a JSON result from stdout.

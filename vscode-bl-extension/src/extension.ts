@@ -30,7 +30,7 @@ type BuildResultDto = {
 };
 
 const LANGUAGE_ID = "bl";
-const DIAGNOSTIC_SOURCE = "bise-sql";
+const DIAGNOSTIC_SOURCE = "ballerina-language-tools";
 const BUILD_DEBOUNCE_MS = 50;
 let buildRunSequence = 0;
 let buildServerClient: BuildServerClient | undefined;
@@ -177,29 +177,11 @@ async function runBuildFromProjectPath(
   if (!workspaceFolder) {
     return;
   }
-
-  const biseSqlProject = path.join(workspaceFolder.uri.fsPath, "src", "playgrounds", "bise-sql", "bise-sql.fsproj");
-
-  try {
-    await fs.access(biseSqlProject);
-  } catch {
-    void vscode.window.showWarningMessage("Could not find bise-sql.fsproj under src/playgrounds/bise-sql.");
-    return;
-  }
-
   const output = getOutputChannel();
   output.clear();
   const runId = ++buildRunSequence;
   output.appendLine(`[Run #${runId}] Building ${vscode.workspace.asRelativePath(projectPath)}...`);
-  const commandArgs = [
-    "run",
-    "--project",
-    biseSqlProject,
-    "--",
-    "--file",
-    projectPath
-  ];
-  output.appendLine(`[Run #${runId}] Command: ${formatCommandForLog("dotnet", commandArgs)}`);
+
   output.appendLine(`[Run #${runId}] Working directory: ${workspaceFolder.uri.fsPath}`);
   const startedAt = new Date();
   const startedAtMs = Date.now();
@@ -210,8 +192,7 @@ async function runBuildFromProjectPath(
   let buildOutput: { stdout: string; stderr: string; exitCode: number; serverResult?: BuildResultDto };
 
   try {
-    buildOutput = await runBiseSqlBuild(
-      biseSqlProject,
+    buildOutput = await runBallerinaSqlBuild(
       projectPath,
       workspaceFolder.uri.fsPath,
       output,
@@ -220,7 +201,7 @@ async function runBuildFromProjectPath(
   } catch (error) {
     const elapsedMs = Date.now() - startedAtMs;
     output.appendLine(`[Run #${runId}] Failed after: ${formatDurationForLog(elapsedMs)}`);
-    void vscode.window.showErrorMessage(`Failed to execute bise-sql build: ${toMessage(error)}`);
+    void vscode.window.showErrorMessage(`Failed to execute ballerina build: ${toMessage(error)}`);
     return;
   }
 
@@ -473,14 +454,13 @@ async function readProjectFile(projectPath: string): Promise<ProjectFileDto> {
   return parsed;
 }
 
-async function runBiseSqlBuild(
-  biseSqlProjectPath: string,
+async function runBallerinaSqlBuild(
   projectFilePath: string,
   cwd: string,
   output: vscode.OutputChannel,
   runId: number
 ): Promise<{ stdout: string; stderr: string; exitCode: number; serverResult?: BuildResultDto }> {
-  const serverClient = getBuildServerClient(biseSqlProjectPath, cwd, output);
+  const serverClient = getBuildServerClient(cwd, output);
 
   try {
     const serverResult = await serverClient.build(projectFilePath);
@@ -497,53 +477,8 @@ async function runBiseSqlBuild(
     };
   } catch (serverError) {
     output.appendLine(`[Run #${runId}] Server mode failed; falling back to one-shot build: ${toMessage(serverError)}`);
-    return runBiseSqlBuildOneShot(biseSqlProjectPath, projectFilePath, cwd);
+    throw serverError;
   }
-}
-
-async function runBiseSqlBuildOneShot(
-  biseSqlProjectPath: string,
-  projectFilePath: string,
-  cwd: string
-): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-  return new Promise((resolve, reject) => {
-    const args = [
-      "run",
-      "--project",
-      biseSqlProjectPath,
-      "--",
-      "--file",
-      projectFilePath
-    ];
-
-    const env = (
-      (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env
-    ) ?? undefined;
-    const child = spawn("dotnet", args, { cwd, env });
-
-    let stdout = "";
-    let stderr = "";
-
-    child.stdout.on("data", (chunk: Uint8Array | string) => {
-      stdout += chunk.toString();
-    });
-
-    child.stderr.on("data", (chunk: Uint8Array | string) => {
-      stderr += chunk.toString();
-    });
-
-    child.on("error", (err: unknown) => {
-      reject(err);
-    });
-
-    child.on("close", (code: number | null) => {
-      resolve({
-        stdout,
-        stderr,
-        exitCode: code ?? 1
-      });
-    });
-  });
 }
 
 function parseIssuesFromServerResult(serverResult: BuildResultDto, projectPath: string): BuildIssue[] {
@@ -669,15 +604,14 @@ function normalizePath(p: string): string {
 }
 
 function getBuildServerClient(
-  biseSqlProjectPath: string,
   cwd: string,
   output: vscode.OutputChannel
 ): BuildServerClient {
-  const nextKey = `${normalizePath(biseSqlProjectPath)}::${normalizePath(cwd)}`;
+  const nextKey = `${normalizePath(cwd)}`;
 
   if (!buildServerClient || buildServerClientKey !== nextKey) {
     disposeBuildServerClient();
-    buildServerClient = new BuildServerClient(biseSqlProjectPath, cwd, output);
+    buildServerClient = new BuildServerClient(cwd, output);
     buildServerClientKey = nextKey;
   }
 
@@ -701,7 +635,6 @@ class BuildServerClient {
   private requestChain: Promise<void> = Promise.resolve();
 
   constructor(
-    private readonly biseSqlProjectPath: string,
     private readonly cwd: string,
     private readonly output: vscode.OutputChannel
   ) {}
@@ -734,13 +667,13 @@ class BuildServerClient {
       return;
     }
 
-    const args = ["run", "--project", this.biseSqlProjectPath, "--", "server"];
+    const args = ["server"];
     const env = (
       (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env
     ) ?? undefined;
-    const child = spawn("dotnet", args, { cwd: this.cwd, env, stdio: "pipe" });
+    const child = spawn("ballerina", args, { cwd: this.cwd, env, stdio: "pipe" });
 
-    this.output.appendLine(`[Server] Starting: ${formatCommandForLog("dotnet", args)}`);
+    this.output.appendLine(`[Server] Starting: ${formatCommandForLog("ballerina", args)}`);
 
     const stdoutReader = createInterface({ input: child.stdout });
     this.stdoutReader = stdoutReader;
