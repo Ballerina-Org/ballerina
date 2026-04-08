@@ -20,8 +20,7 @@ type BuildErrorDTO =
     Column: int }
 
 type InlayHintDTO =
-  { Identifier: string
-    Type: string
+  { Type: string
     File: string
     Line: int
     Column: int }
@@ -126,8 +125,7 @@ module BuildServer =
     |> Map.toList
     |> List.sortBy (fun (loc, _) -> loc.File, loc.Line, loc.Column)
     |> List.map (fun (loc, hint) ->
-      { Identifier = hint.Identifier
-        Type = hint.Type.ToString()
+      { Type = hint.Type.ToInlayString()
         File = loc.File
         Line = loc.Line
         Column = loc.Column })

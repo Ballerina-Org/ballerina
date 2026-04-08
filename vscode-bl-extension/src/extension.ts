@@ -25,7 +25,6 @@ type BuildErrorDto = {
 };
 
 type BuildInlayHintDto = {
-  identifier?: string;
   type?: string;
   file?: string;
   line?: number;
@@ -662,8 +661,7 @@ class InlayHintStore implements vscode.Disposable {
         continue;
       }
 
-      const identifier = typeof dto.identifier === "string" ? dto.identifier.trim() : "";
-      const label = identifier.length > 0 ? `${identifier}: ${hintType}` : hintType;
+      const label = `: ${hintType}`;
       const position = new vscode.Position(Math.max(0, line - 1), Math.max(0, column - 1));
       const hint = new vscode.InlayHint(position, label, vscode.InlayHintKind.Type);
 

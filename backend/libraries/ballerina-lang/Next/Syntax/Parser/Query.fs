@@ -555,7 +555,7 @@ module Query =
                   |> sum.MapError(Errors.MapContext(replaceWith loc))
                   |> parser.OfSum
 
-                return singleIterator |> List.singleton
+                return (singleIterator, _iterators.Location) |> List.singleton
               }
               parser {
                 let! items =
@@ -567,19 +567,29 @@ module Query =
                 let! items =
                   items
                   |> List.map (fun item ->
-                    item
-                    |> ExprQueryExpr.AsLookup
-                    |> sum.MapError(Errors.MapContext(replaceWith loc))
-                    |> parser.OfSum)
+                    parser {
+                      let! itemName =
+                        item
+                        |> ExprQueryExpr.AsLookup
+                        |> sum.MapError(Errors.MapContext(replaceWith loc))
+                        |> parser.OfSum
+
+                      return itemName, item.Location
+                    })
                   |> parser.All
 
                 let! items =
                   items
-                  |> List.map (fun item ->
-                    item
-                    |> Identifier.AsLocalScope
-                    |> sum.MapError(Errors.MapContext(replaceWith loc))
-                    |> parser.OfSum)
+                  |> List.map (fun (itemName, itemLocation) ->
+                    parser {
+                      let! itemName =
+                        itemName
+                        |> Identifier.AsLocalScope
+                        |> sum.MapError(Errors.MapContext(replaceWith loc))
+                        |> parser.OfSum
+
+                      return itemName, itemLocation
+                    })
                   |> parser.All
 
                 return items
@@ -621,8 +631,8 @@ module Query =
 
             let iterators_with_datasources =
               iterators_with_datasources
-              |> NonEmptyList.map (fun (v, ds) ->
-                { ExprQueryIterator.Location = ds.Location
+              |> NonEmptyList.map (fun ((v, vLocation), ds) ->
+                { ExprQueryIterator.Location = vLocation
                   Var = v |> Var.Create
                   VarType = None
                   Source = ds })

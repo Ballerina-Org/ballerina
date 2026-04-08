@@ -841,6 +841,36 @@ module Model =
       | QueryTypeFunction -> $"Query"
       | QueryRow q -> $"QueryRow[{q}]"
 
+    member self.ToInlayString() : string =
+      match self with
+      | QueryRow q -> q.ToInlayString()
+      | Imported i ->
+        let args = String.Join(" ", i.Arguments |> List.map (fun a -> $"[{a.ToInlayString()}]"))
+        $"{i.Sym.Name}{args}"
+      | Arrow({ value = (t1, t2) }) -> $"({t1.ToInlayString()} -> {t2.ToInlayString()})"
+      | Tuple({ value = types }) ->
+        let comma = " * "
+        $"({String.Join(comma, types |> List.map (fun t -> t.ToInlayString()))})"
+      | Record({ value = fields }) ->
+        let comma = ", "
+
+        let fieldStrs =
+          fields
+          |> OrderedMap.toList
+          |> List.map (fun (name, (fieldType, _)) -> $"{name}: {fieldType.ToInlayString()}")
+
+        $"{{{String.Join(comma, fieldStrs)}}}"
+      | Union({ value = types }) ->
+        let comma = " | "
+
+        let typeStrs =
+          types
+          |> OrderedMap.toList
+          |> List.map (fun (name, typ) -> $"{name}: {typ.ToInlayString()}")
+
+        $"({String.Join(comma, typeStrs)})"
+      | _ -> self.ToString()
+
     static member IsOptionalPrimitive(t: TypeValue<_>) =
       match t with
       | TypeValue.Sum({ value = [ TypeValue.Primitive { value = PrimitiveType.Unit }; TypeValue.Primitive _ ] }) -> true
@@ -870,6 +900,20 @@ module Model =
 
         $"{{{String.Join(comma, fieldStrs)}}}"
       | Array t -> $"Array[{t}]"
+
+    member self.ToInlayString() : string =
+      match self with
+      | PrimaryKey t -> $"{t.ToInlayString()}*"
+      | Json t -> t.ToInlayString()
+      | PrimitiveType(p, _) -> p.ToString()
+      | Tuple types ->
+        let comma = " * "
+        $"({String.Join(comma, types |> List.map (fun t -> t.ToInlayString()))})"
+      | Record fields ->
+        let comma = ", "
+        let fieldStrs = fields |> Map.toList |> List.map (fun (name, typ) -> $"{name}: {typ.ToInlayString()}")
+        $"{{{String.Join(comma, fieldStrs)}}}"
+      | Array t -> $"{t.ToInlayString()}[]"
 
   and ExprTypeLetBindingName =
     | ExprTypeLetBindingName of string
