@@ -133,13 +133,13 @@ module Lambda =
 
           let paramHintLoc =
             { lambdaLoc with
-                Column = lambdaLoc.Column + 4 }
+                Column = lambdaLoc.Column + x.Name.Length }
 
           if not ctx.IsTypeCheckingLetValue then
             do!
               match t with
               | Some _ -> state { return () }
-              | None -> TypeCheckState.bindInlayHint (paramHintLoc, x.Name, fst var_type)
+              | None -> TypeCheckState.bindInlayHint (paramHintLoc, x.Name, t_x)
 
           return TypeCheckedExpr.Lambda(x, t_x, body, t_body, t_res, Kind.Star, loc0, ctx.Scope), ctx
         }

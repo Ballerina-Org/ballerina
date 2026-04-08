@@ -699,6 +699,7 @@ module Model =
 
   and Schema<'valueExt> =
     { DeclaredAtForNominalEquality: Location
+      Source: TypeExprSourceMapping<'valueExt>
       Entities: OrderedMap<SchemaEntityName, SchemaEntity<'valueExt>>
       Relations: OrderedMap<SchemaRelationName, SchemaRelation<'valueExt>>
       Included: Option<Schema<'valueExt>> }
@@ -774,6 +775,12 @@ module Model =
     | QueryRow of TypeQueryRow<'valueExt>
 
     override self.ToString() =
+      let schemaNameFromSource (source: TypeExprSourceMapping<'valueExt>) =
+        match source with
+        | OriginExprTypeLet(id, _) -> Some(id.ToString())
+        | OriginTypeExpr(TypeExpr.Lookup id) -> Some(id.ToString())
+        | _ -> None
+
       match self with
       | Union({ typeExprSource = OriginExprTypeLet(id, _) })
       | Record({ typeExprSource = OriginExprTypeLet(id, _) }) -> id.ToString()
@@ -813,7 +820,10 @@ module Model =
       | Sum({ value = types }) ->
         let comma = " + "
         $"({String.Join(comma, types)})"
-      | Schema s -> $"Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]"
+      | Schema s ->
+        match schemaNameFromSource s.Source with
+        | Some schemaName -> schemaName
+        | None -> $"Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]"
       | Entities s -> $"SchemaEntities[{s.Entities.Count}]"
       | Entity(s, e, e_with_props, id) ->
         $"SchemaEntity[Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]][{e}][{e_with_props}][{id}]"

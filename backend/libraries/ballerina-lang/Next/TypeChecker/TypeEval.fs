@@ -250,7 +250,7 @@ module Eval =
 
             return TypeValue.CreateRelationLookupMany(a_schema, t', f_id, t_id), Kind.Star
           | TypeExpr.Schema parsed_schema ->
-            return! SchemaTypeEval.evalSchemaExpr config typeCheckExpr (!) loc0 parsed_schema
+            return! SchemaTypeEval.evalSchemaExpr config typeCheckExpr (!) loc0 source parsed_schema
           | TypeExpr.FromTypeValue tv ->
             // do Console.WriteLine($"Instantiating type value {tv}")
             let! (ctx: TypeCheckContext<'ve>) = state.GetContext()

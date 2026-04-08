@@ -67,7 +67,7 @@ module ProjectModel =
 
   type InlayHint<'valueExt when 'valueExt: comparison> with
     member this.AsString() =
-      $"%s{this.Identifier}: %s{this.Type.ToString()}"
+      $": %s{this.Type.ToString()}"
 
   type TypeCheckState<'valueExt when 'valueExt: comparison> with
     static member InstantiateInlayHints

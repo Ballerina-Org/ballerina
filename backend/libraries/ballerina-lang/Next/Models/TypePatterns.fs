@@ -607,17 +607,75 @@ module Patterns =
       | TypeValue.Union v -> TypeValue.CreateUnion v.value
       | TypeValue.Sum v -> TypeValue.CreateSum v.value
       | TypeValue.Set v -> TypeValue.CreateSet v.value
-      | TypeValue.Schema v -> TypeValue.CreateSchema v
-      | TypeValue.Entities v -> TypeValue.CreateEntities v
-      | TypeValue.Relations v -> TypeValue.CreateRelations v
-      | TypeValue.Entity(s, e, e', id) -> TypeValue.CreateEntity(s, e, e', id)
+      | TypeValue.Schema v ->
+        TypeValue.CreateSchema
+          { v with
+              Source = TypeExprSourceMapping.NoSourceMapping "" }
+      | TypeValue.Entities v ->
+        TypeValue.CreateEntities
+          { v with
+              Source = TypeExprSourceMapping.NoSourceMapping "" }
+      | TypeValue.Relations v ->
+        TypeValue.CreateRelations
+          { v with
+              Source = TypeExprSourceMapping.NoSourceMapping "" }
+      | TypeValue.Entity(s, e, e', id) ->
+        TypeValue.CreateEntity(
+          { s with
+              Source = TypeExprSourceMapping.NoSourceMapping "" },
+          e,
+          e',
+          id
+        )
       | TypeValue.Relation(s, rn, c, f, f', f_id, t, t', t_id) ->
-        TypeValue.CreateRelation(s, rn, c, f, f', f_id, t, t', t_id)
-      | TypeValue.RelationLookupOption(s, f', t_id, target_id) -> TypeValue.CreateLookupMaybe(s, f', t_id, target_id)
-      | TypeValue.RelationLookupOne(s, f', t_id, target_id) -> TypeValue.CreateLookupOne(s, f', t_id, target_id)
-      | TypeValue.RelationLookupMany(s, f', t_id, target_id) -> TypeValue.CreateLookupMany(s, f', t_id, target_id)
+        TypeValue.CreateRelation(
+          { s with
+              Source = TypeExprSourceMapping.NoSourceMapping "" },
+          rn,
+          c,
+          f,
+          f',
+          f_id,
+          t,
+          t',
+          t_id
+        )
+      | TypeValue.RelationLookupOption(s, f', t_id, target_id) ->
+        TypeValue.CreateLookupMaybe(
+          { s with
+              Source = TypeExprSourceMapping.NoSourceMapping "" },
+          f',
+          t_id,
+          target_id
+        )
+      | TypeValue.RelationLookupOne(s, f', t_id, target_id) ->
+        TypeValue.CreateLookupOne(
+          { s with
+              Source = TypeExprSourceMapping.NoSourceMapping "" },
+          f',
+          t_id,
+          target_id
+        )
+      | TypeValue.RelationLookupMany(s, f', t_id, target_id) ->
+        TypeValue.CreateLookupMany(
+          { s with
+              Source = TypeExprSourceMapping.NoSourceMapping "" },
+          f',
+          t_id,
+          target_id
+        )
       | TypeValue.ForeignKeyRelation(s, rn, f, f', f_id, t, t', t_id) ->
-        TypeValue.CreateForeignKeyRelation(s, rn, f, f', f_id, t, t', t_id)
+        TypeValue.CreateForeignKeyRelation(
+          { s with
+              Source = TypeExprSourceMapping.NoSourceMapping "" },
+          rn,
+          f,
+          f',
+          f_id,
+          t,
+          t',
+          t_id
+        )
       | TypeValue.QueryRow q -> TypeValue.QueryRow q
       | TypeValue.QueryTypeFunction -> TypeValue.CreateQueryTypeFunction()
 
@@ -636,15 +694,20 @@ module Patterns =
       | TypeValue.Union v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Union
       | TypeValue.Sum v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Sum
       | TypeValue.Set v -> WithSourceMapping.Setters.Source(v, source) |> TypeValue.Set
-      | TypeValue.Schema _
-      | TypeValue.Entities _
-      | TypeValue.Relations _
-      | TypeValue.Entity _
-      | TypeValue.RelationLookupOption _
-      | TypeValue.RelationLookupOne _
-      | TypeValue.RelationLookupMany _
-      | TypeValue.Relation _
-      | TypeValue.ForeignKeyRelation _
+      | TypeValue.Schema s -> TypeValue.Schema { s with Source = source }
+      | TypeValue.Entities s -> TypeValue.Entities { s with Source = source }
+      | TypeValue.Relations s -> TypeValue.Relations { s with Source = source }
+      | TypeValue.Entity(s, e, e', id) -> TypeValue.Entity({ s with Source = source }, e, e', id)
+      | TypeValue.RelationLookupOption(s, f', t_id, target_id) ->
+        TypeValue.RelationLookupOption({ s with Source = source }, f', t_id, target_id)
+      | TypeValue.RelationLookupOne(s, f', t_id, target_id) ->
+        TypeValue.RelationLookupOne({ s with Source = source }, f', t_id, target_id)
+      | TypeValue.RelationLookupMany(s, f', t_id, target_id) ->
+        TypeValue.RelationLookupMany({ s with Source = source }, f', t_id, target_id)
+      | TypeValue.Relation(s, rn, c, f, f', f_id, t, t', t_id) ->
+        TypeValue.Relation({ s with Source = source }, rn, c, f, f', f_id, t, t', t_id)
+      | TypeValue.ForeignKeyRelation(s, rn, f, f', f_id, t, t', t_id) ->
+        TypeValue.ForeignKeyRelation({ s with Source = source }, rn, f, f', f_id, t, t', t_id)
       | TypeValue.QueryTypeFunction
       | TypeValue.QueryRow _ -> t
 
@@ -662,15 +725,15 @@ module Patterns =
       | TypeValue.Union v -> v.typeExprSource
       | TypeValue.Sum v -> v.typeExprSource
       | TypeValue.Set v -> v.typeExprSource
-      | TypeValue.Schema _
-      | TypeValue.Entities _
-      | TypeValue.Relations _
-      | TypeValue.Entity _
-      | TypeValue.RelationLookupOption _
-      | TypeValue.RelationLookupOne _
-      | TypeValue.RelationLookupMany _
-      | TypeValue.Relation _
-      | TypeValue.ForeignKeyRelation _
+      | TypeValue.Schema s
+      | TypeValue.Entities s
+      | TypeValue.Relations s -> s.Source
+      | TypeValue.Entity(s, _, _, _)
+      | TypeValue.RelationLookupOption(s, _, _, _)
+      | TypeValue.RelationLookupOne(s, _, _, _)
+      | TypeValue.RelationLookupMany(s, _, _, _)
+      | TypeValue.Relation(s, _, _, _, _, _, _, _, _)
+      | TypeValue.ForeignKeyRelation(s, _, _, _, _, _, _, _) -> s.Source
       | TypeValue.QueryTypeFunction
       | TypeValue.QueryRow _ -> TypeExprSourceMapping<'valueExt>.NoSourceMapping ""
 
