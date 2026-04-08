@@ -10,6 +10,7 @@ module DeltaGeneration =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
+  open DataModelGeneration
 
   let generate_delta_models
     (schema: Schema<ValueExt<'runtimeContext, 'db, 'customExtension>>)
@@ -61,7 +62,7 @@ module DeltaGeneration =
       (type_value: TypeValue<'ext>)
       (properties: List<SchemaEntityProperty<ValueExt<'runtimeContext, 'db, 'customExtension>>>)
       : State<
-          OpenAPIDataModel * OpenAPIDataModel,
+          OpenAPIDataModel,
           TypeCheckContext<ValueExt<'runtimeContext, 'db, 'customExtension>> *
           TypeCheckState<ValueExt<'runtimeContext, 'db, 'customExtension>>,
           Map<OpenAPIDataModelName, OpenAPIDataModel>,
@@ -77,119 +78,125 @@ module DeltaGeneration =
           let type_value =
             TypeValue.SetSourceMapping(type_value, TypeExprSourceMapping.NoSourceMapping "")
 
-          let! (_, delta_model) = generate_delta_model type_value properties_at_next_level
+          let! delta_model = generate_delta_model type_value properties_at_next_level
 
           let delta_type_name = { OpenAPIDataModelName = $"{let_id}-Delta" }
           do! state.SetState(Map.add delta_type_name delta_model)
 
-          return
-            OpenAPIDataModel.Ref { OpenAPIDataModelName = let_id },
-            OpenAPIDataModel.Ref delta_type_name
+          return OpenAPIDataModel.Ref delta_type_name
         | TypeExprSourceMapping.OriginTypeExpr(_)
         | TypeExprSourceMapping.NoSourceMapping(_) ->
 
+          let! replace_model = TypeValue.ToOpenApiModel type_value properties
+
           match type_value with
-          | TypeValue.Primitive { value = p } ->
-            let value_model =
-              OpenAPIDataModel.Object [ "Primitive" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive p ]
-
-            let delta_model =
-              OpenAPIDataModel.Object
-                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.List OpenAPIDataModel.AnyObject
-                  "Replace" |> ResolvedIdentifier.Create, value_model ]
-
-            return value_model, delta_model
+          | TypeValue.Primitive _ ->
+            return
+              OpenAPIDataModel.OneOf
+                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.List replace_model
+                  "Replace" |> ResolvedIdentifier.Create, replace_model ]
 
           | TypeValue.Record { value = fields } ->
-            let! field_results =
+            let! record_delta_fields =
               fields
               |> OrderedMap.toSeq
               |> Seq.map (fun (name, (field_type, _)) ->
                 state {
                   let! resolved_name = resolve_name name properties_at_this_level
-                  let! (field_value, field_delta) = generate_delta_model field_type properties_at_next_level
-                  return resolved_name, field_value, field_delta
+                  let! field_delta = generate_delta_model field_type properties_at_next_level
+                  return resolved_name, field_delta
                 })
               |> state.All
 
-            let value_model =
-              OpenAPIDataModel.Record(field_results |> List.map (fun (n, v, _) -> n, v))
+            let record_delta = OpenAPIDataModel.Record record_delta_fields
 
-            let delta_model =
-              OpenAPIDataModel.Object
-                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.List OpenAPIDataModel.AnyObject
-                  "Replace" |> ResolvedIdentifier.Create, value_model
-                  "Record" |> ResolvedIdentifier.Create,
-                  OpenAPIDataModel.Record(field_results |> List.map (fun (n, _, d) -> n, d)) ]
+            let multiple_element =
+              OpenAPIDataModel.OneOf
+                [ "Replace" |> ResolvedIdentifier.Create, replace_model
+                  "Record" |> ResolvedIdentifier.Create, record_delta ]
 
-            return value_model, delta_model
+            return
+              OpenAPIDataModel.OneOf
+                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.List multiple_element
+                  "Replace" |> ResolvedIdentifier.Create, replace_model
+                  "Record" |> ResolvedIdentifier.Create, record_delta ]
 
           | TypeValue.Union { value = cases } ->
-            let! case_results =
+            let! union_delta_cases =
               cases
               |> OrderedMap.toSeq
               |> Seq.map (fun (name, case_type) ->
                 state {
                   let! resolved_name = resolve_name name properties_at_this_level
-                  let! (case_value, case_delta) = generate_delta_model case_type properties_at_next_level
-                  return resolved_name, case_value, case_delta
+                  let! case_delta = generate_delta_model case_type properties_at_next_level
+                  return resolved_name, case_delta
                 })
               |> state.All
 
-            let value_model =
-              OpenAPIDataModel.Union(case_results |> List.map (fun (n, v, _) -> n, v))
+            let union_delta = OpenAPIDataModel.OneOf union_delta_cases
 
-            let delta_model =
-              OpenAPIDataModel.Object
-                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.List OpenAPIDataModel.AnyObject
-                  "Replace" |> ResolvedIdentifier.Create, value_model
-                  "Union" |> ResolvedIdentifier.Create,
-                  OpenAPIDataModel.Union(case_results |> List.map (fun (n, _, d) -> n, d)) ]
+            let multiple_element =
+              OpenAPIDataModel.OneOf
+                [ "Replace" |> ResolvedIdentifier.Create, replace_model
+                  "Union" |> ResolvedIdentifier.Create, union_delta ]
 
-            return value_model, delta_model
+            return
+              OpenAPIDataModel.OneOf
+                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.List multiple_element
+                  "Replace" |> ResolvedIdentifier.Create, replace_model
+                  "Union" |> ResolvedIdentifier.Create, union_delta ]
 
           | TypeValue.Sum { value = options } ->
-            let! option_results =
+            let! option_deltas =
               options
               |> Seq.map (fun option_type -> generate_delta_model option_type properties_at_next_level)
               |> state.All
 
-            let value_model =
-              OpenAPIDataModel.Sum(option_results |> List.map fst)
+            let sum_delta =
+              OpenAPIDataModel.OneOf(
+                option_deltas
+                |> List.mapi (fun i delta -> string i |> ResolvedIdentifier.Create, delta)
+              )
 
-            let delta_model =
-              OpenAPIDataModel.Object
-                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.List OpenAPIDataModel.AnyObject
-                  "Replace" |> ResolvedIdentifier.Create, value_model
-                  "Sum" |> ResolvedIdentifier.Create,
-                  OpenAPIDataModel.Sum(option_results |> List.map snd) ]
+            let multiple_element =
+              OpenAPIDataModel.OneOf
+                [ "Replace" |> ResolvedIdentifier.Create, replace_model
+                  "Sum" |> ResolvedIdentifier.Create, sum_delta ]
 
-            return value_model, delta_model
+            return
+              OpenAPIDataModel.OneOf
+                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.List multiple_element
+                  "Replace" |> ResolvedIdentifier.Create, replace_model
+                  "Sum" |> ResolvedIdentifier.Create, sum_delta ]
 
           | TypeValue.Tuple { value = elements } ->
-            let! element_results =
+            let! element_deltas =
               elements
               |> Seq.map (fun element_type -> generate_delta_model element_type properties_at_next_level)
               |> state.All
 
-            let value_model =
-              OpenAPIDataModel.Tuple(element_results |> List.map fst)
+            let tuple_delta =
+              OpenAPIDataModel.OneOf(
+                element_deltas
+                |> List.mapi (fun i delta -> string i |> ResolvedIdentifier.Create, delta)
+              )
 
-            let delta_model =
-              OpenAPIDataModel.Object
-                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.List OpenAPIDataModel.AnyObject
-                  "Replace" |> ResolvedIdentifier.Create, value_model
-                  "Tuple" |> ResolvedIdentifier.Create,
-                  OpenAPIDataModel.Tuple(element_results |> List.map snd) ]
+            let multiple_element =
+              OpenAPIDataModel.OneOf
+                [ "Replace" |> ResolvedIdentifier.Create, replace_model
+                  "Tuple" |> ResolvedIdentifier.Create, tuple_delta ]
 
-            return value_model, delta_model
+            return
+              OpenAPIDataModel.OneOf
+                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.List multiple_element
+                  "Replace" |> ResolvedIdentifier.Create, replace_model
+                  "Tuple" |> ResolvedIdentifier.Create, tuple_delta ]
 
           | TypeValue.Imported { Id = type_id; Arguments = [ arg_t ] } when
             type_id = ("List" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
             ->
-            let! (element_value, element_delta) = generate_delta_model arg_t properties_at_next_level
-
-            let value_model = listToOpenApi element_value
+            let! element_delta = generate_delta_model arg_t properties_at_next_level
+            let! element_value = TypeValue.ToOpenApiModel arg_t properties_at_next_level
 
             let list_delta_ext =
               OpenAPIDataModel.Object
@@ -211,13 +218,11 @@ module DeltaGeneration =
                     [ "From" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Int32
                       "To" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Int32 ] ]
 
-            let delta_model =
+            return
               OpenAPIDataModel.Object
                 [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.List OpenAPIDataModel.AnyObject
-                  "Replace" |> ResolvedIdentifier.Create, value_model
+                  "Replace" |> ResolvedIdentifier.Create, replace_model
                   "Ext" |> ResolvedIdentifier.Create, list_delta_ext ]
-
-            return value_model, delta_model
 
           | _ ->
             return!
@@ -232,8 +237,8 @@ module DeltaGeneration =
         |> OrderedMap.toSeq
         |> Seq.map (fun (entity_name, entity_desc) ->
           state {
-            let! (_, delta_with_props) = generate_delta_model entity_desc.TypeWithProps entity_desc.Properties
-            let! (_, delta_original) = generate_delta_model entity_desc.TypeOriginal []
+            let! delta_with_props = generate_delta_model entity_desc.TypeWithProps entity_desc.Properties
+            let! delta_original = generate_delta_model entity_desc.TypeOriginal []
 
             let delta_with_props_name =
               { OpenAPIDataModelName.OpenAPIDataModelName = $"{entity_name.Name}-Delta-WithProps" }

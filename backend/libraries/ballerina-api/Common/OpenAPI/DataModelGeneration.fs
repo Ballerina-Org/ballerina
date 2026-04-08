@@ -10,17 +10,9 @@ module DataModelGeneration =
   open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.Collections.Sum
   open Ballerina.Reader.WithError
-  let generate_data_models
-    (schema: Schema<ValueExt<'runtimeContext, 'db, 'customExtension>>)
-    : State<
-        unit,
-        (TypeCheckContext<ValueExt<'runtimeContext, 'db, 'customExtension>> *
-        TypeCheckState<ValueExt<'runtimeContext, 'db, 'customExtension>>),
-        Map<OpenAPIDataModelName, OpenAPIDataModel>,
-        Errors<Unit>
-       >
-    =
-    let rec generate_data_model
+
+  type TypeValue<'ext> with
+    static member ToOpenApiModel
       (type_value: TypeValue<'ext>)
       (properties: List<SchemaEntityProperty<ValueExt<'runtimeContext, 'db, 'customExtension>>>)
       : State<
@@ -50,7 +42,7 @@ module DataModelGeneration =
           let type_value =
             TypeValue.SetSourceMapping(type_value, TypeExprSourceMapping.NoSourceMapping "")
 
-          let! type_value = generate_data_model type_value properties_at_next_level
+          let! type_value = TypeValue.ToOpenApiModel type_value properties_at_next_level
           let type_name = { OpenAPIDataModelName = let_id }
           do! state.SetState(Map.add type_name type_value)
 
@@ -60,10 +52,7 @@ module DataModelGeneration =
 
           match type_value with
           | TypeValue.Primitive { value = p } ->
-              return OpenAPIDataModel.Object
-                [
-                  "Primitive" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive p
-                ]
+            return OpenAPIDataModel.Object [ "Primitive" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive p ]
           | TypeValue.Record { value = fields } ->
             let! fields =
               fields
@@ -85,7 +74,7 @@ module DataModelGeneration =
                        |> state.OfReader)
 
 
-                  let! field_type = generate_data_model field_type properties_at_next_level
+                  let! field_type = TypeValue.ToOpenApiModel field_type properties_at_next_level
 
                   return name, field_type
                 })
@@ -112,7 +101,7 @@ module DataModelGeneration =
                        |> reader.MapContext snd
                        |> state.OfReader)
 
-                  let! case_type = generate_data_model case_type properties_at_next_level
+                  let! case_type = TypeValue.ToOpenApiModel case_type properties_at_next_level
 
                   return name, case_type
                 })
@@ -122,23 +111,23 @@ module DataModelGeneration =
           | TypeValue.Sum { value = options } ->
             let! options =
               options
-              |> Seq.map (fun option_type -> generate_data_model option_type properties_at_next_level)
+              |> Seq.map (fun option_type -> TypeValue.ToOpenApiModel option_type properties_at_next_level)
               |> state.All
 
             return OpenAPIDataModel.Sum options
           | TypeValue.Tuple { value = elements } ->
             let! elements =
               elements
-              |> Seq.map (fun element_type -> generate_data_model element_type properties_at_next_level)
+              |> Seq.map (fun element_type -> TypeValue.ToOpenApiModel element_type properties_at_next_level)
               |> state.All
 
             return OpenAPIDataModel.Tuple elements
           | TypeValue.Imported { Id = type_id; Arguments = [ arg_t ] } when
             type_id = ("List" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
             ->
-            let! arg_t = generate_data_model arg_t properties_at_next_level
+            let! arg_t = TypeValue.ToOpenApiModel arg_t properties_at_next_level
             return listToOpenApi arg_t
-              
+
           | _ ->
             return!
               (fun () -> $"Not supported type value: {type_value}")
@@ -146,15 +135,27 @@ module DataModelGeneration =
               |> state.Throw
       }
 
+  let generate_data_models
+    (schema: Schema<ValueExt<'runtimeContext, 'db, 'customExtension>>)
+    : State<
+        unit,
+        (TypeCheckContext<ValueExt<'runtimeContext, 'db, 'customExtension>> *
+        TypeCheckState<ValueExt<'runtimeContext, 'db, 'customExtension>>),
+        Map<OpenAPIDataModelName, OpenAPIDataModel>,
+        Errors<Unit>
+       >
+    =
+
+
     state {
       do!
         schema.Entities
         |> OrderedMap.toSeq
         |> Seq.map (fun (entity_name, entity_desc) ->
           state {
-            let! type_with_props = generate_data_model entity_desc.TypeWithProps entity_desc.Properties
-            let! type_original = generate_data_model entity_desc.TypeOriginal []
-            let! id = generate_data_model entity_desc.Id []
+            let! type_with_props = TypeValue.ToOpenApiModel entity_desc.TypeWithProps entity_desc.Properties
+            let! type_original = TypeValue.ToOpenApiModel entity_desc.TypeOriginal []
+            let! id = TypeValue.ToOpenApiModel entity_desc.Id []
 
             let type_with_props_name =
               { OpenAPIDataModelName.OpenAPIDataModelName = $"{entity_name.Name}-WithProps" }

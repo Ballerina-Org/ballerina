@@ -211,6 +211,24 @@ module YamlGeneration =
       let record_schema_lines = get_record_schema_lines fields level
       wrap_case_in_property level "Record" record_schema_lines
     | Object fields -> get_record_schema_lines fields level
+    | OpenAPIDataModel.OneOf cases ->
+      let sorted_cases =
+        cases
+        |> List.sortWith (fun (left_name, _) (right_name, _) ->
+          compare_ordinal (left_name |> resolved_identifier_to_string) (right_name |> resolved_identifier_to_string))
+
+      [ $"{indent level}oneOf:" ]
+      @ (sorted_cases
+         |> List.collect (fun (case_name, case_model) ->
+           let case_name = case_name |> resolved_identifier_to_string
+
+           [ $"{indent (level + 1)}-"
+             $"{indent (level + 2)}type: object"
+             $"{indent (level + 2)}properties:"
+             $"{indent (level + 3)}{yaml_string case_name}:" ]
+           @ (render_schema_lines (level + 4) case_model)
+           @ [ $"{indent (level + 2)}required:"
+               $"{indent (level + 3)}- {yaml_string case_name}" ]))
     | OpenAPIDataModel.Union cases ->
       let sorted_cases =
         cases

@@ -10,6 +10,7 @@
     <Compile Include="Common/Utils.fs" />
     <Compile Include="Common/OpenAPI/Model.fs" />
     <Compile Include="Common/OpenAPI/DataModelGeneration.fs" />
+    <Compile Include="Common/OpenAPI/DeltaGeneration.fs" />
     <Compile Include="Common/OpenAPI/EndpointGeneration.fs" />
     <Compile Include="Common/OpenAPI/YamlGeneration.fs" />
     <Compile Include="Common/OpenAPI/OpenAPIGeneration.fs" />

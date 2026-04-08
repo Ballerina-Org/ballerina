@@ -35,6 +35,7 @@ module OpenAPIModel =
     | Primitive of PrimitiveType
     | AnyObject
     | Union of List<ResolvedIdentifier * OpenAPIDataModel>
+    | OneOf of List<ResolvedIdentifier * OpenAPIDataModel>
     | Sum of List<OpenAPIDataModel>
     | Tuple of List<OpenAPIDataModel>
     | List of OpenAPIDataModel
