@@ -33,12 +33,15 @@ module OpenAPIModel =
     | Ref of OpenAPIDataModelName
     | Record of List<ResolvedIdentifier * OpenAPIDataModel>
     | Primitive of PrimitiveType
+    | Scalar of PrimitiveType
     | AnyObject
     | Union of List<ResolvedIdentifier * OpenAPIDataModel>
     | OneOf of List<ResolvedIdentifier * OpenAPIDataModel>
     | Sum of List<OpenAPIDataModel>
     | Tuple of List<OpenAPIDataModel>
     | List of OpenAPIDataModel
+    | Array of OpenAPIDataModel
+    | PositionalElement of OpenAPIDataModel
     | Object of List<ResolvedIdentifier * OpenAPIDataModel>
 
   let internal listToOpenApi (arg_t : OpenAPIDataModel) =

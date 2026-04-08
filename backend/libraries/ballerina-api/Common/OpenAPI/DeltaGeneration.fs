@@ -93,7 +93,7 @@ module DeltaGeneration =
           | TypeValue.Primitive _ ->
             return
               OpenAPIDataModel.OneOf
-                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.List replace_model
+                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.Array replace_model
                   "Replace" |> ResolvedIdentifier.Create, replace_model ]
 
           | TypeValue.Record { value = fields } ->
@@ -108,7 +108,7 @@ module DeltaGeneration =
                 })
               |> state.All
 
-            let record_delta = OpenAPIDataModel.Record record_delta_fields
+            let record_delta = OpenAPIDataModel.OneOf record_delta_fields
 
             let multiple_element =
               OpenAPIDataModel.OneOf
@@ -117,7 +117,7 @@ module DeltaGeneration =
 
             return
               OpenAPIDataModel.OneOf
-                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.List multiple_element
+                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.Array multiple_element
                   "Replace" |> ResolvedIdentifier.Create, replace_model
                   "Record" |> ResolvedIdentifier.Create, record_delta ]
 
@@ -142,7 +142,7 @@ module DeltaGeneration =
 
             return
               OpenAPIDataModel.OneOf
-                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.List multiple_element
+                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.Array multiple_element
                   "Replace" |> ResolvedIdentifier.Create, replace_model
                   "Union" |> ResolvedIdentifier.Create, union_delta ]
 
@@ -165,7 +165,7 @@ module DeltaGeneration =
 
             return
               OpenAPIDataModel.OneOf
-                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.List multiple_element
+                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.Array multiple_element
                   "Replace" |> ResolvedIdentifier.Create, replace_model
                   "Sum" |> ResolvedIdentifier.Create, sum_delta ]
 
@@ -188,7 +188,7 @@ module DeltaGeneration =
 
             return
               OpenAPIDataModel.OneOf
-                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.List multiple_element
+                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.Array multiple_element
                   "Replace" |> ResolvedIdentifier.Create, replace_model
                   "Tuple" |> ResolvedIdentifier.Create, tuple_delta ]
 
@@ -200,27 +200,28 @@ module DeltaGeneration =
 
             let list_delta_ext =
               OpenAPIDataModel.Object
-                [ "UpdateElement" |> ResolvedIdentifier.Create,
-                  OpenAPIDataModel.Record
-                    [ "Index" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Int32
-                      "Value" |> ResolvedIdentifier.Create, element_delta ]
-                  "AppendElement" |> ResolvedIdentifier.Create, element_value
-                  "RemoveElement" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Int32
-                  "InsertElement" |> ResolvedIdentifier.Create,
-                  OpenAPIDataModel.Record
-                    [ "Index" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Int32
-                      "Value" |> ResolvedIdentifier.Create, element_value ]
-                  "DuplicateElement" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Int32
-                  "SetAllElements" |> ResolvedIdentifier.Create, element_value
-                  "RemoveAllElements" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Bool
-                  "MoveElement" |> ResolvedIdentifier.Create,
-                  OpenAPIDataModel.Record
-                    [ "From" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Int32
-                      "To" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Int32 ] ]
+                [ "List" |> ResolvedIdentifier.Create,
+                  OpenAPIDataModel.OneOf
+                    [ "UpdateElement" |> ResolvedIdentifier.Create, OpenAPIDataModel.PositionalElement element_delta
+                      "AppendElement" |> ResolvedIdentifier.Create, element_value
+                      "RemoveElement" |> ResolvedIdentifier.Create, OpenAPIDataModel.Scalar PrimitiveType.Int32
+                      "InsertElement" |> ResolvedIdentifier.Create, OpenAPIDataModel.PositionalElement element_value
+                      "DuplicateElement" |> ResolvedIdentifier.Create, OpenAPIDataModel.Scalar PrimitiveType.Int32
+                      "SetAllElements" |> ResolvedIdentifier.Create, element_value
+                      "RemoveAllElements" |> ResolvedIdentifier.Create, OpenAPIDataModel.Scalar PrimitiveType.Bool
+                      "MoveElement" |> ResolvedIdentifier.Create,
+                      OpenAPIDataModel.Object
+                        [ "From" |> ResolvedIdentifier.Create, OpenAPIDataModel.Scalar PrimitiveType.Int32
+                          "To" |> ResolvedIdentifier.Create, OpenAPIDataModel.Scalar PrimitiveType.Int32 ] ] ]
+
+            let multiple_element =
+              OpenAPIDataModel.OneOf
+                [ "Replace" |> ResolvedIdentifier.Create, replace_model
+                  "Ext" |> ResolvedIdentifier.Create, list_delta_ext ]
 
             return
-              OpenAPIDataModel.Object
-                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.List OpenAPIDataModel.AnyObject
+              OpenAPIDataModel.OneOf
+                [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.Array multiple_element
                   "Replace" |> ResolvedIdentifier.Create, replace_model
                   "Ext" |> ResolvedIdentifier.Create, list_delta_ext ]
 

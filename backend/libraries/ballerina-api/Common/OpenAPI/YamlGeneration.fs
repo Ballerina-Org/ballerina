@@ -172,6 +172,8 @@ module YamlGeneration =
         //   $"{indent level}required:"
         //   $"{indent (level + 1)}- 'Primitive'"
         // ]
+    | OpenAPIDataModel.Scalar primitive_type ->
+      render_parameter_primitive_schema_lines level primitive_type
     | AnyObject -> [ $"{indent level}type: object"; $"{indent level}additionalProperties: true" ]
     | List item_type ->
       let list_schema_lines =
@@ -180,6 +182,18 @@ module YamlGeneration =
 
       (wrap_case_in_property level "List" list_schema_lines)
       @ [ $"{indent level}additionalProperties: false" ]
+    | OpenAPIDataModel.Array item_type ->
+      [ $"{indent level}type: array"
+        $"{indent level}items:" ]
+      @ (render_schema_lines (level + 1) item_type)
+    | OpenAPIDataModel.PositionalElement value_type ->
+      [ $"{indent level}type: object"
+        $"{indent level}propertyNames:"
+        $"{indent (level + 1)}pattern: '^\\d+$'"
+        $"{indent level}additionalProperties:" ]
+      @ (render_schema_lines (level + 1) value_type)
+      @ [ $"{indent level}minProperties: 1"
+          $"{indent level}maxProperties: 1" ]
     | OpenAPIDataModel.Tuple elements ->
       let prefix_items =
         elements
