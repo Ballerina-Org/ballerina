@@ -27,11 +27,7 @@ module Value =
     IsValueInstanceOf<'valueExt>
       -> 'valueExt
       -> TypeValue<'valueExt>
-      -> Reader<
-        Unit,
-        TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
-        Errors<Unit>
-       >
+      -> Reader<Unit, TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>, Errors<Unit>>
 
   type Value<'T, 'ext> with
     static member IsInstanceOf<'valueExt when 'valueExt: comparison>
@@ -39,9 +35,7 @@ module Value =
       : IsValueInstanceOf<'valueExt> =
       fun (v, t) ->
         reader {
-          let! (_ctx: TypeCheckContext<'valueExt>, s: TypeCheckState<'valueExt>) =
-            reader.GetContext()
-
+          let! (_ctx: TypeCheckContext<'valueExt>, s: TypeCheckState<'valueExt>) = reader.GetContext()
           let (<=) v t = Value.IsInstanceOf ext_checker (v, t)
 
           match v, t with
@@ -56,37 +50,24 @@ module Value =
               |> reader.OfSum
 
             return! v <= resolved_t
-          | Value.Primitive(PrimitiveValue.Bool _),
-            TypeValue.Primitive { value = PrimitiveType.Bool }
-          | Value.Primitive(PrimitiveValue.Date _),
-            TypeValue.Primitive { value = PrimitiveType.DateOnly }
-          | Value.Primitive(PrimitiveValue.DateTime _),
-            TypeValue.Primitive { value = PrimitiveType.DateTime }
-          | Value.Primitive(PrimitiveValue.Decimal _),
-            TypeValue.Primitive { value = PrimitiveType.Decimal }
-          | Value.Primitive(PrimitiveValue.Float32 _),
-            TypeValue.Primitive { value = PrimitiveType.Float32 }
-          | Value.Primitive(PrimitiveValue.Float64 _),
-            TypeValue.Primitive { value = PrimitiveType.Float64 }
-          | Value.Primitive(PrimitiveValue.Guid _),
-            TypeValue.Primitive { value = PrimitiveType.Guid }
-          | Value.Primitive(PrimitiveValue.Int32 _),
-            TypeValue.Primitive { value = PrimitiveType.Int32 }
-          | Value.Primitive(PrimitiveValue.Int64 _),
-            TypeValue.Primitive { value = PrimitiveType.Int64 }
-          | Value.Primitive(PrimitiveValue.String _),
-            TypeValue.Primitive { value = PrimitiveType.String }
-          | Value.Primitive(PrimitiveValue.TimeSpan _),
-            TypeValue.Primitive { value = PrimitiveType.TimeSpan }
-          | Value.Primitive(PrimitiveValue.Unit),
-            TypeValue.Primitive { value = PrimitiveType.Unit } -> return ()
+          | Value.Primitive(PrimitiveValue.Bool _), TypeValue.Primitive { value = PrimitiveType.Bool }
+          | Value.Primitive(PrimitiveValue.Date _), TypeValue.Primitive { value = PrimitiveType.DateOnly }
+          | Value.Primitive(PrimitiveValue.DateTime _), TypeValue.Primitive { value = PrimitiveType.DateTime }
+          | Value.Primitive(PrimitiveValue.Decimal _), TypeValue.Primitive { value = PrimitiveType.Decimal }
+          | Value.Primitive(PrimitiveValue.Float32 _), TypeValue.Primitive { value = PrimitiveType.Float32 }
+          | Value.Primitive(PrimitiveValue.Float64 _), TypeValue.Primitive { value = PrimitiveType.Float64 }
+          | Value.Primitive(PrimitiveValue.Guid _), TypeValue.Primitive { value = PrimitiveType.Guid }
+          | Value.Primitive(PrimitiveValue.Int32 _), TypeValue.Primitive { value = PrimitiveType.Int32 }
+          | Value.Primitive(PrimitiveValue.Int64 _), TypeValue.Primitive { value = PrimitiveType.Int64 }
+          | Value.Primitive(PrimitiveValue.String _), TypeValue.Primitive { value = PrimitiveType.String }
+          | Value.Primitive(PrimitiveValue.TimeSpan _), TypeValue.Primitive { value = PrimitiveType.TimeSpan }
+          | Value.Primitive(PrimitiveValue.Unit), TypeValue.Primitive { value = PrimitiveType.Unit } -> return ()
           | Value.Sum(case, value), TypeValue.Sum { value = case_types } ->
             let! case_type =
               case_types
               |> List.tryItem (case.Case - 1)
               |> sum.OfOption(
-                (fun () ->
-                  $"Error: case {case.Case} does not exist in type {case_types}")
+                (fun () -> $"Error: case {case.Case} does not exist in type {case_types}")
                 |> Errors.Singleton()
               )
               |> reader.OfSum
@@ -96,18 +77,14 @@ module Value =
             let! case_symbol =
               s.Symbols.UnionCases
               |> Map.tryFind case
-              |> sum.OfOption(
-                (fun () -> $"Error: case {case.Name} does not exist")
-                |> Errors.Singleton()
-              )
+              |> sum.OfOption((fun () -> $"Error: case {case.Name} does not exist") |> Errors.Singleton())
               |> reader.OfSum
 
             let! case_type =
               case_types
               |> OrderedMap.tryFind case_symbol
               |> sum.OfOption(
-                (fun () ->
-                  $"Error: case {case.Name} does not exist in type {case_types}")
+                (fun () -> $"Error: case {case.Name} does not exist in type {case_types}")
                 |> Errors.Singleton()
               )
               |> reader.OfSum
@@ -122,8 +99,7 @@ module Value =
             else
               return!
                 List.zip fields field_types
-                |> Seq.map (fun (field_value, field_type) ->
-                  field_value <= field_type)
+                |> Seq.map (fun (field_value, field_type) -> field_value <= field_type)
                 |> reader.All
                 |> reader.Ignore
           | Value.Record fields, TypeValue.Record { value = field_types } ->
@@ -135,18 +111,14 @@ module Value =
                   let! field_symbol =
                     s.Symbols.RecordFields
                     |> Map.tryFind field_name
-                    |> sum.OfOption(
-                      (fun () -> $"Error: field {field_name} does not exist")
-                      |> Errors.Singleton()
-                    )
+                    |> sum.OfOption((fun () -> $"Error: field {field_name} does not exist") |> Errors.Singleton())
                     |> reader.OfSum
 
                   let! field_type, _ =
                     field_types
                     |> OrderedMap.tryFind field_symbol
                     |> sum.OfOption(
-                      (fun () ->
-                        $"Error: field {field_name} does not exist in type {field_types}")
+                      (fun () -> $"Error: field {field_name} does not exist in type {field_types}")
                       |> Errors.Singleton()
                     )
                     |> reader.OfSum
@@ -155,8 +127,7 @@ module Value =
                 })
               |> reader.All
               |> reader.Ignore
-          | Value.Ext(ext, _), t ->
-            return! ext_checker (Value.IsInstanceOf ext_checker) ext t
+          | Value.Ext(ext, _), t -> return! ext_checker (Value.IsInstanceOf ext_checker) ext t
           | Value.Var _, _ -> return! failwith "Not implemented"
           | Value.RecordDes _, _ -> return! failwith "Not implemented" // this is a lambda
           | Value.UnionCons _, _ -> return! failwith "Not implemented" // this is a lambda
@@ -164,7 +135,6 @@ module Value =
           | Value.TypeLambda _, _ -> return! failwith "Not implemented"
           | _ ->
             return!
-              Errors.Singleton () (fun () ->
-                $"Error: value {v} is not an instance of type {t}")
+              Errors.Singleton () (fun () -> $"Error: value {v} is not an instance of type {t}")
               |> reader.Throw
         }

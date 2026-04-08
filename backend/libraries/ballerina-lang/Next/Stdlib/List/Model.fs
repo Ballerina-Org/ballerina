@@ -43,60 +43,40 @@ module Model =
     override self.ToString() : string =
       match self with
       | List values ->
-        let valueStr =
-          values |> List.map (fun v -> v.ToString()) |> String.concat "; "
-
+        let valueStr = values |> List.map (fun v -> v.ToString()) |> String.concat "; "
         $"[{valueStr}]"
 
 
-  type ListValueDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct> =
-    ValueDTO<'extDTO>[]
+  type ListValueDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct> = ValueDTO<'extDTO>[]
 
   type ListDeltaExt<'valueExt, 'deltaExt> =
     | UpdateElement of index: int * delta: Delta<'valueExt, 'deltaExt>
     | AppendElement of value: Model.Value<Model.TypeValue<'valueExt>, 'valueExt>
     | RemoveElement of index: int
-    | InsertElement of
-      index: int *
-      value: Model.Value<Model.TypeValue<'valueExt>, 'valueExt>
+    | InsertElement of index: int * value: Model.Value<Model.TypeValue<'valueExt>, 'valueExt>
     | DuplicateElement of index: int
-    | SetAllElements of
-      value: Model.Value<Model.TypeValue<'valueExt>, 'valueExt>
+    | SetAllElements of value: Model.Value<Model.TypeValue<'valueExt>, 'valueExt>
     | RemoveAllElements
     | MoveElement of fromIndex: int * toIndex: int
 
   type UpdateElementDTO<'extDTO, 'deltaExtDTO
-    when 'extDTO: not null
-    and 'extDTO: not struct
-    and 'deltaExtDTO: not null
-    and 'deltaExtDTO: not struct> =
+    when 'extDTO: not null and 'extDTO: not struct and 'deltaExtDTO: not null and 'deltaExtDTO: not struct> =
     { Index: int
       Value: DeltaDTO<'extDTO, 'deltaExtDTO> }
 
-  type InsertElementDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct>
-    =
+  type InsertElementDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct> =
     { Index: int; Value: ValueDTO<'extDTO> }
 
-  type DuplicateElementDTO<'extDTO
-    when 'extDTO: not null and 'extDTO: not struct> = { Index: int }
+  type DuplicateElementDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct> = { Index: int }
 
-  type MoveElementDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct> =
-    { From: int; To: int }
+  type MoveElementDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct> = { From: int; To: int }
 
   type ListDeltaExtDTO<'extDTO, 'deltaExtDTO
-    when 'extDTO: not null
-    and 'extDTO: not struct
-    and 'deltaExtDTO: not null
-    and 'deltaExtDTO: not struct> =
-    { UpdateElement:
-        System.Collections.Generic.Dictionary<
-          int,
-          DeltaDTO<'extDTO, 'deltaExtDTO>
-         >
+    when 'extDTO: not null and 'extDTO: not struct and 'deltaExtDTO: not null and 'deltaExtDTO: not struct> =
+    { UpdateElement: System.Collections.Generic.Dictionary<int, DeltaDTO<'extDTO, 'deltaExtDTO>>
       AppendElement: ValueDTO<'extDTO> | null
       RemoveElement: Nullable<int>
-      InsertElement:
-        System.Collections.Generic.Dictionary<int, ValueDTO<'extDTO>>
+      InsertElement: System.Collections.Generic.Dictionary<int, ValueDTO<'extDTO>>
       DuplicateElement: Nullable<int>
       SetAllElements: ValueDTO<'extDTO> | null
       RemoveAllElements: Nullable<bool> // not sure about this
@@ -112,15 +92,9 @@ module Model =
         RemoveAllElements = Nullable()
         MoveElement = null }
 
-    static member CreateUpdate
-      index
-      delta
-      : ListDeltaExtDTO<'extDTO, 'deltaExtDTO> =
+    static member CreateUpdate index delta : ListDeltaExtDTO<'extDTO, 'deltaExtDTO> =
       let updateElement =
-        new System.Collections.Generic.Dictionary<
-          int,
-          DeltaDTO<'extDTO, 'deltaExtDTO>
-         >()
+        new System.Collections.Generic.Dictionary<int, DeltaDTO<'extDTO, 'deltaExtDTO>>()
 
       updateElement.Add(index, delta)
 
@@ -131,16 +105,11 @@ module Model =
       { ListDeltaExtDTO<'extDTO, 'deltaExtDTO>.Empty with
           AppendElement = value }
 
-    static member CreateRemove
-      (index: int)
-      : ListDeltaExtDTO<'extDTO, 'deltaExtDTO> =
+    static member CreateRemove(index: int) : ListDeltaExtDTO<'extDTO, 'deltaExtDTO> =
       { ListDeltaExtDTO<'extDTO, 'deltaExtDTO>.Empty with
           RemoveElement = Nullable index }
 
-    static member CreateInsert
-      index
-      value
-      : ListDeltaExtDTO<'extDTO, 'deltaExtDTO> =
+    static member CreateInsert index value : ListDeltaExtDTO<'extDTO, 'deltaExtDTO> =
       let insertElement =
         new System.Collections.Generic.Dictionary<int, ValueDTO<'extDTO>>()
 
@@ -149,26 +118,18 @@ module Model =
       { ListDeltaExtDTO<'extDTO, 'deltaExtDTO>.Empty with
           InsertElement = insertElement }
 
-    static member CreateDuplicate
-      index
-      : ListDeltaExtDTO<'extDTO, 'deltaExtDTO> =
+    static member CreateDuplicate index : ListDeltaExtDTO<'extDTO, 'deltaExtDTO> =
       { ListDeltaExtDTO<'extDTO, 'deltaExtDTO>.Empty with
           DuplicateElement = Nullable index }
 
-    static member CreateSetAllElements
-      value
-      : ListDeltaExtDTO<'extDTO, 'deltaExtDTO> =
+    static member CreateSetAllElements value : ListDeltaExtDTO<'extDTO, 'deltaExtDTO> =
       { ListDeltaExtDTO<'extDTO, 'deltaExtDTO>.Empty with
           SetAllElements = value }
 
-    static member CreateRemoveAllElements
-      : ListDeltaExtDTO<'extDTO, 'deltaExtDTO> =
+    static member CreateRemoveAllElements: ListDeltaExtDTO<'extDTO, 'deltaExtDTO> =
       { ListDeltaExtDTO<'extDTO, 'deltaExtDTO>.Empty with
           RemoveAllElements = Nullable true }
 
-    static member CreateMoveElement
-      fromIndex
-      toIndex
-      : ListDeltaExtDTO<'extDTO, 'deltaExtDTO> =
+    static member CreateMoveElement fromIndex toIndex : ListDeltaExtDTO<'extDTO, 'deltaExtDTO> =
       { ListDeltaExtDTO<'extDTO, 'deltaExtDTO>.Empty with
           MoveElement = { From = fromIndex; To = toIndex } }

@@ -87,7 +87,7 @@ module CUD =
     (list_lens: PartialLens<'ext, List<Value<TypeValue<'ext>, 'ext>>>)
     (map_lens: PartialLens<'ext, Map<Value<TypeValue<'ext>, 'ext>, Value<TypeValue<'ext>, 'ext>>>)
     (value_lens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
-    (typeCheckingConfig: Option<TypeCheckingConfig<'ext>>)
+    (typeEvalConfig: Option<TypeEvalConfig<'ext>>)
     : (LanguageContext<'runtimeContext, 'ext, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>
         -> LanguageContext<'runtimeContext, 'ext, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>) *
       TypeSymbol *
@@ -109,7 +109,7 @@ module CUD =
         db_ops
         list_lens.Set
         value_lens
-        (typeCheckingConfig |> Option.map (fun cfg -> cfg.QueryTypeSymbol))
+        (typeEvalConfig |> Option.map (fun cfg -> cfg.QueryTypeSymbol))
 
     (fun languageContext ->
       languageContext

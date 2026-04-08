@@ -9,120 +9,74 @@ module Patterns =
   open Ballerina.DSL.Next.Types
 
   type DecimalOperations<'ext> with
-    static member AsString
-      (op: DecimalOperations<'ext>)
-      : Sum<Unit, Errors<Unit>> =
+    static member AsString(op: DecimalOperations<'ext>) : Sum<Unit, Errors<Unit>> =
       match op with
       | DecimalOperations.String -> () |> sum.Return
-      | _ ->
-        sum.Throw
-        <| Errors.Singleton () (fun () -> "Expected ToString operation")
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected ToString operation")
 
-    static member AsTryParse
-      (op: DecimalOperations<'ext>)
-      : Sum<Unit, Errors<Unit>> =
+    static member AsTryParse(op: DecimalOperations<'ext>) : Sum<Unit, Errors<Unit>> =
       match op with
       | DecimalOperations.TryParse -> () |> sum.Return
-      | _ ->
-        sum.Throw
-        <| Errors.Singleton () (fun () -> "Expected TryParse operation")
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected TryParse operation")
 
-    static member AsPlus
-      (op: DecimalOperations<'ext>)
-      : Sum<Option<decimal>, Errors<Unit>> =
+    static member AsPlus(op: DecimalOperations<'ext>) : Sum<Option<decimal>, Errors<Unit>> =
       match op with
       | DecimalOperations.Plus v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw <| Errors.Singleton () (fun () -> "Expected Plus operation")
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected Plus operation")
 
-    static member AsMinus
-      (op: DecimalOperations<'ext>)
-      : Sum<Option<decimal>, Errors<Unit>> =
+    static member AsMinus(op: DecimalOperations<'ext>) : Sum<Option<decimal>, Errors<Unit>> =
       match op with
       | DecimalOperations.Minus v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw <| Errors.Singleton () (fun () -> "Expected Minus operation")
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected Minus operation")
 
-    static member AsDivide
-      (op: DecimalOperations<'ext>)
-      : Sum<Option<decimal>, Errors<Unit>> =
+    static member AsDivide(op: DecimalOperations<'ext>) : Sum<Option<decimal>, Errors<Unit>> =
       match op with
       | DecimalOperations.Divide v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw <| Errors.Singleton () (fun () -> "Expected Divide operation")
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected Divide operation")
 
-    static member AsTimes
-      (op: DecimalOperations<'ext>)
-      : Sum<Option<decimal>, Errors<Unit>> =
+    static member AsTimes(op: DecimalOperations<'ext>) : Sum<Option<decimal>, Errors<Unit>> =
       match op with
       | DecimalOperations.Times v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw <| Errors.Singleton () (fun () -> "Expected Times operation")
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected Times operation")
 
-    static member AsPower
-      (op: DecimalOperations<'ext>)
-      : Sum<Option<decimal>, Errors<Unit>> =
+    static member AsPower(op: DecimalOperations<'ext>) : Sum<Option<decimal>, Errors<Unit>> =
       match op with
       | DecimalOperations.Power v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw <| Errors.Singleton () (fun () -> "Expected Power operation")
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected Power operation")
 
-    static member AsMod
-      (op: DecimalOperations<'ext>)
-      : Sum<Option<decimal>, Errors<Unit>> =
+    static member AsMod(op: DecimalOperations<'ext>) : Sum<Option<decimal>, Errors<Unit>> =
       match op with
       | DecimalOperations.Mod v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw <| Errors.Singleton () (fun () -> "Expected Mod operation")
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected Mod operation")
 
-    static member AsEqual
-      (op: DecimalOperations<'ext>)
-      : Sum<Option<decimal>, Errors<Unit>> =
+    static member AsEqual(op: DecimalOperations<'ext>) : Sum<Option<decimal>, Errors<Unit>> =
       match op with
       | DecimalOperations.Equal v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw <| Errors.Singleton () (fun () -> "Expected Equal operation")
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected Equal operation")
 
-    static member AsNotEqual
-      (op: DecimalOperations<'ext>)
-      : Sum<Option<decimal>, Errors<Unit>> =
+    static member AsNotEqual(op: DecimalOperations<'ext>) : Sum<Option<decimal>, Errors<Unit>> =
       match op with
       | DecimalOperations.NotEqual v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw
-        <| Errors.Singleton () (fun () -> "Expected NotEqual operation")
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected NotEqual operation")
 
-    static member AsGreaterThan
-      (op: DecimalOperations<'ext>)
-      : Sum<Option<decimal>, Errors<Unit>> =
+    static member AsGreaterThan(op: DecimalOperations<'ext>) : Sum<Option<decimal>, Errors<Unit>> =
       match op with
       | DecimalOperations.GreaterThan v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw
-        <| Errors.Singleton () (fun () -> "Expected GreaterThan operation")
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected GreaterThan operation")
 
-    static member AsGreaterThanOrEqual
-      (op: DecimalOperations<'ext>)
-      : Sum<Option<decimal>, Errors<Unit>> =
+    static member AsGreaterThanOrEqual(op: DecimalOperations<'ext>) : Sum<Option<decimal>, Errors<Unit>> =
       match op with
       | DecimalOperations.GreaterThanOrEqual v -> v.v1 |> sum.Return
       | _ ->
         sum.Throw
-        <| Errors.Singleton () (fun () ->
-          "Expected GreaterThanOrEqual operation")
+        <| Errors.Singleton () (fun () -> "Expected GreaterThanOrEqual operation")
 
-    static member AsLessThan
-      (op: DecimalOperations<'ext>)
-      : Sum<Option<decimal>, Errors<Unit>> =
+    static member AsLessThan(op: DecimalOperations<'ext>) : Sum<Option<decimal>, Errors<Unit>> =
       match op with
       | DecimalOperations.LessThan v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw
-        <| Errors.Singleton () (fun () -> "Expected LessThan operation")
+      | _ -> sum.Throw <| Errors.Singleton () (fun () -> "Expected LessThan operation")
 
-    static member AsLessThanOrEqual
-      (op: DecimalOperations<'ext>)
-      : Sum<Option<decimal>, Errors<Unit>> =
+    static member AsLessThanOrEqual(op: DecimalOperations<'ext>) : Sum<Option<decimal>, Errors<Unit>> =
       match op with
       | DecimalOperations.LessThanOrEqual v -> v.v1 |> sum.Return
       | _ ->

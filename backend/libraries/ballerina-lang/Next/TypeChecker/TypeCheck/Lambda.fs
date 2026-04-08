@@ -29,23 +29,18 @@ module Lambda =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckLambda<'valueExt when 'valueExt: comparison>
-      (config: TypeCheckingConfig<'valueExt>)
+      (config: TypeEvalConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
-      : TypeChecker<
-          Location * ExprLambda<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-          'valueExt
-         >
-      =
+      : TypeChecker<ExprLambda<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
-          (lambdaLoc,
-           { Param = x
-             ParamType = t
-             Body = body
-             BodyType = bt }) ->
+          { Param = x
+            ParamType = t
+            Body = body
+            BodyType = bt } ->
         // let (!) = typeCheckExpr context_t
         let (=>) c e = typeCheckExpr c e
-        let loc0 = lambdaLoc
+        let loc0 = body.Location
 
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
@@ -78,8 +73,7 @@ module Lambda =
           let! var_type =
             match t, context_t with
             | Some t, _ -> state { t }
-            | _, Some(TypeValue.Arrow({ value = input, _ })) ->
-              state { input, Kind.Star }
+            | _, Some(TypeValue.Arrow({ value = input, _ })) -> state { input, Kind.Star }
             | _ ->
               state {
                 let guid = Guid.CreateVersion7()
@@ -89,33 +83,20 @@ module Lambda =
                     Synthetic = true
                     Guid = guid }
 
-                do!
-                  state.SetState(
-                    TypeCheckState.Updaters.Vars(
-                      UnificationState.EnsureVariableExists freshVar
-                    )
-                  )
-
+                do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists freshVar))
                 freshVar |> TypeValue.Var, Kind.Star
               }
 
           let body_constraint_t =
             match context_t with
-            | Some(TypeValue.Arrow({ value = _, TypeValue.Var v })) when
-              v.Synthetic
-              ->
-              None
+            | Some(TypeValue.Arrow({ value = _, TypeValue.Var v })) when v.Synthetic -> None
             | Some(TypeValue.Arrow({ value = _, ret_t })) -> Some ret_t
             | _ -> bt |> Option.map fst
 
           let! body, _ =
             body_constraint_t => body
             |> state.MapContext(
-              TypeCheckContext.Updaters.Values(
-                Map.add
-                  (x.Name |> Identifier.LocalScope |> ctx.Scope.Resolve)
-                  var_type
-              )
+              TypeCheckContext.Updaters.Values(Map.add (x.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) var_type)
             )
 
           let t_body = body.Type
@@ -125,26 +106,18 @@ module Lambda =
 
           do!
             match bt with
-            | Some(t_bt, _) ->
-              TypeValue.Unify(loc0, t_bt, t_body)
-              |> Expr<'T, 'Id, 'valueExt>.liftUnification
+            | Some(t_bt, _) -> TypeValue.Unify(loc0, t_bt, t_body) |> Expr<'T, 'Id, 'valueExt>.liftUnification
             | None -> state { return () }
 
           let! t_x =
             var_type
             |> fst
-            |> TypeValue.Instantiate
-              ()
-              (TypeExpr.Eval config typeCheckExpr)
-              loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
           let! t_body =
             t_body
-            |> TypeValue.Instantiate
-              ()
-              (TypeExpr.Eval config typeCheckExpr)
-              loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
           // do!
@@ -154,33 +127,11 @@ module Lambda =
 
           let! t_res =
             TypeValue.CreateArrow(t_x, t_body)
-            |> TypeValue.Instantiate
-              ()
-              (TypeExpr.Eval config typeCheckExpr)
-              loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
-          let paramHintLoc =
-            { lambdaLoc with
-                Column = lambdaLoc.Column + x.Name.Length }
+          do! TypeCheckState.bindInlayHint (loc0, x.Name, fst var_type)
 
-          if not ctx.IsTypeCheckingLetValue then
-            do!
-              match t with
-              | Some _ -> state { return () }
-              | None -> TypeCheckState.bindInlayHint (paramHintLoc, x.Name, t_x)
-
-          return
-            TypeCheckedExpr.Lambda(
-              x,
-              t_x,
-              body,
-              t_body,
-              t_res,
-              Kind.Star,
-              loc0,
-              ctx.Scope
-            ),
-            ctx
+          return TypeCheckedExpr.Lambda(x, t_x, body, t_body, t_res, Kind.Star, loc0, ctx.Scope), ctx
         }
 // |> state.MapError(Errors.Map(String.appendNewline $"...when typechecking `fun {x.Name} -> ...`"))

@@ -16,9 +16,7 @@ module FromTypeValueTypeExpr =
     static member FromJsonFromTypeValue
       (typeValueFromJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors<_>>)
       : TypeExprParser<'valueExt> =
-      Sum.assertDiscriminatorAndContinueWithValue
-        discriminator
-        (typeValueFromJson >> sum.Map TypeExpr.FromTypeValue)
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (typeValueFromJson >> sum.Map TypeExpr.FromTypeValue)
 
     static member ToJsonFromTypeValue
       (typeValueToJson: TypeValue<'valueExt> -> JsonValue)

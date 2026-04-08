@@ -29,8 +29,7 @@ module GetById =
     =
 
     let memoryDBGetById =
-      Identifier.FullyQualified([ "DB" ], "getById")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "DB" ], "getById") |> TypeCheckScope.Empty.Resolve
 
     let memoryDBGetByIdType =
       TypeValue.CreateLambda(
@@ -52,9 +51,7 @@ module GetById =
                       ),
                       TypeExpr.Lookup("entity" |> Identifier.LocalScope)
                     ),
-                    TypeExpr.Lookup(
-                      "entity_with_props" |> Identifier.LocalScope
-                    )
+                    TypeExpr.Lookup("entity_with_props" |> Identifier.LocalScope)
                   ),
                   TypeExpr.Lookup("entityId" |> Identifier.LocalScope)
                 ),
@@ -62,9 +59,7 @@ module GetById =
                   TypeExpr.Lookup("entityId" |> Identifier.LocalScope),
                   TypeExpr.Sum(
                     [ TypeExpr.Primitive PrimitiveType.Unit
-                      TypeExpr.Lookup(
-                        "entity_with_props" |> Identifier.LocalScope
-                      ) ]
+                      TypeExpr.Lookup("entity_with_props" |> Identifier.LocalScope) ]
                   )
                 )
               )
@@ -74,20 +69,12 @@ module GetById =
       )
 
     let memoryDBGetByIdKind =
-      Kind.Arrow(
-        Kind.Schema,
-        Kind.Arrow(
-          Kind.Star,
-          Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
-        )
-      )
+      Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))))
 
     let getByIdOperation: OperationExtension<'runtimeContext, _, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBGetByIdType,
-              memoryDBGetByIdKind,
-              DBValues.GetById {| EntityRef = None |})
+          <| (memoryDBGetByIdType, memoryDBGetByIdKind, DBValues.GetById {| EntityRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -113,10 +100,7 @@ module GetById =
                 let! v =
                   v
                   |> valueLens.Get
-                  |> sum.OfOption(
-                    Errors.Singleton loc0 (fun () ->
-                      "Cannot get value from extension")
-                  )
+                  |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
                   |> reader.OfSum
 
                 let! v =
@@ -126,8 +110,7 @@ module GetById =
                   |> reader.OfSum
 
                 return
-                  (DBValues.GetById({| EntityRef = Some v |}) |> valueLens.Set,
-                   Some memoryDBGetById)
+                  (DBValues.GetById({| EntityRef = Some v |}) |> valueLens.Set, Some memoryDBGetById)
                   |> Ext
               | Some(entity_ref) -> // the closure has the first operand - second step in the application
                 let! v =
@@ -136,12 +119,7 @@ module GetById =
                   |> reader.Catch
 
                 match v with
-                | Right _ ->
-                  return
-                    Value.Sum(
-                      { Case = 1; Count = 2 },
-                      Value.Primitive PrimitiveValue.Unit
-                    )
+                | Right _ -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
                 | Left value -> return Value.Sum({ Case = 2; Count = 2 }, value)
             } }
 

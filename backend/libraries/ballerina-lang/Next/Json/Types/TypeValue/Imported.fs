@@ -20,29 +20,27 @@ module TypeValueImported =
     static member FromJsonImported
       (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors<unit>>)
       : JsonValue -> Sum<TypeValue<'valueExt>, Errors<unit>> =
-      Sum.assertDiscriminatorAndContinueWithValue
-        discriminator
-        (fun applyFields ->
-          sum {
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun applyFields ->
+        sum {
 
-            let! (id, sym, pars, args) = applyFields |> JsonValue.AsQuadruple
-            let! id = id |> ResolvedIdentifier.FromJson
-            let! sym = sym |> TypeSymbol.FromJson
-            let! args = args |> JsonValue.AsArray
-            let! args = args |> Seq.map fromRootJson |> sum.All
-            let! pars = pars |> JsonValue.AsArray
-            let! pars = pars |> Seq.map TypeParameter.FromJson |> sum.All
+          let! (id, sym, pars, args) = applyFields |> JsonValue.AsQuadruple
+          let! id = id |> ResolvedIdentifier.FromJson
+          let! sym = sym |> TypeSymbol.FromJson
+          let! args = args |> JsonValue.AsArray
+          let! args = args |> Seq.map fromRootJson |> sum.All
+          let! pars = pars |> JsonValue.AsArray
+          let! pars = pars |> Seq.map TypeParameter.FromJson |> sum.All
 
-            return
-              TypeValue.CreateImported(
-                { Id = id
-                  Sym = sym
-                  Parameters = pars
-                  Arguments = args
+          return
+            TypeValue.CreateImported(
+              { Id = id
+                Sym = sym
+                Parameters = pars
+                Arguments = args
 
-                }
-              )
-          })
+              }
+            )
+        })
 
     static member ToJsonImported
       (toRootJson: TypeValue<'valueExt> -> JsonValue)
@@ -50,15 +48,10 @@ module TypeValueImported =
       fun i ->
         let idJson = i.Id |> ResolvedIdentifier.ToJson
         let symJson = i.Sym |> TypeSymbol.ToJson
-
-        let args =
-          i.Arguments |> List.map toRootJson |> Seq.toArray |> JsonValue.Array
+        let args = i.Arguments |> List.map toRootJson |> Seq.toArray |> JsonValue.Array
 
         let params_ =
-          i.Parameters
-          |> List.map TypeParameter.ToJson
-          |> Seq.toArray
-          |> JsonValue.Array
+          i.Parameters |> List.map TypeParameter.ToJson |> Seq.toArray |> JsonValue.Array
 
         JsonValue.Array [| idJson; symJson; params_; args |]
         |> Json.discriminator discriminator

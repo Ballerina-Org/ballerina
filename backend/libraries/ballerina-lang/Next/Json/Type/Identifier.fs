@@ -26,8 +26,7 @@ module TypeIdentifier =
     static member ToJson: Identifier -> JsonValue =
       fun id ->
         match id with
-        | Identifier.LocalScope name ->
-          name |> JsonValue.String |> Json.discriminator discriminator
+        | Identifier.LocalScope name -> name |> JsonValue.String |> Json.discriminator discriminator
         | Identifier.FullyQualified(scope, name) ->
           (name :: scope |> Seq.map JsonValue.String |> Seq.toArray)
           |> JsonValue.Array

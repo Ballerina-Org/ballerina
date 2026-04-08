@@ -28,8 +28,7 @@ module Type =
   type ComplexType<'valueExt> =
     | ScopedIdentifier of NonEmptyList<string>
     | ApplicationArguments of NonEmptyList<TypeExpr<'valueExt>>
-    | BinaryExpressionChain of
-      NonEmptyList<BinaryTypeOperator * TypeExpr<'valueExt>>
+    | BinaryExpressionChain of NonEmptyList<BinaryTypeOperator * TypeExpr<'valueExt>>
     | RecordOrTupleDesChain of NonEmptyList<Sum<string, int>>
 
   let parseAllComplexTypeShapes: Set<ComplexTypeKind> =
@@ -52,13 +51,7 @@ module Type =
     }
 
   let rec typeDecl
-    (parseExpr:
-      Parser<
-        Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-        LocalizedToken,
-        Location,
-        Errors<Location>
-       >)
+    (parseExpr: Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>>)
     (parseComplexShapes: Set<ComplexTypeKind>)
     : Parser<TypeExpr<'valueExt>, _, _, Errors<Location>> =
     let lookupTypeDecl () =
@@ -274,10 +267,7 @@ module Type =
       }
 
     let schema () =
-      TypeSchema.schema
-        parseExpr
-        (fun () -> typeDecl parseExpr parseAllComplexTypeShapes)
-        ()
+      TypeSchema.schema parseExpr (fun () -> typeDecl parseExpr parseAllComplexTypeShapes) ()
 
     let record () =
       parser {
@@ -296,14 +286,10 @@ module Type =
 
                   return!
                     parser {
-                      let! typeDecl =
-                        typeDecl parseExpr parseAllComplexTypeShapes
-
+                      let! typeDecl = typeDecl parseExpr parseAllComplexTypeShapes
                       return (id, typeDecl)
                     }
-                    |> parser.MapError(
-                      Errors.MapPriority(replaceWith ErrorPriority.High)
-                    )
+                    |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 })
 
             do! semicolonOperator |> parser.Try |> parser.Ignore
@@ -312,8 +298,7 @@ module Type =
             return
               TypeExpr.Record(
                 fields
-                |> List.map (fun (id, td) ->
-                  (id |> Identifier.LocalScope |> TypeExpr.Lookup, td))
+                |> List.map (fun (id, td) -> (id |> Identifier.LocalScope |> TypeExpr.Lookup, td))
               )
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
@@ -337,15 +322,10 @@ module Type =
                     parser {
                       let! id = singleIdentifier
                       do! ofKeyword
-
-                      let! typeDecl =
-                        typeDecl parseExpr parseAllComplexTypeShapes
-
+                      let! typeDecl = typeDecl parseExpr parseAllComplexTypeShapes
                       return (id, typeDecl)
                     }
-                    |> parser.MapError(
-                      Errors.MapPriority(replaceWith ErrorPriority.High)
-                    )
+                    |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 }
               )
               |> parser.Map(NonEmptyList.ToList)
@@ -353,8 +333,7 @@ module Type =
             return
               TypeExpr.Union(
                 cases
-                |> List.map (fun (id, td) ->
-                  (id |> Identifier.LocalScope |> TypeExpr.Lookup, td))
+                |> List.map (fun (id, td) -> (id |> Identifier.LocalScope |> TypeExpr.Lookup, td))
               )
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
@@ -393,10 +372,7 @@ module Type =
                   let! op = binaryTypeOperator
 
                   let! value =
-                    typeDecl
-                      parseExpr
-                      (parseComplexShapes
-                       |> Set.remove ComplexTypeKind.BinaryExpressionChain)
+                    typeDecl parseExpr (parseComplexShapes |> Set.remove ComplexTypeKind.BinaryExpressionChain)
 
                   return op, value
                 }
@@ -418,11 +394,7 @@ module Type =
               parser.AtLeastOne(
                 parser {
                   do! dotOperator
-
-                  return!
-                    parser.Any
-                      [ singleIdentifier |> parser.Map Left
-                        intLiteralToken () |> parser.Map Right ]
+                  return! parser.Any [ singleIdentifier |> parser.Map Left; intLiteralToken () |> parser.Map Right ]
                 }
               )
 
@@ -460,8 +432,7 @@ module Type =
       }
 
     let simpleShapes =
-      [ (fun () -> typeDecl parseExpr parseAllComplexTypeShapes)
-        |> betweenBrackets
+      [ (fun () -> typeDecl parseExpr parseAllComplexTypeShapes) |> betweenBrackets
         typeLambda ()
         schema ()
         record ()
@@ -527,25 +498,19 @@ module Type =
             complexShapes
 
         let complexShapes =
-          if
-            parseComplexShapes.Contains ComplexTypeKind.BinaryExpressionChain
-          then
+          if parseComplexShapes.Contains ComplexTypeKind.BinaryExpressionChain then
             binaryExpressionChainTail () :: complexShapes
           else
             complexShapes
 
         let complexShapes =
-          if
-            parseComplexShapes.Contains ComplexTypeKind.ApplicationArguments
-          then
+          if parseComplexShapes.Contains ComplexTypeKind.ApplicationArguments then
             application () :: complexShapes
           else
             complexShapes
 
         let complexShapes =
-          if
-            parseComplexShapes.Contains ComplexTypeKind.RecordOrTupleDesChain
-          then
+          if parseComplexShapes.Contains ComplexTypeKind.RecordOrTupleDesChain then
             recordDes () :: complexShapes
           else
             complexShapes
@@ -565,25 +530,17 @@ module Type =
 
                 match e with
                 | BinaryExpressionChain fields ->
-                  let fields
-                    : List<
-                        BinaryOperatorsElement<
-                          TypeExpr<'valueExt>,
-                          BinaryTypeOperator
-                         >
-                       > =
+                  let fields: List<BinaryOperatorsElement<TypeExpr<'valueExt>, BinaryTypeOperator>> =
                     fields
                     |> NonEmptyList.ToList
                     |> Seq.collect (fun (op, e) ->
-                      [ op |> Precedence.Operator
-                        (e, NonMergeable) |> Precedence.Operand ])
+                      [ op |> Precedence.Operator; (e, NonMergeable) |> Precedence.Operand ])
                     |> List.ofSeq
 
                   let chain = Operand(acc, merge_status) :: fields
 
                   let precedence: List<OperatorsPrecedence<BinaryTypeOperator>> =
-                    [ { Operators =
-                          [ BinaryTypeOperator.SingleArrow ] |> Set.ofList
+                    [ { Operators = [ BinaryTypeOperator.SingleArrow ] |> Set.ofList
                         Associativity = AssociateRight }
                       { Operators = [ BinaryTypeOperator.Times ] |> Set.ofList
                         Associativity = AssociateLeft }
@@ -600,16 +557,11 @@ module Type =
                             match op with
                             | BinaryTypeOperator.Times ->
                               match e1, src1, e2, src2 with
-                              | TypeExpr.Tuple l1,
-                                Mergeable,
-                                TypeExpr.Tuple l2,
-                                Mergeable -> TypeExpr.Tuple(l1 @ l2), Mergeable
-                              | TypeExpr.Tuple l1, Mergeable, _, _ ->
-                                TypeExpr.Tuple(l1 @ [ e2 ]), Mergeable
-                              | _, _, TypeExpr.Tuple l2, Mergeable ->
-                                TypeExpr.Tuple(e1 :: l2), Mergeable
-                              | TypeExpr.Tuple _, _, TypeExpr.Tuple _, _ ->
-                                TypeExpr.Tuple [ e1; e2 ], NonMergeable
+                              | TypeExpr.Tuple l1, Mergeable, TypeExpr.Tuple l2, Mergeable ->
+                                TypeExpr.Tuple(l1 @ l2), Mergeable
+                              | TypeExpr.Tuple l1, Mergeable, _, _ -> TypeExpr.Tuple(l1 @ [ e2 ]), Mergeable
+                              | _, _, TypeExpr.Tuple l2, Mergeable -> TypeExpr.Tuple(e1 :: l2), Mergeable
+                              | TypeExpr.Tuple _, _, TypeExpr.Tuple _, _ -> TypeExpr.Tuple [ e1; e2 ], NonMergeable
                               | _ -> TypeExpr.Tuple [ e1; e2 ], Mergeable
                             | BinaryTypeOperator.Plus ->
                               // do Console.WriteLine $"Combining type expressions with + : {e1},{src1} + {e2},{src2}"
@@ -618,23 +570,17 @@ module Type =
                               let res =
 
                                 match e1, src1, e2, src2 with
-                                | TypeExpr.Sum l1,
-                                  Mergeable,
-                                  TypeExpr.Sum l2,
-                                  Mergeable -> TypeExpr.Sum(l1 @ l2), Mergeable
-                                | TypeExpr.Sum l1, Mergeable, _, _ ->
-                                  TypeExpr.Sum(l1 @ [ e2 ]), Mergeable
-                                | _, _, TypeExpr.Sum l2, Mergeable ->
-                                  TypeExpr.Sum(e1 :: l2), Mergeable
-                                | TypeExpr.Sum _, _, TypeExpr.Sum _, _ ->
-                                  TypeExpr.Sum [ e1; e2 ], NonMergeable
+                                | TypeExpr.Sum l1, Mergeable, TypeExpr.Sum l2, Mergeable ->
+                                  TypeExpr.Sum(l1 @ l2), Mergeable
+                                | TypeExpr.Sum l1, Mergeable, _, _ -> TypeExpr.Sum(l1 @ [ e2 ]), Mergeable
+                                | _, _, TypeExpr.Sum l2, Mergeable -> TypeExpr.Sum(e1 :: l2), Mergeable
+                                | TypeExpr.Sum _, _, TypeExpr.Sum _, _ -> TypeExpr.Sum [ e1; e2 ], NonMergeable
                                 | _ -> TypeExpr.Sum [ e1; e2 ], Mergeable
 
                               // do Console.WriteLine $"Resulting type expression: {res.AsFSharpString}"
                               // do Console.ReadLine() |> ignore
                               res
-                            | BinaryTypeOperator.SingleArrow ->
-                              TypeExpr.Arrow(e1, e2), NonMergeable
+                            | BinaryTypeOperator.SingleArrow -> TypeExpr.Arrow(e1, e2), NonMergeable
                         // | _ ->
                         //   TypeExpr.Apply(
                         //     TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope(op.ToString())), e1),
@@ -653,16 +599,10 @@ module Type =
                   match acc with
                   | TypeExpr.Lookup(Identifier.LocalScope id) ->
                     let ids = (id :: (ids |> NonEmptyList.ToList)) |> List.rev
-
-                    return
-                      (TypeExpr.Lookup(
-                        Identifier.FullyQualified(ids.Tail, ids.Head)
-                      )),
-                      Mergeable
+                    return (TypeExpr.Lookup(Identifier.FullyQualified(ids.Tail, ids.Head))), Mergeable
                   | _ ->
                     return!
-                      (fun () ->
-                        $"Error: cannot collapse scoped identifier chain on non-identifier")
+                      (fun () -> $"Error: cannot collapse scoped identifier chain on non-identifier")
                       |> Errors.Singleton loc
                       |> sum.Throw
                 | ApplicationArguments args ->
@@ -678,13 +618,8 @@ module Type =
                      |> List.fold
                        (fun acc e ->
                          match e with
-                         | Left field_name ->
-                           TypeExpr.RecordDes(
-                             acc,
-                             Sum.Left(LocalIdentifier.Create field_name)
-                           )
-                         | Right index ->
-                           TypeExpr.RecordDes(acc, Sum.Right index))
+                         | Left field_name -> TypeExpr.RecordDes(acc, Sum.Left(LocalIdentifier.Create field_name))
+                         | Right index -> TypeExpr.RecordDes(acc, Sum.Right index))
                        acc),
                     Mergeable
               })

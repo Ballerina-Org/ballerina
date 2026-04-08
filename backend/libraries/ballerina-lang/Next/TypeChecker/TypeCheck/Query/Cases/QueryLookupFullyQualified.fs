@@ -18,11 +18,7 @@ module QueryCaseLookupFullyQualified =
     (closure: Map<ResolvedIdentifier, TypeQueryRow<'valueExt>>)
     (expr: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
     (l: Identifier)
-    : TypeCheckerResult<
-        (TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>),
-        'valueExt
-       >
-    =
+    : TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt> =
     state {
       let l = l |> ResolvedIdentifier.FromIdentifier
 

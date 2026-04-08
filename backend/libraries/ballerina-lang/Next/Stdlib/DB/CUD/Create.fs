@@ -30,23 +30,14 @@ module Create =
       DBTypeClass<'runtimeContext, 'db, 'ext>
         -> Value<TypeValue<'ext>, 'ext>
         -> EntityRef<'db, 'ext>
-        -> Reader<
-          Value<TypeValue<'ext>, 'ext>,
-          ExprEvalContext<'runtimeContext, 'ext>,
-          Errors<Location>
-         >)
+        -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Location>>)
     (entity_ref: EntityRef<'db, 'ext>)
     (loc0: Location)
     (_entityId: Value<TypeValue<'ext>, 'ext>)
     (v: Value<TypeValue<'ext>, 'ext>)
     (valueWithProps: Value<TypeValue<'ext>, 'ext>)
 
-    : Reader<
-        Value<TypeValue<'ext>, 'ext>,
-        ExprEvalContext<'runtimeContext, 'ext>,
-        Errors<Location>
-       >
-    =
+    : Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Location>> =
     reader {
       let _schema, _db, _entity, _schema_as_value = entity_ref
       let _schema_as_value = _schema_as_value.Value.Value
@@ -59,25 +50,13 @@ module Create =
               TypeCheckedExpr.UnsafeApplyForUntypedEval(
                 TypeCheckedExpr.UnsafeApplyForUntypedEval(
                   hookExpr,
-                  TypeCheckedExpr.FromValue(
-                    _schema_as_value,
-                    TypeValue.CreateUnit(),
-                    Kind.Star
-                  )
+                  TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
                 ),
-                TypeCheckedExpr.FromValue(
-                  _entityId,
-                  TypeValue.CreateUnit(),
-                  Kind.Star
-                )
+                TypeCheckedExpr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
               ),
               TypeCheckedExpr.FromValue(v, TypeValue.CreateUnit(), Kind.Star)
             ),
-            TypeCheckedExpr.FromValue(
-              valueWithProps,
-              TypeValue.CreateUnit(),
-              Kind.Star
-            )
+            TypeCheckedExpr.FromValue(valueWithProps, TypeValue.CreateUnit(), Kind.Star)
           )
 
         let! run_hook_result = _doRunHookExpr |> NonEmptyList.One |> Expr.Eval
@@ -92,20 +71,14 @@ module Create =
         | 1 -> return valueWithProps
         | 2 ->
           return!
-            sum.Throw(
-              Errors.Singleton loc0 (fun () ->
-                $"On creating hook returned error {result_value}")
-            )
+            sum.Throw(Errors.Singleton loc0 (fun () -> $"On creating hook returned error {result_value}"))
             |> reader.OfSum
         | 3 ->
           let modified_value_to_insert = result_value
           return! calculateProps db_ops modified_value_to_insert entity_ref
         | _ ->
           return!
-            sum.Throw(
-              Errors.Singleton loc0 (fun () ->
-                $"On creating hook returned unexpected value {result_value}")
-            )
+            sum.Throw(Errors.Singleton loc0 (fun () -> $"On creating hook returned unexpected value {result_value}"))
             |> reader.OfSum
       | None -> return valueWithProps
     }
@@ -116,11 +89,7 @@ module Create =
       DBTypeClass<'runtimeContext, 'db, 'ext>
         -> Value<TypeValue<'ext>, 'ext>
         -> EntityRef<'db, 'ext>
-        -> Reader<
-          Value<TypeValue<'ext>, 'ext>,
-          ExprEvalContext<'runtimeContext, 'ext>,
-          Errors<Location>
-         >)
+        -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Location>>)
     (entity_ref: EntityRef<'db, 'ext>)
     (loc0: Location)
     (_entityId: Value<TypeValue<'ext>, 'ext>)
@@ -138,23 +107,11 @@ module Create =
             TypeCheckedExpr.UnsafeApplyForUntypedEval(
               TypeCheckedExpr.UnsafeApplyForUntypedEval(
                 hookExpr,
-                TypeCheckedExpr.FromValue(
-                  _schema_as_value,
-                  TypeValue.CreateUnit(),
-                  Kind.Star
-                )
+                TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
               ),
-              TypeCheckedExpr.FromValue(
-                _entityId,
-                TypeValue.CreateUnit(),
-                Kind.Star
-              )
+              TypeCheckedExpr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
             ),
-            TypeCheckedExpr.FromValue(
-              valueWithProps,
-              TypeValue.CreateUnit(),
-              Kind.Star
-            )
+            TypeCheckedExpr.FromValue(valueWithProps, TypeValue.CreateUnit(), Kind.Star)
           )
 
         let! run_hook_result = _doRunHookExpr |> NonEmptyList.One |> Expr.Eval
@@ -169,17 +126,11 @@ module Create =
         | 1 -> return ()
         | 2 ->
           return!
-            sum.Throw(
-              Errors.Singleton loc0 (fun () ->
-                $"On creating hook returned error {result_value}")
-            )
+            sum.Throw(Errors.Singleton loc0 (fun () -> $"On creating hook returned error {result_value}"))
             |> reader.OfSum
         | _ ->
           return!
-            sum.Throw(
-              Errors.Singleton loc0 (fun () ->
-                $"On creating hook returned unexpected value {result_value}")
-            )
+            sum.Throw(Errors.Singleton loc0 (fun () -> $"On creating hook returned unexpected value {result_value}"))
             |> reader.OfSum
       | None -> return ()
     }
@@ -191,17 +142,12 @@ module Create =
       DBTypeClass<'runtimeContext, 'db, 'ext>
         -> Value<TypeValue<'ext>, 'ext>
         -> EntityRef<'db, 'ext>
-        -> Reader<
-          Value<TypeValue<'ext>, 'ext>,
-          ExprEvalContext<'runtimeContext, 'ext>,
-          Errors<Location>
-         >)
+        -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Location>>)
     (_listSet: List<Value<TypeValue<'ext>, 'ext>> -> 'ext)
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
     =
     let memoryDBCreateId =
-      Identifier.FullyQualified([ "DB" ], "create")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "DB" ], "create") |> TypeCheckScope.Empty.Resolve
 
     let memoryDBCreateType =
       TypeValue.CreateLambda(
@@ -213,20 +159,14 @@ module Create =
             TypeExpr.Lambda(
               TypeParameter.Create("entityId", Kind.Star),
               TypeExpr.Arrow(
-                createSchemaEntityTypeApplication
-                  "schema"
-                  "entity"
-                  "entity_with_props"
-                  "entityId",
+                createSchemaEntityTypeApplication "schema" "entity" "entity_with_props" "entityId",
                 TypeExpr.Arrow(
                   TypeExpr.Tuple
                     [ TypeExpr.Lookup("entityId" |> Identifier.LocalScope)
                       TypeExpr.Lookup("entity" |> Identifier.LocalScope) ],
                   TypeExpr.Sum
                     [ TypeExpr.Primitive PrimitiveType.Unit
-                      TypeExpr.Lookup(
-                        "entity_with_props" |> Identifier.LocalScope
-                      ) ]
+                      TypeExpr.Lookup("entity_with_props" |> Identifier.LocalScope) ]
                 )
               )
             )
@@ -239,9 +179,7 @@ module Create =
     let CreateOperation: OperationExtension<'runtimeContext, _, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBCreateType,
-              memoryDBCreateKind,
-              DBValues.Create {| EntityRef = None |})
+          <| (memoryDBCreateType, memoryDBCreateKind, DBValues.Create {| EntityRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -261,8 +199,7 @@ module Create =
                 let! v = extractEntityRefFromValue loc0 v valueLens
 
                 return
-                  (DBValues.Create({| EntityRef = Some v |}) |> valueLens.Set,
-                   Some memoryDBCreateId)
+                  (DBValues.Create({| EntityRef = Some v |}) |> valueLens.Set, Some memoryDBCreateId)
                   |> Ext
               | Some(entity_ref) -> // the closure has the first operand - second step in the application
                 let! v =
@@ -278,14 +215,7 @@ module Create =
                       let! valueWithProps = calculateProps db_ops v entity_ref
 
                       let! valueWithProps =
-                        onCreatingHook
-                          db_ops
-                          calculateProps
-                          entity_ref
-                          loc0
-                          _entityId
-                          v
-                          valueWithProps
+                        onCreatingHook db_ops calculateProps entity_ref loc0 _entityId v valueWithProps
 
                       let! _ =
                         db_ops.Create
@@ -294,21 +224,11 @@ module Create =
                             Value = valueWithProps }
                         |> reader.MapError(Errors.MapContext(replaceWith loc0))
 
-                      do!
-                        onCreatedHook
-                          db_ops
-                          calculateProps
-                          entity_ref
-                          loc0
-                          _entityId
-                          v
-                          valueWithProps
+                      do! onCreatedHook db_ops calculateProps entity_ref loc0 _entityId v valueWithProps
 
                       return Value.Sum({ Case = 2; Count = 2 }, valueWithProps)
                     }
-                    |> reader.MapContext(
-                      ExprEvalContext.Updaters.RootLevelEval(replaceWith false)
-                    )
+                    |> reader.MapContext(ExprEvalContext.Updaters.RootLevelEval(replaceWith false))
 
                   return!
                     reader {
@@ -321,32 +241,19 @@ module Create =
                         match!
                           TypeCheckedExpr.UnsafeApplyForUntypedEval(
                             canCreateHook,
-                            TypeCheckedExpr.FromValue(
-                              schema_value.Value.Value,
-                              TypeValue.CreateUnit(),
-                              Kind.Star
-                            )
+                            TypeCheckedExpr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
                           )
                           |> NonEmptyList.One
                           |> Expr.Eval
                         with
-                        | Value.Primitive(PrimitiveValue.Bool canCreate) when
-                          canCreate
-                          ->
-                          return! actual_creation
-                        | _ ->
-                          return
-                            Value.Sum(
-                              { Case = 1; Count = 2 },
-                              Value.Primitive PrimitiveValue.Unit
-                            )
+                        | Value.Primitive(PrimitiveValue.Bool canCreate) when canCreate -> return! actual_creation
+                        | _ -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
                       | _, None -> return! actual_creation
                     }
                 | _ ->
                   return!
                     sum.Throw(
-                      Errors.Singleton loc0 (fun () ->
-                        "Expected a tuple with 2 elements when creating DB entity")
+                      Errors.Singleton loc0 (fun () -> "Expected a tuple with 2 elements when creating DB entity")
                     )
                     |> reader.OfSum
             } }

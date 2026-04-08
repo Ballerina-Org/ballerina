@@ -22,16 +22,13 @@ module Do =
       (fromRootJson: ExprParser<'T, 'Id, 'valueExt>)
       (value: JsonValue)
       : ExprParserReader<'T, 'Id, 'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue
-        discriminator
-        value
-        (fun doJson ->
-          reader {
-            let! (value, body) = doJson |> JsonValue.AsPair |> reader.OfSum
-            let! value = value |> fromRootJson
-            let! body = body |> fromRootJson
-            return Expr.Do(value, body)
-          })
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun doJson ->
+        reader {
+          let! (value, body) = doJson |> JsonValue.AsPair |> reader.OfSum
+          let! value = value |> fromRootJson
+          let! body = body |> fromRootJson
+          return Expr.Do(value, body)
+        })
 
     static member ToJsonDo
       (rootToJson: ExprEncoder<'T, 'Id, 'valueExt>)
@@ -41,9 +38,5 @@ module Do =
       reader {
         let! value = value |> rootToJson
         let! body = body |> rootToJson
-
-        return
-          [| value; body |]
-          |> JsonValue.Array
-          |> Json.discriminator discriminator
+        return [| value; body |] |> JsonValue.Array |> Json.discriminator discriminator
       }

@@ -29,11 +29,7 @@ module Update =
       DBTypeClass<'runtimeContext, 'db, 'ext>
         -> Value<TypeValue<'ext>, 'ext>
         -> EntityRef<'db, 'ext>
-        -> Reader<
-          Value<TypeValue<'ext>, 'ext>,
-          ExprEvalContext<'runtimeContext, 'ext>,
-          Errors<Location>
-         >)
+        -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Location>>)
     (entity_ref: EntityRef<'db, 'ext>)
     (loc0: Location)
     (_entityId: Value<TypeValue<'ext>, 'ext>)
@@ -41,12 +37,7 @@ module Update =
     (current_value: Value<TypeValue<'ext>, 'ext>)
     (currentValueWithProps: Value<TypeValue<'ext>, 'ext>)
 
-    : Reader<
-        Value<TypeValue<'ext>, 'ext>,
-        ExprEvalContext<'runtimeContext, 'ext>,
-        Errors<Location>
-       >
-    =
+    : Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Location>> =
     reader {
       let _schema, _db, _entity, _schema_as_value = entity_ref
       let _schema_as_value = _schema_as_value.Value.Value
@@ -60,35 +51,15 @@ module Update =
                 TypeCheckedExpr.UnsafeApplyForUntypedEval(
                   TypeCheckedExpr.UnsafeApplyForUntypedEval(
                     hookExpr,
-                    TypeCheckedExpr.FromValue(
-                      _schema_as_value,
-                      TypeValue.CreateUnit(),
-                      Kind.Star
-                    )
+                    TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
                   ),
-                  TypeCheckedExpr.FromValue(
-                    _entityId,
-                    TypeValue.CreateUnit(),
-                    Kind.Star
-                  )
+                  TypeCheckedExpr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
                 ),
-                TypeCheckedExpr.FromValue(
-                  previousValueWithProps,
-                  TypeValue.CreateUnit(),
-                  Kind.Star
-                )
+                TypeCheckedExpr.FromValue(previousValueWithProps, TypeValue.CreateUnit(), Kind.Star)
               ),
-              TypeCheckedExpr.FromValue(
-                current_value,
-                TypeValue.CreateUnit(),
-                Kind.Star
-              )
+              TypeCheckedExpr.FromValue(current_value, TypeValue.CreateUnit(), Kind.Star)
             ),
-            TypeCheckedExpr.FromValue(
-              currentValueWithProps,
-              TypeValue.CreateUnit(),
-              Kind.Star
-            )
+            TypeCheckedExpr.FromValue(currentValueWithProps, TypeValue.CreateUnit(), Kind.Star)
           )
 
         let! run_hook_result = _doRunHookExpr |> NonEmptyList.One |> Expr.Eval
@@ -103,20 +74,14 @@ module Update =
         | 1 -> return currentValueWithProps
         | 2 ->
           return!
-            sum.Throw(
-              Errors.Singleton loc0 (fun () ->
-                $"On updating hook returned error {result_value}")
-            )
+            sum.Throw(Errors.Singleton loc0 (fun () -> $"On updating hook returned error {result_value}"))
             |> reader.OfSum
         | 3 ->
           let modified_value_to_insert = result_value
           return! calculateProps db_ops modified_value_to_insert entity_ref
         | _ ->
           return!
-            sum.Throw(
-              Errors.Singleton loc0 (fun () ->
-                $"On updating hook returned unexpected value {result_value}")
-            )
+            sum.Throw(Errors.Singleton loc0 (fun () -> $"On updating hook returned unexpected value {result_value}"))
             |> reader.OfSum
       | None -> return currentValueWithProps
     }
@@ -143,29 +108,13 @@ module Update =
               TypeCheckedExpr.UnsafeApplyForUntypedEval(
                 TypeCheckedExpr.UnsafeApplyForUntypedEval(
                   hookExpr,
-                  TypeCheckedExpr.FromValue(
-                    _schema_as_value,
-                    TypeValue.CreateUnit(),
-                    Kind.Star
-                  )
+                  TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
                 ),
-                TypeCheckedExpr.FromValue(
-                  _entityId,
-                  TypeValue.CreateUnit(),
-                  Kind.Star
-                )
+                TypeCheckedExpr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
               ),
-              TypeCheckedExpr.FromValue(
-                previousValueWithProps,
-                TypeValue.CreateUnit(),
-                Kind.Star
-              )
+              TypeCheckedExpr.FromValue(previousValueWithProps, TypeValue.CreateUnit(), Kind.Star)
             ),
-            TypeCheckedExpr.FromValue(
-              currentValueWithProps,
-              TypeValue.CreateUnit(),
-              Kind.Star
-            )
+            TypeCheckedExpr.FromValue(currentValueWithProps, TypeValue.CreateUnit(), Kind.Star)
           )
 
         let! run_hook_result = _doRunHookExpr |> NonEmptyList.One |> Expr.Eval
@@ -180,17 +129,11 @@ module Update =
         | 1 -> return ()
         | 2 ->
           return!
-            sum.Throw(
-              Errors.Singleton loc0 (fun () ->
-                $"On updated hook returned error {result_value}")
-            )
+            sum.Throw(Errors.Singleton loc0 (fun () -> $"On updated hook returned error {result_value}"))
             |> reader.OfSum
         | _ ->
           return!
-            sum.Throw(
-              Errors.Singleton loc0 (fun () ->
-                $"On updated hook returned unexpected value {result_value}")
-            )
+            sum.Throw(Errors.Singleton loc0 (fun () -> $"On updated hook returned unexpected value {result_value}"))
             |> reader.OfSum
       | None -> return ()
     }
@@ -202,27 +145,18 @@ module Update =
         DBTypeClass<'runtimeContext, 'db, 'ext>
           -> Value<TypeValue<'ext>, 'ext>
           -> EntityRef<'db, 'ext>
-          -> Reader<
-            Value<TypeValue<'ext>, 'ext>,
-            ExprEvalContext<'runtimeContext, 'ext>,
-            Errors<Location>
-           >,
+          -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Location>>,
       stripProps:
         DBTypeClass<'runtimeContext, 'db, 'ext>
           -> Value<TypeValue<'ext>, 'ext>
           -> EntityRef<'db, 'ext>
-          -> Reader<
-            Value<TypeValue<'ext>, 'ext>,
-            ExprEvalContext<'runtimeContext, 'ext>,
-            Errors<Location>
-           >
+          -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Location>>
     )
     (_listSet: List<Value<TypeValue<'ext>, 'ext>> -> 'ext)
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
     =
     let memoryDBUpdateId =
-      Identifier.FullyQualified([ "DB" ], "update")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "DB" ], "update") |> TypeCheckScope.Empty.Resolve
 
     let memoryDBUpdateType =
       TypeValue.CreateLambda(
@@ -234,18 +168,12 @@ module Update =
             TypeExpr.Lambda(
               TypeParameter.Create("entityId", Kind.Star),
               TypeExpr.Arrow(
-                createSchemaEntityTypeApplication
-                  "schema"
-                  "entity"
-                  "entity_with_props"
-                  "entityId",
+                createSchemaEntityTypeApplication "schema" "entity" "entity_with_props" "entityId",
                 TypeExpr.Arrow(
                   TypeExpr.Tuple
                     [ TypeExpr.Lookup("entityId" |> Identifier.LocalScope)
                       TypeExpr.Arrow(
-                        TypeExpr.Lookup(
-                          "entity_with_props" |> Identifier.LocalScope
-                        ),
+                        TypeExpr.Lookup("entity_with_props" |> Identifier.LocalScope),
                         TypeExpr.Arrow(
                           TypeExpr.Lookup("entity" |> Identifier.LocalScope),
                           TypeExpr.Lookup("entity" |> Identifier.LocalScope)
@@ -253,9 +181,7 @@ module Update =
                       ) ],
                   TypeExpr.Sum
                     [ TypeExpr.Primitive PrimitiveType.Unit
-                      TypeExpr.Lookup(
-                        "entity_with_props" |> Identifier.LocalScope
-                      ) ]
+                      TypeExpr.Lookup("entity_with_props" |> Identifier.LocalScope) ]
                 )
               )
             )
@@ -268,9 +194,7 @@ module Update =
     let UpdateOperation: OperationExtension<'runtimeContext, _, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBUpdateType,
-              memoryDBUpdateKind,
-              DBValues.Update {| EntityRef = None |})
+          <| (memoryDBUpdateType, memoryDBUpdateKind, DBValues.Update {| EntityRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -290,8 +214,7 @@ module Update =
                 let! v = extractEntityRefFromValue loc0 v valueLens
 
                 return
-                  (DBValues.Update({| EntityRef = Some v |}) |> valueLens.Set,
-                   Some memoryDBUpdateId)
+                  (DBValues.Update({| EntityRef = Some v |}) |> valueLens.Set, Some memoryDBUpdateId)
                   |> Ext
               | Some entity_ref -> // the closure has the first operand - second step in the application
 
@@ -314,16 +237,11 @@ module Update =
                     // let _, _, entity, _ = entity_ref
                     // do Console.WriteLine $"Error getting {entity.Name.Name} with id {_entityId}: {errors.Errors()}"
                     // do Console.ReadLine() |> ignore
-                    return
-                      Value.Sum(
-                        { Case = 1; Count = 2 },
-                        Value.Primitive PrimitiveValue.Unit
-                      )
+                    return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
                   | Left existingValue ->
                     let actual_update =
                       reader {
-                        let! existingValueWithoutProps =
-                          stripProps db_ops existingValue entity_ref
+                        let! existingValueWithoutProps = stripProps db_ops existingValue entity_ref
 
                         let! updatedValue =
                           TypeCheckedExpr.UnsafeApplyForUntypedEval(
@@ -348,8 +266,7 @@ module Update =
                           |> NonEmptyList.One
                           |> Expr.Eval
 
-                        let! valueWithProps =
-                          calculateProps db_ops updatedValue entity_ref
+                        let! valueWithProps = calculateProps db_ops updatedValue entity_ref
 
                         let! valueWithProps =
                           onUpdatingHook
@@ -368,27 +285,13 @@ module Update =
                             { Id = _entityId
                               Previous = existingValue
                               Value = valueWithProps }
-                          |> reader.MapError(
-                            Errors.MapContext(replaceWith loc0)
-                          )
+                          |> reader.MapError(Errors.MapContext(replaceWith loc0))
 
-                        do!
-                          onUpdatedHook
-                            db_ops
-                            entity_ref
-                            loc0
-                            _entityId
-                            existingValue
-                            valueWithProps
+                        do! onUpdatedHook db_ops entity_ref loc0 _entityId existingValue valueWithProps
 
-                        return
-                          Value.Sum({ Case = 2; Count = 2 }, valueWithProps)
+                        return Value.Sum({ Case = 2; Count = 2 }, valueWithProps)
                       }
-                      |> reader.MapContext(
-                        ExprEvalContext.Updaters.RootLevelEval(
-                          replaceWith false
-                        )
-                      )
+                      |> reader.MapContext(ExprEvalContext.Updaters.RootLevelEval(replaceWith false))
 
                     return!
                       reader {
@@ -406,40 +309,21 @@ module Update =
                               TypeCheckedExpr.UnsafeApplyForUntypedEval(
                                 TypeCheckedExpr.UnsafeApplyForUntypedEval(
                                   canUpdateHook,
-                                  TypeCheckedExpr.FromValue(
-                                    schema_value.Value.Value,
-                                    TypeValue.CreateUnit(),
-                                    Kind.Star
-                                  )
+                                  TypeCheckedExpr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
                                 ),
-                                TypeCheckedExpr.FromValue(
-                                  _entityId,
-                                  TypeValue.CreateUnit(),
-                                  Kind.Star
-                                )
+                                TypeCheckedExpr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
                               ),
-                              TypeCheckedExpr.FromValue(
-                                existingValue,
-                                TypeValue.CreateUnit(),
-                                Kind.Star
-                              )
+                              TypeCheckedExpr.FromValue(existingValue, TypeValue.CreateUnit(), Kind.Star)
                             )
                             |> NonEmptyList.One
                             |> Expr.Eval
                           with
-                          | Value.Primitive(PrimitiveValue.Bool canUpdate) when
-                            canUpdate
-                            ->
-                            return! actual_update
+                          | Value.Primitive(PrimitiveValue.Bool canUpdate) when canUpdate -> return! actual_update
                           | _res ->
                             // do Console.WriteLine $"Unexpected result from canUpdate hook: {res}"
                             // do Console.ReadLine() |> ignore
 
-                            return
-                              Value.Sum(
-                                { Case = 1; Count = 2 },
-                                Value.Primitive PrimitiveValue.Unit
-                              )
+                            return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
                         | _ ->
                           // do Console.WriteLine $"There is no canUpdate hook for entity {entity.Name}, proceeding with update"
                           // do Console.ReadLine() |> ignore
@@ -448,8 +332,7 @@ module Update =
                 | _ ->
                   return!
                     sum.Throw(
-                      Errors.Singleton loc0 (fun () ->
-                        "Expected a tuple with 2 elements when updating DB entity")
+                      Errors.Singleton loc0 (fun () -> "Expected a tuple with 2 elements when updating DB entity")
                     )
                     |> reader.OfSum
             } }

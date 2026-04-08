@@ -22,19 +22,14 @@ module RecordDes =
       (fromRootJson: ExprParser<'T, 'Id, 'valueExt>)
       (value: JsonValue)
       : ExprParserReader<'T, 'Id, 'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue
-        discriminator
-        value
-        (fun recordDesJson ->
-          reader {
-            let! expr, field =
-              recordDesJson |> JsonValue.AsPair |> reader.OfSum
-
-            let! expr = expr |> fromRootJson
-            let! _, ctx = reader.GetContext()
-            let! field = field |> ctx |> reader.OfSum
-            return Expr.RecordDes(expr, field)
-          })
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun recordDesJson ->
+        reader {
+          let! expr, field = recordDesJson |> JsonValue.AsPair |> reader.OfSum
+          let! expr = expr |> fromRootJson
+          let! _, ctx = reader.GetContext()
+          let! field = field |> ctx |> reader.OfSum
+          return Expr.RecordDes(expr, field)
+        })
 
     static member ToJsonRecordDes
       (rootToJson: ExprEncoder<'T, 'Id, 'valueExt>)
@@ -46,8 +41,5 @@ module RecordDes =
         let! expr = rootToJson expr
         let field = field |> ctx
 
-        return
-          [| expr; field |]
-          |> JsonValue.Array
-          |> Json.discriminator discriminator
+        return [| expr; field |] |> JsonValue.Array |> Json.discriminator discriminator
       }

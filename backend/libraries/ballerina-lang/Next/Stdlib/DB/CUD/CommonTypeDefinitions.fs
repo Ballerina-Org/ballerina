@@ -74,13 +74,7 @@ module CommonTypeDefinitions =
 
   /// Creates the standard kind for schema operations
   let standardSchemaOperationKind: Kind =
-    Kind.Arrow(
-      Kind.Schema,
-      Kind.Arrow(
-        Kind.Star,
-        Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
-      )
-    )
+    Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))))
 
   /// Creates the standard kind for schema relation operations
   let standardSchemaRelationOperationKind: Kind =
@@ -90,13 +84,7 @@ module CommonTypeDefinitions =
         Kind.Star,
         Kind.Arrow(
           Kind.Star,
-          Kind.Arrow(
-            Kind.Star,
-            Kind.Arrow(
-              Kind.Star,
-              Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
-            )
-          )
+          Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))))
         )
       )
     )

@@ -18,9 +18,7 @@ module Model =
 
     override this.ToString() =
       match this with
-      | Multiple deltas ->
-        let deltas = String.join ", " (deltas |> List.map string) in
-        $"[ {deltas}]"
+      | Multiple deltas -> let deltas = String.join ", " (deltas |> List.map string) in $"[ {deltas}]"
       | Replace v -> v.ToString()
       | Record(fieldName, fieldDelta) -> $"({fieldName}: {fieldDelta})"
       | Union(caseName, caseDelta) -> $"({caseName} of {caseDelta})"

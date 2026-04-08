@@ -17,38 +17,30 @@ module UnionTypeExpr =
   let private discriminator = "union"
 
   type TypeExpr<'valueExt> with
-    static member FromJsonUnion
-      (fromJsonRoot: TypeExprParser<'valueExt>)
-      : TypeExprParser<'valueExt> =
-      Sum.assertDiscriminatorAndContinueWithValue
-        discriminator
-        (fun unionFields ->
-          sum {
-            let! cases = unionFields |> JsonValue.AsArray
+    static member FromJsonUnion(fromJsonRoot: TypeExprParser<'valueExt>) : TypeExprParser<'valueExt> =
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun unionFields ->
+        sum {
+          let! cases = unionFields |> JsonValue.AsArray
 
-            let! caseTypes =
-              cases
-              |> Array.map (fun case ->
-                sum {
-                  let! (caseKey, caseValue) = case |> JsonValue.AsPair
-                  let! caseType = fromJsonRoot caseValue
-                  let! caseKey = fromJsonRoot caseKey
-                  return (caseKey, caseType)
-                })
-              |> sum.All
+          let! caseTypes =
+            cases
+            |> Array.map (fun case ->
+              sum {
+                let! (caseKey, caseValue) = case |> JsonValue.AsPair
+                let! caseType = fromJsonRoot caseValue
+                let! caseKey = fromJsonRoot caseKey
+                return (caseKey, caseType)
+              })
+            |> sum.All
 
-            let union = TypeExpr.Union(caseTypes)
+          let union = TypeExpr.Union(caseTypes)
 
-            let! wrappedUnion =
-              AutomaticSymbolCreation.wrapWithLet (
-                union,
-                caseTypes |> List.map fst,
-                SymbolsKind.UnionConstructors
-              )
-              |> sum.MapError(Errors.MapContext(replaceWith ()))
+          let! wrappedUnion =
+            AutomaticSymbolCreation.wrapWithLet (union, caseTypes |> List.map fst, SymbolsKind.UnionConstructors)
+            |> sum.MapError(Errors.MapContext(replaceWith ()))
 
-            return wrappedUnion
-          })
+          return wrappedUnion
+        })
 
     static member ToJsonUnion
       (rootToJson: TypeExpr<'valueExt> -> JsonValue)
@@ -61,5 +53,4 @@ module UnionTypeExpr =
             let caseTypeJson = rootToJson caseType
             JsonValue.Array [| caseKeyJson; caseTypeJson |])
 
-        JsonValue.Array(caseTypes |> Array.ofSeq)
-        |> Json.discriminator discriminator
+        JsonValue.Array(caseTypes |> Array.ofSeq) |> Json.discriminator discriminator

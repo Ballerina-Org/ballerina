@@ -22,22 +22,13 @@ module Model =
   open Ballerina.StdLib.Map
 
 
-  type TypeBindings<'valueExt> =
-    Map<ResolvedIdentifier, TypeValue<'valueExt> * Kind>
+  type TypeBindings<'valueExt> = Map<ResolvedIdentifier, TypeValue<'valueExt> * Kind>
 
   type UnionCaseConstructorBindings<'valueExt> =
-    Map<
-      ResolvedIdentifier,
-      TypeValue<'valueExt> *
-      List<TypeParameter> *
-      OrderedMap<TypeSymbol, TypeValue<'valueExt>>
-     >
+    Map<ResolvedIdentifier, TypeValue<'valueExt> * List<TypeParameter> * OrderedMap<TypeSymbol, TypeValue<'valueExt>>>
 
   type RecordFieldBindings<'valueExt> =
-    Map<
-      ResolvedIdentifier,
-      OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind> * TypeValue<'valueExt>
-     >
+    Map<ResolvedIdentifier, OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind> * TypeValue<'valueExt>>
 
   type TypeSymbols = Map<ResolvedIdentifier, TypeSymbol>
 
@@ -50,10 +41,8 @@ module Model =
 
     static member Combine (s1: TypeExprEvalSymbols) (s2: TypeExprEvalSymbols) =
       { Types = s1.Types |> Map.merge s2.Types
-        ResolvedIdentifiers =
-          s1.ResolvedIdentifiers |> Map.merge s2.ResolvedIdentifiers
-        IdentifiersResolver =
-          s1.IdentifiersResolver |> Map.merge s2.IdentifiersResolver
+        ResolvedIdentifiers = s1.ResolvedIdentifiers |> Map.merge s2.ResolvedIdentifiers
+        IdentifiersResolver = s1.IdentifiersResolver |> Map.merge s2.IdentifiersResolver
         UnionCases = s1.UnionCases |> Map.merge s2.UnionCases
         RecordFields = s1.RecordFields |> Map.merge s2.RecordFields }
 
@@ -61,14 +50,11 @@ module Model =
 
   type TypeCheckContext<'valueExt> =
     { Scope: TypeCheckScope
-      IsTypeCheckingLetValue: bool
       TypeVariables: TypeVariablesScope<'valueExt>
       TypeParameters: TypeParametersScope
       Values: Map<ResolvedIdentifier, TypeValue<'valueExt> * Kind>
-      BackgroundHooksExtraScope:
-        Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)>
-      PermissionHooksExtraScope:
-        Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)> }
+      BackgroundHooksExtraScope: Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)>
+      PermissionHooksExtraScope: Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)> }
 
   type UnificationState<'valueExt when 'valueExt: comparison> =
     { Classes: EquivalenceClasses<TypeVar, TypeValue<'valueExt>> }
@@ -89,23 +75,13 @@ module Model =
     Option<ExprTypeLetBindingName>
       -> Location
       -> TypeValue<'valueExt>
-      -> State<
-        Kind,
-        KindEvalContext,
-        TypeCheckState<'valueExt>,
-        Errors<Location>
-       >
+      -> State<Kind, KindEvalContext, TypeCheckState<'valueExt>, Errors<Location>>
 
   type TypeExprKindEval<'valueExt when 'valueExt: comparison> =
     Option<ExprTypeLetBindingName>
       -> Location
       -> TypeExpr<'valueExt>
-      -> State<
-        Kind,
-        KindEvalContext,
-        TypeCheckState<'valueExt>,
-        Errors<Location>
-       >
+      -> State<Kind, KindEvalContext, TypeCheckState<'valueExt>, Errors<Location>>
 
   type UnificationContext<'valueExt when 'valueExt: comparison> =
     { EvalState: TypeCheckState<'valueExt>
@@ -113,20 +89,12 @@ module Model =
       Scope: TypeCheckScope }
 
   type TypeCheckerResult<'r, 'valueExt when 'valueExt: comparison> =
-    State<
-      'r,
-      TypeCheckContext<'valueExt>,
-      TypeCheckState<'valueExt>,
-      Errors<Location>
-     >
+    State<'r, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>>
 
   type TypeChecker<'input, 'valueExt when 'valueExt: comparison> =
     Option<TypeValue<'valueExt>>
       -> 'input
-      -> TypeCheckerResult<
-        TypeCheckedExpr<'valueExt> * TypeCheckContext<'valueExt>,
-        'valueExt
-       >
+      -> TypeCheckerResult<TypeCheckedExpr<'valueExt> * TypeCheckContext<'valueExt>, 'valueExt>
 
   type ExprTypeChecker<'valueExt when 'valueExt: comparison> =
     TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt>
@@ -137,10 +105,7 @@ module Model =
       -> Map<ResolvedIdentifier, TypeQueryRow<'valueExt>>
       -> 'input
       -> TypeCheckerResult<
-        TypeCheckedExprQuery<'valueExt> *
-        TypeValue<'valueExt> *
-        Kind *
-        TypeCheckContext<'valueExt>,
+        TypeCheckedExprQuery<'valueExt> * TypeValue<'valueExt> * Kind * TypeCheckContext<'valueExt>,
         'valueExt
        >
 
@@ -150,31 +115,20 @@ module Model =
       TypeVariables: TypeVariablesScope<'valueExt>
       TypeParameters: TypeParametersScope
       Values: Map<ResolvedIdentifier, TypeValue<'valueExt> * Kind>
-      BackgroundHooksExtraScope:
-        Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)>
-      PermissionHooksExtraScope:
-        Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)> }
+      BackgroundHooksExtraScope: Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)>
+      PermissionHooksExtraScope: Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)> }
 
-  type TypeCheckingConfig<'valueExt when 'valueExt: comparison> =
+  type TypeEvalConfig<'valueExt when 'valueExt: comparison> =
     { QueryTypeSymbol: TypeSymbol
       ListTypeSymbol: TypeSymbol
-      MkQueryType:
-        Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>
+      MkQueryType: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>
       MkListType: TypeValue<'valueExt> -> TypeValue<'valueExt> }
 
   type TypeExprEvalResult<'valueExt when 'valueExt: comparison> =
-    State<
-      TypeValue<'valueExt> * Kind,
-      TypeCheckContext<'valueExt>,
-      TypeCheckState<'valueExt>,
-      Errors<Location>
-     >
+    State<TypeValue<'valueExt> * Kind, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>>
 
   type TypeExprEvalPlain<'valueExt when 'valueExt: comparison> =
-    Option<ExprTypeLetBindingName>
-      -> Location
-      -> TypeExpr<'valueExt>
-      -> TypeExprEvalResult<'valueExt>
+    Option<ExprTypeLetBindingName> -> Location -> TypeExpr<'valueExt> -> TypeExprEvalResult<'valueExt>
 
   type TypeExprEval<'valueExt when 'valueExt: comparison> =
     TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt>
@@ -184,12 +138,7 @@ module Model =
       -> TypeExprEvalResult<'valueExt>
 
   type TypeExprSymbolEvalResult<'valueExt when 'valueExt: comparison> =
-    State<
-      TypeSymbol,
-      TypeCheckContext<'valueExt>,
-      TypeCheckState<'valueExt>,
-      Errors<Location>
-     >
+    State<TypeSymbol, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>>
 
   type TypeExprSymbolEval<'valueExt when 'valueExt: comparison> =
     TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt>
@@ -198,12 +147,7 @@ module Model =
       -> TypeExprSymbolEvalResult<'valueExt>
 
   type TypeExprQueryRowEvalResult<'valueExt when 'valueExt: comparison> =
-    State<
-      TypeQueryRow<'valueExt>,
-      TypeCheckContext<'valueExt>,
-      TypeCheckState<'valueExt>,
-      Errors<Location>
-     >
+    State<TypeQueryRow<'valueExt>, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>>
 
   type TypeQueryRowExprEval<'valueExt when 'valueExt: comparison> =
     TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt>

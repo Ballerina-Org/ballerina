@@ -22,12 +22,10 @@ module QueryCaseApplyIntrinsic =
         TypeQueryRow.PrimaryKey(TypeValue.Record { value = k2 }) ],
       _ when k1 |> OrderedMap.count = 1 && k2 |> OrderedMap.count = 1 ->
       let k1, k2 =
-        k1 |> OrderedMap.toSeq |> Seq.head |> fst,
-        k2 |> OrderedMap.toSeq |> Seq.head |> fst
+        k1 |> OrderedMap.toSeq |> Seq.head |> fst, k2 |> OrderedMap.toSeq |> Seq.head |> fst
 
       if k1 = k2 then Some(es) else None
-    | [ TypeQueryRow.Json(TypeValue.Record { value = k1 })
-        TypeQueryRow.PrimaryKey(TypeValue.Record { value = k2 }) ],
+    | [ TypeQueryRow.Json(TypeValue.Record { value = k1 }); TypeQueryRow.PrimaryKey(TypeValue.Record { value = k2 }) ],
       [ e1; e2 ] when k1 |> OrderedMap.count = 1 && k2 |> OrderedMap.count = 1 ->
       let (k1, (_t1, _)), (k2, (t2, _)) =
         k1 |> OrderedMap.toSeq |> Seq.head, k2 |> OrderedMap.toSeq |> Seq.head
@@ -35,24 +33,16 @@ module QueryCaseApplyIntrinsic =
       match k1 = k2, t2 with
       | true, TypeValue.Primitive { value = pt } ->
         let e1 =
-          TypeCheckedExprQueryExprRec.QueryRecordDes(
-            e1,
-            k1.Name.LocalName |> ResolvedIdentifier.Create,
-            true
-          )
+          TypeCheckedExprQueryExprRec.QueryRecordDes(e1, k1.Name.LocalName |> ResolvedIdentifier.Create, true)
           |> TypeCheckedExprQueryExpr.Create loc0
 
         let e1 =
-          TypeCheckedExprQueryExprRec.QueryCastTo(
-            e1,
-            TypeQueryRow.PrimitiveType(pt, false)
-          )
+          TypeCheckedExprQueryExprRec.QueryCastTo(e1, TypeQueryRow.PrimitiveType(pt, false))
           |> TypeCheckedExprQueryExpr.Create loc0
 
         Some([ e1; e2 ])
       | _ -> None
-    | [ TypeQueryRow.PrimaryKey(TypeValue.Record { value = k1 })
-        TypeQueryRow.Json(TypeValue.Record { value = k2 }) ],
+    | [ TypeQueryRow.PrimaryKey(TypeValue.Record { value = k1 }); TypeQueryRow.Json(TypeValue.Record { value = k2 }) ],
       [ e1; e2 ] when k1 |> OrderedMap.count = 1 && k2 |> OrderedMap.count = 1 ->
       let (k1, (t1, _)), (k2, (_t2, _)) =
         k1 |> OrderedMap.toSeq |> Seq.head, k2 |> OrderedMap.toSeq |> Seq.head
@@ -60,18 +50,11 @@ module QueryCaseApplyIntrinsic =
       match k1 = k2, t1 with
       | true, TypeValue.Primitive { value = pt } ->
         let e2 =
-          TypeCheckedExprQueryExprRec.QueryRecordDes(
-            e2,
-            k2.Name.LocalName |> ResolvedIdentifier.Create,
-            true
-          )
+          TypeCheckedExprQueryExprRec.QueryRecordDes(e2, k2.Name.LocalName |> ResolvedIdentifier.Create, true)
           |> TypeCheckedExprQueryExpr.Create loc0
 
         let e2 =
-          TypeCheckedExprQueryExprRec.QueryCastTo(
-            e2,
-            TypeQueryRow.PrimitiveType(pt, false)
-          )
+          TypeCheckedExprQueryExprRec.QueryCastTo(e2, TypeQueryRow.PrimitiveType(pt, false))
           |> TypeCheckedExprQueryExpr.Create loc0
 
         Some([ e1; e2 ])
@@ -82,18 +65,11 @@ module QueryCaseApplyIntrinsic =
     loc0
     (recur:
       ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>
-        -> TypeCheckerResult<
-          (TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>),
-          'valueExt
-         >)
+        -> TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt>)
     (expr: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
     intrinsic
     arg
-    : TypeCheckerResult<
-        (TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>),
-        'valueExt
-       >
-    =
+    : TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt> =
     let ofSum (p: Sum<'a, Errors<Unit>>) =
       p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
@@ -106,9 +82,7 @@ module QueryCaseApplyIntrinsic =
             | QueryIntrinsic.NotEquals ->
               let! arg_e, arg_t = recur arg
               let! arg_t_elements = arg_t |> TypeQueryRow.AsTuple |> ofSum
-
-              let! arg_e_elements =
-                arg_e |> TypeCheckedExprQueryExpr.AsTupleCons |> ofSum
+              let! arg_e_elements = arg_e |> TypeCheckedExprQueryExpr.AsTupleCons |> ofSum
 
               match two_primary_keys loc0 arg_t_elements arg_e_elements with
               | Some arg_e_elements ->
@@ -125,19 +99,14 @@ module QueryCaseApplyIntrinsic =
                   )
                   |> TypeCheckedExprQueryExpr.Create expr.Location
 
-                return
-                  res, TypeQueryRow.PrimitiveType(PrimitiveType.Bool, false)
+                return res, TypeQueryRow.PrimitiveType(PrimitiveType.Bool, false)
               | None ->
                 return!
                   (fun () ->
                     $"Type checking error: Equals/not equals operator in query expressions only supports tuples of two primary keys, but got {arg_t}")
                   |> Errors.Singleton loc0
                   |> state.Throw
-            | _ ->
-              return!
-                (fun () -> $"Skipping branch.")
-                |> Errors.Singleton loc0
-                |> state.Throw
+            | _ -> return! (fun () -> $"Skipping branch.") |> Errors.Singleton loc0 |> state.Throw
 
           })
           (state {
@@ -145,8 +114,7 @@ module QueryCaseApplyIntrinsic =
               binary_operators
               |> Map.tryFind intrinsic
               |> sum.OfOption(
-                (fun () ->
-                  $"Type checking error: unknown binary operator {intrinsic}")
+                (fun () -> $"Type checking error: unknown binary operator {intrinsic}")
                 |> Errors.Singleton loc0
               )
               |> state.OfSum
@@ -161,9 +129,7 @@ module QueryCaseApplyIntrinsic =
                   state {
                     let! arg_e, is_nullable =
                       (arg_t_elements, arg_e)
-                      |> two_equal_primitives
-                        expr.Location
-                        expected_primitive_type
+                      |> two_equal_primitives expr.Location expected_primitive_type
                       |> sum.OfOption(
                         (fun () ->
                           $"Type checking error: invalid type arguments {arg_t_elements} for {intrinsic} operator in query expression")
@@ -175,19 +141,13 @@ module QueryCaseApplyIntrinsic =
                       TypeCheckedExprQueryExprRec.QueryApply(
                         TypeCheckedExprQueryExprRec.QueryIntrinsic(
                           intrinsic,
-                          TypeQueryRow.PrimitiveType(
-                            expected_primitive_type,
-                            is_nullable
-                          )
+                          TypeQueryRow.PrimitiveType(expected_primitive_type, is_nullable)
                         )
                         |> TypeCheckedExprQueryExpr.Create expr.Location,
                         arg_e
                       )
                       |> TypeCheckedExprQueryExpr.Create expr.Location,
-                      TypeQueryRow.PrimitiveType(
-                        expected_primitive_type,
-                        is_nullable
-                      )
+                      TypeQueryRow.PrimitiveType(expected_primitive_type, is_nullable)
                   })
               )
           })
@@ -196,8 +156,7 @@ module QueryCaseApplyIntrinsic =
               comparison_operators
               |> Map.tryFind intrinsic
               |> sum.OfOption(
-                (fun () ->
-                  $"Type checking error: unknown binary operator {intrinsic}")
+                (fun () -> $"Type checking error: unknown binary operator {intrinsic}")
                 |> Errors.Singleton loc0
               )
               |> state.OfSum
@@ -212,9 +171,7 @@ module QueryCaseApplyIntrinsic =
                   state {
                     let! arg_e, is_nullable =
                       (arg_t_elements, arg_e)
-                      |> two_equal_primitives
-                        expr.Location
-                        expected_primitive_type
+                      |> two_equal_primitives expr.Location expected_primitive_type
                       |> sum.OfOption(
                         (fun () ->
                           $"Type checking error: invalid type arguments {arg_t_elements} for {intrinsic} operator in query expression")
@@ -226,19 +183,13 @@ module QueryCaseApplyIntrinsic =
                       TypeCheckedExprQueryExprRec.QueryApply(
                         TypeCheckedExprQueryExprRec.QueryIntrinsic(
                           intrinsic,
-                          TypeQueryRow.PrimitiveType(
-                            PrimitiveType.Bool,
-                            is_nullable
-                          )
+                          TypeQueryRow.PrimitiveType(PrimitiveType.Bool, is_nullable)
                         )
                         |> TypeCheckedExprQueryExpr.Create expr.Location,
                         arg_e
                       )
                       |> TypeCheckedExprQueryExpr.Create expr.Location,
-                      TypeQueryRow.PrimitiveType(
-                        PrimitiveType.Bool,
-                        is_nullable
-                      )
+                      TypeQueryRow.PrimitiveType(PrimitiveType.Bool, is_nullable)
                   })
               )
           })

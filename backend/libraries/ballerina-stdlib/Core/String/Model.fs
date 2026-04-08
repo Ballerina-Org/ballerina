@@ -15,11 +15,7 @@ module String =
 
   type String with
     member self.ReasonablyClamped =
-      Regex.Replace(
-        self.Substring(0, min self.Length 250).ReplaceLineEndings(" "),
-        " +",
-        " "
-      )
+      Regex.Replace(self.Substring(0, min self.Length 250).ReplaceLineEndings(" "), " +", " ")
       + "..."
 
     static member append (s2: string) s1 = s1 + s2
@@ -37,12 +33,8 @@ module String =
         String.Concat(self[0].ToString().ToUpper(), self.AsSpan(1))
 
     static member ToFirstUpper(self: String) = self.ToFirstUpper
-
-    static member JoinSeq (separator: char) (self: string seq) =
-      join' separator self
-
-    static member join (separator: string) (self: string seq) =
-      String.Join(separator, self)
+    static member JoinSeq (separator: char) (self: string seq) = join' separator self
+    static member join (separator: string) (self: string seq) = String.Join(separator, self)
 
   type NonEmptyString =
     private
@@ -53,8 +45,7 @@ module String =
       | "" -> None
       | _ -> NonEmptyString s |> Some
 
-    static member Create (head: char) (tail: string) =
-      NonEmptyString(string head + tail)
+    static member Create (head: char) (tail: string) = NonEmptyString(string head + tail)
 
     static member AsString(NonEmptyString s) = s
 

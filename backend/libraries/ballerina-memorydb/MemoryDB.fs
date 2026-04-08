@@ -34,45 +34,21 @@ module MutableMemoryDB =
 
   type MemoryDBValue<'runtimeContext, 'customExt when 'customExt: comparison> =
     Value<
-      TypeValue<
-        ValueExt<
-          'runtimeContext,
-          MutableMemoryDB<'runtimeContext, 'customExt>,
-          'customExt
-         >
-       >,
-      ValueExt<
-        'runtimeContext,
-        MutableMemoryDB<'runtimeContext, 'customExt>,
-        'customExt
-       >
+      TypeValue<ValueExt<'runtimeContext, MutableMemoryDB<'runtimeContext, 'customExt>, 'customExt>>,
+      ValueExt<'runtimeContext, MutableMemoryDB<'runtimeContext, 'customExt>, 'customExt>
      >
 
-  and MemoryDBRelation<'runtimeContext, 'customExt when 'customExt: comparison>
-    =
-    { All:
-        Set<
-          MemoryDBValue<'runtimeContext, 'customExt> *
-          MemoryDBValue<'runtimeContext, 'customExt>
-         >
-      FromTo:
-        Map<
-          MemoryDBValue<'runtimeContext, 'customExt>,
-          Set<MemoryDBValue<'runtimeContext, 'customExt>>
-         >
-      ToFrom:
-        Map<
-          MemoryDBValue<'runtimeContext, 'customExt>,
-          Set<MemoryDBValue<'runtimeContext, 'customExt>>
-         > }
+  and MemoryDBRelation<'runtimeContext, 'customExt when 'customExt: comparison> =
+    { All: Set<MemoryDBValue<'runtimeContext, 'customExt> * MemoryDBValue<'runtimeContext, 'customExt>>
+      FromTo: Map<MemoryDBValue<'runtimeContext, 'customExt>, Set<MemoryDBValue<'runtimeContext, 'customExt>>>
+      ToFrom: Map<MemoryDBValue<'runtimeContext, 'customExt>, Set<MemoryDBValue<'runtimeContext, 'customExt>>> }
 
     static member Empty: MemoryDBRelation<'runtimeContext, 'customExt> =
       { All = Set.empty
         FromTo = Map.empty
         ToFrom = Map.empty }
 
-  and MemoryDBEntityId<'runtimeContext, 'customExt when 'customExt: comparison>
-    =
+  and MemoryDBEntityId<'runtimeContext, 'customExt when 'customExt: comparison> =
     { EntityName: SchemaEntityName
       EntityId: MemoryDBValue<'runtimeContext, 'customExt> }
 
@@ -92,25 +68,18 @@ module MutableMemoryDB =
     { mutable entities:
         Map<
           SchemaEntityName,
-          Map<
-            MemoryDBValue<'runtimeContext, 'customExt>,
-            MemoryDBValue<'runtimeContext, 'customExt>
-           >
+          Map<MemoryDBValue<'runtimeContext, 'customExt>, MemoryDBValue<'runtimeContext, 'customExt>>
          >
-      mutable relations:
-        Map<SchemaRelationName, MemoryDBRelation<'runtimeContext, 'customExt>>
+      mutable relations: Map<SchemaRelationName, MemoryDBRelation<'runtimeContext, 'customExt>>
       mutable operations: List<DBOperation<'runtimeContext, 'customExt>>
-      mutable backgroundJobs:
-        Map<MemoryDBEntityId<'runtimeContext, 'customExt>, MemoryDBBackgroundJob> }
+      mutable backgroundJobs: Map<MemoryDBEntityId<'runtimeContext, 'customExt>, MemoryDBBackgroundJob> }
 
   and DBOperation<'runtimeContext, 'customExt when 'customExt: comparison> =
     | Create of
       EntityName: SchemaEntityName *
       Id: MemoryDBValue<'runtimeContext, 'customExt> *
       Value: MemoryDBValue<'runtimeContext, 'customExt>
-    | Delete of
-      EntityName: SchemaEntityName *
-      Id: MemoryDBValue<'runtimeContext, 'customExt>
+    | Delete of EntityName: SchemaEntityName * Id: MemoryDBValue<'runtimeContext, 'customExt>
     | Update of
       EntityName: SchemaEntityName *
       Id: MemoryDBValue<'runtimeContext, 'customExt> *
@@ -132,11 +101,8 @@ module MutableMemoryDB =
       GetDbFromRelationRef: RelationRef<'db, 'ext> -> 'db }
 
   let rec private evalQueryExpr
-    (runQuery:
-      ValueQuery<_, _>
-        -> Reader<seq<_> * _, ExprEvalContext<_, _>, Errors<Unit>>)
-    (makeListValue:
-      List<Value<TypeValue<'ext>, 'ext>> -> Value<TypeValue<'ext>, 'ext>)
+    (runQuery: ValueQuery<_, _> -> Reader<seq<_> * _, ExprEvalContext<_, _>, Errors<Unit>>)
+    (makeListValue: List<Value<TypeValue<'ext>, 'ext>> -> Value<TypeValue<'ext>, 'ext>)
     (query: TypeCheckedExprQueryExpr<'ext>)
     : Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<_, _>, Errors<Unit>> =
     reader {
@@ -147,30 +113,23 @@ module MutableMemoryDB =
         let! argVal = evalQueryExpr arg
 
         match func.Expr, argVal with
-        | TypeCheckedExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.GreaterThan,
-                                                     _),
-          Value.Tuple [ Value.Primitive(PrimitiveValue.Int32 v1)
-                        Value.Primitive(PrimitiveValue.Int32 v2) ] ->
+        | TypeCheckedExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.GreaterThan, _),
+          Value.Tuple [ Value.Primitive(PrimitiveValue.Int32 v1); Value.Primitive(PrimitiveValue.Int32 v2) ] ->
           return Value.Primitive(PrimitiveValue.Bool(v1 > v2))
         | TypeCheckedExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.And, _),
-          Value.Tuple [ Value.Primitive(PrimitiveValue.Bool v1)
-                        Value.Primitive(PrimitiveValue.Bool v2) ] ->
+          Value.Tuple [ Value.Primitive(PrimitiveValue.Bool v1); Value.Primitive(PrimitiveValue.Bool v2) ] ->
           return Value.Primitive(PrimitiveValue.Bool(v1 && v2))
         | TypeCheckedExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Or, _),
-          Value.Tuple [ Value.Primitive(PrimitiveValue.Bool v1)
-                        Value.Primitive(PrimitiveValue.Bool v2) ] ->
+          Value.Tuple [ Value.Primitive(PrimitiveValue.Bool v1); Value.Primitive(PrimitiveValue.Bool v2) ] ->
           return Value.Primitive(PrimitiveValue.Bool(v1 || v2))
         | TypeCheckedExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Multiply, _),
-          Value.Tuple [ Value.Primitive(PrimitiveValue.Int32 v1)
-                        Value.Primitive(PrimitiveValue.Int32 v2) ] ->
+          Value.Tuple [ Value.Primitive(PrimitiveValue.Int32 v1); Value.Primitive(PrimitiveValue.Int32 v2) ] ->
           return Value.Primitive(PrimitiveValue.Int32(v1 * v2))
-        | TypeCheckedExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Equals, _),
-          Value.Tuple [ v1; v2 ] ->
+        | TypeCheckedExprQueryExprRec.QueryIntrinsic(QueryIntrinsic.Equals, _), Value.Tuple [ v1; v2 ] ->
           return Value.Primitive(PrimitiveValue.Bool(v1 = v2))
         | _ ->
           return!
-            Errors.Singleton () (fun () ->
-              $"Not implemented intrinsic {func} in query")
+            Errors.Singleton () (fun () -> $"Not implemented intrinsic {func} in query")
             |> reader.Throw
       | TypeCheckedExprQueryExprRec.QueryTupleCons items ->
         let! items = items |> Seq.map evalQueryExpr |> reader.All
@@ -183,15 +142,11 @@ module MutableMemoryDB =
           return!
             fields
             |> Map.tryFind field
-            |> sum.OfOption(
-              Errors.Singleton () (fun () ->
-                $"Field {field} not found in record {recordVal}")
-            )
+            |> sum.OfOption(Errors.Singleton () (fun () -> $"Field {field} not found in record {recordVal}"))
             |> reader.OfSum
         | _ ->
           return!
-            Errors.Singleton () (fun () ->
-              $"Expected a record value for record destructuring, got {recordVal}")
+            Errors.Singleton () (fun () -> $"Expected a record value for record destructuring, got {recordVal}")
             |> reader.Throw
       | TypeCheckedExprQueryExprRec.QueryTupleDes(expr, index, _isJson) ->
         let! tupleVal = evalQueryExpr expr
@@ -201,40 +156,31 @@ module MutableMemoryDB =
           let! item =
             items
             |> List.tryItem (index.Index - 1)
-            |> sum.OfOption(
-              Errors.Singleton () (fun () ->
-                $"Index {index} out of bounds for tuple {tupleVal}")
-            )
+            |> sum.OfOption(Errors.Singleton () (fun () -> $"Index {index} out of bounds for tuple {tupleVal}"))
             |> reader.OfSum
 
           return item
         | _ ->
           return!
-            Errors.Singleton () (fun () ->
-              $"Expected a tuple value for tuple destructuring, got {tupleVal}")
+            Errors.Singleton () (fun () -> $"Expected a tuple value for tuple destructuring, got {tupleVal}")
             |> reader.Throw
       | TypeCheckedExprQueryExprRec.QueryConditional(cond, ``then``, ``else``) ->
         let! condVal = evalQueryExpr cond
 
         match condVal with
-        | Value.Primitive(PrimitiveValue.Bool true) ->
-          return! evalQueryExpr ``then``
-        | Value.Primitive(PrimitiveValue.Bool false) ->
-          return! evalQueryExpr ``else``
+        | Value.Primitive(PrimitiveValue.Bool true) -> return! evalQueryExpr ``then``
+        | Value.Primitive(PrimitiveValue.Bool false) -> return! evalQueryExpr ``else``
         | _ ->
           return!
-            Errors.Singleton () (fun () ->
-              $"Expected a boolean value for conditional expression, got {condVal}")
+            Errors.Singleton () (fun () -> $"Expected a boolean value for conditional expression, got {condVal}")
             |> reader.Throw
       | TypeCheckedExprQueryExprRec.QueryUnionDes(_expr, _handlers) ->
         return!
-          Errors.Singleton () (fun () ->
-            $"Union destructuring not implemented yet")
+          Errors.Singleton () (fun () -> $"Union destructuring not implemented yet")
           |> reader.Throw
       | TypeCheckedExprQueryExprRec.QuerySumDes(_expr, _handlers) ->
         return!
-          Errors.Singleton () (fun () ->
-            $"Sum destructuring not implemented yet")
+          Errors.Singleton () (fun () -> $"Sum destructuring not implemented yet")
           |> reader.Throw
       | TypeCheckedExprQueryExprRec.QueryLookup id ->
         let! ctx = reader.GetContext()
@@ -242,15 +188,11 @@ module MutableMemoryDB =
         return!
           ctx.Scope.Values
           |> Map.tryFind id
-          |> sum.OfOption(
-            Errors.Singleton () (fun () ->
-              $"Identifier {id} not found in query context")
-          )
+          |> sum.OfOption(Errors.Singleton () (fun () -> $"Identifier {id} not found in query context"))
           |> reader.OfSum
       | TypeCheckedExprQueryExprRec.QueryIntrinsic(_, _) ->
         return!
-          Errors.Singleton () (fun () ->
-            $"Standalone intrinsics are not supported in the query engine")
+          Errors.Singleton () (fun () -> $"Standalone intrinsics are not supported in the query engine")
           |> reader.Throw
       | TypeCheckedExprQueryExprRec.QueryConstant v -> return Value.Primitive v
       | TypeCheckedExprQueryExprRec.QueryClosureValue(v, _) -> return v
@@ -286,15 +228,11 @@ module MutableMemoryDB =
     (entity_ref: EntityRef<MutableMemoryDB<_, _>, _>)
     (queryRunAdapter: MemoryDBQueryRunAdapter<_, _>)
     =
-    let (db: MutableMemoryDB<_, _>) =
-      queryRunAdapter.GetDbFromEntityRef entity_ref
-
+    let (db: MutableMemoryDB<_, _>) = queryRunAdapter.GetDbFromEntityRef entity_ref
     let _, _, entity_desc, schema_value = entity_ref
 
     let all_values =
-      db.entities
-      |> Map.tryFind entity_desc.Name
-      |> Option.defaultValue Map.empty
+      db.entities |> Map.tryFind entity_desc.Name |> Option.defaultValue Map.empty
 
     reader {
       let! ctx = reader.GetContext()
@@ -306,11 +244,7 @@ module MutableMemoryDB =
         let can_read_query_expr =
           TypeCheckedExpr.Apply(
             can_read_hook,
-            TypeCheckedExpr.FromValue(
-              schema_value.Value.Value,
-              TypeValue.CreateUnit(),
-              Kind.Star
-            ),
+            TypeCheckedExpr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star),
             TypeValue.CreateUnit(),
             Kind.Star
           )
@@ -328,45 +262,30 @@ module MutableMemoryDB =
         let visible_ids = visible_ids |> fst
         let visible_ids = visible_ids |> Set.ofSeq
 
-        return
-          all_values |> Map.filter (fun id _ -> visible_ids |> Set.contains id)
+        return all_values |> Map.filter (fun id _ -> visible_ids |> Set.contains id)
     }
 
   and runSimpleQuery
     (apply_permissions: bool)
     (queryRunAdapter: MemoryDBQueryRunAdapter<_, _>)
     (query: ValueQuerySimple<_, _>)
-    : Reader<
-        seq<Value<_, _>> * MutableMemoryDB<_, _>,
-        ExprEvalContext<'runtimeContext, ValueExt<_, _, _>>,
-        Errors<Unit>
-       >
-    =
+    : Reader<seq<Value<_, _>> * MutableMemoryDB<_, _>, ExprEvalContext<'runtimeContext, ValueExt<_, _, _>>, Errors<Unit>> =
     reader {
       let! iterators =
         query.Iterators
         |> NonEmptyList.map (fun it ->
           reader {
             match it.Source with
-            | Value.Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.EntityRef entity_ref))),
-                        _) ->
-              let (db: MutableMemoryDB<_, _>) =
-                queryRunAdapter.GetDbFromEntityRef entity_ref
-
+            | Value.Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.EntityRef entity_ref))), _) ->
+              let (db: MutableMemoryDB<_, _>) = queryRunAdapter.GetDbFromEntityRef entity_ref
               let _, _, entity_desc, _ = entity_ref
 
               let! all_values =
                 reader {
                   if apply_permissions then
-                    return!
-                      entity_values_restricted_by_can_read
-                        entity_ref
-                        queryRunAdapter
+                    return! entity_values_restricted_by_can_read entity_ref queryRunAdapter
                   else
-                    return
-                      db.entities
-                      |> Map.tryFind entity_desc.Name
-                      |> Option.defaultValue Map.empty
+                    return db.entities |> Map.tryFind entity_desc.Name |> Option.defaultValue Map.empty
                 }
 
               let db_values =
@@ -383,22 +302,14 @@ module MutableMemoryDB =
               let! relation =
                 fields
                 |> Map.tryFind ("Relation" |> ResolvedIdentifier.Create)
-                |> sum.OfOption(
-                  Errors.Singleton () (fun () ->
-                    "Relation field not found in iterator source")
-                )
+                |> sum.OfOption(Errors.Singleton () (fun () -> "Relation field not found in iterator source"))
                 |> reader.OfSum
 
               match relation with
               | Value.Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.RelationRef(relation_ref:
-                            RelationRef<
-                              MutableMemoryDB<'a, 'b>,
-                              ValueExt<'a, MutableMemoryDB<'a, 'b>, 'b>
-                             >)))),
+                            RelationRef<MutableMemoryDB<'a, 'b>, ValueExt<'a, MutableMemoryDB<'a, 'b>, 'b>>)))),
                           _) ->
-                let (db: MutableMemoryDB<_, _>) =
-                  queryRunAdapter.GetDbFromRelationRef relation_ref
-
+                let (db: MutableMemoryDB<_, _>) = queryRunAdapter.GetDbFromRelationRef relation_ref
                 let _, _, schema_relation, _, _, _ = relation_ref
 
                 let relation_values =
@@ -415,16 +326,14 @@ module MutableMemoryDB =
                 return it.Var, relation_values, db
               | _ ->
                 return!
-                  Errors.Singleton () (fun () ->
-                    "Expected Relation field to be a RelationRef in iterator source")
+                  Errors.Singleton () (fun () -> "Expected Relation field to be a RelationRef in iterator source")
                   |> reader.Throw
             | Value.Query q ->
               let! values, db = runQuery true queryRunAdapter q
               return it.Var, values, db
             | _ ->
               return!
-                Errors.Singleton () (fun () ->
-                  $"Unsupported iterator source: {it.Source}")
+                Errors.Singleton () (fun () -> $"Unsupported iterator source: {it.Source}")
                 |> reader.Throw
           })
         |> reader.AllNonEmpty
@@ -442,8 +351,7 @@ module MutableMemoryDB =
           let (var, values) = vars_with_values.Head
 
           values
-          |> Seq.map (fun value ->
-            Map.empty |> Map.add (var.Name |> ResolvedIdentifier.Create) value)
+          |> Seq.map (fun value -> Map.empty |> Map.add (var.Name |> ResolvedIdentifier.Create) value)
           |> Seq.toList
         | v :: vs ->
           let rest_joined = cross_join_of_sources (NonEmptyList.OfList(v, vs))
@@ -456,13 +364,8 @@ module MutableMemoryDB =
       let all_scopes = vars_with_values |> cross_join_of_sources
 
       let evalQueryExpr =
-        evalQueryExpr
-          (runQuery apply_permissions queryRunAdapter)
-          (fun values ->
-            Value.Ext(
-              ListExt<_, _, _>.ValueLens.Set(List.Model.ListValues.List values),
-              None
-            ))
+        evalQueryExpr (runQuery apply_permissions queryRunAdapter) (fun values ->
+          Value.Ext(ListExt<_, _, _>.ValueLens.Set(List.Model.ListValues.List values), None))
 
       let! all_scopes =
         reader {
@@ -480,20 +383,12 @@ module MutableMemoryDB =
                         let! left =
                           join.Left
                           |> evalQueryExpr
-                          |> Reader.mapContext (
-                            ExprEvalContext.Updaters.Values(
-                              Map.merge (fun _ -> id) scope
-                            )
-                          )
+                          |> Reader.mapContext (ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) scope))
 
                         let! right =
                           join.Right
                           |> evalQueryExpr
-                          |> Reader.mapContext (
-                            ExprEvalContext.Updaters.Values(
-                              Map.merge (fun _ -> id) scope
-                            )
-                          )
+                          |> Reader.mapContext (ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) scope))
 
                         let! left =
                           left
@@ -565,11 +460,7 @@ module MutableMemoryDB =
                   let! predicate_value =
                     predicate
                     |> evalQueryExpr
-                    |> Reader.mapContext (
-                      ExprEvalContext.Updaters.Values(
-                        Map.merge (fun _ -> id) scope
-                      )
-                    )
+                    |> Reader.mapContext (ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) scope))
 
                   let! predicate_value =
                     predicate_value
@@ -588,9 +479,7 @@ module MutableMemoryDB =
               |> reader.All
 
             let all_scopes_with_join_predicate =
-              all_scopes_with_filtering_predicate
-              |> Seq.filter snd
-              |> Seq.map fst
+              all_scopes_with_filtering_predicate |> Seq.filter snd |> Seq.map fst
 
             return all_scopes_with_join_predicate |> Seq.toList
         }
@@ -602,9 +491,7 @@ module MutableMemoryDB =
             let! return_value =
               query.Select
               |> evalQueryExpr
-              |> Reader.mapContext (
-                ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) scope)
-              )
+              |> Reader.mapContext (ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) scope))
 
             return scope, return_value
           })
@@ -622,18 +509,13 @@ module MutableMemoryDB =
                   let! ordering_value =
                     ordering
                     |> evalQueryExpr
-                    |> Reader.mapContext (
-                      ExprEvalContext.Updaters.Values(
-                        Map.merge (fun _ -> id) scope
-                      )
-                    )
+                    |> Reader.mapContext (ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) scope))
 
                   return scope, return_value, ordering_value
                 })
               |> reader.All
 
-            let all_scopes_with_ordering_values =
-              all_scopes_with_ordering_values |> Seq.toList
+            let all_scopes_with_ordering_values = all_scopes_with_ordering_values |> Seq.toList
 
             let all_scopes_with_ordering_values =
               match direction with
@@ -642,8 +524,7 @@ module MutableMemoryDB =
                 |> List.sortBy (fun (_, _, ordering_value) -> ordering_value)
               | Desc ->
                 all_scopes_with_ordering_values
-                |> List.sortByDescending (fun (_, _, ordering_value) ->
-                  ordering_value)
+                |> List.sortByDescending (fun (_, _, ordering_value) -> ordering_value)
 
             return
               all_scopes_with_ordering_values
@@ -658,20 +539,13 @@ module MutableMemoryDB =
     (apply_permissions: bool)
     (queryRunAdapter: MemoryDBQueryRunAdapter<_, _>)
     (query: ValueQuery<_, _>)
-    : Reader<
-        seq<Value<_, _>> * MutableMemoryDB<_, _>,
-        ExprEvalContext<'runtimeContext, ValueExt<_, _, _>>,
-        Errors<Unit>
-       >
-    =
+    : Reader<seq<Value<_, _>> * MutableMemoryDB<_, _>, ExprEvalContext<'runtimeContext, ValueExt<_, _, _>>, Errors<Unit>> =
     reader {
       match query with
-      | ValueQuerySimple q ->
-        return! runSimpleQuery apply_permissions queryRunAdapter q
+      | ValueQuerySimple q -> return! runSimpleQuery apply_permissions queryRunAdapter q
       | ValueUnionQueries _ ->
         return!
-          Errors.Singleton () (fun () ->
-            "Unsupported query type ValueUnionQueries")
+          Errors.Singleton () (fun () -> "Unsupported query type ValueUnionQueries")
           |> reader.Throw
     }
 
@@ -680,11 +554,7 @@ module MutableMemoryDB =
     : DBTypeClass<
         'runtimeContext,
         MutableMemoryDB<'runtimeContext, 'customExt>,
-        ValueExt<
-          'runtimeContext,
-          MutableMemoryDB<'runtimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<'runtimeContext, MutableMemoryDB<'runtimeContext, 'customExt>, 'customExt>
        >
     =
     let queryRunAdapter =
@@ -709,34 +579,14 @@ module MutableMemoryDB =
       )
       (v:
         Value<
-          TypeValue<
-            ValueExt<
-              'runtimeContext,
-              MutableMemoryDB<'runtimeContext, 'customExt>,
-              'customExt
-             >
-           >,
-          ValueExt<
-            'runtimeContext,
-            MutableMemoryDB<'runtimeContext, 'customExt>,
-            'customExt
-           >
+          TypeValue<ValueExt<'runtimeContext, MutableMemoryDB<'runtimeContext, 'customExt>, 'customExt>>,
+          ValueExt<'runtimeContext, MutableMemoryDB<'runtimeContext, 'customExt>, 'customExt>
          >)
       : Reader<
           List<
             Value<
-              TypeValue<
-                ValueExt<
-                  'runtimeContext,
-                  MutableMemoryDB<'runtimeContext, 'customExt>,
-                  'customExt
-                 >
-               >,
-              ValueExt<
-                'runtimeContext,
-                MutableMemoryDB<'runtimeContext, 'customExt>,
-                'customExt
-               >
+              TypeValue<ValueExt<'runtimeContext, MutableMemoryDB<'runtimeContext, 'customExt>, 'customExt>>,
+              ValueExt<'runtimeContext, MutableMemoryDB<'runtimeContext, 'customExt>, 'customExt>
              >
            >,
           ExprEvalContext<'runtimeContext, _>,
@@ -747,9 +597,7 @@ module MutableMemoryDB =
         let! relation_ref =
           db.relations
           |> Map.tryFind relation.Name
-          |> reader.OfOption(
-            Errors.Singleton () (fun () -> "Relation not found")
-          )
+          |> reader.OfOption(Errors.Singleton () (fun () -> "Relation not found"))
 
         let _source_entity_ref, target_entity_ref, source_to_targets =
           match dir with
@@ -759,14 +607,10 @@ module MutableMemoryDB =
         let source_id = v
 
         let! targets =
-          entity_values_restricted_by_can_read
-            (schema, db, target_entity_ref, schema_value)
-            queryRunAdapter
+          entity_values_restricted_by_can_read (schema, db, target_entity_ref, schema_value) queryRunAdapter
 
         let target_ids =
-          source_to_targets
-          |> Map.tryFind source_id
-          |> Option.defaultValue Set.empty
+          source_to_targets |> Map.tryFind source_id |> Option.defaultValue Set.empty
 
         return!
           target_ids
@@ -776,9 +620,7 @@ module MutableMemoryDB =
               let! target_v =
                 targets
                 |> Map.tryFind target_id
-                |> reader.OfOption(
-                  Errors.Singleton () (fun () -> "Target ID not found")
-                )
+                |> reader.OfOption(Errors.Singleton () (fun () -> "Target ID not found"))
 
               return Value.Tuple [ target_id; target_v ]
             })
@@ -801,19 +643,14 @@ module MutableMemoryDB =
 
             match range with
             | None -> return values |> Seq.toList
-            | Some(skip, take) ->
-              return values |> Seq.skip skip |> Seq.truncate take |> Seq.toList
+            | Some(skip, take) -> return values |> Seq.skip skip |> Seq.truncate take |> Seq.toList
           }
       Create =
         fun
             (entity_ref:
               EntityRef<
                 MutableMemoryDB<'runtimeContext, 'customExt>,
-                ValueExt<
-                  'runtimeContext,
-                  MutableMemoryDB<'runtimeContext, 'customExt>,
-                  'customExt
-                 >
+                ValueExt<'runtimeContext, MutableMemoryDB<'runtimeContext, 'customExt>, 'customExt>
                >)
             create_arg ->
           reader {
@@ -828,10 +665,7 @@ module MutableMemoryDB =
                   | Some entities -> Some(entities |> Map.add entityId value)
                   | None -> Some(Map.empty |> Map.add entityId value))
 
-            do
-              db.operations <-
-                db.operations
-                @ [ Create(entity.Name, create_arg.Id, create_arg.Value) ]
+            do db.operations <- db.operations @ [ Create(entity.Name, create_arg.Id, create_arg.Value) ]
 
             if entity.Hooks.OnBackground.IsSome then
               do
@@ -849,11 +683,7 @@ module MutableMemoryDB =
             (entity_ref:
               EntityRef<
                 MutableMemoryDB<'runtimeContext, 'customExt>,
-                ValueExt<
-                  'runtimeContext,
-                  MutableMemoryDB<'runtimeContext, 'customExt>,
-                  'customExt
-                 >
+                ValueExt<'runtimeContext, MutableMemoryDB<'runtimeContext, 'customExt>, 'customExt>
                >)
             update_arg ->
           reader {
@@ -868,9 +698,7 @@ module MutableMemoryDB =
                   | Some entities -> Some(entities |> Map.add entityId value)
                   | None -> Some(Map.empty |> Map.add entityId value))
 
-            do
-              db.operations <-
-                db.operations @ [ Update(entity.Name, entityId, value) ]
+            do db.operations <- db.operations @ [ Update(entity.Name, entityId, value) ]
 
             return Value.Tuple [ entityId; value ]
           }
@@ -880,11 +708,7 @@ module MutableMemoryDB =
             (entity_ref:
               EntityRef<
                 MutableMemoryDB<'runtimeContext, 'customExt>,
-                ValueExt<
-                  'runtimeContext,
-                  MutableMemoryDB<'runtimeContext, 'customExt>,
-                  'customExt
-                 >
+                ValueExt<'runtimeContext, MutableMemoryDB<'runtimeContext, 'customExt>, 'customExt>
                >)
             id_to_delete ->
           reader {
@@ -897,9 +721,7 @@ module MutableMemoryDB =
                   | Some entities -> Some(entities |> Map.remove id_to_delete)
                   | None -> None)
 
-            do
-              db.operations <-
-                db.operations @ [ Delete(entity.Name, id_to_delete) ]
+            do db.operations <- db.operations @ [ Delete(entity.Name, id_to_delete) ]
 
             do
               db.backgroundJobs <-
@@ -916,11 +738,7 @@ module MutableMemoryDB =
             (entity_ref:
               EntityRef<
                 MutableMemoryDB<'runtimeContext, 'customExt>,
-                ValueExt<
-                  'runtimeContext,
-                  MutableMemoryDB<'runtimeContext, 'customExt>,
-                  'customExt
-                 >
+                ValueExt<'runtimeContext, MutableMemoryDB<'runtimeContext, 'customExt>, 'customExt>
                >)
             ids_to_delete ->
           reader {
@@ -934,13 +752,10 @@ module MutableMemoryDB =
                     db.entities <-
                       db.entities
                       |> Map.change entity.Name (function
-                        | Some entities ->
-                          Some(entities |> Map.remove id_to_delete)
+                        | Some entities -> Some(entities |> Map.remove id_to_delete)
                         | None -> None)
 
-                  do
-                    db.operations <-
-                      db.operations @ [ Delete(entity.Name, id_to_delete) ]
+                  do db.operations <- db.operations @ [ Delete(entity.Name, id_to_delete) ]
 
                   do
                     db.backgroundJobs <-
@@ -983,9 +798,7 @@ module MutableMemoryDB =
                 | Some rel -> Some(add_link rel)
                 | None -> Some(MemoryDBRelation.Empty |> add_link))
 
-            do
-              db.operations <-
-                db.operations @ [ Link(relation.Name, fromId, toId) ]
+            do db.operations <- db.operations @ [ Link(relation.Name, fromId, toId) ]
 
             return ()
 
@@ -1019,9 +832,7 @@ module MutableMemoryDB =
                 | Some rel -> Some(remove_link rel)
                 | None -> Some(MemoryDBRelation.Empty |> remove_link))
 
-            do
-              db.operations <-
-                db.operations @ [ Unlink(relation.Name, fromId, toId) ]
+            do db.operations <- db.operations @ [ Unlink(relation.Name, fromId, toId) ]
 
             return ()
           } //: RelationRef<'db, 'ext> -> UnlinkArgs<'runtimeContext, 'db, 'ext> -> Sum<unit, Errors<Unit>>
@@ -1042,16 +853,12 @@ module MutableMemoryDB =
       GetById =
         fun entity_ref entityId ->
           reader {
-            let! entityMap =
-              entity_values_restricted_by_can_read entity_ref queryRunAdapter
+            let! entityMap = entity_values_restricted_by_can_read entity_ref queryRunAdapter
 
             let! value =
               entityMap
               |> Map.tryFind entityId
-              |> reader.OfOption(
-                (fun () -> $"Entity not found with id: {entityId}")
-                |> Errors.Singleton()
-              )
+              |> reader.OfOption((fun () -> $"Entity not found with id: {entityId}") |> Errors.Singleton())
 
             return value
           }
@@ -1061,30 +868,18 @@ module MutableMemoryDB =
       GetMany =
         fun entity_ref (skip, take) ->
           reader {
-            let! entityMap =
-              entity_values_restricted_by_can_read entity_ref queryRunAdapter
+            let! entityMap = entity_values_restricted_by_can_read entity_ref queryRunAdapter
 
             let values =
-              entityMap
-              |> Map.toSeq
-              |> Seq.skip skip
-              |> Seq.truncate take
-              |> Seq.toList
+              entityMap |> Map.toSeq |> Seq.skip skip |> Seq.truncate take |> Seq.toList
 
-            return
-              values
-              |> Seq.map (fun (id, value) -> Value.Tuple [ id; value ])
-              |> Seq.toList
+            return values |> Seq.map (fun (id, value) -> Value.Tuple [ id; value ]) |> Seq.toList
           }
       LookupMaybe =
         fun relation_ref source dir ->
           reader {
             let schema, db, relation, from, to_, schema_value = relation_ref
-
-            let! results =
-              actual_lookup
-                (schema, db, dir, relation, from, to_, schema_value)
-                source
+            let! results = actual_lookup (schema, db, dir, relation, from, to_, schema_value) source
 
             return
               match results with
@@ -1095,29 +890,17 @@ module MutableMemoryDB =
         fun relation_ref source dir ->
           reader {
             let schema, db, relation, from, to_, schema_value = relation_ref
-
-            let! results =
-              actual_lookup
-                (schema, db, dir, relation, from, to_, schema_value)
-                source
+            let! results = actual_lookup (schema, db, dir, relation, from, to_, schema_value) source
 
             match results with
-            | [] ->
-              return!
-                Errors.Singleton () (fun () -> "No related value found")
-                |> reader.Throw
+            | [] -> return! Errors.Singleton () (fun () -> "No related value found") |> reader.Throw
             | r :: _ -> return r
           }
       LookupMany =
         fun relation_ref source dir (skip, truncate) ->
           reader {
             let schema, db, relation, from, to_, schema_value = relation_ref
+            let! results = actual_lookup (schema, db, dir, relation, from, to_, schema_value) source
 
-            let! results =
-              actual_lookup
-                (schema, db, dir, relation, from, to_, schema_value)
-                source
-
-            return
-              results |> Seq.skip skip |> Seq.truncate truncate |> Seq.toList
+            return results |> Seq.skip skip |> Seq.truncate truncate |> Seq.toList
           } }

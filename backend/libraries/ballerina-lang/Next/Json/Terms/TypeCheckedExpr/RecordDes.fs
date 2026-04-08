@@ -23,26 +23,14 @@ module RecordDes =
       (fromRootJson: TypeCheckedExprParser<'valueExt>)
       (value: JsonValue)
       : TypeCheckedExprParserReader<'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue
-        discriminator
-        value
-        (fun recordDesJson ->
-          reader {
-            let! expr, field =
-              recordDesJson |> JsonValue.AsPair |> reader.OfSum
-
-            let! expr = expr |> fromRootJson
-            let! _, ctx = reader.GetContext()
-            let! field = field |> ctx |> reader.OfSum
-
-            return
-              TypeCheckedExpr.RecordDes(
-                expr,
-                field,
-                TypeValue.CreateUnit(),
-                Kind.Star
-              )
-          })
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun recordDesJson ->
+        reader {
+          let! expr, field = recordDesJson |> JsonValue.AsPair |> reader.OfSum
+          let! expr = expr |> fromRootJson
+          let! _, ctx = reader.GetContext()
+          let! field = field |> ctx |> reader.OfSum
+          return TypeCheckedExpr.RecordDes(expr, field, TypeValue.CreateUnit(), Kind.Star)
+        })
 
     static member ToJsonRecordDes
       (rootToJson: TypeCheckedExprEncoder<'valueExt>)
@@ -54,8 +42,5 @@ module RecordDes =
         let! expr = rootToJson expr
         let field = field |> ctx
 
-        return
-          [| expr; field |]
-          |> JsonValue.Array
-          |> Json.discriminator discriminator
+        return [| expr; field |] |> JsonValue.Array |> Json.discriminator discriminator
       }

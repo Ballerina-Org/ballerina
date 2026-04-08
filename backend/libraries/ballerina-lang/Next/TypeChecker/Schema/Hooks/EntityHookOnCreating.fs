@@ -24,17 +24,14 @@ module SchemaEntityHookOnCreating =
       match onCreating with
       | None -> return None
       | Some on_creating ->
-        let error_type =
-          TypeValue.Lookup(Identifier.FullyQualified([], "Error"))
+        let error_type = TypeValue.Lookup(Identifier.FullyQualified([], "Error"))
 
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
         let! on_creating_expr, _ =
           typeCheckExpr None on_creating
-          |> state.MapContext(
-            TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
-          )
+          |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
 
         let on_creating_t = on_creating_expr.Type
 
@@ -55,17 +52,14 @@ module SchemaEntityHookOnCreating =
                   e.TypeOriginal,
                   TypeValue.CreateArrow(
                     e.TypeWithProps,
-                    TypeValue.CreateSum
-                      [ TypeValue.CreateUnit(); error_type; e.TypeOriginal ]
+                    TypeValue.CreateSum [ TypeValue.CreateUnit(); error_type; e.TypeOriginal ]
                   )
                 )
               )
             )
           )
           |> Expr.liftUnification
-          |> state.MapContext(
-            TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
-          )
+          |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
 
         return Some on_creating_expr
     }

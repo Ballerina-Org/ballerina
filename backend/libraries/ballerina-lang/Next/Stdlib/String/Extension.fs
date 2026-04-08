@@ -32,21 +32,15 @@ module Extension =
 
 
     let stringPrintId =
-      Identifier.FullyQualified([ "string" ], "print")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "string" ], "print") |> TypeCheckScope.Empty.Resolve
 
-    let printOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
+    let printOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
       stringPrintId,
       { PublicIdentifiers =
           Some
           <| (TypeValue.CreateLambda(
                 TypeParameter.Create("T", Kind.Schema),
-                TypeExpr.Arrow(
-                  TypeExpr.Lookup("T" |> Identifier.LocalScope),
-                  TypeExpr.Primitive PrimitiveType.Unit
-                )
+                TypeExpr.Arrow(TypeExpr.Lookup("T" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Unit)
               ),
               Kind.Arrow(Kind.Star, Kind.Star),
               StringOperations.Print)
@@ -71,21 +65,15 @@ module Extension =
             } }
 
     let stringOfTId =
-      Identifier.FullyQualified([ "string" ], "ofT")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "string" ], "ofT") |> TypeCheckScope.Empty.Resolve
 
-    let ofTOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
+    let ofTOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
       stringOfTId,
       { PublicIdentifiers =
           Some
           <| (TypeValue.CreateLambda(
                 TypeParameter.Create("T", Kind.Schema),
-                TypeExpr.Arrow(
-                  TypeExpr.Lookup("T" |> Identifier.LocalScope),
-                  TypeExpr.Primitive PrimitiveType.String
-                )
+                TypeExpr.Arrow(TypeExpr.Lookup("T" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.String)
               ),
               Kind.Arrow(Kind.Star, Kind.Star),
               StringOperations.OfT)
@@ -104,24 +92,18 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return
-                Value<TypeValue<'ext>, 'ext>
-                  .Primitive(PrimitiveValue.String(v.ToString()))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.String(v.ToString()))
             } }
 
     let stringLengthId =
       Identifier.FullyQualified([ "string" ], "length")
       |> TypeCheckScope.Empty.Resolve
 
-    let lengthOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
+    let lengthOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
       stringLengthId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(stringTypeValue, int32TypeValue),
-              Kind.Star,
-              StringOperations.Length)
+          <| (TypeValue.CreateArrow(stringTypeValue, int32TypeValue), Kind.Star, StringOperations.Length)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -150,25 +132,17 @@ module Extension =
                 |> reader.OfSum
 
 
-              return
-                Value<TypeValue<'ext>, 'ext>
-                  .Primitive(PrimitiveValue.Int32(v.Length))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.Length))
             } }
 
     let stringPlusId =
-      Identifier.FullyQualified([ "string" ], "+")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "string" ], "+") |> TypeCheckScope.Empty.Resolve
 
-    let plusOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
+    let plusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
       stringPlusId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                stringTypeValue,
-                TypeValue.CreateArrow(stringTypeValue, stringTypeValue)
-              ),
+          <| (TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, stringTypeValue)),
               Kind.Star,
               StringOperations.Concat {| v1 = None |})
         OperationsLens =
@@ -201,32 +175,22 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (StringOperations.Concat({| v1 = Some v |})
-                   |> operationLens.Set,
-                   Some stringPlusId)
+                  (StringOperations.Concat({| v1 = Some v |}) |> operationLens.Set, Some stringPlusId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.String(vClosure + v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.String(vClosure + v))
             } }
 
 
     let stringEqualId =
-      Identifier.FullyQualified([ "string" ], "==")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "string" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
       stringEqualId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                stringTypeValue,
-                TypeValue.CreateArrow(stringTypeValue, boolTypeValue)
-              ),
+          <| (TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue)),
               Kind.Star,
               StringOperations.Equal {| v1 = None |})
         OperationsLens =
@@ -258,31 +222,21 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (StringOperations.Equal({| v1 = Some v |})
-                   |> operationLens.Set,
-                   Some stringEqualId)
+                  (StringOperations.Equal({| v1 = Some v |}) |> operationLens.Set, Some stringEqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Bool(vClosure = v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
     let stringNotEqualId =
-      Identifier.FullyQualified([ "string" ], "!=")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "string" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
       stringNotEqualId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                stringTypeValue,
-                TypeValue.CreateArrow(stringTypeValue, boolTypeValue)
-              ),
+          <| (TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue)),
               Kind.Star,
               StringOperations.NotEqual {| v1 = None |})
         OperationsLens =
@@ -314,38 +268,27 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (StringOperations.NotEqual({| v1 = Some v |})
-                   |> operationLens.Set,
-                   Some stringNotEqualId)
+                  (StringOperations.NotEqual({| v1 = Some v |}) |> operationLens.Set, Some stringNotEqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Bool(vClosure <> v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
     let stringGreaterThanId =
-      Identifier.FullyQualified([ "string" ], ">")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "string" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
+    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
       stringGreaterThanId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                stringTypeValue,
-                TypeValue.CreateArrow(stringTypeValue, boolTypeValue)
-              ),
+          <| (TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue)),
               Kind.Star,
               StringOperations.GreaterThan {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | StringOperations.GreaterThan v ->
-              Some(StringOperations.GreaterThan v)
+            | StringOperations.GreaterThan v -> Some(StringOperations.GreaterThan v)
             | _ -> None)
         Apply =
           fun loc0 _rest (op, v) ->
@@ -371,38 +314,28 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (StringOperations.GreaterThan({| v1 = Some v |})
-                   |> operationLens.Set,
-                   Some stringGreaterThanId)
+                  (StringOperations.GreaterThan({| v1 = Some v |}) |> operationLens.Set, Some stringGreaterThanId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Bool(vClosure > v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
     let stringGreaterThanOrEqualId =
-      Identifier.FullyQualified([ "string" ], ">=")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "string" ], ">=") |> TypeCheckScope.Empty.Resolve
 
     let greaterThanOrEqualOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
       stringGreaterThanOrEqualId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                stringTypeValue,
-                TypeValue.CreateArrow(stringTypeValue, boolTypeValue)
-              ),
+          <| (TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue)),
               Kind.Star,
               StringOperations.GreaterThanOrEqual {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | StringOperations.GreaterThanOrEqual v ->
-              Some(StringOperations.GreaterThanOrEqual v)
+            | StringOperations.GreaterThanOrEqual v -> Some(StringOperations.GreaterThanOrEqual v)
             | _ -> None)
         Apply =
           fun loc0 _rest (op, v) ->
@@ -428,31 +361,22 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (StringOperations.GreaterThanOrEqual({| v1 = Some v |})
-                   |> operationLens.Set,
+                  (StringOperations.GreaterThanOrEqual({| v1 = Some v |}) |> operationLens.Set,
                    Some stringGreaterThanOrEqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Bool(vClosure >= v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
     let stringLessThanId =
-      Identifier.FullyQualified([ "string" ], "<")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "string" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
+    let lessThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
       stringLessThanId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                stringTypeValue,
-                TypeValue.CreateArrow(stringTypeValue, boolTypeValue)
-              ),
+          <| (TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue)),
               Kind.Star,
               StringOperations.LessThan {| v1 = None |})
         OperationsLens =
@@ -484,38 +408,27 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (StringOperations.LessThan({| v1 = Some v |})
-                   |> operationLens.Set,
-                   Some stringLessThanId)
+                  (StringOperations.LessThan({| v1 = Some v |}) |> operationLens.Set, Some stringLessThanId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Bool(vClosure < v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
     let stringLessThanOrEqualId =
-      Identifier.FullyQualified([ "string" ], "<=")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "string" ], "<=") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOrEqualOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
+    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
       stringLessThanOrEqualId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                stringTypeValue,
-                TypeValue.CreateArrow(stringTypeValue, boolTypeValue)
-              ),
+          <| (TypeValue.CreateArrow(stringTypeValue, TypeValue.CreateArrow(stringTypeValue, boolTypeValue)),
               Kind.Star,
               StringOperations.LessThanOrEqual {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | StringOperations.LessThanOrEqual v ->
-              Some(StringOperations.LessThanOrEqual v)
+            | StringOperations.LessThanOrEqual v -> Some(StringOperations.LessThanOrEqual v)
             | _ -> None)
         Apply =
           fun loc0 _rest (op, v) ->
@@ -541,15 +454,12 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (StringOperations.LessThanOrEqual({| v1 = Some v |})
-                   |> operationLens.Set,
+                  (StringOperations.LessThanOrEqual({| v1 = Some v |}) |> operationLens.Set,
                    Some stringLessThanOrEqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Bool(vClosure <= v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))
             } }
 
     { TypeVars = []

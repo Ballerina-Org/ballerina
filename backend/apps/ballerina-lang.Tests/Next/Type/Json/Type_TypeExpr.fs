@@ -24,10 +24,7 @@ type TypeValueTestCase =
     Json: string
     Expected: TypeValue<Object> }
 
-let ``Assert TypeExpr -> ToJson -> FromJson -> TypeExpr``
-  (expression: TypeExpr<Object>)
-  (expectedJson: JsonValue)
-  =
+let ``Assert TypeExpr -> ToJson -> FromJson -> TypeExpr`` (expression: TypeExpr<Object>) (expectedJson: JsonValue) =
   let normalize (json: JsonValue) =
     json.ToString JsonSaveOptions.DisableFormatting
 
@@ -45,51 +42,34 @@ let ``Assert TypeExpr -> ToJson -> FromJson -> TypeExpr``
 let ``Dsl:Type:TypeExpr json round-trip`` () =
   let testCases =
     [ """{ "discriminator":"apply", "value": [{"discriminator":"lookup", "value":"MyFunction"}, {"discriminator":"int32"} ] }""",
-      TypeExpr.Apply(
-        TypeExpr.Lookup("MyFunction" |> Identifier.LocalScope),
-        TypeExpr.Primitive PrimitiveType.Int32
-      )
+      TypeExpr.Apply(TypeExpr.Lookup("MyFunction" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int32)
       """{ "discriminator":"lambda", "value": [{"name":"T", "kind":{"discriminator":"star"}}, {"discriminator":"int32"}] }""",
-      TypeExpr.Lambda(
-        { Name = "T"; Kind = Kind.Star },
-        TypeExpr.Primitive PrimitiveType.Int32
-      )
+      TypeExpr.Lambda({ Name = "T"; Kind = Kind.Star }, TypeExpr.Primitive PrimitiveType.Int32)
       """{ "discriminator":"arrow", "value": [{"discriminator":"int32"}, {"discriminator":"string"} ] }""",
-      TypeExpr.Arrow(
-        TypeExpr.Primitive PrimitiveType.Int32,
-        TypeExpr.Primitive PrimitiveType.String
-      )
+      TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Int32, TypeExpr.Primitive PrimitiveType.String)
 
       """{ "discriminator":"record", "value": [[{"discriminator":"lookup", "value":"foo"}, {"discriminator":"int32"}], [{"discriminator":"lookup", "value":"bar"}, {"discriminator":"string"}]] }""",
       TypeExpr.LetSymbols(
         [ "foo"; "bar" ],
         SymbolsKind.RecordFields,
         TypeExpr.Record
-          [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope),
-             TypeExpr.Primitive PrimitiveType.Int32)
-            (TypeExpr.Lookup("bar" |> Identifier.LocalScope),
-             TypeExpr.Primitive PrimitiveType.String) ]
+          [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int32)
+            (TypeExpr.Lookup("bar" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.String) ]
       )
 
       """{"discriminator":"int32"}""", TypeExpr.Primitive PrimitiveType.Int32
       """{"discriminator":"int64"}""", TypeExpr.Primitive PrimitiveType.Int64
-      """{"discriminator":"float32"}""",
-      TypeExpr.Primitive PrimitiveType.Float32
-      """{"discriminator":"float64"}""",
-      TypeExpr.Primitive PrimitiveType.Float64
+      """{"discriminator":"float32"}""", TypeExpr.Primitive PrimitiveType.Float32
+      """{"discriminator":"float64"}""", TypeExpr.Primitive PrimitiveType.Float64
       """{"discriminator":"string"}""", TypeExpr.Primitive PrimitiveType.String
       """{"discriminator":"bool"}""", TypeExpr.Primitive PrimitiveType.Bool
       """{"discriminator":"unit"}""", TypeExpr.Primitive PrimitiveType.Unit
       """{"discriminator":"guid"}""", TypeExpr.Primitive PrimitiveType.Guid
-      """{"discriminator":"decimal"}""",
-      TypeExpr.Primitive PrimitiveType.Decimal
-      """{"discriminator":"datetime"}""",
-      TypeExpr.Primitive PrimitiveType.DateTime
-      """{"discriminator":"dateonly"}""",
-      TypeExpr.Primitive PrimitiveType.DateOnly
+      """{"discriminator":"decimal"}""", TypeExpr.Primitive PrimitiveType.Decimal
+      """{"discriminator":"datetime"}""", TypeExpr.Primitive PrimitiveType.DateTime
+      """{"discriminator":"dateonly"}""", TypeExpr.Primitive PrimitiveType.DateOnly
 
-      """{ "discriminator": "lookup", "value": "MyType" }""",
-      TypeExpr.Lookup("MyType" |> Identifier.LocalScope)
+      """{ "discriminator": "lookup", "value": "MyType" }""", TypeExpr.Lookup("MyType" |> Identifier.LocalScope)
       """{ "discriminator": "set", "value": {"discriminator": "string"} }""",
       TypeExpr.Set(TypeExpr.Primitive PrimitiveType.String)
       """{ "discriminator": "keyOf", "value": {"discriminator": "record", "value": [[{"discriminator": "lookup", "value": "foo"}, {"discriminator": "int32"}]]} }""",
@@ -97,9 +77,7 @@ let ``Dsl:Type:TypeExpr json round-trip`` () =
         TypeExpr.LetSymbols(
           [ "foo" ],
           SymbolsKind.RecordFields,
-          TypeExpr.Record
-            [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope),
-               TypeExpr.Primitive PrimitiveType.Int32) ]
+          TypeExpr.Record [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int32) ]
         )
       )
       """{ "discriminator": "tuple", "value": [{"discriminator": "int32"}, {"discriminator": "string"}] }""",
@@ -111,10 +89,8 @@ let ``Dsl:Type:TypeExpr json round-trip`` () =
         [ "foo"; "bar" ],
         SymbolsKind.UnionConstructors,
         TypeExpr.Union
-          [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope),
-             TypeExpr.Primitive PrimitiveType.Int32)
-            (TypeExpr.Lookup("bar" |> Identifier.LocalScope),
-             TypeExpr.Primitive PrimitiveType.String) ]
+          [ (TypeExpr.Lookup("foo" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.Int32)
+            (TypeExpr.Lookup("bar" |> Identifier.LocalScope), TypeExpr.Primitive PrimitiveType.String) ]
       )
       """{ "discriminator": "sum", "value": [{"discriminator": "int32"}, {"discriminator": "string"}, {"discriminator": "bool"}] }""",
       TypeExpr.Sum
@@ -122,15 +98,9 @@ let ``Dsl:Type:TypeExpr json round-trip`` () =
           TypeExpr.Primitive PrimitiveType.String
           TypeExpr.Primitive PrimitiveType.Bool ]
       """{ "discriminator": "flatten", "value": [{"discriminator": "int32"}, {"discriminator": "string"}] }""",
-      TypeExpr.Flatten(
-        TypeExpr.Primitive PrimitiveType.Int32,
-        TypeExpr.Primitive PrimitiveType.String
-      )
+      TypeExpr.Flatten(TypeExpr.Primitive PrimitiveType.Int32, TypeExpr.Primitive PrimitiveType.String)
       """{ "discriminator": "exclude", "value": [{"discriminator": "int32"}, {"discriminator": "string"}] }""",
-      TypeExpr.Exclude(
-        TypeExpr.Primitive PrimitiveType.Int32,
-        TypeExpr.Primitive PrimitiveType.String
-      )
+      TypeExpr.Exclude(TypeExpr.Primitive PrimitiveType.Int32, TypeExpr.Primitive PrimitiveType.String)
       """{ "discriminator": "rotate", "value": {"discriminator": "int32"} }""",
       TypeExpr.Rotate(TypeExpr.Primitive PrimitiveType.Int32) ]
 
@@ -140,9 +110,7 @@ let ``Dsl:Type:TypeExpr json round-trip`` () =
 
 
 [<Test>]
-let ``Dsl:Type:TypeExpr FromTypeValue json round-trip with TypeValue serializer``
-  ()
-  =
+let ``Dsl:Type:TypeExpr FromTypeValue json round-trip with TypeValue serializer`` () =
   let normalize (json: JsonValue) =
     json.ToString JsonSaveOptions.DisableFormatting
 
@@ -159,8 +127,7 @@ let ``Dsl:Type:TypeExpr FromTypeValue json round-trip with TypeValue serializer`
 
     Assert.That(normalize json, Is.EqualTo(normalize expectedJsonParsed))
 
-    let parsed =
-      TypeExpr.FromJsonWith TypeValue<Object>.FromJson expectedJsonParsed
+    let parsed = TypeExpr.FromJsonWith TypeValue<Object>.FromJson expectedJsonParsed
 
     match parsed with
     | Right err -> Assert.Fail $"Parse failed: {err}"

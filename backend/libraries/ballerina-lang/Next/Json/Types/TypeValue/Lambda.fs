@@ -22,24 +22,21 @@ module Lambda =
     static member FromJsonLambda
       (fromExpr: JsonValue -> Sum<TypeExpr<'valueExt>, Errors<unit>>)
       : JsonValue -> Sum<TypeParameter * TypeExpr<'valueExt>, Errors<unit>> =
-      Sum.assertDiscriminatorAndContinueWithValue
-        discriminator
-        (fun lambdaFields ->
-          sum {
-            let! lambdaFields = lambdaFields |> JsonValue.AsRecordMap
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun lambdaFields ->
+        sum {
+          let! lambdaFields = lambdaFields |> JsonValue.AsRecordMap
 
-            let! param =
-              lambdaFields
-              |> (Map.tryFindWithError "param" "lambda" (fun () -> "param") ()
-                  >>= TypeParameter.FromJson)
+          let! param =
+            lambdaFields
+            |> (Map.tryFindWithError "param" "lambda" (fun () -> "param") ()
+                >>= TypeParameter.FromJson)
 
-            let! body =
-              lambdaFields
-              |> (Map.tryFindWithError "body" "lambda" (fun () -> "body") ()
-                  >>= fromExpr)
+          let! body =
+            lambdaFields
+            |> (Map.tryFindWithError "body" "lambda" (fun () -> "body") () >>= fromExpr)
 
-            return param, body
-          })
+          return param, body
+        })
 
     static member ToJsonLambda
       (rootToJson: TypeExpr<'valueExt> -> JsonValue)

@@ -14,64 +14,39 @@ module Patterns =
       : Sum<List<Delta<'valueExtension, 'deltaExtension>>, Errors<unit>> =
       match delta with
       | Multiple deltas -> deltas |> sum.Return
-      | other ->
-        sum.Throw(
-          Errors.Singleton () (fun () ->
-            $"Expected a multiple delta but got {other}")
-        )
+      | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected a multiple delta but got {other}"))
 
     static member AsReplace
       (delta: Delta<'valueExtension, 'deltaExtension>)
       : Sum<Value<TypeValue<'valueExtension>, 'valueExtension>, Errors<unit>> =
       match delta with
       | Replace v -> sum.Return v
-      | other ->
-        sum.Throw(
-          Errors.Singleton () (fun () ->
-            $"Expected a replace delta but got {other}")
-        )
+      | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected a replace delta but got {other}"))
 
     static member AsRecord
       (delta: Delta<'valueExtension, 'deltaExtension>)
       : Sum<string * Delta<'valueExtension, 'deltaExtension>, Errors<unit>> =
       match delta with
       | Delta.Record(fieldName, fieldDelta) -> sum.Return(fieldName, fieldDelta)
-      | other ->
-        sum.Throw(
-          Errors.Singleton () (fun () ->
-            $"Expected a record delta but got {other}")
-        )
+      | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected a record delta but got {other}"))
 
     static member AsUnion
       (delta: Delta<'valueExtension, 'deltaExtension>)
       : Sum<string * Delta<'valueExtension, 'deltaExtension>, Errors<unit>> =
       match delta with
       | Delta.Union(caseName, caseDelta) -> sum.Return(caseName, caseDelta)
-      | other ->
-        sum.Throw(
-          Errors.Singleton () (fun () ->
-            $"Expected a union delta but got {other}")
-        )
+      | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected a union delta but got {other}"))
 
     static member AsTuple
       (delta: Delta<'valueExtension, 'deltaExtension>)
       : Sum<int * Delta<'valueExtension, 'deltaExtension>, Errors<unit>> =
       match delta with
-      | Delta.Tuple(fieldIndex, fieldDelta) ->
-        sum.Return(fieldIndex, fieldDelta)
-      | other ->
-        sum.Throw(
-          Errors.Singleton () (fun () ->
-            $"Expected a tuple delta but got {other}")
-        )
+      | Delta.Tuple(fieldIndex, fieldDelta) -> sum.Return(fieldIndex, fieldDelta)
+      | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected a tuple delta but got {other}"))
 
     static member AsSum
       (delta: Delta<'valueExtension, 'deltaExtension>)
       : Sum<int * Delta<'valueExtension, 'deltaExtension>, Errors<unit>> =
       match delta with
       | Delta.Sum(fieldIndex, fieldDelta) -> sum.Return(fieldIndex, fieldDelta)
-      | other ->
-        sum.Throw(
-          Errors.Singleton () (fun () ->
-            $"Expected a sum delta but got {other}")
-        )
+      | other -> sum.Throw(Errors.Singleton () (fun () -> $"Expected a sum delta but got {other}"))

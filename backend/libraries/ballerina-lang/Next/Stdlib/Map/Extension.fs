@@ -39,19 +39,8 @@ module Extension =
     (listValueLens: Option<PartialLens<'ext, ListValues<'ext>>>)
     (valueDTOLens: PartialLens<'extDTO, MapValueDTO<'extDTO>>)
     (deltaLens: PartialLens<'deltaExt, MapDeltaExt<'ext, 'deltaExt>>)
-    (deltaDTOLens:
-      PartialLens<'deltaExtDTO, MapDeltaExtDTO<'extDTO, 'deltaExtDTO>>)
-    : TypeExtension<
-        'runtimeContext,
-        'ext,
-        'extDTO,
-        'deltaExt,
-        'deltaExtDTO,
-        Unit,
-        MapValues<'ext>,
-        MapOperations<'ext>
-       >
-    =
+    (deltaDTOLens: PartialLens<'deltaExtDTO, MapDeltaExtDTO<'extDTO, 'deltaExtDTO>>)
+    : TypeExtension<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO, Unit, MapValues<'ext>, MapOperations<'ext>> =
     let mapId = Identifier.LocalScope "Map"
     let mapSymbolId = mapId |> TypeSymbol.Create
     let kVar, kKind = TypeVar.Create("k"), Kind.Star
@@ -60,24 +49,18 @@ module Extension =
 
     let mapOf (keyArgName: string) (valueArgName: string) =
       TypeExpr.Apply(
-        TypeExpr.Apply(
-          TypeExpr.Lookup(Identifier.LocalScope "Map"),
-          TypeExpr.Lookup(Identifier.LocalScope keyArgName)
-        ),
+        TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope "Map"), TypeExpr.Lookup(Identifier.LocalScope keyArgName)),
         TypeExpr.Lookup(Identifier.LocalScope valueArgName)
       )
 
     let mapMapId =
-      Identifier.FullyQualified([ "Map" ], "map")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "Map" ], "map") |> TypeCheckScope.Empty.Resolve
 
     let mapSetId =
-      Identifier.FullyQualified([ "Map" ], "set")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "Map" ], "set") |> TypeCheckScope.Empty.Resolve
 
     let mapEmptyId =
-      Identifier.FullyQualified([ "Map" ], "Empty")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "Map" ], "Empty") |> TypeCheckScope.Empty.Resolve
 
     let mapMapToListId =
       Identifier.FullyQualified([ "Map" ], "mapToList")
@@ -85,33 +68,20 @@ module Extension =
 
     let getValueAsMap
       (v: Value<TypeValue<'ext>, 'ext>)
-      : Sum<
-          Map<Value<TypeValue<'ext>, 'ext>, Value<TypeValue<'ext>, 'ext>>,
-          Errors<Unit>
-         >
-      =
+      : Sum<Map<Value<TypeValue<'ext>, 'ext>, Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
       sum {
         let! v, _ = v |> Value.AsExt
 
         let! v =
           valueLens.Get v
-          |> sum.OfOption(
-            (fun () -> $"cannot get map value") |> Errors<Unit>.Singleton()
-          )
+          |> sum.OfOption((fun () -> $"cannot get map value") |> Errors<Unit>.Singleton())
 
         let! v = v |> MapValues.AsMap
         v
       }
 
     let mapOperation
-      : ResolvedIdentifier *
-        TypeOperationExtension<
-          'runtimeContext,
-          'ext,
-          Unit,
-          MapValues<'ext>,
-          MapOperations<'ext>
-         > =
+      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, MapValues<'ext>, MapOperations<'ext>> =
       mapMapId,
       { Type =
           TypeValue.CreateLambda(
@@ -130,11 +100,7 @@ module Extension =
               )
             )
           )
-        Kind =
-          Kind.Arrow(
-            Kind.Star,
-            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
-          )
+        Kind = Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
         Operation = Map_Map {| f = None |}
         OperationsLens =
           operationLens
@@ -153,8 +119,7 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application (value function)
                 return
-                  (MapOperations.Map_Map({| f = Some v |}) |> operationLens.Set,
-                   Some mapMapId)
+                  (MapOperations.Map_Map({| f = Some v |}) |> operationLens.Set, Some mapMapId)
                   |> Ext
               | Some f -> // the closure has the value function - second step in the application (the map)
                 let! map =
@@ -172,20 +137,11 @@ module Extension =
                     })
                   |> reader.All
 
-                return
-                  (MapValues.Map(Map.ofList newMap) |> valueLens.Set, None)
-                  |> Ext
+                return (MapValues.Map(Map.ofList newMap) |> valueLens.Set, None) |> Ext
             } }
 
     let setOperation
-      : ResolvedIdentifier *
-        TypeOperationExtension<
-          'runtimeContext,
-          'ext,
-          Unit,
-          MapValues<'ext>,
-          MapOperations<'ext>
-         > =
+      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, MapValues<'ext>, MapOperations<'ext>> =
       mapSetId,
       { Type =
           TypeValue.CreateLambda(
@@ -228,9 +184,7 @@ module Extension =
                 match items with
                 | [ key; value ] ->
                   return
-                    (MapOperations.Map_Set(Some(key, value))
-                     |> operationLens.Set,
-                     Some mapSetId)
+                    (MapOperations.Map_Set(Some(key, value)) |> operationLens.Set, Some mapSetId)
                     |> Ext
                 | _ ->
                   return!
@@ -247,9 +201,7 @@ module Extension =
                 let! map =
                   map
                   |> valueLens.Get
-                  |> sum.OfOption(
-                    (fun () -> "Error: expected map") |> Errors.Singleton loc0
-                  )
+                  |> sum.OfOption((fun () -> "Error: expected map") |> Errors.Singleton loc0)
                   |> reader.OfSum
 
                 let! map =
@@ -258,30 +210,18 @@ module Extension =
                   |> sum.MapError(Errors.MapContext(replaceWith loc0))
                   |> reader.OfSum
 
-                return
-                  (MapValues.Map(Map.add key value map) |> valueLens.Set, None)
-                  |> Ext
+                return (MapValues.Map(Map.add key value map) |> valueLens.Set, None) |> Ext
             } }
 
     let emptyOperation
-      : ResolvedIdentifier *
-        TypeOperationExtension<
-          'runtimeContext,
-          'ext,
-          Unit,
-          MapValues<'ext>,
-          MapOperations<'ext>
-         > =
+      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, MapValues<'ext>, MapOperations<'ext>> =
       mapEmptyId,
       { Type =
           TypeValue.CreateLambda(
             TypeParameter.Create("k", kKind),
             TypeExpr.Lambda(
               TypeParameter.Create("v", vKind),
-              TypeExpr.Arrow(
-                TypeExpr.Primitive PrimitiveType.Unit,
-                mapOf "k" "v"
-              )
+              TypeExpr.Arrow(TypeExpr.Primitive PrimitiveType.Unit, mapOf "k" "v")
             )
           )
         Kind = Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
@@ -304,14 +244,7 @@ module Extension =
             } }
 
     let maptolistOperation
-      : ResolvedIdentifier *
-        TypeOperationExtension<
-          'runtimeContext,
-          'ext,
-          Unit,
-          MapValues<'ext>,
-          MapOperations<'ext>
-         > =
+      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, MapValues<'ext>, MapOperations<'ext>> =
       mapMapToListId,
       { Type =
           TypeValue.CreateLambda(
@@ -351,18 +284,13 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              let tupleList =
-                map
-                |> Map.toList
-                |> List.map (fun (k, v) -> Value.Tuple([ k; v ]))
+              let tupleList = map |> Map.toList |> List.map (fun (k, v) -> Value.Tuple([ k; v ]))
 
               match listValueLens with
-              | Some listLens ->
-                return (ListValues.List tupleList |> listLens.Set, None) |> Ext
+              | Some listLens -> return (ListValues.List tupleList |> listLens.Set, None) |> Ext
               | None ->
                 return!
-                  (fun () ->
-                    "Error: Map::maptolist requires List extension value lens")
+                  (fun () -> "Error: Map::maptolist requires List extension value lens")
                   |> Errors.Singleton loc0
                   |> reader.Throw
             } }
@@ -370,20 +298,12 @@ module Extension =
     let mapToDTO
       (value: 'ext)
       (applicableId: Option<ResolvedIdentifierDTO>)
-      : Reader<
-          ValueDTO<'extDTO>,
-          SerializationContext<'ext, 'extDTO>,
-          Ballerina.Errors.Errors<unit>
-         >
-      =
+      : Reader<ValueDTO<'extDTO>, SerializationContext<'ext, 'extDTO>, Ballerina.Errors.Errors<unit>> =
       reader {
         let! Map mapValue =
           value
           |> valueLens.Get
-          |> sum.OfOption(
-            Ballerina.Errors.Errors.Singleton () (fun _ ->
-              "Expected map value in mapToDTO.")
-          )
+          |> sum.OfOption(Ballerina.Errors.Errors.Singleton () (fun _ -> "Expected map value in mapToDTO."))
           |> reader.OfSum
 
         let! pairs =
@@ -407,20 +327,12 @@ module Extension =
     let DTOToMap
       (valueDTO: 'extDTO)
       (applicableId: Option<ResolvedIdentifier>)
-      : Reader<
-          Value<TypeValue<'ext>, 'ext>,
-          SerializationContext<'ext, 'extDTO>,
-          Ballerina.Errors.Errors<unit>
-         >
-      =
+      : Reader<Value<TypeValue<'ext>, 'ext>, SerializationContext<'ext, 'extDTO>, Ballerina.Errors.Errors<unit>> =
       reader {
         let! mapValueDTO =
           valueDTO
           |> valueDTOLens.Get
-          |> sum.OfOption(
-            Ballerina.Errors.Errors.Singleton () (fun _ ->
-              "Expected map value DTO in DTOToMap.")
-          )
+          |> sum.OfOption(Ballerina.Errors.Errors.Singleton () (fun _ -> "Expected map value DTO in DTOToMap."))
           |> reader.OfSum
 
         let! mapElements =
@@ -433,11 +345,7 @@ module Extension =
             })
           |> reader.All
 
-        return
-          Ext(
-            MapValues.Map(mapElements |> Map.ofList) |> valueLens.Set,
-            applicableId
-          )
+        return Ext(MapValues.Map(mapElements |> Map.ofList) |> valueLens.Set, applicableId)
       }
 
     let isMapInstanceOf: IsExtInstanceOf<'ext> =
@@ -446,10 +354,7 @@ module Extension =
           let! l =
             v
             |> valueLens.Get
-            |> sum.OfOption(
-              Errors.Singleton () (fun _ ->
-                "Expected list value in isListInstanceOf.")
-            )
+            |> sum.OfOption(Errors.Singleton () (fun _ -> "Expected list value in isListInstanceOf."))
             |> reader.OfSum
 
           match l, t with
@@ -458,21 +363,18 @@ module Extension =
               match i.Arguments with
               | [ key_t; val_t ] -> reader { return (key_t, val_t) }
               | _ ->
-                Errors.Singleton () (fun _ ->
-                  "Expected two type arguments for Map in isListInstanceOf.")
+                Errors.Singleton () (fun _ -> "Expected two type arguments for Map in isListInstanceOf.")
                 |> reader.Throw
 
             return!
               m
               |> Map.toSeq
-              |> Seq.map (fun (k, v) ->
-                reader.All2 (f (k, key_t)) (f (v, val_t)))
+              |> Seq.map (fun (k, v) -> reader.All2 (f (k, key_t)) (f (v, val_t)))
               |> reader.All
               |> reader.Ignore
           | _ ->
             return!
-              Errors.Singleton () (fun _ ->
-                "Expected list value in isListInstanceOf.")
+              Errors.Singleton () (fun _ -> "Expected list value in isListInstanceOf.")
               |> reader.Throw
         }
 
@@ -488,10 +390,7 @@ module Extension =
         let! mapDelta =
           delta
           |> deltaLens.Get
-          |> sum.OfOption(
-            Errors.Singleton () (fun _ ->
-              "Expected map delta extension in mapDeltaToDTO.")
-          )
+          |> sum.OfOption(Errors.Singleton () (fun _ -> "Expected map delta extension in mapDeltaToDTO."))
           |> reader.OfSum
 
         match mapDelta with
@@ -509,10 +408,7 @@ module Extension =
             |> deltaDTOLens.Set
             |> fun ext -> new DeltaDTO<'extDTO, 'deltaExtDTO>(ext)
         | UpdateValue(key, delta) ->
-          let! keyDTO =
-            valueToDTO key
-            |> reader.MapContext(fun context -> context.SerializationContext)
-
+          let! keyDTO = valueToDTO key |> reader.MapContext(fun context -> context.SerializationContext)
           let! deltaDTO = deltaToDTO delta
 
           return
@@ -520,9 +416,7 @@ module Extension =
             |> deltaDTOLens.Set
             |> fun ext -> new DeltaDTO<'extDTO, 'deltaExtDTO>(ext)
         | AddItem(key, value) ->
-          let! keyDTO =
-            valueToDTO key
-            |> reader.MapContext(fun context -> context.SerializationContext)
+          let! keyDTO = valueToDTO key |> reader.MapContext(fun context -> context.SerializationContext)
 
           let! valueDTO =
             valueToDTO value
@@ -533,9 +427,7 @@ module Extension =
             |> deltaDTOLens.Set
             |> fun ext -> new DeltaDTO<'extDTO, 'deltaExtDTO>(ext)
         | RemoveItem key ->
-          let! keyDTO =
-            valueToDTO key
-            |> reader.MapContext(fun context -> context.SerializationContext)
+          let! keyDTO = valueToDTO key |> reader.MapContext(fun context -> context.SerializationContext)
 
           return
             MapDeltaExtDTO.CreateRemoveItem keyDTO
@@ -555,10 +447,7 @@ module Extension =
         let! mapDeltaDTO =
           deltaDTO
           |> deltaDTOLens.Get
-          |> sum.OfOption(
-            Errors.Singleton () (fun _ ->
-              "Expected map delta DTO extension in mapDeltaFromDTO.")
-          )
+          |> sum.OfOption(Errors.Singleton () (fun _ -> "Expected map delta DTO extension in mapDeltaFromDTO."))
           |> reader.OfSum
 
         if isNull mapDeltaDTO.UpdateKey |> not then
@@ -570,10 +459,7 @@ module Extension =
             valueFromDTO mapDeltaDTO.UpdateKey.NewKey
             |> reader.MapContext(fun context -> context.SerializationContext)
 
-          return
-            UpdateKey(oldKey, newKey)
-            |> deltaLens.Set
-            |> Data.Delta.Model.Delta.Ext
+          return UpdateKey(oldKey, newKey) |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
         elif isNull mapDeltaDTO.UpdateValue |> not then
           let! key =
             valueFromDTO mapDeltaDTO.UpdateValue.Key
@@ -581,10 +467,7 @@ module Extension =
 
           let! delta = deltaFromDTO mapDeltaDTO.UpdateValue.Value
 
-          return
-            UpdateValue(key, delta)
-            |> deltaLens.Set
-            |> Data.Delta.Model.Delta.Ext
+          return UpdateValue(key, delta) |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
         elif isNull mapDeltaDTO.AddItem |> not then
           let! key =
             valueFromDTO mapDeltaDTO.AddItem.Key
@@ -594,8 +477,7 @@ module Extension =
             valueFromDTO mapDeltaDTO.AddItem.Value
             |> reader.MapContext(fun context -> context.SerializationContext)
 
-          return
-            AddItem(key, value) |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
+          return AddItem(key, value) |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
         elif isNull mapDeltaDTO.RemoveItem |> not then
           let! key =
             valueFromDTO mapDeltaDTO.RemoveItem
@@ -603,18 +485,13 @@ module Extension =
 
           return RemoveItem key |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
         else
-          return!
-            reader.Throw(
-              Errors.Singleton () (fun _ -> "Malformed map delta DTO.")
-            )
+          return! reader.Throw(Errors.Singleton () (fun _ -> "Malformed map delta DTO."))
       }
 
     { TypeName = mapId, mapSymbolId
       TypeVars = [ (kVar, kKind); (vVar, vKind) ]
       Cases = Map.empty
-      Operations =
-        [ setOperation; emptyOperation; mapOperation; maptolistOperation ]
-        |> Map.ofList
+      Operations = [ setOperation; emptyOperation; mapOperation; maptolistOperation ] |> Map.ofList
       // Deconstruct =
       //   fun (v: MapValues<'ext>) ->
       //     match v with

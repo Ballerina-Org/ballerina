@@ -30,14 +30,9 @@ module TypeLambda =
   open Ballerina.Collections.NonEmptyList
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
-    static member internal TypeCheckTypeLambda<'valueExt
-      when 'valueExt: comparison>
+    static member internal TypeCheckTypeLambda<'valueExt when 'valueExt: comparison>
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
-      : TypeChecker<
-          ExprTypeLambda<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-          'valueExt
-         >
-      =
+      : TypeChecker<ExprTypeLambda<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Param = t_par; Body = body }) ->
         let (!) = typeCheckExpr context_t
         let loc0 = body.Location
@@ -69,11 +64,7 @@ module TypeLambda =
 
           let! body, _ =
             !body
-            |> state.MapContext(
-              TypeCheckContext.Updaters.TypeParameters(
-                Map.add t_par.Name t_par.Kind
-              )
-            )
+            |> state.MapContext(TypeCheckContext.Updaters.TypeParameters(Map.add t_par.Name t_par.Kind))
 
           let t_body = body.Type
           let body_k = body.Kind
@@ -100,14 +91,5 @@ module TypeLambda =
           let t_res = TypeValue.CreateLambda(t_par, t_body.AsExpr)
           let k_res = Kind.Arrow(t_par.Kind, body_k)
 
-          return
-            TypeCheckedExpr.TypeLambda(
-              t_par,
-              body,
-              t_res,
-              k_res,
-              loc0,
-              ctx.Scope
-            ),
-            ctx
+          return TypeCheckedExpr.TypeLambda(t_par, body, t_res, k_res, loc0, ctx.Scope), ctx
         }

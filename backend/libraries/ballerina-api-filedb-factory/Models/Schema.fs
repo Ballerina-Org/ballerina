@@ -44,19 +44,8 @@ module Model =
           | Some draft -> draft
         Publications = schema.Publications |> List.toArray }
 
-  type FileDbValueExtension =
-    ValueExt<
-      FileDBRuntimeContext,
-      MutableMemoryDB<FileDBRuntimeContext, unit>,
-      unit
-     >
-
-  type FileDbDeltaExtension =
-    DeltaExt<
-      FileDBRuntimeContext,
-      MutableMemoryDB<FileDBRuntimeContext, unit>,
-      unit
-     >
+  type FileDbValueExtension = ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, unit>, unit>
+  type FileDbDeltaExtension = DeltaExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, unit>, unit>
 
   type SchemaFileConfig =
     { SchemaDirectory: string

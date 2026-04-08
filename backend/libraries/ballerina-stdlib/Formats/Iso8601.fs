@@ -29,14 +29,7 @@ module Iso8601 =
       date.ToString("o", CultureInfo.InvariantCulture)
 
     let tryParse (input: string) =
-      match
-        DateOnly.TryParseExact(
-          input,
-          dateOnlyFormat,
-          CultureInfo.InvariantCulture,
-          DateTimeStyles.None
-        )
-      with
+      match DateOnly.TryParseExact(input, dateOnlyFormat, CultureInfo.InvariantCulture, DateTimeStyles.None) with
       | true, value -> Some value
       | false, _ -> None
 
@@ -47,13 +40,6 @@ module Iso8601 =
       date.ToUniversalTime().ToString("o", CultureInfo.InvariantCulture)
 
     let tryParse (input: string) =
-      match
-        DateTime.TryParseExact(
-          input,
-          formats,
-          CultureInfo.InvariantCulture,
-          styles
-        )
-      with
+      match DateTime.TryParseExact(input, formats, CultureInfo.InvariantCulture, styles) with
       | true, value -> Some value
       | false, _ -> None

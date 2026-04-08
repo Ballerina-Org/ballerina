@@ -35,11 +35,8 @@ module Types =
                 match renderer with
                 | RendererExpression.Primitive(primitive) ->
                   match primitive.Renderer with
-                  | PrimitiveRendererKind.Unit ->
-                    JsonValue.Record [||], Seq.empty
-                  | _ ->
-                    failwith
-                      $"Only named records and unit are supported as a union case"
+                  | PrimitiveRendererKind.Unit -> JsonValue.Record [||], Seq.empty
+                  | _ -> failwith $"Only named records and unit are supported as a union case"
                 | RendererExpression.Record { Members = members } ->
                   let results =
                     members.Fields
@@ -50,9 +47,7 @@ module Types =
 
                       (fieldName, fieldTypeJson), fieldUnionTypes)
 
-                  let jsonFields =
-                    results |> Seq.map fst |> Seq.toArray |> JsonValue.Record
-
+                  let jsonFields = results |> Seq.map fst |> Seq.toArray |> JsonValue.Record
                   let unionTypes = results |> Seq.map snd |> Seq.concat
                   jsonFields, unionTypes
                 | RendererExpression.Form(formIdentifier, _) ->
@@ -61,36 +56,21 @@ module Types =
                     let (TypeIdentifier typeId) = form.TypeIdentifier
                     JsonValue.String(typeId), Seq.empty
                   | None -> failwith $"Form {formIdentifier} not found"
-                | _ ->
-                  failwith
-                    $"Only named records and unit are supported as a union case")
+                | _ -> failwith $"Only named records and unit are supported as a union case")
 
               |> Seq.map (fun (caseName, (caseJson, caseUnionTypes)) ->
-                JsonValue.Record
-                  [| "caseName", JsonValue.String caseName
-                     "fields", caseJson |],
-                caseUnionTypes)
+                JsonValue.Record [| "caseName", JsonValue.String caseName; "fields", caseJson |], caseUnionTypes)
 
             let casesJson =
-              casesJsonAndFurtherUnionTypes
-              |> Seq.map fst
-              |> Seq.toArray
-              |> JsonValue.Array
+              casesJsonAndFurtherUnionTypes |> Seq.map fst |> Seq.toArray |> JsonValue.Array
 
             let additional =
-              casesJsonAndFurtherUnionTypes
-              |> Seq.map snd
-              |> Seq.concat
-              |> List.ofSeq
+              casesJsonAndFurtherUnionTypes |> Seq.map snd |> Seq.concat |> List.ofSeq
 
             let newResult =
-              (unionType.Type.ToString(),
-               JsonValue.Record
-                 [| "fun", JsonValue.String "Union"; "args", casesJson |])
+              (unionType.Type.ToString(), JsonValue.Record [| "fun", JsonValue.String "Union"; "args", casesJson |])
 
-            newResult :: accResults,
-            additional @ accAdditional,
-            Set.add (unionType.Type.ToString()) seen)
+            newResult :: accResults, additional @ accAdditional, Set.add (unionType.Type.ToString()) seen)
         (List.Empty, List.Empty, seen)
 
     // we want additional types to be in reverse order because a nested union type has a reverse dependency graph
@@ -120,13 +100,10 @@ module Types =
       | PrimitiveRendererKind.Bool -> JsonValue.String "boolean", unionTypes
       | PrimitiveRendererKind.String -> JsonValue.String "string", unionTypes
       | PrimitiveRendererKind.Date -> JsonValue.String "Date", unionTypes
-      | PrimitiveRendererKind.DateOnly ->
-        failwith $"DateOnly is not supported in the bridge, use Datetime"
+      | PrimitiveRendererKind.DateOnly -> failwith $"DateOnly is not supported in the bridge, use Datetime"
       | PrimitiveRendererKind.StringId -> JsonValue.String "string", unionTypes
-      | PrimitiveRendererKind.Base64 ->
-        failwith $"Base64 is not supported in the bridge"
-      | PrimitiveRendererKind.Secret ->
-        failwith $"Secret is not supported in the bridge"
+      | PrimitiveRendererKind.Base64 -> failwith $"Base64 is not supported in the bridge"
+      | PrimitiveRendererKind.Secret -> failwith $"Secret is not supported in the bridge"
     | RendererExpression.List { Element = element } ->
       let elementTypeJson, elementUnionTypes =
         generateFieldTypeJson forms unionTypes element
@@ -136,11 +113,8 @@ module Types =
            "args", JsonValue.Array [| elementTypeJson |] |],
       elementUnionTypes
     | RendererExpression.Sum { Left = left; Right = right } ->
-      let leftTypeJson, leftUnionTypes =
-        generateFieldTypeJson forms unionTypes left
-
-      let rightTypeJson, rightUnionTypes =
-        generateFieldTypeJson forms unionTypes right
+      let leftTypeJson, leftUnionTypes = generateFieldTypeJson forms unionTypes left
+      let rightTypeJson, rightUnionTypes = generateFieldTypeJson forms unionTypes right
 
       JsonValue.Record
         [| "fun", JsonValue.String "Sum"
@@ -157,8 +131,7 @@ module Types =
            "args", itemTypesJsons |> Seq.toArray |> JsonValue.Array |],
       itemsUnionTypes
     // needs to be a lookup type
-    | RendererExpression.Union union ->
-      JsonValue.String(union.Type.ToString()), Seq.singleton union
+    | RendererExpression.Union union -> JsonValue.String(union.Type.ToString()), Seq.singleton union
     | RendererExpression.Record { Renderer = rendererId
                                   Members = members
                                   DisabledFields = disabledFields
@@ -178,11 +151,8 @@ module Types =
 
       generateFormTypeJson forms unionTypes form
     | RendererExpression.Map { Key = key; Value = value } ->
-      let keyTypeJson, keyUnionTypes =
-        generateFieldTypeJson forms unionTypes key
-
-      let valueTypeJson, valueUnionTypes =
-        generateFieldTypeJson forms unionTypes value
+      let keyTypeJson, keyUnionTypes = generateFieldTypeJson forms unionTypes key
+      let valueTypeJson, valueUnionTypes = generateFieldTypeJson forms unionTypes value
 
       JsonValue.Record
         [| "fun", JsonValue.String "Map"
@@ -214,14 +184,10 @@ module Types =
         [| "fun", JsonValue.String "ReadOnly"
            "args", JsonValue.Array [| childTypeJson |] |],
       childUnionTypes
-    | RendererExpression.Table _ ->
-      failwith $"Table Renderers are not supported for field type generation"
-    | RendererExpression.One _ ->
-      failwith $"One Renderers are not supported for field type generation"
-    | RendererExpression.Many _ ->
-      failwith $"Many Renderers are not supported for field type generation"
-    | _ ->
-      failwith $"Renderer {renderer} not supported for field type generation"
+    | RendererExpression.Table _ -> failwith $"Table Renderers are not supported for field type generation"
+    | RendererExpression.One _ -> failwith $"One Renderers are not supported for field type generation"
+    | RendererExpression.Many _ -> failwith $"Many Renderers are not supported for field type generation"
+    | _ -> failwith $"Renderer {renderer} not supported for field type generation"
 
   and private generateFormTypeJson<'typeValue>
     (forms: OrderedMap<FormIdentifier, Form<'typeValue>>)
@@ -237,21 +203,15 @@ module Types =
 
     let fieldsProps =
       fieldsRes
-      |> Seq.map (fun (fieldName, (fieldTypeJson, _)) ->
-        fieldName, fieldTypeJson)
+      |> Seq.map (fun (fieldName, (fieldTypeJson, _)) -> fieldName, fieldTypeJson)
       |> Array.ofSeq
 
     let fieldsUnionTypes =
-      fieldsRes
-      |> Seq.map (fun (_, (_, unionTypes)) -> unionTypes)
-      |> Seq.concat
+      fieldsRes |> Seq.map (fun (_, (_, unionTypes)) -> unionTypes) |> Seq.concat
 
-    JsonValue.Record [| "fields", JsonValue.Record fieldsProps |],
-    fieldsUnionTypes
+    JsonValue.Record [| "fields", JsonValue.Record fieldsProps |], fieldsUnionTypes
 
-  and internal generateFormsTypeJson<'typeValue>
-    (forms: OrderedMap<FormIdentifier, Form<'typeValue>>)
-    : JsonValue =
+  and internal generateFormsTypeJson<'typeValue> (forms: OrderedMap<FormIdentifier, Form<'typeValue>>) : JsonValue =
     // Config types are mandatory in the front end engine, so we use this placeholder for every launcher
     let emptyConfigType =
       ("EmptyConfig", JsonValue.Record [| "fields", JsonValue.Record [||] |])
@@ -267,13 +227,10 @@ module Types =
           if Set.contains typeId seen then
             (accResults, seen)
           else
-            let formJson, unionTypes =
-              generateFormTypeJson forms Seq.empty form
+            let formJson, unionTypes = generateFormTypeJson forms Seq.empty form
 
             let newUnionTypes =
-              unionTypes
-              |> Seq.filter (fun u ->
-                not (Set.contains (u.Type.ToString()) seen))
+              unionTypes |> Seq.filter (fun u -> not (Set.contains (u.Type.ToString()) seen))
 
             let unionTypesJson, _, newSeen =
               newUnionTypes |> Seq.toList |> generateUnionTypesJson forms seen

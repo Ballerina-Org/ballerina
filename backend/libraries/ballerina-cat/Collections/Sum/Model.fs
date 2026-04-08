@@ -9,8 +9,7 @@ module Model =
     | Left of 'a
     | Right of 'b
 
-    static member fromNullable<'value, 'error
-      when 'value: not null and 'value: not struct>
+    static member fromNullable<'value, 'error when 'value: not null and 'value: not struct>
       (rightPlaceholder: unit -> 'error)
       (value: 'value | null)
       : Sum<'value, 'error> =
@@ -28,22 +27,15 @@ module Model =
       | Left a -> Right a
       | Right b -> Left b
 
-    static member mapRight<'a, 'b, 'c>
-      (f: 'b -> 'c)
-      : Sum<'a, 'b> -> Sum<'a, 'c> =
-      Sum.swap >> Sum.map f >> Sum.swap
-
-    static member map2<'a, 'b, 'a1, 'b1> (f: 'a -> 'a1) (g: 'b -> 'b1) =
-      Sum.map f >> Sum.mapRight g
+    static member mapRight<'a, 'b, 'c>(f: 'b -> 'c) : Sum<'a, 'b> -> Sum<'a, 'c> = Sum.swap >> Sum.map f >> Sum.swap
+    static member map2<'a, 'b, 'a1, 'b1> (f: 'a -> 'a1) (g: 'b -> 'b1) = Sum.map f >> Sum.mapRight g
 
     static member toOption: Sum<'a, 'b> -> _ =
       function
       | Left a -> Some a
       | _ -> None
 
-    static member fromOption<'a, 'b>
-      (rightPlaceholder: Unit -> 'b)
-      : Option<'a> -> Sum<'a, 'b> =
+    static member fromOption<'a, 'b>(rightPlaceholder: Unit -> 'b) : Option<'a> -> Sum<'a, 'b> =
       function
       | Some a -> Left a
       | _ -> Right(rightPlaceholder ())
@@ -54,9 +46,7 @@ module Model =
       | Right b
       | Left(Right b) -> Right b
 
-    static member bind<'a, 'b, 'c>
-      (k: 'a -> Sum<'c, 'b>)
-      : Sum<'a, 'b> -> Sum<'c, 'b> =
+    static member bind<'a, 'b, 'c>(k: 'a -> Sum<'c, 'b>) : Sum<'a, 'b> -> Sum<'c, 'b> =
       Sum.map<'a, 'b, Sum<'c, 'b>> k >> Sum.flatten
 
     static member AsLeft<'a, 'b>(p: Sum<'a, 'b>) : Option<'a> =
@@ -69,8 +59,7 @@ module Model =
       | Left _ -> None
       | Right b -> Some b
 
-  let inline (<+>) (f: 'a -> 'a1) (g: 'b -> 'b1) =
-    Sum.map2<'a, 'b, 'a1, 'b1> f g
+  let inline (<+>) (f: 'a -> 'a1) (g: 'b -> 'b1) = Sum.map2<'a, 'b, 'a1, 'b1> f g
 
   type SumBuilder() =
     member _.MapError f p = p |> Sum.mapRight f
@@ -96,17 +85,13 @@ module Model =
     member _.OfOption (b: 'b) (p: Option<'a>) = Sum.fromOption (fun () -> b) p
 
     // Required to use a try-with block in computation expressions. It is mandatory to define Using.
-    member _.TryWith
-      (p: unit -> Sum<'a, 'b>, handler: exn -> Sum<'a, 'b>)
-      : Sum<'a, 'b> =
+    member _.TryWith(p: unit -> Sum<'a, 'b>, handler: exn -> Sum<'a, 'b>) : Sum<'a, 'b> =
       try
         p ()
       with exc ->
         handler exc
 
-    member _.TryFinally
-      (p: unit -> Sum<'a, 'b>, handler: unit -> unit)
-      : Sum<'a, 'b> =
+    member _.TryFinally(p: unit -> Sum<'a, 'b>, handler: unit -> unit) : Sum<'a, 'b> =
       try
         p ()
       finally
@@ -116,18 +101,14 @@ module Model =
       Required to write use blocks in the computation expression. Necessary when dealing with disposable objects 
       such as the scope provider in ASP.NET
     *)
-    member _.Using
-      (disposable: #IDisposable, body: #IDisposable -> Sum<'a, 'b>)
-      : Sum<'a, 'b> =
+    member _.Using(disposable: #IDisposable, body: #IDisposable -> Sum<'a, 'b>) : Sum<'a, 'b> =
       try
         body disposable
       finally
         if not (obj.ReferenceEquals(box disposable, null)) then
           disposable.Dispose()
 
-    member inline _.Any<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
-      (ps: NonEmptyList<Sum<'a, 'b>>)
-      =
+    member inline _.Any<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>(ps: NonEmptyList<Sum<'a, 'b>>) =
       let merge: Sum<'a, 'b> -> Sum<'a, 'b> -> Sum<'a, 'b> =
         function
         | Left a -> fun _ -> Left a
@@ -144,18 +125,13 @@ module Model =
       =
       sum.Any(NonEmptyList.OfList(p, ps))
 
-    member inline _.Any2<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
-      (p1: Sum<'a, 'b>)
-      (p2: Sum<'a, 'b>)
-      =
+    member inline _.Any2<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)> (p1: Sum<'a, 'b>) (p2: Sum<'a, 'b>) =
       match p1, p2 with
       | Left v, _
       | _, Left v -> Left v
       | Right e1, Right e2 -> Right('b.Concat(e1, e2))
 
-    member inline _.All<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
-      (ps: List<Sum<'a, 'b>>)
-      =
+    member inline _.All<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>(ps: List<Sum<'a, 'b>>) =
       let merge: Sum<List<'a>, 'b> -> Sum<'a, 'b> -> Sum<List<'a>, 'b> =
         function
         | Left a1 ->
@@ -174,8 +150,7 @@ module Model =
       : Sum<List<'a>, 'b> =
       ps |> List.ofSeq |> sum.All
 
-    member inline sum.AllNonEmpty<'a, 'b
-      when 'b: (static member Concat: 'b * 'b -> 'b)>
+    member inline sum.AllNonEmpty<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
       (ps: NonEmptyList<Sum<'a, 'b>>)
       : Sum<NonEmptyList<'a>, 'b> =
       let head: Sum<'a, 'b> = ps.Head
@@ -191,8 +166,7 @@ module Model =
         | Left _ -> Right rightHead
         | Right rightTail -> Right('b.Concat(rightHead, rightTail))
 
-    member inline _.All2<'a1, 'a2, 'b
-      when 'b: (static member Concat: 'b * 'b -> 'b)>
+    member inline _.All2<'a1, 'a2, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
       (p1: Sum<'a1, 'b>)
       (p2: Sum<'a2, 'b>)
       =
@@ -211,8 +185,7 @@ module Model =
         return f a b
       }
 
-    member inline sum.AllMap<'k, 'v, 'b
-      when 'k: comparison and 'b: (static member Concat: 'b * 'b -> 'b)>
+    member inline sum.AllMap<'k, 'v, 'b when 'k: comparison and 'b: (static member Concat: 'b * 'b -> 'b)>
       (ps: Map<'k, Sum<'v, 'b>>)
       : Sum<Map<'k, 'v>, 'b> =
       ps
@@ -225,8 +198,7 @@ module Model =
       |> sum.All
       |> sum.Map(Map.ofList)
 
-    member inline sum.AllNonEmptyList<'a, 'b
-      when 'b: (static member Concat: 'b * 'b -> 'b)>
+    member inline sum.AllNonEmptyList<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
       (NonEmptyList(head, tail): NonEmptyList<Sum<'a, 'b>>)
       : Sum<NonEmptyList<'a>, 'b> =
       sum.All2 head (tail |> sum.All)
@@ -241,8 +213,7 @@ module Model =
         | None -> return None
       }
 
-    member inline this.MergeSources<'a1, 'a2, 'b
-      when 'b: (static member Concat: 'b * 'b -> 'b)>
+    member inline this.MergeSources<'a1, 'a2, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
       (p1: Sum<'a1, 'b>, p2: Sum<'a2, 'b>)
       =
       this.All2 p1 p2

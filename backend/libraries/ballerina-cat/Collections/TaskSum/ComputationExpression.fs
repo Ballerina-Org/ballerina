@@ -20,8 +20,7 @@ type TaskSumBuilder() =
 
   member inline _.ReturnFrom x : Task<Sum<_, _>> = x
 
-  member inline _.Return value : Task<Sum<_, _>> =
-    value |> sum.Return |> Task.FromResult
+  member inline _.Return value : Task<Sum<_, _>> = value |> sum.Return |> Task.FromResult
 
   member inline _.Source(s: Sum<_, _> Task) = s
 

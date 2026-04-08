@@ -12,8 +12,7 @@ module Generator =
     { Id: ResolvedIdentifier
       Generate:
         GeneratorConfig<'importedCfg>
-          -> (TypeValue<'valueExt>
-            -> seq<Sum<Value<TypeValue<'valueExt>, 'valueExt>, Errors<Unit>>>)
+          -> (TypeValue<'valueExt> -> seq<Sum<Value<TypeValue<'valueExt>, 'valueExt>, Errors<Unit>>>)
           -> ImportedTypeValue<'valueExt>
           -> seq<Sum<Value<TypeValue<'valueExt>, 'valueExt>, Errors<Unit>>> }
 
@@ -49,36 +48,26 @@ module Generator =
     | PrimitiveType.Unit -> PrimitiveValue.Unit
     | PrimitiveType.Guid -> PrimitiveValue.Guid(Guid.CreateVersion7())
     | PrimitiveType.Int32 -> PrimitiveValue.Int32(rng.Next(-1000, 1001))
-    | PrimitiveType.Int64 ->
-      PrimitiveValue.Int64(rng.NextInt64(-100000L, 100001L))
-    | PrimitiveType.Float32 ->
-      PrimitiveValue.Float32(float32 (rng.NextDouble() * 1000.0))
+    | PrimitiveType.Int64 -> PrimitiveValue.Int64(rng.NextInt64(-100000L, 100001L))
+    | PrimitiveType.Float32 -> PrimitiveValue.Float32(float32 (rng.NextDouble() * 1000.0))
     | PrimitiveType.Float64 -> PrimitiveValue.Float64(rng.NextDouble() * 1000.0)
-    | PrimitiveType.Decimal ->
-      PrimitiveValue.Decimal(decimal (rng.NextDouble() * 1000.0))
+    | PrimitiveType.Decimal -> PrimitiveValue.Decimal(decimal (rng.NextDouble() * 1000.0))
     | PrimitiveType.Bool -> PrimitiveValue.Bool(rng.Next(0, 2) = 0)
     | PrimitiveType.String -> PrimitiveValue.String(randomString rng 4 12)
     | PrimitiveType.DateTime ->
       let baseDate = System.DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc)
 
       PrimitiveValue.DateTime(
-        baseDate
-          .AddDays(float (rng.Next(0, 365 * 10)))
-          .AddSeconds(float (rng.Next(0, 60 * 60 * 24)))
+        baseDate.AddDays(float (rng.Next(0, 365 * 10))).AddSeconds(float (rng.Next(0, 60 * 60 * 24)))
       )
     | PrimitiveType.DateOnly ->
       let baseDate = System.DateOnly(2020, 1, 1)
       PrimitiveValue.Date(baseDate.AddDays(rng.Next(0, 365 * 10)))
-    | PrimitiveType.TimeSpan ->
-      PrimitiveValue.TimeSpan(
-        TimeSpan.FromSeconds(float (rng.Next(0, 60 * 60 * 24)))
-      )
+    | PrimitiveType.TimeSpan -> PrimitiveValue.TimeSpan(TimeSpan.FromSeconds(float (rng.Next(0, 60 * 60 * 24))))
     | PrimitiveType.Vector -> failwith "Not Implemented"
 
   /// Combine all elements from all sequences into a single sequence of lists
-  let private cartesianProduct<'a>
-    (seqs: list<seq<Sum<'a, Errors<Unit>>>>)
-    : seq<list<'a>> =
+  let private cartesianProduct<'a> (seqs: list<seq<Sum<'a, Errors<Unit>>>>) : seq<list<'a>> =
     let rec go (seqs: list<seq<Sum<'a, Errors<Unit>>>>) : seq<list<'a>> =
       match seqs with
       | [] -> seq { yield [] }
@@ -94,13 +83,11 @@ module Generator =
 
     go seqs
 
-  let rec private localGenerate<'valueExt, 'importedCfg
-    when 'valueExt: comparison>
+  let rec private localGenerate<'valueExt, 'importedCfg when 'valueExt: comparison>
     (config: GeneratorConfig<'importedCfg>)
     (typeContext: TypeCheckContext<'valueExt>)
     (typeState: TypeCheckState<'valueExt>)
-    (importedGenerators:
-      Map<ResolvedIdentifier, ImportedGenerator<'valueExt, 'importedCfg>>)
+    (importedGenerators: Map<ResolvedIdentifier, ImportedGenerator<'valueExt, 'importedCfg>>)
     (t: TypeValue<'valueExt>)
     : seq<Sum<Value<TypeValue<'valueExt>, 'valueExt>, Errors<Unit>>> =
     match t with
@@ -111,8 +98,7 @@ module Generator =
       |> Seq.singleton
     | TypeValue.Var v ->
       match Map.tryFind v.Name typeContext.TypeVariables with
-      | Some(bound, _kind) ->
-        localGenerate config typeContext typeState importedGenerators bound
+      | Some(bound, _kind) -> localGenerate config typeContext typeState importedGenerators bound
       | None -> fail $"Missing type variable binding for {v}" |> Seq.singleton
     | TypeValue.Lookup id ->
       let resolved = typeContext.Scope.Resolve id
@@ -123,8 +109,7 @@ module Generator =
         |> Option.orElseWith (fun () -> Map.tryFind resolved typeContext.Values)
 
       match binding with
-      | Some(bound, _kind) ->
-        localGenerate config typeContext typeState importedGenerators bound
+      | Some(bound, _kind) -> localGenerate config typeContext typeState importedGenerators bound
       | None -> fail $"Missing lookup binding for {resolved}" |> Seq.singleton
     | TypeValue.Record fields ->
       let scope = fields.typeCheckScopeSource
@@ -133,12 +118,7 @@ module Generator =
         fields.value
         |> OrderedMap.toList
         |> List.map (fun (symbol, (fieldType, _kind)) ->
-          localGenerate
-            config
-            typeContext
-            typeState
-            importedGenerators
-            fieldType
+          localGenerate config typeContext typeState importedGenerators fieldType
           |> Seq.map (fun s ->
             sum {
               let! value = s
@@ -146,14 +126,11 @@ module Generator =
               return fieldId, value
             }))
 
-      cartesianProduct fieldSeqs
-      |> Seq.map (Map.ofList >> Value.Record >> sum.Return)
+      cartesianProduct fieldSeqs |> Seq.map (Map.ofList >> Value.Record >> sum.Return)
     | TypeValue.Tuple items ->
       let itemSeqs =
         items.value
-        |> List.map (
-          localGenerate config typeContext typeState importedGenerators
-        )
+        |> List.map (localGenerate config typeContext typeState importedGenerators)
 
       cartesianProduct itemSeqs |> Seq.map (Value.Tuple >> sum.Return)
     | TypeValue.Union cases ->
@@ -166,13 +143,7 @@ module Generator =
           for symbol, caseType in caseList do
             let caseId = cases.typeCheckScopeSource.Resolve symbol.Name
 
-            for s in
-              localGenerate
-                config
-                typeContext
-                typeState
-                importedGenerators
-                caseType do
+            for s in localGenerate config typeContext typeState importedGenerators caseType do
               yield
                 sum {
                   let! value = s
@@ -189,13 +160,7 @@ module Generator =
               { SumConsSelector.Case = index + 1
                 Count = cases.Length }
 
-            for s in
-              localGenerate
-                config
-                typeContext
-                typeState
-                importedGenerators
-                caseType do
+            for s in localGenerate config typeContext typeState importedGenerators caseType do
               yield
                 sum {
                   let! value = s
@@ -204,21 +169,15 @@ module Generator =
         }
     | TypeValue.Imported imported ->
       match Map.tryFind imported.Id importedGenerators with
-      | None ->
-        fail $"Missing imported generator for {imported.Id}" |> Seq.singleton
+      | None -> fail $"Missing imported generator for {imported.Id}" |> Seq.singleton
       | Some generator ->
-        generator.Generate
-          config
-          (localGenerate config typeContext typeState importedGenerators)
-          imported
-    | _ ->
-      fail $"Synthetic generator does not support type {t}" |> Seq.singleton
+        generator.Generate config (localGenerate config typeContext typeState importedGenerators) imported
+    | _ -> fail $"Synthetic generator does not support type {t}" |> Seq.singleton
 
   let Generate<'valueExt, 'importedCfg when 'valueExt: comparison>
     (config: GeneratorConfig<'importedCfg>)
     (context: TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>)
-    (importedGenerators:
-      Map<ResolvedIdentifier, ImportedGenerator<'valueExt, 'importedCfg>>)
+    (importedGenerators: Map<ResolvedIdentifier, ImportedGenerator<'valueExt, 'importedCfg>>)
     (t: TypeValue<'valueExt>)
     : seq<Sum<Value<TypeValue<'valueExt>, 'valueExt>, Errors<Unit>>> =
     let typeContext, typeState = context

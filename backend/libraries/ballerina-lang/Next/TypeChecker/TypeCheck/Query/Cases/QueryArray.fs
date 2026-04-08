@@ -13,19 +13,12 @@ module QueryCaseArray =
     (typeCheckQuery:
       ExprQuery<TypeExpr<'valueExt>, Identifier, 'valueExt>
         -> TypeCheckerResult<
-          (TypeCheckedExprQuery<'valueExt> *
-          TypeValue<'valueExt> *
-          Kind *
-          TypeCheckContext<'valueExt>),
+          (TypeCheckedExprQuery<'valueExt> * TypeValue<'valueExt> * Kind * TypeCheckContext<'valueExt>),
           'valueExt
          >)
     (expr: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
     q
-    : TypeCheckerResult<
-        (TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>),
-        'valueExt
-       >
-    =
+    : TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt> =
     state {
       let! q_e, query_type, _, _ = q |> typeCheckQuery
 
@@ -37,8 +30,7 @@ module QueryCaseArray =
           TypeQueryRow.Array row
       | _ ->
         return!
-          (fun () ->
-            $"Type checking error: QueryArray expects Query type, got {query_type}")
+          (fun () -> $"Type checking error: QueryArray expects Query type, got {query_type}")
           |> Errors.Singleton expr.Location
           |> state.Throw
     }

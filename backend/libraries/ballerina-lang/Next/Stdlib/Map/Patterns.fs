@@ -10,9 +10,7 @@ module Patterns =
   open Model
 
   type MapOperations<'ext> with
-    static member AsMap
-      (op: MapOperations<'ext>)
-      : Sum<Option<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
+    static member AsMap(op: MapOperations<'ext>) : Sum<Option<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
       match op with
       | Map_Map v -> v.f |> sum.Return
       | _ ->
@@ -22,11 +20,7 @@ module Patterns =
 
     static member AsSet
       (op: MapOperations<'ext>)
-      : Sum<
-          Option<Value<TypeValue<'ext>, 'ext> * Value<TypeValue<'ext>, 'ext>>,
-          Errors<Unit>
-         >
-      =
+      : Sum<Option<Value<TypeValue<'ext>, 'ext> * Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
       match op with
       | Map_Set v -> v |> sum.Return
       | _ ->
@@ -42,9 +36,7 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsMapToList
-      (op: MapOperations<'ext>)
-      : Sum<Unit, Errors<Unit>> =
+    static member AsMapToList(op: MapOperations<'ext>) : Sum<Unit, Errors<Unit>> =
       match op with
       | Map_MapToList -> () |> sum.Return
       | _ ->
@@ -55,10 +47,6 @@ module Patterns =
   type MapValues<'ext when 'ext: comparison> with
     static member AsMap
       (op: MapValues<'ext>)
-      : Sum<
-          Map<Value<TypeValue<'ext>, 'ext>, Value<TypeValue<'ext>, 'ext>>,
-          Errors<Unit>
-         >
-      =
+      : Sum<Map<Value<TypeValue<'ext>, 'ext>, Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
       match op with
       | MapValues.Map v -> v |> sum.Return

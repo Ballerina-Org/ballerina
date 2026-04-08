@@ -11,10 +11,7 @@ module QueryCaseTupleCons =
   let typeCheckQueryTupleCons<'valueExt when 'valueExt: comparison>
     (recur:
       ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>
-        -> TypeCheckerResult<
-          (TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>),
-          'valueExt
-         >)
+        -> TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt>)
     (expr: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
     (args: List<ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>>)
     =
@@ -23,9 +20,7 @@ module QueryCaseTupleCons =
       let args_t = args_e_t |> Seq.map snd |> Seq.toList
 
       return
-        TypeCheckedExprQueryExprRec.QueryTupleCons(
-          args_e_t |> Seq.map fst |> Seq.toList
-        )
+        TypeCheckedExprQueryExprRec.QueryTupleCons(args_e_t |> Seq.map fst |> Seq.toList)
         |> TypeCheckedExprQueryExpr.Create expr.Location,
         TypeQueryRow.Tuple args_t
     }

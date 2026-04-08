@@ -27,12 +27,8 @@ let ``Should parse union`` () =
       [| "fun", JsonValue.String "Union"
          "args",
          JsonValue.Array
-           [| JsonValue.Record
-                [| "caseName", JsonValue.String "First"
-                   "fields", JsonValue.Record [||] |]
-              JsonValue.Record
-                [| "caseName", JsonValue.String "Second"
-                   "fields", JsonValue.Record [||] |] |] |]
+           [| JsonValue.Record [| "caseName", JsonValue.String "First"; "fields", JsonValue.Record [||] |]
+              JsonValue.Record [| "caseName", JsonValue.String "Second"; "fields", JsonValue.Record [||] |] |] |]
 
   let result = parseExprType json
 
@@ -98,10 +94,7 @@ let ``Should parse option`` () =
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
   let result = parseExprType json
-
-  assertSuccess
-    result
-    (ExprType.OptionType(ExprType.PrimitiveType PrimitiveType.StringType))
+  assertSuccess result (ExprType.OptionType(ExprType.PrimitiveType PrimitiveType.StringType))
 
 [<Test>]
 let ``Should parse list`` () =
@@ -111,10 +104,7 @@ let ``Should parse list`` () =
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
   let result = parseExprType json
-
-  assertSuccess
-    result
-    (ExprType.ListType(ExprType.PrimitiveType PrimitiveType.StringType))
+  assertSuccess result (ExprType.ListType(ExprType.PrimitiveType PrimitiveType.StringType))
 
 [<Test>]
 let ``Should parse set`` () =
@@ -124,46 +114,33 @@ let ``Should parse set`` () =
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
   let result = parseExprType json
-
-  assertSuccess
-    result
-    (ExprType.SetType(ExprType.PrimitiveType PrimitiveType.StringType))
+  assertSuccess result (ExprType.SetType(ExprType.PrimitiveType PrimitiveType.StringType))
 
 [<Test>]
 let ``Should parse map`` () =
   let json =
     JsonValue.Record
       [| "fun", JsonValue.String "Map"
-         "args",
-         JsonValue.Array
-           [| JsonValue.String "string"; JsonValue.String "number" |] |]
+         "args", JsonValue.Array [| JsonValue.String "string"; JsonValue.String "number" |] |]
 
   let result = parseExprType json
 
   assertSuccess
     result
-    (ExprType.MapType(
-      ExprType.PrimitiveType PrimitiveType.StringType,
-      ExprType.PrimitiveType PrimitiveType.IntType
-    ))
+    (ExprType.MapType(ExprType.PrimitiveType PrimitiveType.StringType, ExprType.PrimitiveType PrimitiveType.IntType))
 
 [<Test>]
 let ``Should parse sum`` () =
   let json =
     JsonValue.Record
       [| "fun", JsonValue.String "Sum"
-         "args",
-         JsonValue.Array
-           [| JsonValue.String "string"; JsonValue.String "number" |] |]
+         "args", JsonValue.Array [| JsonValue.String "string"; JsonValue.String "number" |] |]
 
   let result = parseExprType json
 
   assertSuccess
     result
-    (ExprType.SumType(
-      ExprType.PrimitiveType PrimitiveType.StringType,
-      ExprType.PrimitiveType PrimitiveType.IntType
-    ))
+    (ExprType.SumType(ExprType.PrimitiveType PrimitiveType.StringType, ExprType.PrimitiveType PrimitiveType.IntType))
 
 [<Test>]
 let ``Should parse tuple`` () =
@@ -194,10 +171,7 @@ let ``Should parse one`` () =
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
   let result = parseExprType json
-
-  assertSuccess
-    result
-    (ExprType.OneType(ExprType.PrimitiveType PrimitiveType.StringType))
+  assertSuccess result (ExprType.OneType(ExprType.PrimitiveType PrimitiveType.StringType))
 
 [<Test>]
 let ``Should parse many`` () =
@@ -207,10 +181,7 @@ let ``Should parse many`` () =
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
   let result = parseExprType json
-
-  assertSuccess
-    result
-    (ExprType.ManyType(ExprType.PrimitiveType PrimitiveType.StringType))
+  assertSuccess result (ExprType.ManyType(ExprType.PrimitiveType PrimitiveType.StringType))
 
 [<Test>]
 let ``Should parse table`` () =
@@ -220,10 +191,7 @@ let ``Should parse table`` () =
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
   let result = parseExprType json
-
-  assertSuccess
-    result
-    (ExprType.TableType(ExprType.PrimitiveType PrimitiveType.StringType))
+  assertSuccess result (ExprType.TableType(ExprType.PrimitiveType PrimitiveType.StringType))
 
 [<Test>]
 let ``Should parse readonly`` () =
@@ -233,28 +201,18 @@ let ``Should parse readonly`` () =
          "args", JsonValue.Array [| JsonValue.String "string" |] |]
 
   let result = parseExprType json
-
-  assertSuccess
-    result
-    (ExprType.ReadOnlyType(ExprType.PrimitiveType PrimitiveType.StringType))
+  assertSuccess result (ExprType.ReadOnlyType(ExprType.PrimitiveType PrimitiveType.StringType))
 
 [<Test>]
 let ``Should parse record`` () =
   let json =
-    JsonValue.Record
-      [| "fields",
-         JsonValue.Record
-           [| "a", JsonValue.String "string"; "b", JsonValue.String "unit" |] |]
+    JsonValue.Record [| "fields", JsonValue.Record [| "a", JsonValue.String "string"; "b", JsonValue.String "unit" |] |]
 
   let result = parseExprType json
 
   assertSuccess
     result
-    (ExprType.RecordType(
-      Map.ofList
-        [ "a", ExprType.PrimitiveType PrimitiveType.StringType
-          "b", ExprType.UnitType ]
-    ))
+    (ExprType.RecordType(Map.ofList [ "a", ExprType.PrimitiveType PrimitiveType.StringType; "b", ExprType.UnitType ]))
 
 [<Test>]
 let ``Should parse keyof`` () =
@@ -264,26 +222,17 @@ let ``Should parse keyof`` () =
          "args", JsonValue.Array [| JsonValue.String "record" |] |]
 
   let result = parseExprType json
-
-  assertSuccess
-    result
-    (ExprType.KeyOf(ExprType.LookupType { VarName = "record" }, []))
+  assertSuccess result (ExprType.KeyOf(ExprType.LookupType { VarName = "record" }, []))
 
 [<Test>]
 let ``Should parse keyof with excluded keys`` () =
   let json =
     JsonValue.Record
       [| "fun", JsonValue.String "KeyOf"
-         "args",
-         JsonValue.Array
-           [| JsonValue.String "record"
-              JsonValue.Array [| JsonValue.String "a" |] |] |]
+         "args", JsonValue.Array [| JsonValue.String "record"; JsonValue.Array [| JsonValue.String "a" |] |] |]
 
   let result = parseExprType json
-
-  assertSuccess
-    result
-    (ExprType.KeyOf(ExprType.LookupType { VarName = "record" }, [ "a" ]))
+  assertSuccess result (ExprType.KeyOf(ExprType.LookupType { VarName = "record" }, [ "a" ]))
 
 
 module ExprTypeToAndFromJsonTests =
@@ -350,17 +299,13 @@ module ExprTypeToAndFromJsonTests =
 
   [<Test>]
   let ``Should convert option to and from Json`` () =
-    let expr =
-      ExprType.OptionType(ExprType.PrimitiveType PrimitiveType.StringType)
-
+    let expr = ExprType.OptionType(ExprType.PrimitiveType PrimitiveType.StringType)
     let result = toAndFromJson expr
     assertSuccess result expr
 
   [<Test>]
   let ``Should convert list to and from Json`` () =
-    let expr =
-      ExprType.ListType(ExprType.PrimitiveType PrimitiveType.StringType)
-
+    let expr = ExprType.ListType(ExprType.PrimitiveType PrimitiveType.StringType)
     let result = toAndFromJson expr
     assertSuccess result expr
 
@@ -373,10 +318,7 @@ module ExprTypeToAndFromJsonTests =
   [<Test>]
   let ``Should convert map to and from Json`` () =
     let expr =
-      ExprType.MapType(
-        ExprType.PrimitiveType PrimitiveType.StringType,
-        ExprType.PrimitiveType PrimitiveType.IntType
-      )
+      ExprType.MapType(ExprType.PrimitiveType PrimitiveType.StringType, ExprType.PrimitiveType PrimitiveType.IntType)
 
     let result = toAndFromJson expr
     assertSuccess result expr
@@ -384,10 +326,7 @@ module ExprTypeToAndFromJsonTests =
   [<Test>]
   let ``Should convert sum to and from Json`` () =
     let expr =
-      ExprType.SumType(
-        ExprType.PrimitiveType PrimitiveType.StringType,
-        ExprType.PrimitiveType PrimitiveType.IntType
-      )
+      ExprType.SumType(ExprType.PrimitiveType PrimitiveType.StringType, ExprType.PrimitiveType PrimitiveType.IntType)
 
     let result = toAndFromJson expr
     assertSuccess result expr
@@ -412,36 +351,26 @@ module ExprTypeToAndFromJsonTests =
 
   [<Test>]
   let ``Should convert many to and from Json`` () =
-    let expr =
-      ExprType.ManyType(ExprType.PrimitiveType PrimitiveType.StringType)
-
+    let expr = ExprType.ManyType(ExprType.PrimitiveType PrimitiveType.StringType)
     let result = toAndFromJson expr
     assertSuccess result expr
 
   [<Test>]
   let ``Should convert table to and from Json`` () =
-    let expr =
-      ExprType.TableType(ExprType.PrimitiveType PrimitiveType.StringType)
-
+    let expr = ExprType.TableType(ExprType.PrimitiveType PrimitiveType.StringType)
     let result = toAndFromJson expr
     assertSuccess result expr
 
   [<Test>]
   let ``Should convert readonly to and from Json`` () =
-    let expr =
-      ExprType.ReadOnlyType(ExprType.PrimitiveType PrimitiveType.StringType)
-
+    let expr = ExprType.ReadOnlyType(ExprType.PrimitiveType PrimitiveType.StringType)
     let result = toAndFromJson expr
     assertSuccess result expr
 
   [<Test>]
   let ``Should convert record to and from Json`` () =
     let expr =
-      ExprType.RecordType(
-        Map.ofList
-          [ "a", ExprType.PrimitiveType PrimitiveType.StringType
-            "b", ExprType.UnitType ]
-      )
+      ExprType.RecordType(Map.ofList [ "a", ExprType.PrimitiveType PrimitiveType.StringType; "b", ExprType.UnitType ])
 
     let result = toAndFromJson expr
     assertSuccess result expr
@@ -449,32 +378,22 @@ module ExprTypeToAndFromJsonTests =
 module ReadOnlyTypeStringRepresentationTests =
   [<Test>]
   let ``Should generate correct string representation for ReadOnlyType`` () =
-    let expr =
-      ExprType.ReadOnlyType(ExprType.PrimitiveType PrimitiveType.StringType)
-
+    let expr = ExprType.ReadOnlyType(ExprType.PrimitiveType PrimitiveType.StringType)
     let result = expr.ToString()
     Assert.That(result, Is.EqualTo "ReadOnly<String>")
 
   [<Test>]
-  let ``Should generate correct string representation for nested ReadOnlyType``
-    ()
-    =
+  let ``Should generate correct string representation for nested ReadOnlyType`` () =
     let expr =
-      ExprType.ReadOnlyType(
-        ExprType.OptionType(ExprType.PrimitiveType PrimitiveType.IntType)
-      )
+      ExprType.ReadOnlyType(ExprType.OptionType(ExprType.PrimitiveType PrimitiveType.IntType))
 
     let result = expr.ToString()
     Assert.That(result, Is.EqualTo "ReadOnly<Option<Int>>")
 
   [<Test>]
-  let ``Should generate correct string representation for ReadOnlyType with complex inner type``
-    ()
-    =
+  let ``Should generate correct string representation for ReadOnlyType with complex inner type`` () =
     let expr =
-      ExprType.ReadOnlyType(
-        ExprType.ListType(ExprType.PrimitiveType PrimitiveType.StringType)
-      )
+      ExprType.ReadOnlyType(ExprType.ListType(ExprType.PrimitiveType PrimitiveType.StringType))
 
     let result = expr.ToString()
     Assert.That(result, Is.EqualTo "ReadOnly<List<String>>")

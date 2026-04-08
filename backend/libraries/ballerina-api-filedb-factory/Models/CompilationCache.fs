@@ -13,19 +13,16 @@ module CacheCompilation =
       Schema: string
       IsDraft: bool }
 
-  type CompilationContext<'runtimeContext, 'valueExt when 'valueExt: comparison>
-    =
+  type CompilationContext<'runtimeContext, 'valueExt when 'valueExt: comparison> =
     { TypeCheckContext: TypeCheckContext<'valueExt>
       TypeCheckState: TypeCheckState<'valueExt>
       EvalContext: ExprEvalContext<'runtimeContext, 'valueExt>
       EvalResult: Value<TypeValue<'valueExt>, 'valueExt> }
 
   type CompilationCache<'runtimeContext, 'valueExt when 'valueExt: comparison> =
-    { mutable Cache:
-        Map<TenantData, CompilationContext<'runtimeContext, 'valueExt>> }
+    { mutable Cache: Map<TenantData, CompilationContext<'runtimeContext, 'valueExt>> }
 
-    static member Empty: CompilationCache<'runtimeContext, 'valueExt> =
-      { Cache = Map.empty }
+    static member Empty: CompilationCache<'runtimeContext, 'valueExt> = { Cache = Map.empty }
 
     member this.TryFind(tenant, schema, isDraft) =
       lock compilationCacheLock (fun () ->

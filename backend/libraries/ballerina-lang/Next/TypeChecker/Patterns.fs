@@ -30,22 +30,17 @@ module Patterns =
         UnionCases = Map.empty
         RecordFields = Map.empty }
 
-    static member CreateFromTypeSymbols
-      (symbols: Map<ResolvedIdentifier, TypeSymbol>)
-      : TypeExprEvalSymbols =
+    static member CreateFromTypeSymbols(symbols: Map<ResolvedIdentifier, TypeSymbol>) : TypeExprEvalSymbols =
       { TypeExprEvalSymbols.Empty with
           Types = symbols }
 
 
   type TypeCheckContext<'valueExt> with
-    static member Empty
-      (assembly: string, _module: string)
-      : TypeCheckContext<'valueExt> =
+    static member Empty(assembly: string, _module: string) : TypeCheckContext<'valueExt> =
       { Scope =
           { Assembly = assembly
             Module = _module
             Type = None }
-        IsTypeCheckingLetValue = false
         TypeVariables = Map.empty
         TypeParameters = Map.empty
         Values = Map.empty
@@ -53,13 +48,7 @@ module Patterns =
         PermissionHooksExtraScope = Map.empty }
 
     static member Updaters =
-      {| Scope =
-          fun u (c: TypeCheckContext<'valueExt>) ->
-            { c with Scope = c.Scope |> u }
-         IsTypeCheckingLetValue =
-          fun u (c: TypeCheckContext<'valueExt>) ->
-            { c with
-                IsTypeCheckingLetValue = c.IsTypeCheckingLetValue |> u }
+      {| Scope = fun u (c: TypeCheckContext<'valueExt>) -> { c with Scope = c.Scope |> u }
          TypeVariables =
           fun u (c: TypeCheckContext<'valueExt>) ->
             { c with
@@ -68,9 +57,7 @@ module Patterns =
           fun u (c: TypeCheckContext<'valueExt>) ->
             { c with
                 TypeParameters = c.TypeParameters |> u }
-         Values =
-          fun u (c: TypeCheckContext<'valueExt>) ->
-            { c with Values = c.Values |> u }
+         Values = fun u (c: TypeCheckContext<'valueExt>) -> { c with Values = c.Values |> u }
          BackgroundHooksExtraScope =
           fun u (c: TypeCheckContext<'valueExt>) ->
             { c with
@@ -84,7 +71,6 @@ module Patterns =
       (ctx: TypeInstantiateContext<'ve>)
       : TypeCheckContext<'ve> =
       { Scope = ctx.Scope
-        IsTypeCheckingLetValue = false
         TypeVariables = ctx.TypeVariables
         TypeParameters = ctx.TypeParameters
         Values = ctx.Values
@@ -93,22 +79,13 @@ module Patterns =
 
     static member tryFindTypeVariable
       (v: string, loc: Location)
-      : Reader<
-          TypeValue<'valueExt> * Kind,
-          TypeCheckContext<'valueExt>,
-          Errors<Location>
-         >
-      =
+      : Reader<TypeValue<'valueExt> * Kind, TypeCheckContext<'valueExt>, Errors<Location>> =
       reader {
         let! s = reader.GetContext()
 
         return!
           s.TypeVariables
-          |> Map.tryFindWithError
-            v
-            "type variables"
-            (fun () -> v.AsFSharpString)
-            loc
+          |> Map.tryFindWithError v "type variables" (fun () -> v.AsFSharpString) loc
           |> reader.OfSum
       }
 
@@ -120,35 +97,23 @@ module Patterns =
 
         return!
           s.TypeParameters
-          |> Map.tryFindWithError
-            v
-            "type parameters"
-            (fun () -> v.AsFSharpString)
-            loc
+          |> Map.tryFindWithError v "type parameters" (fun () -> v.AsFSharpString) loc
           |> reader.OfSum
       }
 
   type UnificationState<'valueExt when 'valueExt: comparison> with
-    static member Empty: UnificationState<'valueExt> =
-      { Classes = EquivalenceClasses.Empty }
+    static member Empty: UnificationState<'valueExt> = { Classes = EquivalenceClasses.Empty }
 
-    static member Create
-      (classes: EquivalenceClasses<TypeVar, TypeValue<'valueExt>>)
-      : UnificationState<'valueExt> =
+    static member Create(classes: EquivalenceClasses<TypeVar, TypeValue<'valueExt>>) : UnificationState<'valueExt> =
       { Classes = classes }
 
-    static member EnsureVariableExists
-      var
-      (classes: UnificationState<'valueExt>)
-      =
+    static member EnsureVariableExists var (classes: UnificationState<'valueExt>) =
       EquivalenceClasses.EnsureVariableExists var classes.Classes
       |> UnificationState.Create
 
     static member Updaters =
       {| Classes =
-          fun
-              (u: Updater<EquivalenceClasses<TypeVar, TypeValue<'valueExt>>>)
-              (c: UnificationState<'valueExt>) ->
+          fun (u: Updater<EquivalenceClasses<TypeVar, TypeValue<'valueExt>>>) (c: UnificationState<'valueExt>) ->
             { c with Classes = c.Classes |> u } |}
 
   type TypeCheckState<'valueExt when 'valueExt: comparison> with
@@ -160,28 +125,20 @@ module Patterns =
         Vars = UnificationState.Empty
         InlayHints = Map.empty }
 
-    static member Create
-      (bindings: TypeBindings<'valueExt>, symbols: TypeExprEvalSymbols)
-      : TypeCheckState<'valueExt> =
+    static member Create(bindings: TypeBindings<'valueExt>, symbols: TypeExprEvalSymbols) : TypeCheckState<'valueExt> =
       { TypeCheckState.Empty with
           Bindings = bindings
           Symbols = symbols }
 
-    static member CreateFromUnificationState
-      (vars: UnificationState<'valueExt>)
-      : TypeCheckState<'valueExt> =
+    static member CreateFromUnificationState(vars: UnificationState<'valueExt>) : TypeCheckState<'valueExt> =
       { TypeCheckState.Empty with
           Vars = vars }
 
-    static member CreateFromSymbols
-      (symbols: TypeExprEvalSymbols)
-      : TypeCheckState<'valueExt> =
+    static member CreateFromSymbols(symbols: TypeExprEvalSymbols) : TypeCheckState<'valueExt> =
       { TypeCheckState.Empty with
           Symbols = symbols }
 
-    static member CreateFromTypeSymbols
-      (symbols: Map<ResolvedIdentifier, TypeSymbol>)
-      : TypeCheckState<'valueExt> =
+    static member CreateFromTypeSymbols(symbols: Map<ResolvedIdentifier, TypeSymbol>) : TypeCheckState<'valueExt> =
       { TypeCheckState.Empty with
           Symbols =
             { TypeExprEvalSymbols.Empty with
@@ -189,12 +146,7 @@ module Patterns =
 
     static member tryFindType
       (v: ResolvedIdentifier, loc: Location)
-      : Reader<
-          TypeValue<'valueExt> * Kind,
-          TypeCheckState<'valueExt>,
-          Errors<Location>
-         >
-      =
+      : Reader<TypeValue<'valueExt> * Kind, TypeCheckState<'valueExt>, Errors<Location>> =
       reader {
         let! s = reader.GetContext()
 
@@ -207,9 +159,7 @@ module Patterns =
     static member tryFindUnionCaseConstructor
       (v: ResolvedIdentifier, loc: Location)
       : Reader<
-          TypeValue<'valueExt> *
-          List<TypeParameter> *
-          OrderedMap<TypeSymbol, TypeValue<'valueExt>>,
+          TypeValue<'valueExt> * List<TypeParameter> * OrderedMap<TypeSymbol, TypeValue<'valueExt>>,
           TypeCheckState<'valueExt>,
           Errors<Location>
          >
@@ -219,19 +169,14 @@ module Patterns =
 
         return!
           s.UnionCases
-          |> Map.tryFindWithError
-            v
-            "union cases"
-            (fun () -> v.AsFSharpString)
-            loc
+          |> Map.tryFindWithError v "union cases" (fun () -> v.AsFSharpString) loc
           |> reader.OfSum
       }
 
     static member tryFindRecordField
       (v: ResolvedIdentifier, loc: Location)
       : Reader<
-          OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind> *
-          TypeValue<'valueExt>,
+          OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind> * TypeValue<'valueExt>,
           TypeCheckState<'valueExt>,
           Errors<Location>
          >
@@ -241,11 +186,7 @@ module Patterns =
 
         return!
           s.RecordFields
-          |> Map.tryFindWithError
-            v
-            "record fields"
-            (fun () -> v.AsFSharpString)
-            loc
+          |> Map.tryFindWithError v "record fields" (fun () -> v.AsFSharpString) loc
           |> reader.OfSum
       }
 
@@ -257,11 +198,7 @@ module Patterns =
 
         return!
           s.Symbols.Types
-          |> Map.tryFindWithError
-            v
-            "type symbols"
-            (fun () -> v.AsFSharpString)
-            loc
+          |> Map.tryFindWithError v "type symbols" (fun () -> v.AsFSharpString) loc
           |> reader.OfSum
       }
 
@@ -273,11 +210,7 @@ module Patterns =
 
         return!
           s.Symbols.RecordFields
-          |> Map.tryFindWithError
-            v
-            "record field symbols"
-            (fun () -> v.AsFSharpString)
-            loc
+          |> Map.tryFindWithError v "record field symbols" (fun () -> v.AsFSharpString) loc
           |> reader.OfSum
       }
 
@@ -289,11 +222,7 @@ module Patterns =
 
         return!
           s.Symbols.UnionCases
-          |> Map.tryFindWithError
-            v
-            "union case symbols"
-            (fun () -> v.AsFSharpString)
-            loc
+          |> Map.tryFindWithError v "union case symbols" (fun () -> v.AsFSharpString) loc
           |> reader.OfSum
       }
 
@@ -305,22 +234,14 @@ module Patterns =
 
         return!
           ctx.Symbols.ResolvedIdentifiers
-          |> Map.tryFindWithError
-            v
-            "resolved identifiers"
-            (fun () -> v.AsFSharpString)
-            loc
+          |> Map.tryFindWithError v "resolved identifiers" (fun () -> v.AsFSharpString) loc
           |> reader.OfSum
       }
 
     static member Updaters =
       {| Vars =
-          fun
-              (u: Updater<UnificationState<'valueExt>>)
-              (c: TypeCheckState<'valueExt>) -> { c with Vars = c.Vars |> u }
-         Bindings =
-          fun u (c: TypeCheckState<'valueExt>) ->
-            { c with Bindings = c.Bindings |> u }
+          fun (u: Updater<UnificationState<'valueExt>>) (c: TypeCheckState<'valueExt>) -> { c with Vars = c.Vars |> u }
+         Bindings = fun u (c: TypeCheckState<'valueExt>) -> { c with Bindings = c.Bindings |> u }
          InlayHints =
           fun u (c: TypeCheckState<'valueExt>) ->
             { c with
@@ -345,15 +266,13 @@ module Patterns =
                 { c with
                     Symbols =
                       { c.Symbols with
-                          ResolvedIdentifiers =
-                            c.Symbols.ResolvedIdentifiers |> u } }
+                          ResolvedIdentifiers = c.Symbols.ResolvedIdentifiers |> u } }
              IdentifiersResolver =
               fun u (c: TypeCheckState<'valueExt>) ->
                 { c with
                     Symbols =
                       { c.Symbols with
-                          IdentifiersResolver =
-                            c.Symbols.IdentifiersResolver |> u } }
+                          IdentifiersResolver = c.Symbols.IdentifiersResolver |> u } }
              RecordFields =
               fun u (c: TypeCheckState<'valueExt>) ->
                 { c with
@@ -368,14 +287,10 @@ module Patterns =
                           UnionCases = c.Symbols.UnionCases |> u } } |} |}
 
     static member unbindType x =
-      state {
-        do! state.SetState(TypeCheckState.Updaters.Bindings(Map.remove x))
-      }
+      state { do! state.SetState(TypeCheckState.Updaters.Bindings(Map.remove x)) }
 
     static member bindType x t_x =
-      state {
-        do! state.SetState(TypeCheckState.Updaters.Bindings(Map.add x t_x))
-      }
+      state { do! state.SetState(TypeCheckState.Updaters.Bindings(Map.add x t_x)) }
 
     static member bindUnionCaseConstructor (x: ResolvedIdentifier) t_x =
       state {
@@ -393,51 +308,26 @@ module Patterns =
 
     static member bindRecordFieldSymbol x t_x =
       state {
-        do!
-          state.SetState(
-            TypeCheckState.Updaters.Symbols.ResolvedIdentifiers(Map.add t_x x)
-          )
-
-        do!
-          state.SetState(
-            TypeCheckState.Updaters.Symbols.RecordFields(Map.add x t_x)
-          )
+        do! state.SetState(TypeCheckState.Updaters.Symbols.ResolvedIdentifiers(Map.add t_x x))
+        do! state.SetState(TypeCheckState.Updaters.Symbols.RecordFields(Map.add x t_x))
       }
 
     static member bindIdentifierToResolvedIdentifier x t_x =
-      state {
-        do!
-          state.SetState(
-            TypeCheckState.Updaters.Symbols.IdentifiersResolver(Map.add t_x x)
-          )
-      }
+      state { do! state.SetState(TypeCheckState.Updaters.Symbols.IdentifiersResolver(Map.add t_x x)) }
 
     static member bindUnionCaseSymbol x t_x =
       state {
-        do!
-          state.SetState(
-            TypeCheckState.Updaters.Symbols.ResolvedIdentifiers(Map.add t_x x)
-          )
-
-        do!
-          state.SetState(
-            TypeCheckState.Updaters.Symbols.UnionCases(Map.add x t_x)
-          )
+        do! state.SetState(TypeCheckState.Updaters.Symbols.ResolvedIdentifiers(Map.add t_x x))
+        do! state.SetState(TypeCheckState.Updaters.Symbols.UnionCases(Map.add x t_x))
       }
 
     static member bindTypeSymbol x t_x =
       state {
-        do!
-          state.SetState(
-            TypeCheckState.Updaters.Symbols.ResolvedIdentifiers(Map.add t_x x)
-          )
-
+        do! state.SetState(TypeCheckState.Updaters.Symbols.ResolvedIdentifiers(Map.add t_x x))
         do! state.SetState(TypeCheckState.Updaters.Symbols.Types(Map.add x t_x))
       }
 
-    static member bindInlayHint
-      (location: Location, identifier: string, hintType: TypeValue<'valueExt>)
-      =
+    static member bindInlayHint(location: Location, identifier: string, hintType: TypeValue<'valueExt>) =
       state {
         do!
           state.SetState(
@@ -447,14 +337,6 @@ module Patterns =
                 { Identifier = identifier
                   Type = hintType }
             )
-          )
-      }
-
-    static member unbindInlayHint(location: Location) =
-      state {
-        do!
-          state.SetState(
-            TypeCheckState.Updaters.InlayHints(Map.remove location)
           )
       }
 
@@ -489,19 +371,13 @@ module Patterns =
 
         return!
           ctx.Values
-          |> Map.tryFindWithError
-            id
-            "variables"
-            (fun () -> id.AsFSharpString)
-            loc
+          |> Map.tryFindWithError id "variables" (fun () -> id.AsFSharpString) loc
           |> state.OfSum
       }
 
 
   type TypeInstantiateContext<'valueExt when 'valueExt: comparison> with
-    static member FromEvalContext
-      (ctx: TypeCheckContext<'valueExt>)
-      : TypeInstantiateContext<'valueExt> =
+    static member FromEvalContext(ctx: TypeCheckContext<'valueExt>) : TypeInstantiateContext<'valueExt> =
       { VisitedVars = Set.empty
         Scope = ctx.Scope
         TypeVariables = ctx.TypeVariables
@@ -532,12 +408,8 @@ module Patterns =
           fun f (ctx: TypeInstantiateContext<'valueExt>) ->
             { ctx with
                 TypeVariables = f ctx.TypeVariables }
-         Scope =
-          fun f (ctx: TypeInstantiateContext<'valueExt>) ->
-            { ctx with Scope = f ctx.Scope }
-         Values =
-          fun f (ctx: TypeInstantiateContext<'valueExt>) ->
-            { ctx with Values = f ctx.Values }
+         Scope = fun f (ctx: TypeInstantiateContext<'valueExt>) -> { ctx with Scope = f ctx.Scope }
+         Values = fun f (ctx: TypeInstantiateContext<'valueExt>) -> { ctx with Values = f ctx.Values }
          BackgroundHooksExtraScope =
           fun f (ctx: TypeInstantiateContext<'valueExt>) ->
             { ctx with
@@ -557,20 +429,14 @@ module Patterns =
     //     TypeParameters = typeParameters
     //     Values = Map.empty }
 
-    static member TryFindTypeSymbol
-      (id: Identifier, loc: Location)
-      : TypeCheckerResult<TypeSymbol, 'valueExt> =
+    static member TryFindTypeSymbol(id: Identifier, loc: Location) : TypeCheckerResult<TypeSymbol, 'valueExt> =
       state {
         let! s = state.GetState()
         let! ctx = state.GetContext()
 
         return!
           s.Symbols.Types
-          |> Map.tryFindWithError
-            (id |> ctx.Scope.Resolve)
-            "symbols"
-            (fun () -> id.AsFSharpString)
-            loc
+          |> Map.tryFindWithError (id |> ctx.Scope.Resolve) "symbols" (fun () -> id.AsFSharpString) loc
           |> state.OfSum
       }
 
@@ -582,11 +448,7 @@ module Patterns =
 
         return!
           s.Symbols.ResolvedIdentifiers
-          |> Map.tryFindWithError
-            id
-            "resolved identifier"
-            (fun () -> id.AsFSharpString)
-            loc
+          |> Map.tryFindWithError id "resolved identifier" (fun () -> id.AsFSharpString) loc
           |> state.OfSum
       }
 
@@ -598,11 +460,7 @@ module Patterns =
 
         return!
           s.Symbols.IdentifiersResolver
-          |> Map.tryFindWithError
-            id
-            "identifier resolver"
-            (fun () -> id.AsFSharpString)
-            loc
+          |> Map.tryFindWithError id "identifier resolver" (fun () -> id.AsFSharpString) loc
           |> state.OfSum
       }
 
@@ -614,11 +472,7 @@ module Patterns =
 
         return!
           s.Symbols.RecordFields
-          |> Map.tryFindWithError
-            id
-            "record fields"
-            (fun () -> id.AsFSharpString)
-            loc
+          |> Map.tryFindWithError id "record fields" (fun () -> id.AsFSharpString) loc
           |> state.OfSum
       }
 
@@ -630,11 +484,7 @@ module Patterns =
 
         return!
           s.Symbols.UnionCases
-          |> Map.tryFindWithError
-            id
-            "union cases"
-            (fun () -> id.AsFSharpString)
-            loc
+          |> Map.tryFindWithError id "union cases" (fun () -> id.AsFSharpString) loc
           |> state.OfSum
       }
 
@@ -646,20 +496,14 @@ module Patterns =
 
         return!
           s.Bindings
-          |> Map.tryFindWithError
-            id
-            "type bindings"
-            (fun () -> id.AsFSharpString)
-            loc
+          |> Map.tryFindWithError id "type bindings" (fun () -> id.AsFSharpString) loc
           |> state.OfSum
       }
 
     static member TryFindUnionCaseConstructor
       (id: ResolvedIdentifier, loc: Location)
       : TypeCheckerResult<
-          TypeValue<'valueExt> *
-          List<TypeParameter> *
-          OrderedMap<TypeSymbol, TypeValue<'valueExt>>,
+          TypeValue<'valueExt> * List<TypeParameter> * OrderedMap<TypeSymbol, TypeValue<'valueExt>>,
           'valueExt
          >
       =
@@ -668,31 +512,18 @@ module Patterns =
 
         return!
           s.UnionCases
-          |> Map.tryFindWithError
-            id
-            "union cases"
-            (fun () -> id.AsFSharpString)
-            loc
+          |> Map.tryFindWithError id "union cases" (fun () -> id.AsFSharpString) loc
           |> state.OfSum
       }
 
     static member TryFindRecordField
       (id: ResolvedIdentifier, loc: Location)
-      : TypeCheckerResult<
-          OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind> *
-          TypeValue<'valueExt>,
-          'valueExt
-         >
-      =
+      : TypeCheckerResult<OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind> * TypeValue<'valueExt>, 'valueExt> =
       state {
         let! s = state.GetState()
 
         return!
           s.RecordFields
-          |> Map.tryFindWithError
-            id
-            "record fields"
-            (fun () -> id.AsFSharpString)
-            loc
+          |> Map.tryFindWithError id "record fields" (fun () -> id.AsFSharpString) loc
           |> state.OfSum
       }

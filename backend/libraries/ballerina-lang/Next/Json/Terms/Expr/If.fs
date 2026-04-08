@@ -20,19 +20,14 @@ module If =
       (fromRootJson: ExprParser<'T, 'Id, 'valueExt>)
       (value: JsonValue)
       : ExprParserReader<'T, 'Id, 'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue
-        discriminator
-        value
-        (fun ifJson ->
-          reader {
-            let! cond, thenBranch, elseBranch =
-              ifJson |> JsonValue.AsTriple |> reader.OfSum
-
-            let! cond = cond |> fromRootJson
-            let! thenBranch = thenBranch |> fromRootJson
-            let! elseBranch = elseBranch |> fromRootJson
-            return Expr.If(cond, thenBranch, elseBranch)
-          })
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun ifJson ->
+        reader {
+          let! cond, thenBranch, elseBranch = ifJson |> JsonValue.AsTriple |> reader.OfSum
+          let! cond = cond |> fromRootJson
+          let! thenBranch = thenBranch |> fromRootJson
+          let! elseBranch = elseBranch |> fromRootJson
+          return Expr.If(cond, thenBranch, elseBranch)
+        })
 
     static member ToJsonIf
       (rootToJson: ExprEncoder<'T, 'Id, 'valueExt>)

@@ -23,9 +23,7 @@ module Extension =
       Identifier.FullyQualified([ "@updater" ], "apply")
       |> TypeCheckScope.Empty.Resolve
 
-    let applyOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, UpdaterOperations<'ext>> =
+    let applyOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, UpdaterOperations<'ext>> =
       updaterApply,
       { PublicIdentifiers = None
         OperationsLens =

@@ -18,8 +18,7 @@ module Operations =
   open Ballerina.DSL.Next.Serialization
 
   type OperationsExtension<'rtc, 'e, 'extOperations> with
-    static member RegisterTypeCheckContext<'runtimeContext, 'ext
-      when 'ext: comparison>
+    static member RegisterTypeCheckContext<'runtimeContext, 'ext when 'ext: comparison>
       (opsExt: OperationsExtension<'runtimeContext, 'ext, 'extOperations>)
       : Updater<TypeCheckContext<'ext>> =
       fun typeCheckContext ->
@@ -38,14 +37,12 @@ module Operations =
         { typeCheckContext with
             Values = values }
 
-    static member RegisterTypeCheckState<'runtimeContext, 'ext
-      when 'ext: comparison>
+    static member RegisterTypeCheckState<'runtimeContext, 'ext when 'ext: comparison>
       (_opsExt: OperationsExtension<'runtimeContext, 'ext, 'extOperations>)
       : Updater<TypeCheckState<'ext>> =
       id // leave it here, it will be needed later
 
-    static member RegisterExprEvalContext<'runtimeContext, 'ext
-      when 'ext: comparison>
+    static member RegisterExprEvalContext<'runtimeContext, 'ext when 'ext: comparison>
       (opsExt: OperationsExtension<'runtimeContext, 'ext, 'extOperations>)
       : Updater<ExprEvalContext<'runtimeContext, 'ext>> =
       fun evalContext ->
@@ -60,11 +57,7 @@ module Operations =
                    Location
                      -> List<_>
                      -> 'ext
-                     -> ExprEvaluator<
-                       'runtimeContext,
-                       'ext,
-                       ExtEvalResult<'runtimeContext, 'ext>
-                      >)
+                     -> ExprEvaluator<'runtimeContext, 'ext, ExtEvalResult<'runtimeContext, 'ext>>)
                  caseExt ->
               fun loc0 rest v ->
                 reader.Any(
@@ -72,14 +65,12 @@ module Operations =
                     let! v =
                       caseExt.OperationsLens.Get v
                       |> sum.OfOption(
-                        (fun () ->
-                          $"Error: cannot extra constructor from extension")
+                        (fun () -> $"Error: cannot extra constructor from extension")
                         |> Errors.Singleton loc0
                       )
                       |> reader.OfSum
 
-                    return
-                      Applicable(fun arg -> caseExt.Apply loc0 rest (v, arg))
+                    return Applicable(fun arg -> caseExt.Apply loc0 rest (v, arg))
                   },
                   [ acc loc0 rest v ]
                 ))
@@ -96,42 +87,27 @@ module Operations =
               | None -> acc
               | Some(_, _, publicIdentifiers) ->
                 acc
-                |> Map.add
-                  caseId
-                  ((publicIdentifiers |> caseExt.OperationsLens.Set,
-                    Some caseId)
-                   |> Value.Ext))
+                |> Map.add caseId ((publicIdentifiers |> caseExt.OperationsLens.Set, Some caseId) |> Value.Ext))
             values
 
-        let applicables
-          : Map<
-              ResolvedIdentifier,
-              ApplicableExtEvalResult<'runtimeContext, 'ext>
-             > =
+        let applicables: Map<ResolvedIdentifier, ApplicableExtEvalResult<'runtimeContext, 'ext>> =
           opsExt.Operations
-          |> Map.map
-            (fun
-                 (_k: ResolvedIdentifier)
-                 (op: OperationExtension<'runtimeContext, 'ext, 'extOperations>) ->
-              fun loc0 rest f v ->
-                reader {
-                  let! f =
-                    op.OperationsLens.Get f
-                    |> sum.OfOption(
-                      (fun () ->
-                        $"Error: cannot extract constructor from extension")
-                      |> Errors.Singleton loc0
-                    )
-                    |> reader.OfSum
+          |> Map.map (fun (_k: ResolvedIdentifier) (op: OperationExtension<'runtimeContext, 'ext, 'extOperations>) ->
+            fun loc0 rest f v ->
+              reader {
+                let! f =
+                  op.OperationsLens.Get f
+                  |> sum.OfOption(
+                    (fun () -> $"Error: cannot extract constructor from extension")
+                    |> Errors.Singleton loc0
+                  )
+                  |> reader.OfSum
 
-                  return! op.Apply loc0 rest (f, v)
-                })
+                return! op.Apply loc0 rest (f, v)
+              })
 
         let applicables =
-          Map.merge
-            (fun _ -> id)
-            evalContext.ExtensionOps.Applicables
-            applicables
+          Map.merge (fun _ -> id) evalContext.ExtensionOps.Applicables applicables
 
         { evalContext with
             Scope =
@@ -143,23 +119,12 @@ module Operations =
 
     static member RegisterLanguageContext
       (opsExt: OperationsExtension<'runtimeContext, 'ext, 'extOperations>)
-      : Updater<
-          LanguageContext<
-            'runtimeContext,
-            'ext,
-            'extDTO,
-            'deltaExt,
-            'deltaExtDTO
-           >
-         >
-      =
+      : Updater<LanguageContext<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>> =
       fun langCtx ->
         { TypeCheckContext =
             langCtx.TypeCheckContext
             |> (opsExt |> OperationsExtension.RegisterTypeCheckContext)
-          TypeCheckState =
-            langCtx.TypeCheckState
-            |> (opsExt |> OperationsExtension.RegisterTypeCheckState)
+          TypeCheckState = langCtx.TypeCheckState |> (opsExt |> OperationsExtension.RegisterTypeCheckState)
           ExprEvalContext =
             langCtx.ExprEvalContext
             >> (opsExt |> OperationsExtension.RegisterExprEvalContext)

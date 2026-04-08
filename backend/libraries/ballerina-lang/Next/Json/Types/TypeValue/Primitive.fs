@@ -14,9 +14,7 @@ module PrimitiveTypeValue =
   open Ballerina.DSL.Next.Types.Patterns
 
   type TypeValue<'valueExt> with
-    static member FromJsonPrimitive
-      : JsonValue -> Sum<TypeValue<'valueExt>, Errors<_>> =
+    static member FromJsonPrimitive: JsonValue -> Sum<TypeValue<'valueExt>, Errors<_>> =
       PrimitiveType.FromJson >>= (TypeValue.CreatePrimitive >> sum.Return)
 
-    static member ToJsonPrimitive: PrimitiveType -> JsonValue =
-      PrimitiveType.ToJson
+    static member ToJsonPrimitive: PrimitiveType -> JsonValue = PrimitiveType.ToJson

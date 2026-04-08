@@ -9,9 +9,7 @@ module Patterns =
   open Ballerina.DSL.Next.Types
 
   type BoolOperations<'ext> with
-    static member AsToString
-      (op: BoolOperations<'ext>)
-      : Sum<Unit, Errors<Unit>> =
+    static member AsToString(op: BoolOperations<'ext>) : Sum<Unit, Errors<Unit>> =
       match op with
       | BoolOperations.String -> () |> sum.Return
       | _ ->
@@ -19,9 +17,7 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsTryParse
-      (op: BoolOperations<'ext>)
-      : Sum<Unit, Errors<Unit>> =
+    static member AsTryParse(op: BoolOperations<'ext>) : Sum<Unit, Errors<Unit>> =
       match op with
       | BoolOperations.TryParse -> () |> sum.Return
       | _ ->
@@ -29,9 +25,7 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsAnd
-      (op: BoolOperations<'ext>)
-      : Sum<Option<bool>, Errors<Unit>> =
+    static member AsAnd(op: BoolOperations<'ext>) : Sum<Option<bool>, Errors<Unit>> =
       match op with
       | BoolOperations.And v -> v.v1 |> sum.Return
       | _ ->
@@ -39,9 +33,7 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsOr
-      (op: BoolOperations<'ext>)
-      : Sum<Option<bool>, Errors<Unit>> =
+    static member AsOr(op: BoolOperations<'ext>) : Sum<Option<bool>, Errors<Unit>> =
       match op with
       | BoolOperations.Or v -> v.v1 |> sum.Return
       | _ ->

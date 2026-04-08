@@ -49,8 +49,7 @@ module OpenAPI =
 
   let private indent level = String.replicate (level * 2) " "
 
-  let private compare_ordinal (a: string) (b: string) =
-    String.CompareOrdinal(a, b)
+  let private compare_ordinal (a: string) (b: string) = String.CompareOrdinal(a, b)
 
   let private resolved_identifier_to_string (id: ResolvedIdentifier) =
     match id.Type with
@@ -70,8 +69,7 @@ module OpenAPI =
       $"{indent level}properties:"
       $"{indent (level + 1)}{yaml_string case_name}:" ]
     @ case_schema_lines
-    @ [ $"{indent level}required:"
-        $"{indent (level + 1)}- {yaml_string case_name}" ]
+    @ [ $"{indent level}required:"; $"{indent (level + 1)}- {yaml_string case_name}" ]
 
   let private render_primitive_schema_lines level primitive_type =
     let primitive_case_name =
@@ -93,33 +91,19 @@ module OpenAPI =
     let primitive_schema_lines =
       match primitive_type with
       | PrimitiveType.Unit -> [ $"{indent (level + 2)}type: 'null'" ]
-      | PrimitiveType.Guid ->
-        [ $"{indent (level + 2)}type: string"
-          $"{indent (level + 2)}format: uuid" ]
-      | PrimitiveType.Int32 ->
-        [ $"{indent (level + 2)}type: integer"
-          $"{indent (level + 2)}format: int32" ]
-      | PrimitiveType.Int64 ->
-        [ $"{indent (level + 2)}type: integer"
-          $"{indent (level + 2)}format: int64" ]
-      | PrimitiveType.Float32 ->
-        [ $"{indent (level + 2)}type: number"
-          $"{indent (level + 2)}format: float" ]
-      | PrimitiveType.Float64 ->
-        [ $"{indent (level + 2)}type: number"
-          $"{indent (level + 2)}format: double" ]
+      | PrimitiveType.Guid -> [ $"{indent (level + 2)}type: string"; $"{indent (level + 2)}format: uuid" ]
+      | PrimitiveType.Int32 -> [ $"{indent (level + 2)}type: integer"; $"{indent (level + 2)}format: int32" ]
+      | PrimitiveType.Int64 -> [ $"{indent (level + 2)}type: integer"; $"{indent (level + 2)}format: int64" ]
+      | PrimitiveType.Float32 -> [ $"{indent (level + 2)}type: number"; $"{indent (level + 2)}format: float" ]
+      | PrimitiveType.Float64 -> [ $"{indent (level + 2)}type: number"; $"{indent (level + 2)}format: double" ]
       | PrimitiveType.Decimal -> [ $"{indent (level + 2)}type: number" ]
       | PrimitiveType.Bool -> [ $"{indent (level + 2)}type: boolean" ]
       | PrimitiveType.String -> [ $"{indent (level + 2)}type: string" ]
       | PrimitiveType.DateTime ->
         [ $"{indent (level + 2)}type: string"
           $"{indent (level + 2)}format: date-time" ]
-      | PrimitiveType.DateOnly ->
-        [ $"{indent (level + 2)}type: string"
-          $"{indent (level + 2)}format: date" ]
-      | PrimitiveType.TimeSpan ->
-        [ $"{indent (level + 2)}type: string"
-          $"{indent (level + 2)}format: duration" ]
+      | PrimitiveType.DateOnly -> [ $"{indent (level + 2)}type: string"; $"{indent (level + 2)}format: date" ]
+      | PrimitiveType.TimeSpan -> [ $"{indent (level + 2)}type: string"; $"{indent (level + 2)}format: duration" ]
       | PrimitiveType.Vector ->
         [ $"{indent (level + 2)}type: array"
           $"{indent (level + 2)}items:"
@@ -131,25 +115,17 @@ module OpenAPI =
   let private render_parameter_primitive_schema_lines level primitive_type =
     match primitive_type with
     | PrimitiveType.Unit -> [ $"{indent level}type: 'null'" ]
-    | PrimitiveType.Guid ->
-      [ $"{indent level}type: string"; $"{indent level}format: uuid" ]
-    | PrimitiveType.Int32 ->
-      [ $"{indent level}type: integer"; $"{indent level}format: int32" ]
-    | PrimitiveType.Int64 ->
-      [ $"{indent level}type: integer"; $"{indent level}format: int64" ]
-    | PrimitiveType.Float32 ->
-      [ $"{indent level}type: number"; $"{indent level}format: float" ]
-    | PrimitiveType.Float64 ->
-      [ $"{indent level}type: number"; $"{indent level}format: double" ]
+    | PrimitiveType.Guid -> [ $"{indent level}type: string"; $"{indent level}format: uuid" ]
+    | PrimitiveType.Int32 -> [ $"{indent level}type: integer"; $"{indent level}format: int32" ]
+    | PrimitiveType.Int64 -> [ $"{indent level}type: integer"; $"{indent level}format: int64" ]
+    | PrimitiveType.Float32 -> [ $"{indent level}type: number"; $"{indent level}format: float" ]
+    | PrimitiveType.Float64 -> [ $"{indent level}type: number"; $"{indent level}format: double" ]
     | PrimitiveType.Decimal -> [ $"{indent level}type: number" ]
     | PrimitiveType.Bool -> [ $"{indent level}type: boolean" ]
     | PrimitiveType.String -> [ $"{indent level}type: string" ]
-    | PrimitiveType.DateTime ->
-      [ $"{indent level}type: string"; $"{indent level}format: date-time" ]
-    | PrimitiveType.DateOnly ->
-      [ $"{indent level}type: string"; $"{indent level}format: date" ]
-    | PrimitiveType.TimeSpan ->
-      [ $"{indent level}type: string"; $"{indent level}format: duration" ]
+    | PrimitiveType.DateTime -> [ $"{indent level}type: string"; $"{indent level}format: date-time" ]
+    | PrimitiveType.DateOnly -> [ $"{indent level}type: string"; $"{indent level}format: date" ]
+    | PrimitiveType.TimeSpan -> [ $"{indent level}type: string"; $"{indent level}format: duration" ]
     | PrimitiveType.Vector ->
       [ $"{indent level}type: array"
         $"{indent level}items:"
@@ -171,9 +147,7 @@ module OpenAPI =
           if end_index < 0 then
             List.rev acc
           else
-            let name =
-              path.Substring(start_index + 1, end_index - start_index - 1)
-
+            let name = path.Substring(start_index + 1, end_index - start_index - 1)
             loop (end_index + 1) (name :: acc)
 
     loop 0 []
@@ -183,11 +157,8 @@ module OpenAPI =
     | Ref model_name ->
       let schema_ref = $"#/components/schemas/{model_name.OpenAPIDataModelName}"
       [ $"{indent level}$ref: {yaml_string schema_ref}" ]
-    | Primitive primitive_type ->
-      render_primitive_schema_lines level primitive_type
-    | AnyObject ->
-      [ $"{indent level}type: object"
-        $"{indent level}additionalProperties: true" ]
+    | Primitive primitive_type -> render_primitive_schema_lines level primitive_type
+    | AnyObject -> [ $"{indent level}type: object"; $"{indent level}additionalProperties: true" ]
     | List item_type ->
       let list_schema_lines =
         [ $"{indent (level + 2)}type: array"; $"{indent (level + 2)}items:" ]
@@ -198,13 +169,10 @@ module OpenAPI =
     | Tuple elements ->
       let prefix_items =
         elements
-        |> List.collect (fun element ->
-          [ $"{indent (level + 3)}-" ]
-          @ (render_schema_lines (level + 4) element))
+        |> List.collect (fun element -> [ $"{indent (level + 3)}-" ] @ (render_schema_lines (level + 4) element))
 
       let tuple_schema_lines =
-        [ $"{indent (level + 2)}type: array"
-          $"{indent (level + 2)}prefixItems:" ]
+        [ $"{indent (level + 2)}type: array"; $"{indent (level + 2)}prefixItems:" ]
         @ prefix_items
         @ [ $"{indent (level + 2)}minItems: {elements.Length}"
             $"{indent (level + 2)}maxItems: {elements.Length}" ]
@@ -229,9 +197,7 @@ module OpenAPI =
       let sorted_fields =
         fields
         |> List.sortWith (fun (left_name, _) (right_name, _) ->
-          compare_ordinal
-            (left_name |> resolved_identifier_to_string)
-            (right_name |> resolved_identifier_to_string))
+          compare_ordinal (left_name |> resolved_identifier_to_string) (right_name |> resolved_identifier_to_string))
 
       let rendered_properties =
         sorted_fields
@@ -248,8 +214,7 @@ module OpenAPI =
           $"{indent (level + 3)}- {yaml_string field_name}")
 
       let record_schema_lines =
-        [ $"{indent (level + 2)}type: object"
-          $"{indent (level + 2)}properties:" ]
+        [ $"{indent (level + 2)}type: object"; $"{indent (level + 2)}properties:" ]
         @ (if List.isEmpty fields then
              [ $"{indent (level + 3)}{{}}" ]
            else
@@ -266,9 +231,7 @@ module OpenAPI =
       let sorted_cases =
         cases
         |> List.sortWith (fun (left_name, _) (right_name, _) ->
-          compare_ordinal
-            (left_name |> resolved_identifier_to_string)
-            (right_name |> resolved_identifier_to_string))
+          compare_ordinal (left_name |> resolved_identifier_to_string) (right_name |> resolved_identifier_to_string))
 
       let union_schema_lines =
         [ $"{indent (level + 2)}oneOf:" ]
@@ -292,18 +255,11 @@ module OpenAPI =
     let path_parameter_names = extract_path_parameter_names endpoint.Path
 
     let operation_name =
-      sprintf
-        "%s %s"
-        ((openapi_method_to_string endpoint.Method).ToUpperInvariant())
-        endpoint.Path
+      sprintf "%s %s" ((openapi_method_to_string endpoint.Method).ToUpperInvariant()) endpoint.Path
 
     let operation_id =
       let sanitized_path =
-        endpoint.Path
-          .Replace("/", "_")
-          .Replace("{", "")
-          .Replace("}", "")
-          .Trim('_')
+        endpoint.Path.Replace("/", "_").Replace("{", "").Replace("}", "").Trim('_')
 
       sprintf "%s_%s" (openapi_method_to_string endpoint.Method) sanitized_path
 
@@ -351,9 +307,7 @@ module OpenAPI =
         let sorted_fields =
           fields
           |> List.sortWith (fun (left_name, _) (right_name, _) ->
-            compare_ordinal
-              (left_name |> resolved_identifier_to_string)
-              (right_name |> resolved_identifier_to_string))
+            compare_ordinal (left_name |> resolved_identifier_to_string) (right_name |> resolved_identifier_to_string))
 
         let rendered_query_parameters =
           sorted_fields
@@ -364,14 +318,9 @@ module OpenAPI =
                 $"{indent (level + 4)}in: query"
                 $"{indent (level + 4)}required: true"
                 $"{indent (level + 4)}schema:" ]
-              @ (render_parameter_primitive_schema_lines
-                (level + 5)
-                primitive_type)
+              @ (render_parameter_primitive_schema_lines (level + 5) primitive_type)
             | Ref model_name ->
-              let schema_ref =
-                sprintf
-                  "#/components/schemas/%s"
-                  model_name.OpenAPIDataModelName
+              let schema_ref = sprintf "#/components/schemas/%s" model_name.OpenAPIDataModelName
 
               [ $"{indent (level + 3)}- name: {field_name.Name}"
                 $"{indent (level + 4)}in: query"
@@ -403,8 +352,7 @@ module OpenAPI =
         @ (render_schema_lines (level + 6) request_model))
       |> Option.defaultValue []
 
-    let request_lines =
-      if List.isEmpty parameters_lines then request_lines else []
+    let request_lines = if List.isEmpty parameters_lines then request_lines else []
 
     let response_lines =
       endpoint.ResponseModel
@@ -439,9 +387,7 @@ module OpenAPI =
         if by_path <> 0 then
           by_path
         else
-          compare_ordinal
-            (left.Method |> openapi_method_to_string)
-            (right.Method |> openapi_method_to_string))
+          compare_ordinal (left.Method |> openapi_method_to_string) (right.Method |> openapi_method_to_string))
 
     let paths_lines = sorted_endpoints |> List.collect (render_endpoint_lines 1)
 
@@ -449,9 +395,7 @@ module OpenAPI =
       spec.DataModels
       |> Map.toList
       |> List.sortWith (fun (left_name, _) (right_name, _) ->
-        compare_ordinal
-          left_name.OpenAPIDataModelName
-          right_name.OpenAPIDataModelName)
+        compare_ordinal left_name.OpenAPIDataModelName right_name.OpenAPIDataModelName)
       |> List.collect (fun (model_name, model_schema) ->
         [ $"{indent 2}{yaml_string model_name.OpenAPIDataModelName}:" ]
         @ (render_schema_lines 3 model_schema))
@@ -486,10 +430,7 @@ module OpenAPI =
     =
     let rec generate_data_model
       (type_value: TypeValue<'ext>)
-      (properties:
-        List<
-          SchemaEntityProperty<ValueExt<'runtimeContext, 'db, 'customExtension>>
-         >)
+      (properties: List<SchemaEntityProperty<ValueExt<'runtimeContext, 'db, 'customExtension>>>)
       : State<
           OpenAPIDataModel,
           TypeCheckContext<ValueExt<'runtimeContext, 'db, 'customExtension>> *
@@ -513,17 +454,11 @@ module OpenAPI =
             | _ :: rest -> [ { prop with Path = rest } ])
 
         match type_value |> TypeValue.GetSourceMapping with
-        | TypeExprSourceMapping.OriginExprTypeLet(ExprTypeLetBindingName let_id,
-                                                  _) ->
+        | TypeExprSourceMapping.OriginExprTypeLet(ExprTypeLetBindingName let_id, _) ->
           let type_value =
-            TypeValue.SetSourceMapping(
-              type_value,
-              TypeExprSourceMapping.NoSourceMapping ""
-            )
+            TypeValue.SetSourceMapping(type_value, TypeExprSourceMapping.NoSourceMapping "")
 
-          let! type_value =
-            generate_data_model type_value properties_at_next_level
-
+          let! type_value = generate_data_model type_value properties_at_next_level
           let type_name = { OpenAPIDataModelName = let_id }
           do! state.SetState(Map.add type_name type_value)
 
@@ -532,8 +467,7 @@ module OpenAPI =
         | TypeExprSourceMapping.NoSourceMapping(_) ->
 
           match type_value with
-          | TypeValue.Primitive { value = p } ->
-            return OpenAPIDataModel.Primitive p
+          | TypeValue.Primitive { value = p } -> return OpenAPIDataModel.Primitive p
           | TypeValue.Record { value = fields } ->
             let! fields =
               fields
@@ -543,15 +477,10 @@ module OpenAPI =
                   let! name =
                     state.Either
                       (properties_at_this_level
-                       |> Map.tryFind (
-                         name.Name.LocalName |> LocalIdentifier.Create
-                       )
-                       |> Option.map (fun prop ->
-                         prop.PropertyName
-                         |> ResolvedIdentifier.FromLocalIdentifier)
+                       |> Map.tryFind (name.Name.LocalName |> LocalIdentifier.Create)
+                       |> Option.map (fun prop -> prop.PropertyName |> ResolvedIdentifier.FromLocalIdentifier)
                        |> sum.OfOption(
-                         (fun () ->
-                           $"Field '{name.Name.LocalName}' not found in properties at this level.")
+                         (fun () -> $"Field '{name.Name.LocalName}' not found in properties at this level.")
                          |> Errors.Singleton()
                        )
                        |> state.OfSum)
@@ -560,8 +489,7 @@ module OpenAPI =
                        |> state.OfReader)
 
 
-                  let! field_type =
-                    generate_data_model field_type properties_at_next_level
+                  let! field_type = generate_data_model field_type properties_at_next_level
 
                   return name, field_type
                 })
@@ -577,15 +505,10 @@ module OpenAPI =
                   let! name =
                     state.Either
                       (properties_at_this_level
-                       |> Map.tryFind (
-                         name.Name.LocalName |> LocalIdentifier.Create
-                       )
-                       |> Option.map (fun prop ->
-                         prop.PropertyName
-                         |> ResolvedIdentifier.FromLocalIdentifier)
+                       |> Map.tryFind (name.Name.LocalName |> LocalIdentifier.Create)
+                       |> Option.map (fun prop -> prop.PropertyName |> ResolvedIdentifier.FromLocalIdentifier)
                        |> sum.OfOption(
-                         (fun () ->
-                           $"Field '{name.Name.LocalName}' not found in properties at this level.")
+                         (fun () -> $"Field '{name.Name.LocalName}' not found in properties at this level.")
                          |> Errors.Singleton()
                        )
                        |> state.OfSum)
@@ -593,8 +516,7 @@ module OpenAPI =
                        |> reader.MapContext snd
                        |> state.OfReader)
 
-                  let! case_type =
-                    generate_data_model case_type properties_at_next_level
+                  let! case_type = generate_data_model case_type properties_at_next_level
 
                   return name, case_type
                 })
@@ -604,23 +526,19 @@ module OpenAPI =
           | TypeValue.Sum { value = options } ->
             let! options =
               options
-              |> Seq.map (fun option_type ->
-                generate_data_model option_type properties_at_next_level)
+              |> Seq.map (fun option_type -> generate_data_model option_type properties_at_next_level)
               |> state.All
 
             return OpenAPIDataModel.Sum options
           | TypeValue.Tuple { value = elements } ->
             let! elements =
               elements
-              |> Seq.map (fun element_type ->
-                generate_data_model element_type properties_at_next_level)
+              |> Seq.map (fun element_type -> generate_data_model element_type properties_at_next_level)
               |> state.All
 
             return OpenAPIDataModel.Tuple elements
           | TypeValue.Imported { Id = type_id; Arguments = [ arg_t ] } when
-            type_id = ("List"
-                       |> Identifier.LocalScope
-                       |> TypeCheckScope.Empty.Resolve)
+            type_id = ("List" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
             ->
             let! arg_t = generate_data_model arg_t properties_at_next_level
             return OpenAPIDataModel.List arg_t
@@ -637,31 +555,22 @@ module OpenAPI =
         |> OrderedMap.toSeq
         |> Seq.map (fun (entity_name, entity_desc) ->
           state {
-            let! type_with_props =
-              generate_data_model
-                entity_desc.TypeWithProps
-                entity_desc.Properties
-
-            let! type_original =
-              generate_data_model entity_desc.TypeOriginal []
-
+            let! type_with_props = generate_data_model entity_desc.TypeWithProps entity_desc.Properties
+            let! type_original = generate_data_model entity_desc.TypeOriginal []
             let! id = generate_data_model entity_desc.Id []
 
             let type_with_props_name =
-              { OpenAPIDataModelName.OpenAPIDataModelName =
-                  $"{entity_name.Name}-WithProps" }
+              { OpenAPIDataModelName.OpenAPIDataModelName = $"{entity_name.Name}-WithProps" }
 
             do! state.SetState(Map.add type_with_props_name type_with_props)
 
             let type_original_name =
-              { OpenAPIDataModelName.OpenAPIDataModelName =
-                  $"{entity_name.Name}-Original" }
+              { OpenAPIDataModelName.OpenAPIDataModelName = $"{entity_name.Name}-Original" }
 
             do! state.SetState(Map.add type_original_name type_original)
 
             let id_name =
-              { OpenAPIDataModelName.OpenAPIDataModelName =
-                  $"{entity_name.Name}-Id" }
+              { OpenAPIDataModelName.OpenAPIDataModelName = $"{entity_name.Name}-Id" }
 
             do! state.SetState(Map.add id_name id)
             return ()
@@ -688,16 +597,13 @@ module OpenAPI =
         |> Seq.map (fun (entity_name, entity_desc) ->
           state {
             let type_with_props_name =
-              { OpenAPIDataModelName.OpenAPIDataModelName =
-                  $"{entity_name.Name}-WithProps" }
+              { OpenAPIDataModelName.OpenAPIDataModelName = $"{entity_name.Name}-WithProps" }
 
             let type_original_name =
-              { OpenAPIDataModelName.OpenAPIDataModelName =
-                  $"{entity_name.Name}-Original" }
+              { OpenAPIDataModelName.OpenAPIDataModelName = $"{entity_name.Name}-Original" }
 
             let id_name =
-              { OpenAPIDataModelName.OpenAPIDataModelName =
-                  $"{entity_name.Name}-Id" }
+              { OpenAPIDataModelName.OpenAPIDataModelName = $"{entity_name.Name}-Id" }
             // let! _, id_primitive = entity_desc.Id |> TypeValue.AsPrimaryKey |> state.OfSum
 
             let endpoint =
@@ -714,16 +620,10 @@ module OpenAPI =
                 RequestModel =
                   Some(
                     OpenAPIDataModel.Record
-                      [ ("offset" |> ResolvedIdentifier.Create,
-                         OpenAPIDataModel.Primitive PrimitiveType.Int32)
-                        ("limit" |> ResolvedIdentifier.Create,
-                         OpenAPIDataModel.Primitive PrimitiveType.Int32) ]
+                      [ ("offset" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Int32)
+                        ("limit" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Int32) ]
                   )
-                ResponseModel =
-                  type_with_props_name
-                  |> OpenAPIDataModel.Ref
-                  |> OpenAPIDataModel.List
-                  |> Some }
+                ResponseModel = type_with_props_name |> OpenAPIDataModel.Ref |> OpenAPIDataModel.List |> Some }
 
             do! state.SetState(fun l -> endpoint :: l)
 
@@ -733,16 +633,10 @@ module OpenAPI =
                 RequestModel =
                   Some(
                     OpenAPIDataModel.Record
-                      [ ("id" |> ResolvedIdentifier.Create,
-                         OpenAPIDataModel.Ref id_name)
-                        ("value" |> ResolvedIdentifier.Create,
-                         OpenAPIDataModel.Ref type_original_name) ]
+                      [ ("id" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref id_name)
+                        ("value" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref type_original_name) ]
                   )
-                ResponseModel =
-                  type_with_props_name
-                  |> OpenAPIDataModel.Ref
-                  |> OpenAPIDataModel.List
-                  |> Some }
+                ResponseModel = type_with_props_name |> OpenAPIDataModel.Ref |> OpenAPIDataModel.List |> Some }
 
             do! state.SetState(fun l -> endpoint :: l)
 
@@ -756,11 +650,7 @@ module OpenAPI =
                         OpenAPIDataModel.Ref type_original_name
                         OpenAPIDataModel.AnyObject ]
                   )
-                ResponseModel =
-                  type_with_props_name
-                  |> OpenAPIDataModel.Ref
-                  |> OpenAPIDataModel.List
-                  |> Some }
+                ResponseModel = type_with_props_name |> OpenAPIDataModel.Ref |> OpenAPIDataModel.List |> Some }
 
             do! state.SetState(fun l -> endpoint :: l)
 
@@ -768,16 +658,8 @@ module OpenAPI =
               { Path = $"/entities/{entity_name.Name}/update"
                 Method = OpenAPIEndpointModel.Post
                 RequestModel =
-                  Some(
-                    OpenAPIDataModel.Tuple
-                      [ OpenAPIDataModel.Ref id_name
-                        OpenAPIDataModel.AnyObject ]
-                  )
-                ResponseModel =
-                  type_with_props_name
-                  |> OpenAPIDataModel.Ref
-                  |> OpenAPIDataModel.List
-                  |> Some }
+                  Some(OpenAPIDataModel.Tuple [ OpenAPIDataModel.Ref id_name; OpenAPIDataModel.AnyObject ])
+                ResponseModel = type_with_props_name |> OpenAPIDataModel.Ref |> OpenAPIDataModel.List |> Some }
 
             do! state.SetState(fun l -> endpoint :: l)
 
@@ -804,8 +686,7 @@ module OpenAPI =
                     | [ TypeValue.Primitive { value = PrimitiveType.Unit }
                         TypeValue.Primitive { value = primitive_type } ] ->
                       Some(
-                        p.PropertyName
-                        |> ResolvedIdentifier.FromLocalIdentifier,
+                        p.PropertyName |> ResolvedIdentifier.FromLocalIdentifier,
                         OpenAPIDataModel.Sum
                           [ OpenAPIDataModel.Primitive PrimitiveType.Unit
                             OpenAPIDataModel.Primitive primitive_type ]
@@ -817,8 +698,7 @@ module OpenAPI =
 
             let vector_search_response_model =
               OpenAPIDataModel.Record(
-                [ ("id" |> ResolvedIdentifier.Create,
-                   OpenAPIDataModel.Ref id_name) ]
+                [ ("id" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref id_name) ]
                 @ root_level_primitive_properties
               )
 
@@ -827,23 +707,16 @@ module OpenAPI =
               |> Seq.map (fun vector_desc ->
                 state {
                   let endpoint =
-                    { Path =
-                        $"/entities/{entity_name.Name}/vectors/{vector_desc.VectorName.Name}/search"
+                    { Path = $"/entities/{entity_name.Name}/vectors/{vector_desc.VectorName.Name}/search"
                       Method = OpenAPIEndpointModel.Post
                       RequestModel =
                         Some(
                           OpenAPIDataModel.Record
-                            [ ("query" |> ResolvedIdentifier.Create,
-                               OpenAPIDataModel.Primitive PrimitiveType.String)
-                              ("offset" |> ResolvedIdentifier.Create,
-                               OpenAPIDataModel.Primitive PrimitiveType.Int32)
-                              ("limit" |> ResolvedIdentifier.Create,
-                               OpenAPIDataModel.Primitive PrimitiveType.Int32) ]
+                            [ ("query" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.String)
+                              ("offset" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Int32)
+                              ("limit" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Int32) ]
                         )
-                      ResponseModel =
-                        Some(
-                          OpenAPIDataModel.List(vector_search_response_model)
-                        ) }
+                      ResponseModel = Some(OpenAPIDataModel.List(vector_search_response_model)) }
 
                   do! state.SetState(fun l -> endpoint :: l)
                   return ()
@@ -862,27 +735,21 @@ module OpenAPI =
         |> Seq.map (fun (relation_name, relation_desc) ->
           state {
             let from_id_name =
-              { OpenAPIDataModelName.OpenAPIDataModelName =
-                  sprintf "%s-Id" (relation_desc.From.ToString()) }
+              { OpenAPIDataModelName.OpenAPIDataModelName = sprintf "%s-Id" (relation_desc.From.ToString()) }
 
             let to_id_name =
-              { OpenAPIDataModelName.OpenAPIDataModelName =
-                  sprintf "%s-Id" (relation_desc.To.ToString()) }
+              { OpenAPIDataModelName.OpenAPIDataModelName = sprintf "%s-Id" (relation_desc.To.ToString()) }
 
             let from_with_props_name =
-              { OpenAPIDataModelName.OpenAPIDataModelName =
-                  sprintf "%s-WithProps" (relation_desc.From.ToString()) }
+              { OpenAPIDataModelName.OpenAPIDataModelName = sprintf "%s-WithProps" (relation_desc.From.ToString()) }
 
             let to_with_props_name =
-              { OpenAPIDataModelName.OpenAPIDataModelName =
-                  sprintf "%s-WithProps" (relation_desc.To.ToString()) }
+              { OpenAPIDataModelName.OpenAPIDataModelName = sprintf "%s-WithProps" (relation_desc.To.ToString()) }
 
             let link_request_model =
               OpenAPIDataModel.Record
-                [ ("FromId" |> ResolvedIdentifier.Create,
-                   OpenAPIDataModel.Ref from_id_name)
-                  ("ToId" |> ResolvedIdentifier.Create,
-                   OpenAPIDataModel.Ref to_id_name) ]
+                [ ("FromId" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref from_id_name)
+                  ("ToId" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref to_id_name) ]
 
             let endpoint =
               { Path = sprintf "/relations/%s/link" relation_name.Name
@@ -904,8 +771,7 @@ module OpenAPI =
               { Path = sprintf "/relations/%s/isLinked" relation_name.Name
                 Method = OpenAPIEndpointModel.Post
                 RequestModel = Some(link_request_model)
-                ResponseModel =
-                  Some(OpenAPIDataModel.Primitive PrimitiveType.Bool) }
+                ResponseModel = Some(OpenAPIDataModel.Primitive PrimitiveType.Bool) }
 
             do! state.SetState(fun l -> endpoint :: l)
 
@@ -922,36 +788,26 @@ module OpenAPI =
                   | Cardinality.One ->
                     (sprintf "/relations/%s/lookupOne/From" relation_name.Name,
                      OpenAPIDataModel.Record
-                       [ ("FromId" |> ResolvedIdentifier.Create,
-                          OpenAPIDataModel.Ref from_id_name) ],
+                       [ ("FromId" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref from_id_name) ],
                      OpenAPIDataModel.Tuple
-                       [ OpenAPIDataModel.Ref to_id_name
-                         OpenAPIDataModel.Ref to_with_props_name ])
+                       [ OpenAPIDataModel.Ref to_id_name; OpenAPIDataModel.Ref to_with_props_name ])
                   | Cardinality.Zero ->
-                    (sprintf
-                      "/relations/%s/lookupOption/From"
-                      relation_name.Name,
+                    (sprintf "/relations/%s/lookupOption/From" relation_name.Name,
                      OpenAPIDataModel.Record
-                       [ ("FromId" |> ResolvedIdentifier.Create,
-                          OpenAPIDataModel.Ref from_id_name) ],
+                       [ ("FromId" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref from_id_name) ],
                      OpenAPIDataModel.Sum
                        [ OpenAPIDataModel.Primitive PrimitiveType.Unit
                          OpenAPIDataModel.Tuple
-                           [ OpenAPIDataModel.Ref to_id_name
-                             OpenAPIDataModel.Ref to_with_props_name ] ])
+                           [ OpenAPIDataModel.Ref to_id_name; OpenAPIDataModel.Ref to_with_props_name ] ])
                   | Cardinality.Many ->
                     (sprintf "/relations/%s/lookupMany/From" relation_name.Name,
                      OpenAPIDataModel.Record
-                       [ ("FromId" |> ResolvedIdentifier.Create,
-                          OpenAPIDataModel.Ref from_id_name)
-                         ("offset" |> ResolvedIdentifier.Create,
-                          OpenAPIDataModel.Primitive PrimitiveType.Int32)
-                         ("limit" |> ResolvedIdentifier.Create,
-                          OpenAPIDataModel.Primitive PrimitiveType.Int32) ],
+                       [ ("FromId" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref from_id_name)
+                         ("offset" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Int32)
+                         ("limit" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Int32) ],
                      OpenAPIDataModel.List(
                        OpenAPIDataModel.Tuple
-                         [ OpenAPIDataModel.Ref to_id_name
-                           OpenAPIDataModel.Ref to_with_props_name ]
+                         [ OpenAPIDataModel.Ref to_id_name; OpenAPIDataModel.Ref to_with_props_name ]
                      ))
 
                 let endpoint =
@@ -970,35 +826,25 @@ module OpenAPI =
                   match target_cardinality with
                   | Cardinality.One ->
                     (sprintf "/relations/%s/lookupOne/To" relation_name.Name,
-                     OpenAPIDataModel.Record
-                       [ ("ToId" |> ResolvedIdentifier.Create,
-                          OpenAPIDataModel.Ref to_id_name) ],
+                     OpenAPIDataModel.Record [ ("ToId" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref to_id_name) ],
                      OpenAPIDataModel.Tuple
-                       [ OpenAPIDataModel.Ref from_id_name
-                         OpenAPIDataModel.Ref from_with_props_name ])
+                       [ OpenAPIDataModel.Ref from_id_name; OpenAPIDataModel.Ref from_with_props_name ])
                   | Cardinality.Zero ->
                     (sprintf "/relations/%s/lookupOption/To" relation_name.Name,
-                     OpenAPIDataModel.Record
-                       [ ("ToId" |> ResolvedIdentifier.Create,
-                          OpenAPIDataModel.Ref to_id_name) ],
+                     OpenAPIDataModel.Record [ ("ToId" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref to_id_name) ],
                      OpenAPIDataModel.Sum
                        [ OpenAPIDataModel.Primitive PrimitiveType.Unit
                          OpenAPIDataModel.Tuple
-                           [ OpenAPIDataModel.Ref from_id_name
-                             OpenAPIDataModel.Ref from_with_props_name ] ])
+                           [ OpenAPIDataModel.Ref from_id_name; OpenAPIDataModel.Ref from_with_props_name ] ])
                   | Cardinality.Many ->
                     (sprintf "/relations/%s/lookupMany/To" relation_name.Name,
                      OpenAPIDataModel.Record
-                       [ ("ToId" |> ResolvedIdentifier.Create,
-                          OpenAPIDataModel.Ref to_id_name)
-                         ("offset" |> ResolvedIdentifier.Create,
-                          OpenAPIDataModel.Primitive PrimitiveType.Int32)
-                         ("limit" |> ResolvedIdentifier.Create,
-                          OpenAPIDataModel.Primitive PrimitiveType.Int32) ],
+                       [ ("ToId" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref to_id_name)
+                         ("offset" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Int32)
+                         ("limit" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Int32) ],
                      OpenAPIDataModel.List(
                        OpenAPIDataModel.Tuple
-                         [ OpenAPIDataModel.Ref from_id_name
-                           OpenAPIDataModel.Ref from_with_props_name ]
+                         [ OpenAPIDataModel.Ref from_id_name; OpenAPIDataModel.Ref from_with_props_name ]
                      ))
 
                 let endpoint =

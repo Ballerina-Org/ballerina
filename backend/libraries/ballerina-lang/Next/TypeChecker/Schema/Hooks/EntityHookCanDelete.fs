@@ -20,13 +20,7 @@ module SchemaEntityHookCanDelete =
     (schema: Schema<'ve>)
     (e: SchemaEntity<'ve>)
     (canDelete: Option<Expr<TypeExpr<'ve>, Identifier, 've>>)
-    : State<
-        Option<TypeCheckedExpr<'ve>>,
-        TypeCheckContext<'ve>,
-        TypeCheckState<'ve>,
-        Errors<Location>
-       >
-    =
+    : State<Option<TypeCheckedExpr<'ve>>, TypeCheckContext<'ve>, TypeCheckState<'ve>, Errors<Location>> =
     state {
       match canDelete with
       | None -> return None
@@ -40,12 +34,8 @@ module SchemaEntityHookCanDelete =
         let! can_delete_expr, _ =
           typeCheckExpr None can_delete
           |> state.MapContext(
-            TypeCheckContext.Updaters.Values(
-              Map.merge (fun _ -> id) extra_scope
-            )
-            >> TypeCheckContext.Updaters.Scope(
-              TypeCheckScope.Empty |> replaceWith
-            )
+            TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope)
+            >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
           )
 
         let can_delete_t = can_delete_expr.Type
@@ -61,16 +51,11 @@ module SchemaEntityHookCanDelete =
             can_delete_t,
             TypeValue.CreateArrow(
               TypeValue.Schema schema,
-              TypeValue.CreateArrow(
-                e.Id,
-                TypeValue.CreateArrow(e.TypeWithProps, TypeValue.CreateBool())
-              )
+              TypeValue.CreateArrow(e.Id, TypeValue.CreateArrow(e.TypeWithProps, TypeValue.CreateBool()))
             )
           )
           |> Expr.liftUnification
-          |> state.MapContext(
-            TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
-          )
+          |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
 
         return Some can_delete_expr
     }

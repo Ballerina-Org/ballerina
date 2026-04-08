@@ -15,25 +15,15 @@ module TypeLambda =
   let private discriminator = "type-lambda"
 
   type Value<'T, 'valueExtension> with
-    static member FromJsonTypeLambda
-      (json: JsonValue)
-      : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
-      Reader.assertDiscriminatorAndContinueWithValue
-        discriminator
-        json
-        (fun typeParamJson ->
-          reader {
-            let! exprFromJsonRoot, _, _ = reader.GetContext()
-
-            let! typeParam, body =
-              typeParamJson |> JsonValue.AsPair |> reader.OfSum
-
-            let! typeParam =
-              typeParam |> TypeParameter.FromJson |> reader.OfSum
-
-            let! body = body |> exprFromJsonRoot |> reader.OfSum
-            return Value.TypeLambda(typeParam, body)
-          })
+    static member FromJsonTypeLambda(json: JsonValue) : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
+      Reader.assertDiscriminatorAndContinueWithValue discriminator json (fun typeParamJson ->
+        reader {
+          let! exprFromJsonRoot, _, _ = reader.GetContext()
+          let! typeParam, body = typeParamJson |> JsonValue.AsPair |> reader.OfSum
+          let! typeParam = typeParam |> TypeParameter.FromJson |> reader.OfSum
+          let! body = body |> exprFromJsonRoot |> reader.OfSum
+          return Value.TypeLambda(typeParam, body)
+        })
 
     static member ToJsonTypeLambda
       (typeParam: TypeParameter)
@@ -43,9 +33,5 @@ module TypeLambda =
         let! rootExprEncoder, _ = reader.GetContext()
         let tp = TypeParameter.ToJson typeParam
         let! bodyJson = body |> rootExprEncoder |> reader.OfSum
-
-        return
-          [| tp; bodyJson |]
-          |> JsonValue.Array
-          |> Json.discriminator discriminator
+        return [| tp; bodyJson |] |> JsonValue.Array |> Json.discriminator discriminator
       }

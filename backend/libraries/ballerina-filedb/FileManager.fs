@@ -31,10 +31,7 @@ module FileDbManager =
 
         if this.FileExists fileName then
           let bytes = File.ReadAllBytes fileName
-
-          let serializer: MessagePackSerializerAdapter =
-            new MessagePackSerializerAdapter()
-
+          let serializer: MessagePackSerializerAdapter = new MessagePackSerializerAdapter()
           let! content = serializer.Deserialize<'content> bytes
           return Some content
         else
@@ -46,10 +43,7 @@ module FileDbManager =
         match! this.TryReadContent() with
         | None ->
           return!
-            sum.Throw(
-              Errors.Singleton () (fun _ ->
-                $"File not found for {this.SchemaName} in tenant {this.TenantId}")
-            )
+            sum.Throw(Errors.Singleton () (fun _ -> $"File not found for {this.SchemaName} in tenant {this.TenantId}"))
         | Some content -> return content
       }
 

@@ -41,15 +41,10 @@ module TypeApply =
   open Ballerina.Collections.NonEmptyList
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
-    static member internal TypeCheckTypeApply<'valueExt
-      when 'valueExt: comparison>
-      (config: TypeCheckingConfig<'valueExt>)
+    static member internal TypeCheckTypeApply<'valueExt when 'valueExt: comparison>
+      (config: TypeEvalConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
-      : TypeChecker<
-          ExprTypeApply<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-          'valueExt
-         >
-      =
+      : TypeChecker<ExprTypeApply<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Func = fExpr; TypeArg = tExpr }) ->
         let (!) = typeCheckExpr context_t
         let loc0 = fExpr.Location
@@ -70,16 +65,12 @@ module TypeApply =
 
           // do Console.WriteLine($"TypeApply: f = {f}, f_t = {f_t}, f_k = {f_k}, f_k_i = {f_k_i}, f_k_o = {f_k_o}")
 
-          let! t_val, t_k =
-            tExpr
-            |> TypeExpr.Eval config typeCheckExpr None loc0
-            |> Expr.liftTypeEval
+          let! t_val, t_k = tExpr |> TypeExpr.Eval config typeCheckExpr None loc0 |> Expr.liftTypeEval
           // do Console.WriteLine($"TypeApply: tExpr = {tExpr}, t_val = {t_val}, t_k = {t_k}")
 
           if f_k_i <> t_k then
             return!
-              (fun () ->
-                $"Error: mismatched kind, expected {f_k_i} but got {t_k}")
+              (fun () -> $"Error: mismatched kind, expected {f_k_i} but got {t_k}")
               |> error
               |> state.Throw
           else
@@ -95,9 +86,7 @@ module TypeApply =
 
             // do Console.WriteLine($"TypeApply: f_res = {f_res}")
 
-            let res =
-              TypeCheckedExpr.TypeApply(f, t_val, f_res, f_k_o, loc0, ctx.Scope),
-              ctx
+            let res = TypeCheckedExpr.TypeApply(f, t_val, f_res, f_k_o, loc0, ctx.Scope), ctx
             // do Console.WriteLine($"TypeApply: {res}")
             // do Console.ReadLine() |> ignore
             return res

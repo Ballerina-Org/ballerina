@@ -14,18 +14,14 @@ module Flatten =
   let private discriminator = "flatten"
 
   type TypeExpr<'valueExt> with
-    static member FromJsonFlatten
-      (fromJsonRoot: TypeExprParser<'valueExt>)
-      : TypeExprParser<'valueExt> =
-      Sum.assertDiscriminatorAndContinueWithValue
-        discriminator
-        (fun flattenFields ->
-          sum {
-            let! (type1, type2) = flattenFields |> JsonValue.AsPair
-            let! type1 = type1 |> fromJsonRoot
-            let! type2 = type2 |> fromJsonRoot
-            return TypeExpr.Flatten(type1, type2)
-          })
+    static member FromJsonFlatten(fromJsonRoot: TypeExprParser<'valueExt>) : TypeExprParser<'valueExt> =
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun flattenFields ->
+        sum {
+          let! (type1, type2) = flattenFields |> JsonValue.AsPair
+          let! type1 = type1 |> fromJsonRoot
+          let! type2 = type2 |> fromJsonRoot
+          return TypeExpr.Flatten(type1, type2)
+        })
 
     static member ToJsonFlatten
       (rootToJson: TypeExpr<'valueExt> -> JsonValue)

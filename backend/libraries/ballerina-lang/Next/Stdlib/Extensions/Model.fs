@@ -28,8 +28,7 @@ module Model =
       TypeCheckState: TypeCheckState<'ext>
       ExprEvalContext: Updater<ExprEvalContext<'runtimeContext, 'ext>>
       TypeCheckedPreludes: List<TypeCheckedExpr<'ext>>
-      SerializationContext:
-        DeltaSerializationContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>
+      SerializationContext: DeltaSerializationContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>
       ExtTypeChecker: Option<IsExtInstanceOf<'ext>> }
 
   type OperationsExtension<'runtimeContext, 'ext, 'extOperations> =
@@ -67,16 +66,9 @@ module Model =
       Operations:
         Map<
           ResolvedIdentifier,  // example: ("Option.Some", "OptionSome")
-          TypeOperationExtension<
-            'runtimeContext,
-            'ext,
-            'extConstructors,
-            'extValues,
-            'extOperations
-           >
+          TypeOperationExtension<'runtimeContext, 'ext, 'extConstructors, 'extValues, 'extOperations>
          >
-      Serialization:
-        Option<DeltaSerializationContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>>
+      Serialization: Option<DeltaSerializationContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>>
       ExtTypeChecker: Option<IsExtInstanceOf<'ext>> }
 
     static member ToImportedTypeValue
@@ -94,13 +86,10 @@ module Model =
       : ImportedTypeValue<'ext> =
       { Id = typeExt.TypeName |> fst
         Sym = typeExt.TypeName |> snd
-        Parameters =
-          typeExt.TypeVars
-          |> List.map (fun (tv, k) -> TypeParameter.Create(tv.Name, k))
+        Parameters = typeExt.TypeVars |> List.map (fun (tv, k) -> TypeParameter.Create(tv.Name, k))
         Arguments = [] }
 
-  and TypeOperationExtension<'runtimeContext, 'ext, 'extConstructors, 'extValues, 'extOperations>
-    =
+  and TypeOperationExtension<'runtimeContext, 'ext, 'extConstructors, 'extValues, 'extOperations> =
     { Type: TypeValue<'ext> // "a => b => (a -> b) -> Option a -> Option b"
       Kind: Kind // * => * => *
       Operation: 'extOperations
@@ -123,8 +112,8 @@ module Model =
           -> 'extConstructors * Value<TypeValue<'ext>, 'ext>
           -> ExprEvaluator<'runtimeContext, 'ext, Value<TypeValue<'ext>, 'ext>> }
 
-  and TypeLambdaExtension<'runtimeContext, 'ext, 'extDTO, 'extTypeLambda
-    when 'extDTO: not null and 'extDTO: not struct> =
+  and TypeLambdaExtension<'runtimeContext, 'ext, 'extDTO, 'extTypeLambda when 'extDTO: not null and 'extDTO: not struct>
+    =
     { ExtensionType: ResolvedIdentifier * TypeValue<'ext> * Kind
       ExtraBindings: Map<ResolvedIdentifier, TypeValue<'ext> * Kind>
       Value: 'extTypeLambda // eval value bindings will contain an entry from the extension identifier to this value (modulo DU packaging)

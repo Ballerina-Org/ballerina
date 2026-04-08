@@ -10,9 +10,7 @@ module ToV1JSON =
   open FSharp.Data
   open System.Text.Json
 
-  let private generateLaunchers
-    (forms: OrderedMap<FormIdentifier, Form<TypeValue<'valueExt>>>)
-    : JsonValue =
+  let private generateLaunchers (forms: OrderedMap<FormIdentifier, Form<TypeValue<'valueExt>>>) : JsonValue =
     forms
     |> OrderedMap.toSeq
     |> Seq.filter (fun (_, form) -> form.IsEntryPoint)
@@ -30,9 +28,7 @@ module ToV1JSON =
     |> JsonValue.Record
 
   type FormDefinitions<'typeValue> with
-    static member toV1Json
-      (formDefinitions: FormDefinitions<TypeValue<'valueExt>>)
-      : JsonElement =
+    static member toV1Json(formDefinitions: FormDefinitions<TypeValue<'valueExt>>) : JsonElement =
       let typesJson = Types.generateFormsTypeJson formDefinitions.Forms
       let formsJson = Forms.generateForms formDefinitions.Forms
       let launchersJson = generateLaunchers formDefinitions.Forms

@@ -34,15 +34,10 @@ module Query =
   type ComplexExpression<'valueExt> =
     | ScopedIdentifier of NonEmptyList<string>
     | RecordOrTupleDesChain of NonEmptyList<Sum<string, int>>
-    | TupleCons of
-      NonEmptyList<ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
-    | ApplicationArguments of
-      NonEmptyList<ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
+    | TupleCons of NonEmptyList<ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
+    | ApplicationArguments of NonEmptyList<ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
     | BinaryExpressionChain of
-      NonEmptyList<
-        BinaryExprOperator *
-        ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>
-       >
+      NonEmptyList<BinaryExprOperator * ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
 
   let private parseAllComplexShapes: Set<ComplexExpressionKind> =
     [ ComplexExpressionKind.ApplicationArguments
@@ -58,13 +53,7 @@ module Query =
     (query: unit -> _)
     (depth: int)
     (parseComplexShapes: Set<ComplexExpressionKind>)
-    : Parser<
-        ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-        LocalizedToken,
-        Location,
-        Errors<Location>
-       >
-    =
+    : Parser<ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
 
     let expr = queryexpr query (depth + 1)
 
@@ -74,8 +63,7 @@ module Query =
         | Token.Identifier id -> Some id
         | Token.Keyword(Keyword.Schema) -> Keyword.Schema.ToString() |> Some
         | Token.Keyword(Keyword.Entity) -> Keyword.Entity.ToString() |> Some
-        | Token.Keyword(Keyword.Relation) ->
-          Keyword.Relation.ToString() |> Some
+        | Token.Keyword(Keyword.Relation) -> Keyword.Relation.ToString() |> Some
         | Token.Keyword(Keyword.Include) -> Keyword.Include.ToString() |> Some
         | _ -> None)
 
@@ -93,19 +81,13 @@ module Query =
     let intLiteral () =
       parser.Exactly(fun t ->
         match t.Token with
-        | Token.IntLiteral s ->
-          QueryConstant(PrimitiveValue.Int32 s)
-          |> ExprQueryExpr.Create t.Location
-          |> Some
+        | Token.IntLiteral s -> QueryConstant(PrimitiveValue.Int32 s) |> ExprQueryExpr.Create t.Location |> Some
         | _ -> None)
 
     let int64Literal () =
       parser.Exactly(fun t ->
         match t.Token with
-        | Token.Int64Literal s ->
-          QueryConstant(PrimitiveValue.Int64 s)
-          |> ExprQueryExpr.Create t.Location
-          |> Some
+        | Token.Int64Literal s -> QueryConstant(PrimitiveValue.Int64 s) |> ExprQueryExpr.Create t.Location |> Some
         | _ -> None)
 
     let decimalLiteral () =
@@ -138,10 +120,7 @@ module Query =
     let boolLiteral () =
       parser.Exactly(fun t ->
         match t.Token with
-        | Token.BoolLiteral b ->
-          QueryConstant(PrimitiveValue.Bool b)
-          |> ExprQueryExpr.Create t.Location
-          |> Some
+        | Token.BoolLiteral b -> QueryConstant(PrimitiveValue.Bool b) |> ExprQueryExpr.Create t.Location |> Some
         | _ -> None)
 
     let unitLiteral () =
@@ -224,13 +203,7 @@ module Query =
               parser.AtLeastOne(
                 parser {
                   do! commaOperator
-
-                  let! value =
-                    expr (
-                      parseComplexShapes
-                      |> Set.remove ComplexExpressionKind.TupleCons
-                    )
-
+                  let! value = expr (parseComplexShapes |> Set.remove ComplexExpressionKind.TupleCons)
                   return value
                 }
               )
@@ -250,11 +223,7 @@ module Query =
               parser.AtLeastOne(
                 parser {
                   do! dotOperator
-
-                  return!
-                    parser.Any
-                      [ singleIdentifier |> parser.Map Left
-                        intLiteralToken () |> parser.Map Right ]
+                  return! parser.Any [ singleIdentifier |> parser.Map Left; intLiteralToken () |> parser.Map Right ]
                 }
               )
 
@@ -321,13 +290,7 @@ module Query =
               parser.AtLeastOne(
                 parser {
                   let! op = binaryExprOperator
-
-                  let! value =
-                    expr (
-                      parseComplexShapes
-                      |> Set.remove ComplexExpressionKind.BinaryExpressionChain
-                    )
-
+                  let! value = expr (parseComplexShapes |> Set.remove ComplexExpressionKind.BinaryExpressionChain)
                   return op, value
                 }
               )
@@ -403,27 +366,19 @@ module Query =
         let complexShapes = []
 
         let complexShapes =
-          if
-            parseComplexShapes.Contains ComplexExpressionKind.ScopedIdentifier
-          then
+          if parseComplexShapes.Contains ComplexExpressionKind.ScopedIdentifier then
             scopedIdentifier () :: complexShapes
           else
             complexShapes
 
         let complexShapes =
-          if
-            parseComplexShapes.Contains
-              ComplexExpressionKind.BinaryExpressionChain
-          then
+          if parseComplexShapes.Contains ComplexExpressionKind.BinaryExpressionChain then
             binaryExpressionChainTail () :: complexShapes
           else
             complexShapes
 
         let complexShapes =
-          if
-            parseComplexShapes.Contains
-              ComplexExpressionKind.ApplicationArguments
-          then
+          if parseComplexShapes.Contains ComplexExpressionKind.ApplicationArguments then
             application () :: complexShapes
           else
             complexShapes
@@ -446,11 +401,7 @@ module Query =
         // do Console.ReadLine() |> ignore
         let! loc = parser.Location
 
-        let res
-          : Sum<
-              ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-              Errors<Location>
-             > =
+        let res: Sum<ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>, Errors<Location>> =
           res
           |> List.fold
             (fun acc e ->
@@ -459,32 +410,21 @@ module Query =
 
                 match e with
                 | BinaryExpressionChain fields ->
-                  let fields
-                    : List<
-                        BinaryOperatorsElement<
-                          ExprQueryExpr<_, _, _>,
-                          BinaryExprOperator
-                         >
-                       > =
+                  let fields: List<BinaryOperatorsElement<ExprQueryExpr<_, _, _>, BinaryExprOperator>> =
                     fields
                     |> NonEmptyList.ToList
                     |> Seq.collect (fun (op, e) ->
-                      [ op |> Precedence.Operator
-                        (e, NonMergeable) |> Precedence.Operand ])
+                      [ op |> Precedence.Operator; (e, NonMergeable) |> Precedence.Operand ])
                     |> List.ofSeq
 
                   let chain = Operand(acc, Mergeable) :: fields
 
                   let precedence: List<OperatorsPrecedence<BinaryExprOperator>> =
                     [ { Operators =
-                          [ BinaryExprOperator.Div
-                            BinaryExprOperator.Times
-                            BinaryExprOperator.Mod ]
+                          [ BinaryExprOperator.Div; BinaryExprOperator.Times; BinaryExprOperator.Mod ]
                           |> Set.ofList
                         Associativity = AssociateLeft }
-                      { Operators =
-                          [ BinaryExprOperator.Plus; BinaryExprOperator.Minus ]
-                          |> Set.ofList
+                      { Operators = [ BinaryExprOperator.Plus; BinaryExprOperator.Minus ] |> Set.ofList
                         Associativity = AssociateLeft }
                       { Operators =
                           [ BinaryExprOperator.GreaterEqual
@@ -495,9 +435,7 @@ module Query =
                             BinaryExprOperator.NotEqual ]
                           |> Set.ofList
                         Associativity = AssociateLeft }
-                      { Operators =
-                          [ BinaryExprOperator.And; BinaryExprOperator.Or ]
-                          |> Set.ofList
+                      { Operators = [ BinaryExprOperator.And; BinaryExprOperator.Or ] |> Set.ofList
                         Associativity = AssociateLeft } ]
 
                   return!
@@ -507,44 +445,30 @@ module Query =
                             let query_op =
                               match op with
                               | BinaryExprOperator.Plus -> QueryIntrinsic.Plus
-                              | BinaryExprOperator.Times ->
-                                QueryIntrinsic.Multiply
+                              | BinaryExprOperator.Times -> QueryIntrinsic.Multiply
                               | BinaryExprOperator.Div -> QueryIntrinsic.Divide
                               | BinaryExprOperator.Mod -> QueryIntrinsic.Modulo
-                              | BinaryExprOperator.Minus ->
-                                QueryIntrinsic.Minus
+                              | BinaryExprOperator.Minus -> QueryIntrinsic.Minus
                               | BinaryExprOperator.And -> QueryIntrinsic.And
                               | BinaryExprOperator.Or -> QueryIntrinsic.Or
-                              | BinaryExprOperator.Equal ->
-                                QueryIntrinsic.Equals
-                              | BinaryExprOperator.NotEqual ->
-                                QueryIntrinsic.NotEquals
-                              | BinaryExprOperator.GreaterThan ->
-                                QueryIntrinsic.GreaterThan
-                              | BinaryExprOperator.LessThan ->
-                                QueryIntrinsic.LessThan
-                              | BinaryExprOperator.GreaterEqual ->
-                                QueryIntrinsic.GreaterThanOrEqual
-                              | BinaryExprOperator.LessThanOrEqual ->
-                                QueryIntrinsic.LessThanOrEqual
+                              | BinaryExprOperator.Equal -> QueryIntrinsic.Equals
+                              | BinaryExprOperator.NotEqual -> QueryIntrinsic.NotEquals
+                              | BinaryExprOperator.GreaterThan -> QueryIntrinsic.GreaterThan
+                              | BinaryExprOperator.LessThan -> QueryIntrinsic.LessThan
+                              | BinaryExprOperator.GreaterEqual -> QueryIntrinsic.GreaterThanOrEqual
+                              | BinaryExprOperator.LessThanOrEqual -> QueryIntrinsic.LessThanOrEqual
                               | BinaryExprOperator.PipeGreaterThan ->
-                                failwith
-                                  "PipeGreaterThan operator is not supported in query expressions"
+                                failwith "PipeGreaterThan operator is not supported in query expressions"
                               | BinaryExprOperator.DoubleGreaterThan ->
-                                failwith
-                                  "DoubleGreaterThan operator is not supported in query expressions"
+                                failwith "DoubleGreaterThan operator is not supported in query expressions"
 
                             ExprQueryExprRec.QueryApply(
                               ExprQueryExprRec.QueryIntrinsic(
                                 query_op,
-                                TypeQueryRow.PrimitiveType(
-                                  PrimitiveType.Unit,
-                                  false
-                                )
+                                TypeQueryRow.PrimitiveType(PrimitiveType.Unit, false)
                               )
                               |> ExprQueryExpr.Create loc,
-                              ExprQueryExprRec.QueryTupleCons([ e1; e2 ])
-                              |> ExprQueryExpr.Create loc
+                              ExprQueryExprRec.QueryTupleCons([ e1; e2 ]) |> ExprQueryExpr.Create loc
                             )
                             |> ExprQueryExpr.Create loc,
                             NonMergeable
@@ -558,14 +482,11 @@ module Query =
                     let ids = (id :: (ids |> NonEmptyList.ToList)) |> List.rev
 
                     return
-                      ExprQueryExprRec.QueryLookup(
-                        Identifier.FullyQualified(ids.Tail, ids.Head)
-                      )
+                      ExprQueryExprRec.QueryLookup(Identifier.FullyQualified(ids.Tail, ids.Head))
                       |> ExprQueryExpr.Create loc
                   | _ ->
                     return!
-                      (fun () ->
-                        $"Error: cannot collapse scoped identifier chain on non-identifier")
+                      (fun () -> $"Error: cannot collapse scoped identifier chain on non-identifier")
                       |> Errors.Singleton loc
                       |> sum.Throw
                 | RecordOrTupleDesChain ids ->
@@ -576,35 +497,21 @@ module Query =
                       (fun acc id ->
                         match id with
                         | Sum.Left id ->
-                          ExprQueryExprRec.QueryRecordDes(
-                            acc,
-                            id |> Identifier.LocalScope,
-                            false
-                          )
+                          ExprQueryExprRec.QueryRecordDes(acc, id |> Identifier.LocalScope, false)
                           |> ExprQueryExpr.Create loc
                         | Sum.Right idx ->
-                          ExprQueryExprRec.QueryTupleDes(
-                            acc,
-                            { Index = idx },
-                            false
-                          )
+                          ExprQueryExprRec.QueryTupleDes(acc, { Index = idx }, false)
                           |> ExprQueryExpr.Create loc)
                       acc
                 | TupleCons fields ->
                   return
-                    ExprQueryExprRec.QueryTupleCons(
-                      acc :: (fields |> NonEmptyList.ToList)
-                    )
+                    ExprQueryExprRec.QueryTupleCons(acc :: (fields |> NonEmptyList.ToList))
                     |> ExprQueryExpr.Create loc
                 | ApplicationArguments args ->
                   let smartApply (t1, t2) =
-                    ExprQueryExprRec.QueryApply(t1, t2)
-                    |> ExprQueryExpr.Create loc
+                    ExprQueryExprRec.QueryApply(t1, t2) |> ExprQueryExpr.Create loc
 
-                  return
-                    args
-                    |> NonEmptyList.ToList
-                    |> List.fold (fun acc e -> smartApply (acc, e)) acc
+                  return args |> NonEmptyList.ToList |> List.fold (fun acc e -> smartApply (acc, e)) acc
               })
             (Sum.Left e)
 
@@ -622,14 +529,7 @@ module Query =
 
 
   let rec private query_iterators_and_datasources<'valueExt>
-    (expr:
-      unit
-        -> Parser<
-          Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-          LocalizedToken,
-          Location,
-          Errors<Location>
-         >)
+    (expr: unit -> Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>>)
     query
     =
     parser {
@@ -655,7 +555,7 @@ module Query =
                   |> sum.MapError(Errors.MapContext(replaceWith loc))
                   |> parser.OfSum
 
-                return (singleIterator, _iterators.Location) |> List.singleton
+                return singleIterator |> List.singleton
               }
               parser {
                 let! items =
@@ -667,29 +567,19 @@ module Query =
                 let! items =
                   items
                   |> List.map (fun item ->
-                    parser {
-                      let! itemName =
-                        item
-                        |> ExprQueryExpr.AsLookup
-                        |> sum.MapError(Errors.MapContext(replaceWith loc))
-                        |> parser.OfSum
-
-                      return itemName, item.Location
-                    })
+                    item
+                    |> ExprQueryExpr.AsLookup
+                    |> sum.MapError(Errors.MapContext(replaceWith loc))
+                    |> parser.OfSum)
                   |> parser.All
 
                 let! items =
                   items
-                  |> List.map (fun (itemName, itemLocation) ->
-                    parser {
-                      let! itemName =
-                        itemName
-                        |> Identifier.AsLocalScope
-                        |> sum.MapError(Errors.MapContext(replaceWith loc))
-                        |> parser.OfSum
-
-                      return itemName, itemLocation
-                    })
+                  |> List.map (fun item ->
+                    item
+                    |> Identifier.AsLocalScope
+                    |> sum.MapError(Errors.MapContext(replaceWith loc))
+                    |> parser.OfSum)
                   |> parser.All
 
                 return items
@@ -704,9 +594,7 @@ module Query =
                 let! items =
                   _dataSources
                   |> Expr.AsTupleCons
-                  |> sum.MapError(
-                    Errors.MapContext(replaceWith _dataSources.Location)
-                  )
+                  |> sum.MapError(Errors.MapContext(replaceWith _dataSources.Location))
                   |> parser.OfSum
 
                 return items.Items
@@ -716,8 +604,7 @@ module Query =
 
           if List.length _iterators <> List.length _dataSources then
             return!
-              (fun () ->
-                $"Error: number of iterators and data sources must be the same")
+              (fun () -> $"Error: number of iterators and data sources must be the same")
               |> Errors.Singleton loc
               |> parser.Throw
           else
@@ -734,8 +621,8 @@ module Query =
 
             let iterators_with_datasources =
               iterators_with_datasources
-              |> NonEmptyList.map (fun ((v, vLocation), ds) ->
-                { ExprQueryIterator.Location = vLocation
+              |> NonEmptyList.map (fun (v, ds) ->
+                { ExprQueryIterator.Location = ds.Location
                   Var = v |> Var.Create
                   VarType = None
                   Source = ds })
@@ -763,8 +650,7 @@ module Query =
                   if i > 0 then
                     do! andKeyword
 
-                  let! join_terms =
-                    queryexpr<'valueExt> query 0 parseAllComplexShapes
+                  let! join_terms = queryexpr<'valueExt> query 0 parseAllComplexShapes
 
                   let! join_terms =
                     join_terms
@@ -780,8 +666,7 @@ module Query =
                         Right = right }
                   | _ ->
                     return!
-                      (fun () ->
-                        $"Error: each join condition must consist of exactly two terms")
+                      (fun () -> $"Error: each join condition must consist of exactly two terms")
                       |> Errors.Singleton loc
                       |> parser.Throw
                 })
@@ -789,10 +674,7 @@ module Query =
             let! _joinConditions =
               _joinConditions
               |> NonEmptyList.TryOfList
-              |> sum.OfOption(
-                Errors.Singleton loc (fun () ->
-                  "At least one join condition is mandatory")
-              )
+              |> sum.OfOption(Errors.Singleton loc (fun () -> "At least one join condition is mandatory"))
               |> parser.OfSum
 
             return Some _joinConditions
@@ -848,8 +730,7 @@ module Query =
                 let! loc = parser.Location
 
                 return!
-                  (fun () ->
-                    $"Error: expected 'ascending' or 'descending' after 'orderby'")
+                  (fun () -> $"Error: expected 'ascending' or 'descending' after 'orderby'")
                   |> Errors.Singleton loc
                   |> parser.Throw
         }
@@ -867,35 +748,18 @@ module Query =
           | Left _ ->
             return!
               parser {
-                let! distinction =
-                  queryexpr<'valueExt> query 0 parseAllComplexShapes
-
+                let! distinction = queryexpr<'valueExt> query 0 parseAllComplexShapes
                 return Some distinction
               }
-              |> parser.MapError(
-                Errors.MapPriority(replaceWith ErrorPriority.High)
-              )
+              |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
         }
         |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
 
   let rec private query'<'valueExt>
-    (expr:
-      unit
-        -> Parser<
-          Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-          LocalizedToken,
-          Location,
-          Errors<Location>
-         >)
+    (expr: unit -> Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>>)
     ()
-    : Parser<
-        ExprQuery<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-        LocalizedToken,
-        Location,
-        Errors<Location>
-       >
-    =
+    : Parser<ExprQuery<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
     parser {
       let! hasBracket =
         parser.Any
@@ -909,9 +773,7 @@ module Query =
           let query = query'
           do! openCurlyBracketOperator
 
-          let! iterators_with_datasources =
-            query_iterators_and_datasources expr (query expr)
-
+          let! iterators_with_datasources = query_iterators_and_datasources expr (query expr)
           let! joins = query_joins (query expr)
           let! where_ = query_where (query expr)
           let! select_expr = query_select<'valueExt> (query expr)
@@ -932,8 +794,7 @@ module Query =
               Distinct = distinct_
               // Closure and DeserializeFrom are placeholders, they will be calculated by the type checker
               Closure = Map.empty
-              DeserializeFrom =
-                TypeQueryRow.PrimitiveType(PrimitiveType.Unit, false) }
+              DeserializeFrom = TypeQueryRow.PrimitiveType(PrimitiveType.Unit, false) }
             |> SimpleQuery
 
           return res
@@ -942,22 +803,9 @@ module Query =
     }
 
   let query<'valueExt>
-    (expr:
-      unit
-        -> Parser<
-          Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-          LocalizedToken,
-          Location,
-          Errors<Location>
-         >)
+    (expr: unit -> Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>>)
     ()
-    : Parser<
-        Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-        LocalizedToken,
-        Location,
-        Errors<Location>
-       >
-    =
+    : Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
     parser {
       let! loc = parser.Location
 

@@ -33,14 +33,9 @@ module RecordDes =
     | _ -> String.Join(", ", names)
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
-    static member internal TypeCheckRecordDes<'valueExt
-      when 'valueExt: comparison>
+    static member internal TypeCheckRecordDes<'valueExt when 'valueExt: comparison>
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
-      : TypeChecker<
-          ExprRecordDes<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-          'valueExt
-         >
-      =
+      : TypeChecker<ExprRecordDes<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
           ({ Expr = record_expr
@@ -57,23 +52,19 @@ module RecordDes =
           let record_t = record_v.Type
           let record_k = record_v.Kind
 
-          let resolve_lookup
-            (fields_t: OrderedMap<TypeSymbol, (TypeValue<'valueExt> * Kind)>)
-            =
+          let resolve_lookup (fields_t: OrderedMap<TypeSymbol, (TypeValue<'valueExt> * Kind)>) =
             state {
               let availableFields =
                 fields_t
                 |> OrderedMap.toSeq
-                |> Seq.map (fun (fieldSym, _fieldType) ->
-                  fieldSym.Name.LocalName)
+                |> Seq.map (fun (fieldSym, _fieldType) -> fieldSym.Name.LocalName)
                 |> formatAvailableFieldNames
 
               let! field_n, (field_t, field_k) =
                 fields_t
                 |> OrderedMap.toSeq
                 |> Seq.map (fun (k, v) -> (k, v))
-                |> Seq.tryFind (fun (k, _v) ->
-                  k.Name.LocalName = fieldName.LocalName)
+                |> Seq.tryFind (fun (k, _v) -> k.Name.LocalName = fieldName.LocalName)
                 |> sum.OfOption(
                   (fun () ->
                     $"Type checking error: record lookup failed, field %s{fieldName.LocalName} not found. Available fields: %s{availableFields}")
@@ -86,26 +77,14 @@ module RecordDes =
                   (TypeCheckState.TryResolveIdentifier(field_n, loc0))
                   (state { return fieldName |> ctx.Scope.Resolve })
                   (state.Throw(
-                    Errors.Singleton loc0 (fun () ->
-                      $"Error: cannot resolve field name {fieldName}")
+                    Errors.Singleton loc0 (fun () -> $"Error: cannot resolve field name {fieldName}")
                     |> Errors<_>.MapPriority(replaceWith ErrorPriority.High)
                   ))
                 |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
 
-              return
-                TypeCheckedExpr.RecordDes(
-                  record_v,
-                  fieldName,
-                  field_t,
-                  field_k,
-                  loc0,
-                  ctx.Scope
-                ),
-                ctx
+              return TypeCheckedExpr.RecordDes(record_v, fieldName, field_t, field_k, loc0, ctx.Scope), ctx
             }
-            |> state.MapError(
-              Errors.MapPriority(replaceWith ErrorPriority.High)
-            )
+            |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
           return!
             match record_k, record_t with
@@ -117,33 +96,16 @@ module RecordDes =
                   let t_res = TypeValue.CreateEntities(schema_t)
                   let k_res = Kind.Star
 
-                  return
-                    TypeCheckedExpr.EntitiesDes(
-                      schema_v,
-                      t_res,
-                      k_res,
-                      loc0,
-                      ctx.Scope
-                    ),
-                    ctx
+                  return TypeCheckedExpr.EntitiesDes(schema_v, t_res, k_res, loc0, ctx.Scope), ctx
                 elif fieldName.LocalName = "Relations" then
                   let t_res = TypeValue.CreateRelations(schema_t)
                   let k_res = Kind.Star
 
-                  return
-                    TypeCheckedExpr.RelationsDes(
-                      schema_v,
-                      t_res,
-                      k_res,
-                      loc0,
-                      ctx.Scope
-                    ),
-                    ctx
+                  return TypeCheckedExpr.RelationsDes(schema_v, t_res, k_res, loc0, ctx.Scope), ctx
                 else
 
                   return!
-                    Errors.Singleton loc0 (fun () ->
-                      $"Error: cannot find field {fieldName} in schema {schema_v}")
+                    Errors.Singleton loc0 (fun () -> $"Error: cannot find field {fieldName} in schema {schema_v}")
                     |> Errors<_>
                       .MapPriority(
                         replaceWith (
@@ -164,36 +126,17 @@ module RecordDes =
 
                 let! entity =
                   schema_t.Entities
-                  |> OrderedMap.tryFindWithError
-                    fieldName
-                    "entity"
-                    fieldName.Name
+                  |> OrderedMap.tryFindWithError fieldName "entity" fieldName.Name
                   |> ofSum
 
                 let t_res =
-                  TypeValue.CreateEntity(
-                    schema_t,
-                    entity.TypeOriginal,
-                    entity.TypeWithProps,
-                    entity.Id
-                  )
+                  TypeValue.CreateEntity(schema_t, entity.TypeOriginal, entity.TypeWithProps, entity.Id)
 
                 let k_res = Kind.Star
 
-                return
-                  TypeCheckedExpr.EntityDes(
-                    schema_v,
-                    fieldName,
-                    t_res,
-                    k_res,
-                    loc0,
-                    ctx.Scope
-                  ),
-                  ctx
+                return TypeCheckedExpr.EntityDes(schema_v, fieldName, t_res, k_res, loc0, ctx.Scope), ctx
               }
-              |> state.MapError(
-                Errors.MapPriority(replaceWith ErrorPriority.High)
-              )
+              |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
             | Kind.Star, TypeValue.Relations schema_t ->
               state {
@@ -203,10 +146,7 @@ module RecordDes =
 
                 let! relation =
                   schema_t.Relations
-                  |> OrderedMap.tryFindWithError
-                    fieldName
-                    "relations"
-                    fieldName.Name
+                  |> OrderedMap.tryFindWithError fieldName "relations" fieldName.Name
                   |> ofSum
 
                 let! from =
@@ -253,38 +193,16 @@ module RecordDes =
 
                 let k_res = Kind.Star
 
-                return
-                  TypeCheckedExpr.RelationDes(
-                    schema_v,
-                    fieldName,
-                    t_res,
-                    k_res,
-                    loc0,
-                    ctx.Scope
-                  ),
-                  ctx
+                return TypeCheckedExpr.RelationDes(schema_v, fieldName, t_res, k_res, loc0, ctx.Scope), ctx
               }
-              |> state.MapError(
-                Errors.MapPriority(replaceWith ErrorPriority.High)
-              )
+              |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
             | Kind.Star,
-              TypeValue.Relation(schema_t,
-                                 relation_name,
-                                 cardinality,
-                                 _from,
-                                 from',
-                                 from_id,
-                                 _to_,
-                                 to',
-                                 to_id) ->
+              TypeValue.Relation(schema_t, relation_name, cardinality, _from, from', from_id, _to_, to', to_id) ->
               state {
                 let! cardinality =
                   cardinality
-                  |> sum.OfOption(
-                    (fun () -> "Error: relation cardinality is missing")
-                    |> Errors<Unit>.Singleton()
-                  )
+                  |> sum.OfOption((fun () -> "Error: relation cardinality is missing") |> Errors<Unit>.Singleton())
                   |> ofSum
 
                 let! flipped =
@@ -295,8 +213,7 @@ module RecordDes =
                       return true
                     else
                       return!
-                        Errors.Singleton loc0 (fun () ->
-                          $"Error: cannot find field {fieldName} in relation {record_v}")
+                        Errors.Singleton loc0 (fun () -> $"Error: cannot find field {fieldName} in relation {record_v}")
                         |> state.Throw
                   }
 
@@ -322,14 +239,7 @@ module RecordDes =
 
                 match target_cardinality with
                 | Cardinality.Zero ->
-                  let t_res =
-                    TypeValue.RelationLookupOption(
-                      schema_t,
-                      source_id,
-                      target',
-                      target_id
-                    )
-
+                  let t_res = TypeValue.RelationLookupOption(schema_t, source_id, target', target_id)
                   let k_res = Kind.Star
 
                   return
@@ -338,14 +248,7 @@ module RecordDes =
                         Kind = k_res },
                     ctx
                 | Cardinality.One ->
-                  let t_res =
-                    TypeValue.RelationLookupOne(
-                      schema_t,
-                      source_id,
-                      target',
-                      target_id
-                    )
-
+                  let t_res = TypeValue.RelationLookupOne(schema_t, source_id, target', target_id)
                   let k_res = Kind.Star
 
                   return
@@ -354,14 +257,7 @@ module RecordDes =
                         Kind = k_res },
                     ctx
                 | Cardinality.Many ->
-                  let t_res =
-                    TypeValue.RelationLookupMany(
-                      schema_t,
-                      source_id,
-                      target',
-                      target_id
-                    )
-
+                  let t_res = TypeValue.RelationLookupMany(schema_t, source_id, target', target_id)
                   let k_res = Kind.Star
 
                   return
@@ -370,29 +266,21 @@ module RecordDes =
                         Kind = k_res },
                     ctx
               }
-              |> state.MapError(
-                Errors<_>.MapPriority(replaceWith ErrorPriority.High)
-              )
+              |> state.MapError(Errors<_>.MapPriority(replaceWith ErrorPriority.High))
 
             | Kind.Star, _ ->
               state {
                 match record_t with
-                | TypeValue.Record { value = fields_t } ->
-                  return! resolve_lookup fields_t
+                | TypeValue.Record { value = fields_t } -> return! resolve_lookup fields_t
                 | _ ->
                   let! id = TypeCheckState.TryResolveIdentifier(fieldName, loc0)
-
-                  let! fields_t =
-                    TypeCheckState.TryFindRecordField(id, loc0) |> state.Map fst
-
+                  let! fields_t = TypeCheckState.TryFindRecordField(id, loc0) |> state.Map fst
                   let expected_record_t = TypeValue.CreateRecord fields_t
 
                   do!
                     TypeValue.Unify(loc0, record_t, expected_record_t)
                     |> Expr.liftUnification
-                    |> state.MapError(
-                      Errors.MapPriority(replaceWith ErrorPriority.High)
-                    )
+                    |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
                   return! resolve_lookup fields_t
               }

@@ -22,26 +22,16 @@ module TypeParameter =
 
         let! name =
           fields
-          |> (Map.tryFindWithError
-                nameKey
-                "TypeParameter"
-                (fun () -> nameKey)
-                ()
+          |> (Map.tryFindWithError nameKey "TypeParameter" (fun () -> nameKey) ()
               >>= JsonValue.AsString)
 
         let! kind =
           fields
-          |> (Map.tryFindWithError
-                kindKey
-                "TypeParameter"
-                (fun () -> kindKey)
-                ()
+          |> (Map.tryFindWithError kindKey "TypeParameter" (fun () -> kindKey) ()
               >>= Kind.FromJson)
 
         return { Name = name; Kind = kind }
       }
 
     static member ToJson: TypeParameter -> JsonValue =
-      fun tp ->
-        JsonValue.Record
-          [| nameKey, JsonValue.String tp.Name; kindKey, Kind.ToJson tp.Kind |]
+      fun tp -> JsonValue.Record [| nameKey, JsonValue.String tp.Name; kindKey, Kind.ToJson tp.Kind |]

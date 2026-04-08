@@ -42,23 +42,11 @@ module Delete =
             TypeCheckedExpr.UnsafeApplyForUntypedEval(
               TypeCheckedExpr.UnsafeApplyForUntypedEval(
                 hookExpr,
-                TypeCheckedExpr.FromValue(
-                  _schema_as_value,
-                  TypeValue.CreateUnit(),
-                  Kind.Star
-                )
+                TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
               ),
-              TypeCheckedExpr.FromValue(
-                _entityId,
-                TypeValue.CreateUnit(),
-                Kind.Star
-              )
+              TypeCheckedExpr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
             ),
-            TypeCheckedExpr.FromValue(
-              currentValueWithProps,
-              TypeValue.CreateUnit(),
-              Kind.Star
-            )
+            TypeCheckedExpr.FromValue(currentValueWithProps, TypeValue.CreateUnit(), Kind.Star)
           )
 
         let! run_hook_result = _doRunHookExpr |> NonEmptyList.One |> Expr.Eval
@@ -73,17 +61,11 @@ module Delete =
         | 1 -> return ()
         | 2 ->
           return!
-            sum.Throw(
-              Errors.Singleton loc0 (fun () ->
-                $"On deleting hook returned error {result_value}")
-            )
+            sum.Throw(Errors.Singleton loc0 (fun () -> $"On deleting hook returned error {result_value}"))
             |> reader.OfSum
         | _ ->
           return!
-            sum.Throw(
-              Errors.Singleton loc0 (fun () ->
-                $"On deleting hook returned unexpected value {result_value}")
-            )
+            sum.Throw(Errors.Singleton loc0 (fun () -> $"On deleting hook returned unexpected value {result_value}"))
             |> reader.OfSum
       | None -> return ()
     }
@@ -107,23 +89,11 @@ module Delete =
             TypeCheckedExpr.UnsafeApplyForUntypedEval(
               TypeCheckedExpr.UnsafeApplyForUntypedEval(
                 hookExpr,
-                TypeCheckedExpr.FromValue(
-                  _schema_as_value,
-                  TypeValue.CreateUnit(),
-                  Kind.Star
-                )
+                TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
               ),
-              TypeCheckedExpr.FromValue(
-                _entityId,
-                TypeValue.CreateUnit(),
-                Kind.Star
-              )
+              TypeCheckedExpr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
             ),
-            TypeCheckedExpr.FromValue(
-              currentValueWithProps,
-              TypeValue.CreateUnit(),
-              Kind.Star
-            )
+            TypeCheckedExpr.FromValue(currentValueWithProps, TypeValue.CreateUnit(), Kind.Star)
           )
 
         let! run_hook_result = _doRunHookExpr |> NonEmptyList.One |> Expr.Eval
@@ -138,17 +108,11 @@ module Delete =
         | 1 -> return ()
         | 2 ->
           return!
-            sum.Throw(
-              Errors.Singleton loc0 (fun () ->
-                $"On deleted hook returned error {result_value}")
-            )
+            sum.Throw(Errors.Singleton loc0 (fun () -> $"On deleted hook returned error {result_value}"))
             |> reader.OfSum
         | _ ->
           return!
-            sum.Throw(
-              Errors.Singleton loc0 (fun () ->
-                $"On deleted hook returned unexpected value {result_value}")
-            )
+            sum.Throw(Errors.Singleton loc0 (fun () -> $"On deleted hook returned unexpected value {result_value}"))
             |> reader.OfSum
       | None -> return ()
     }
@@ -159,8 +123,7 @@ module Delete =
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
     =
     let memoryDBDeleteId =
-      Identifier.FullyQualified([ "DB" ], "delete")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "DB" ], "delete") |> TypeCheckScope.Empty.Resolve
 
     let memoryDBDeleteType: TypeValue<'ext> =
       TypeValue.CreateLambda(
@@ -172,11 +135,7 @@ module Delete =
             TypeExpr.Lambda(
               TypeParameter.Create("entityId", Kind.Star),
               TypeExpr.Arrow(
-                createSchemaEntityTypeApplication
-                  "schema"
-                  "entity"
-                  "entity_with_props"
-                  "entityId",
+                createSchemaEntityTypeApplication "schema" "entity" "entity_with_props" "entityId",
                 TypeExpr.Arrow(
                   TypeExpr.Lookup("entityId" |> Identifier.LocalScope),
                   TypeExpr.Primitive PrimitiveType.Bool
@@ -189,17 +148,10 @@ module Delete =
 
     let memoryDBDeleteKind = standardSchemaOperationKind
 
-    let DeleteOperation
-      : OperationExtension<
-          'runtimeContext,
-          'ext,
-          DBValues<'runtimeContext, 'db, 'ext>
-         > =
+    let DeleteOperation: OperationExtension<'runtimeContext, 'ext, DBValues<'runtimeContext, 'db, 'ext>> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBDeleteType,
-              memoryDBDeleteKind,
-              DBValues.Delete {| EntityRef = None |})
+          <| (memoryDBDeleteType, memoryDBDeleteKind, DBValues.Delete {| EntityRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -219,8 +171,7 @@ module Delete =
                 let! v = extractEntityRefFromValue loc0 v valueLens
 
                 return
-                  (DBValues.Delete({| EntityRef = Some v |}) |> valueLens.Set,
-                   Some memoryDBDeleteId)
+                  (DBValues.Delete({| EntityRef = Some v |}) |> valueLens.Set, Some memoryDBDeleteId)
                   |> Ext
               | Some(entity_ref) -> // the closure has the first operand - second step in the application
                 let entityId = v
@@ -236,32 +187,18 @@ module Delete =
                 | Some currentValueWithProps ->
                   let actual_delete =
                     reader {
-                      do!
-                        onDeletingHook
-                          db_ops
-                          entity_ref
-                          loc0
-                          entityId
-                          currentValueWithProps
+                      do! onDeletingHook db_ops entity_ref loc0 entityId currentValueWithProps
 
                       let! result =
                         db_ops.Delete entity_ref entityId
                         |> reader.MapError(Errors.MapContext(replaceWith loc0))
                         |> reader.Catch
 
-                      do!
-                        onDeletedHook
-                          db_ops
-                          entity_ref
-                          loc0
-                          entityId
-                          currentValueWithProps
+                      do! onDeletedHook db_ops entity_ref loc0 entityId currentValueWithProps
 
                       return Value.Primitive(PrimitiveValue.Bool(result.IsLeft))
                     }
-                    |> reader.MapContext(
-                      ExprEvalContext.Updaters.RootLevelEval(replaceWith false)
-                    )
+                    |> reader.MapContext(ExprEvalContext.Updaters.RootLevelEval(replaceWith false))
 
                   return!
                     reader {
@@ -277,33 +214,17 @@ module Delete =
                             TypeCheckedExpr.UnsafeApplyForUntypedEval(
                               TypeCheckedExpr.UnsafeApplyForUntypedEval(
                                 canDeleteHook,
-                                TypeCheckedExpr.FromValue(
-                                  schema_value.Value.Value,
-                                  TypeValue.CreateUnit(),
-                                  Kind.Star
-                                )
+                                TypeCheckedExpr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
                               ),
-                              TypeCheckedExpr.FromValue(
-                                entityId,
-                                TypeValue.CreateUnit(),
-                                Kind.Star
-                              )
+                              TypeCheckedExpr.FromValue(entityId, TypeValue.CreateUnit(), Kind.Star)
                             ),
-                            TypeCheckedExpr.FromValue(
-                              currentValueWithProps,
-                              TypeValue.CreateUnit(),
-                              Kind.Star
-                            )
+                            TypeCheckedExpr.FromValue(currentValueWithProps, TypeValue.CreateUnit(), Kind.Star)
                           )
                           |> NonEmptyList.One
                           |> Expr.Eval
                         with
-                        | Value.Primitive(PrimitiveValue.Bool canDelete) when
-                          canDelete
-                          ->
-                          return! actual_delete
-                        | _ ->
-                          return Value.Primitive(PrimitiveValue.Bool(false))
+                        | Value.Primitive(PrimitiveValue.Bool canDelete) when canDelete -> return! actual_delete
+                        | _ -> return Value.Primitive(PrimitiveValue.Bool(false))
                     }
 
             } }

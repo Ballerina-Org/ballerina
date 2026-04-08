@@ -8,8 +8,7 @@ module Model =
   open Ballerina.Data.Delta.Serialization.DeltaDTO
 
   type MapOperations<'ext> =
-    | Map_Set of
-      Option<Value<TypeValue<'ext>, 'ext> * Value<TypeValue<'ext>, 'ext>>
+    | Map_Set of Option<Value<TypeValue<'ext>, 'ext> * Value<TypeValue<'ext>, 'ext>>
     | Map_Empty
     | Map_Map of {| f: Option<Value<TypeValue<'ext>, 'ext>> |}
     | Map_MapToList
@@ -35,16 +34,13 @@ module Model =
 
         $"{{{keyValueStr}}}"
 
-  type MapValueDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct> =
-    (ValueDTO<'extDTO> * ValueDTO<'extDTO>)[]
+  type MapValueDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct> = (ValueDTO<'extDTO> * ValueDTO<'extDTO>)[]
 
   type MapDeltaExt<'valueExt, 'deltaExt> =
     | UpdateKey of
       oldKey: Model.Value<Model.TypeValue<'valueExt>, 'valueExt> *
       newKey: Model.Value<Model.TypeValue<'valueExt>, 'valueExt>
-    | UpdateValue of
-      key: Model.Value<Model.TypeValue<'valueExt>, 'valueExt> *
-      delta: Delta<'valueExt, 'deltaExt>
+    | UpdateValue of key: Model.Value<Model.TypeValue<'valueExt>, 'valueExt> * delta: Delta<'valueExt, 'deltaExt>
     | AddItem of
       key: Model.Value<Model.TypeValue<'valueExt>, 'valueExt> *
       value: Model.Value<Model.TypeValue<'valueExt>, 'valueExt>
@@ -55,10 +51,7 @@ module Model =
       NewKey: ValueDTO<'extDTO> }
 
   type UpdateMapValueDTO<'extDTO, 'deltaExtDTO
-    when 'extDTO: not null
-    and 'extDTO: not struct
-    and 'deltaExtDTO: not null
-    and 'deltaExtDTO: not struct> =
+    when 'extDTO: not null and 'extDTO: not struct and 'deltaExtDTO: not null and 'deltaExtDTO: not struct> =
     { Key: ValueDTO<'extDTO>
       Value: DeltaDTO<'extDTO, 'deltaExtDTO> }
 
@@ -67,10 +60,7 @@ module Model =
       Value: ValueDTO<'extDTO> }
 
   type MapDeltaExtDTO<'extDTO, 'deltaExtDTO
-    when 'extDTO: not null
-    and 'extDTO: not struct
-    and 'deltaExtDTO: not null
-    and 'deltaExtDTO: not struct> =
+    when 'extDTO: not null and 'extDTO: not struct and 'deltaExtDTO: not null and 'deltaExtDTO: not struct> =
     { UpdateKey: UpdateMapKeyDTO<'extDTO> | null
       UpdateValue: UpdateMapValueDTO<'extDTO, 'deltaExtDTO> | null
       AddItem: AddMapItemDTO<'extDTO> | null
@@ -82,24 +72,15 @@ module Model =
         AddItem = null
         RemoveItem = null }
 
-    static member CreateUpdateKey
-      oldKey
-      newKey
-      : MapDeltaExtDTO<'extDTO, 'deltaExtDTO> =
+    static member CreateUpdateKey oldKey newKey : MapDeltaExtDTO<'extDTO, 'deltaExtDTO> =
       { MapDeltaExtDTO<'extDTO, 'deltaExtDTO>.Empty with
           UpdateKey = { OldKey = oldKey; NewKey = newKey } }
 
-    static member CreateUpdateValue
-      key
-      delta
-      : MapDeltaExtDTO<'extDTO, 'deltaExtDTO> =
+    static member CreateUpdateValue key delta : MapDeltaExtDTO<'extDTO, 'deltaExtDTO> =
       { MapDeltaExtDTO<'extDTO, 'deltaExtDTO>.Empty with
           UpdateValue = { Key = key; Value = delta } }
 
-    static member CreateAddItem
-      key
-      value
-      : MapDeltaExtDTO<'extDTO, 'deltaExtDTO> =
+    static member CreateAddItem key value : MapDeltaExtDTO<'extDTO, 'deltaExtDTO> =
       { MapDeltaExtDTO<'extDTO, 'deltaExtDTO>.Empty with
           AddItem = { Key = key; Value = value } }
 

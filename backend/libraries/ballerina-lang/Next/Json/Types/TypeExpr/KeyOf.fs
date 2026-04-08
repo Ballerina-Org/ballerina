@@ -16,14 +16,8 @@ module KeyOf =
   open Ballerina.DSL.Next.Json.Keys
 
   type TypeExpr<'valueExt> with
-    static member FromJsonKeyOf
-      (fromJsonRoot: TypeExprParser<'valueExt>)
-      : TypeExprParser<'valueExt> =
-      Sum.assertDiscriminatorAndContinueWithValue
-        discriminator
-        (fromJsonRoot >>= (TypeExpr.KeyOf >> sum.Return))
+    static member FromJsonKeyOf(fromJsonRoot: TypeExprParser<'valueExt>) : TypeExprParser<'valueExt> =
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fromJsonRoot >>= (TypeExpr.KeyOf >> sum.Return))
 
-    static member ToJsonKeyOf
-      (rootToJson: TypeExpr<'valueExt> -> JsonValue)
-      : TypeExpr<'valueExt> -> JsonValue =
+    static member ToJsonKeyOf(rootToJson: TypeExpr<'valueExt> -> JsonValue) : TypeExpr<'valueExt> -> JsonValue =
       rootToJson >> Json.discriminator discriminator
