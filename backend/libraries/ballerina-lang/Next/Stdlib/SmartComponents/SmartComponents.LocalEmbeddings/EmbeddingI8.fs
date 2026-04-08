@@ -21,7 +21,9 @@ type EmbeddingI8 =
   member this.Values: ReadOnlyMemory<sbyte> = this.values
   member this.Magnitude: single = this.magnitude
 
-  static member FromModelOutput(input: ReadOnlySpan<single>, buffer: Memory<byte>) : EmbeddingI8 =
+  static member FromModelOutput
+    (input: ReadOnlySpan<single>, buffer: Memory<byte>)
+    : EmbeddingI8 =
     let requiredBufferLength = EmbeddingI8.GetBufferByteLength(input.Length)
 
     if buffer.Length <> requiredBufferLength then
@@ -49,7 +51,9 @@ type EmbeddingI8 =
       magnitudeSquared <- magnitudeSquared + (single (clamped * clamped))
       i <- i + 1
 
-    BitConverter.TryWriteBytes(buffer.Span, MathF.Sqrt(magnitudeSquared)) |> ignore
+    BitConverter.TryWriteBytes(buffer.Span, MathF.Sqrt(magnitudeSquared))
+    |> ignore
+
     EmbeddingI8(buffer)
 
   member this.Similarity(other: EmbeddingI8) : single =
@@ -84,8 +88,14 @@ type EmbeddingI8 =
 and ByteEmbeddingJsonConverter() =
   inherit JsonConverter<EmbeddingI8>()
 
-  override _.Read(reader: byref<Utf8JsonReader>, _typeToConvert: Type, _options: JsonSerializerOptions) : EmbeddingI8 =
+  override _.Read
+    (
+      reader: byref<Utf8JsonReader>,
+      _typeToConvert: Type,
+      _options: JsonSerializerOptions
+    ) : EmbeddingI8 =
     EmbeddingI8(reader.GetBytesFromBase64())
 
-  override _.Write(writer: Utf8JsonWriter, value: EmbeddingI8, _options: JsonSerializerOptions) : unit =
+  override _.Write
+    (writer: Utf8JsonWriter, value: EmbeddingI8, _options: JsonSerializerOptions) : unit =
     writer.WriteBase64StringValue(value.Buffer.Span)

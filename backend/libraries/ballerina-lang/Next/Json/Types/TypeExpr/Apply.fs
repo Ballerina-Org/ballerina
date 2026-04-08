@@ -15,16 +15,21 @@ module Apply =
   let private discriminator = "apply"
 
   type TypeExpr<'valueExt> with
-    static member FromJsonApply(fromJsonRoot: JsonParser<TypeExpr<'valueExt>>) : JsonParser<TypeExpr<'valueExt>> =
-      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun applyFields ->
-        sum {
-          let! (functionField, argumentField) = applyFields |> JsonValue.AsPair
+    static member FromJsonApply
+      (fromJsonRoot: JsonParser<TypeExpr<'valueExt>>)
+      : JsonParser<TypeExpr<'valueExt>> =
+      Sum.assertDiscriminatorAndContinueWithValue
+        discriminator
+        (fun applyFields ->
+          sum {
+            let! (functionField, argumentField) =
+              applyFields |> JsonValue.AsPair
 
-          let! functionType = functionField |> fromJsonRoot
-          let! argumentType = argumentField |> fromJsonRoot
+            let! functionType = functionField |> fromJsonRoot
+            let! argumentType = argumentField |> fromJsonRoot
 
-          return TypeExpr.Apply(functionType, argumentType)
-        })
+            return TypeExpr.Apply(functionType, argumentType)
+          })
 
     static member ToJsonApply
       (rootToJson: TypeExpr<'valueExt> -> JsonValue)

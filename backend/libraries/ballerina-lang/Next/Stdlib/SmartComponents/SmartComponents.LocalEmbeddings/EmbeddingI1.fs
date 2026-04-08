@@ -13,7 +13,9 @@ type EmbeddingI1 =
 
   member this.Buffer: ReadOnlyMemory<byte> = this.buffer
 
-  static member private Quantize(input: ReadOnlySpan<single>, result: Span<byte>) : unit =
+  static member private Quantize
+    (input: ReadOnlySpan<single>, result: Span<byte>)
+    : unit =
     let mutable j = 0
 
     while j < input.Length do
@@ -47,7 +49,9 @@ type EmbeddingI1 =
       result[j / 8] <- packed
       j <- j + 8
 
-  static member FromModelOutput(input: ReadOnlySpan<single>, buffer: Memory<byte>) : EmbeddingI1 =
+  static member FromModelOutput
+    (input: ReadOnlySpan<single>, buffer: Memory<byte>)
+    : EmbeddingI1 =
     let remainder = input.Length % 8
 
     if remainder <> 0 then
@@ -98,8 +102,14 @@ type EmbeddingI1 =
 and BitEmbeddingJsonConverter() =
   inherit JsonConverter<EmbeddingI1>()
 
-  override _.Read(reader: byref<Utf8JsonReader>, _typeToConvert: Type, _options: JsonSerializerOptions) : EmbeddingI1 =
+  override _.Read
+    (
+      reader: byref<Utf8JsonReader>,
+      _typeToConvert: Type,
+      _options: JsonSerializerOptions
+    ) : EmbeddingI1 =
     EmbeddingI1(reader.GetBytesFromBase64())
 
-  override _.Write(writer: Utf8JsonWriter, value: EmbeddingI1, _options: JsonSerializerOptions) : unit =
+  override _.Write
+    (writer: Utf8JsonWriter, value: EmbeddingI1, _options: JsonSerializerOptions) : unit =
     writer.WriteBase64StringValue(value.Buffer.Span)

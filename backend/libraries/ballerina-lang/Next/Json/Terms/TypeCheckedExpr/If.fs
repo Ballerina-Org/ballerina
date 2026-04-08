@@ -20,14 +20,27 @@ module If =
       (fromRootJson: TypeCheckedExprParser<'valueExt>)
       (value: JsonValue)
       : TypeCheckedExprParserReader<'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun ifJson ->
-        reader {
-          let! cond, thenBranch, elseBranch = ifJson |> JsonValue.AsTriple |> reader.OfSum
-          let! cond = cond |> fromRootJson
-          let! thenBranch = thenBranch |> fromRootJson
-          let! elseBranch = elseBranch |> fromRootJson
-          return TypeCheckedExpr.If(cond, thenBranch, elseBranch, TypeValue.CreateUnit(), Kind.Star)
-        })
+      Reader.assertDiscriminatorAndContinueWithValue
+        discriminator
+        value
+        (fun ifJson ->
+          reader {
+            let! cond, thenBranch, elseBranch =
+              ifJson |> JsonValue.AsTriple |> reader.OfSum
+
+            let! cond = cond |> fromRootJson
+            let! thenBranch = thenBranch |> fromRootJson
+            let! elseBranch = elseBranch |> fromRootJson
+
+            return
+              TypeCheckedExpr.If(
+                cond,
+                thenBranch,
+                elseBranch,
+                TypeValue.CreateUnit(),
+                Kind.Star
+              )
+          })
 
     static member ToJsonIf
       (rootToJson: TypeCheckedExprEncoder<'valueExt>)

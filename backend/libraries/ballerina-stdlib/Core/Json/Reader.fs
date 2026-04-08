@@ -24,7 +24,11 @@ module Reader =
         let! ctx = reader.GetContext()
 
         let! result =
-          sum.AssertDiscriminatorAndContinue discriminatorKey discriminatorValue (fun () -> k () |> Reader.Run ctx) json
+          sum.AssertDiscriminatorAndContinue
+            discriminatorKey
+            discriminatorValue
+            (fun () -> k () |> Reader.Run ctx)
+            json
           |> reader.OfSum
 
         return result

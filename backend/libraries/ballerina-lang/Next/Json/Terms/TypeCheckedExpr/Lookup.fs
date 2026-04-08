@@ -18,15 +18,24 @@ module Lookup =
   let private discriminator = "lookup"
 
   type TypeCheckedExpr<'valueExt> with
-    static member FromJsonLookup(value: JsonValue) : TypeCheckedExprParserReader<'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun nameJson ->
-        reader {
-          let! _, ctx = reader.GetContext()
-          let! (res: ResolvedIdentifier) = nameJson |> ctx |> reader.OfSum
-          return TypeCheckedExpr.Lookup(res, TypeValue.CreateUnit(), Kind.Star)
-        })
+    static member FromJsonLookup
+      (value: JsonValue)
+      : TypeCheckedExprParserReader<'valueExt> =
+      Reader.assertDiscriminatorAndContinueWithValue
+        discriminator
+        value
+        (fun nameJson ->
+          reader {
+            let! _, ctx = reader.GetContext()
+            let! (res: ResolvedIdentifier) = nameJson |> ctx |> reader.OfSum
 
-    static member ToJsonLookup(id: TypeCheckedExprLookup<'valueExt>) : TypeCheckedExprEncoderReader<'valueExt> =
+            return
+              TypeCheckedExpr.Lookup(res, TypeValue.CreateUnit(), Kind.Star)
+          })
+
+    static member ToJsonLookup
+      (id: TypeCheckedExprLookup<'valueExt>)
+      : TypeCheckedExprEncoderReader<'valueExt> =
       reader {
         let! _, ctx = reader.GetContext()
         return id.Id |> ctx |> Json.discriminator discriminator

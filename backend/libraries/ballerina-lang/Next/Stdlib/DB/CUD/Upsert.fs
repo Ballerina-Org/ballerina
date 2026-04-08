@@ -31,18 +31,27 @@ module Upsert =
         DBTypeClass<'runtimeContext, 'db, 'ext>
           -> Value<TypeValue<'ext>, 'ext>
           -> EntityRef<'db, 'ext>
-          -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Location>>,
+          -> Reader<
+            Value<TypeValue<'ext>, 'ext>,
+            ExprEvalContext<'runtimeContext, 'ext>,
+            Errors<Location>
+           >,
       stripProps:
         DBTypeClass<'runtimeContext, 'db, 'ext>
           -> Value<TypeValue<'ext>, 'ext>
           -> EntityRef<'db, 'ext>
-          -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Location>>
+          -> Reader<
+            Value<TypeValue<'ext>, 'ext>,
+            ExprEvalContext<'runtimeContext, 'ext>,
+            Errors<Location>
+           >
     )
     (_listSet: List<Value<TypeValue<'ext>, 'ext>> -> 'ext)
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
     =
     let memoryDBUpsertId =
-      Identifier.FullyQualified([ "DB" ], "upsert") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "DB" ], "upsert")
+      |> TypeCheckScope.Empty.Resolve
 
     (* 
       (entityId : [entityId], entity : [entity], entity_with_props : [entity_with_props] -> entity : [entity] -> [entity]) ->
@@ -58,13 +67,19 @@ module Upsert =
             TypeExpr.Lambda(
               TypeParameter.Create("entityId", Kind.Star),
               TypeExpr.Arrow(
-                createSchemaEntityTypeApplication "schema" "entity" "entity_with_props" "entityId",
+                createSchemaEntityTypeApplication
+                  "schema"
+                  "entity"
+                  "entity_with_props"
+                  "entityId",
                 TypeExpr.Arrow(
                   TypeExpr.Tuple
                     [ TypeExpr.Lookup("entityId" |> Identifier.LocalScope)
                       TypeExpr.Lookup("entity" |> Identifier.LocalScope)
                       TypeExpr.Arrow(
-                        TypeExpr.Lookup("entity_with_props" |> Identifier.LocalScope),
+                        TypeExpr.Lookup(
+                          "entity_with_props" |> Identifier.LocalScope
+                        ),
                         TypeExpr.Arrow(
                           TypeExpr.Lookup("entity" |> Identifier.LocalScope),
                           TypeExpr.Lookup("entity" |> Identifier.LocalScope)
@@ -72,7 +87,9 @@ module Upsert =
                       ) ],
                   TypeExpr.Sum
                     [ TypeExpr.Primitive PrimitiveType.Unit
-                      TypeExpr.Lookup("entity_with_props" |> Identifier.LocalScope) ]
+                      TypeExpr.Lookup(
+                        "entity_with_props" |> Identifier.LocalScope
+                      ) ]
                 )
               )
             )
@@ -85,7 +102,9 @@ module Upsert =
     let UpsertOperation: OperationExtension<'runtimeContext, _, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBUpsertType, memoryDBUpsertKind, DBValues.Upsert {| EntityRef = None |})
+          <| (memoryDBUpsertType,
+              memoryDBUpsertKind,
+              DBValues.Upsert {| EntityRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -105,7 +124,8 @@ module Upsert =
                 let! v = extractEntityRefFromValue loc0 v valueLens
 
                 return
-                  (DBValues.Upsert({| EntityRef = Some v |}) |> valueLens.Set, Some memoryDBUpsertId)
+                  (DBValues.Upsert({| EntityRef = Some v |}) |> valueLens.Set,
+                   Some memoryDBUpsertId)
                   |> Ext
               | Some entity_ref -> // the closure has the first operand - second step in the application
 
@@ -116,7 +136,9 @@ module Upsert =
                   |> reader.OfSum
 
                 match v with
-                | [ _entityId; valueToInsert: Value<TypeValue<'ext>, 'ext>; updateFunc ] ->
+                | [ _entityId
+                    valueToInsert: Value<TypeValue<'ext>, 'ext>
+                    updateFunc ] ->
                   let! existingValue =
                     db_ops.GetById entity_ref _entityId
                     |> reader.MapError(Errors.MapContext(replaceWith loc0))
@@ -127,23 +149,46 @@ module Upsert =
                   | None ->
                     let actual_creation =
                       reader {
-                        let! valueWithProps = calculateProps db_ops valueToInsert entity_ref
+                        let! valueWithProps =
+                          calculateProps db_ops valueToInsert entity_ref
 
                         let! valueWithProps =
-                          onCreatingHook db_ops calculateProps entity_ref loc0 _entityId valueToInsert valueWithProps
+                          onCreatingHook
+                            db_ops
+                            calculateProps
+                            entity_ref
+                            loc0
+                            _entityId
+                            valueToInsert
+                            valueWithProps
 
                         let! _ =
                           db_ops.Create
                             entity_ref
                             { Id = _entityId
                               Value = valueWithProps }
-                          |> reader.MapError(Errors.MapContext(replaceWith loc0))
+                          |> reader.MapError(
+                            Errors.MapContext(replaceWith loc0)
+                          )
 
-                        do! onCreatedHook db_ops calculateProps entity_ref loc0 _entityId valueToInsert valueWithProps
+                        do!
+                          onCreatedHook
+                            db_ops
+                            calculateProps
+                            entity_ref
+                            loc0
+                            _entityId
+                            valueToInsert
+                            valueWithProps
 
-                        return Value.Sum({ Case = 2; Count = 2 }, valueWithProps)
+                        return
+                          Value.Sum({ Case = 2; Count = 2 }, valueWithProps)
                       }
-                      |> reader.MapContext(ExprEvalContext.Updaters.RootLevelEval(replaceWith false))
+                      |> reader.MapContext(
+                        ExprEvalContext.Updaters.RootLevelEval(
+                          replaceWith false
+                        )
+                      )
 
                     return!
                       reader {
@@ -155,20 +200,33 @@ module Upsert =
                           match!
                             TypeCheckedExpr.UnsafeApplyForUntypedEval(
                               canCreateHook,
-                              TypeCheckedExpr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
+                              TypeCheckedExpr.FromValue(
+                                schema_value.Value.Value,
+                                TypeValue.CreateUnit(),
+                                Kind.Star
+                              )
                             )
                             |> NonEmptyList.One
                             |> Expr.Eval
                           with
-                          | Value.Primitive(PrimitiveValue.Bool canCreate) when canCreate -> return! actual_creation
-                          | _ -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                          | Value.Primitive(PrimitiveValue.Bool canCreate) when
+                            canCreate
+                            ->
+                            return! actual_creation
+                          | _ ->
+                            return
+                              Value.Sum(
+                                { Case = 1; Count = 2 },
+                                Value.Primitive PrimitiveValue.Unit
+                              )
                         | _ -> return! actual_creation
                       }
 
                   | Some existingValue ->
                     let actual_update =
                       reader {
-                        let! existingValueWithoutProps = stripProps db_ops existingValue entity_ref
+                        let! existingValueWithoutProps =
+                          stripProps db_ops existingValue entity_ref
 
                         let! updatedValue =
                           TypeCheckedExpr.UnsafeApplyForUntypedEval(
@@ -193,7 +251,8 @@ module Upsert =
                           |> NonEmptyList.One
                           |> Expr.Eval
 
-                        let! valueWithProps = calculateProps db_ops updatedValue entity_ref
+                        let! valueWithProps =
+                          calculateProps db_ops updatedValue entity_ref
 
                         let! valueWithProps =
                           onUpdatingHook
@@ -212,13 +271,27 @@ module Upsert =
                             { Id = _entityId
                               Previous = existingValue
                               Value = valueWithProps }
-                          |> reader.MapError(Errors.MapContext(replaceWith loc0))
+                          |> reader.MapError(
+                            Errors.MapContext(replaceWith loc0)
+                          )
 
-                        let! _ = onUpdatedHook db_ops entity_ref loc0 _entityId existingValue valueWithProps
+                        let! _ =
+                          onUpdatedHook
+                            db_ops
+                            entity_ref
+                            loc0
+                            _entityId
+                            existingValue
+                            valueWithProps
 
-                        return Value.Sum({ Case = 2; Count = 2 }, valueWithProps)
+                        return
+                          Value.Sum({ Case = 2; Count = 2 }, valueWithProps)
                       }
-                      |> reader.MapContext(ExprEvalContext.Updaters.RootLevelEval(replaceWith false))
+                      |> reader.MapContext(
+                        ExprEvalContext.Updaters.RootLevelEval(
+                          replaceWith false
+                        )
+                      )
 
                     return!
                       reader {
@@ -232,23 +305,44 @@ module Upsert =
                               TypeCheckedExpr.UnsafeApplyForUntypedEval(
                                 TypeCheckedExpr.UnsafeApplyForUntypedEval(
                                   canUpdateHook,
-                                  TypeCheckedExpr.FromValue(schema_value.Value.Value, TypeValue.CreateUnit(), Kind.Star)
+                                  TypeCheckedExpr.FromValue(
+                                    schema_value.Value.Value,
+                                    TypeValue.CreateUnit(),
+                                    Kind.Star
+                                  )
                                 ),
-                                TypeCheckedExpr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
+                                TypeCheckedExpr.FromValue(
+                                  _entityId,
+                                  TypeValue.CreateUnit(),
+                                  Kind.Star
+                                )
                               ),
-                              TypeCheckedExpr.FromValue(existingValue, TypeValue.CreateUnit(), Kind.Star)
+                              TypeCheckedExpr.FromValue(
+                                existingValue,
+                                TypeValue.CreateUnit(),
+                                Kind.Star
+                              )
                             )
                             |> NonEmptyList.One
                             |> Expr.Eval
                           with
-                          | Value.Primitive(PrimitiveValue.Bool canUpdate) when canUpdate -> return! actual_update
-                          | _ -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                          | Value.Primitive(PrimitiveValue.Bool canUpdate) when
+                            canUpdate
+                            ->
+                            return! actual_update
+                          | _ ->
+                            return
+                              Value.Sum(
+                                { Case = 1; Count = 2 },
+                                Value.Primitive PrimitiveValue.Unit
+                              )
                         | _ -> return! actual_update
                       }
                 | _ ->
                   return!
                     sum.Throw(
-                      Errors.Singleton loc0 (fun () -> "Expected a tuple with 3 elements when upserting into DB")
+                      Errors.Singleton loc0 (fun () ->
+                        "Expected a tuple with 3 elements when upserting into DB")
                     )
                     |> reader.OfSum
             } }

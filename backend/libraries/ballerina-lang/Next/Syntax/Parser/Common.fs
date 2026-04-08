@@ -33,15 +33,25 @@ module Common =
   let doubleDotOperator = parseOperator Operator.DoubleDot
   let dotOperator = parseOperator Operator.Dot
   let doubleColonOperator = parseOperator Operator.DoubleColon
-  let openRoundBracketOperator = parseOperator (Operator.RoundBracket Bracket.Open)
-  let closeRoundBracketOperator = parseOperator (Operator.RoundBracket Bracket.Close)
-  let openSquareBracketOperator = parseOperator (Operator.SquareBracket Bracket.Open)
+
+  let openRoundBracketOperator =
+    parseOperator (Operator.RoundBracket Bracket.Open)
+
+  let closeRoundBracketOperator =
+    parseOperator (Operator.RoundBracket Bracket.Close)
+
+  let openSquareBracketOperator =
+    parseOperator (Operator.SquareBracket Bracket.Open)
 
   let closeSquareBracketOperator =
     parseOperator (Operator.SquareBracket Bracket.Close)
 
-  let openCurlyBracketOperator = parseOperator (Operator.CurlyBracket Bracket.Open)
-  let closeCurlyBracketOperator = parseOperator (Operator.CurlyBracket Bracket.Close)
+  let openCurlyBracketOperator =
+    parseOperator (Operator.CurlyBracket Bracket.Open)
+
+  let closeCurlyBracketOperator =
+    parseOperator (Operator.CurlyBracket Bracket.Close)
+
   let equalsOperator = parseOperator (Operator.Equals)
   let pipeGreaterThanOperator = parseOperator (Operator.PipeGreaterThan)
   let doubleGreaterThanOperator = parseOperator (Operator.DoubleGreaterThan)
@@ -85,16 +95,22 @@ module Common =
 
   let binaryExprOperator =
     parser.Any
-      [ parseOperator Operator.Times |> parser.Map(fun () -> BinaryExprOperator.Times)
-        parseOperator Operator.Div |> parser.Map(fun () -> BinaryExprOperator.Div)
+      [ parseOperator Operator.Times
+        |> parser.Map(fun () -> BinaryExprOperator.Times)
+        parseOperator Operator.Div
+        |> parser.Map(fun () -> BinaryExprOperator.Div)
         parseOperator Operator.Percentage
         |> parser.Map(fun () -> BinaryExprOperator.Mod)
-        parseOperator Operator.Plus |> parser.Map(fun () -> BinaryExprOperator.Plus)
-        parseOperator Operator.Minus |> parser.Map(fun () -> BinaryExprOperator.Minus)
+        parseOperator Operator.Plus
+        |> parser.Map(fun () -> BinaryExprOperator.Plus)
+        parseOperator Operator.Minus
+        |> parser.Map(fun () -> BinaryExprOperator.Minus)
         parseOperator Operator.DoubleAmpersand
         |> parser.Map(fun () -> BinaryExprOperator.And)
-        parseOperator Operator.DoublePipe |> parser.Map(fun () -> BinaryExprOperator.Or)
-        parseOperator Operator.Equal |> parser.Map(fun () -> BinaryExprOperator.Equal)
+        parseOperator Operator.DoublePipe
+        |> parser.Map(fun () -> BinaryExprOperator.Or)
+        parseOperator Operator.Equal
+        |> parser.Map(fun () -> BinaryExprOperator.Equal)
         parseOperator Operator.NotEqual
         |> parser.Map(fun () -> BinaryExprOperator.NotEqual)
         parseOperator Operator.GreaterThan
@@ -123,8 +139,10 @@ module Common =
 
   let binaryTypeOperator =
     parser.Any
-      [ parseOperator Operator.Times |> parser.Map(fun () -> BinaryTypeOperator.Times)
-        parseOperator Operator.Plus |> parser.Map(fun () -> BinaryTypeOperator.Plus)
+      [ parseOperator Operator.Times
+        |> parser.Map(fun () -> BinaryTypeOperator.Times)
+        parseOperator Operator.Plus
+        |> parser.Map(fun () -> BinaryTypeOperator.Plus)
         parseOperator Operator.SingleArrow
         |> parser.Map(fun () -> BinaryTypeOperator.SingleArrow) ]
 
@@ -166,8 +184,10 @@ module Common =
       | Token.Keyword(Keyword.Exists) -> Keyword.Exists.ToString() |> Some
       | Token.Keyword(Keyword.Union) -> Keyword.Union.ToString() |> Some
       | Token.Keyword(Keyword.Array) -> Keyword.Array.ToString() |> Some
-      | Token.Keyword(Keyword.Ascending) -> Keyword.Ascending.ToString() |> Some
-      | Token.Keyword(Keyword.Descending) -> Keyword.Descending.ToString() |> Some
+      | Token.Keyword(Keyword.Ascending) ->
+        Keyword.Ascending.ToString() |> Some
+      | Token.Keyword(Keyword.Descending) ->
+        Keyword.Descending.ToString() |> Some
       | _ -> None)
 
   let singleIdentifier =
@@ -246,10 +266,14 @@ module Common =
 
               return!
                 parser {
-                  let! ids = identifiersMatch () |> parser.Map(NonEmptyList.ToList)
+                  let! ids =
+                    identifiersMatch () |> parser.Map(NonEmptyList.ToList)
+
                   return NonEmptyList.OfList(id, ids)
                 }
-                |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+                |> parser.MapError(
+                  Errors.MapPriority(replaceWith ErrorPriority.High)
+                )
             }
             parser { return NonEmptyList.OfList(id, []) } ]
     }
@@ -291,7 +315,9 @@ module Common =
 
       return!
         parser {
-          let! res = p () |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+          let! res =
+            p () |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+
           do! closeRoundBracketOperator
           return res
         }
@@ -315,7 +341,9 @@ module Common =
   let afterKeyword k p =
     parser {
       do! k
-      return! p |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+
+      return!
+        p |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
     |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 

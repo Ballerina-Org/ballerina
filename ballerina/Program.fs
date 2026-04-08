@@ -22,11 +22,13 @@ let private printInlays (typeCheckState: TypeCheckState<ValueExt>) =
 
     inlays
     |> List.iter (fun (loc, inlay) ->
-      Console.WriteLine $"  {loc.File}:{loc.Line}:{loc.Column}  {inlay.Type.ToInlayString()}")
+      Console.WriteLine
+        $"  {loc.File}:{loc.Line}:{loc.Column}  {inlay.Type.ToInlayString()}")
 
 let buildOnly showDebugInlays files =
   sum {
-    let! _langCtx, (_exprs, _typeValue, _typeCheckCtx, typeCheckState) = build files
+    let! _langCtx, (_exprs, _typeValue, _typeCheckCtx, typeCheckState) =
+      build files
 
     if showDebugInlays then
       printInlays typeCheckState
@@ -34,7 +36,9 @@ let buildOnly showDebugInlays files =
     return ()
   }
 
-let buildOnlyFromProject (project: ProjectBuildConfiguration) : Sum<InlayHintDTO array, Errors<Location>> =
+let buildOnlyFromProject
+  (project: ProjectBuildConfiguration)
+  : Sum<InlayHintDTO array, Errors<Location>> =
   sum {
     let! _, (_, _, _, typeCheckState) = buildProject project
     return BuildServer.inlayHintDtosFromTypeCheckState typeCheckState
@@ -64,7 +68,7 @@ let main (args: string array) =
 
   Cli.addServerCommand rootCommand runServerLoop
 
-  rootCommand.SetAction (fun parseResult ->
+  rootCommand.SetAction(fun parseResult ->
     let filename = parseResult.GetValue fileOption
     let runProgram = parseResult.GetValue runOption
     let showDebugInlays = parseResult.GetValue debugInlaysOption
@@ -76,17 +80,15 @@ let main (args: string array) =
         Console.WriteLine $"Result: {value}"
         Console.WriteLine "Program executed successfully."
         0
-      | Right _errors ->
-        1
+      | Right _errors -> 1
     else
       match buildOnly showDebugInlays files with
-      | Left () ->
+      | Left() ->
         Console.WriteLine "Program built successfully."
         0
-      | Right _errors ->
-        1)
+      | Right _errors -> 1)
 
   if args.Length = 0 then
-    rootCommand.Parse("--help").Invoke ()
+    rootCommand.Parse("--help").Invoke()
   else
-    rootCommand.Parse(args).Invoke ()
+    rootCommand.Parse(args).Invoke()

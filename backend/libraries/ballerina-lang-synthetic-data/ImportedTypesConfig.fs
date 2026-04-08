@@ -11,8 +11,13 @@ module ImportedTypesConfig =
 
     static member Default = { ManyItemsLength = GENERATED_MANY_ITEMS_LENGTH }
 
-  let configWithRandom<'importedCfg> seed (imported: 'importedCfg option) : GeneratorConfig<'importedCfg> =
+  let configWithRandom<'importedCfg>
+    seed
+    (imported: 'importedCfg option)
+    : GeneratorConfig<'importedCfg> =
     let emptyConfig = GeneratorConfig<'importedCfg>.Empty
 
-    GeneratorConfig<'importedCfg>.Updaters.Random (fun _ -> Random(seed)) emptyConfig
+    GeneratorConfig<'importedCfg>.Updaters.Random
+      (fun _ -> Random(seed))
+      emptyConfig
     |> GeneratorConfig<'importedCfg>.Updaters.ImportedConfig(fun _ -> imported)

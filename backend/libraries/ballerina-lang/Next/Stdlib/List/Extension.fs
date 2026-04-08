@@ -36,7 +36,8 @@ module Extension =
     (operationLens: PartialLens<'ext, ListOperations<'ext>>)
     (valueDTOLens: PartialLens<'extDTO, ListValueDTO<'extDTO>>)
     (deltaLens: PartialLens<'deltaExt, ListDeltaExt<'ext, 'deltaExt>>)
-    (deltaDTOLens: PartialLens<'deltaExtDTO, ListDeltaExtDTO<'extDTO, 'deltaExtDTO>>)
+    (deltaDTOLens:
+      PartialLens<'deltaExtDTO, ListDeltaExtDTO<'extDTO, 'deltaExtDTO>>)
     (typeSymbol: Option<TypeSymbol>)
     : TypeExtension<
         'runtimeContext,
@@ -60,7 +61,10 @@ module Extension =
     let listId = listId |> TypeCheckScope.Empty.Resolve
 
     let listOf (argName: string) =
-      TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope "List"), TypeExpr.Lookup(Identifier.LocalScope argName))
+      TypeExpr.Apply(
+        TypeExpr.Lookup(Identifier.LocalScope "List"),
+        TypeExpr.Lookup(Identifier.LocalScope argName)
+      )
 
     let make_listType (inner: TypeValue<'ext>) =
       TypeValue.Imported
@@ -79,56 +83,80 @@ module Extension =
     // )
 
     let listFoldId =
-      Identifier.FullyQualified([ "List" ], "fold") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "List" ], "fold")
+      |> TypeCheckScope.Empty.Resolve
 
     let listLengthId =
-      Identifier.FullyQualified([ "List" ], "length") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "List" ], "length")
+      |> TypeCheckScope.Empty.Resolve
 
     let listFilterId =
-      Identifier.FullyQualified([ "List" ], "filter") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "List" ], "filter")
+      |> TypeCheckScope.Empty.Resolve
 
     let listMapId =
-      Identifier.FullyQualified([ "List" ], "map") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "List" ], "map")
+      |> TypeCheckScope.Empty.Resolve
 
     let listOrderById =
-      Identifier.FullyQualified([ "List" ], "orderBy") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "List" ], "orderBy")
+      |> TypeCheckScope.Empty.Resolve
 
     let listAppendId =
-      Identifier.FullyQualified([ "List" ], "append") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "List" ], "append")
+      |> TypeCheckScope.Empty.Resolve
 
     let listConsId =
-      Identifier.FullyQualified([ "List" ], "Cons") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "List" ], "Cons")
+      |> TypeCheckScope.Empty.Resolve
 
     let listNilId =
-      Identifier.FullyQualified([ "List" ], "Nil") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "List" ], "Nil")
+      |> TypeCheckScope.Empty.Resolve
 
     let listDecomposeId =
       Identifier.FullyQualified([ "List" ], "decompose")
       |> TypeCheckScope.Empty.Resolve
 
-    let getValueAsList (v: Value<TypeValue<'ext>, 'ext>) : Sum<List<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
+    let getValueAsList
+      (v: Value<TypeValue<'ext>, 'ext>)
+      : Sum<List<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
       sum {
         let! v, _ = v |> Value.AsExt
 
         let! v =
           valueLens.Get v
-          |> sum.OfOption((fun () -> "cannot get list value") |> Errors<Unit>.Singleton())
+          |> sum.OfOption(
+            (fun () -> "cannot get list value") |> Errors<Unit>.Singleton()
+          )
 
         let! v = v |> ListValues.AsList
         v
       }
 
-    let _toValueFromList (v: List<Value<TypeValue<'ext>, 'ext>>) : Value<TypeValue<'ext>, 'ext> =
+    let _toValueFromList
+      (v: List<Value<TypeValue<'ext>, 'ext>>)
+      : Value<TypeValue<'ext>, 'ext> =
       (ListValues.List v |> valueLens.Set, None) |> Ext
 
     let lengthOperation
-      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+      : ResolvedIdentifier *
+        TypeOperationExtension<
+          'runtimeContext,
+          'ext,
+          Unit,
+          ListValues<'ext>,
+          ListOperations<'ext>
+         > =
       listLengthId,
       { Type =
           TypeValue.CreateLambda(
             TypeParameter.Create("a", aKind),
             TypeExpr.Arrow(
-              TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope "List"), TypeExpr.Lookup(Identifier.LocalScope "a")),
+              TypeExpr.Apply(
+                TypeExpr.Lookup(Identifier.LocalScope "List"),
+                TypeExpr.Lookup(Identifier.LocalScope "a")
+              ),
               TypeExpr.Primitive(PrimitiveType.Int32)
             )
           )
@@ -156,7 +184,9 @@ module Extension =
 
               let! v =
                 valueLens.Get v
-                |> sum.OfOption((fun () -> "cannot get option value") |> Errors.Singleton loc0)
+                |> sum.OfOption(
+                  (fun () -> "cannot get option value") |> Errors.Singleton loc0
+                )
                 |> reader.OfSum
 
               let! v =
@@ -170,7 +200,14 @@ module Extension =
       }
 
     let foldOperation
-      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+      : ResolvedIdentifier *
+        TypeOperationExtension<
+          'runtimeContext,
+          'ext,
+          Unit,
+          ListValues<'ext>,
+          ListOperations<'ext>
+         > =
       listFoldId,
       { Type =
           TypeValue.CreateLambda(
@@ -217,13 +254,17 @@ module Extension =
               match f with
               | None -> // the closure is empty - first step in the application
                 return
-                  (ListOperations.List_Fold({| f = Some v; acc = None |}) |> operationLens.Set, Some listFoldId)
+                  (ListOperations.List_Fold({| f = Some v; acc = None |})
+                   |> operationLens.Set,
+                   Some listFoldId)
                   |> Ext
               | Some f -> // the closure has the function - second step in the application
                 match acc with
                 | None -> // the closure has the function but not the accumulator - second step in the application
                   return
-                    (ListOperations.List_Fold({| f = Some f; acc = Some v |}) |> operationLens.Set, Some listFoldId)
+                    (ListOperations.List_Fold({| f = Some f; acc = Some v |})
+                     |> operationLens.Set,
+                     Some listFoldId)
                     |> Ext
                 | Some acc -> // the closure has the function and the accumulator - third step in the application
                   let! v, _ =
@@ -234,7 +275,10 @@ module Extension =
 
                   let! v =
                     valueLens.Get v
-                    |> sum.OfOption((fun () -> "cannot get option value") |> Errors.Singleton loc0)
+                    |> sum.OfOption(
+                      (fun () -> "cannot get option value")
+                      |> Errors.Singleton loc0
+                    )
                     |> reader.OfSum
 
                   let! l =
@@ -259,13 +303,23 @@ module Extension =
       }
 
     let filterOperation
-      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+      : ResolvedIdentifier *
+        TypeOperationExtension<
+          'runtimeContext,
+          'ext,
+          Unit,
+          ListValues<'ext>,
+          ListOperations<'ext>
+         > =
       listFilterId,
       { Type =
           TypeValue.CreateLambda(
             TypeParameter.Create("a", aKind),
             TypeExpr.Arrow(
-              TypeExpr.Arrow(TypeExpr.Lookup(Identifier.LocalScope "a"), TypeExpr.Primitive PrimitiveType.Bool),
+              TypeExpr.Arrow(
+                TypeExpr.Lookup(Identifier.LocalScope "a"),
+                TypeExpr.Primitive PrimitiveType.Bool
+              ),
               TypeExpr.Arrow(
                 TypeExpr.Apply(
                   TypeExpr.Lookup(Identifier.LocalScope "List"),
@@ -297,7 +351,9 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (ListOperations.List_Filter({| f = Some v |}) |> operationLens.Set, Some listFilterId)
+                  (ListOperations.List_Filter({| f = Some v |})
+                   |> operationLens.Set,
+                   Some listFilterId)
                   |> Ext
               | Some predicate -> // the closure has the function - second step in the application
                 let! v, _ =
@@ -308,7 +364,10 @@ module Extension =
 
                 let! v =
                   valueLens.Get v
-                  |> sum.OfOption((fun () -> "cannot get option value") |> Errors.Singleton loc0)
+                  |> sum.OfOption(
+                    (fun () -> "cannot get option value")
+                    |> Errors.Singleton loc0
+                  )
                   |> reader.OfSum
 
                 let! v =
@@ -340,13 +399,25 @@ module Extension =
                   |> reader.All
 
                 return
-                  (v' |> List.filter snd |> List.map fst |> ListValues.List |> valueLens.Set, Some listFilterId)
+                  (v'
+                   |> List.filter snd
+                   |> List.map fst
+                   |> ListValues.List
+                   |> valueLens.Set,
+                   Some listFilterId)
                   |> Ext
             } //: 'runtimeContext * 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'runtimeContext, 'ext, 'extValues> }
       }
 
     let mapOperation
-      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+      : ResolvedIdentifier *
+        TypeOperationExtension<
+          'runtimeContext,
+          'ext,
+          Unit,
+          ListValues<'ext>,
+          ListOperations<'ext>
+         > =
       listMapId,
       { Type =
           TypeValue.CreateLambda(
@@ -354,7 +425,10 @@ module Extension =
             TypeExpr.Lambda(
               TypeParameter.Create("b", Kind.Star),
               TypeExpr.Arrow(
-                TypeExpr.Arrow(TypeExpr.Lookup(Identifier.LocalScope "a"), TypeExpr.Lookup(Identifier.LocalScope "b")),
+                TypeExpr.Arrow(
+                  TypeExpr.Lookup(Identifier.LocalScope "a"),
+                  TypeExpr.Lookup(Identifier.LocalScope "b")
+                ),
                 TypeExpr.Arrow(listOf "a", listOf "b")
               )
             )
@@ -378,7 +452,9 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (ListOperations.List_Map({| f = Some v |}) |> operationLens.Set, Some listMapId)
+                  (ListOperations.List_Map({| f = Some v |})
+                   |> operationLens.Set,
+                   Some listMapId)
                   |> Ext
               | Some f -> // the closure has the function - second step in the application
                 let! v =
@@ -386,20 +462,33 @@ module Extension =
                   |> sum.MapError(Errors.MapContext(replaceWith loc0))
                   |> reader.OfSum
 
-                let! v' = v |> List.map (fun v -> Expr.EvalApply loc0 [] (f, v)) |> reader.All
+                let! v' =
+                  v
+                  |> List.map (fun v -> Expr.EvalApply loc0 [] (f, v))
+                  |> reader.All
 
                 return (ListValues.List v' |> valueLens.Set, None) |> Ext
             } //: 'runtimeContext * 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'runtimeContext, 'ext, 'extValues> }
       }
 
     let appendOperation
-      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+      : ResolvedIdentifier *
+        TypeOperationExtension<
+          'runtimeContext,
+          'ext,
+          Unit,
+          ListValues<'ext>,
+          ListOperations<'ext>
+         > =
       listAppendId,
       { Type =
           TypeValue.CreateLambda(
             TypeParameter.Create("a", aKind),
             TypeExpr.Arrow(
-              TypeExpr.Apply(TypeExpr.Lookup(Identifier.LocalScope "List"), TypeExpr.Lookup(Identifier.LocalScope "a")),
+              TypeExpr.Apply(
+                TypeExpr.Lookup(Identifier.LocalScope "List"),
+                TypeExpr.Lookup(Identifier.LocalScope "a")
+              ),
               TypeExpr.Arrow(
                 TypeExpr.Apply(
                   TypeExpr.Lookup(Identifier.LocalScope "List"),
@@ -431,7 +520,9 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (ListOperations.List_Append({| l = Some v |}) |> operationLens.Set, Some listAppendId)
+                  (ListOperations.List_Append({| l = Some v |})
+                   |> operationLens.Set,
+                   Some listAppendId)
                   |> Ext
               | Some l -> // the closure has the first list - second step in the application
                 let! l =
@@ -453,12 +544,24 @@ module Extension =
       }
 
     let consOperation
-      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+      : ResolvedIdentifier *
+        TypeOperationExtension<
+          'runtimeContext,
+          'ext,
+          Unit,
+          ListValues<'ext>,
+          ListOperations<'ext>
+         > =
       listConsId,
       { Type =
           TypeValue.CreateLambda(
             TypeParameter.Create("a", aKind),
-            TypeExpr.Arrow(TypeExpr.Tuple([ TypeExpr.Lookup(Identifier.LocalScope "a"); listOf "a" ]), listOf "a")
+            TypeExpr.Arrow(
+              TypeExpr.Tuple(
+                [ TypeExpr.Lookup(Identifier.LocalScope "a"); listOf "a" ]
+              ),
+              listOf "a"
+            )
           )
         Kind = Kind.Arrow(Kind.Star, Kind.Star)
         Operation = List_Cons
@@ -493,7 +596,9 @@ module Extension =
                 let! tail =
                   tail
                   |> valueLens.Get
-                  |> sum.OfOption((fun () -> $"Error: expected list") |> Errors.Singleton loc0)
+                  |> sum.OfOption(
+                    (fun () -> $"Error: expected list") |> Errors.Singleton loc0
+                  )
                   |> reader.OfSum
 
                 let! tail =
@@ -502,13 +607,25 @@ module Extension =
                   |> sum.MapError(Errors.MapContext(replaceWith loc0))
                   |> reader.OfSum
 
-                return (ListValues.List(head :: tail) |> valueLens.Set, None) |> Ext
-              | _ -> return! (fun () -> "Error: expected pair") |> Errors.Singleton loc0 |> reader.Throw
+                return
+                  (ListValues.List(head :: tail) |> valueLens.Set, None) |> Ext
+              | _ ->
+                return!
+                  (fun () -> "Error: expected pair")
+                  |> Errors.Singleton loc0
+                  |> reader.Throw
             } //: 'runtimeContext * 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'runtimeContext, 'ext, 'extValues> }
       }
 
     let nilOperation
-      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+      : ResolvedIdentifier *
+        TypeOperationExtension<
+          'runtimeContext,
+          'ext,
+          Unit,
+          ListValues<'ext>,
+          ListOperations<'ext>
+         > =
       listNilId,
       { Type =
           TypeValue.CreateLambda(
@@ -536,7 +653,14 @@ module Extension =
       }
 
     let decomposeOperation
-      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+      : ResolvedIdentifier *
+        TypeOperationExtension<
+          'runtimeContext,
+          'ext,
+          Unit,
+          ListValues<'ext>,
+          ListOperations<'ext>
+         > =
       listDecomposeId,
       { Type =
           TypeValue.CreateLambda(
@@ -545,7 +669,9 @@ module Extension =
               listOf "a",
               TypeExpr.Sum(
                 [ TypeExpr.Primitive PrimitiveType.Unit
-                  TypeExpr.Tuple([ TypeExpr.Lookup(Identifier.LocalScope "a"); listOf "a" ]) ]
+                  TypeExpr.Tuple(
+                    [ TypeExpr.Lookup(Identifier.LocalScope "a"); listOf "a" ]
+                  ) ]
               )
             )
 
@@ -574,9 +700,20 @@ module Extension =
 
               match v with
               | head :: tail ->
-                let tailAsValue = (ListValues.List tail |> valueLens.Set, None) |> Ext
-                return Value.Sum({ Case = 2; Count = 2 }, Value.Tuple([ head; tailAsValue ]))
-              | [] -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                let tailAsValue =
+                  (ListValues.List tail |> valueLens.Set, None) |> Ext
+
+                return
+                  Value.Sum(
+                    { Case = 2; Count = 2 },
+                    Value.Tuple([ head; tailAsValue ])
+                  )
+              | [] ->
+                return
+                  Value.Sum(
+                    { Case = 1; Count = 2 },
+                    Value.Primitive PrimitiveValue.Unit
+                  )
             } }
 
 
@@ -584,12 +721,20 @@ module Extension =
     let listToDTO
       (value: 'ext)
       (applicableId: Option<ResolvedIdentifierDTO>)
-      : Reader<ValueDTO<'extDTO>, SerializationContext<'ext, 'extDTO>, Ballerina.Errors.Errors<unit>> =
+      : Reader<
+          ValueDTO<'extDTO>,
+          SerializationContext<'ext, 'extDTO>,
+          Ballerina.Errors.Errors<unit>
+         >
+      =
       reader {
         let! List listValue =
           value
           |> valueLens.Get
-          |> sum.OfOption(Ballerina.Errors.Errors.Singleton () (fun _ -> "Expected list value in listToDTO."))
+          |> sum.OfOption(
+            Ballerina.Errors.Errors.Singleton () (fun _ ->
+              "Expected list value in listToDTO.")
+          )
           |> reader.OfSum
 
         if listValue.Length = 0 then
@@ -610,12 +755,20 @@ module Extension =
     let DTOToList
       (valueDTO: 'extDTO)
       (applicableId: Option<ResolvedIdentifier>)
-      : Reader<Value<TypeValue<'ext>, 'ext>, SerializationContext<'ext, 'extDTO>, Ballerina.Errors.Errors<unit>> =
+      : Reader<
+          Value<TypeValue<'ext>, 'ext>,
+          SerializationContext<'ext, 'extDTO>,
+          Ballerina.Errors.Errors<unit>
+         >
+      =
       reader {
         let! listValueDTO =
           valueDTO
           |> valueDTOLens.Get
-          |> sum.OfOption(Ballerina.Errors.Errors.Singleton () (fun _ -> "Expected list value DTO in DTOToList."))
+          |> sum.OfOption(
+            Ballerina.Errors.Errors.Singleton () (fun _ ->
+              "Expected list value DTO in DTOToList.")
+          )
           |> reader.OfSum
 
 
@@ -623,9 +776,11 @@ module Extension =
         match listValueDTO.Length with
         | 0 -> return Ext(ListValues.List [] |> valueLens.Set, applicableId)
         | _ when isNull listValueDTO |> not && listValueDTO.Length > 0 ->
-          let! listElements = listValueDTO |> Array.map valueFromDTO |> reader.All
+          let! listElements =
+            listValueDTO |> Array.map valueFromDTO |> reader.All
 
-          return Ext(ListValues.List listElements |> valueLens.Set, applicableId)
+          return
+            Ext(ListValues.List listElements |> valueLens.Set, applicableId)
         | _ ->
           return!
             reader.Throw(
@@ -646,7 +801,10 @@ module Extension =
         let! listDelta =
           delta
           |> deltaLens.Get
-          |> sum.OfOption(Errors.Singleton () (fun _ -> "Expected list delta extension in listDeltaToDTO."))
+          |> sum.OfOption(
+            Errors.Singleton () (fun _ ->
+              "Expected list delta extension in listDeltaToDTO.")
+          )
           |> reader.OfSum
 
         match listDelta with
@@ -658,7 +816,9 @@ module Extension =
             |> deltaDTOLens.Set
             |> fun ext -> new DeltaDTO<'extDTO, 'deltaExtDTO>(ext)
         | AppendElement v ->
-          let! valueDTO = valueToDTO v |> reader.MapContext(fun context -> context.SerializationContext)
+          let! valueDTO =
+            valueToDTO v
+            |> reader.MapContext(fun context -> context.SerializationContext)
 
           return
             ListDeltaExtDTO.CreateAppend valueDTO
@@ -670,7 +830,9 @@ module Extension =
             |> deltaDTOLens.Set
             |> fun ext -> new DeltaDTO<'extDTO, 'deltaExtDTO>(ext)
         | InsertElement(index, v) ->
-          let! valueDTO = valueToDTO v |> reader.MapContext(fun context -> context.SerializationContext)
+          let! valueDTO =
+            valueToDTO v
+            |> reader.MapContext(fun context -> context.SerializationContext)
 
           return
             ListDeltaExtDTO.CreateInsert index valueDTO
@@ -714,33 +876,50 @@ module Extension =
         let! listDeltaDTO =
           deltaDTO
           |> deltaDTOLens.Get
-          |> sum.OfOption(Errors.Singleton () (fun _ -> "Expected list delta DTO extension in listDeltaToDTO."))
+          |> sum.OfOption(
+            Errors.Singleton () (fun _ ->
+              "Expected list delta DTO extension in listDeltaToDTO.")
+          )
           |> reader.OfSum
 
         if listDeltaDTO.UpdateElement |> isNull |> not then
-          let! index, value = assertSingleElementDictionary listDeltaDTO.UpdateElement "update element delta"
+          let! index, value =
+            assertSingleElementDictionary
+              listDeltaDTO.UpdateElement
+              "update element delta"
+
           let! delta = deltaFromDTO value
 
-          return UpdateElement(index, delta) |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
+          return
+            UpdateElement(index, delta)
+            |> deltaLens.Set
+            |> Data.Delta.Model.Delta.Ext
         elif listDeltaDTO.AppendElement |> isNull |> not then
           let! value =
             valueFromDTO listDeltaDTO.AppendElement
             |> reader.MapContext(fun context -> context.SerializationContext)
 
-          return AppendElement value |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
+          return
+            AppendElement value |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
         elif listDeltaDTO.RemoveElement.HasValue then
           return
             RemoveElement listDeltaDTO.RemoveElement.Value
             |> deltaLens.Set
             |> Data.Delta.Model.Delta.Ext
         elif isNull listDeltaDTO.InsertElement |> not then
-          let! index, value = assertSingleElementDictionary listDeltaDTO.InsertElement "insert element delta"
+          let! index, value =
+            assertSingleElementDictionary
+              listDeltaDTO.InsertElement
+              "insert element delta"
 
           let! value =
             valueFromDTO value
             |> reader.MapContext(fun context -> context.SerializationContext)
 
-          return InsertElement(index, value) |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
+          return
+            InsertElement(index, value)
+            |> deltaLens.Set
+            |> Data.Delta.Model.Delta.Ext
         elif listDeltaDTO.DuplicateElement.HasValue then
           return
             DuplicateElement listDeltaDTO.DuplicateElement.Value
@@ -751,20 +930,35 @@ module Extension =
             valueFromDTO listDeltaDTO.SetAllElements
             |> reader.MapContext(fun context -> context.SerializationContext)
 
-          return SetAllElements value |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
+          return
+            SetAllElements value |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
         elif listDeltaDTO.RemoveAllElements.HasValue then
-          return RemoveAllElements |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
+          return
+            RemoveAllElements |> deltaLens.Set |> Data.Delta.Model.Delta.Ext
         elif isNull listDeltaDTO.MoveElement |> not then
           return
-            MoveElement(listDeltaDTO.MoveElement.From, listDeltaDTO.MoveElement.To)
+            MoveElement(
+              listDeltaDTO.MoveElement.From,
+              listDeltaDTO.MoveElement.To
+            )
             |> deltaLens.Set
             |> Data.Delta.Model.Delta.Ext
         else
-          return! reader.Throw(Errors.Singleton () (fun _ -> "Malformed list delta DTO."))
+          return!
+            reader.Throw(
+              Errors.Singleton () (fun _ -> "Malformed list delta DTO.")
+            )
       }
 
     let orderByOperation
-      : ResolvedIdentifier * TypeOperationExtension<'runtimeContext, 'ext, Unit, ListValues<'ext>, ListOperations<'ext>> =
+      : ResolvedIdentifier *
+        TypeOperationExtension<
+          'runtimeContext,
+          'ext,
+          Unit,
+          ListValues<'ext>,
+          ListOperations<'ext>
+         > =
       listOrderById,
       { Type =
           TypeValue.CreateLambda(
@@ -772,7 +966,10 @@ module Extension =
             TypeExpr.Lambda(
               TypeParameter.Create("b", Kind.Star),
               TypeExpr.Arrow(
-                TypeExpr.Arrow(TypeExpr.Lookup(Identifier.LocalScope "a"), TypeExpr.Lookup(Identifier.LocalScope "b")),
+                TypeExpr.Arrow(
+                  TypeExpr.Lookup(Identifier.LocalScope "a"),
+                  TypeExpr.Lookup(Identifier.LocalScope "b")
+                ),
                 TypeExpr.Arrow(listOf "a", listOf "a")
               )
             )
@@ -796,7 +993,9 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (ListOperations.List_OrderBy({| f = Some v |}) |> operationLens.Set, Some listOrderById)
+                  (ListOperations.List_OrderBy({| f = Some v |})
+                   |> operationLens.Set,
+                   Some listOrderById)
                   |> Ext
               | Some f -> // the closure has the function - second step in the application
                 let! v =
@@ -825,7 +1024,10 @@ module Extension =
           let! l =
             v
             |> valueLens.Get
-            |> sum.OfOption(Errors.Singleton () (fun _ -> "Expected list value in isListInstanceOf."))
+            |> sum.OfOption(
+              Errors.Singleton () (fun _ ->
+                "Expected list value in isListInstanceOf.")
+            )
             |> reader.OfSum
 
           match l, t with
@@ -833,13 +1035,21 @@ module Extension =
             let! arg_t =
               i.Arguments
               |> Seq.tryHead
-              |> sum.OfOption(Errors.Singleton () (fun _ -> "Expected type argument in isListInstanceOf."))
+              |> sum.OfOption(
+                Errors.Singleton () (fun _ ->
+                  "Expected type argument in isListInstanceOf.")
+              )
               |> reader.OfSum
 
-            return! l |> Seq.map (fun v -> f (v, arg_t)) |> reader.All |> reader.Ignore
+            return!
+              l
+              |> Seq.map (fun v -> f (v, arg_t))
+              |> reader.All
+              |> reader.Ignore
           | _ ->
             return!
-              Errors.Singleton () (fun _ -> "Expected list value in isListInstanceOf.")
+              Errors.Singleton () (fun _ ->
+                "Expected list value in isListInstanceOf.")
               |> reader.Throw
         }
 

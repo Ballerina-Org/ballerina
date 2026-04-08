@@ -17,7 +17,8 @@ let ``MapRenderer AllLabels returns all labels`` () =
             Details = None
             Renderer =
               Renderer.PrimitiveRenderer
-                { PrimitiveRendererName = RendererName "KeyPrimitiveRendererName"
+                { PrimitiveRendererName =
+                    RendererName "KeyPrimitiveRendererName"
                   PrimitiveRendererId = 0
                   Type = ExprType.PrimitiveType PrimitiveType.StringType
                   Label = Some(Label "Inner Key Label") } }
@@ -27,7 +28,8 @@ let ``MapRenderer AllLabels returns all labels`` () =
             Details = None
             Renderer =
               Renderer.PrimitiveRenderer
-                { PrimitiveRendererName = RendererName "ValuePrimitiveRendererName"
+                { PrimitiveRendererName =
+                    RendererName "ValuePrimitiveRendererName"
                   PrimitiveRendererId = 0
                   Type = ExprType.PrimitiveType PrimitiveType.StringType
                   Label = Some(Label "Inner Value Label") } } }

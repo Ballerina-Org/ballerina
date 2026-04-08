@@ -17,19 +17,27 @@ module Unification =
     static member Zero() =
       { UnificationConstraints.Equalities = Set.empty }
 
-    static member Add (v1: VarName, v2: VarName) (constraints: UnificationConstraints) : UnificationConstraints =
+    static member Add
+      (v1: VarName, v2: VarName)
+      (constraints: UnificationConstraints)
+      : UnificationConstraints =
       { constraints with
-          Equalities = constraints.Equalities |> Set.add (v1, v2) |> Set.add (v2, v1) }
+          Equalities =
+            constraints.Equalities |> Set.add (v1, v2) |> Set.add (v2, v1) }
 
     static member (+)
-      (constraints1: UnificationConstraints, constraints2: UnificationConstraints)
-      : UnificationConstraints =
+      (
+        constraints1: UnificationConstraints,
+        constraints2: UnificationConstraints
+      ) : UnificationConstraints =
       { Equalities = constraints1.Equalities + constraints2.Equalities }
 
     static member Singleton(v1: VarName, v2: VarName) : UnificationConstraints =
       UnificationConstraints.Zero() |> UnificationConstraints.Add(v1, v2)
 
-    static member ToEquivalenceClasses(constraints: UnificationConstraints) : List<Set<VarName>> =
+    static member ToEquivalenceClasses
+      (constraints: UnificationConstraints)
+      : List<Set<VarName>> =
       let mutable result: Map<VarName, Set<VarName>> = Map.empty
 
       for (v1, v2) in constraints.Equalities do
@@ -49,7 +57,11 @@ module Unification =
           |> Seq.map (fun v -> v, newJoinedEquivalence)
           |> Map.ofSeq
 
-        result <- result |> Map.merge (fun _ newConstraint -> newConstraint) modifiedConstraints
+        result <-
+          result
+          |> Map.merge
+            (fun _ newConstraint -> newConstraint)
+            modifiedConstraints
 
       result |> Map.values |> Set.ofSeq |> Set.toList
 
@@ -65,23 +77,34 @@ module Unification =
       sum {
         match t1, t2 with
         | ExprType.PrimitiveType(PrimitiveType.CalculatedDisplayValueType),
-          ExprType.PrimitiveType(PrimitiveType.StringType) -> return UnificationConstraints.Zero()
+          ExprType.PrimitiveType(PrimitiveType.StringType) ->
+          return UnificationConstraints.Zero()
         | ExprType.PrimitiveType(PrimitiveType.StringType),
-          ExprType.PrimitiveType(PrimitiveType.CalculatedDisplayValueType) -> return UnificationConstraints.Zero()
-        | ExprType.PrimitiveType(PrimitiveType.EntityIdStringType), ExprType.PrimitiveType(PrimitiveType.StringType) ->
+          ExprType.PrimitiveType(PrimitiveType.CalculatedDisplayValueType) ->
           return UnificationConstraints.Zero()
-        | ExprType.PrimitiveType(PrimitiveType.StringType), ExprType.PrimitiveType(PrimitiveType.EntityIdStringType) ->
+        | ExprType.PrimitiveType(PrimitiveType.EntityIdStringType),
+          ExprType.PrimitiveType(PrimitiveType.StringType) ->
           return UnificationConstraints.Zero()
-        | ExprType.UnitType, ExprType.UnitType -> return UnificationConstraints.Zero()
-        | ExprType.UnitType, ExprType.RecordType fields when fields |> Map.isEmpty ->
+        | ExprType.PrimitiveType(PrimitiveType.StringType),
+          ExprType.PrimitiveType(PrimitiveType.EntityIdStringType) ->
           return UnificationConstraints.Zero()
-        | ExprType.RecordType fields, ExprType.UnitType when fields |> Map.isEmpty ->
+        | ExprType.UnitType, ExprType.UnitType ->
           return UnificationConstraints.Zero()
-        | ExprType.LookupType l1, ExprType.LookupType l2 when l1 = l2 -> return UnificationConstraints.Zero()
+        | ExprType.UnitType, ExprType.RecordType fields when
+          fields |> Map.isEmpty
+          ->
+          return UnificationConstraints.Zero()
+        | ExprType.RecordType fields, ExprType.UnitType when
+          fields |> Map.isEmpty
+          ->
+          return UnificationConstraints.Zero()
+        | ExprType.LookupType l1, ExprType.LookupType l2 when l1 = l2 ->
+          return UnificationConstraints.Zero()
         | ExprType.LookupType l1, ExprType.LookupType l2 when l1 <> l2 ->
           return!
             sum.Throw(
-              Errors.Singleton () (fun () -> $"Error: types {t1} and {t2} cannot be unified under typedefs {typedefs}")
+              Errors.Singleton () (fun () ->
+                $"Error: types {t1} and {t2} cannot be unified under typedefs {typedefs}")
             )
         | ExprType.VarType v1, ExprType.VarType v2 ->
           match tvars |> Map.tryFind v1, tvars |> Map.tryFind v2 with
@@ -89,7 +112,11 @@ module Unification =
             if v1 = v2 then
               return UnificationConstraints.Zero()
             else
-              return! sum.Throw(Errors.Singleton () (fun () -> $"Error: types {t1} and {t2} cannot be unified"))
+              return!
+                sum.Throw(
+                  Errors.Singleton () (fun () ->
+                    $"Error: types {t1} and {t2} cannot be unified")
+                )
           | _ -> return UnificationConstraints.Singleton(v1, v2)
         | t, ExprType.LookupType tn
         | ExprType.LookupType tn, t ->
@@ -110,21 +137,33 @@ module Unification =
         | ExprType.ManyType(t1), ExprType.ManyType(t2) -> return! t1 =?= t2
         | ExprType.MapType(k1, v1), ExprType.MapType(k2, v2) ->
           let! partialUnifications = sum.All([ k1 =?= k2; v1 =?= v2 ])
-          return partialUnifications |> Seq.fold (+) (UnificationConstraints.Zero())
+
+          return
+            partialUnifications |> Seq.fold (+) (UnificationConstraints.Zero())
         | ExprType.SumType(l1, r1), ExprType.SumType(l2, r2) ->
           let! partialUnifications = sum.All([ l1 =?= l2; r1 =?= r2 ])
-          return partialUnifications |> Seq.fold (+) (UnificationConstraints.Zero())
-        | ExprType.TupleType([]), ExprType.TupleType([]) -> return UnificationConstraints.Zero()
-        | ExprType.TupleType(t1 :: ts1), ExprType.TupleType(t2 :: ts2) ->
-          let! partialUnifications = sum.All([ t1 =?= t2; ExprType.TupleType(ts1) =?= ExprType.TupleType(ts2) ])
 
-          return partialUnifications |> Seq.fold (+) (UnificationConstraints.Zero())
+          return
+            partialUnifications |> Seq.fold (+) (UnificationConstraints.Zero())
+        | ExprType.TupleType([]), ExprType.TupleType([]) ->
+          return UnificationConstraints.Zero()
+        | ExprType.TupleType(t1 :: ts1), ExprType.TupleType(t2 :: ts2) ->
+          let! partialUnifications =
+            sum.All(
+              [ t1 =?= t2; ExprType.TupleType(ts1) =?= ExprType.TupleType(ts2) ]
+            )
+
+          return
+            partialUnifications |> Seq.fold (+) (UnificationConstraints.Zero())
         | ExprType.TupleType(_), ExprType.TupleType(_) ->
           return!
             sum.Throw(
-              Errors.Singleton () (fun () -> $"Error: tuples of different length {t1} and {t2} cannot be unified")
+              Errors.Singleton () (fun () ->
+                $"Error: tuples of different length {t1} and {t2} cannot be unified")
             )
-        | ExprType.UnionType(cs1), ExprType.UnionType(cs2) when cs1 |> Map.isEmpty && cs2 |> Map.isEmpty ->
+        | ExprType.UnionType(cs1), ExprType.UnionType(cs2) when
+          cs1 |> Map.isEmpty && cs2 |> Map.isEmpty
+          ->
           return UnificationConstraints.Zero()
         | ExprType.UnionType(cs1), ExprType.UnionType(cs2) ->
           match cs1 |> Seq.tryHead with
@@ -139,40 +178,64 @@ module Unification =
                     =?= ExprType.UnionType(cs2 |> Map.remove t1.Key) ]
                 )
 
-              return partialUnifications |> Seq.fold (+) (UnificationConstraints.Zero())
-            | _ -> return! sum.Throw(Errors.Singleton () (fun () -> $"Error: cases {cs1} and {cs2} cannot be unified"))
+              return
+                partialUnifications
+                |> Seq.fold (+) (UnificationConstraints.Zero())
+            | _ ->
+              return!
+                sum.Throw(
+                  Errors.Singleton () (fun () ->
+                    $"Error: cases {cs1} and {cs2} cannot be unified")
+                )
           | _ ->
             return!
               sum.Throw(
-                Errors.Singleton () (fun () -> $"Error: unions of different length {t1} and {t2} cannot be unified")
+                Errors.Singleton () (fun () ->
+                  $"Error: unions of different length {t1} and {t2} cannot be unified")
               )
-        | ExprType.RecordType(m1), ExprType.RecordType(m2) when m1 |> Map.isEmpty && m2 |> Map.isEmpty ->
+        | ExprType.RecordType(m1), ExprType.RecordType(m2) when
+          m1 |> Map.isEmpty && m2 |> Map.isEmpty
+          ->
           return UnificationConstraints.Zero()
         | ExprType.RecordType(m1), ExprType.RecordType(m2) ->
           match m1 |> Seq.tryHead with
           | None ->
             return!
               sum.Throw(
-                Errors.Singleton () (fun () -> $"Error: records of different length {t1} and {t2} cannot be unified")
+                Errors.Singleton () (fun () ->
+                  $"Error: records of different length {t1} and {t2} cannot be unified")
               )
           | Some first1 ->
             let m1 = m1 |> Map.remove first1.Key
 
             match m2 |> Map.tryFind first1.Key with
             | None ->
-              return! sum.Throw(Errors.Singleton () (fun () -> $"Error: record fields {t1} and {t2} cannot be unified"))
+              return!
+                sum.Throw(
+                  Errors.Singleton () (fun () ->
+                    $"Error: record fields {t1} and {t2} cannot be unified")
+                )
             | Some first2 ->
               let m2 = m2 |> Map.remove first1.Key
 
               let! partialUnifications =
-                sum.All([ first1.Value =?= first2; ExprType.RecordType(m1) =?= ExprType.RecordType(m2) ])
+                sum.All(
+                  [ first1.Value =?= first2
+                    ExprType.RecordType(m1) =?= ExprType.RecordType(m2) ]
+                )
 
-              return partialUnifications |> Seq.fold (+) (UnificationConstraints.Zero())
+              return
+                partialUnifications
+                |> Seq.fold (+) (UnificationConstraints.Zero())
         | ExprType.VarType _, _
         | _, ExprType.VarType _ -> return UnificationConstraints.Zero()
         | _ ->
           if t1 = t2 then
             return UnificationConstraints.Zero()
           else
-            return! sum.Throw(Errors.Singleton () (fun () -> $"Error: types {t1} and {t2} cannot be unified"))
+            return!
+              sum.Throw(
+                Errors.Singleton () (fun () ->
+                  $"Error: types {t1} and {t2} cannot be unified")
+              )
       }

@@ -26,9 +26,14 @@ module TupleDes =
   open Ballerina.Collections.NonEmptyList
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
-    static member internal TypeCheckTupleDes<'valueExt when 'valueExt: comparison>
+    static member internal TypeCheckTupleDes<'valueExt
+      when 'valueExt: comparison>
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
-      : TypeChecker<ExprTupleDes<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
+      : TypeChecker<
+          ExprTupleDes<TypeExpr<'valueExt>, Identifier, 'valueExt>,
+          'valueExt
+         >
+      =
       fun
           context_t
           ({ ExprTupleDes.Tuple = fields
@@ -54,10 +59,20 @@ module TupleDes =
             t_fields
             |> List.tryItem (fieldName.Index - 1)
             |> sum.OfOption(
-              (fun () -> $"Error: cannot find item {fieldName.Index} in tuple {fields}")
+              (fun () ->
+                $"Error: cannot find item {fieldName.Index} in tuple {fields}")
               |> error
             )
             |> state.OfSum
 
-          return TypeCheckedExpr.TupleDes(fields, fieldName, t_field, Kind.Star, loc0, ctx.Scope), ctx
+          return
+            TypeCheckedExpr.TupleDes(
+              fields,
+              fieldName,
+              t_field,
+              Kind.Star,
+              loc0,
+              ctx.Scope
+            ),
+            ctx
         }

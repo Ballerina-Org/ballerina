@@ -7,13 +7,18 @@ open Ballerina.Coroutines
 open OAuth.Spotify.API
 
 let init () : EvaluatedCoroutines<_, _, _> =
-  { active = Map.empty.Add(Guid.NewGuid(), processToken (TimeSpan.FromMinutes(1.)))
+  { active =
+      Map.empty.Add(Guid.NewGuid(), processToken (TimeSpan.FromMinutes(1.)))
     waiting = Map.empty
     waitingOrListening = Map.empty
     listening = Map.empty
     stopped = Set.empty }
 
-let getSnapshot (clientId: string) (clientSecret: string) (authorizationCode: string) =
+let getSnapshot
+  (clientId: string)
+  (clientSecret: string)
+  (authorizationCode: string)
+  =
   fun () ->
     (),
     { GetToken =
@@ -44,7 +49,11 @@ let getSnapshot (clientId: string) (clientSecret: string) (authorizationCode: st
     Map.empty,
     ()
 
-let spotifyEventLoop (clientId: string) (clientSecret: string) (authorizationCode: string) =
+let spotifyEventLoop
+  (clientId: string)
+  (clientSecret: string)
+  (authorizationCode: string)
+  =
   Ballerina.Coroutines.Runner.runLoop
     init
     (getSnapshot clientId clientSecret authorizationCode)

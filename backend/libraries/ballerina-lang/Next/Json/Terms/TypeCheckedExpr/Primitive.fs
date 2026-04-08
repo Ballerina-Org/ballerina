@@ -18,7 +18,15 @@ module PrimitiveExpr =
     static member FromJsonPrimitive: TypeCheckedExprParser<'valueExt> =
       PrimitiveValue.FromJson
       >> reader.OfSum
-      >>= fun primitive -> reader.Return(TypeCheckedExpr.Primitive(primitive, TypeValue.CreateUnit(), Kind.Star))
+      >>= fun primitive ->
+          reader.Return(
+            TypeCheckedExpr.Primitive(
+              primitive,
+              TypeValue.CreateUnit(),
+              Kind.Star
+            )
+          )
 
-    static member ToJsonPrimitive: PrimitiveValue -> TypeCheckedExprEncoderReader<'valueExt> =
+    static member ToJsonPrimitive
+      : PrimitiveValue -> TypeCheckedExprEncoderReader<'valueExt> =
       PrimitiveValue.ToJson >> reader.Return

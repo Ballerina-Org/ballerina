@@ -16,7 +16,8 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open FSharp.Data
 
-  let GuidExtension<'runtimeContext, 'ext, 'extDTO when 'extDTO: not null and 'extDTO: not struct>
+  let GuidExtension<'runtimeContext, 'ext, 'extDTO
+    when 'extDTO: not null and 'extDTO: not struct>
     (operationLens: PartialLens<'ext, GuidOperations<'ext>>)
     // : TypeExtension<'ext, GuidConstructors, PrimitiveValue, GuidOperations<'ext>> =
     : OperationsExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
@@ -29,11 +30,15 @@ module Extension =
       Identifier.FullyQualified([ "guid" ], "toString")
       |> TypeCheckScope.Empty.Resolve
 
-    let toStringOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
+    let toStringOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
       guidToStringId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(guidTypeValue, stringTypeValue), Kind.Star, GuidOperations.String)
+          <| (TypeValue.CreateArrow(guidTypeValue, stringTypeValue),
+              Kind.Star,
+              GuidOperations.String)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -62,14 +67,23 @@ module Extension =
 
               return
                 Value<TypeValue<'ext>, 'ext>
-                  .Primitive(PrimitiveValue.String(v.ToString("D", System.Globalization.CultureInfo.InvariantCulture)))
+                  .Primitive(
+                    PrimitiveValue.String(
+                      v.ToString(
+                        "D",
+                        System.Globalization.CultureInfo.InvariantCulture
+                      )
+                    )
+                  )
             } }
 
     let guidTryParseId =
       Identifier.FullyQualified([ "guid" ], "tryParse")
       |> TypeCheckScope.Empty.Resolve
 
-    let tryParseOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
+    let tryParseOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
       guidTryParseId,
       { PublicIdentifiers =
           Some
@@ -109,18 +123,32 @@ module Extension =
 
               return
                 match System.Guid.TryParse(v) with
-                | true, result -> Value.Sum({ Case = 2; Count = 2 }, Value.Primitive(PrimitiveValue.Guid result))
-                | false, _ -> Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit))
+                | true, result ->
+                  Value.Sum(
+                    { Case = 2; Count = 2 },
+                    Value.Primitive(PrimitiveValue.Guid result)
+                  )
+                | false, _ ->
+                  Value.Sum(
+                    { Case = 1; Count = 2 },
+                    Value.Primitive(PrimitiveValue.Unit)
+                  )
             } }
 
     let guidEqualId =
-      Identifier.FullyQualified([ "guid" ], "==") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "guid" ], "==")
+      |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
+    let equalOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
       guidEqualId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(guidTypeValue, TypeValue.CreateArrow(guidTypeValue, boolTypeValue)),
+          <| (TypeValue.CreateArrow(
+                guidTypeValue,
+                TypeValue.CreateArrow(guidTypeValue, boolTypeValue)
+              ),
               Kind.Star,
               GuidOperations.Equal {| v1 = None |})
         OperationsLens =
@@ -153,21 +181,30 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (GuidOperations.Equal({| v1 = Some v |}) |> operationLens.Set, Some guidEqualId)
+                  (GuidOperations.Equal({| v1 = Some v |}) |> operationLens.Set,
+                   Some guidEqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
+                return
+                  Value<TypeValue<'ext>, 'ext>
+                    .Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
     let guidNotEqualId =
-      Identifier.FullyQualified([ "guid" ], "!=") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "guid" ], "!=")
+      |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
+    let notEqualOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
       guidNotEqualId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(guidTypeValue, TypeValue.CreateArrow(guidTypeValue, boolTypeValue)),
+          <| (TypeValue.CreateArrow(
+                guidTypeValue,
+                TypeValue.CreateArrow(guidTypeValue, boolTypeValue)
+              ),
               Kind.Star,
               GuidOperations.NotEqual {| v1 = None |})
         OperationsLens =
@@ -200,17 +237,23 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (GuidOperations.NotEqual({| v1 = Some v |}) |> operationLens.Set, Some guidNotEqualId)
+                  (GuidOperations.NotEqual({| v1 = Some v |})
+                   |> operationLens.Set,
+                   Some guidNotEqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
+                return
+                  Value<TypeValue<'ext>, 'ext>
+                    .Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
     let guidNewId = Identifier.FullyQualified([ "guid" ], "new")
     let guidNewId = guidNewId |> TypeCheckScope.Empty.Resolve
 
-    let guidNew: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
+    let guidNew
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
       guidNewId,
       { PublicIdentifiers =
           Some
@@ -234,16 +277,29 @@ module Extension =
               | Value.Primitive(PrimitiveValue.String v) ->
                 return
                   try
-                    Value.Sum({ Case = 2; Count = 2 }, Value.Primitive(PrimitiveValue.Guid(System.Guid.Parse(v))))
+                    Value.Sum(
+                      { Case = 2; Count = 2 },
+                      Value.Primitive(PrimitiveValue.Guid(System.Guid.Parse(v)))
+                    )
                   with _ ->
-                    Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit))
-              | _ -> return! sum.Throw(Errors.Singleton loc0 (fun () -> "Expected a string")) |> reader.OfSum
+                    Value.Sum(
+                      { Case = 1; Count = 2 },
+                      Value.Primitive(PrimitiveValue.Unit)
+                    )
+              | _ ->
+                return!
+                  sum.Throw(
+                    Errors.Singleton loc0 (fun () -> "Expected a string")
+                  )
+                  |> reader.OfSum
             } }
 
     let guidV4Id = Identifier.FullyQualified([ "guid" ], "v4")
     let guidV4Id = guidV4Id |> TypeCheckScope.Empty.Resolve
 
-    let guidV4: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
+    let guidV4
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, GuidOperations<'ext>> =
       guidV4Id,
       { PublicIdentifiers =
           Some
@@ -264,8 +320,12 @@ module Extension =
             reader {
               match v with
               | Value.Primitive PrimitiveValue.Unit ->
-                return Value.Primitive(PrimitiveValue.Guid(System.Guid.NewGuid()))
-              | _ -> return! sum.Throw(Errors.Singleton loc0 (fun () -> "Expected a unit")) |> reader.OfSum
+                return
+                  Value.Primitive(PrimitiveValue.Guid(System.Guid.NewGuid()))
+              | _ ->
+                return!
+                  sum.Throw(Errors.Singleton loc0 (fun () -> "Expected a unit"))
+                  |> reader.OfSum
             } }
 
     { TypeVars = []

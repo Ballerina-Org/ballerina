@@ -6,13 +6,16 @@ open System
 open context
 open absample.models
 
-let processAEvents (abId: System.Guid) : Coroutine<Unit, Unit, ABContext, absample.models.ABEvent> =
+let processAEvents
+  (abId: System.Guid)
+  : Coroutine<Unit, Unit, ABContext, absample.models.ABEvent> =
   co.Repeat(
     co.Any(
       [ co {
           let! a_e =
             co.On (function
-              | absample.models.ABEvent.AEvent e when e.event.ABId = abId -> Some e
+              | absample.models.ABEvent.AEvent e when e.event.ABId = abId ->
+                Some e
               | _ -> None)
 
           do! co.Wait(TimeSpan.FromSeconds 0.0)
@@ -39,13 +42,16 @@ let processAEvents (abId: System.Guid) : Coroutine<Unit, Unit, ABContext, absamp
     )
   )
 
-let processBEvents (abId: Guid) : Coroutine<Unit, Unit, ABContext, absample.models.ABEvent> =
+let processBEvents
+  (abId: Guid)
+  : Coroutine<Unit, Unit, ABContext, absample.models.ABEvent> =
   co.Repeat(
     co.Any(
       [ co {
           let! b_e =
             co.On (function
-              | absample.models.ABEvent.BEvent e when e.event.ABId = abId -> Some e
+              | absample.models.ABEvent.BEvent e when e.event.ABId = abId ->
+                Some e
               | _ -> None)
 
           do! co.Wait(TimeSpan.FromSeconds 0.0)

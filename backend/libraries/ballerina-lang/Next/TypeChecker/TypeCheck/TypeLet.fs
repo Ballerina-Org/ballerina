@@ -44,7 +44,11 @@ module TypeLet =
     static member internal TypeCheckTypeLet<'valueExt when 'valueExt: comparison>
       (config: TypeCheckingConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
-      : TypeChecker<ExprTypeLet<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
+      : TypeChecker<
+          ExprTypeLet<TypeExpr<'valueExt>, Identifier, 'valueExt>,
+          'valueExt
+         >
+      =
       fun
           context_t
           ({ Name = typeIdentifier
@@ -63,10 +67,17 @@ module TypeLet =
           // do Console.ReadLine() |> ignore
 
           let! typeDefinition =
-            TypeExpr.Eval config typeCheckExpr (Some(ExprTypeLetBindingName typeIdentifier)) loc0 typeDefinition
+            TypeExpr.Eval
+              config
+              typeCheckExpr
+              (Some(ExprTypeLetBindingName typeIdentifier))
+              loc0
+              typeDefinition
             |> Expr.liftTypeEval
             |> state.MapContext(
-              TypeCheckContext.Updaters.Scope(TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier)))
+              TypeCheckContext.Updaters.Scope(
+                TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier))
+              )
             )
 
           // do Console.WriteLine $"Evaluated to {(typeDefinition |> fst)}"
@@ -75,12 +86,18 @@ module TypeLet =
           let! scope = state.GetContext() |> state.Map(fun ctx -> ctx.Scope)
 
           do!
-            TypeCheckState.bindType (typeIdentifier |> Identifier.LocalScope |> scope.Resolve) typeDefinition
+            TypeCheckState.bindType
+              (typeIdentifier |> Identifier.LocalScope |> scope.Resolve)
+              typeDefinition
             |> Expr.liftTypeEval
 
-          let scope = scope |> TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier))
+          let scope =
+            scope
+            |> TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier))
 
-          let bind_component (v, t, k) : Updater<Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)>> =
+          let bind_component
+            (v, t, k)
+            : Updater<Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)>> =
             Map.add v (t, k)
 
           let! definition_cases =
@@ -104,33 +121,55 @@ module TypeLet =
                   let wrap_type_params arg_t =
                     arg_t
                     |> List.foldBack
-                      (fun tp acc -> TypeValue.CreateLambda(tp, acc |> TypeExpr.FromTypeValue))
+                      (fun tp acc ->
+                        TypeValue.CreateLambda(
+                          tp,
+                          acc |> TypeExpr.FromTypeValue
+                        ))
                       type_parameters
 
                   let wrap_type_params_kind arg_t =
                     arg_t
-                    |> List.foldBack (fun (tp: TypeParameter) acc -> Kind.Arrow(tp.Kind, acc)) type_parameters
+                    |> List.foldBack
+                      (fun (tp: TypeParameter) acc ->
+                        Kind.Arrow(tp.Kind, acc))
+                      type_parameters
 
                   do!
                     TypeCheckState.bindUnionCaseConstructor
                       (k.Name |> scope.Resolve)
-                      (arg_t |> wrap_type_params, type_parameters, definition_cases)
+                      (arg_t |> wrap_type_params,
+                       type_parameters,
+                       definition_cases)
                     |> Expr.liftTypeEval
 
                   let constructor_t =
-                    TypeValue.CreateArrow(arg_t, TypeValue.CreateUnion(definition_cases))
+                    TypeValue.CreateArrow(
+                      arg_t,
+                      TypeValue.CreateUnion(definition_cases)
+                    )
                     |> wrap_type_params
 
                   let constructor_k = Kind.Star |> wrap_type_params_kind
 
                   return
-                    bind_component (k.Name |> scope.Resolve, constructor_t, constructor_k)
-                    >> bind_component (k.Name |> TypeCheckScope.Empty.Resolve, constructor_t, constructor_k)
+                    bind_component (
+                      k.Name |> scope.Resolve,
+                      constructor_t,
+                      constructor_k
+                    )
+                    >> bind_component (
+                      k.Name |> TypeCheckScope.Empty.Resolve,
+                      constructor_t,
+                      constructor_k
+                    )
 
                 })
               |> state.All)
             |> state.RunOption
-            |> state.Map(Option.map (List.fold (>>) id) >> Option.defaultValue id)
+            |> state.Map(
+              Option.map (List.fold (>>) id) >> Option.defaultValue id
+            )
 
           let! definition_fields =
             typeDefinition
@@ -148,19 +187,26 @@ module TypeLet =
               |> Seq.map (fun (k, (arg_t, _arg_k)) ->
                 state {
                   do!
-                    TypeCheckState.bindRecordField (k.Name |> scope.Resolve) (definition_fields, arg_t)
+                    TypeCheckState.bindRecordField
+                      (k.Name |> scope.Resolve)
+                      (definition_fields, arg_t)
                     |> Expr.liftTypeEval
 
                   return
                     bind_component (
                       k.Name |> scope.Resolve,
-                      TypeValue.CreateArrow(TypeValue.CreateRecord(definition_fields), arg_t),
+                      TypeValue.CreateArrow(
+                        TypeValue.CreateRecord(definition_fields),
+                        arg_t
+                      ),
                       Kind.Star
                     )
                 })
               |> state.All)
             |> state.RunOption
-            |> state.Map(Option.map (List.fold (>>) id) >> Option.defaultValue id)
+            |> state.Map(
+              Option.map (List.fold (>>) id) >> Option.defaultValue id
+            )
 
           let! entities =
             typeDefinition
@@ -183,7 +229,9 @@ module TypeLet =
 
                   do!
                     TypeCheckState.bindType
-                      (entityName.Name |> Identifier.LocalScope |> scope.Resolve)
+                      (entityName.Name
+                       |> Identifier.LocalScope
+                       |> scope.Resolve)
                       (entityDef.TypeWithProps, Kind.Star)
                     |> Expr.liftTypeEval
 
@@ -195,7 +243,11 @@ module TypeLet =
 
           let! rest, ctx_rest =
             !rest
-            |> state.MapContext(TypeCheckContext.Updaters.Values(bind_definition_cases >> bind_definition_fields))
+            |> state.MapContext(
+              TypeCheckContext.Updaters.Values(
+                bind_definition_cases >> bind_definition_fields
+              )
+            )
 
           let rest_t = rest.Type
 
@@ -209,7 +261,8 @@ module TypeLet =
               rest_t,
               rest_k,
               loc0,
-              ctx.Scope |> TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier))
+              ctx.Scope
+              |> TypeCheckScope.Updaters.Type(replaceWith (Some typeIdentifier))
             ),
             ctx_rest
         }

@@ -15,16 +15,21 @@ module Lambda =
   let private discriminator = "lambda"
 
   type Value<'T, 'valueExtension> with
-    static member FromJsonLambda(json: JsonValue) : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
-      Reader.assertDiscriminatorAndContinueWithValue discriminator json (fun lambdaJson ->
-        reader {
-          let! exprFromJsonRoot, _, _ = reader.GetContext()
-          let! (var, body) = lambdaJson |> JsonValue.AsPair |> reader.OfSum
-          let! var = var |> JsonValue.AsString |> reader.OfSum
-          let var = Var.Create var
-          let! body = body |> exprFromJsonRoot |> reader.OfSum
-          return Value.Lambda(var, body, Map.empty, TypeCheckScope.Empty)
-        })
+    static member FromJsonLambda
+      (json: JsonValue)
+      : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
+      Reader.assertDiscriminatorAndContinueWithValue
+        discriminator
+        json
+        (fun lambdaJson ->
+          reader {
+            let! exprFromJsonRoot, _, _ = reader.GetContext()
+            let! (var, body) = lambdaJson |> JsonValue.AsPair |> reader.OfSum
+            let! var = var |> JsonValue.AsString |> reader.OfSum
+            let var = Var.Create var
+            let! body = body |> exprFromJsonRoot |> reader.OfSum
+            return Value.Lambda(var, body, Map.empty, TypeCheckScope.Empty)
+          })
 
     static member ToJsonLambda
       (var: Var)
@@ -34,5 +39,7 @@ module Lambda =
         let! rootExprEncoder, _ = reader.GetContext()
         let var = var.Name |> JsonValue.String
         let! body = body |> rootExprEncoder |> reader.OfSum
-        return [| var; body |] |> JsonValue.Array |> Json.discriminator discriminator
+
+        return
+          [| var; body |] |> JsonValue.Array |> Json.discriminator discriminator
       }

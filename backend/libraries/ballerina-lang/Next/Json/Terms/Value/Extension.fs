@@ -23,7 +23,8 @@ module Extensions =
       reader.Any(
         listFromJson json,
         [ optionFromJson json
-          fun () -> $"FromJsonExt: Unknown Value JSON: {json.AsFSharpString.ReasonablyClamped}"
+          fun () ->
+            $"FromJsonExt: Unknown Value JSON: {json.AsFSharpString.ReasonablyClamped}"
           |> Errors.Singleton()
           |> Errors.MapPriority(replaceWith ErrorPriority.Medium)
           |> reader.Throw ]
@@ -38,7 +39,8 @@ module Extensions =
       reader.Any(
         listToJson value,
         [ optionToJson value
-          fun () -> $"ToJsonExt: Unknown Value: {value.AsFSharpString.ReasonablyClamped}"
+          fun () ->
+            $"ToJsonExt: Unknown Value: {value.AsFSharpString.ReasonablyClamped}"
           |> Errors.Singleton()
           |> Errors.MapPriority(replaceWith ErrorPriority.Medium)
           |> reader.Throw ]

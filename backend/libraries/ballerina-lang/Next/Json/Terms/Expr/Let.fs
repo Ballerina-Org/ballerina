@@ -22,15 +22,20 @@ module Let =
       (fromRootJson: ExprParser<'T, 'Id, 'valueExt>)
       (value: JsonValue)
       : ExprParserReader<'T, 'Id, 'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun letJson ->
-        reader {
-          let! (var, value, body) = letJson |> JsonValue.AsTriple |> reader.OfSum
-          let! var = var |> JsonValue.AsString |> reader.OfSum
-          let var = Var.Create var
-          let! value = value |> fromRootJson
-          let! body = body |> fromRootJson
-          return Expr.Let(var, None, value, body)
-        })
+      Reader.assertDiscriminatorAndContinueWithValue
+        discriminator
+        value
+        (fun letJson ->
+          reader {
+            let! (var, value, body) =
+              letJson |> JsonValue.AsTriple |> reader.OfSum
+
+            let! var = var |> JsonValue.AsString |> reader.OfSum
+            let var = Var.Create var
+            let! value = value |> fromRootJson
+            let! body = body |> fromRootJson
+            return Expr.Let(var, None, value, body)
+          })
 
     static member ToJsonLet
       (rootToJson: ExprEncoder<'T, 'Id, 'valueExt>)
@@ -42,5 +47,9 @@ module Let =
         let var = var.Name |> JsonValue.String
         let! value = value |> rootToJson
         let! body = body |> rootToJson
-        return [| var; value; body |] |> JsonValue.Array |> Json.discriminator discriminator
+
+        return
+          [| var; value; body |]
+          |> JsonValue.Array
+          |> Json.discriminator discriminator
       }

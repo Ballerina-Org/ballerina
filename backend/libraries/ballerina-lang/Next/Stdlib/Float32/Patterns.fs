@@ -9,7 +9,9 @@ module Patterns =
   open Ballerina.DSL.Next.Types
 
   type Float32Operations<'ext> with
-    static member AsToString(op: Float32Operations<'ext>) : Sum<Unit, Errors<Unit>> =
+    static member AsToString
+      (op: Float32Operations<'ext>)
+      : Sum<Unit, Errors<Unit>> =
       match op with
       | Float32Operations.String -> () |> sum.Return
       | _ ->
@@ -17,7 +19,9 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsTryParse(op: Float32Operations<'ext>) : Sum<Unit, Errors<Unit>> =
+    static member AsTryParse
+      (op: Float32Operations<'ext>)
+      : Sum<Unit, Errors<Unit>> =
       match op with
       | Float32Operations.TryParse -> () |> sum.Return
       | _ ->
@@ -25,7 +29,9 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsPlus(op: Float32Operations<'ext>) : Sum<Option<float32>, Errors<Unit>> =
+    static member AsPlus
+      (op: Float32Operations<'ext>)
+      : Sum<Option<float32>, Errors<Unit>> =
       match op with
       | Float32Operations.Plus v -> v.v1 |> sum.Return
       | _ ->
@@ -33,7 +39,9 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsMinus(op: Float32Operations<'ext>) : Sum<Option<float32>, Errors<Unit>> =
+    static member AsMinus
+      (op: Float32Operations<'ext>)
+      : Sum<Option<float32>, Errors<Unit>> =
       match op with
       | Float32Operations.Minus v -> v.v1 |> sum.Return
       | _ ->
@@ -41,7 +49,9 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsDivide(op: Float32Operations<'ext>) : Sum<Option<float32>, Errors<Unit>> =
+    static member AsDivide
+      (op: Float32Operations<'ext>)
+      : Sum<Option<float32>, Errors<Unit>> =
       match op with
       | Float32Operations.Divide v -> v.v1 |> sum.Return
       | _ ->
@@ -49,7 +59,9 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsPower(op: Float32Operations<'ext>) : Sum<Option<float32>, Errors<Unit>> =
+    static member AsPower
+      (op: Float32Operations<'ext>)
+      : Sum<Option<float32>, Errors<Unit>> =
       match op with
       | Float32Operations.Power v -> v.v1 |> sum.Return
       | _ ->
@@ -57,7 +69,9 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsMod(op: Float32Operations<'ext>) : Sum<Option<float32>, Errors<Unit>> =
+    static member AsMod
+      (op: Float32Operations<'ext>)
+      : Sum<Option<float32>, Errors<Unit>> =
       match op with
       | Float32Operations.Mod v -> v.v1 |> sum.Return
       | _ ->
@@ -65,7 +79,9 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsEqual(op: Float32Operations<'ext>) : Sum<Option<float32>, Errors<Unit>> =
+    static member AsEqual
+      (op: Float32Operations<'ext>)
+      : Sum<Option<float32>, Errors<Unit>> =
       match op with
       | Float32Operations.Equal v -> v.v1 |> sum.Return
       | _ ->
@@ -73,7 +89,9 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsNotEqual(op: Float32Operations<'ext>) : Sum<Option<float32>, Errors<Unit>> =
+    static member AsNotEqual
+      (op: Float32Operations<'ext>)
+      : Sum<Option<float32>, Errors<Unit>> =
       match op with
       | Float32Operations.NotEqual v -> v.v1 |> sum.Return
       | _ ->
@@ -81,7 +99,9 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsGreaterThan(op: Float32Operations<'ext>) : Sum<Option<float32>, Errors<Unit>> =
+    static member AsGreaterThan
+      (op: Float32Operations<'ext>)
+      : Sum<Option<float32>, Errors<Unit>> =
       match op with
       | Float32Operations.GreaterThan v -> v.v1 |> sum.Return
       | _ ->
@@ -89,15 +109,20 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsGreaterThanOrEqual(op: Float32Operations<'ext>) : Sum<Option<float32>, Errors<Unit>> =
+    static member AsGreaterThanOrEqual
+      (op: Float32Operations<'ext>)
+      : Sum<Option<float32>, Errors<Unit>> =
       match op with
       | Float32Operations.GreaterThanOrEqual v -> v.v1 |> sum.Return
       | _ ->
-        (fun () -> $"Error: Expected Float32Operations.GreaterThanOrEqual, found {op}")
+        (fun () ->
+          $"Error: Expected Float32Operations.GreaterThanOrEqual, found {op}")
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsLessThan(op: Float32Operations<'ext>) : Sum<Option<float32>, Errors<Unit>> =
+    static member AsLessThan
+      (op: Float32Operations<'ext>)
+      : Sum<Option<float32>, Errors<Unit>> =
       match op with
       | Float32Operations.LessThan v -> v.v1 |> sum.Return
       | _ ->
@@ -105,10 +130,13 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsLessThanOrEqual(op: Float32Operations<'ext>) : Sum<Option<float32>, Errors<Unit>> =
+    static member AsLessThanOrEqual
+      (op: Float32Operations<'ext>)
+      : Sum<Option<float32>, Errors<Unit>> =
       match op with
       | Float32Operations.LessThanOrEqual v -> v.v1 |> sum.Return
       | _ ->
-        (fun () -> $"Error: Expected Float32Operations.LessThanOrEqual, found {op}")
+        (fun () ->
+          $"Error: Expected Float32Operations.LessThanOrEqual, found {op}")
         |> Errors.Singleton()
         |> sum.Throw

@@ -13,12 +13,17 @@ module TypeCheck =
 
   type TypeName = string
 
-  type TypeChecker<'source> = TypeBindings -> VarTypes -> 'source -> Sum<ExprType, Errors<unit>>
+  type TypeChecker<'source> =
+    TypeBindings -> VarTypes -> 'source -> Sum<ExprType, Errors<unit>>
 
-  type TypeCheck<'ExprExtension, 'ValueExtension> = TypeChecker<Expr<'ExprExtension, 'ValueExtension>>
+  type TypeCheck<'ExprExtension, 'ValueExtension> =
+    TypeChecker<Expr<'ExprExtension, 'ValueExtension>>
 
   let private notImplementedError exprName =
-    sum.Throw(Errors.Singleton () (fun () -> $"Error: not implemented Expr type checker for expression {exprName}"))
+    sum.Throw(
+      Errors.Singleton () (fun () ->
+        $"Error: not implemented Expr type checker for expression {exprName}")
+    )
 
   type Expr<'ExprExtension, 'ValueExtension> with
     static member typeCheck
@@ -31,21 +36,35 @@ module TypeCheck =
           -> TypeChecker<Value<'ExprExtension, 'ValueExtension>>
           -> TypeChecker<'ValueExtension>))
       : TypeChecker<Expr<'ExprExtension, 'ValueExtension>> =
-      fun (typeBindings: TypeBindings) (vars: VarTypes) (e: Expr<'ExprExtension, 'ValueExtension>) ->
+      fun
+          (typeBindings: TypeBindings)
+          (vars: VarTypes)
+          (e: Expr<'ExprExtension, 'ValueExtension>) ->
         let lookup (t: ExprType) : Sum<ExprType, Errors<_>> =
           sum {
             match t with
             | ExprType.LookupType lookupTypeId ->
               let! lookupType =
                 typeBindings
-                |> Map.tryFindWithError lookupTypeId "type id" (fun () -> lookupTypeId.VarName) ()
+                |> Map.tryFindWithError
+                  lookupTypeId
+                  "type id"
+                  (fun () -> lookupTypeId.VarName)
+                  ()
 
               return lookupType
             | _ -> return t
           }
 
-        let typeCheckVarLookup (vars: VarTypes) (_typeBindings: TypeBindings) (v: VarName) : Sum<ExprType, Errors<_>> =
-          sum { return! vars |> Map.tryFindWithError v "var" (fun () -> v.VarName) () }
+        let typeCheckVarLookup
+          (vars: VarTypes)
+          (_typeBindings: TypeBindings)
+          (v: VarName)
+          : Sum<ExprType, Errors<_>> =
+          sum {
+            return!
+              vars |> Map.tryFindWithError v "var" (fun () -> v.VarName) ()
+          }
 
         let rec typeCheckRecordFieldLookup
           (vars: VarTypes)
@@ -63,7 +82,9 @@ module TypeCheck =
               let! fieldDescriptorType =
                 entityDescriptor
                 |> Map.tryFindWithError field "field" (fun () -> field) ()
-                |> sum.MapError(Errors.Map(fun e -> e + " in record" + eType.ToString()))
+                |> sum.MapError(
+                  Errors.Map(fun e -> e + " in record" + eType.ToString())
+                )
 
               fieldDescriptorType
             | _ ->
@@ -78,7 +99,8 @@ module TypeCheck =
           (vars: VarTypes)
           (typeBindings: TypeBindings)
           (e: Expr<'ExprExtension, 'ValueExtension>)
-          (caseHandlers: Map<string, VarName * Expr<'ExprExtension, 'ValueExtension>>)
+          (caseHandlers:
+            Map<string, VarName * Expr<'ExprExtension, 'ValueExtension>>)
           : Sum<ExprType, Errors<_>> =
           let (!) = eval vars typeBindings
 
@@ -91,14 +113,16 @@ module TypeCheck =
                 caseHandlers
                 |> Map.tryFind sumCaseNames.Left
                 |> Sum.fromOption (fun () ->
-                  Errors.Singleton () (fun () -> $"Error: missing case handler for {sumCaseNames.Left}")
+                  Errors.Singleton () (fun () ->
+                    $"Error: missing case handler for {sumCaseNames.Left}")
                   |> Errors.MapPriority(replaceWith ErrorPriority.High))
 
               let! rightHandlerVarName, rightHandlerBody =
                 caseHandlers
                 |> Map.tryFind sumCaseNames.Right
                 |> Sum.fromOption (fun () ->
-                  Errors.Singleton () (fun () -> $"Error: missing case handler for {sumCaseNames.Right}")
+                  Errors.Singleton () (fun () ->
+                    $"Error: missing case handler for {sumCaseNames.Right}")
                   |> Errors.MapPriority(replaceWith ErrorPriority.High))
 
               if caseHandlers.Count <> 2 then
@@ -108,21 +132,39 @@ module TypeCheck =
                       $"Error: matchCase {e} has {caseHandlers.Count} case handlers, but expected 2 ({sumCaseNames.Left} and {sumCaseNames.Right}).")
                   )
               else
-                let! leftHandler = eval (vars |> Map.add leftHandlerVarName l) typeBindings leftHandlerBody
-                let! rightHandler = eval (vars |> Map.add rightHandlerVarName r) typeBindings rightHandlerBody
+                let! leftHandler =
+                  eval
+                    (vars |> Map.add leftHandlerVarName l)
+                    typeBindings
+                    leftHandlerBody
 
-                do! ExprType.Unify vars typeBindings leftHandler rightHandler |> Sum.map ignore
+                let! rightHandler =
+                  eval
+                    (vars |> Map.add rightHandlerVarName r)
+                    typeBindings
+                    rightHandlerBody
+
+                do!
+                  ExprType.Unify vars typeBindings leftHandler rightHandler
+                  |> Sum.map ignore
 
                 return leftHandler
             | UnionType cases ->
-              let handledCases = caseHandlers |> Seq.map (fun h -> h.Key) |> Set.ofSeq
+              let handledCases =
+                caseHandlers |> Seq.map (fun h -> h.Key) |> Set.ofSeq
 
               let expectedCases =
-                cases |> Map.values |> Seq.map (fun h -> h.CaseName) |> Set.ofSeq
+                cases
+                |> Map.values
+                |> Seq.map (fun h -> h.CaseName)
+                |> Set.ofSeq
 
               if Set.isProperSuperset handledCases expectedCases then
                 return!
-                  sum.Throw(Errors.Singleton () (fun () -> $"Error: too many handlers {handledCases - expectedCases}"))
+                  sum.Throw(
+                    Errors.Singleton () (fun () ->
+                      $"Error: too many handlers {handledCases - expectedCases}")
+                  )
               elif Set.isProperSuperset expectedCases handledCases then
                 return!
                   sum.Throw(
@@ -138,7 +180,8 @@ module TypeCheck =
                     |> Map.tryFind case.CaseName
                     |> Option.map (fun (varName, body) -> case, varName, body)
                     |> Sum.fromOption (fun () ->
-                      Errors.Singleton () (fun () -> $"Error: missing case handler for case {case.CaseName}")
+                      Errors.Singleton () (fun () ->
+                        $"Error: missing case handler for case {case.CaseName}")
                       |> Errors.MapPriority(replaceWith ErrorPriority.High)))
                   |> sum.All
 
@@ -167,7 +210,8 @@ module TypeCheck =
                         sum {
                           let! prevExpr, _ = unifications
 
-                          let! newUnifications = ExprType.Unify Map.empty typeBindings prevExpr expr
+                          let! newUnifications =
+                            ExprType.Unify Map.empty typeBindings prevExpr expr
 
                           return expr, newUnifications
                         })
@@ -177,7 +221,11 @@ module TypeCheck =
             | t ->
               return!
                 sum.Throw(
-                  fun () -> sprintf "Error: unexpected matchCase on type %A when typechecking expression %A" t e
+                  fun () ->
+                    sprintf
+                      "Error: unexpected matchCase on type %A when typechecking expression %A"
+                      t
+                      e
                   |> Errors.Singleton()
                 )
           }
@@ -190,7 +238,11 @@ module TypeCheck =
           : Sum<ExprType, Errors<_>> =
 
           sum {
-            let! bodyType = eval (vars |> Map.add parameter (ExprType.VarType parameter)) typeBindings body
+            let! bodyType =
+              eval
+                (vars |> Map.add parameter (ExprType.VarType parameter))
+                typeBindings
+                body
 
             return ExprType.GenericType(parameter, ExprTypeKind.Star, bodyType)
 
@@ -204,16 +256,23 @@ module TypeCheck =
           : Sum<ExprType, Errors<_>> =
           sum {
             let x_t_generic =
-              System.Guid.CreateVersion7().ToString() |> VarName.Create |> VarType
+              System.Guid.CreateVersion7().ToString()
+              |> VarName.Create
+              |> VarType
 
             let returnTypeGeneric =
-              System.Guid.CreateVersion7().ToString() |> VarName.Create |> VarType
+              System.Guid.CreateVersion7().ToString()
+              |> VarName.Create
+              |> VarType
 
             let x_t = x_t |> Option.defaultValue x_t_generic
             let returnType = returnType |> Option.defaultValue returnTypeGeneric
 
             let! ret = eval (vars |> Map.add x x_t) typeBindings body
-            do! ExprType.Unify vars typeBindings returnType ret |> sum.Map ignore
+
+            do!
+              ExprType.Unify vars typeBindings returnType ret |> sum.Map ignore
+
             return ExprType.ArrowType(x_t, returnType)
           }
 
@@ -228,10 +287,13 @@ module TypeCheck =
             match v with
             | Value.Unit -> return ExprType.UnitType
             | Value.Tuple items ->
-              let! evaluatedItems = items |> List.map Expr.Value |> List.map (!) |> sum.All
+              let! evaluatedItems =
+                items |> List.map Expr.Value |> List.map (!) |> sum.All
+
               let itemTypes = evaluatedItems
               ExprType.TupleType itemTypes
-            | Value.Lambda(x, t, returnType, body) -> return! typeCheckLambda vars typeBindings (x, t, returnType) body
+            | Value.Lambda(x, t, returnType, body) ->
+              return! typeCheckLambda vars typeBindings (x, t, returnType) body
             | Value.Extension e ->
               return!
                 typeCheckValueExtension
@@ -240,11 +302,13 @@ module TypeCheck =
                   typeBindings
                   vars
                   e
-            | Value.GenericLambda(parameter, body) -> return! typeCheckGenericLambda vars typeBindings parameter body
+            | Value.GenericLambda(parameter, body) ->
+              return! typeCheckGenericLambda vars typeBindings parameter body
             | _ ->
               return!
                 sum.Throw(
-                  (fun () -> $"not implemented type checker for value {v.ToString()}")
+                  (fun () ->
+                    $"not implemented type checker for value {v.ToString()}")
                   |> Errors.Singleton()
                 )
           }
@@ -267,14 +331,16 @@ module TypeCheck =
               else
                 return!
                   sum.Throw(
-                    fun () -> $"Error: invalid lookup index {i} when looking up {e.ToString()}."
+                    fun () ->
+                      $"Error: invalid lookup index {i} when looking up {e.ToString()}."
                     |> Errors.Singleton()
                   )
 
             | _ ->
               return!
                 sum.Throw(
-                  fun () -> $"Error: invalid lookup type {t.ToString()} when looking up {e.ToString()}.Item{i}."
+                  fun () ->
+                    $"Error: invalid lookup type {t.ToString()} when looking up {e.ToString()}.Item{i}."
                   |> Errors.Singleton()
                 )
           }
@@ -292,7 +358,9 @@ module TypeCheck =
 
             match f with
             | ExprType.GenericType(parameter, _, bodyType) ->
-              let res = ExprType.Substitute ([ parameter, arg ] |> Map.ofSeq) bodyType
+              let res =
+                ExprType.Substitute ([ parameter, arg ] |> Map.ofSeq) bodyType
+
               return res
             | _ ->
               return!
@@ -316,17 +384,27 @@ module TypeCheck =
             match f with
             | Expr.Value(Value.Lambda(x, x_t, returnType, body)) ->
               let x_t_generic =
-                System.Guid.CreateVersion7().ToString() |> VarName.Create |> VarType
+                System.Guid.CreateVersion7().ToString()
+                |> VarName.Create
+                |> VarType
 
               let returnTypeGeneric =
-                System.Guid.CreateVersion7().ToString() |> VarName.Create |> VarType
+                System.Guid.CreateVersion7().ToString()
+                |> VarName.Create
+                |> VarType
 
               let x_t = x_t |> Option.defaultValue x_t_generic
-              let returnType = returnType |> Option.defaultValue returnTypeGeneric
+
+              let returnType =
+                returnType |> Option.defaultValue returnTypeGeneric
 
               do! ExprType.Unify vars typeBindings x_t arg |> sum.Map ignore
               let! ret = eval (vars |> Map.add x x_t) typeBindings body
-              do! ExprType.Unify vars typeBindings returnType ret |> sum.Map ignore
+
+              do!
+                ExprType.Unify vars typeBindings returnType ret
+                |> sum.Map ignore
+
               return returnType
             | _ ->
               let! f = !f
@@ -363,12 +441,16 @@ module TypeCheck =
             match caseName with
             | caseName when caseName = sumCaseNames.Left ->
               let other =
-                System.Guid.CreateVersion7().ToString() |> VarName.Create |> ExprType.VarType
+                System.Guid.CreateVersion7().ToString()
+                |> VarName.Create
+                |> ExprType.VarType
 
               return ExprType.SumType(value, other)
             | caseName when caseName = sumCaseNames.Right ->
               let other =
-                System.Guid.CreateVersion7().ToString() |> VarName.Create |> ExprType.VarType
+                System.Guid.CreateVersion7().ToString()
+                |> VarName.Create
+                |> ExprType.VarType
 
               return ExprType.SumType(other, value)
             | _ ->
@@ -435,19 +517,35 @@ module TypeCheck =
 
             let mapKeysToSet = Map.keys >> Set.ofSeq
 
-            let intersection = newCases |> mapKeysToSet |> Set.intersect (cases |> mapKeysToSet)
+            let intersection =
+              newCases |> mapKeysToSet |> Set.intersect (cases |> mapKeysToSet)
 
             if intersection |> Set.isEmpty then
               sum.Return(
                 ExprType.SetType(
-                  RecordType(Map.ofList [ "Value", ExprType.UnionType(Map.merge (fun a _ -> a) newCases cases) ])
+                  RecordType(
+                    Map.ofList
+                      [ "Value",
+                        ExprType.UnionType(
+                          Map.merge (fun a _ -> a) newCases cases
+                        ) ]
+                  )
                 )
               )
             else
-              sum.Throw(Errors.Singleton () (fun () -> $"Error: cases {intersection} already exist in union {cases}"))
+              sum.Throw(
+                Errors.Singleton () (fun () ->
+                  $"Error: cases {intersection} already exist in union {cases}")
+              )
 
-          if newCases |> List.length <> (newCases |> List.distinct |> List.length) then
-            sum.Throw(Errors.Singleton () (fun () -> $"Error: cases {newCases} must be unique"))
+          if
+            newCases |> List.length
+            <> (newCases |> List.distinct |> List.length)
+          then
+            sum.Throw(
+              Errors.Singleton () (fun () ->
+                $"Error: cases {newCases} must be unique")
+            )
           else
             sum {
               let! eType = !expr
@@ -461,7 +559,10 @@ module TypeCheck =
                 let! inner = lookup (LookupType typeId)
                 let! recordFields = inner |> ExprType.AsRecord
 
-                if recordFields |> Map.count = 1 && recordFields |> Map.containsKey "Value" then
+                if
+                  recordFields |> Map.count = 1
+                  && recordFields |> Map.containsKey "Value"
+                then
                   let! valueType = lookup recordFields["Value"]
                   let! cases = valueType |> ExprType.AsUnion
                   return! prependCases newCases cases
@@ -481,20 +582,27 @@ module TypeCheck =
           let result =
             match e with
             | Expr.VarLookup v -> typeCheckVarLookup vars typeBindings v
-            | Expr.RecordFieldLookup(e, field) -> typeCheckRecordFieldLookup vars typeBindings e field
-            | Expr.MatchCase(e, caseHandlers) -> typeCheckMatchCase vars typeBindings e caseHandlers
+            | Expr.RecordFieldLookup(e, field) ->
+              typeCheckRecordFieldLookup vars typeBindings e field
+            | Expr.MatchCase(e, caseHandlers) ->
+              typeCheckMatchCase vars typeBindings e caseHandlers
             | Expr.Value v -> typeCheckValue vars typeBindings v
             | Expr.Project(e, i) -> typeCheckProjection vars typeBindings e i
             | Expr.Apply(f, arg) -> typeCheckApplication vars typeBindings f arg
-            | Expr.MakeRecord record -> typeCheckMakeRecord vars typeBindings record
+            | Expr.MakeRecord record ->
+              typeCheckMakeRecord vars typeBindings record
             | Expr.MakeTuple _ -> notImplementedError "MakeTuple"
             | Expr.MakeSet _ -> notImplementedError "MakeSet"
-            | Expr.MakeCase(caseName, value) -> typeCheckMakeCase vars typeBindings caseName value
-            | Expr.GenericApply(f, arg) -> typeCheckGenericApplication vars typeBindings f arg
+            | Expr.MakeCase(caseName, value) ->
+              typeCheckMakeCase vars typeBindings caseName value
+            | Expr.GenericApply(f, arg) ->
+              typeCheckGenericApplication vars typeBindings f arg
             | Expr.Let(x, e, rest) -> typeCheckLet vars typeBindings x e rest
-            | Expr.LetType(typeName, typeDef, rest) -> typeCheckLetType vars typeBindings typeName typeDef rest
+            | Expr.LetType(typeName, typeDef, rest) ->
+              typeCheckLetType vars typeBindings typeName typeDef rest
             | Expr.Annotate(_, _) -> notImplementedError "Annotate"
-            | Expr.Prepend(newCases, expr) -> typeCheckPrepend vars typeBindings newCases expr
+            | Expr.Prepend(newCases, expr) ->
+              typeCheckPrepend vars typeBindings newCases expr
             | Expr.Extension ext ->
               typeCheckExprExtension
                 (Expr.typeCheck typeCheckExprExtension typeCheckValueExtension)

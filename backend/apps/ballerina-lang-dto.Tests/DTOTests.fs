@@ -19,7 +19,11 @@ open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 open Ballerina.DSL.Next.StdLib.String
 
 let _, languageContext, typeCheckingConfig, build_cache =
-  hddcacheWithStdExtensions<unit, MutableMemoryDB<unit, unit>> (StringTypeClass<_>.Console()) (db_ops ()) id id
+  hddcacheWithStdExtensions<unit, MutableMemoryDB<unit, unit>>
+    (StringTypeClass<_>.Console())
+    (db_ops ())
+    id
+    id
 
 let primitive (v: string) =
   $"""
@@ -126,26 +130,47 @@ in r2
 let typeCheckProgram (programName: string) (program: string) =
   sum {
     let project: ProjectBuildConfiguration =
-      { Files = NonEmptyList.OfList(FileBuildConfiguration.FromFile($"{programName}.bl", program), []) }
+      { Files =
+          NonEmptyList.OfList(
+            FileBuildConfiguration.FromFile($"{programName}.bl", program),
+            []
+          ) }
 
-    return! ProjectBuildConfiguration.BuildCached typeCheckingConfig build_cache project
+    return!
+      ProjectBuildConfiguration.BuildCached
+        typeCheckingConfig
+        build_cache
+        project
   }
 
-let runProgram expr exprs (st: TypeCheckState<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>) =
+let runProgram
+  expr
+  exprs
+  (st: TypeCheckState<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>)
+  =
   sum {
     let evalContext = ExprEvalContext.Empty()
 
     let evalContext =
-      ExprEvalContext.WithTypeCheckingSymbols (evalContext |> languageContext.ExprEvalContext) st.Symbols
+      ExprEvalContext.WithTypeCheckingSymbols
+        (evalContext |> languageContext.ExprEvalContext)
+        st.Symbols
 
     return!
-      Expr.Eval(NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(expr, exprs)))
+      Expr.Eval(
+        NonEmptyList.prependList
+          languageContext.TypeCheckedPreludes
+          (NonEmptyList.OfList(expr, exprs))
+      )
       |> Reader.Run evalContext
   }
 
 let buildAndRunProgram (programName: string) (program: string) =
   sum {
-    let! NonEmptyList(expr, exprs), _, _, (st: TypeCheckState<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>) =
+    let! NonEmptyList(expr, exprs),
+         _,
+         _,
+         (st: TypeCheckState<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>) =
       typeCheckProgram programName program
 
     return! runProgram expr exprs st
@@ -219,8 +244,10 @@ let checkConversion
      >)
   =
   match conversion with
-  | Left(givenValue, _, returnedValue) -> Assert.That(givenValue, Is.EqualTo returnedValue)
-  | Right errors -> Assert.Fail $"Failed to convert {testCategory}: {errors.ToString()}"
+  | Left(givenValue, _, returnedValue) ->
+    Assert.That(givenValue, Is.EqualTo returnedValue)
+  | Right errors ->
+    Assert.Fail $"Failed to convert {testCategory}: {errors.ToString()}"
 
 
 [<Test>]
@@ -229,7 +256,8 @@ let ``Convert primitives and assert equality`` () =
   | Left results ->
     for givenValue, _, returnedValue in results do
       Assert.That(givenValue, Is.EqualTo returnedValue)
-  | Right errors -> Assert.Fail $"Failed to convert primitives: {errors.ToString()}"
+  | Right errors ->
+    Assert.Fail $"Failed to convert primitives: {errors.ToString()}"
 
 [<Test>]
 let ``Convert tuple and assert equality`` () =
@@ -249,7 +277,9 @@ let ``Convert union and assert equality`` () =
 
 [<Test>]
 let ``Convert empty list and assert equality`` () =
-  checkConversion "empty list" (runProgramAndConvert "empty-list-conversion" testEmptyList)
+  checkConversion
+    "empty list"
+    (runProgramAndConvert "empty-list-conversion" testEmptyList)
 
 [<Test>]
 let ``Convert list and assert equality`` () =
@@ -257,4 +287,6 @@ let ``Convert list and assert equality`` () =
 
 [<Test>]
 let ``Convert complex value and assert equality`` () =
-  checkConversion "complex value" (runProgramAndConvert "complex-value-conversion" testComplexType)
+  checkConversion
+    "complex value"
+    (runProgramAndConvert "complex-value-conversion" testComplexType)

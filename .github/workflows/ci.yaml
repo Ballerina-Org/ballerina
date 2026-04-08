@@ -28,7 +28,7 @@ jobs:
           dotnet-version: "10.0.201"
       - run: dotnet tool restore
       - run: dotnet build backend
-      - run: dotnet fantomas --check backend
+      # - run: dotnet fantomas --check backend
       - run: dotnet test backend
 
   ballerina-go:

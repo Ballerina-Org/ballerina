@@ -28,7 +28,9 @@ type private ValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
 
 let stdExtensions, languageContext, typeCheckingConfig =
   db_ops ()
-  |> bootstrapStdExtensions<Unit, _> (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
+  |> bootstrapStdExtensions<Unit, _> (
+    Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()
+  )
 
 let ``Assert Value<TypeValue> -> ToJson -> FromJson -> Value<TypeValue>``
   (expression: Value<TypeValue<ValueExt>, ValueExt>)
@@ -43,7 +45,10 @@ let ``Assert Value<TypeValue> -> ToJson -> FromJson -> Value<TypeValue>``
 
   let rootToJson =
     Json.buildRootEncoder<TypeValue<ValueExt>, ValueExt> (
-      NonEmptyList.OfList(Value.ToJson, [ List.Json.Extension.encoder ListExt.ValueLens ])
+      NonEmptyList.OfList(
+        Value.ToJson,
+        [ List.Json.Extension.encoder ListExt.ValueLens ]
+      )
     )
 
   let encoder = rootToJson >> Reader.Run(rootExprEncoder, TypeValue.ToJson)
@@ -59,12 +64,19 @@ let ``Assert Value<TypeValue> -> ToJson -> FromJson -> Value<TypeValue>``
 
     let rootFromJson =
       Json.buildRootParser<TypeValue<ValueExt>, ResolvedIdentifier, ValueExt> (
-        NonEmptyList.OfList(Value.FromJson, [ List.Json.Extension.parser ListExt.ValueLens ])
+        NonEmptyList.OfList(
+          Value.FromJson,
+          [ List.Json.Extension.parser ListExt.ValueLens ]
+        )
       )
 
     let parser =
       rootFromJson
-      >> Reader.Run(rootExprFromJson, TypeValue.FromJson, ResolvedIdentifier.FromJson)
+      >> Reader.Run(
+        rootExprFromJson,
+        TypeValue.FromJson,
+        ResolvedIdentifier.FromJson
+      )
 
     let parsed = parser expectedJson
 
@@ -83,37 +95,57 @@ let ``Dsl:Terms:Value:TypeValue.Rest json round-trip`` () =
       TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") }
 
   let testCases: List<string * Value<TypeValue<ValueExt>, ValueExt>> =
-    [ """{"discriminator": "var", "value":"myVar"}""", Var.Create "myVar" |> Value.Var
-      """{"discriminator": "int32", "value":"123"}""", PrimitiveValue.Int32 123 |> Value.Primitive
-      """{"discriminator": "decimal", "value":"123.456"}""", PrimitiveValue.Decimal 123.456M |> Value.Primitive
-      """{"discriminator": "boolean", "value":"true"}""", PrimitiveValue.Bool true |> Value.Primitive
+    [ """{"discriminator": "var", "value":"myVar"}""",
+      Var.Create "myVar" |> Value.Var
+      """{"discriminator": "int32", "value":"123"}""",
+      PrimitiveValue.Int32 123 |> Value.Primitive
+      """{"discriminator": "decimal", "value":"123.456"}""",
+      PrimitiveValue.Decimal 123.456M |> Value.Primitive
+      """{"discriminator": "boolean", "value":"true"}""",
+      PrimitiveValue.Bool true |> Value.Primitive
       """{"discriminator": "record", "value":[[{"discriminator":"id","value":["","",null,"bar"]}, {"discriminator":"string","value":"baz"}],
       [{"discriminator":"id","value":["","",null,"foo"]}, {"discriminator":"int32","value":"42"}]
         ]}""",
       Value<TypeValue<ValueExt>, ValueExt>
         .Record(
           Map.ofList
-            [ foo.Name |> TypeCheckScope.Empty.Resolve, PrimitiveValue.Int32 42 |> Value.Primitive
-              bar.Name |> TypeCheckScope.Empty.Resolve, PrimitiveValue.String "baz" |> Value.Primitive ]
+            [ foo.Name |> TypeCheckScope.Empty.Resolve,
+              PrimitiveValue.Int32 42 |> Value.Primitive
+              bar.Name |> TypeCheckScope.Empty.Resolve,
+              PrimitiveValue.String "baz" |> Value.Primitive ]
         )
       """{"discriminator": "union-case", "value": [{"discriminator":"id", "value":["","",null,"foo"]}, {"discriminator":"int32","value":"42"}]}""",
-      Value.UnionCase(foo.Name |> TypeCheckScope.Empty.Resolve, PrimitiveValue.Int32 42 |> Value.Primitive)
+      Value.UnionCase(
+        foo.Name |> TypeCheckScope.Empty.Resolve,
+        PrimitiveValue.Int32 42 |> Value.Primitive
+      )
       """{"discriminator": "tuple", "value":[{"discriminator":"int32","value":"1"},{"discriminator":"string","value":"two"}]}""",
       Value.Tuple(
         [ PrimitiveValue.Int32 1 |> Value.Primitive
           PrimitiveValue.String "two" |> Value.Primitive ]
       )
       """{"discriminator": "sum", "value": [3, 3, {"discriminator":"int32","value":"42"}]}""",
-      Value.Sum({ Case = 3; Count = 3 }, PrimitiveValue.Int32 42 |> Value.Primitive)
+      Value.Sum(
+        { Case = 3; Count = 3 },
+        PrimitiveValue.Int32 42 |> Value.Primitive
+      )
       """{"discriminator": "type-lambda", "value":[{"name":"T", "kind":{"discriminator":"star"}}, {"discriminator":"int32","value":"42"}]}""",
       Value.TypeLambda(
         { Name = "T"; Kind = Kind.Star },
-        TypeCheckedExpr.Primitive(PrimitiveValue.Int32 42, TypeValue.CreateUnit(), Kind.Star)
+        TypeCheckedExpr.Primitive(
+          PrimitiveValue.Int32 42,
+          TypeValue.CreateUnit(),
+          Kind.Star
+        )
       )
       """{"discriminator": "lambda", "value": ["x", {"discriminator":"int32","value":"42"}]}""",
       Value.Lambda(
         Var.Create "x",
-        TypeCheckedExpr.Primitive(PrimitiveValue.Int32 42, TypeValue.CreateUnit(), Kind.Star),
+        TypeCheckedExpr.Primitive(
+          PrimitiveValue.Int32 42,
+          TypeValue.CreateUnit(),
+          Kind.Star
+        ),
         Map.empty,
         TypeCheckScope.Empty
       )

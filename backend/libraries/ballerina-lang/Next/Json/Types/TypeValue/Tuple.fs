@@ -20,14 +20,23 @@ module Tuple =
     static member FromJsonTuple
       (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors<unit>>)
       : JsonValue -> Sum<List<TypeValue<'valueExt>>, Errors<unit>> =
-      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun tupleFields ->
-        sum {
-          let! elements = tupleFields |> JsonValue.AsArray
-          let! elementTypes = elements |> Array.map (fun element -> element |> fromRootJson) |> sum.All
-          return elementTypes
-        })
+      Sum.assertDiscriminatorAndContinueWithValue
+        discriminator
+        (fun tupleFields ->
+          sum {
+            let! elements = tupleFields |> JsonValue.AsArray
 
-    static member ToJsonTuple(rootToJson: TypeValue<'valueExt> -> JsonValue) : List<TypeValue<'valueExt>> -> JsonValue =
+            let! elementTypes =
+              elements
+              |> Array.map (fun element -> element |> fromRootJson)
+              |> sum.All
+
+            return elementTypes
+          })
+
+    static member ToJsonTuple
+      (rootToJson: TypeValue<'valueExt> -> JsonValue)
+      : List<TypeValue<'valueExt>> -> JsonValue =
       List.toArray
       >> Array.map rootToJson
       >> JsonValue.Array

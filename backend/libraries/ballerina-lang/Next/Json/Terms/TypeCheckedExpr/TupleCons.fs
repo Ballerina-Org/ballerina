@@ -21,12 +21,21 @@ module TupleCons =
       (fromRootJson: TypeCheckedExprParser<'valueExt>)
       (value: JsonValue)
       : TypeCheckedExprParserReader<'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun elementsJson ->
-        reader {
-          let! elements = elementsJson |> JsonValue.AsArray |> reader.OfSum
-          let! elements = elements |> Seq.map fromRootJson |> reader.All
-          return TypeCheckedExpr.TupleCons(elements, TypeValue.CreateUnit(), Kind.Star)
-        })
+      Reader.assertDiscriminatorAndContinueWithValue
+        discriminator
+        value
+        (fun elementsJson ->
+          reader {
+            let! elements = elementsJson |> JsonValue.AsArray |> reader.OfSum
+            let! elements = elements |> Seq.map fromRootJson |> reader.All
+
+            return
+              TypeCheckedExpr.TupleCons(
+                elements,
+                TypeValue.CreateUnit(),
+                Kind.Star
+              )
+          })
 
     static member ToJsonTupleCons
       (rootToJson: TypeCheckedExprEncoder<'valueExt>)
@@ -35,4 +44,6 @@ module TupleCons =
       tuple
       |> List.map rootToJson
       |> reader.All
-      |> reader.Map(Array.ofList >> JsonValue.Array >> Json.discriminator discriminator)
+      |> reader.Map(
+        Array.ofList >> JsonValue.Array >> Json.discriminator discriminator
+      )

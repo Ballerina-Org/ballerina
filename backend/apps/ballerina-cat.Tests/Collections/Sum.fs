@@ -11,7 +11,11 @@ type Errors =
   { Errors: NonEmptyList<Error> }
 
   static member Concat(e1, e2) =
-    { Errors = NonEmptyList.OfList(e1.Errors.Head, e1.Errors.Tail @ (e2.Errors |> NonEmptyList.ToList)) }
+    { Errors =
+        NonEmptyList.OfList(
+          e1.Errors.Head,
+          e1.Errors.Tail @ (e2.Errors |> NonEmptyList.ToList)
+        ) }
 
 [<Test>]
 let TestAllShouldCollectAllErrors () =
@@ -48,7 +52,8 @@ let TestAllNonEmptyShouldCollectAllErrors () =
   let dataWithError: NonEmptyList<Sum<unit, Errors>> =
     NonEmptyList.OfList(
       Sum.Right({ Errors = NonEmptyList.One { Message = "Error1" } }),
-      [ Sum.Left(); Sum.Right({ Errors = NonEmptyList.One { Message = "Error2" } }) ]
+      [ Sum.Left()
+        Sum.Right({ Errors = NonEmptyList.One { Message = "Error2" } }) ]
     )
 
   let merged: Sum<NonEmptyList<unit>, Errors> = sum.AllNonEmpty dataWithError
@@ -65,7 +70,10 @@ let TestAllNonEmptyShouldCollectAllErrors () =
 [<Test>]
 let TestAllNonEmptyShouldCollectSingleError () =
   let dataWithError: NonEmptyList<Sum<unit, Errors>> =
-    NonEmptyList.OfList(Sum.Right({ Errors = NonEmptyList.One { Message = "Error1" } }), [ Sum.Left() ])
+    NonEmptyList.OfList(
+      Sum.Right({ Errors = NonEmptyList.One { Message = "Error1" } }),
+      [ Sum.Left() ]
+    )
 
   let merged: Sum<NonEmptyList<unit>, Errors> = sum.AllNonEmpty dataWithError
 
@@ -86,5 +94,6 @@ let TestAllNonEmptyShouldCollectReturnValuesIfNoErrors () =
   let expected: NonEmptyList<int> = NonEmptyList.OfList(1, [ 2 ])
 
   match merged with
-  | Sum.Left values -> Assert.That(values, Is.EqualTo<NonEmptyList<int>> expected)
+  | Sum.Left values ->
+    Assert.That(values, Is.EqualTo<NonEmptyList<int>> expected)
   | Sum.Right _ -> Assert.Fail "Expected Left"

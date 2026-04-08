@@ -20,7 +20,8 @@ module TopologicalSort =
     let result = TopologicalSort.sort graph
 
     match result with
-    | Left sortedList -> Assert.That(sortedList, Is.EqualTo<string list> [ "D"; "C"; "B"; "A" ])
+    | Left sortedList ->
+      Assert.That(sortedList, Is.EqualTo<string list> [ "D"; "C"; "B"; "A" ])
     | Right err -> Assert.Fail $"Expected successful sort, but got error: {err}"
 
   [<Test>]
@@ -29,14 +30,24 @@ module TopologicalSort =
     let result = TopologicalSort.sort graph
 
     match result with
-    | Left _ -> Assert.Fail "Expected error due to cycle, but got successful result"
-    | Right errors -> Assert.That((errors.Errors()).Head.Message, Does.Contain "Cycle detected")
+    | Left _ ->
+      Assert.Fail "Expected error due to cycle, but got successful result"
+    | Right errors ->
+      Assert.That((errors.Errors()).Head.Message, Does.Contain "Cycle detected")
 
   [<Test>]
   let ``Should fail if dependency node not actually in graph`` () =
-    let graph = Map.ofList [ "A", Set.ofList [ "B"; "C" ]; "B", Set.ofList [ "D" ] ]
+    let graph =
+      Map.ofList [ "A", Set.ofList [ "B"; "C" ]; "B", Set.ofList [ "D" ] ]
+
     let result = TopologicalSort.sort graph
 
     match result with
-    | Left _ -> Assert.Fail "Expected error due to missing node, but got successful result"
-    | Right errors -> Assert.That((errors.Errors()).Head.Message, Does.Contain "cannot find node")
+    | Left _ ->
+      Assert.Fail
+        "Expected error due to missing node, but got successful result"
+    | Right errors ->
+      Assert.That(
+        (errors.Errors()).Head.Message,
+        Does.Contain "cannot find node"
+      )

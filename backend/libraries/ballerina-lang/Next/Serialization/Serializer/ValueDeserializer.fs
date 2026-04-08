@@ -13,19 +13,34 @@ module ValueDeserializer =
   let nullableToOption (value: 'T | null) : Option<'T> =
     if isNull value then None else Some value
 
-  let assertValue (value: 'T | null) (category: string) : Reader<'T, 'context, Errors<unit>> =
+  let assertValue
+    (value: 'T | null)
+    (category: string)
+    : Reader<'T, 'context, Errors<unit>> =
     if isNull value then
-      reader.Throw(Errors.Singleton () (fun _ -> $"Expected non nullable value when parsing {category}."))
+      reader.Throw(
+        Errors.Singleton () (fun _ ->
+          $"Expected non nullable value when parsing {category}.")
+      )
     else
       reader.Return value
 
-  let assertNonNullable (nullable: Nullable<'T>) (category: string) : Reader<'T, 'context, Errors<unit>> =
+  let assertNonNullable
+    (nullable: Nullable<'T>)
+    (category: string)
+    : Reader<'T, 'context, Errors<unit>> =
     if nullable.HasValue |> not then
-      reader.Throw(Errors.Singleton () (fun _ -> $"Expected non nullable value when parsing {category}."))
+      reader.Throw(
+        Errors.Singleton () (fun _ ->
+          $"Expected non nullable value when parsing {category}.")
+      )
     else
       reader.Return nullable.Value
 
-  let assertSingleElementDictionary (dictionary: System.Collections.Generic.Dictionary<'k, 'v>) (category: string) =
+  let assertSingleElementDictionary
+    (dictionary: System.Collections.Generic.Dictionary<'k, 'v>)
+    (category: string)
+    =
     reader {
       if dictionary.Count <> 1 then
         return!
@@ -38,7 +53,8 @@ module ValueDeserializer =
         dictionary
         |> Seq.tryHead
         |> reader.OfOption(
-          Errors.Singleton () (fun _ -> $"The {category} DTO was an empty dictionary. Expected 1 element.")
+          Errors.Singleton () (fun _ ->
+            $"The {category} DTO was an empty dictionary. Expected 1 element.")
         )
 
       return dto.Key, dto.Value
@@ -53,7 +69,9 @@ module ValueDeserializer =
         recordDTO
         |> Seq.map (fun recordKV ->
           reader {
-            let! identifier = ResolvedIdentifier.TryParse recordKV.Key |> reader.OfSum
+            let! identifier =
+              ResolvedIdentifier.TryParse recordKV.Key |> reader.OfSum
+
             let! value = valueFromDTO recordKV.Value
             return identifier, value
           })
@@ -64,8 +82,13 @@ module ValueDeserializer =
   and unionCaseFromDTO (valueDTO: ValueDTO<'valueExtDTO>) =
     reader {
       let! unionCaseDTO = assertValue valueDTO.UnionCase "union case"
-      let! identifierDTO, valueDTO = assertSingleElementDictionary unionCaseDTO "union case"
-      let! identifier = ResolvedIdentifier.TryParse identifierDTO |> reader.OfSum
+
+      let! identifierDTO, valueDTO =
+        assertSingleElementDictionary unionCaseDTO "union case"
+
+      let! identifier =
+        ResolvedIdentifier.TryParse identifierDTO |> reader.OfSum
+
       let! value = valueFromDTO valueDTO
       return UnionCase(identifier, value)
     }
@@ -73,7 +96,12 @@ module ValueDeserializer =
   and tupleFromDTO (valueDTO: ValueDTO<'valueExtDTO>) =
     reader {
       let! itemsDTO = assertValue valueDTO.Tuple "tuple"
-      return! itemsDTO |> Array.map valueFromDTO |> reader.All |> reader.Map Value.Tuple
+
+      return!
+        itemsDTO
+        |> Array.map valueFromDTO
+        |> reader.All
+        |> reader.Map Value.Tuple
     }
 
   and sumFromDTO (valueDTO: ValueDTO<'valueExtDTO>) =
@@ -87,7 +115,12 @@ module ValueDeserializer =
 
   and primitiveValueFromDTO
     (primitive: PrimitiveValueDTO)
-    : Reader<Value<TypeValue<'valueExt>, 'valueExt>, SerializationContext<'valueExt, 'valueExtDTO>, Errors<unit>> =
+    : Reader<
+        Value<TypeValue<'valueExt>, 'valueExt>,
+        SerializationContext<'valueExt, 'valueExtDTO>,
+        Errors<unit>
+       >
+    =
     reader.Any(
       NonEmptyList(
         assertNonNullable primitive.Int32 "int32"
@@ -118,7 +151,12 @@ module ValueDeserializer =
 
   and primitiveFromDTO
     (valueDTO: ValueDTO<'valueExtDTO>)
-    : Reader<Value<TypeValue<'valueExt>, 'valueExt>, SerializationContext<'valueExt, 'valueExtDTO>, Errors<unit>> =
+    : Reader<
+        Value<TypeValue<'valueExt>, 'valueExt>,
+        SerializationContext<'valueExt, 'valueExtDTO>,
+        Errors<unit>
+       >
+    =
     reader {
       let! primitiveValue = assertValue valueDTO.Primitive "primitive"
       return! primitiveValueFromDTO primitiveValue
@@ -126,12 +164,22 @@ module ValueDeserializer =
 
   and varFromDTO
     (valueDTO: ValueDTO<'valueExtDTO>)
-    : Reader<Value<TypeValue<'valueExt>, 'valueExt>, SerializationContext<'valueExt, 'valueExtDTO>, Errors<unit>> =
+    : Reader<
+        Value<TypeValue<'valueExt>, 'valueExt>,
+        SerializationContext<'valueExt, 'valueExtDTO>,
+        Errors<unit>
+       >
+    =
     assertValue valueDTO.Var "var" |> reader.Map Var
 
   and extFromDTO
     (valueDTO: ValueDTO<'valueExtDTO>)
-    : Reader<Value<TypeValue<'valueExt>, 'valueExt>, SerializationContext<'valueExt, 'valueExtDTO>, Errors<unit>> =
+    : Reader<
+        Value<TypeValue<'valueExt>, 'valueExt>,
+        SerializationContext<'valueExt, 'valueExtDTO>,
+        Errors<unit>
+       >
+    =
     reader {
       let! extDTO = assertValue valueDTO.Ext "extension"
       let! context = reader.GetContext()
@@ -140,18 +188,33 @@ module ValueDeserializer =
 
   and extWithIdFromDTO
     (valueDTO: ValueDTO<'valueExtDTO>)
-    : Reader<Value<TypeValue<'valueExt>, 'valueExt>, SerializationContext<'valueExt, 'valueExtDTO>, Errors<unit>> =
+    : Reader<
+        Value<TypeValue<'valueExt>, 'valueExt>,
+        SerializationContext<'valueExt, 'valueExtDTO>,
+        Errors<unit>
+       >
+    =
     reader {
       let! extDTO = assertValue valueDTO.ExtWithId "extension with applicable"
-      let! applicableIdDTO, extDTO = assertSingleElementDictionary extDTO "extension with applicable"
-      let! applicableId = ResolvedIdentifier.TryParse applicableIdDTO |> reader.OfSum
+
+      let! applicableIdDTO, extDTO =
+        assertSingleElementDictionary extDTO "extension with applicable"
+
+      let! applicableId =
+        ResolvedIdentifier.TryParse applicableIdDTO |> reader.OfSum
+
       let! context = reader.GetContext()
       return! context.FromDTO extDTO (Some applicableId)
     }
 
   and valueFromDTO
     (valueDTO: ValueDTO<'valueExtDTO>)
-    : Reader<Value<TypeValue<'valueExt>, 'valueExt>, SerializationContext<'valueExt, 'valueExtDTO>, Errors<unit>> =
+    : Reader<
+        Value<TypeValue<'valueExt>, 'valueExt>,
+        SerializationContext<'valueExt, 'valueExtDTO>,
+        Errors<unit>
+       >
+    =
     reader.Any(
       (recordFromDTO valueDTO,
        [ unionCaseFromDTO valueDTO
@@ -160,17 +223,28 @@ module ValueDeserializer =
          primitiveFromDTO valueDTO
          varFromDTO valueDTO
          extFromDTO valueDTO
-         reader.Throw(Errors.Singleton () (fun _ -> $"The value {valueDTO} cannot be converted from DTO.")) ])
+         reader.Throw(
+           Errors.Singleton () (fun _ ->
+             $"The value {valueDTO} cannot be converted from DTO.")
+         ) ])
       |> NonEmptyList
     )
 
   type Value<'T, 'valueExt> with
     static member JsonDeserializeV2
       (json: string)
-      : Reader<Value<TypeValue<'valueExt>, 'valueExt>, SerializationContext<'valueExt, 'valueExtDTO>, Errors<unit>> =
+      : Reader<
+          Value<TypeValue<'valueExt>, 'valueExt>,
+          SerializationContext<'valueExt, 'valueExtDTO>,
+          Errors<unit>
+         >
+      =
       reader {
         let value: ValueDTO<'valueExtDTO> =
-          JsonSerializer.Deserialize<ValueDTO<'valueExtDTO>>(json, jsonSerializationConfiguration)
+          JsonSerializer.Deserialize<ValueDTO<'valueExtDTO>>(
+            json,
+            jsonSerializationConfiguration
+          )
 
         return! valueFromDTO value
       }

@@ -14,8 +14,10 @@ module TypeLambdas =
   open Ballerina.DSL.Next.Serialization
   open Ballerina.Collections.Map
 
-  type TypeLambdaExtension<'runtimeContext, 'e, 'extDTO, 'extTypeLambda when 'extDTO: not null and 'extDTO: not struct> with
-    static member RegisterTypeCheckContext<'runtimeContext, 'ext when 'ext: comparison>
+  type TypeLambdaExtension<'runtimeContext, 'e, 'extDTO, 'extTypeLambda
+    when 'extDTO: not null and 'extDTO: not struct> with
+    static member RegisterTypeCheckContext<'runtimeContext, 'ext
+      when 'ext: comparison>
       (ext: TypeLambdaExtension<'runtimeContext, 'ext, 'extDTO, 'extTypeLambda>)
       : Updater<TypeCheckContext<'ext>> =
       fun typeCheckContext ->
@@ -28,14 +30,18 @@ module TypeLambdas =
             Values = values }
 
 
-    static member RegisterTypeCheckState<'runtimeContext, 'ext when 'ext: comparison>
+    static member RegisterTypeCheckState<'runtimeContext, 'ext
+      when 'ext: comparison>
       (ext: TypeLambdaExtension<'runtimeContext, 'ext, 'extDTO, 'extTypeLambda>)
       : Updater<TypeCheckState<'ext>> =
       fun typeCheckState ->
         { typeCheckState with
-            Bindings = typeCheckState.Bindings |> Map.merge (fun _ -> id) ext.ExtraBindings }
+            Bindings =
+              typeCheckState.Bindings
+              |> Map.merge (fun _ -> id) ext.ExtraBindings }
 
-    static member RegisterExprEvalContext<'runtimeContext, 'ext when 'ext: comparison>
+    static member RegisterExprEvalContext<'runtimeContext, 'ext
+      when 'ext: comparison>
       (ext: TypeLambdaExtension<'runtimeContext, 'ext, 'extDTO, 'extTypeLambda>)
       : Updater<ExprEvalContext<'runtimeContext, 'ext>> =
       fun evalContext ->
@@ -44,28 +50,51 @@ module TypeLambdas =
         let newOps = [ ext.EvalToTypeApplicable; ext.EvalToApplicable ]
 
         let ops =
-          fun loc0 rest v -> reader.Any(ops loc0 rest v, newOps |> List.map (fun newOp -> newOp loc0 rest v))
+          fun loc0 rest v ->
+            reader.Any(
+              ops loc0 rest v,
+              newOps |> List.map (fun newOp -> newOp loc0 rest v)
+            )
 
         let id, _, _ = ext.ExtensionType
 
         { evalContext with
             Scope =
               { evalContext.Scope with
-                  Values = Map.add id ((ext.Value |> ext.ValueLens.Set, None) |> Ext) evalContext.Scope.Values }
+                  Values =
+                    Map.add
+                      id
+                      ((ext.Value |> ext.ValueLens.Set, None) |> Ext)
+                      evalContext.Scope.Values }
             ExtensionOps =
               { Eval = ops
                 Applicables = evalContext.ExtensionOps.Applicables } }
 
     static member RegisterLanguageContext<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO
-      when 'ext: comparison and 'deltaExtDTO: not null and 'deltaExtDTO: not struct>
+      when 'ext: comparison
+      and 'deltaExtDTO: not null
+      and 'deltaExtDTO: not struct>
       (ext: TypeLambdaExtension<'runtimeContext, 'ext, 'extDTO, 'extTypeLambda>)
-      : Updater<LanguageContext<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>> =
+      : Updater<
+          LanguageContext<
+            'runtimeContext,
+            'ext,
+            'extDTO,
+            'deltaExt,
+            'deltaExtDTO
+           >
+         >
+      =
       fun langCtx ->
         { TypeCheckContext =
             langCtx.TypeCheckContext
             |> (ext |> TypeLambdaExtension.RegisterTypeCheckContext)
-          ExprEvalContext = langCtx.ExprEvalContext >> (ext |> TypeLambdaExtension.RegisterExprEvalContext)
+          ExprEvalContext =
+            langCtx.ExprEvalContext
+            >> (ext |> TypeLambdaExtension.RegisterExprEvalContext)
           TypeCheckedPreludes = langCtx.TypeCheckedPreludes
-          TypeCheckState = langCtx.TypeCheckState |> (ext |> TypeLambdaExtension.RegisterTypeCheckState)
+          TypeCheckState =
+            langCtx.TypeCheckState
+            |> (ext |> TypeLambdaExtension.RegisterTypeCheckState)
           SerializationContext = langCtx.SerializationContext
           ExtTypeChecker = langCtx.ExtTypeChecker }

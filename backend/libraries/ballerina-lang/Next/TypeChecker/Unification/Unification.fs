@@ -50,7 +50,16 @@ module Unification =
           let! tVars = TypeExpr.FreeVariables t
           let! tWithPropsVars = TypeExpr.FreeVariables t_with_props
           let! tIdVars = TypeExpr.FreeVariables t_id
-          return Set.unionMany [ sVars; fVars; fWithPropsVars; tVars; tWithPropsVars; fIdVars; tIdVars ]
+
+          return
+            Set.unionMany
+              [ sVars
+                fVars
+                fWithPropsVars
+                tVars
+                tWithPropsVars
+                fIdVars
+                tIdVars ]
         | TypeExpr.RelationLookupOne(s, t', f_id, t_id) ->
           let! sVars = TypeExpr.FreeVariables s
           let! tVars = TypeExpr.FreeVariables t'
@@ -87,7 +96,9 @@ module Unification =
             |> reader.MapContext(
               UnificationContext.Updaters.EvalState(
                 TypeCheckState.Updaters.Bindings(
-                  Map.add !p.Name (TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                  Map.add
+                    !p.Name
+                    (TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                 )
               )
             )
@@ -109,8 +120,12 @@ module Unification =
           return vars |> Set.unionMany
         | TypeExpr.Record es
         | TypeExpr.Union es ->
-          let! vars = es |> Seq.map (fun (_, v) -> TypeExpr.FreeVariables v) |> reader.All
-          let! keys = es |> Seq.map (fun (k, _) -> TypeExpr.FreeVariables k) |> reader.All
+          let! vars =
+            es |> Seq.map (fun (_, v) -> TypeExpr.FreeVariables v) |> reader.All
+
+          let! keys =
+            es |> Seq.map (fun (k, _) -> TypeExpr.FreeVariables k) |> reader.All
+
           return keys @ vars |> Set.unionMany
         | TypeExpr.Primitive _
         | TypeExpr.Imported _
@@ -118,7 +133,10 @@ module Unification =
         | TypeExpr.FromQueryRow -> return Set.empty
         | TypeExpr.Lookup l ->
           let! t =
-            TypeCheckState.tryFindType (l |> ctx.Scope.Resolve, Location.Unknown)
+            TypeCheckState.tryFindType (
+              l |> ctx.Scope.Resolve,
+              Location.Unknown
+            )
             |> reader.MapContext(fun ctx -> ctx.EvalState)
             |> reader.Catch
 
@@ -190,7 +208,12 @@ module Unification =
 
     static member MostSpecific<'valueExt when 'valueExt: comparison>
       (loc0: Location, t1: TypeQueryRow<'valueExt>, t2: TypeQueryRow<'valueExt>)
-      : Reader<TypeQueryRow<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>> =
+      : Reader<
+          TypeQueryRow<'valueExt>,
+          TypeCheckState<'valueExt>,
+          Errors<Location>
+         >
+      =
       reader {
         let error e = Errors.Singleton loc0 e
 
@@ -207,15 +230,21 @@ module Unification =
         | TypeQueryRow.Json j1, TypeQueryRow.Json j2 ->
           let! j = j1 === j2
           return TypeQueryRow.Json j
-        | TypeQueryRow.PrimitiveType(p1, is_nullable1), TypeQueryRow.PrimitiveType(p2, is_nullable2) when
+        | TypeQueryRow.PrimitiveType(p1, is_nullable1),
+          TypeQueryRow.PrimitiveType(p2, is_nullable2) when
           p1 = p2 && is_nullable1 = is_nullable2
           ->
           return TypeQueryRow.PrimitiveType(p1, is_nullable1)
-        | TypeQueryRow.Tuple e1, TypeQueryRow.Tuple e2 when e1.Length = e2.Length ->
-          let! items = List.zip e1 e2 |> Seq.map (fun (v1, v2) -> v1 == v2) |> reader.All
+        | TypeQueryRow.Tuple e1, TypeQueryRow.Tuple e2 when
+          e1.Length = e2.Length
+          ->
+          let! items =
+            List.zip e1 e2 |> Seq.map (fun (v1, v2) -> v1 == v2) |> reader.All
 
           return TypeQueryRow.Tuple items
-        | TypeQueryRow.Record e1, TypeQueryRow.Record e2 when e1.Count = e2.Count ->
+        | TypeQueryRow.Record e1, TypeQueryRow.Record e2 when
+          e1.Count = e2.Count
+          ->
           let! items =
             e1
             |> Map.map (fun k v1 ->
@@ -236,7 +265,8 @@ module Unification =
           return TypeQueryRow.Record items
         | _ ->
           return!
-            (fun () -> $"Cannot determine most specific query row type between {t1} and {t2}")
+            (fun () ->
+              $"Cannot determine most specific query row type between {t1} and {t2}")
             |> error
             |> reader.Throw
       }
@@ -292,14 +322,17 @@ module Unification =
             return Set.empty
           else
             return Set.singleton v
-        | TypeValue.Application { value = a } -> return! SymbolicTypeApplication.FreeVariables a
+        | TypeValue.Application { value = a } ->
+          return! SymbolicTypeApplication.FreeVariables a
         | TypeValue.Lambda { value = p, t } ->
           return!
             TypeExpr.FreeVariables t
             |> reader.MapContext(
               UnificationContext.Updaters.EvalState(
                 TypeCheckState.Updaters.Bindings(
-                  Map.add !p.Name (TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                  Map.add
+                    !p.Name
+                    (TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                 )
               )
             )
@@ -333,7 +366,10 @@ module Unification =
         | TypeValue.Primitive _ -> return Set.empty
         | TypeValue.Lookup l ->
           let! t, _ =
-            TypeCheckState.tryFindType (l |> ctx.Scope.Resolve, Location.Unknown)
+            TypeCheckState.tryFindType (
+              l |> ctx.Scope.Resolve,
+              Location.Unknown
+            )
             |> reader.MapContext(fun ctx -> ctx.EvalState)
 
           return! TypeValue.FreeVariables t
@@ -360,14 +396,21 @@ module Unification =
           let! q = q1 === _q2
           return TypeValue.QueryRow q
         | TypeValue.Schema s1, TypeValue.Schema s2 when
-          s1.Entities.Count = s2.Entities.Count && s1.Relations.Count = s2.Relations.Count
+          s1.Entities.Count = s2.Entities.Count
+          && s1.Relations.Count = s2.Relations.Count
           ->
           let! entities =
             s1.Entities
             |> OrderedMap.map (fun k v1 ->
               reader {
-                let ofSum = sum.MapError(Errors.MapContext(replaceWith loc0)) >> reader.OfSum
-                let! v2 = s2.Entities |> OrderedMap.tryFindWithError k "schema entity" k.Name |> ofSum
+                let ofSum =
+                  sum.MapError(Errors.MapContext(replaceWith loc0))
+                  >> reader.OfSum
+
+                let! v2 =
+                  s2.Entities
+                  |> OrderedMap.tryFindWithError k "schema entity" k.Name
+                  |> ofSum
 
                 let! t = v1.TypeOriginal == v2.TypeOriginal
                 let! tWithProps = v1.TypeWithProps == v2.TypeWithProps
@@ -382,11 +425,15 @@ module Unification =
             |> reader.AllMapOrdered
 
           return TypeValue.Schema { s1 with Entities = entities }
-        | TypeValue.Primitive p1, TypeValue.Primitive p2 when p1.value = p2.value -> return t1
+        | TypeValue.Primitive p1, TypeValue.Primitive p2 when
+          p1.value = p2.value
+          ->
+          return t1
         | TypeValue.Lookup l1, TypeValue.Lookup l2 when l1 = l2 -> return t1
         | TypeValue.Lookup l1, TypeValue.Lookup l2 when l1 <> l2 ->
           return!
-            (fun () -> $"Cannot determine most specific type between {t1} and {t2}, they are lookups {l1} and {l2}")
+            (fun () ->
+              $"Cannot determine most specific type between {t1} and {t2}, they are lookups {l1} and {l2}")
             |> error
             |> reader.Throw
         | TypeValue.Lookup _, _ -> return t2
@@ -400,23 +447,37 @@ module Unification =
         | TypeValue.Set e1, TypeValue.Set e2 ->
           let! e = e1.value == e2.value
           return TypeValue.CreateSet e
-        | TypeValue.Tuple e1, TypeValue.Tuple e2 when e1.value.Length = e2.value.Length ->
-          let! items = List.zip e1.value e2.value |> Seq.map (fun (v1, v2) -> v1 == v2) |> reader.All
+        | TypeValue.Tuple e1, TypeValue.Tuple e2 when
+          e1.value.Length = e2.value.Length
+          ->
+          let! items =
+            List.zip e1.value e2.value
+            |> Seq.map (fun (v1, v2) -> v1 == v2)
+            |> reader.All
 
           return TypeValue.CreateTuple items
 
-        | TypeValue.Imported e1, TypeValue.Imported e2 when e1.Arguments.Length = e2.Arguments.Length ->
+        | TypeValue.Imported e1, TypeValue.Imported e2 when
+          e1.Arguments.Length = e2.Arguments.Length
+          ->
           let! arguments =
             List.zip e1.Arguments e2.Arguments
             |> Seq.map (fun (v1, v2) -> v1 == v2)
             |> reader.All
 
           return TypeValue.Imported { e1 with Arguments = arguments }
-        | TypeValue.Sum e1, TypeValue.Sum e2 when e1.value.Length = e2.value.Length ->
-          let! items = List.zip e1.value e2.value |> Seq.map (fun (v1, v2) -> v1 == v2) |> reader.All
+        | TypeValue.Sum e1, TypeValue.Sum e2 when
+          e1.value.Length = e2.value.Length
+          ->
+          let! items =
+            List.zip e1.value e2.value
+            |> Seq.map (fun (v1, v2) -> v1 == v2)
+            |> reader.All
 
           return TypeValue.CreateSum items
-        | TypeValue.Record e1, TypeValue.Record e2 when e1.value.Count = e2.value.Count ->
+        | TypeValue.Record e1, TypeValue.Record e2 when
+          e1.value.Count = e2.value.Count
+          ->
           let! items =
             e1.value
             |> OrderedMap.map (fun k (v1, k1) ->
@@ -436,7 +497,9 @@ module Unification =
             |> reader.AllMapOrdered
 
           return TypeValue.CreateRecord items
-        | TypeValue.Union e1, TypeValue.Union e2 when e1.value.Count = e2.value.Count ->
+        | TypeValue.Union e1, TypeValue.Union e2 when
+          e1.value.Count = e2.value.Count
+          ->
           let! items =
             e1.value
             |> OrderedMap.map (fun k v1 ->
@@ -456,10 +519,14 @@ module Unification =
 
           return TypeValue.CreateUnion items
         | _ ->
-          do Console.WriteLine($"Cannot determine most specific type between {t1} and {t2}")
+          do
+            Console.WriteLine(
+              $"Cannot determine most specific type between {t1} and {t2}"
+            )
 
           return!
-            (fun () -> $"Cannot determine most specific type between {t1} and {t2}")
+            (fun () ->
+              $"Cannot determine most specific type between {t1} and {t2}")
             |> error
             |> reader.Throw
 
@@ -467,10 +534,16 @@ module Unification =
 
 
   type TypeValue<'ve> with
-    static member EquivalenceClassesOp<'res, 'valueExt when 'valueExt: comparison>
+    static member EquivalenceClassesOp<'res, 'valueExt
+      when 'valueExt: comparison>
       (loc0: Location)
       : State<'res, _, _, Errors<Location>>
-          -> State<_, UnificationContext<'valueExt>, UnificationState<'valueExt>, Errors<Location>>
+          -> State<
+            _,
+            UnificationContext<'valueExt>,
+            UnificationState<'valueExt>,
+            Errors<Location>
+           >
       =
       fun op ->
         state {
@@ -478,29 +551,38 @@ module Unification =
 
           return!
             op
-            |> State.mapContext<UnificationContext<'valueExt>> (fun (_ctx: UnificationContext<'valueExt>) ->
-              { tryCompare =
-                  fun (v1, v2) ->
-                    TypeValue.MostSpecific(loc0, v1, v2)
-                    |> Reader.Run _ctx.EvalState
-                    |> Sum.toOption
-                equalize =
-                  fun (left, right) ->
-                    state {
-                      // let! s = state.GetState()
-                      // do Console.WriteLine($"Equalizing {left} and {right} with state {s.ToFSharpString}")
-                      // do Console.ReadLine() |> ignore
+            |> State.mapContext<UnificationContext<'valueExt>>
+              (fun (_ctx: UnificationContext<'valueExt>) ->
+                { tryCompare =
+                    fun (v1, v2) ->
+                      TypeValue.MostSpecific(loc0, v1, v2)
+                      |> Reader.Run _ctx.EvalState
+                      |> Sum.toOption
+                  equalize =
+                    fun (left, right) ->
+                      state {
+                        // let! s = state.GetState()
+                        // do Console.WriteLine($"Equalizing {left} and {right} with state {s.ToFSharpString}")
+                        // do Console.ReadLine() |> ignore
 
-                      do!
-                        TypeValue<'ve>.Unify<'valueExt>(loc0, left, right)
-                        |> State.mapState (fun (s, _) -> s |> UnificationState.Create) (fun (s, _) _ -> s.Classes)
-                        |> state.MapContext(fun _ -> ctx)
-                    } })
+                        do!
+                          TypeValue<'ve>.Unify<'valueExt>(loc0, left, right)
+                          |> State.mapState
+                            (fun (s, _) -> s |> UnificationState.Create)
+                            (fun (s, _) _ -> s.Classes)
+                          |> state.MapContext(fun _ -> ctx)
+                      } })
         }
 
     static member Unify<'valueExt when 'valueExt: comparison>
       (loc0: Location, left: TypeValue<'valueExt>, right: TypeValue<'valueExt>)
-      : State<Unit, UnificationContext<'valueExt>, UnificationState<'valueExt>, Errors<Location>> =
+      : State<
+          Unit,
+          UnificationContext<'valueExt>,
+          UnificationState<'valueExt>,
+          Errors<Location>
+         >
+      =
 
       // do Console.WriteLine($"Unifying {left} and {right}")
       // do Console.ReadLine() |> ignore
@@ -514,16 +596,25 @@ module Unification =
         state {
           if
             not (
-              e1.Entities.Count = e2.Entities.Count && e1.Relations.Count = e2.Relations.Count
+              e1.Entities.Count = e2.Entities.Count
+              && e1.Relations.Count = e2.Relations.Count
             // && e1.DeclaredAtForNominalEquality = e2.DeclaredAtForNominalEquality
             )
           then
-            return! (fun () -> $"Cannot unify types: {left} and {right}") |> error |> state.Throw
+            return!
+              (fun () -> $"Cannot unify types: {left} and {right}")
+              |> error
+              |> state.Throw
           else
             for (k1, v1) in e1.Entities |> OrderedMap.toSeq do
-              let ofSum = Sum.mapRight (Errors.MapContext(replaceWith loc0)) >> state.OfSum
+              let ofSum =
+                Sum.mapRight (Errors.MapContext(replaceWith loc0))
+                >> state.OfSum
 
-              let! v2 = e2.Entities |> OrderedMap.tryFindWithError k1 "schema entity" k1.Name |> ofSum
+              let! v2 =
+                e2.Entities
+                |> OrderedMap.tryFindWithError k1 "schema entity" k1.Name
+                |> ofSum
 
               do! v1.Id == v2.Id
               do! v1.TypeOriginal == v2.TypeOriginal
@@ -541,7 +632,13 @@ module Unification =
 
       let bind
         (var: TypeVar, value: TypeValue<'valueExt>)
-        : State<Unit, UnificationContext<'valueExt>, UnificationState<'valueExt>, Errors<Location>> =
+        : State<
+            Unit,
+            UnificationContext<'valueExt>,
+            UnificationState<'valueExt>,
+            Errors<Location>
+           >
+        =
         let bind_eq_c =
           EquivalenceClasses.Bind(
             var,
@@ -553,7 +650,8 @@ module Unification =
 
         let bind_un_s =
           bind_eq_c
-          |> State.mapState (fun (s, _) -> s.Classes) (fun (s, _) _ -> UnificationState.Create s)
+          |> State.mapState (fun (s, _) -> s.Classes) (fun (s, _) _ ->
+            UnificationState.Create s)
 
         bind_un_s |> TypeValue.EquivalenceClassesOp<_, 'valueExt> loc0
 
@@ -562,18 +660,25 @@ module Unification =
         let! ctx = state.GetContext()
 
         match left, right with
-        | TypeValue.Primitive p1, TypeValue.Primitive p2 when p1.value = p2.value -> return ()
+        | TypeValue.Primitive p1, TypeValue.Primitive p2 when
+          p1.value = p2.value
+          ->
+          return ()
         | TypeValue.QueryRow q1, TypeValue.QueryRow q2 -> return! q1 === q2
         | TypeValue.Lookup l1, TypeValue.Lookup l2 when l1 = l2 -> return ()
         | TypeValue.Lookup l, t2
-        | t2, TypeValue.Lookup l when ctx.TypeParameters |> Map.containsKey l.LocalName |> not ->
+        | t2, TypeValue.Lookup l when
+          ctx.TypeParameters |> Map.containsKey l.LocalName |> not
+          ->
           let! t1, _ =
             TypeCheckState.tryFindType (l |> ctx.Scope.Resolve, loc0)
             |> reader.MapContext(fun ctx -> ctx.EvalState)
             |> state.OfReader
 
           return! t1 == t2
-        | TypeValue.Imported i1, TypeValue.Imported i2 when i1.Sym = i2.Sym && i1.Arguments.Length = i2.Arguments.Length ->
+        | TypeValue.Imported i1, TypeValue.Imported i2 when
+          i1.Sym = i2.Sym && i1.Arguments.Length = i2.Arguments.Length
+          ->
           // do
           //   Console.WriteLine
           //     $"Unifying imported types: {i1.Sym} and {i2.Sym} with arguments {i1.Arguments} and {i2.Arguments}"
@@ -589,7 +694,8 @@ module Unification =
         | t, TypeValue.Var v ->
           // do Console.WriteLine $"Binding type variable {v} to {t}"
           return! bind (v, t)
-        | TypeValue.Lambda { value = p1, t1 }, TypeValue.Lambda { value = p2, t2 } ->
+        | TypeValue.Lambda { value = p1, t1 },
+          TypeValue.Lambda { value = p2, t2 } ->
           if p1.Kind <> p2.Kind then
             return!
               (fun () -> $"Cannot unify type parameters: {p1} and {p2}")
@@ -616,12 +722,18 @@ module Unification =
                   return
                     ctx
                     |> UnificationContext.Updaters.EvalState(
-                      TypeCheckState.Updaters.Bindings(Map.add !p1.Name v1 >> Map.add !p2.Name v2)
+                      TypeCheckState.Updaters.Bindings(
+                        Map.add !p1.Name v1 >> Map.add !p2.Name v2
+                      )
                     ),
                     ctx
-                    |> UnificationContext.Updaters.EvalState(TypeCheckState.Updaters.Bindings(Map.add !p1.Name v1)),
+                    |> UnificationContext.Updaters.EvalState(
+                      TypeCheckState.Updaters.Bindings(Map.add !p1.Name v1)
+                    ),
                     ctx
-                    |> UnificationContext.Updaters.EvalState(TypeCheckState.Updaters.Bindings(Map.add !p2.Name v2))
+                    |> UnificationContext.Updaters.EvalState(
+                      TypeCheckState.Updaters.Bindings(Map.add !p2.Name v2)
+                    )
                 else
                   let s1 = TypeSymbol.Create(Identifier.LocalScope p1.Name)
                   let s2 = TypeSymbol.Create(Identifier.LocalScope p2.Name)
@@ -629,22 +741,33 @@ module Unification =
                   return
                     ctx
                     |> UnificationContext.Updaters.EvalState(
-                      TypeCheckState.Updaters.Symbols.Types(Map.add !p1.Name s1 >> Map.add !p2.Name s2)
+                      TypeCheckState.Updaters.Symbols.Types(
+                        Map.add !p1.Name s1 >> Map.add !p2.Name s2
+                      )
                     ),
                     ctx
-                    |> UnificationContext.Updaters.EvalState(TypeCheckState.Updaters.Symbols.Types(Map.add !p1.Name s1)),
+                    |> UnificationContext.Updaters.EvalState(
+                      TypeCheckState.Updaters.Symbols.Types(Map.add !p1.Name s1)
+                    ),
                     ctx
-                    |> UnificationContext.Updaters.EvalState(TypeCheckState.Updaters.Symbols.Types(Map.add !p2.Name s2))
+                    |> UnificationContext.Updaters.EvalState(
+                      TypeCheckState.Updaters.Symbols.Types(Map.add !p2.Name s2)
+                    )
               }
 
             let! v1 =
               t1
               |> TypeExpr.AsValue
                 loc0
-                ((fun t -> TypeCheckState.tryFindType (t |> ctx1.Scope.Resolve, loc0))
+                ((fun t ->
+                  TypeCheckState.tryFindType (t |> ctx1.Scope.Resolve, loc0))
                  >> reader.Map fst
                  >> Reader.Run ctx1.EvalState)
-                ((fun s -> TypeCheckState.tryFindTypeSymbol (s |> ctx1.Scope.Resolve, loc0))
+                ((fun s ->
+                  TypeCheckState.tryFindTypeSymbol (
+                    s |> ctx1.Scope.Resolve,
+                    loc0
+                  ))
                  >> Reader.Run ctx1.EvalState)
               |> state.OfSum
 
@@ -652,10 +775,15 @@ module Unification =
               t2
               |> TypeExpr.AsValue
                 loc0
-                ((fun t -> TypeCheckState.tryFindType (t |> ctx2.Scope.Resolve, loc0))
+                ((fun t ->
+                  TypeCheckState.tryFindType (t |> ctx2.Scope.Resolve, loc0))
                  >> reader.Map fst
                  >> Reader.Run ctx2.EvalState)
-                ((fun s -> TypeCheckState.tryFindTypeSymbol (s |> ctx2.Scope.Resolve, loc0))
+                ((fun s ->
+                  TypeCheckState.tryFindTypeSymbol (
+                    s |> ctx2.Scope.Resolve,
+                    loc0
+                  ))
                  >> Reader.Run ctx2.EvalState)
               |> state.OfSum
 
@@ -672,31 +800,77 @@ module Unification =
         //   do! a1 == a2
         | Set { value = e1 }, Set { value = e2 } -> do! e1 == e2
         | TypeValue.Tuple { value = e1 }, TypeValue.Tuple { value = e2 }
-        | TypeValue.Sum { value = e1 }, TypeValue.Sum { value = e2 } when List.length e1 = List.length e2 ->
+        | TypeValue.Sum { value = e1 }, TypeValue.Sum { value = e2 } when
+          List.length e1 = List.length e2
+          ->
           for (v1, v2) in List.zip e1 e2 do
             do! v1 == v2
-        | TypeValue.Record { value = e1 }, TypeValue.Record { value = e2 } when e1.Count = e2.Count ->
+        | TypeValue.Record { value = e1 }, TypeValue.Record { value = e2 } when
+          e1.Count = e2.Count
+          ->
           for (k1, (v1, _)) in e1 |> OrderedMap.toSeq do
             match e2 |> OrderedMap.tryFind k1 with
             | Some(v2, _) -> do! v1 == v2
-            | None -> return! (fun () -> $"Cannot unify types: {left} and {right}") |> error |> state.Throw
-        | TypeValue.Union { value = e1 }, TypeValue.Union { value = e2 } when e1.Count = e2.Count ->
+            | None ->
+              return!
+                (fun () -> $"Cannot unify types: {left} and {right}")
+                |> error
+                |> state.Throw
+        | TypeValue.Union { value = e1 }, TypeValue.Union { value = e2 } when
+          e1.Count = e2.Count
+          ->
           for (k1, v1) in e1 |> OrderedMap.toSeq do
             match e2 |> OrderedMap.tryFind k1 with
             | Some v2 -> do! v1 == v2
-            | None -> return! (fun () -> $"Cannot unify types: {left} and {right}") |> error |> state.Throw
+            | None ->
+              return!
+                (fun () -> $"Cannot unify types: {left} and {right}")
+                |> error
+                |> state.Throw
         | TypeValue.Schema e1, TypeValue.Schema e2 -> do! unifySchemas e1 e2
         | TypeValue.Entities e1, TypeValue.Entities e2 -> do! unifySchemas e1 e2
-        | TypeValue.Relations e1, TypeValue.Relations e2 -> do! unifySchemas e1 e2
-        | TypeValue.Entity(s1, e1, e1with_props, eid1), TypeValue.Entity(s2, e2, e2with_props, eid2) ->
+        | TypeValue.Relations e1, TypeValue.Relations e2 ->
+          do! unifySchemas e1 e2
+        | TypeValue.Entity(s1, e1, e1with_props, eid1),
+          TypeValue.Entity(s2, e2, e2with_props, eid2) ->
           do! unifySchemas s1 s2
           do! e1 == e2
           do! e1with_props == e2with_props
           do! eid1 == eid2
-        | TypeValue.Relation(s1, _, _, f1, f1with_props, fid1, t1, t1with_props, tid1),
-          TypeValue.Relation(s2, _, _, f2, f2with_props, fid2, t2, t2with_props, tid2)
-        | TypeValue.ForeignKeyRelation(s1, _, f1, f1with_props, fid1, t1, t1with_props, tid1),
-          TypeValue.ForeignKeyRelation(s2, _, f2, f2with_props, fid2, t2, t2with_props, tid2) ->
+        | TypeValue.Relation(s1,
+                             _,
+                             _,
+                             f1,
+                             f1with_props,
+                             fid1,
+                             t1,
+                             t1with_props,
+                             tid1),
+          TypeValue.Relation(s2,
+                             _,
+                             _,
+                             f2,
+                             f2with_props,
+                             fid2,
+                             t2,
+                             t2with_props,
+                             tid2)
+        | TypeValue.ForeignKeyRelation(s1,
+                                       _,
+                                       f1,
+                                       f1with_props,
+                                       fid1,
+                                       t1,
+                                       t1with_props,
+                                       tid1),
+          TypeValue.ForeignKeyRelation(s2,
+                                       _,
+                                       f2,
+                                       f2with_props,
+                                       fid2,
+                                       t2,
+                                       t2with_props,
+                                       tid2) ->
           do! unifySchemas s1 s2
           do! f1 == f2
           do! f1with_props == f2with_props
@@ -704,29 +878,45 @@ module Unification =
           do! t1 == t2
           do! t1with_props == t2with_props
           do! tid1 == tid2
-        | TypeValue.RelationLookupOption(s1, e1, id1, tId1), TypeValue.RelationLookupOption(s2, e2, id2, tId2) ->
+        | TypeValue.RelationLookupOption(s1, e1, id1, tId1),
+          TypeValue.RelationLookupOption(s2, e2, id2, tId2) ->
           do! unifySchemas s1 s2
           do! e1 == e2
           do! id1 == id2
           do! tId1 == tId2
-        | TypeValue.RelationLookupOne(s1, e1, id1, tId1), TypeValue.RelationLookupOne(s2, e2, id2, tId2) ->
+        | TypeValue.RelationLookupOne(s1, e1, id1, tId1),
+          TypeValue.RelationLookupOne(s2, e2, id2, tId2) ->
           do! unifySchemas s1 s2
           do! e1 == e2
           do! id1 == id2
           do! tId1 == tId2
-        | TypeValue.RelationLookupMany(s1, e1, id1, tId1), TypeValue.RelationLookupMany(s2, e2, id2, tId2) ->
+        | TypeValue.RelationLookupMany(s1, e1, id1, tId1),
+          TypeValue.RelationLookupMany(s2, e2, id2, tId2) ->
           do! unifySchemas s1 s2
           do! e1 == e2
           do! id1 == id2
           do! tId1 == tId2
-        | _ -> return! (fun () -> $"Cannot unify types: {left} and {right}") |> error |> state.Throw
+        | _ ->
+          return!
+            (fun () -> $"Cannot unify types: {left} and {right}")
+            |> error
+            |> state.Throw
       }
 
 
   and TypeQueryRow<'ve> with
     static member Unify<'valueExt when 'valueExt: comparison>
-      (loc0: Location, left: TypeQueryRow<'valueExt>, right: TypeQueryRow<'valueExt>)
-      : State<Unit, UnificationContext<'valueExt>, UnificationState<'valueExt>, Errors<Location>> =
+      (
+        loc0: Location,
+        left: TypeQueryRow<'valueExt>,
+        right: TypeQueryRow<'valueExt>
+      ) : State<
+            Unit,
+            UnificationContext<'valueExt>,
+            UnificationState<'valueExt>,
+            Errors<Location>
+           >
+      =
 
       let error e = Errors.Singleton loc0 e
 
@@ -735,12 +925,19 @@ module Unification =
 
       state {
         match left, right with
-        | TypeQueryRow.PrimaryKey k1, TypeQueryRow.PrimaryKey k2 -> return! k1 == k2
+        | TypeQueryRow.PrimaryKey k1, TypeQueryRow.PrimaryKey k2 ->
+          return! k1 == k2
         | TypeQueryRow.Json j1, TypeQueryRow.Json j2 -> return! j1 == j2
-        | TypeQueryRow.PrimitiveType(p1, n1), TypeQueryRow.PrimitiveType(p2, n2) when p1 = p2 && n1 = n2 -> return ()
+        | TypeQueryRow.PrimitiveType(p1, n1), TypeQueryRow.PrimitiveType(p2, n2) when
+          p1 = p2 && n1 = n2
+          ->
+          return ()
         | TypeQueryRow.Tuple(t1), TypeQueryRow.Tuple(t2) ->
           if t1.Length <> t2.Length then
-            return! (fun () -> $"Cannot unify query row types: {left} and {right}") |> error |> state.Throw
+            return!
+              (fun () -> $"Cannot unify query row types: {left} and {right}")
+              |> error
+              |> state.Throw
           else
             for v1, v2 in List.zip t1 t2 do
               do! v1 === v2
@@ -748,13 +945,20 @@ module Unification =
             return ()
         | TypeQueryRow.Record fields1, TypeQueryRow.Record fields2 ->
           if fields1.Count <> fields2.Count then
-            return! (fun () -> $"Cannot unify query row types: {left} and {right}") |> error |> state.Throw
+            return!
+              (fun () -> $"Cannot unify query row types: {left} and {right}")
+              |> error
+              |> state.Throw
           else
             for k1, v1 in fields1 |> Map.toSeq do
               match fields2 |> Map.tryFind k1 with
               | Some v2 -> do! v1 === v2
               | None ->
-                return! (fun () -> $"Cannot unify query row types: {left} and {right}") |> error |> state.Throw
+                return!
+                  (fun () ->
+                    $"Cannot unify query row types: {left} and {right}")
+                  |> error
+                  |> state.Throw
         | _ ->
           return!
             (fun () -> $"Cannot unify query row types: {left} and {right}")
@@ -769,7 +973,12 @@ module Unification =
       : TypeExprEvalPlain<'valueExt>
           -> Location
           -> SymbolicTypeApplication<'valueExt>
-          -> State<TypeValue<'valueExt>, TypeInstantiateContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>>
+          -> State<
+            TypeValue<'valueExt>,
+            TypeInstantiateContext<'valueExt>,
+            TypeCheckState<'valueExt>,
+            Errors<Location>
+           >
       =
       fun typeEval loc0 t ->
         state {
@@ -778,7 +987,8 @@ module Unification =
           match t with
           | SymbolicTypeApplication.FromQueryRow q_row ->
             // do Console.WriteLine($"Instantiating FromQueryRow with {q_row}")
-            let! q_row = TypeValue.Instantiate () typeEval loc0 (q_row |> TypeValue.Lookup)
+            let! q_row =
+              TypeValue.Instantiate () typeEval loc0 (q_row |> TypeValue.Lookup)
             // do Console.WriteLine($"Instantiated query row: {q_row}")
             // do Console.ReadLine() |> ignore
 
@@ -787,12 +997,17 @@ module Unification =
               // do Console.WriteLine $"Encountered var {v.AsFSharpString}, chickening out, but also not fully"
 
               return
-                SymbolicTypeApplication.FromQueryRow(v.Name |> Identifier.LocalScope)
+                SymbolicTypeApplication.FromQueryRow(
+                  v.Name |> Identifier.LocalScope
+                )
                 |> TypeValue.CreateApplication
             | _ ->
 
               let application =
-                TypeExpr.Apply(TypeExpr.FromQueryRow, TypeExpr.FromTypeValue q_row)
+                TypeExpr.Apply(
+                  TypeExpr.FromQueryRow,
+                  TypeExpr.FromTypeValue q_row
+                )
 
               // do Console.WriteLine $"[symbolictypeapplication] Evaluating query row application {application}"
 
@@ -803,15 +1018,26 @@ module Unification =
 
               return res
           | SymbolicTypeApplication.Lookup(l, a) ->
-            let! f = TypeValue.Instantiate () typeEval loc0 (l |> TypeValue.Lookup)
+            let! f =
+              TypeValue.Instantiate () typeEval loc0 (l |> TypeValue.Lookup)
+
             let! a = TypeValue.Instantiate () typeEval loc0 a
 
             match f with
             | TypeValue.Application { value = f } ->
-              return SymbolicTypeApplication.Application(f, a) |> TypeValue.CreateApplication
-            | TypeValue.Lookup l -> return SymbolicTypeApplication.Lookup(l, a) |> TypeValue.CreateApplication
+              return
+                SymbolicTypeApplication.Application(f, a)
+                |> TypeValue.CreateApplication
+            | TypeValue.Lookup l ->
+              return
+                SymbolicTypeApplication.Lookup(l, a)
+                |> TypeValue.CreateApplication
             | _ ->
-              let application = TypeExpr.Apply(TypeExpr.FromTypeValue f, TypeExpr.FromTypeValue a)
+              let application =
+                TypeExpr.Apply(
+                  TypeExpr.FromTypeValue f,
+                  TypeExpr.FromTypeValue a
+                )
 
               let! res =
                 typeEval None loc0 application
@@ -825,9 +1051,15 @@ module Unification =
 
             match f with
             | TypeValue.Application { value = f } ->
-              return SymbolicTypeApplication.Application(f, a) |> TypeValue.CreateApplication
+              return
+                SymbolicTypeApplication.Application(f, a)
+                |> TypeValue.CreateApplication
             | _ ->
-              let application = TypeExpr.Apply(TypeExpr.FromTypeValue f, TypeExpr.FromTypeValue a)
+              let application =
+                TypeExpr.Apply(
+                  TypeExpr.FromTypeValue f,
+                  TypeExpr.FromTypeValue a
+                )
 
               let! res =
                 typeEval None loc0 application
@@ -843,7 +1075,12 @@ module Unification =
       : TypeExprEvalPlain<'valueExt>
           -> Location
           -> TypeValue<'valueExt>
-          -> State<TypeValue<'valueExt>, TypeInstantiateContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>>
+          -> State<
+            TypeValue<'valueExt>,
+            TypeInstantiateContext<'valueExt>,
+            TypeCheckState<'valueExt>,
+            Errors<Location>
+           >
       =
       fun typeEval loc0 t ->
         state {
@@ -855,8 +1092,12 @@ module Unification =
                 schema.Entities
                 |> OrderedMap.map (fun _ e ->
                   state {
-                    let! t = TypeValue.Instantiate () typeEval loc0 e.TypeOriginal
-                    let! t' = TypeValue.Instantiate () typeEval loc0 e.TypeWithProps
+                    let! t =
+                      TypeValue.Instantiate () typeEval loc0 e.TypeOriginal
+
+                    let! t' =
+                      TypeValue.Instantiate () typeEval loc0 e.TypeWithProps
+
                     let! id = TypeValue.Instantiate () typeEval loc0 e.Id
 
                     return
@@ -895,18 +1136,41 @@ module Unification =
             let! schema = instantiateSchema schema
 
             let! entityType = TypeValue.Instantiate () typeEval loc0 entityType
-            let! entityTypeWithProps = TypeValue.Instantiate () typeEval loc0 entityTypeWithProps
+
+            let! entityTypeWithProps =
+              TypeValue.Instantiate () typeEval loc0 entityTypeWithProps
+
             let! entityId = TypeValue.Instantiate () typeEval loc0 entityId
 
-            return TypeValue.Entity(schema, entityType, entityTypeWithProps, entityId)
-          | TypeValue.Relation(schema, relation_name, cardinality, from, fromWithProps, fromId, to_, toWithProps, toId) ->
+            return
+              TypeValue.Entity(
+                schema,
+                entityType,
+                entityTypeWithProps,
+                entityId
+              )
+          | TypeValue.Relation(schema,
+                               relation_name,
+                               cardinality,
+                               from,
+                               fromWithProps,
+                               fromId,
+                               to_,
+                               toWithProps,
+                               toId) ->
             let! schema = instantiateSchema schema
 
             let! fromType = TypeValue.Instantiate () typeEval loc0 from
-            let! fromTypeWithProps = TypeValue.Instantiate () typeEval loc0 fromWithProps
+
+            let! fromTypeWithProps =
+              TypeValue.Instantiate () typeEval loc0 fromWithProps
+
             let! fromId = TypeValue.Instantiate () typeEval loc0 fromId
             let! toType = TypeValue.Instantiate () typeEval loc0 to_
-            let! toTypeWithProps = TypeValue.Instantiate () typeEval loc0 toWithProps
+
+            let! toTypeWithProps =
+              TypeValue.Instantiate () typeEval loc0 toWithProps
+
             let! toId = TypeValue.Instantiate () typeEval loc0 toId
 
             return
@@ -921,14 +1185,27 @@ module Unification =
                 toTypeWithProps,
                 toId
               )
-          | TypeValue.ForeignKeyRelation(schema, relation_name, from, fromWithProps, fromId, to_, toWithProps, toId) ->
+          | TypeValue.ForeignKeyRelation(schema,
+                                         relation_name,
+                                         from,
+                                         fromWithProps,
+                                         fromId,
+                                         to_,
+                                         toWithProps,
+                                         toId) ->
             let! schema = instantiateSchema schema
 
             let! fromType = TypeValue.Instantiate () typeEval loc0 from
-            let! fromTypeWithProps = TypeValue.Instantiate () typeEval loc0 fromWithProps
+
+            let! fromTypeWithProps =
+              TypeValue.Instantiate () typeEval loc0 fromWithProps
+
             let! fromId = TypeValue.Instantiate () typeEval loc0 fromId
             let! toType = TypeValue.Instantiate () typeEval loc0 to_
-            let! toTypeWithProps = TypeValue.Instantiate () typeEval loc0 toWithProps
+
+            let! toTypeWithProps =
+              TypeValue.Instantiate () typeEval loc0 toWithProps
+
             let! toId = TypeValue.Instantiate () typeEval loc0 toId
 
             return
@@ -945,27 +1222,48 @@ module Unification =
           | TypeValue.RelationLookupOption(schema, elementType, elementId, t_id) ->
             let! schema = instantiateSchema schema
 
-            let! elementType = TypeValue.Instantiate () typeEval loc0 elementType
+            let! elementType =
+              TypeValue.Instantiate () typeEval loc0 elementType
+
             let! elementId = TypeValue.Instantiate () typeEval loc0 elementId
             let! tId = TypeValue.Instantiate () typeEval loc0 t_id
 
-            return TypeValue.RelationLookupOption(schema, elementType, elementId, tId)
+            return
+              TypeValue.RelationLookupOption(
+                schema,
+                elementType,
+                elementId,
+                tId
+              )
           | TypeValue.RelationLookupOne(schema, elementType, elementId, t_id) ->
             let! schema = instantiateSchema schema
-            let! elementType = TypeValue.Instantiate () typeEval loc0 elementType
+
+            let! elementType =
+              TypeValue.Instantiate () typeEval loc0 elementType
+
             let! elementId = TypeValue.Instantiate () typeEval loc0 elementId
             let! tId = TypeValue.Instantiate () typeEval loc0 t_id
-            return TypeValue.RelationLookupOne(schema, elementType, elementId, tId)
+
+            return
+              TypeValue.RelationLookupOne(schema, elementType, elementId, tId)
           | TypeValue.RelationLookupMany(schema, elementType, elementId, t_id) ->
             let! schema = instantiateSchema schema
-            let! elementType = TypeValue.Instantiate () typeEval loc0 elementType
+
+            let! elementType =
+              TypeValue.Instantiate () typeEval loc0 elementType
+
             let! elementId = TypeValue.Instantiate () typeEval loc0 elementId
             let! tId = TypeValue.Instantiate () typeEval loc0 t_id
-            return TypeValue.RelationLookupMany(schema, elementType, elementId, tId)
+
+            return
+              TypeValue.RelationLookupMany(schema, elementType, elementId, tId)
           | TypeValue.Imported({ Arguments = arguments } as t) ->
             // do Console.WriteLine $"Instantiating imported type {t}"
             // do Console.WriteLine $"Arguments: {arguments |> Seq.map (fun a -> a.ToFSharpString) |> Seq.toList}"
-            let! args = arguments |> Seq.map (TypeValue.Instantiate () typeEval loc0) |> state.All
+            let! args =
+              arguments
+              |> Seq.map (TypeValue.Instantiate () typeEval loc0)
+              |> state.All
             // do Console.WriteLine $"Arguments instantiated: {args |> Seq.map (fun a -> a.ToFSharpString) |> Seq.toList}"
             // do Console.ReadLine() |> ignore
             let t = { t with Arguments = args }
@@ -991,8 +1289,10 @@ module Unification =
               let localState = s.Vars
 
               let! vClass, newLocalState =
-                EquivalenceClasses<TypeVar, TypeValue<'valueExt>>.tryFind (v, loc0)
-                |> State.mapState (fun (s, _) -> s.Classes) (fun (s, _) _ -> UnificationState.Create s)
+                EquivalenceClasses<TypeVar, TypeValue<'valueExt>>
+                  .tryFind (v, loc0)
+                |> State.mapState (fun (s, _) -> s.Classes) (fun (s, _) _ ->
+                  UnificationState.Create s)
                 |> TypeValue.EquivalenceClassesOp<_, 'valueExt> loc0
                 |> State.Run(localCtx, localState)
                 |> sum.MapError fst
@@ -1000,7 +1300,11 @@ module Unification =
 
               do!
                 state.SetState(
-                  TypeCheckState.Updaters.Vars(newLocalState |> Option.map replaceWith |> Option.defaultValue id)
+                  TypeCheckState.Updaters.Vars(
+                    newLocalState
+                    |> Option.map replaceWith
+                    |> Option.defaultValue id
+                  )
                 )
 
               // |> state.MapContext(fun ctx ->
@@ -1013,7 +1317,9 @@ module Unification =
               | Some rep ->
                 return!
                   TypeValue.Instantiate () typeEval loc0 rep
-                  |> state.MapContext(TypeInstantiateContext.Updaters.VisitedVars(Set.add v))
+                  |> state.MapContext(
+                    TypeInstantiateContext.Updaters.VisitedVars(Set.add v)
+                  )
               | None ->
                 match
                   vClass.Variables
@@ -1021,13 +1327,16 @@ module Unification =
                   |> Seq.map (TypeValue.Var)
                   |> Seq.map (
                     TypeValue.Instantiate () typeEval loc0
-                    >> state.MapContext(TypeInstantiateContext.Updaters.VisitedVars(Set.add v))
+                    >> state.MapContext(
+                      TypeInstantiateContext.Updaters.VisitedVars(Set.add v)
+                    )
                   )
                   |> Seq.toList
                 with
                 | [] ->
                   return!
-                    (fun () -> $"Variable {v} has no representative in the equivalence class")
+                    (fun () ->
+                      $"Variable {v} has no representative in the equivalence class")
                     |> error
                     |> state.Throw
                 | x :: xs -> return! NonEmptyList.OfList(x, xs) |> state.Any
@@ -1037,7 +1346,11 @@ module Unification =
 
             let! t =
               s.Bindings
-              |> TypeBindings.tryFindWithError (l |> ctx.Scope.Resolve) "lookup" (fun () -> l.AsFSharpString) loc0
+              |> TypeBindings.tryFindWithError
+                (l |> ctx.Scope.Resolve)
+                "lookup"
+                (fun () -> l.AsFSharpString)
+                loc0
               |> state.OfSum
               |> state.Catch
 
@@ -1047,7 +1360,11 @@ module Unification =
               return!
                 state.Either
                   (ctx.TypeVariables
-                   |> TypeVariablesScope.tryFindWithError l.LocalName "type variable" (fun () -> l.AsFSharpString) loc0
+                   |> TypeVariablesScope.tryFindWithError
+                     l.LocalName
+                     "type variable"
+                     (fun () -> l.AsFSharpString)
+                     loc0
                    |> sum.Map fst
                    |> state.OfSum)
                   (ctx.TypeParameters
@@ -1058,18 +1375,21 @@ module Unification =
                      loc0
                    |> sum.Map(fun _ -> TypeValue.Lookup l)
                    |> state.OfSum)
-          | TypeValue.Lambda
-              { value = (par, body)
-                typeExprSource = n
-                typeCheckScopeSource = scope } ->
+          | TypeValue.Lambda { value = (par, body)
+                               typeExprSource = n
+                               typeCheckScopeSource = scope } ->
             match body with
             | TypeExpr.FromTypeValue bodyTv ->
 
               let! bodyTv' =
                 TypeValue.Instantiate () typeEval loc0 bodyTv
                 |> state.MapContext(
-                  TypeInstantiateContext.Updaters.TypeParameters(Map.add par.Name par.Kind)
-                  >> TypeInstantiateContext.Updaters.TypeVariables(Map.remove par.Name)
+                  TypeInstantiateContext.Updaters.TypeParameters(
+                    Map.add par.Name par.Kind
+                  )
+                  >> TypeInstantiateContext.Updaters.TypeVariables(
+                    Map.remove par.Name
+                  )
                 )
 
               return
@@ -1110,7 +1430,10 @@ module Unification =
           | TypeValue.Tuple { value = es
                               typeExprSource = n
                               typeCheckScopeSource = scope } ->
-            let! es' = es |> Seq.map (TypeValue.Instantiate () typeEval loc0) |> state.All
+            let! es' =
+              es
+              |> Seq.map (TypeValue.Instantiate () typeEval loc0)
+              |> state.All
 
             return
               TypeValue.Tuple
@@ -1120,7 +1443,10 @@ module Unification =
           | TypeValue.Sum { value = es
                             typeExprSource = n
                             typeCheckScopeSource = scope } ->
-            let! es' = es |> Seq.map (TypeValue.Instantiate () typeEval loc0) |> state.All
+            let! es' =
+              es
+              |> Seq.map (TypeValue.Instantiate () typeEval loc0)
+              |> state.All
 
             return
               TypeValue.Sum
@@ -1133,7 +1459,9 @@ module Unification =
             let! es' =
               es
               |> OrderedMap.map (fun _ (tv, k) ->
-                tv |> TypeValue.Instantiate () typeEval loc0 |> state.Map(fun res -> res, k))
+                tv
+                |> TypeValue.Instantiate () typeEval loc0
+                |> state.Map(fun res -> res, k))
               |> state.AllMapOrdered
 
             return
@@ -1146,7 +1474,8 @@ module Unification =
                               typeCheckScopeSource = scope } ->
             let! es' =
               es
-              |> OrderedMap.map (fun _ -> TypeValue.Instantiate () typeEval loc0)
+              |> OrderedMap.map (fun _ ->
+                TypeValue.Instantiate () typeEval loc0)
               |> state.AllMapOrdered
 
             return
@@ -1184,14 +1513,20 @@ module Unification =
           | TypeQueryRow.Json t ->
             let! t' = TypeValue.Instantiate () typeEval loc0 t
             return (TypeQueryRow.Json t')
-          | TypeQueryRow.PrimitiveType(p, is_nullable) -> return (TypeQueryRow.PrimitiveType(p, is_nullable))
+          | TypeQueryRow.PrimitiveType(p, is_nullable) ->
+            return (TypeQueryRow.PrimitiveType(p, is_nullable))
           | TypeQueryRow.Tuple es ->
-            let! es' = es |> Seq.map (TypeQueryRow.Instantiate () typeEval loc0) |> state.All
+            let! es' =
+              es
+              |> Seq.map (TypeQueryRow.Instantiate () typeEval loc0)
+              |> state.All
+
             return (TypeQueryRow.Tuple es')
           | TypeQueryRow.Record es ->
             let! es' =
               es
-              |> Map.map (fun _k v -> v |> TypeQueryRow.Instantiate () typeEval loc0)
+              |> Map.map (fun _k v ->
+                v |> TypeQueryRow.Instantiate () typeEval loc0)
               |> state.AllMap
 
             return (TypeQueryRow.Record es')

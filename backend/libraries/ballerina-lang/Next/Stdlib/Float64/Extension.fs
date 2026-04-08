@@ -20,7 +20,8 @@ module Extension =
     (operationLens: PartialLens<'ext, Float64Operations<'ext>>)
     : OperationsExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
     let float64PlusId =
-      Identifier.FullyQualified([ "float64" ], "+") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "float64" ], "+")
+      |> TypeCheckScope.Empty.Resolve
 
 
     let boolTypeValue = TypeValue.CreatePrimitive PrimitiveType.Bool
@@ -32,11 +33,15 @@ module Extension =
       Identifier.FullyQualified([ "float64" ], "toString")
       |> TypeCheckScope.Empty.Resolve
 
-    let toStringOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
+    let toStringOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64ToStringId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(float64TypeValue, stringTypeValue), Kind.Star, Float64Operations.String)
+          <| (TypeValue.CreateArrow(float64TypeValue, stringTypeValue),
+              Kind.Star,
+              Float64Operations.String)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -63,14 +68,18 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.String(v |> string))
+              return
+                Value<TypeValue<'ext>, 'ext>
+                  .Primitive(PrimitiveValue.String(v |> string))
             } }
 
     let float64TryParseId =
       Identifier.FullyQualified([ "float64" ], "tryParse")
       |> TypeCheckScope.Empty.Resolve
 
-    let tryParseOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
+    let tryParseOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64TryParseId,
       { PublicIdentifiers =
           Some
@@ -116,15 +125,28 @@ module Extension =
                     System.Globalization.CultureInfo.InvariantCulture
                   )
                 with
-                | true, result -> Value.Sum({ Case = 2; Count = 2 }, Value.Primitive(PrimitiveValue.Float64 result))
-                | false, _ -> Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit))
+                | true, result ->
+                  Value.Sum(
+                    { Case = 2; Count = 2 },
+                    Value.Primitive(PrimitiveValue.Float64 result)
+                  )
+                | false, _ ->
+                  Value.Sum(
+                    { Case = 1; Count = 2 },
+                    Value.Primitive(PrimitiveValue.Unit)
+                  )
             } }
 
-    let plusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
+    let plusOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64PlusId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, float64TypeValue)),
+          <| (TypeValue.CreateArrow(
+                float64TypeValue,
+                TypeValue.CreateArrow(float64TypeValue, float64TypeValue)
+              ),
               Kind.Star,
               Float64Operations.Plus {| v1 = None |})
         OperationsLens =
@@ -156,21 +178,31 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Float64Operations.Plus({| v1 = Some v |}) |> operationLens.Set, Some float64PlusId)
+                  (Float64Operations.Plus({| v1 = Some v |})
+                   |> operationLens.Set,
+                   Some float64PlusId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float64(vClosure + v))
+                return
+                  Value<TypeValue<'ext>, 'ext>
+                    .Primitive(PrimitiveValue.Float64(vClosure + v))
             } }
 
     let float64MinusId =
-      Identifier.FullyQualified([ "float64" ], "-") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "float64" ], "-")
+      |> TypeCheckScope.Empty.Resolve
 
-    let minusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
+    let minusOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64MinusId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, float64TypeValue)),
+          <| (TypeValue.CreateArrow(
+                float64TypeValue,
+                TypeValue.CreateArrow(float64TypeValue, float64TypeValue)
+              ),
               Kind.Star,
               Float64Operations.Minus {| v1 = None |})
         OperationsLens =
@@ -202,20 +234,30 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Float64Operations.Minus({| v1 = Some v |}) |> operationLens.Set, Some float64MinusId)
+                  (Float64Operations.Minus({| v1 = Some v |})
+                   |> operationLens.Set,
+                   Some float64MinusId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
-                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float64(vClosure - v))
+                return
+                  Value<TypeValue<'ext>, 'ext>
+                    .Primitive(PrimitiveValue.Float64(vClosure - v))
             } }
 
     let float64DivideId =
-      Identifier.FullyQualified([ "float64" ], "/") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "float64" ], "/")
+      |> TypeCheckScope.Empty.Resolve
 
-    let divideOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
+    let divideOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64DivideId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, float64TypeValue)),
+          <| (TypeValue.CreateArrow(
+                float64TypeValue,
+                TypeValue.CreateArrow(float64TypeValue, float64TypeValue)
+              ),
               Kind.Star,
               Float64Operations.Divide {| v1 = None |})
         OperationsLens =
@@ -247,21 +289,31 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Float64Operations.Divide({| v1 = Some v |}) |> operationLens.Set, Some float64DivideId)
+                  (Float64Operations.Divide({| v1 = Some v |})
+                   |> operationLens.Set,
+                   Some float64DivideId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float64(vClosure / v))
+                return
+                  Value<TypeValue<'ext>, 'ext>
+                    .Primitive(PrimitiveValue.Float64(vClosure / v))
             } }
 
     let float64PowerId =
-      Identifier.FullyQualified([ "float64" ], "**") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "float64" ], "**")
+      |> TypeCheckScope.Empty.Resolve
 
-    let powerOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
+    let powerOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64PowerId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, int32TypeValue)),
+          <| (TypeValue.CreateArrow(
+                float64TypeValue,
+                TypeValue.CreateArrow(float64TypeValue, int32TypeValue)
+              ),
               Kind.Star,
               Float64Operations.Power {| v1 = None |})
         OperationsLens =
@@ -294,7 +346,9 @@ module Extension =
                   |> reader.OfSum
 
                 return
-                  (Float64Operations.Power({| v1 = Some v |}) |> operationLens.Set, Some float64PowerId)
+                  (Float64Operations.Power({| v1 = Some v |})
+                   |> operationLens.Set,
+                   Some float64PowerId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
                 let! v =
@@ -303,17 +357,25 @@ module Extension =
                   |> sum.MapError(Errors.MapContext(replaceWith loc0))
                   |> reader.OfSum
 
-                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float64(pown vClosure v))
+                return
+                  Value<TypeValue<'ext>, 'ext>
+                    .Primitive(PrimitiveValue.Float64(pown vClosure v))
             } }
 
     let float64ModId =
-      Identifier.FullyQualified([ "float64" ], "%") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "float64" ], "%")
+      |> TypeCheckScope.Empty.Resolve
 
-    let modOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
+    let modOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64ModId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, float64TypeValue)),
+          <| (TypeValue.CreateArrow(
+                float64TypeValue,
+                TypeValue.CreateArrow(float64TypeValue, float64TypeValue)
+              ),
               Kind.Star,
               Float64Operations.Mod {| v1 = None |})
         OperationsLens =
@@ -345,21 +407,30 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Float64Operations.Mod({| v1 = Some v |}) |> operationLens.Set, Some float64ModId)
+                  (Float64Operations.Mod({| v1 = Some v |}) |> operationLens.Set,
+                   Some float64ModId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float64(vClosure % v))
+                return
+                  Value<TypeValue<'ext>, 'ext>
+                    .Primitive(PrimitiveValue.Float64(vClosure % v))
             } }
 
     let float64EqualId =
-      Identifier.FullyQualified([ "float64" ], "==") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "float64" ], "==")
+      |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
+    let equalOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64EqualId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue)),
+          <| (TypeValue.CreateArrow(
+                float64TypeValue,
+                TypeValue.CreateArrow(float64TypeValue, boolTypeValue)
+              ),
               Kind.Star,
               Float64Operations.Equal {| v1 = None |})
         OperationsLens =
@@ -391,21 +462,31 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Float64Operations.Equal({| v1 = Some v |}) |> operationLens.Set, Some float64EqualId)
+                  (Float64Operations.Equal({| v1 = Some v |})
+                   |> operationLens.Set,
+                   Some float64EqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
+                return
+                  Value<TypeValue<'ext>, 'ext>
+                    .Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
     let float64NotEqualId =
-      Identifier.FullyQualified([ "float64" ], "!=") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "float64" ], "!=")
+      |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
+    let notEqualOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64NotEqualId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue)),
+          <| (TypeValue.CreateArrow(
+                float64TypeValue,
+                TypeValue.CreateArrow(float64TypeValue, boolTypeValue)
+              ),
               Kind.Star,
               Float64Operations.NotEqual {| v1 = None |})
         OperationsLens =
@@ -437,27 +518,38 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Float64Operations.NotEqual({| v1 = Some v |}) |> operationLens.Set, Some float64NotEqualId)
+                  (Float64Operations.NotEqual({| v1 = Some v |})
+                   |> operationLens.Set,
+                   Some float64NotEqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
+                return
+                  Value<TypeValue<'ext>, 'ext>
+                    .Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
     let float64GreaterThanId =
-      Identifier.FullyQualified([ "float64" ], ">") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "float64" ], ">")
+      |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
+    let greaterThanOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64GreaterThanId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue)),
+          <| (TypeValue.CreateArrow(
+                float64TypeValue,
+                TypeValue.CreateArrow(float64TypeValue, boolTypeValue)
+              ),
               Kind.Star,
               Float64Operations.GreaterThan {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | Float64Operations.GreaterThan v -> Some(Float64Operations.GreaterThan v)
+            | Float64Operations.GreaterThan v ->
+              Some(Float64Operations.GreaterThan v)
             | _ -> None)
         Apply =
           fun loc0 _rest (op, v) ->
@@ -483,28 +575,38 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Float64Operations.GreaterThan({| v1 = Some v |}) |> operationLens.Set, Some float64GreaterThanId)
+                  (Float64Operations.GreaterThan({| v1 = Some v |})
+                   |> operationLens.Set,
+                   Some float64GreaterThanId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
+                return
+                  Value<TypeValue<'ext>, 'ext>
+                    .Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
     let float64GreaterThanOrEqualId =
-      Identifier.FullyQualified([ "float64" ], ">=") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "float64" ], ">=")
+      |> TypeCheckScope.Empty.Resolve
 
     let greaterThanOrEqualOperation
-      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64GreaterThanOrEqualId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue)),
+          <| (TypeValue.CreateArrow(
+                float64TypeValue,
+                TypeValue.CreateArrow(float64TypeValue, boolTypeValue)
+              ),
               Kind.Star,
               Float64Operations.GreaterThanOrEqual {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | Float64Operations.GreaterThanOrEqual v -> Some(Float64Operations.GreaterThanOrEqual v)
+            | Float64Operations.GreaterThanOrEqual v ->
+              Some(Float64Operations.GreaterThanOrEqual v)
             | _ -> None)
         Apply =
           fun loc0 _rest (op, v) ->
@@ -530,22 +632,31 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Float64Operations.GreaterThanOrEqual({| v1 = Some v |}) |> operationLens.Set,
+                  (Float64Operations.GreaterThanOrEqual({| v1 = Some v |})
+                   |> operationLens.Set,
                    Some float64GreaterThanOrEqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
+                return
+                  Value<TypeValue<'ext>, 'ext>
+                    .Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
     let float64LessThanId =
-      Identifier.FullyQualified([ "float64" ], "<") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "float64" ], "<")
+      |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
+    let lessThanOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64LessThanId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue)),
+          <| (TypeValue.CreateArrow(
+                float64TypeValue,
+                TypeValue.CreateArrow(float64TypeValue, boolTypeValue)
+              ),
               Kind.Star,
               Float64Operations.LessThan {| v1 = None |})
         OperationsLens =
@@ -577,28 +688,38 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Float64Operations.LessThan({| v1 = Some v |}) |> operationLens.Set, Some float64LessThanId)
+                  (Float64Operations.LessThan({| v1 = Some v |})
+                   |> operationLens.Set,
+                   Some float64LessThanId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
+                return
+                  Value<TypeValue<'ext>, 'ext>
+                    .Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
     let float64LessThanOrEqualId =
-      Identifier.FullyQualified([ "float64" ], "<=") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "float64" ], "<=")
+      |> TypeCheckScope.Empty.Resolve
 
     let lessThanOrEqualOperation
-      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, Float64Operations<'ext>> =
       float64LessThanOrEqualId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(float64TypeValue, TypeValue.CreateArrow(float64TypeValue, boolTypeValue)),
+          <| (TypeValue.CreateArrow(
+                float64TypeValue,
+                TypeValue.CreateArrow(float64TypeValue, boolTypeValue)
+              ),
               Kind.Star,
               Float64Operations.LessThanOrEqual {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | Float64Operations.LessThanOrEqual v -> Some(Float64Operations.LessThanOrEqual v)
+            | Float64Operations.LessThanOrEqual v ->
+              Some(Float64Operations.LessThanOrEqual v)
             | _ -> None)
         Apply =
           fun loc0 _rest (op, v) ->
@@ -624,12 +745,15 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Float64Operations.LessThanOrEqual({| v1 = Some v |}) |> operationLens.Set,
+                  (Float64Operations.LessThanOrEqual({| v1 = Some v |})
+                   |> operationLens.Set,
                    Some float64LessThanOrEqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))
+                return
+                  Value<TypeValue<'ext>, 'ext>
+                    .Primitive(PrimitiveValue.Bool(vClosure <= v))
             } }
 
     { TypeVars = []

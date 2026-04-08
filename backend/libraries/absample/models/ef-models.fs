@@ -35,8 +35,10 @@ type ABEvent(ABId: Guid, CreatedAt: DateTime, ProcessingStatus: ABEventStatus) =
     let this = this |> ABEvent.ToUnion
 
     (match this with
-     | absample.models.ABEvent.AEvent e -> absample.models.ABEvent.AEvent { e with event = u (e.event) }
-     | absample.models.ABEvent.BEvent e -> absample.models.ABEvent.BEvent { e with event = u (e.event) })
+     | absample.models.ABEvent.AEvent e ->
+       absample.models.ABEvent.AEvent { e with event = u (e.event) }
+     | absample.models.ABEvent.BEvent e ->
+       absample.models.ABEvent.BEvent { e with event = u (e.event) })
     |> ABEvent.FromUnion
 
   static member ToUnion(instance: ABEvent) =
@@ -50,7 +52,9 @@ type ABEvent(ABId: Guid, CreatedAt: DateTime, ProcessingStatus: ABEventStatus) =
     | AEvent e -> e |> AEvent.FromRecord :> ABEvent
     | BEvent e -> e |> BEvent.FromRecord :> ABEvent
 
-and AEvent(ABId: Guid, CreatedAt: DateTime, ProcessingStatus: ABEventStatus, AStep: int) =
+and AEvent
+  (ABId: Guid, CreatedAt: DateTime, ProcessingStatus: ABEventStatus, AStep: int)
+  =
   inherit ABEvent(ABId, CreatedAt, ProcessingStatus)
   member val AStep = AStep with get, set
   // member val A1Event:A1Event = Unchecked.defaultof<A1Event> with get, set
@@ -68,7 +72,9 @@ and AEvent(ABId: Guid, CreatedAt: DateTime, ProcessingStatus: ABEventStatus, ASt
       AStep = e.AStep
     )
 
-and BEvent(ABId: Guid, CreatedAt: DateTime, ProcessingStatus: ABEventStatus, BStep: int) =
+and BEvent
+  (ABId: Guid, CreatedAt: DateTime, ProcessingStatus: ABEventStatus, BStep: int)
+  =
   inherit ABEvent(ABId, CreatedAt, ProcessingStatus)
   member val BStep = BStep with get, set
 

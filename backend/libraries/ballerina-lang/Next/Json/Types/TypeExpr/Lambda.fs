@@ -14,15 +14,19 @@ module LambdaTypeExpr =
   let private discriminator = "lambda"
 
   type TypeExpr<'valueExt> with
-    static member FromJsonLambda(fromJsonRoot: TypeExprParser<'valueExt>) : TypeExprParser<'valueExt> =
-      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun lambdaFields ->
-        sum {
-          let! param, body = lambdaFields |> JsonValue.AsPair
-          let! param = param |> TypeParameter.FromJson
-          let! body = body |> fromJsonRoot
+    static member FromJsonLambda
+      (fromJsonRoot: TypeExprParser<'valueExt>)
+      : TypeExprParser<'valueExt> =
+      Sum.assertDiscriminatorAndContinueWithValue
+        discriminator
+        (fun lambdaFields ->
+          sum {
+            let! param, body = lambdaFields |> JsonValue.AsPair
+            let! param = param |> TypeParameter.FromJson
+            let! body = body |> fromJsonRoot
 
-          return TypeExpr.Lambda(param, body)
-        })
+            return TypeExpr.Lambda(param, body)
+          })
 
     static member ToJsonLambda
       (rootToJson: TypeExpr<'valueExt> -> JsonValue)

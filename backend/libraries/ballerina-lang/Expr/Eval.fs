@@ -15,9 +15,12 @@ module Eval =
       {| Vars =
           fun
               (f: Updater<Vars<'ExprExtension, 'ValueExtension>>)
-              (ctx: ExprEvalContext<'ExprExtension, 'ValueExtension>) -> { ctx with Vars = f ctx.Vars }
+              (ctx: ExprEvalContext<'ExprExtension, 'ValueExtension>) ->
+            { ctx with Vars = f ctx.Vars }
          Types =
-          fun (f: Updater<TypeBindings>) (ctx: ExprEvalContext<'ExprExtension, 'ValueExtension>) ->
+          fun
+              (f: Updater<TypeBindings>)
+              (ctx: ExprEvalContext<'ExprExtension, 'ValueExtension>) ->
             { ctx with Types = f ctx.Types } |}
 
   type ExprEvalState = unit
@@ -32,12 +35,14 @@ module Eval =
      >
 
   type ExprEval<'ExprExtension, 'ValueExtension> =
-    (Expr<'ExprExtension, 'ValueExtension>) -> EvalCoroutine<'ExprExtension, 'ValueExtension>
+    (Expr<'ExprExtension, 'ValueExtension>)
+      -> EvalCoroutine<'ExprExtension, 'ValueExtension>
 
   type EvalFrom<'ExprExtension, 'ValueExtension, 'ExprExtensionTail> =
     'ExprExtensionTail -> EvalCoroutine<'ExprExtension, 'ValueExtension>
 
-  type OperatorEvalExtensions<'ExprExtension, 'ValueExtension, 'ValueExtensionTail> =
+  type OperatorEvalExtensions<'ExprExtension, 'ValueExtension, 'ValueExtensionTail>
+    =
     {| Apply:
          {| func: 'ValueExtensionTail
             arg: Value<'ExprExtension, 'ValueExtension> |}
@@ -49,27 +54,41 @@ module Eval =
            -> EvalCoroutine<'ExprExtension, 'ValueExtension>
        MatchCase:
          {| value: 'ValueExtensionTail
-            caseHandlers: Map<string, (VarName * Expr<'ExprExtension, 'ValueExtension>)> |}
+            caseHandlers:
+              Map<string, (VarName * Expr<'ExprExtension, 'ValueExtension>)> |}
            -> EvalCoroutine<'ExprExtension, 'ValueExtension> |}
 
   module OperatorEvalExtensions =
     let preprocessTail<'ExprExtension, 'ValueExtension, 'ValueExtensionTail, 'ValueExtensionTail2>
       (f: 'ValueExtensionTail2 -> 'ValueExtensionTail)
-      (i: OperatorEvalExtensions<'ExprExtension, 'ValueExtension, 'ValueExtensionTail>)
-      : OperatorEvalExtensions<'ExprExtension, 'ValueExtension, 'ValueExtensionTail2> =
+      (i:
+        OperatorEvalExtensions<
+          'ExprExtension,
+          'ValueExtension,
+          'ValueExtensionTail
+         >)
+      : OperatorEvalExtensions<
+          'ExprExtension,
+          'ValueExtension,
+          'ValueExtensionTail2
+         >
+      =
       {| Apply = fun inputs -> i.Apply {| inputs with func = f inputs.func |}
          GenericApply =
           fun inputs ->
             i.GenericApply
               {| inputs with
                   typeFunc = f inputs.typeFunc |}
-         MatchCase = fun inputs -> i.MatchCase {| inputs with value = f inputs.value |} |}
+         MatchCase =
+          fun inputs -> i.MatchCase {| inputs with value = f inputs.value |} |}
 
   type Expr<'ExprExtension, 'ValueExtension> with
     static member eval
-      (operatorEvalExtensions: OperatorEvalExtensions<'ExprExtension, 'ValueExtension, 'ValueExtension>)
+      (operatorEvalExtensions:
+        OperatorEvalExtensions<'ExprExtension, 'ValueExtension, 'ValueExtension>)
       (evalExtension:
-        ExprEval<'ExprExtension, 'ValueExtension> -> EvalFrom<'ExprExtension, 'ValueExtension, 'ExprExtension>)
+        ExprEval<'ExprExtension, 'ValueExtension>
+          -> EvalFrom<'ExprExtension, 'ValueExtension, 'ExprExtension>)
       : ExprEval<'ExprExtension, 'ValueExtension> =
       fun e ->
         let (!) = Expr.eval operatorEvalExtensions evalExtension
@@ -81,12 +100,17 @@ module Eval =
             let! arg = !arg
 
             match fValue with
-            | Value.Lambda(v, _, _, b) -> return! !b |> co.mapContext (ExprEvalContext.Update.Vars(Map.add v arg))
+            | Value.Lambda(v, _, _, b) ->
+              return!
+                !b |> co.mapContext (ExprEvalContext.Update.Vars(Map.add v arg))
             | Value.Extension extensionFunc ->
-              return! operatorEvalExtensions.Apply {| func = extensionFunc; arg = arg |}
+              return!
+                operatorEvalExtensions.Apply
+                  {| func = extensionFunc; arg = arg |}
             | _ ->
               return!
-                (fun () -> $"runtime error: {fValue} should be a function because it is applied")
+                (fun () ->
+                  $"runtime error: {fValue} should be a function because it is applied")
                 |> Errors.Singleton()
                 |> co.Throw
 
@@ -95,16 +119,27 @@ module Eval =
 
             let! varValue =
               ctx.Vars
-              |> Map.tryFindWithError varName "var" (fun () -> varName.VarName) ()
+              |> Map.tryFindWithError
+                varName
+                "var"
+                (fun () -> varName.VarName)
+                ()
               |> co.ofSum
 
             return varValue
           | Value v -> return v
           | LetType(typeName, typeDef, in_) ->
-            return! !in_ |> co.mapContext (ExprEvalContext.Update.Types(Map.add typeName typeDef))
+            return!
+              !in_
+              |> co.mapContext (
+                ExprEvalContext.Update.Types(Map.add typeName typeDef)
+              )
           | Let(x, expr, in_) ->
             let! expr = !expr
-            return! !in_ |> co.mapContext (ExprEvalContext.Update.Vars(Map.add x expr))
+
+            return!
+              !in_
+              |> co.mapContext (ExprEvalContext.Update.Vars(Map.add x expr))
 
           | MakeRecord fields ->
             let! evaluatedFields =
@@ -127,12 +162,18 @@ module Eval =
             | Value.CaseCons(caseName, caseValue) ->
               let! varName, handler =
                 caseHandlers
-                |> Map.tryFindWithError caseName "case name" (fun () -> caseName) ()
+                |> Map.tryFindWithError
+                  caseName
+                  "case name"
+                  (fun () -> caseName)
+                  ()
                 |> co.ofSum
 
               return!
                 !handler
-                |> co.mapContext (ExprEvalContext.Update.Vars(Map.add varName caseValue))
+                |> co.mapContext (
+                  ExprEvalContext.Update.Vars(Map.add varName caseValue)
+                )
             | Value.Extension value ->
               return!
                 operatorEvalExtensions.MatchCase
@@ -140,7 +181,8 @@ module Eval =
                      caseHandlers = caseHandlers |}
             | _ ->
               return!
-                (fun () -> $"runtime error: {value} should be a case constructor because it is matched")
+                (fun () ->
+                  $"runtime error: {value} should be a case constructor because it is matched")
                 |> Errors.Singleton()
                 |> co.Throw
 
@@ -157,12 +199,14 @@ module Eval =
               | Some v -> return v
               | None ->
                 return!
-                  fun () -> $"runtime error: {fieldName} not found in record {e}"
+                  fun () ->
+                    $"runtime error: {fieldName} not found in record {e}"
                   |> Errors.Singleton()
                   |> co.Throw
             | _ ->
               return!
-                fun () -> $"runtime error: {e} should be a record because it is field looked up"
+                fun () ->
+                  $"runtime error: {e} should be a record because it is field looked up"
                 |> Errors.Singleton()
                 |> co.Throw
 
@@ -181,7 +225,8 @@ module Eval =
                      types = ctx.Types |}
             | _ ->
               return!
-                fun () -> $"runtime error: {e} should be a generic lambda because it is applied"
+                fun () ->
+                  $"runtime error: {e} should be a generic lambda because it is applied"
                 |> Errors.Singleton()
                 |> co.Throw
           | Expr.Extension e -> return! evalExtension (!) e

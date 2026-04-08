@@ -19,12 +19,15 @@ module Tuple =
       (fromJsonRoot: ValueParser<'T, ResolvedIdentifier, 'valueExtension>)
       (json: JsonValue)
       : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
-      Reader.assertDiscriminatorAndContinueWithValue discriminator json (fun elementsJson ->
-        reader {
-          let! elements = elementsJson |> JsonValue.AsArray |> reader.OfSum
-          let! elements = elements |> Seq.map fromJsonRoot |> reader.All
-          return Value.Tuple elements
-        })
+      Reader.assertDiscriminatorAndContinueWithValue
+        discriminator
+        json
+        (fun elementsJson ->
+          reader {
+            let! elements = elementsJson |> JsonValue.AsArray |> reader.OfSum
+            let! elements = elements |> Seq.map fromJsonRoot |> reader.All
+            return Value.Tuple elements
+          })
 
     static member ToJsonTuple
       (rootToJson: ValueEncoder<'T, 'valueExtension>)
@@ -32,5 +35,10 @@ module Tuple =
       : ValueEncoderReader<'T, 'valueExtension> =
       reader {
         let! elements = elements |> List.map rootToJson |> reader.All
-        return elements |> List.toArray |> JsonValue.Array |> Json.discriminator discriminator
+
+        return
+          elements
+          |> List.toArray
+          |> JsonValue.Array
+          |> Json.discriminator discriminator
       }

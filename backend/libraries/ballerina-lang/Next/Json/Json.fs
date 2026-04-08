@@ -15,19 +15,34 @@ open Keys
 type JsonParser<'T> = JsonValue -> Sum<'T, Errors<Unit>>
 
 type ValueParserReader<'T, 'Id, 'valueExt when 'Id: comparison> =
-  Reader<Value<'T, 'valueExt>, JsonParser<TypeCheckedExpr<'valueExt>> * JsonParser<'T> * JsonParser<'Id>, Errors<Unit>>
+  Reader<
+    Value<'T, 'valueExt>,
+    JsonParser<TypeCheckedExpr<'valueExt>> * JsonParser<'T> * JsonParser<'Id>,
+    Errors<Unit>
+   >
 
 type ExprParserReader<'T, 'Id, 'valueExt when 'Id: comparison> =
-  Reader<Expr<'T, 'Id, 'valueExt>, JsonParser<'T> * JsonParser<'Id>, Errors<Unit>>
+  Reader<
+    Expr<'T, 'Id, 'valueExt>,
+    JsonParser<'T> * JsonParser<'Id>,
+    Errors<Unit>
+   >
 
 type TypeCheckedExprParserReader<'valueExt> =
-  Reader<TypeCheckedExpr<'valueExt>, JsonParser<TypeValue<'valueExt>> * JsonParser<ResolvedIdentifier>, Errors<Unit>>
+  Reader<
+    TypeCheckedExpr<'valueExt>,
+    JsonParser<TypeValue<'valueExt>> * JsonParser<ResolvedIdentifier>,
+    Errors<Unit>
+   >
 
-type ValueParser<'T, 'Id, 'valueExt when 'Id: comparison> = JsonValue -> ValueParserReader<'T, 'Id, 'valueExt>
+type ValueParser<'T, 'Id, 'valueExt when 'Id: comparison> =
+  JsonValue -> ValueParserReader<'T, 'Id, 'valueExt>
 
-type ExprParser<'T, 'Id, 'valueExt when 'Id: comparison> = JsonValue -> ExprParserReader<'T, 'Id, 'valueExt>
+type ExprParser<'T, 'Id, 'valueExt when 'Id: comparison> =
+  JsonValue -> ExprParserReader<'T, 'Id, 'valueExt>
 
-type TypeCheckedExprParser<'valueExt> = JsonValue -> TypeCheckedExprParserReader<'valueExt>
+type TypeCheckedExprParser<'valueExt> =
+  JsonValue -> TypeCheckedExprParserReader<'valueExt>
 
 type TypeExprParser<'valueExt> = JsonParser<TypeExpr<'valueExt>>
 
@@ -38,24 +53,40 @@ type ValueParserLayer<'T, 'Id, 'valueExt when 'Id: comparison> =
 type JsonEncoder<'T> = 'T -> JsonValue
 type JsonEncoderWithError<'T> = 'T -> Sum<JsonValue, Errors<Unit>>
 
-type ExprEncoderReader<'T, 'Id> = Reader<JsonValue, JsonEncoder<'T> * JsonEncoder<'Id>, Errors<Unit>>
-type ExprEncoder<'T, 'Id, 'valueExt when 'Id: comparison> = Expr<'T, 'Id, 'valueExt> -> ExprEncoderReader<'T, 'Id>
+type ExprEncoderReader<'T, 'Id> =
+  Reader<JsonValue, JsonEncoder<'T> * JsonEncoder<'Id>, Errors<Unit>>
+
+type ExprEncoder<'T, 'Id, 'valueExt when 'Id: comparison> =
+  Expr<'T, 'Id, 'valueExt> -> ExprEncoderReader<'T, 'Id>
 
 type TypeCheckedExprEncoderReader<'valueExt> =
-  Reader<JsonValue, JsonEncoder<TypeValue<'valueExt>> * JsonEncoder<ResolvedIdentifier>, Errors<Unit>>
+  Reader<
+    JsonValue,
+    JsonEncoder<TypeValue<'valueExt>> * JsonEncoder<ResolvedIdentifier>,
+    Errors<Unit>
+   >
 
-type TypeCheckedExprEncoder<'valueExt> = TypeCheckedExpr<'valueExt> -> TypeCheckedExprEncoderReader<'valueExt>
+type TypeCheckedExprEncoder<'valueExt> =
+  TypeCheckedExpr<'valueExt> -> TypeCheckedExprEncoderReader<'valueExt>
 
 type ValueEncoderReader<'T, 'valueExt> =
-  Reader<JsonValue, JsonEncoderWithError<TypeCheckedExpr<'valueExt>> * JsonEncoder<'T>, Errors<Unit>>
+  Reader<
+    JsonValue,
+    JsonEncoderWithError<TypeCheckedExpr<'valueExt>> * JsonEncoder<'T>,
+    Errors<Unit>
+   >
 
-type ValueEncoder<'T, 'valueExt> = Value<'T, 'valueExt> -> ValueEncoderReader<'T, 'valueExt>
+type ValueEncoder<'T, 'valueExt> =
+  Value<'T, 'valueExt> -> ValueEncoderReader<'T, 'valueExt>
 
-type ValueEncoderLayer<'T, 'valueExt> = ValueEncoder<'T, 'valueExt> -> ValueEncoder<'T, 'valueExt>
+type ValueEncoderLayer<'T, 'valueExt> =
+  ValueEncoder<'T, 'valueExt> -> ValueEncoder<'T, 'valueExt>
 
 module Json =
   let discriminator (discriminatorValue: string) (value: JsonValue) =
-    JsonValue.Record [| discriminatorKey, JsonValue.String discriminatorValue; valueKey, value |]
+    JsonValue.Record
+      [| discriminatorKey, JsonValue.String discriminatorValue
+         valueKey, value |]
 
   let buildRootParser<'T, 'Id, 'valueExtension when 'Id: comparison>
     (layers: NonEmptyList<ValueParserLayer<'T, 'Id, 'valueExtension>>)
@@ -64,7 +95,8 @@ module Json =
       (layers: NonEmptyList<ValueParserLayer<'T, 'Id, 'valueExtension>>)
       (self: ValueParser<'T, 'Id, 'valueExtension>)
       : ValueParser<'T, 'Id, 'valueExtension> =
-      fun data -> reader.Any(layers |> NonEmptyList.map (fun layer -> layer self data))
+      fun data ->
+        reader.Any(layers |> NonEmptyList.map (fun layer -> layer self data))
 
     let parsingOperation = F layers
     fix parsingOperation
@@ -76,7 +108,8 @@ module Json =
       (layers: NonEmptyList<ValueEncoderLayer<'T, 'valueExtension>>)
       (self: ValueEncoder<'T, 'valueExtension>)
       : ValueEncoder<'T, 'valueExtension> =
-      fun value -> reader.Any(layers |> NonEmptyList.map (fun layer -> layer self value))
+      fun value ->
+        reader.Any(layers |> NonEmptyList.map (fun layer -> layer self value))
 
     let encodingOperation = F layers
     fix encodingOperation

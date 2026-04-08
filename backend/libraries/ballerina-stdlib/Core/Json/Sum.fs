@@ -21,10 +21,15 @@ module Sum =
 
         match fields.TryFind discriminatorKey with
         | Some jsonDiscriminatorValue ->
-          let! jsonDiscriminatorValue = jsonDiscriminatorValue |> JsonValue.AsString
+          let! jsonDiscriminatorValue =
+            jsonDiscriminatorValue |> JsonValue.AsString
+
           let fields = fields |> Map.remove discriminatorKey
 
-          if jsonDiscriminatorValue = discriminatorValue && fields |> Map.isEmpty |> not then
+          if
+            jsonDiscriminatorValue = discriminatorValue
+            && fields |> Map.isEmpty |> not
+          then
             return!
               (fun () ->
                 $"Error: Expected no additional fields, but found {fields |> Map.count} ({(fields |> Map.keys).AsFSharpString.ReasonablyClamped}).")
@@ -32,10 +37,15 @@ module Sum =
               |> Errors.MapPriority(replaceWith ErrorPriority.High)
               |> sum.Throw
           elif jsonDiscriminatorValue = discriminatorValue then
-            return! k () |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium))
+            return!
+              k ()
+              |> sum.MapError(
+                Errors.MapPriority(replaceWith ErrorPriority.Medium)
+              )
           else
             return!
-              (fun () -> $"Error: Expected discriminator '{discriminatorValue}', but found '{jsonDiscriminatorValue}'.")
+              (fun () ->
+                $"Error: Expected discriminator '{discriminatorValue}', but found '{jsonDiscriminatorValue}'.")
               |> Errors.Singleton()
               |> sum.Throw
         | None ->
@@ -58,10 +68,15 @@ module Sum =
 
         match fields.TryFind discriminatorKey with
         | Some jsonDiscriminatorValue ->
-          let! jsonDiscriminatorValue = jsonDiscriminatorValue |> JsonValue.AsString
+          let! jsonDiscriminatorValue =
+            jsonDiscriminatorValue |> JsonValue.AsString
+
           let fields = fields |> Map.remove discriminatorKey
 
-          if jsonDiscriminatorValue = discriminatorValue && fields |> Map.count <> 1 then
+          if
+            jsonDiscriminatorValue = discriminatorValue
+            && fields |> Map.count <> 1
+          then
             return!
               (fun () ->
                 $"Error: Expected exactly one field, but found {fields |> Map.count} ({(fields |> Map.keys).AsFSharpString.ReasonablyClamped}).")
@@ -69,11 +84,19 @@ module Sum =
               |> Errors.MapPriority(replaceWith ErrorPriority.High)
               |> sum.Throw
           elif jsonDiscriminatorValue = discriminatorValue then
-            let! fieldValue = fields |> Map.tryFindWithError valueKey "fields" (fun () -> valueKey) ()
-            return! k fieldValue |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+            let! fieldValue =
+              fields
+              |> Map.tryFindWithError valueKey "fields" (fun () -> valueKey) ()
+
+            return!
+              k fieldValue
+              |> sum.MapError(
+                Errors.MapPriority(replaceWith ErrorPriority.High)
+              )
           else
             return!
-              (fun () -> $"Error: Expected discriminator '{discriminatorValue}', but found '{jsonDiscriminatorValue}'.")
+              (fun () ->
+                $"Error: Expected discriminator '{discriminatorValue}', but found '{jsonDiscriminatorValue}'.")
               |> Errors.Singleton()
               |> sum.Throw
         | None ->

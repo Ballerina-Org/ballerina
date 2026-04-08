@@ -33,10 +33,15 @@ module RecordCons =
   open Ballerina.Collections.NonEmptyList
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
-    static member internal TypeCheckRecordCons<'valueExt when 'valueExt: comparison>
+    static member internal TypeCheckRecordCons<'valueExt
+      when 'valueExt: comparison>
       (config: TypeCheckingConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
-      : TypeChecker<ExprRecordCons<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
+      : TypeChecker<
+          ExprRecordCons<TypeExpr<'valueExt>, Identifier, 'valueExt>,
+          'valueExt
+         >
+      =
       fun context_t ({ Fields = fields }) ->
         let (!) = typeCheckExpr context_t
         let (=>) c e = typeCheckExpr c e
@@ -66,7 +71,9 @@ module RecordCons =
                       let v_k = v.Kind
                       // do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
                       let! id = TypeCheckState.TryResolveIdentifier(k, loc0)
-                      let! k_s = TypeCheckState.TryFindRecordFieldSymbol(id, loc0)
+
+                      let! k_s =
+                        TypeCheckState.TryFindRecordFieldSymbol(id, loc0)
 
                       return (id, v), (k_s, (t_v, v_k))
                     })
@@ -86,7 +93,10 @@ module RecordCons =
                     state {
                       let! k_s, (k_t_v, _) =
                         context_fields
-                        |> OrderedMap.tryFindWithError k "fields" k.AsFSharpString
+                        |> OrderedMap.tryFindWithError
+                          k
+                          "fields"
+                          k.AsFSharpString
                         |> ofSum
 
                       let! v, _ = (Some k_t_v) => v
@@ -94,7 +104,9 @@ module RecordCons =
                       let v_k = v.Kind
                       // do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                      do! TypeValue.Unify(loc0, t_v, k_t_v) |> Expr.liftUnification
+                      do!
+                        TypeValue.Unify(loc0, t_v, k_t_v)
+                        |> Expr.liftUnification
 
                       let! id = TypeCheckState.TryResolveIdentifier(k_s, loc0)
 
@@ -116,7 +128,10 @@ module RecordCons =
 
           let! return_t =
             TypeValue.CreateRecord fieldsTypes
-            |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
+            |> TypeValue.Instantiate
+              ()
+              (TypeExpr.Eval config typeCheckExpr)
+              loc0
             |> Expr.liftInstantiation
 
           let return_t =
@@ -124,9 +139,19 @@ module RecordCons =
             | Some typeName ->
               TypeValue.SetSourceMapping(
                 return_t,
-                TypeExprSourceMapping.OriginTypeExpr(TypeExpr.Lookup(Identifier.LocalScope typeName))
+                TypeExprSourceMapping.OriginTypeExpr(
+                  TypeExpr.Lookup(Identifier.LocalScope typeName)
+                )
               )
             | None -> return_t
 
-          return TypeCheckedExpr.RecordCons(fieldsExpr, return_t, Kind.Star, loc0, ctx.Scope), ctx
+          return
+            TypeCheckedExpr.RecordCons(
+              fieldsExpr,
+              return_t,
+              Kind.Star,
+              loc0,
+              ctx.Scope
+            ),
+            ctx
         }

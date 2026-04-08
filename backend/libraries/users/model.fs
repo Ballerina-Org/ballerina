@@ -50,8 +50,10 @@ type UserEvent() =
 
   static member ToUnion(instance: UserEvent) =
     match instance with
-    | :? NewUserEvent as l -> l |> NewUserEvent.ToRecord |> UserEventUnion.NewUser
-    | :? EmailConfirmedEvent as i -> i |> EmailConfirmedEvent.ToRecord |> UserEventUnion.EmailConfirmed
+    | :? NewUserEvent as l ->
+      l |> NewUserEvent.ToRecord |> UserEventUnion.NewUser
+    | :? EmailConfirmedEvent as i ->
+      i |> EmailConfirmedEvent.ToRecord |> UserEventUnion.EmailConfirmed
     | _ -> failwith "cannot convert Tag to union, a case is missing"
 
 and NewUserEvent(Email: string, Password: string) =
@@ -79,8 +81,10 @@ and EmailConfirmedEvent(Email: string, TokenId: Guid) =
 type UserCoroutinesState = unit
 
 let User =
-  {| Create = fun (_: NewUserEventCase) -> failwith<Task<Guid>> "not implemented"
-     Update = fun (_: Guid) (_: U<User>) -> failwith<Task<Unit>> "not implemented"
+  {| Create =
+      fun (_: NewUserEventCase) -> failwith<Task<Guid>> "not implemented"
+     Update =
+      fun (_: Guid) (_: U<User>) -> failwith<Task<Unit>> "not implemented"
      Delete = fun (_: Guid) -> failwith<Task<Unit>> "not implemented"
      Updaters =
       {| EmailConfirmed =
@@ -91,7 +95,8 @@ let User =
           fun (updater: U<bool>) (current: User) ->
             { current with
                 Active = updater (current.Active) } |}
-     SendRegistrationConfirmationEmail = fun (_: Guid) (_: Token) -> failwith<Task<Unit>> "not implemented"
+     SendRegistrationConfirmationEmail =
+      fun (_: Guid) (_: Token) -> failwith<Task<Unit>> "not implemented"
      RegistrationExpiration = TimeSpan.FromDays(3) |}
 
 let register: Coroutine<unit, UserCoroutinesState, unit, UserEventUnion> =
@@ -121,7 +126,10 @@ let register: Coroutine<unit, UserCoroutinesState, unit, UserEventUnion> =
                   co { // wait for an email confirmation event, then mark the user as confirmed and active
                     do!
                       co.On (function
-                        | EmailConfirmed e when e.Email = newUser.Email && e.Token.Token = token.Token -> Some()
+                        | EmailConfirmed e when
+                          e.Email = newUser.Email && e.Token.Token = token.Token
+                          ->
+                          Some()
                         | _ -> None)
 
                     do!

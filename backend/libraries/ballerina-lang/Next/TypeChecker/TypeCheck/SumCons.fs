@@ -36,7 +36,11 @@ module SumCons =
     static member internal TypeCheckSumCons<'valueExt when 'valueExt: comparison>
       (config: TypeCheckingConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
-      : TypeChecker<ExprSumCons<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
+      : TypeChecker<
+          ExprSumCons<TypeExpr<'valueExt>, Identifier, 'valueExt>,
+          'valueExt
+         >
+      =
       fun _context_t ({ Selector = cons }) ->
         state {
           let! ctx = state.GetContext()
@@ -51,14 +55,27 @@ module SumCons =
                  Guid = guid }))
 
           for c in cases do
-            do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists c))
+            do!
+              state.SetState(
+                TypeCheckState.Updaters.Vars(
+                  UnificationState.EnsureVariableExists c
+                )
+              )
 
           let cases = cases |> Array.map TypeValue.Var
 
           let! return_t =
-            TypeValue.CreateArrow(cases[cons.Case - 1], TypeValue.CreateSum(cases |> List.ofSeq))
-            |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
+            TypeValue.CreateArrow(
+              cases[cons.Case - 1],
+              TypeValue.CreateSum(cases |> List.ofSeq)
+            )
+            |> TypeValue.Instantiate
+              ()
+              (TypeExpr.Eval config typeCheckExpr)
+              loc0
             |> Expr.liftInstantiation
 
-          return TypeCheckedExpr.SumCons(cons, return_t, Kind.Star, loc0, ctx.Scope), ctx
+          return
+            TypeCheckedExpr.SumCons(cons, return_t, Kind.Star, loc0, ctx.Scope),
+            ctx
         }

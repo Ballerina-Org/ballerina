@@ -10,16 +10,24 @@ module Extension =
   open Ballerina.Coroutines.Model
   open Ballerina.DSL.Expr.Eval
 
-  type Parse<'ExprExtension, 'ValueExtension> = JsonValue -> Sum<Expr<'ExprExtension, 'ValueExtension>, Errors<unit>>
+  type Parse<'ExprExtension, 'ValueExtension> =
+    JsonValue -> Sum<Expr<'ExprExtension, 'ValueExtension>, Errors<unit>>
 
   type ParserExtension<'ExprExtension, 'ValueExtension> =
-    { parseExtension: Parse<'ExprExtension, 'ValueExtension> -> Parse<'ExprExtension, 'ValueExtension> }
+    { parseExtension:
+        Parse<'ExprExtension, 'ValueExtension>
+          -> Parse<'ExprExtension, 'ValueExtension> }
 
   type TypeCheck<'ExprExtension, 'ValueExtension> =
-    (TypeBindings) -> (VarTypes) -> (Expr<'ExprExtension, 'ValueExtension>) -> Sum<ExprType, Errors<unit>>
+    (TypeBindings)
+      -> (VarTypes)
+      -> (Expr<'ExprExtension, 'ValueExtension>)
+      -> Sum<ExprType, Errors<unit>>
 
   type TypeCheckerExtension<'ExprExtension, 'ValueExtension> =
-    { typeCheck: TypeCheck<'ExprExtension, 'ValueExtension> -> TypeCheck<'ExprExtension, 'ValueExtension> }
+    { typeCheck:
+        TypeCheck<'ExprExtension, 'ValueExtension>
+          -> TypeCheck<'ExprExtension, 'ValueExtension> }
 
   type Eval<'ExprExtension, 'ValueExtension> =
     (Expr<'ExprExtension, 'ValueExtension>)
@@ -32,7 +40,9 @@ module Extension =
        >
 
   type EvaluatorExtension<'ExprExtension, 'ValueExtension> =
-    { eval: Eval<'ExprExtension, 'ValueExtension> -> Eval<'ExprExtension, 'ValueExtension> }
+    { eval:
+        Eval<'ExprExtension, 'ValueExtension>
+          -> Eval<'ExprExtension, 'ValueExtension> }
 
   type LanguageExtension<'ExprExtension, 'ValueExtension> =
     { parse: EvaluatorExtension<'ExprExtension, 'ValueExtension>

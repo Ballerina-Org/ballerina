@@ -42,12 +42,31 @@ module DeltaDTO =
     and 'deltaExtensionDTO: not null
     and 'deltaExtensionDTO: not struct>() =
 
-    member val Multiple: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>[] = null with get, set
+    member val Multiple: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>[] =
+      null with get, set
+
     member val Replace: ValueDTO<'valueExtensionDTO> | null = null with get, set
-    member val Record: Dictionary<string, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>> = null with get, set
-    member val Union: Dictionary<string, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>> = null with get, set
-    member val Tuple: Dictionary<int, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>> = null with get, set
-    member val Sum: Dictionary<int, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>> = null with get, set
+
+    member val Record: Dictionary<
+      string,
+      DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>
+     > = null with get, set
+
+    member val Union: Dictionary<
+      string,
+      DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>
+     > = null with get, set
+
+    member val Tuple: Dictionary<
+      int,
+      DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>
+     > = null with get, set
+
+    member val Sum: Dictionary<
+      int,
+      DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>
+     > = null with get, set
+
     member val Ext: 'deltaExtensionDTO | null = null with get, set
 
     new(deltas: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>[]) as this =
@@ -58,7 +77,12 @@ module DeltaDTO =
       DeltaDTO()
       then this.Replace <- replace
 
-    new(recordOrUnion: Dictionary<string, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>>, isRecord: bool) as this =
+    new
+      (
+        recordOrUnion:
+          Dictionary<string, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>>,
+        isRecord: bool
+      ) as this =
       DeltaDTO()
 
       then
@@ -67,7 +91,12 @@ module DeltaDTO =
         else
           this.Union <- recordOrUnion
 
-    new(tupleOrSum: Dictionary<int, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>>, isTuple: bool) as this =
+    new
+      (
+        tupleOrSum:
+          Dictionary<int, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>>,
+        isTuple: bool
+      ) as this =
       DeltaDTO()
 
       then

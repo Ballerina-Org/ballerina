@@ -20,13 +20,18 @@ module Apply =
       (fromRootJson: TypeCheckedExprParser<'valueExt>)
       (value: JsonValue)
       : TypeCheckedExprParserReader<'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun application ->
-        reader {
-          let! f, arg = application |> JsonValue.AsPair |> reader.OfSum
-          let! f = f |> fromRootJson
-          let! arg = arg |> fromRootJson
-          return TypeCheckedExpr.Apply(f, arg, TypeValue.CreateUnit(), Kind.Star)
-        })
+      Reader.assertDiscriminatorAndContinueWithValue
+        discriminator
+        value
+        (fun application ->
+          reader {
+            let! f, arg = application |> JsonValue.AsPair |> reader.OfSum
+            let! f = f |> fromRootJson
+            let! arg = arg |> fromRootJson
+
+            return
+              TypeCheckedExpr.Apply(f, arg, TypeValue.CreateUnit(), Kind.Star)
+          })
 
     static member ToJsonApply
       (rootToJson: TypeCheckedExprEncoder<'valueExt>)
@@ -36,5 +41,7 @@ module Apply =
       reader {
         let! f = f |> rootToJson
         let! arg = arg |> rootToJson
-        return [| f; arg |] |> JsonValue.Array |> Json.discriminator discriminator
+
+        return
+          [| f; arg |] |> JsonValue.Array |> Json.discriminator discriminator
       }

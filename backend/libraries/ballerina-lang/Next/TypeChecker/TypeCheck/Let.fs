@@ -33,14 +33,18 @@ module Let =
     static member internal TypeCheckLet<'valueExt when 'valueExt: comparison>
       (config: TypeCheckingConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
-      : TypeChecker<Location * ExprLet<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
+      : TypeChecker<
+          Location * ExprLet<TypeExpr<'valueExt>, Identifier, 'valueExt>,
+          'valueExt
+         >
+      =
       fun
           context_t
           (letLoc,
-            { Var = x
-              Type = var_type
-              Val = e1
-              Rest = e2 }) ->
+           { Var = x
+             Type = var_type
+             Val = e1
+             Rest = e2 }) ->
         let (!) = typeCheckExpr context_t
         let (=>) c e = typeCheckExpr c e
         let loc0 = e1.Location
@@ -61,7 +65,10 @@ module Let =
 
           let! e1, _ =
             (x_type |> Option.map fst) => e1
-            |> state.MapContext(TypeCheckContext.Updaters.IsTypeCheckingLetValue(replaceWith true))
+            |> state.MapContext(
+              TypeCheckContext.Updaters.IsTypeCheckingLetValue(replaceWith true)
+            )
+
           let t1 = e1.Type
           let k1 = e1.Kind
 
@@ -69,14 +76,22 @@ module Let =
           | Some(x_type, x_type_kind) ->
             do! x_type_kind |> Kind.AsStar |> ofSum |> state.Ignore
 
-            do! TypeValue.Unify(loc0, t1, x_type) |> Expr<'T, 'Id, 'valueExt>.liftUnification
+            do!
+              TypeValue.Unify(loc0, t1, x_type)
+              |> Expr<'T, 'Id, 'valueExt>.liftUnification
           | _ -> ()
 
           let! e2, ctx_e2 =
             !e2
             |> state.MapContext(
-              TypeCheckContext.Updaters.Values(Map.add (x.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) (t1, k1))
-              >> TypeCheckContext.Updaters.IsTypeCheckingLetValue(replaceWith false)
+              TypeCheckContext.Updaters.Values(
+                Map.add
+                  (x.Name |> Identifier.LocalScope |> ctx.Scope.Resolve)
+                  (t1, k1)
+              )
+              >> TypeCheckContext.Updaters.IsTypeCheckingLetValue(
+                replaceWith false
+              )
             )
 
           let t2 = e2.Type
@@ -86,9 +101,12 @@ module Let =
             match var_type with
             | Some _ -> state { return () }
             | None ->
-              let equalsLoc = { letLoc with Column = letLoc.Column + x.Name.Length + 2 }
+              let equalsLoc =
+                { letLoc with
+                    Column = letLoc.Column + x.Name.Length + 2 }
 
               TypeCheckState.bindInlayHint (equalsLoc, x.Name, t1)
 
-          return TypeCheckedExpr.Let(x, t1, e1, e2, t2, k2, loc0, ctx.Scope), ctx_e2
+          return
+            TypeCheckedExpr.Let(x, t1, e1, e2, t2, k2, loc0, ctx.Scope), ctx_e2
         }

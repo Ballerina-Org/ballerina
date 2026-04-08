@@ -22,15 +22,28 @@ module TypeLet =
       (fromRootJson: TypeCheckedExprParser<'valueExt>)
       (value: JsonValue)
       : TypeCheckedExprParserReader<'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun typeLetJson ->
-        reader {
-          let! (typeId, typeArg, body) = typeLetJson |> JsonValue.AsTriple |> reader.OfSum
-          let! typeId = typeId |> JsonValue.AsString |> reader.OfSum
-          let! ctx, _ = reader.GetContext()
-          let! typeArg = typeArg |> ctx |> reader.OfSum
-          let! body = body |> fromRootJson
-          return TypeCheckedExpr.TypeLet(typeId, typeArg, body, TypeValue.CreateUnit(), Kind.Star)
-        })
+      Reader.assertDiscriminatorAndContinueWithValue
+        discriminator
+        value
+        (fun typeLetJson ->
+          reader {
+            let! (typeId, typeArg, body) =
+              typeLetJson |> JsonValue.AsTriple |> reader.OfSum
+
+            let! typeId = typeId |> JsonValue.AsString |> reader.OfSum
+            let! ctx, _ = reader.GetContext()
+            let! typeArg = typeArg |> ctx |> reader.OfSum
+            let! body = body |> fromRootJson
+
+            return
+              TypeCheckedExpr.TypeLet(
+                typeId,
+                typeArg,
+                body,
+                TypeValue.CreateUnit(),
+                Kind.Star
+              )
+          })
 
     static member ToJsonTypeLet
       (rootToJson: TypeCheckedExprEncoder<'valueExt>)

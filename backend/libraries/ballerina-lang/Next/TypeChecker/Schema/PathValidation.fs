@@ -30,7 +30,8 @@ module SchemaPathValidation =
     let rec loop source path =
       state {
         match path with
-        | [] -> do! TypeValue.Unify(loc0, source, target) |> Expr.liftUnification
+        | [] ->
+          do! TypeValue.Unify(loc0, source, target) |> Expr.liftUnification
         | (_, segment) :: rest ->
           match segment with
           | SchemaPathTypeDecompositionExpr.Field fieldName ->
@@ -39,9 +40,11 @@ module SchemaPathValidation =
             let! (_, (fieldType, _)) =
               sourceRecord
               |> OrderedMap.toSeq
-              |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = fieldName.LocalName)
+              |> Seq.tryFind (fun (k, _) ->
+                k.Name.LocalName = fieldName.LocalName)
               |> Sum.fromOption (fun () ->
-                (fun () -> $"Error: cannot find field {fieldName} in record type {source}")
+                (fun () ->
+                  $"Error: cannot find field {fieldName} in record type {source}")
                 |> Errors.Singleton loc0)
               |> state.OfSum
 
@@ -52,9 +55,11 @@ module SchemaPathValidation =
             let! (_, caseType) =
               sourceCase
               |> OrderedMap.toSeq
-              |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = caseName.LocalName)
+              |> Seq.tryFind (fun (k, _) ->
+                k.Name.LocalName = caseName.LocalName)
               |> Sum.fromOption (fun () ->
-                (fun () -> $"Error: cannot find case {caseName} in union type {source}")
+                (fun () ->
+                  $"Error: cannot find case {caseName} in union type {source}")
                 |> Errors.Singleton loc0)
               |> state.OfSum
 
@@ -68,7 +73,8 @@ module SchemaPathValidation =
               || caseName.Count <> sourceCase.Length
             then
               return!
-                (fun () -> $"Error: sum case {caseName} is out of bounds for sum type {source}")
+                (fun () ->
+                  $"Error: sum case {caseName} is out of bounds for sum type {source}")
                 |> Errors.Singleton loc0
                 |> state.Throw
             else
@@ -76,7 +82,8 @@ module SchemaPathValidation =
                 sourceCase
                 |> Seq.tryItem (caseName.Case - 1)
                 |> Sum.fromOption (fun () ->
-                  (fun () -> $"Error: cannot find sum case {caseName} in sum type {source}")
+                  (fun () ->
+                    $"Error: cannot find sum case {caseName} in sum type {source}")
                   |> Errors.Singleton loc0)
                 |> state.OfSum
 
@@ -86,7 +93,8 @@ module SchemaPathValidation =
 
             if item.Index < 1 || item.Index > sourceCase.Length then
               return!
-                (fun () -> $"Error: tuple index {item} is out of bounds for tuple type {source}")
+                (fun () ->
+                  $"Error: tuple index {item} is out of bounds for tuple type {source}")
                 |> Errors.Singleton loc0
                 |> state.Throw
             else
@@ -94,7 +102,8 @@ module SchemaPathValidation =
                 sourceCase
                 |> Seq.tryItem (item.Index - 1)
                 |> Sum.fromOption (fun () ->
-                  (fun () -> $"Error: cannot find tuple index {item} in tuple type {source}")
+                  (fun () ->
+                    $"Error: cannot find tuple index {item} in tuple type {source}")
                   |> Errors.Singleton loc0)
                 |> state.OfSum
 
@@ -113,15 +122,28 @@ module SchemaPathValidation =
               |> state.OfSum
 
             let! t_map, _ =
-              !TypeExpr.Apply(TypeExpr.Apply(TypeExpr.FromTypeValue t_map, TypeExpr.FromTypeValue t_arg),
+              !TypeExpr.Apply(TypeExpr.Apply(
+                                TypeExpr.FromTypeValue t_map,
+                                TypeExpr.FromTypeValue t_arg
+                              ),
                               TypeExpr.FromTypeValue t_arg)
 
-            let! expected, _ = !(TypeExpr.Apply(TypeExpr.FromTypeValue container, TypeExpr.FromTypeValue t_arg))
+            let! expected, _ =
+              !(TypeExpr.Apply(
+                TypeExpr.FromTypeValue container,
+                TypeExpr.FromTypeValue t_arg
+              ))
 
             let! expected, _ =
               !(TypeExpr.Arrow(
-                TypeExpr.Arrow(TypeExpr.FromTypeValue t_arg, TypeExpr.FromTypeValue t_arg),
-                TypeExpr.Arrow(TypeExpr.FromTypeValue source, TypeExpr.FromTypeValue expected)
+                TypeExpr.Arrow(
+                  TypeExpr.FromTypeValue t_arg,
+                  TypeExpr.FromTypeValue t_arg
+                ),
+                TypeExpr.Arrow(
+                  TypeExpr.FromTypeValue source,
+                  TypeExpr.FromTypeValue expected
+                )
               ))
 
             do! TypeValue.Unify(loc0, t_map, expected) |> Expr.liftUnification

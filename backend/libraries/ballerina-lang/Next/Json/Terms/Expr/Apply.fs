@@ -20,13 +20,16 @@ module Apply =
       (fromRootJson: ExprParser<'T, 'Id, 'valueExt>)
       (value: JsonValue)
       : ExprParserReader<'T, 'Id, 'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun application ->
-        reader {
-          let! f, arg = application |> JsonValue.AsPair |> reader.OfSum
-          let! f = f |> fromRootJson
-          let! arg = arg |> fromRootJson
-          return Expr.Apply(f, arg)
-        })
+      Reader.assertDiscriminatorAndContinueWithValue
+        discriminator
+        value
+        (fun application ->
+          reader {
+            let! f, arg = application |> JsonValue.AsPair |> reader.OfSum
+            let! f = f |> fromRootJson
+            let! arg = arg |> fromRootJson
+            return Expr.Apply(f, arg)
+          })
 
     static member ToJsonApply
       (rootToJson: ExprEncoder<'T, 'Id, 'valueExt>)
@@ -36,5 +39,7 @@ module Apply =
       reader {
         let! f = f |> rootToJson
         let! arg = arg |> rootToJson
-        return [| f; arg |] |> JsonValue.Array |> Json.discriminator discriminator
+
+        return
+          [| f; arg |] |> JsonValue.Array |> Json.discriminator discriminator
       }

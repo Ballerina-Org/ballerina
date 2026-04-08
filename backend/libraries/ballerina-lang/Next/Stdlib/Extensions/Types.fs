@@ -25,7 +25,8 @@ module Types =
     and 'extDTO: not null
     and 'deltaExtDTO: not null
     and 'deltaExtDTO: not struct> with
-    static member RegisterTypeCheckContext<'runtimeContext, 'ext when 'ext: comparison>
+    static member RegisterTypeCheckContext<'runtimeContext, 'ext
+      when 'ext: comparison>
       (typeExt:
         TypeExtension<
           'runtimeContext,
@@ -48,18 +49,23 @@ module Types =
           typeExt.Cases
           |> Map.toSeq
           |> Seq.fold
-            (fun acc ((caseId, _), caseExt) -> acc |> Map.add caseId (caseExt.ConstructorType, kind))
+            (fun acc ((caseId, _), caseExt) ->
+              acc |> Map.add caseId (caseExt.ConstructorType, kind))
             typeCheckContext.Values
 
         let values =
           typeExt.Operations
           |> Map.toSeq
-          |> Seq.fold (fun acc (caseId, caseExt) -> acc |> Map.add caseId (caseExt.Type, caseExt.Kind)) values
+          |> Seq.fold
+            (fun acc (caseId, caseExt) ->
+              acc |> Map.add caseId (caseExt.Type, caseExt.Kind))
+            values
 
         { typeCheckContext with
             Values = values }
 
-    static member RegisterTypeCheckState<'runtimeContext, 'ext when 'ext: comparison>
+    static member RegisterTypeCheckState<'runtimeContext, 'ext
+      when 'ext: comparison>
       (typeExt:
         TypeExtension<
           'runtimeContext,
@@ -92,9 +98,12 @@ module Types =
                   UnionCases =
                     typeExt.Cases
                     |> Map.keys
-                    |> Seq.fold (fun acc (id, sym) -> acc |> Map.add id sym) typeCheckState.Symbols.UnionCases } }
+                    |> Seq.fold
+                      (fun acc (id, sym) -> acc |> Map.add id sym)
+                      typeCheckState.Symbols.UnionCases } }
 
-    static member RegisterExprEvalContext<'runtimeContext, 'ext when 'ext: comparison>
+    static member RegisterExprEvalContext<'runtimeContext, 'ext
+      when 'ext: comparison>
       (typeExt:
         TypeExtension<
           'runtimeContext,
@@ -180,7 +189,11 @@ module Types =
                    Location
                      -> List<TypeCheckedExpr<'ext>>
                      -> 'ext
-                     -> ExprEvaluator<'runtimeContext, 'ext, ExtEvalResult<'runtimeContext, 'ext>>)
+                     -> ExprEvaluator<
+                       'runtimeContext,
+                       'ext,
+                       ExtEvalResult<'runtimeContext, 'ext>
+                      >)
                  caseExt ->
               fun loc0 rest v ->
                 reader.Any(
@@ -188,7 +201,8 @@ module Types =
                     let! v =
                       caseExt.OperationsLens.Get v
                       |> sum.OfOption(
-                        (fun () -> $"Error: cannot extra constructor from extension")
+                        (fun () ->
+                          $"Error: cannot extra constructor from extension")
                         |> Errors.Singleton loc0
                       )
                       |> reader.OfSum
@@ -210,7 +224,9 @@ module Types =
           |> Seq.fold
             (fun acc ((caseId, _), caseExt) ->
               acc
-              |> Map.add caseId ((caseExt.Constructor |> caseExt.ConsLens.Set, None) |> Ext))
+              |> Map.add
+                caseId
+                ((caseExt.Constructor |> caseExt.ConsLens.Set, None) |> Ext))
             evalContext.Scope.Values
 
         let values =
@@ -219,21 +235,35 @@ module Types =
           |> Seq.fold
             (fun acc (caseId, caseExt) ->
               acc
-              |> Map.add caseId ((caseExt.Operation |> caseExt.OperationsLens.Set, None) |> Ext))
+              |> Map.add
+                caseId
+                ((caseExt.Operation |> caseExt.OperationsLens.Set, None) |> Ext))
             values
 
-        let applicables: Map<ResolvedIdentifier, ApplicableExtEvalResult<'runtimeContext, 'ext>> =
+        let applicables
+          : Map<
+              ResolvedIdentifier,
+              ApplicableExtEvalResult<'runtimeContext, 'ext>
+             > =
           typeExt.Operations
           |> Map.map
             (fun
                  (_k: ResolvedIdentifier)
-                 (op: TypeOperationExtension<'runtimeContext, 'ext, 'extConstructors, 'extValues, 'extOperations>) ->
+                 (op:
+                   TypeOperationExtension<
+                     'runtimeContext,
+                     'ext,
+                     'extConstructors,
+                     'extValues,
+                     'extOperations
+                    >) ->
               fun loc0 rest f v ->
                 reader {
                   let! f =
                     op.OperationsLens.Get f
                     |> sum.OfOption(
-                      (fun () -> $"Error: cannot extract constructor from extension")
+                      (fun () ->
+                        $"Error: cannot extract constructor from extension")
                       |> Errors.Singleton loc0
                     )
                     |> reader.OfSum
@@ -242,7 +272,10 @@ module Types =
                 })
 
         let applicables =
-          Map.merge (fun _ -> id) evalContext.ExtensionOps.Applicables applicables
+          Map.merge
+            (fun _ -> id)
+            evalContext.ExtensionOps.Applicables
+            applicables
 
         { evalContext with
             Scope =
@@ -252,7 +285,8 @@ module Types =
               { Eval = ops
                 Applicables = applicables } }
 
-    static member RegisterSerializationContext<'runtimeContext, 'ext when 'ext: comparison>
+    static member RegisterSerializationContext<'runtimeContext, 'ext
+      when 'ext: comparison>
       (typeExt:
         TypeExtension<
           'runtimeContext,
@@ -264,17 +298,25 @@ module Types =
           'extValues,
           'extOperations
          >)
-      : Updater<DeltaSerializationContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>> =
+      : Updater<
+          DeltaSerializationContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>
+         >
+      =
       fun deltaSerializationContext ->
         let toDTO =
           fun ext resolvedIdentifier ->
             reader.Any2
-              (deltaSerializationContext.SerializationContext.ToDTO ext resolvedIdentifier)
+              (deltaSerializationContext.SerializationContext.ToDTO
+                ext
+                resolvedIdentifier)
               (reader {
                 let! dtoConversion =
                   typeExt.Serialization
                   |> Option.map (fun s -> s.SerializationContext.ToDTO)
-                  |> sum.OfOption(Errors.Singleton () (fun _ -> $"Undefined conversion to DTO for ${ext}"))
+                  |> sum.OfOption(
+                    Errors.Singleton () (fun _ ->
+                      $"Undefined conversion to DTO for ${ext}")
+                  )
                   |> reader.OfSum
 
                 return! dtoConversion ext resolvedIdentifier
@@ -283,12 +325,17 @@ module Types =
         let fromDTO =
           fun extDTO resolvedIdentifier ->
             reader.Any2
-              (deltaSerializationContext.SerializationContext.FromDTO extDTO resolvedIdentifier)
+              (deltaSerializationContext.SerializationContext.FromDTO
+                extDTO
+                resolvedIdentifier)
               (reader {
                 let! fromDTOConversion =
                   typeExt.Serialization
                   |> Option.map (fun s -> s.SerializationContext.FromDTO)
-                  |> sum.OfOption(Errors.Singleton () (fun _ -> $"Undefined conversion from DTO for ${extDTO}"))
+                  |> sum.OfOption(
+                    Errors.Singleton () (fun _ ->
+                      $"Undefined conversion from DTO for ${extDTO}")
+                  )
                   |> reader.OfSum
 
                 return! fromDTOConversion extDTO resolvedIdentifier
@@ -302,7 +349,10 @@ module Types =
                 let! dtoConversion =
                   typeExt.Serialization
                   |> Option.map (fun s -> s.ToDTO)
-                  |> sum.OfOption(Errors.Singleton () (fun _ -> $"Undefined delta conversion to DTO for {ext}"))
+                  |> sum.OfOption(
+                    Errors.Singleton () (fun _ ->
+                      $"Undefined delta conversion to DTO for {ext}")
+                  )
                   |> reader.OfSum
 
                 return! dtoConversion ext
@@ -316,7 +366,10 @@ module Types =
                 let! fromDTOConversion =
                   typeExt.Serialization
                   |> Option.map (fun s -> s.FromDTO)
-                  |> sum.OfOption(Errors.Singleton () (fun _ -> $"Undefined delta conversion to DTO for {ext}"))
+                  |> sum.OfOption(
+                    Errors.Singleton () (fun _ ->
+                      $"Undefined delta conversion to DTO for {ext}")
+                  )
                   |> reader.OfSum
 
                 return! fromDTOConversion ext
@@ -329,7 +382,8 @@ module Types =
                 FromDTO = fromDTO
                 ToDTO = toDTO } }
 
-    static member RegisterExtTypeChecker<'runtimeContext, 'ext when 'ext: comparison>
+    static member RegisterExtTypeChecker<'runtimeContext, 'ext
+      when 'ext: comparison>
       (typeExt:
         TypeExtension<
           'runtimeContext,
@@ -348,7 +402,9 @@ module Types =
         | Some tc, None
         | None, Some tc -> Some tc
         | Some tc, Some etc ->
-          let res: IsExtInstanceOf<'ext> = fun f v t -> reader.Any2 (tc f v t) (etc f v t)
+          let res: IsExtInstanceOf<'ext> =
+            fun f v t -> reader.Any2 (tc f v t) (etc f v t)
+
           Some res
 
     static member RegisterLanguageContext
@@ -363,13 +419,30 @@ module Types =
           'extValues,
           'extOperations
          >)
-      : Updater<LanguageContext<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>> =
+      : Updater<
+          LanguageContext<
+            'runtimeContext,
+            'ext,
+            'extDTO,
+            'deltaExt,
+            'deltaExtDTO
+           >
+         >
+      =
       fun langCtx ->
-        { TypeCheckContext = langCtx.TypeCheckContext |> (typeExt |> TypeExtension.RegisterTypeCheckContext)
-          TypeCheckState = langCtx.TypeCheckState |> (typeExt |> TypeExtension.RegisterTypeCheckState)
-          ExprEvalContext = langCtx.ExprEvalContext >> (typeExt |> TypeExtension.RegisterExprEvalContext)
+        { TypeCheckContext =
+            langCtx.TypeCheckContext
+            |> (typeExt |> TypeExtension.RegisterTypeCheckContext)
+          TypeCheckState =
+            langCtx.TypeCheckState
+            |> (typeExt |> TypeExtension.RegisterTypeCheckState)
+          ExprEvalContext =
+            langCtx.ExprEvalContext
+            >> (typeExt |> TypeExtension.RegisterExprEvalContext)
           TypeCheckedPreludes = langCtx.TypeCheckedPreludes
           SerializationContext =
             langCtx.SerializationContext
             |> (typeExt |> TypeExtension.RegisterSerializationContext)
-          ExtTypeChecker = langCtx.ExtTypeChecker |> (typeExt |> TypeExtension.RegisterExtTypeChecker) }
+          ExtTypeChecker =
+            langCtx.ExtTypeChecker
+            |> (typeExt |> TypeExtension.RegisterExtTypeChecker) }

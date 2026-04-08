@@ -37,7 +37,11 @@ module TypeVar =
               Guid = parsedGuid
               Synthetic = false }
         | false, _ ->
-          return! sum.Throw(Errors.Singleton () (fun () -> $"Error: Invalid GUID format '{guid}' in 'TypeVar'."))
+          return!
+            sum.Throw(
+              Errors.Singleton () (fun () ->
+                $"Error: Invalid GUID format '{guid}' in 'TypeVar'.")
+            )
       }
 
     static member ToJson(t: TypeVar) : JsonValue =

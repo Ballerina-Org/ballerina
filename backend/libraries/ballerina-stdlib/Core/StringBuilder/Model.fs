@@ -20,7 +20,10 @@ module StringBuilder =
       traverse sb
       acc.ToString()
 
-    static member Map (f: string -> string) (sb: StringBuilder) : StringBuilder =
+    static member Map
+      (f: string -> string)
+      (sb: StringBuilder)
+      : StringBuilder =
       let rec traverse: StringBuilder -> StringBuilder =
         function
         | One s -> One(f s)

@@ -20,10 +20,19 @@ module Model =
   let parser =
     ParserBuilder<LocalizedToken, Location, Errors<Location>>(
       {| Step = fun lt _ -> lt.Location |},
-      {| UnexpectedEndOfFile = fun loc -> (fun () -> $"Unexpected end of file at {loc}") |> Errors.Singleton loc
-         AnyFailed = fun loc -> (fun () -> "No matching token") |> Errors.Singleton loc
-         NotFailed = fun loc -> (fun () -> $"Expected token not found at {loc}") |> Errors.Singleton loc
-         UnexpectedSymbol = fun loc c -> (fun () -> $"Unexpected symbol: {c}") |> Errors.Singleton loc
+      {| UnexpectedEndOfFile =
+          fun loc ->
+            (fun () -> $"Unexpected end of file at {loc}")
+            |> Errors.Singleton loc
+         AnyFailed =
+          fun loc -> (fun () -> "No matching token") |> Errors.Singleton loc
+         NotFailed =
+          fun loc ->
+            (fun () -> $"Expected token not found at {loc}")
+            |> Errors.Singleton loc
+         UnexpectedSymbol =
+          fun loc c ->
+            (fun () -> $"Unexpected symbol: {c}") |> Errors.Singleton loc
          FilterHighestPriorityOnly = Errors<Location>.FilterHighestPriorityOnly
          Concat = Errors.Concat<Location> |}
     )

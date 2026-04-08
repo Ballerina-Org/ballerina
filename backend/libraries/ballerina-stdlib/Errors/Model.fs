@@ -23,9 +23,13 @@ module Errors =
       Priority: ErrorPriority }
 
     static member Updaters =
-      {| Message = fun u (err: Error<'context>) -> { err with Message = u (err.Message) }
-         Context = fun u (err: Error<'context>) -> { err with Context = u (err.Context) }
-         Priority = fun u (err: Error<'context>) -> { err with Priority = u (err.Priority) } |}
+      {| Message =
+          fun u (err: Error<'context>) -> { err with Message = u (err.Message) }
+         Context =
+          fun u (err: Error<'context>) -> { err with Context = u (err.Context) }
+         Priority =
+          fun u (err: Error<'context>) ->
+            { err with Priority = u (err.Priority) } |}
 
     static member Map f e = { e with Message = f e.Message }
 
@@ -62,7 +66,8 @@ module Errors =
 
     static member Map f (e: Errors<'context>) =
       { e with
-          Errors = fun () -> e.Errors() |> NonEmptyList.map (Error.Updaters.Message f) }
+          Errors =
+            fun () -> e.Errors() |> NonEmptyList.map (Error.Updaters.Message f) }
 
     static member MapContext (f: 'context -> 'ctx') (e: Errors<'context>) =
       { Errors =
@@ -75,19 +80,28 @@ module Errors =
 
     static member MapPriority f (e: Errors<'context>) =
       { e with
-          Errors = fun () -> e.Errors() |> NonEmptyList.map (fun e -> { e with Priority = f e.Priority }) }
+          Errors =
+            fun () ->
+              e.Errors()
+              |> NonEmptyList.map (fun e -> { e with Priority = f e.Priority }) }
 
 
     [<Obsolete("Use 'MapPriority' instead")>]
     static member WithPriority p (e: Errors<'context>) =
       { e with
-          Errors = fun () -> e.Errors() |> NonEmptyList.map (Error.Updaters.Priority(replaceWith p)) }
+          Errors =
+            fun () ->
+              e.Errors()
+              |> NonEmptyList.map (Error.Updaters.Priority(replaceWith p)) }
 
 
     [<Obsolete("Use 'MapPriority' instead")>]
     static member SetPriority p (e: Errors<'context>) =
       { e with
-          Errors = fun () -> e.Errors() |> NonEmptyList.map (Error.Updaters.Priority(replaceWith p)) }
+          Errors =
+            fun () ->
+              e.Errors()
+              |> NonEmptyList.map (Error.Updaters.Priority(replaceWith p)) }
 
     static member HighestPriority(e: Errors<'context>) =
       let errors = e.Errors() |> NonEmptyList.ToList
@@ -117,7 +131,9 @@ module Errors =
               Errors = fun () -> NonEmptyList.OfList(x, xs) }
         | [] -> e
 
-    static member DeduplicateByMessageKeepBest (e: Errors<'context>) : Errors<'context> =
+    static member DeduplicateByMessageKeepBest
+      (e: Errors<'context>)
+      : Errors<'context> =
       let priorityRank p =
         match p with
         | ErrorPriority.High -> 3
@@ -130,7 +146,10 @@ module Errors =
 
         if candidateRank > currentRank then
           candidate
-        else if candidateRank = currentRank && candidate.Message.Length > current.Message.Length then
+        else if
+          candidateRank = currentRank
+          && candidate.Message.Length > current.Message.Length
+        then
           candidate
         else
           current
@@ -141,7 +160,8 @@ module Errors =
         |> List.fold
           (fun acc err ->
             match Map.tryFind err.Context acc with
-            | Some existing -> acc |> Map.add err.Context (pickBestError existing err)
+            | Some existing ->
+              acc |> Map.add err.Context (pickBestError existing err)
             | None -> acc |> Map.add err.Context err)
           Map.empty
         |> Map.values
@@ -151,7 +171,10 @@ module Errors =
       | x :: xs -> { Errors = fun () -> NonEmptyList.OfList(x, xs) }
       | [] -> e
 
-    static member Filter (e: Errors<'context>) (predicate: Error<'context> -> bool) : Option<Errors<'context>> =
+    static member Filter
+      (e: Errors<'context>)
+      (predicate: Error<'context> -> bool)
+      : Option<Errors<'context>> =
       let errors = e.Errors() |> NonEmptyList.ToList
 
       match errors |> List.filter (predicate) with
@@ -175,15 +198,28 @@ module Errors =
     static member FromExn(ex: exn) =
       Errors<_>.Singleton () (fun () -> ex.ToString())
 
-  let private withError (context: 'context) (e: unit -> string) (o: Option<'res>) : Sum<'res, Errors<'context>> =
+  let private withError
+    (context: 'context)
+    (e: unit -> string)
+    (o: Option<'res>)
+    : Sum<'res, Errors<'context>> =
     o
-    |> Sum.fromOption<'res, Errors<'context>> (fun () -> Errors<_>.Singleton context e)
+    |> Sum.fromOption<'res, Errors<'context>> (fun () ->
+      Errors<_>.Singleton context e)
 
   type Map<'k, 'v when 'k: comparison> with
-    static member tryFindWithError k k_category k_error context m : Sum<'c, Errors<'context>> =
+    static member tryFindWithError
+      k
+      k_category
+      k_error
+      context
+      m
+      : Sum<'c, Errors<'context>> =
       m
       |> Map.tryFind k
-      |> withError context ((fun () -> sprintf "Cannot find %s '%s'" k_category (k_error ())))
+      |> withError
+        context
+        ((fun () -> sprintf "Cannot find %s '%s'" k_category (k_error ())))
 
     static member tryFindByWithError
       (predicate: 'k * 'v -> bool)
@@ -195,7 +231,8 @@ module Errors =
       m
       |> Seq.map (fun (KeyValue(k, v)) -> (k, v))
       |> Seq.tryFind predicate
-      |> withError context (fun () -> sprintf "Cannot find %s '%s'" k_category (k_error ()))
+      |> withError context (fun () ->
+        sprintf "Cannot find %s '%s'" k_category (k_error ()))
 
   type SumBuilder with
     member sum.WithErrorContext err =

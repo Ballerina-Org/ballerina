@@ -12,7 +12,9 @@ module PrimitiveTypeExpr =
   open Ballerina.DSL.Next.Types.Model
 
   type TypeExpr<'valueExt> with
-    static member FromJsonPrimitive: JsonValue -> Sum<TypeExpr<'valueExt>, Errors<_>> =
+    static member FromJsonPrimitive
+      : JsonValue -> Sum<TypeExpr<'valueExt>, Errors<_>> =
       PrimitiveType.FromJson >>= (TypeExpr.Primitive >> sum.Return)
 
-    static member ToJsonPrimitive: PrimitiveType -> JsonValue = PrimitiveType.ToJson
+    static member ToJsonPrimitive: PrimitiveType -> JsonValue =
+      PrimitiveType.ToJson

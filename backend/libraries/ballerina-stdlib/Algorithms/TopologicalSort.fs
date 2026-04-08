@@ -14,9 +14,15 @@ module TopologicalSort =
 
     Invariant: the frontier always contains nodes without dependencies (i.e. ready to be output to the top sorted List)
     *)
-  let private filterM (predicate: 'a -> Sum<bool, Errors<Unit>>) (xs: seq<'a>) : Sum<List<'a>, Errors<Unit>> =
+  let private filterM
+    (predicate: 'a -> Sum<bool, Errors<Unit>>)
+    (xs: seq<'a>)
+    : Sum<List<'a>, Errors<Unit>> =
 
-    let folder (x: 'a) (acc: Sum<List<'a>, Errors<Unit>>) : Sum<List<'a>, Errors<Unit>> =
+    let folder
+      (x: 'a)
+      (acc: Sum<List<'a>, Errors<Unit>>)
+      : Sum<List<'a>, Errors<Unit>> =
       sum {
         let! acc = acc
         let! ok = predicate x
@@ -25,7 +31,9 @@ module TopologicalSort =
 
     List.foldBack folder (Seq.toList xs) (sum.Return([]: List<'a>))
 
-  let sort (graph: Map<'T, Set<'T>>) : Sum<List<'T>, Errors<Unit>> when 'T: comparison =
+  let sort
+    (graph: Map<'T, Set<'T>>)
+    : Sum<List<'T>, Errors<Unit>> when 'T: comparison =
     let allNodes =
       graph
       |> Map.toSeq
@@ -45,7 +53,11 @@ module TopologicalSort =
             sum {
               let! dependencies =
                 graph
-                |> Map.tryFindWithError n "graph" (fun () -> sprintf "cannot find node: %A" n) ()
+                |> Map.tryFindWithError
+                  n
+                  "graph"
+                  (fun () -> sprintf "cannot find node: %A" n)
+                  ()
 
               return dependencies.IsSubsetOf visited // logV step
             })
@@ -53,7 +65,11 @@ module TopologicalSort =
         return result |> Set.ofSeq
       }
 
-    let rec loop (visited: Set<'T>) (frontier: Set<'T>) (acc: List<'T>) : Sum<List<'T>, Errors<Unit>> =
+    let rec loop
+      (visited: Set<'T>)
+      (frontier: Set<'T>)
+      (acc: List<'T>)
+      : Sum<List<'T>, Errors<Unit>> =
       sum {
         if Set.isEmpty frontier then
           if visited = allNodes then

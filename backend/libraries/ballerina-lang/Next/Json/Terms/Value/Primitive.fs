@@ -11,12 +11,16 @@ module PrimitiveValue =
   open Ballerina.DSL.Next.Types
 
   type Value<'T, 'valueExtension> with
-    static member FromJsonPrimitive(json: JsonValue) : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
+    static member FromJsonPrimitive
+      (json: JsonValue)
+      : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
       reader {
         let! primitive = PrimitiveValue.FromJson json |> reader.OfSum
         return Value.Primitive primitive
       }
 
-    static member ToJsonPrimitive(primitive: PrimitiveValue) : ValueEncoderReader<'T, 'valueExtension> =
+    static member ToJsonPrimitive
+      (primitive: PrimitiveValue)
+      : ValueEncoderReader<'T, 'valueExtension> =
       let primitive = PrimitiveValue.ToJson primitive
       primitive |> reader.Return

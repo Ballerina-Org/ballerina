@@ -17,7 +17,10 @@ open Ballerina.DSL.Next.StdLib.String
 
 type private ValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
 
-let private fileFromNameAndContent (name: string) (content: string) : FileBuildConfiguration =
+let private fileFromNameAndContent
+  (name: string)
+  (content: string)
+  : FileBuildConfiguration =
   { FileName = { Path = name }
     Content = fun () -> content
     Checksum = Checksum.Compute content }
@@ -28,9 +31,14 @@ let private buildAndEvalFromConfiguredFiles
   let project: ProjectBuildConfiguration = { Files = files }
 
   let _, context, typeCheckingConfig, cache =
-    hddcacheWithStdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()) (db_ops ()) id id
+    hddcacheWithStdExtensions
+      (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
+      (db_ops ())
+      id
+      id
 
-  let buildResult = ProjectBuildConfiguration.BuildCached typeCheckingConfig cache project
+  let buildResult =
+    ProjectBuildConfiguration.BuildCached typeCheckingConfig cache project
 
   match buildResult with
   | Left(exprs, typeValue, _, finalState) ->
@@ -44,7 +52,8 @@ let private buildAndEvalFromConfiguredFiles
       |> Reader.Run evalContext
 
     match evalResult with
-    | Left value -> Left(value, typeValue, NonEmptyList.ToList exprs |> List.length)
+    | Left value ->
+      Left(value, typeValue, NonEmptyList.ToList exprs |> List.length)
     | Right(e: Errors.Errors<Patterns.Location>) ->
       let errString = Errors.ToString(e, "\n")
       Right(sprintf "Evaluation failed: %s" errString)
@@ -56,12 +65,15 @@ let private buildAndEval
   (files: NonEmptyList<string * string>)
   : Sum<Value<TypeValue<ValueExt>, ValueExt> * TypeValue<ValueExt> * int, string> =
   files
-  |> NonEmptyList.map (fun (name, content) -> fileFromNameAndContent name content)
+  |> NonEmptyList.map (fun (name, content) ->
+    fileFromNameAndContent name content)
   |> buildAndEvalFromConfiguredFiles
 
 
 [<Test>]
-let ``Project with three files each defining a type and term referenced by subsequent files`` () =
+let ``Project with three files each defining a type and term referenced by subsequent files``
+  ()
+  =
   let file1 =
     "file1.bl",
     """
@@ -95,7 +107,8 @@ in tri.A.X + tri.B.X + tri.C.X
     match value with
     | Value.Primitive(Int32 15) ->
       match typeValue with
-      | TypeValue.Primitive({ value = PrimitiveType.Int32 }) -> Assert.Pass "Correctly evaluated to 15 (0 + 10 + 5)"
+      | TypeValue.Primitive({ value = PrimitiveType.Int32 }) ->
+        Assert.Pass "Correctly evaluated to 15 (0 + 10 + 5)"
       | _ -> Assert.Fail $"Expected Int32 type, got {typeValue.AsFSharpString}"
     | _ -> Assert.Fail $"Expected 15, got {value}"
 
@@ -122,9 +135,15 @@ in ()
   let result = buildAndEval (NonEmptyList.OfList(file1, [ file2 ]))
 
   match result with
-  | Left _ -> Assert.Fail "Should have failed because Point is not defined yet in file1"
+  | Left _ ->
+    Assert.Fail "Should have failed because Point is not defined yet in file1"
   | Right e ->
-    Assert.That(e, Does.Contain("Point"), "Error should mention missing Point type")
+    Assert.That(
+      e,
+      Does.Contain("Point"),
+      "Error should mention missing Point type"
+    )
+
     Assert.Pass "Correctly failed due to wrong file order"
 
 [<Test>]
@@ -146,7 +165,8 @@ x * 2
 
   match result with
   | Left(value, _, _) -> Assert.Fail $"Expected evaluation to fail, got {value}"
-  | Right e -> Assert.That(e, Does.Contain("x"), "Error should mention missing x variable")
+  | Right e ->
+    Assert.That(e, Does.Contain("x"), "Error should mention missing x variable")
 
 [<Test>]
 let ``Last project file can return non-unit`` () =

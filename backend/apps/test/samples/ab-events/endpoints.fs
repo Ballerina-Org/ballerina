@@ -20,7 +20,10 @@ type WebApplication with
       .MapGet(
         "/ABs",
         new Func<_, _, _, _>(fun (db: 'DB) (skip: int) (take: int) ->
-          (repoAB db).getN <@ fun _ -> true @> <@ fun e -> e.ABId @> (Ballerina.Range.WithinReason(skip, take)))
+          (repoAB db).getN
+            <@ fun _ -> true @>
+            <@ fun e -> e.ABId @>
+            (Ballerina.Range.WithinReason(skip, take)))
       )
       .WithOpenApi()
     |> ignore

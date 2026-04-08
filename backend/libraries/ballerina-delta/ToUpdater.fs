@@ -18,20 +18,29 @@ module ToUpdater =
       (deltaExtensionHandler:
         'deltaExtension
           -> Value<TypeValue<'valueExtension>, 'valueExtension>
-          -> Sum<Value<TypeValue<'valueExtension>, 'valueExtension>, Errors<unit>>)
+          -> Sum<
+            Value<TypeValue<'valueExtension>, 'valueExtension>,
+            Errors<unit>
+           >)
       (delta: Delta<'valueExtension, 'deltaExtension>)
       : Sum<
           Value<TypeValue<'valueExtension>, 'valueExtension>
-            -> Sum<Value<TypeValue<'valueExtension>, 'valueExtension>, Errors<unit>>,
+            -> Sum<
+              Value<TypeValue<'valueExtension>, 'valueExtension>,
+              Errors<unit>
+             >,
           Errors<unit>
          >
       =
       sum {
         match delta with
         | Multiple deltas ->
-          let! updaters = deltas |> Seq.map (Delta.ToUpdater deltaExtensionHandler) |> sum.All
+          let! updaters =
+            deltas |> Seq.map (Delta.ToUpdater deltaExtensionHandler) |> sum.All
 
-          return updaters |> List.fold (fun acc updater -> acc >> Sum.bind updater) Sum.Left
+          return
+            updaters
+            |> List.fold (fun acc updater -> acc >> Sum.bind updater) Sum.Left
 
         | Replace v -> return replaceWith v >> sum.Return
         | Delta.Record(fieldName, fieldDelta) ->
@@ -48,11 +57,18 @@ module ToUpdater =
 
                 let! targetSymbol, currentValue =
                   fieldValues
-                  |> Map.tryFindByWithError (fun (ts, _) -> ts.Name = fieldName) "field values" (fun () -> fieldName) ()
+                  |> Map.tryFindByWithError
+                    (fun (ts, _) -> ts.Name = fieldName)
+                    "field values"
+                    (fun () -> fieldName)
+                    ()
 
                 let! updatedValue = fieldUpdater currentValue
 
-                return fieldValues |> Map.add targetSymbol updatedValue |> Value.Record
+                return
+                  fieldValues
+                  |> Map.add targetSymbol updatedValue
+                  |> Value.Record
               }
 
         | Delta.Union(caseName, caseDelta) ->
@@ -70,7 +86,8 @@ module ToUpdater =
                   return Value.UnionCase(valueCaseName, caseValue)
               }
         | Delta.Tuple(fieldIndex, fieldDelta) ->
-          let! fieldUpdater = fieldDelta |> Delta.ToUpdater deltaExtensionHandler
+          let! fieldUpdater =
+            fieldDelta |> Delta.ToUpdater deltaExtensionHandler
 
           return
             fun v ->
@@ -81,7 +98,8 @@ module ToUpdater =
                   fieldValues
                   |> List.tryItem fieldIndex
                   |> Sum.fromOption (fun () ->
-                    Errors.Singleton () (fun () -> $"Error: tuple does not have field at index {fieldIndex}"))
+                    Errors.Singleton () (fun () ->
+                      $"Error: tuple does not have field at index {fieldIndex}"))
 
                 let! fieldValue = fieldUpdater fieldValue
                 let fields = fieldValues |> List.updateAt fieldIndex fieldValue

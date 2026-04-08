@@ -25,11 +25,16 @@ let private buildContext, languageContext, typeCheckingConfig, buildCache =
     id
 
 /// Build a single project and return success/failure
-let buildProject (project: ProjectBuildConfiguration) : Sum<string, Errors<Location>> =
+let buildProject
+  (project: ProjectBuildConfiguration)
+  : Sum<string, Errors<Location>> =
   sum {
     let! buildResult =
-      ProjectBuildConfiguration.BuildCached typeCheckingConfig buildCache project
-      |> sum.MapError (fun errors ->
+      ProjectBuildConfiguration.BuildCached
+        typeCheckingConfig
+        buildCache
+        project
+      |> sum.MapError(fun errors ->
         let inputFiles =
           project.Files
           |> Seq.map (fun def -> def.FileName.Path, def.Content())
@@ -51,8 +56,11 @@ let buildProject (project: ProjectBuildConfiguration) : Sum<string, Errors<Locat
             |> String.join "\n"
 
           Console.ForegroundColor <- ConsoleColor.Red
-          Console.WriteLine $"  Error: {e.Message} at line {e.Context.Line}:\n{lines}"
-          Console.ResetColor ()
+
+          Console.WriteLine
+            $"  Error: {e.Message} at line {e.Context.Line}:\n{lines}"
+
+          Console.ResetColor()
 
         errors)
 
@@ -66,43 +74,54 @@ let getSamplesDirectory () : string =
   match Environment.GetEnvironmentVariable("BALLERINA_SAMPLES_DIR") with
   | path when not (String.IsNullOrEmpty path) && Directory.Exists path -> path
   | _ ->
-      // Try to find from current directory or parent directories
-      let rec findDir marker dir =
-        if String.IsNullOrEmpty(dir) || dir = Path.GetPathRoot(dir) then
-          None
-        else if Directory.Exists(Path.Combine(dir, marker)) then
-          Some(Path.Combine(dir, marker))
-        else
-          findDir marker (Path.GetDirectoryName(dir))
+    // Try to find from current directory or parent directories
+    let rec findDir marker dir =
+      if String.IsNullOrEmpty(dir) || dir = Path.GetPathRoot(dir) then
+        None
+      else if Directory.Exists(Path.Combine(dir, marker)) then
+        Some(Path.Combine(dir, marker))
+      else
+        findDir marker (Path.GetDirectoryName(dir))
 
-      match findDir "samples" (Environment.CurrentDirectory) with
-      | Some dir -> Path.GetFullPath(dir)
+    match findDir "samples" (Environment.CurrentDirectory) with
+    | Some dir -> Path.GetFullPath(dir)
+    | None ->
+      // Try from repo root
+      match findDir "ballerina" (Environment.CurrentDirectory) with
+      | Some ballerinaDir ->
+        let samplesDir = Path.Combine(ballerinaDir, "samples")
+
+        if Directory.Exists samplesDir then
+          samplesDir
+        else
+          failwith
+            $"Samples directory not found from current dir {Environment.CurrentDirectory}"
       | None ->
-          // Try from repo root
-          match findDir "ballerina" (Environment.CurrentDirectory) with
-          | Some ballerinaDir ->
-              let samplesDir = Path.Combine(ballerinaDir, "samples")
-              if Directory.Exists samplesDir then samplesDir
-              else failwith $"Samples directory not found from current dir {Environment.CurrentDirectory}"
-          | None -> failwith $"Samples directory not found from current dir {Environment.CurrentDirectory}"
+        failwith
+          $"Samples directory not found from current dir {Environment.CurrentDirectory}"
 
 /// Test a single sample project file
 let testSample (samplePath: string) : bool * string =
   try
     let projectName = Path.GetFileNameWithoutExtension(samplePath)
-    
-    match ProjectBuildConfiguration.FromProjectFile(samplePath, Path.GetDirectoryName(samplePath)) with
+
+    match
+      ProjectBuildConfiguration.FromProjectFile(
+        samplePath,
+        Path.GetDirectoryName(samplePath)
+      )
+    with
     | Sum.Left project ->
-        match buildProject project with
-        | Sum.Left _msg -> (true, $"✓ {projectName}")
-        | Sum.Right errors ->
-            let msg = Errors.ToString(errors, "; ")
-            (false, $"✗ {projectName}: {msg}")
+      match buildProject project with
+      | Sum.Left _msg -> (true, $"✓ {projectName}")
+      | Sum.Right errors ->
+        let msg = Errors.ToString(errors, "; ")
+        (false, $"✗ {projectName}: {msg}")
     | Sum.Right err ->
-        let msg = Errors.ToString(err, "; ")
-        (false, $"✗ {projectName}: Parse error: {msg}")
-  with
-  | ex -> (false, $"✗ {Path.GetFileNameWithoutExtension(samplePath)}: {ex.Message}")
+      let msg = Errors.ToString(err, "; ")
+      (false, $"✗ {projectName}: Parse error: {msg}")
+  with ex ->
+    (false, $"✗ {Path.GetFileNameWithoutExtension(samplePath)}: {ex.Message}")
 
 /// Run all integration tests
 let runAllTests (verbose: bool) : int =
@@ -111,9 +130,7 @@ let runAllTests (verbose: bool) : int =
     printfn "📂 Samples directory: %s\n" samplesDir
 
     let projectFiles =
-      Directory.GetFiles(samplesDir, "*.blproj")
-      |> Array.toList
-      |> List.sort
+      Directory.GetFiles(samplesDir, "*.blproj") |> Array.toList |> List.sort
 
     if List.isEmpty projectFiles then
       printfn "❌ No sample projects found"
@@ -125,8 +142,10 @@ let runAllTests (verbose: bool) : int =
         projectFiles
         |> List.map (fun projectFile ->
           let (success, message) = testSample projectFile
+
           if verbose || not success then
             printfn "  %s" message
+
           (success, message))
 
       let passCount = results |> List.filter fst |> List.length
@@ -138,19 +157,25 @@ let runAllTests (verbose: bool) : int =
 
       if failCount > 0 then
         printfn "\n❌ Failed samples:"
+
         results
         |> List.filter (fun (success, _) -> not success)
         |> List.iter (fun (_success, message) -> printfn "    %s" message)
+
         1
       else
         0
-  with
-  | ex ->
+  with ex ->
     printfn "❌ Test execution failed: %s" ex.Message
-    if verbose then printfn "%s" ex.StackTrace
+
+    if verbose then
+      printfn "%s" ex.StackTrace
+
     1
 
 [<EntryPoint>]
 let main args =
-  let verbose = args |> Array.contains "--verbose" || args |> Array.contains "-v"
+  let verbose =
+    args |> Array.contains "--verbose" || args |> Array.contains "-v"
+
   runAllTests verbose

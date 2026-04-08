@@ -21,14 +21,25 @@ module TupleDes =
       (fromRootJson: TypeCheckedExprParser<'valueExt>)
       (value: JsonValue)
       : TypeCheckedExprParserReader<'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun tupleDesJson ->
-        reader {
-          let! (expr, index) = tupleDesJson |> JsonValue.AsPair |> reader.OfSum
-          let! expr = expr |> fromRootJson
-          let! index = index |> JsonValue.AsInt |> reader.OfSum
+      Reader.assertDiscriminatorAndContinueWithValue
+        discriminator
+        value
+        (fun tupleDesJson ->
+          reader {
+            let! (expr, index) =
+              tupleDesJson |> JsonValue.AsPair |> reader.OfSum
 
-          return TypeCheckedExpr.TupleDes(expr, { Index = index }, TypeValue.CreateUnit(), Kind.Star)
-        })
+            let! expr = expr |> fromRootJson
+            let! index = index |> JsonValue.AsInt |> reader.OfSum
+
+            return
+              TypeCheckedExpr.TupleDes(
+                expr,
+                { Index = index },
+                TypeValue.CreateUnit(),
+                Kind.Star
+              )
+          })
 
     static member ToJsonTupleDes
       (rootToJson: TypeCheckedExprEncoder<'valueExt>)
@@ -39,5 +50,6 @@ module TupleDes =
         let! e = e |> rootToJson
         let index = sel.Index |> decimal |> JsonValue.Number
 
-        return [| e; index |] |> JsonValue.Array |> Json.discriminator discriminator
+        return
+          [| e; index |] |> JsonValue.Array |> Json.discriminator discriminator
       }

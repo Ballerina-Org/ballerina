@@ -65,7 +65,11 @@ let performRequest<'a, 'e>
     | _ -> return Choice1Of2 error
   }
 
-let requestToken (clientId: string) (clientSecret: string) (authorizationCode: string) =
+let requestToken
+  (clientId: string)
+  (clientSecret: string)
+  (authorizationCode: string)
+  =
   task {
     let url = "https://accounts.spotify.com/api/token"
 
@@ -78,7 +82,12 @@ let requestToken (clientId: string) (clientSecret: string) (authorizationCode: s
       )
 
     let! result =
-      performRequest<OAuthResponse, unit> url HttpMethod.Post (Basic(clientId, clientSecret)) (Some content) ()
+      performRequest<OAuthResponse, unit>
+        url
+        HttpMethod.Post
+        (Basic(clientId, clientSecret))
+        (Some content)
+        ()
 
     match result with
     | Choice2Of2 deserializedContent ->
@@ -91,15 +100,28 @@ let requestToken (clientId: string) (clientSecret: string) (authorizationCode: s
     | _ -> return Choice1Of2()
   }
 
-let refreshToken (clientId: string) (clientSecret: string) (refreshToken: string) =
+let refreshToken
+  (clientId: string)
+  (clientSecret: string)
+  (refreshToken: string)
+  =
   task {
     let url = "https://accounts.spotify.com/api/token"
 
     let content =
-      new FormUrlEncodedContent(Map.empty.Add("grant_type", "refresh_token").Add("refresh_token", refreshToken))
+      new FormUrlEncodedContent(
+        Map.empty
+          .Add("grant_type", "refresh_token")
+          .Add("refresh_token", refreshToken)
+      )
 
     let! result =
-      performRequest<OAuthResponse, unit> url HttpMethod.Post (Basic(clientId, clientSecret)) (Some content) ()
+      performRequest<OAuthResponse, unit>
+        url
+        HttpMethod.Post
+        (Basic(clientId, clientSecret))
+        (Some content)
+        ()
 
     match result with
     | Choice2Of2 deserializedContent ->
@@ -117,5 +139,11 @@ let getNewReleases (skip: int) (take: int) (accessToken: string) =
     let url =
       $"https://api.spotify.com/v1/browse/new-releases?offset={skip}&limit={take}"
 
-    return! performRequest<NewReleases, unit> url HttpMethod.Get (Bearer accessToken) None ()
+    return!
+      performRequest<NewReleases, unit>
+        url
+        HttpMethod.Get
+        (Bearer accessToken)
+        None
+        ()
   }

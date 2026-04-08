@@ -63,7 +63,11 @@ module Program =
   [<EntryPoint>]
   let main args =
     let builder = WebApplication.CreateBuilder(args)
-    builder.Services.Configure<PositionOptions>(builder.Configuration.GetSection(PositionOptions.Position))
+
+    builder.Services.Configure<PositionOptions>(
+      builder.Configuration.GetSection(PositionOptions.Position)
+    )
+
     let fsOptions = JsonFSharpOptions() // setup options here
 
     builder.Services.Configure<JsonOptions>(fun (options: JsonOptions) ->
@@ -120,13 +124,17 @@ module Program =
       app.Run("http://localhost:5000")
 
     //ms graph arguments
-    let msTenantArg = new Option<Guid>(name = "tenant", description = "Tenant Id")
+    let msTenantArg =
+      new Option<Guid>(name = "tenant", description = "Tenant Id")
 
     let msClientArg =
       new Option<Guid>(name = "client", description = "MS Entra Client Id")
 
     let msSecretArg =
-      new Option<string>(name = "secret", description = "MS Entra Application secret")
+      new Option<string>(
+        name = "secret",
+        description = "MS Entra Application secret"
+      )
 
     //spotify arguments
     let spotifyClientArg =
@@ -136,7 +144,10 @@ module Program =
       new Option<string>(name = "secret", description = "Spotify Secret")
 
     let spotifyAuthorizationCode =
-      new Option<string>(name = "code", description = "Authorization code obtained after user consent.")
+      new Option<string>(
+        name = "code",
+        description = "Authorization code obtained after user consent."
+      )
 
     let abCommand =
       new Command(name = "web", description = "Run the AB sample on localhost.")
@@ -148,10 +159,16 @@ module Program =
       new Command(name = "abcd", description = "Run the ABCD loop sample.")
 
     let unionsCommad =
-      new Command(name = "test-unions", description = "Sample for discriminated unions.")
+      new Command(
+        name = "test-unions",
+        description = "Sample for discriminated unions."
+      )
 
     let mockedOauthCommand =
-      new Command(name = "oauth-mocked", description = "Run the OAuth sample with a mocked API.")
+      new Command(
+        name = "oauth-mocked",
+        description = "Run the OAuth sample with a mocked API."
+      )
 
     let msGraphOauthCommand =
       new Command(
