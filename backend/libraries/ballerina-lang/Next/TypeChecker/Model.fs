@@ -50,6 +50,7 @@ module Model =
 
   type TypeCheckContext<'valueExt> =
     { Scope: TypeCheckScope
+      IsTypeCheckingLetValue: bool
       TypeVariables: TypeVariablesScope<'valueExt>
       TypeParameters: TypeParametersScope
       Values: Map<ResolvedIdentifier, TypeValue<'valueExt> * Kind>

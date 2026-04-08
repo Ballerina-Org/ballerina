@@ -100,7 +100,8 @@ module ProjectModel =
                   |> state.RunOption
                   |> state.Map ignore
 
-                return location, { hint with Type = instantiatedType }
+                let hint = { hint with Type = instantiatedType }
+                return location, hint
               | Right _ -> return location, hint
             })
           |> state.All

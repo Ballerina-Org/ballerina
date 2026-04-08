@@ -41,6 +41,7 @@ module Patterns =
           { Assembly = assembly
             Module = _module
             Type = None }
+        IsTypeCheckingLetValue = false
         TypeVariables = Map.empty
         TypeParameters = Map.empty
         Values = Map.empty
@@ -49,6 +50,10 @@ module Patterns =
 
     static member Updaters =
       {| Scope = fun u (c: TypeCheckContext<'valueExt>) -> { c with Scope = c.Scope |> u }
+         IsTypeCheckingLetValue =
+          fun u (c: TypeCheckContext<'valueExt>) ->
+            { c with
+                IsTypeCheckingLetValue = c.IsTypeCheckingLetValue |> u }
          TypeVariables =
           fun u (c: TypeCheckContext<'valueExt>) ->
             { c with
@@ -71,6 +76,7 @@ module Patterns =
       (ctx: TypeInstantiateContext<'ve>)
       : TypeCheckContext<'ve> =
       { Scope = ctx.Scope
+        IsTypeCheckingLetValue = false
         TypeVariables = ctx.TypeVariables
         TypeParameters = ctx.TypeParameters
         Values = ctx.Values
@@ -336,6 +342,16 @@ module Patterns =
                 location
                 { Identifier = identifier
                   Type = hintType }
+            )
+          )
+      }
+
+    static member unbindInlayHint(location: Location) =
+      state {
+        do!
+          state.SetState(
+            TypeCheckState.Updaters.InlayHints(
+              Map.remove location
             )
           )
       }
