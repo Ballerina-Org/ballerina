@@ -17,10 +17,7 @@ open Ballerina.DSL.Next.EquivalenceClasses
 open Ballerina.DSL.Next.Unification
 open Ballerina.State.WithError
 
-let ``Assert Kind -> ToJson -> FromJson -> Kind``
-  (expression: Kind)
-  (expectedJson: JsonValue)
-  : unit =
+let ``Assert Kind -> ToJson -> FromJson -> Kind`` (expression: Kind) (expectedJson: JsonValue) : unit =
   let toJson = Kind.ToJson expression
   Assert.That(toJson, Is.EqualTo(expectedJson))
 
@@ -30,10 +27,7 @@ let ``Assert Kind -> ToJson -> FromJson -> Kind``
   | Right err -> Assert.Fail $"Parse failed: {err}"
   | Left result -> Assert.That(result, Is.EqualTo(expression))
 
-let ``Assert Symbol -> ToJson -> FromJson -> Symbol``
-  (expression: TypeSymbol)
-  (expectedJson: JsonValue)
-  : unit =
+let ``Assert Symbol -> ToJson -> FromJson -> Symbol`` (expression: TypeSymbol) (expectedJson: JsonValue) : unit =
   let toJson = TypeSymbol.ToJson expression
   Assert.That(toJson, Is.EqualTo(expectedJson))
 
@@ -56,10 +50,7 @@ let ``Assert Parameter -> ToJson -> FromJson -> Parameter``
   | Right err -> Assert.Fail $"Parse failed: {err}"
   | Left result -> Assert.That(result, Is.EqualTo(expression))
 
-let ``Assert Var -> ToJson -> FromJson -> Var``
-  (expression: TypeVar)
-  (expectedJson: JsonValue)
-  : unit =
+let ``Assert Var -> ToJson -> FromJson -> Var`` (expression: TypeVar) (expectedJson: JsonValue) : unit =
   let toJson = TypeVar.ToJson expression
   Assert.That(toJson, Is.EqualTo(expectedJson))
 
@@ -134,8 +125,7 @@ let ``Dsl:Type.Var json round-trip`` () =
       Synthetic = false
       TypeVar.Guid = guid }
 
-  (expected, JsonValue.Parse json)
-  ||> ``Assert Var -> ToJson -> FromJson -> Var``
+  (expected, JsonValue.Parse json) ||> ``Assert Var -> ToJson -> FromJson -> Var``
 
 [<Test>]
 let ``Dsl:Type.ResolvedIdentifier json round-trip`` () =

@@ -74,9 +74,7 @@ module ExprSerializer =
           ValueKind = fromValue.ValueKind }
     }
 
-  and exprIfDTO
-    (``if``: ExprIf<'T, 'Id, 'valueExt>)
-    : Reader<ExprIfDTO<'T, 'Id, 'valueExtDTO>, obj, Errors> =
+  and exprIfDTO (``if``: ExprIf<'T, 'Id, 'valueExt>) : Reader<ExprIfDTO<'T, 'Id, 'valueExtDTO>, obj, Errors> =
     reader {
       let! cond = exprToDTO ``if``.Cond
       let! ``then`` = exprToDTO ``if``.Then
@@ -100,9 +98,7 @@ module ExprSerializer =
           Body = body }
     }
 
-  and exprLetDTO
-    (``let``: ExprLet<'T, 'Id, 'valueExt>)
-    : Reader<ExprLetDTO<'T, 'Id, 'valueExtDTO>, obj, Errors> =
+  and exprLetDTO (``let``: ExprLet<'T, 'Id, 'valueExt>) : Reader<ExprLetDTO<'T, 'Id, 'valueExtDTO>, obj, Errors> =
     reader {
       let! ``val`` = exprToDTO ``let``.Val
       let! rest = exprToDTO ``let``.Rest
@@ -234,11 +230,8 @@ module ExprSerializer =
     reader {
       match expr with
       | ExprRec.Primitive primitiveValue ->
-        return
-          ExprRecDTO<'T, 'Id, 'valueExtDTO>
-            .CreatePrimitive(primitiveToDTO primitiveValue)
-      | Lookup exprLookup ->
-        return ExprRecDTO<'T, 'Id, 'valueExtDTO>.CreateLookup exprLookup
+        return ExprRecDTO<'T, 'Id, 'valueExtDTO>.CreatePrimitive(primitiveToDTO primitiveValue)
+      | Lookup exprLookup -> return ExprRecDTO<'T, 'Id, 'valueExtDTO>.CreateLookup exprLookup
       | Apply apply ->
         let! a = exprApplyDTO apply
         return ExprRecDTO<'T, 'Id, 'valueExtDTO>.CreateApply a
@@ -281,14 +274,8 @@ module ExprSerializer =
       | ExprRec.RelationLookupDes rld ->
         let! rld = exprRelationLookupDesDTO rld
         return ExprRecDTO<'T, 'Id, 'valueExtDTO>.CreateRelationLookupDes rld
-      | ExprRec.SumCons sc ->
-        return
-          ExprRecDTO<'T, 'Id, 'valueExtDTO>.CreateSumCons
-            { Selector = sc.Selector }
-      | ExprRec.SumDes sd ->
-        return
-          ExprRecDTO<'T, 'Id, 'valueExtDTO>.CreateSumDes
-            { Handlers = sd.Handlers }
+      | ExprRec.SumCons sc -> return ExprRecDTO<'T, 'Id, 'valueExtDTO>.CreateSumCons { Selector = sc.Selector }
+      | ExprRec.SumDes sd -> return ExprRecDTO<'T, 'Id, 'valueExtDTO>.CreateSumDes { Handlers = sd.Handlers }
       | ExprRec.TupleCons tc ->
         let! items = exprTupleConsDTO tc
         return ExprRecDTO<'T, 'Id, 'valueExtDTO>.CreateTupleCons items
@@ -306,9 +293,7 @@ module ExprSerializer =
         return ExprRecDTO<'T, 'Id, 'valueExtDTO>.CreateUnionDes ud
     }
 
-  and exprToDTO
-    (expr: Expr<'T, 'Id, 'valueExt>)
-    : Reader<ExprDTO<'T, 'Id, 'valueExtDTO>, obj, Errors> =
+  and exprToDTO (expr: Expr<'T, 'Id, 'valueExt>) : Reader<ExprDTO<'T, 'Id, 'valueExtDTO>, obj, Errors> =
     reader {
       let! exprDTO = exprRecToDTO expr.Expr
 

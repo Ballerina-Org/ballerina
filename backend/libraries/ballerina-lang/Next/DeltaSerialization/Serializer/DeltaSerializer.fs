@@ -11,86 +11,56 @@ module DeltaSerializer =
   open System.Text.Json
   open Ballerina.DSL.Next.Serialization.SerializerConfig
 
-  let rec multipleToDTO
-    (deltas: List<Delta<'valueExtension, 'deltaExtension>>)
-    =
+  let rec multipleToDTO (deltas: List<Delta<'valueExtension, 'deltaExtension>>) =
     deltas
     |> List.map deltaToDTO
     |> reader.All
     |> reader.Map(
       List.toArray
-      >> fun multiple ->
-        new DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>(multiple)
+      >> fun multiple -> new DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>(multiple)
     )
 
   and replaceToDTO
     (value:
-      Ballerina.DSL.Next.Types.Model.Value<
-        Ballerina.DSL.Next.Types.Model.TypeValue<'valueExtension>,
-        'valueExtension
-       >)
+      Ballerina.DSL.Next.Types.Model.Value<Ballerina.DSL.Next.Types.Model.TypeValue<'valueExtension>, 'valueExtension>)
     : Reader<
         DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>,
-        DeltaSerializationContext<
-          'valueExtension,
-          'valueExtensionDTO,
-          'deltaExtension,
-          'deltaExtensionDTO
-         >,
+        DeltaSerializationContext<'valueExtension, 'valueExtensionDTO, 'deltaExtension, 'deltaExtensionDTO>,
         Errors<unit>
        >
     =
     valueToDTO value
     |> reader.MapContext(fun deltaContext -> deltaContext.SerializationContext)
-    |> reader.Map(fun replace ->
-      new DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>(replace))
+    |> reader.Map(fun replace -> new DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>(replace))
 
-  and recordToDTO
-    (field: string)
-    (delta: Delta<'valueExtension, 'deltaExtension>)
-    =
+  and recordToDTO (field: string) (delta: Delta<'valueExtension, 'deltaExtension>) =
     reader {
       let! deltaDTO = deltaToDTO delta
 
       let record =
-        new System.Collections.Generic.Dictionary<
-          string,
-          DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>
-         >()
+        new System.Collections.Generic.Dictionary<string, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>>()
 
       record.Add(field, deltaDTO)
       return new DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>(record, true)
     }
 
-  and unionToDTO
-    (case: string)
-    (delta: Delta<'valueExtension, 'deltaExtension>)
-    =
+  and unionToDTO (case: string) (delta: Delta<'valueExtension, 'deltaExtension>) =
     reader {
       let! deltaDTO = deltaToDTO delta
 
       let union =
-        new System.Collections.Generic.Dictionary<
-          string,
-          DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>
-         >()
+        new System.Collections.Generic.Dictionary<string, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>>()
 
       union.Add(case, deltaDTO)
       return new DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>(union, false)
     }
 
-  and tupleToDTO
-    (position: int)
-    (delta: Delta<'valueExtension, 'deltaExtension>)
-    =
+  and tupleToDTO (position: int) (delta: Delta<'valueExtension, 'deltaExtension>) =
     reader {
       let! deltaDTO = deltaToDTO delta
 
       let tuple =
-        new System.Collections.Generic.Dictionary<
-          int,
-          DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>
-         >()
+        new System.Collections.Generic.Dictionary<int, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>>()
 
       tuple.Add(position, deltaDTO)
       return new DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>(tuple, true)
@@ -101,10 +71,7 @@ module DeltaSerializer =
       let! deltaDTO = deltaToDTO delta
 
       let sum =
-        new System.Collections.Generic.Dictionary<
-          int,
-          DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>
-         >()
+        new System.Collections.Generic.Dictionary<int, DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>>()
 
       sum.Add(caseIndex, deltaDTO)
       return new DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>(sum, false)
@@ -114,12 +81,7 @@ module DeltaSerializer =
     (delta: Delta<'valueExtension, 'deltaExtension>)
     : Reader<
         DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>,
-        DeltaSerializationContext<
-          'valueExtension,
-          'valueExtensionDTO,
-          'deltaExtension,
-          'deltaExtensionDTO
-         >,
+        DeltaSerializationContext<'valueExtension, 'valueExtensionDTO, 'deltaExtension, 'deltaExtensionDTO>,
         Errors<unit>
        >
     =
@@ -137,12 +99,8 @@ module DeltaSerializer =
     }
 
   type Delta<'valueExtension, 'deltaExtension> with
-    static member JsonSerializeV2
-      (delta: Delta<'valueExtension, 'deltaExtension>)
-      =
+    static member JsonSerializeV2(delta: Delta<'valueExtension, 'deltaExtension>) =
       reader {
         let! deltaDTO = deltaToDTO delta
-
-        return
-          JsonSerializer.Serialize(deltaDTO, jsonSerializationConfiguration)
+        return JsonSerializer.Serialize(deltaDTO, jsonSerializationConfiguration)
       }

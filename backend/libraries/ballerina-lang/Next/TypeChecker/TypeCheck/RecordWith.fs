@@ -33,15 +33,10 @@ module RecordWith =
   open Ballerina.Collections.NonEmptyList
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
-    static member internal TypeCheckRecordWith<'valueExt
-      when 'valueExt: comparison>
-      (config: TypeCheckingConfig<'valueExt>)
+    static member internal TypeCheckRecordWith<'valueExt when 'valueExt: comparison>
+      (config: TypeEvalConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
-      : TypeChecker<
-          ExprRecordWith<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-          'valueExt
-         >
-      =
+      : TypeChecker<ExprRecordWith<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Record = record; Fields = fields }) ->
         let (!) = typeCheckExpr context_t
         let loc0 = record.Location
@@ -69,14 +64,9 @@ module RecordWith =
                 // do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
                 let! k_s = TypeCheckState.TryFindRecordFieldSymbol(id, loc0)
 
-                let! t_v_record, _ =
-                  t_record
-                  |> OrderedMap.tryFindWithError k_s "fields" k.AsFSharpString
-                  |> ofSum
+                let! t_v_record, _ = t_record |> OrderedMap.tryFindWithError k_s "fields" k.AsFSharpString |> ofSum
 
-                do!
-                  TypeValue.Unify(loc0, t_v, t_v_record)
-                  |> Expr.liftUnification
+                do! TypeValue.Unify(loc0, t_v, t_v_record) |> Expr.liftUnification
 
                 return (id, v), (k_s, t_v)
               })
@@ -87,20 +77,8 @@ module RecordWith =
           let! t_record =
             t_record
             |> TypeValue.CreateRecord
-            |> TypeValue.Instantiate
-              ()
-              (TypeExpr.Eval config typeCheckExpr)
-              loc0
+            |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
-          return
-            TypeCheckedExpr.RecordWith(
-              record,
-              fieldsExpr,
-              t_record,
-              Kind.Star,
-              loc0,
-              ctx.Scope
-            ),
-            ctx
+          return TypeCheckedExpr.RecordWith(record, fieldsExpr, t_record, Kind.Star, loc0, ctx.Scope), ctx
         }

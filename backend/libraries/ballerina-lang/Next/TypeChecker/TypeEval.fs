@@ -27,9 +27,7 @@ module Eval =
   open Ballerina.DSL.Next.Terms.Patterns
 
   type TypeQueryRowExpr<'valueExt> with
-    static member Eval<'ve when 've: comparison>
-      (config: TypeCheckingConfig<'ve>)
-      : TypeQueryRowExprEval<'ve> =
+    static member Eval<'ve when 've: comparison>(config: TypeEvalConfig<'ve>) : TypeQueryRowExprEval<'ve> =
       fun typeCheckExpr _n loc0 q_row ->
         state {
           let (!) = TypeExpr.Eval<'ve> config typeCheckExpr None loc0
@@ -39,9 +37,7 @@ module Eval =
           // let error e = Errors.Singleton loc0 e
 
           let ofSum (p: Sum<'a, Errors<Unit>>) =
-            p
-            |> Sum.mapRight (Errors.MapContext(replaceWith loc0))
-            |> state.OfSum
+            p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
           match q_row with
           | TypeQueryRowExpr.PrimaryKey q ->
@@ -54,8 +50,7 @@ module Eval =
             do! q_k |> Kind.AsStar |> ofSum |> state.Ignore
 
             return TypeQueryRow.Json q
-          | TypeQueryRowExpr.PrimitiveType(pt, is_nullable) ->
-            return TypeQueryRow.PrimitiveType(pt, is_nullable)
+          | TypeQueryRowExpr.PrimitiveType(pt, is_nullable) -> return TypeQueryRow.PrimitiveType(pt, is_nullable)
           | TypeQueryRowExpr.Tuple qs ->
             let! qs =
               qs
@@ -85,9 +80,7 @@ module Eval =
         }
 
   and TypeExpr<'valueExt> with
-    static member EvalAsSymbol<'ve when 've: comparison>
-      (config: TypeCheckingConfig<'ve>)
-      : TypeExprSymbolEval<'ve> =
+    static member EvalAsSymbol<'ve when 've: comparison>(config: TypeEvalConfig<'ve>) : TypeExprSymbolEval<'ve> =
       fun exprTypeCheck loc0 t ->
         state {
           let (!) = TypeExpr.EvalAsSymbol config exprTypeCheck loc0
@@ -97,42 +90,21 @@ module Eval =
           let error e = Errors.Singleton loc0 e
 
           let ofSum (p: Sum<'a, Errors<Unit>>) =
-            p
-            |> Sum.mapRight (Errors.MapContext(replaceWith loc0))
-            |> state.OfSum
+            p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
           match t with
-          | TypeExpr.NewSymbol name ->
-            return TypeSymbol.Create(Identifier.LocalScope name)
+          | TypeExpr.NewSymbol name -> return TypeSymbol.Create(Identifier.LocalScope name)
           | TypeExpr.Lookup v ->
 
             return!
               reader.Any(
                 NonEmptyList.OfList(
-                  TypeCheckState.tryFindTypeSymbol (
-                    v |> ctx.Scope.Resolve,
-                    loc0
-                  ),
-                  [ TypeCheckState.tryFindRecordFieldSymbol (
-                      v |> ctx.Scope.Resolve,
-                      loc0
-                    )
-                    TypeCheckState.tryFindUnionCaseSymbol (
-                      v |> ctx.Scope.Resolve,
-                      loc0
-                    )
-                    TypeCheckState.tryFindTypeSymbol (
-                      v |> TypeCheckScope.Empty.Resolve,
-                      loc0
-                    )
-                    TypeCheckState.tryFindRecordFieldSymbol (
-                      v |> TypeCheckScope.Empty.Resolve,
-                      loc0
-                    )
-                    TypeCheckState.tryFindUnionCaseSymbol (
-                      v |> TypeCheckScope.Empty.Resolve,
-                      loc0
-                    ) ]
+                  TypeCheckState.tryFindTypeSymbol (v |> ctx.Scope.Resolve, loc0),
+                  [ TypeCheckState.tryFindRecordFieldSymbol (v |> ctx.Scope.Resolve, loc0)
+                    TypeCheckState.tryFindUnionCaseSymbol (v |> ctx.Scope.Resolve, loc0)
+                    TypeCheckState.tryFindTypeSymbol (v |> TypeCheckScope.Empty.Resolve, loc0)
+                    TypeCheckState.tryFindRecordFieldSymbol (v |> TypeCheckScope.Empty.Resolve, loc0)
+                    TypeCheckState.tryFindUnionCaseSymbol (v |> TypeCheckScope.Empty.Resolve, loc0) ]
                 )
               )
               |> state.OfStateReader
@@ -141,31 +113,22 @@ module Eval =
             do! Kind.AsArrow f_k |> ofSum |> state.Ignore
             let! a, a_k = !!a
 
-            let! param, body =
-              f
-              |> TypeValue.AsLambda
-              |> ofSum
-              |> state.Map WithSourceMapping.Getters.Value
+            let! param, body = f |> TypeValue.AsLambda |> ofSum |> state.Map WithSourceMapping.Getters.Value
 
             let! ctx = state.GetContext()
             let closure = ctx.TypeVariables |> Map.add (param.Name) (a, a_k)
 
             return!
               !body
-              |> state.MapContext(
-                TypeCheckContext.Updaters.TypeVariables(replaceWith closure)
-              )
+              |> state.MapContext(TypeCheckContext.Updaters.TypeVariables(replaceWith closure))
           | _ ->
             return!
-              (fun () ->
-                $"Error: invalid type expression when evaluating for symbol, got {t}")
+              (fun () -> $"Error: invalid type expression when evaluating for symbol, got {t}")
               |> error
               |> state.Throw
         }
 
-    static member Eval<'ve when 've: comparison>
-      (config: TypeCheckingConfig<'ve>)
-      : TypeExprEval<'ve> =
+    static member Eval<'ve when 've: comparison>(config: TypeEvalConfig<'ve>) : TypeExprEval<'ve> =
       fun typeCheckExpr n loc0 t ->
         state {
           let { QueryTypeSymbol = _query_type_symbol
@@ -184,9 +147,7 @@ module Eval =
           let error e = Errors.Singleton loc0 e
 
           let ofSum (p: Sum<'a, Errors<Unit>>) =
-            p
-            |> Sum.mapRight (Errors.MapContext(replaceWith loc0))
-            |> state.OfSum
+            p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
           let source =
             match n with
@@ -217,9 +178,7 @@ module Eval =
             do! id_k |> Kind.AsStar |> ofSum |> state.Ignore
 
             let! a_schema = s |> TypeValue.AsSchema |> ofSum
-
-            return
-              TypeValue.CreateEntity(a_schema, e, e_with_props, id), Kind.Star
+            return TypeValue.CreateEntity(a_schema, e, e_with_props, id), Kind.Star
           | TypeExpr.Relation(s, f, f_with_props, f_id, t, t_with_props, t_id) ->
             let! s, s_k = !s
             do! s_k |> Kind.AsSchema |> ofSum |> state.Ignore
@@ -263,9 +222,7 @@ module Eval =
 
             let! a_schema = s |> TypeValue.AsSchema |> ofSum
 
-            return
-              TypeValue.CreateRelationLookupOne(a_schema, t', f_id, t_id),
-              Kind.Star
+            return TypeValue.CreateRelationLookupOne(a_schema, t', f_id, t_id), Kind.Star
           | TypeExpr.RelationLookupOption(s, t', t_id, f_id) ->
             let! s, s_k = !s
             do! s_k |> Kind.AsSchema |> ofSum |> state.Ignore
@@ -278,9 +235,7 @@ module Eval =
 
             let! a_schema = s |> TypeValue.AsSchema |> ofSum
 
-            return
-              TypeValue.CreateRelationLookupOption(a_schema, t', f_id, t_id),
-              Kind.Star
+            return TypeValue.CreateRelationLookupOption(a_schema, t', f_id, t_id), Kind.Star
           | TypeExpr.RelationLookupMany(s, t', t_id, f_id) ->
             let! s, s_k = !s
             do! s_k |> Kind.AsSchema |> ofSum |> state.Ignore
@@ -293,35 +248,20 @@ module Eval =
 
             let! a_schema = s |> TypeValue.AsSchema |> ofSum
 
-            return
-              TypeValue.CreateRelationLookupMany(a_schema, t', f_id, t_id),
-              Kind.Star
+            return TypeValue.CreateRelationLookupMany(a_schema, t', f_id, t_id), Kind.Star
           | TypeExpr.Schema parsed_schema ->
-            return!
-              SchemaTypeEval.evalSchemaExpr
-                config
-                typeCheckExpr
-                (!)
-                loc0
-                source
-                parsed_schema
+            return! SchemaTypeEval.evalSchemaExpr config typeCheckExpr (!) loc0 parsed_schema
           | TypeExpr.FromTypeValue tv ->
             // do Console.WriteLine($"Instantiating type value {tv}")
             let! (ctx: TypeCheckContext<'ve>) = state.GetContext()
             let! (s: TypeCheckState<'ve>) = state.GetState()
             let scope = ctx.TypeVariables |> Map.map (fun _ (_, k) -> k)
             let scope = Map.merge (fun _ -> id) scope ctx.TypeParameters
-
-            let! k =
-              TypeValue.KindEval () n loc0 tv
-              |> state.MapContext(fun _ -> scope)
+            let! k = TypeValue.KindEval () n loc0 tv |> state.MapContext(fun _ -> scope)
 
             let! tv =
               tv
-              |> TypeValue.Instantiate
-                ()
-                (TypeExpr.Eval config typeCheckExpr)
-                loc0
+              |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
               |> State.Run(TypeInstantiateContext.FromEvalContext(ctx), s)
               |> sum.Map fst
               |> sum.MapError fst
@@ -333,15 +273,10 @@ module Eval =
           | TypeExpr.Imported i ->
             let! parameters =
               i.Parameters
-              |> List.map (fun p ->
-                !(TypeExpr.Lookup(Identifier.LocalScope p.Name))
-                |> state.Map fst)
+              |> List.map (fun p -> !(TypeExpr.Lookup(Identifier.LocalScope p.Name)) |> state.Map fst)
               |> state.All
 
-            let! args =
-              i.Arguments
-              |> List.map (fun p -> !p.AsExpr |> state.Map fst)
-              |> state.All
+            let! args = i.Arguments |> List.map (fun p -> !p.AsExpr |> state.Map fst) |> state.All
 
             return
               TypeValue.Imported
@@ -349,11 +284,7 @@ module Eval =
                     Parameters = []
                     Arguments = parameters @ args },
               Kind.Star
-          | TypeExpr.NewSymbol _ ->
-            return!
-              (fun () -> $"Errors cannot evaluate {t} as a type")
-              |> error
-              |> state.Throw
+          | TypeExpr.NewSymbol _ -> return! (fun () -> $"Errors cannot evaluate {t} as a type") |> error |> state.Throw
           | TypeExpr.Primitive p ->
             return
               TypeValue.Primitive
@@ -367,15 +298,11 @@ module Eval =
             let! res =
               state.Any(
                 NonEmptyList.OfList(
-                  TypeCheckContext.tryFindTypeVariable (v.LocalName, loc0)
-                  |> state.OfReader,
+                  TypeCheckContext.tryFindTypeVariable (v.LocalName, loc0) |> state.OfReader,
                   [ TypeCheckContext.tryFindTypeParameter (v.LocalName, loc0)
                     |> reader.Map(fun k -> TypeValue.Lookup v, k)
                     |> state.OfReader
-                    TypeCheckState.tryFindType (
-                      v |> TypeCheckScope.Empty.Resolve,
-                      loc0
-                    )
+                    TypeCheckState.tryFindType (v |> TypeCheckScope.Empty.Resolve, loc0)
                     |> state.OfStateReader
 
                     state {
@@ -384,9 +311,7 @@ module Eval =
                         return
                           TypeValue.CreateLambda(
                             TypeParameter.Create("s", Kind.Schema),
-                            TypeExpr.Entities(
-                              TypeExpr.Lookup(Identifier.LocalScope "s")
-                            )
+                            TypeExpr.Entities(TypeExpr.Lookup(Identifier.LocalScope "s"))
                           ),
                           Kind.Arrow(Kind.Schema, Kind.Star)
                       | Identifier.LocalScope "SchemaEntity" ->
@@ -402,9 +327,7 @@ module Eval =
                                   TypeExpr.Entity(
                                     TypeExpr.Lookup(Identifier.LocalScope "s"),
                                     TypeExpr.Lookup(Identifier.LocalScope "e"),
-                                    TypeExpr.Lookup(
-                                      Identifier.LocalScope "e_with_props"
-                                    ),
+                                    TypeExpr.Lookup(Identifier.LocalScope "e_with_props"),
                                     TypeExpr.Lookup(Identifier.LocalScope "id")
                                   )
                                 )
@@ -413,13 +336,7 @@ module Eval =
                           ),
                           Kind.Arrow(
                             Kind.Schema,
-                            Kind.Arrow(
-                              Kind.Star,
-                              Kind.Arrow(
-                                Kind.Star,
-                                Kind.Arrow(Kind.Star, Kind.Star)
-                              )
-                            )
+                            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
                           )
                       | Identifier.LocalScope "SchemaRelation" ->
                         return
@@ -434,34 +351,17 @@ module Eval =
                                   TypeExpr.Lambda(
                                     TypeParameter.Create("t", Kind.Star),
                                     TypeExpr.Lambda(
-                                      TypeParameter.Create(
-                                        "t_with_props",
-                                        Kind.Star
-                                      ),
+                                      TypeParameter.Create("t_with_props", Kind.Star),
                                       TypeExpr.Lambda(
                                         TypeParameter.Create("t_id", Kind.Star),
                                         TypeExpr.Relation(
-                                          TypeExpr.Lookup(
-                                            Identifier.LocalScope "s"
-                                          ),
-                                          TypeExpr.Lookup(
-                                            Identifier.LocalScope "f"
-                                          ),
-                                          TypeExpr.Lookup(
-                                            Identifier.LocalScope "f_with_props"
-                                          ),
-                                          TypeExpr.Lookup(
-                                            Identifier.LocalScope "f_id"
-                                          ),
-                                          TypeExpr.Lookup(
-                                            Identifier.LocalScope "t"
-                                          ),
-                                          TypeExpr.Lookup(
-                                            Identifier.LocalScope "t_with_props"
-                                          ),
-                                          TypeExpr.Lookup(
-                                            Identifier.LocalScope "t_id"
-                                          )
+                                          TypeExpr.Lookup(Identifier.LocalScope "s"),
+                                          TypeExpr.Lookup(Identifier.LocalScope "f"),
+                                          TypeExpr.Lookup(Identifier.LocalScope "f_with_props"),
+                                          TypeExpr.Lookup(Identifier.LocalScope "f_id"),
+                                          TypeExpr.Lookup(Identifier.LocalScope "t"),
+                                          TypeExpr.Lookup(Identifier.LocalScope "t_with_props"),
+                                          TypeExpr.Lookup(Identifier.LocalScope "t_id")
                                         )
                                       )
                                     )
@@ -472,13 +372,7 @@ module Eval =
                           ),
                           Kind.Arrow(
                             Kind.Schema,
-                            Kind.Arrow(
-                              Kind.Star,
-                              Kind.Arrow(
-                                Kind.Star,
-                                Kind.Arrow(Kind.Star, Kind.Star)
-                              )
-                            )
+                            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
                           )
                       | Identifier.LocalScope "SchemaLookupOne" ->
                         return
@@ -489,21 +383,12 @@ module Eval =
                               TypeExpr.Lambda(
                                 TypeParameter.Create("t_id", Kind.Star),
                                 TypeExpr.Lambda(
-                                  TypeParameter.Create(
-                                    "t_with_props",
-                                    Kind.Star
-                                  ),
+                                  TypeParameter.Create("t_with_props", Kind.Star),
                                   TypeExpr.RelationLookupOne(
                                     TypeExpr.Lookup(Identifier.LocalScope "s"),
-                                    TypeExpr.Lookup(
-                                      Identifier.LocalScope "f_id"
-                                    ),
-                                    TypeExpr.Lookup(
-                                      Identifier.LocalScope "t_id"
-                                    ),
-                                    TypeExpr.Lookup(
-                                      Identifier.LocalScope "t_with_props"
-                                    )
+                                    TypeExpr.Lookup(Identifier.LocalScope "f_id"),
+                                    TypeExpr.Lookup(Identifier.LocalScope "t_id"),
+                                    TypeExpr.Lookup(Identifier.LocalScope "t_with_props")
                                   )
                                 )
                               )
@@ -511,13 +396,7 @@ module Eval =
                           ),
                           Kind.Arrow(
                             Kind.Schema,
-                            Kind.Arrow(
-                              Kind.Star,
-                              Kind.Arrow(
-                                Kind.Star,
-                                Kind.Arrow(Kind.Star, Kind.Star)
-                              )
-                            )
+                            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
                           )
                       | Identifier.LocalScope "SchemaLookupOption" ->
                         return
@@ -528,21 +407,12 @@ module Eval =
                               TypeExpr.Lambda(
                                 TypeParameter.Create("t_id", Kind.Star),
                                 TypeExpr.Lambda(
-                                  TypeParameter.Create(
-                                    "t_with_props",
-                                    Kind.Star
-                                  ),
+                                  TypeParameter.Create("t_with_props", Kind.Star),
                                   TypeExpr.RelationLookupOption(
                                     TypeExpr.Lookup(Identifier.LocalScope "s"),
-                                    TypeExpr.Lookup(
-                                      Identifier.LocalScope "f_id"
-                                    ),
-                                    TypeExpr.Lookup(
-                                      Identifier.LocalScope "t_id"
-                                    ),
-                                    TypeExpr.Lookup(
-                                      Identifier.LocalScope "t_with_props"
-                                    )
+                                    TypeExpr.Lookup(Identifier.LocalScope "f_id"),
+                                    TypeExpr.Lookup(Identifier.LocalScope "t_id"),
+                                    TypeExpr.Lookup(Identifier.LocalScope "t_with_props")
                                   )
                                 )
                               )
@@ -550,13 +420,7 @@ module Eval =
                           ),
                           Kind.Arrow(
                             Kind.Schema,
-                            Kind.Arrow(
-                              Kind.Star,
-                              Kind.Arrow(
-                                Kind.Star,
-                                Kind.Arrow(Kind.Star, Kind.Star)
-                              )
-                            )
+                            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
                           )
                       | Identifier.LocalScope "SchemaLookupMany" ->
                         return
@@ -567,21 +431,12 @@ module Eval =
                               TypeExpr.Lambda(
                                 TypeParameter.Create("t_id", Kind.Star),
                                 TypeExpr.Lambda(
-                                  TypeParameter.Create(
-                                    "t_with_props",
-                                    Kind.Star
-                                  ),
+                                  TypeParameter.Create("t_with_props", Kind.Star),
                                   TypeExpr.RelationLookupMany(
                                     TypeExpr.Lookup(Identifier.LocalScope "s"),
-                                    TypeExpr.Lookup(
-                                      Identifier.LocalScope "f_id"
-                                    ),
-                                    TypeExpr.Lookup(
-                                      Identifier.LocalScope "t_id"
-                                    ),
-                                    TypeExpr.Lookup(
-                                      Identifier.LocalScope "t_with_props"
-                                    )
+                                    TypeExpr.Lookup(Identifier.LocalScope "f_id"),
+                                    TypeExpr.Lookup(Identifier.LocalScope "t_id"),
+                                    TypeExpr.Lookup(Identifier.LocalScope "t_with_props")
                                   )
                                 )
                               )
@@ -589,26 +444,16 @@ module Eval =
                           ),
                           Kind.Arrow(
                             Kind.Schema,
-                            Kind.Arrow(
-                              Kind.Star,
-                              Kind.Arrow(
-                                Kind.Star,
-                                Kind.Arrow(Kind.Star, Kind.Star)
-                              )
-                            )
+                            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star)))
                           )
                       | _ ->
                         let! c = state.GetContext()
 
                         return!
-                          (fun () ->
-                            $"Error: cannot find type for {v} with context ({c.TypeVariables.AsFSharpString})")
+                          (fun () -> $"Error: cannot find type for {v} with context ({c.TypeVariables.AsFSharpString})")
                           |> error
                           |> state.Throw
-                          |> state.MapError(
-                            Errors<_>
-                              .MapPriority(replaceWith ErrorPriority.High)
-                          )
+                          |> state.MapError(Errors<_>.MapPriority(replaceWith ErrorPriority.High))
                     } ]
                 )
               )
@@ -644,10 +489,8 @@ module Eval =
                   // do Console.WriteLine($"Binding symbol {s_x.Name.ToString()} to {x.ToString()}")
 
                   match symbolsKind with
-                  | RecordFields ->
-                    do! TypeCheckState.bindRecordFieldSymbol x s_x
-                  | UnionConstructors ->
-                    do! TypeCheckState.bindUnionCaseSymbol x s_x
+                  | RecordFields -> do! TypeCheckState.bindRecordFieldSymbol x s_x
+                  | UnionConstructors -> do! TypeCheckState.bindUnionCaseSymbol x s_x
 
                 })
               |> state.All
@@ -664,31 +507,19 @@ module Eval =
 
                   let! resultValue, resultKind =
                     !rest
-                    |> state.MapContext(
-                      TypeCheckContext.Updaters.TypeVariables(Map.add x t_x)
-                    )
+                    |> state.MapContext(TypeCheckContext.Updaters.TypeVariables(Map.add x t_x))
 
-                  return
-                    TypeValue.SetSourceMapping(resultValue, source), resultKind
+                  return TypeValue.SetSourceMapping(resultValue, source), resultKind
                 })
                 (state {
                   let! s_x = !!t_x
                   let x = Identifier.LocalScope x |> ctx.Scope.Resolve
                   do! TypeCheckState.bindTypeSymbol x s_x
                   let! resultValue, resultKind = !rest
-
-                  return
-                    TypeValue.SetSourceMapping(resultValue, source), resultKind
+                  return TypeValue.SetSourceMapping(resultValue, source), resultKind
                 })
-                (state {
-                  return!
-                    (fun () -> $"Error: cannot evaluate let binding {x}")
-                    |> error
-                    |> state.Throw
-                 }
-                 |> state.MapError(
-                   Errors.MapPriority(replaceWith ErrorPriority.High)
-                 ))
+                (state { return! (fun () -> $"Error: cannot evaluate let binding {x}") |> error |> state.Throw }
+                 |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High)))
 
           | TypeExpr.Apply(f, a) ->
             // do Console.WriteLine($"Evaluating type application of {f} to {a}")
@@ -700,11 +531,7 @@ module Eval =
             return!
               state.Either5
                 (state {
-                  let! param, body =
-                    f
-                    |> TypeValue.AsLambda
-                    |> ofSum
-                    |> state.Map WithSourceMapping.Getters.Value
+                  let! param, body = f |> TypeValue.AsLambda |> ofSum |> state.Map WithSourceMapping.Getters.Value
 
                   return!
                     state {
@@ -715,16 +542,11 @@ module Eval =
 
                         do!
                           TypeCheckState.bindTypeSymbol
-                            (param.Name
-                             |> Identifier.LocalScope
-                             |> TypeCheckScope.Empty.Resolve)
+                            (param.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
                             a
 
                         let! resultValue, resultKind = !body
-
-                        return
-                          TypeValue.SetSourceMapping(resultValue, source),
-                          resultKind
+                        return TypeValue.SetSourceMapping(resultValue, source), resultKind
                       | _ ->
                         let! a = !a
 
@@ -733,22 +555,14 @@ module Eval =
 
                         let! resultValue, resultKind =
                           !body
-                          |> state.MapContext(
-                            TypeCheckContext.Updaters.TypeVariables(
-                              Map.add param.Name a
-                            )
-                          )
+                          |> state.MapContext(TypeCheckContext.Updaters.TypeVariables(Map.add param.Name a))
 
                         // do Console.WriteLine($"Result of type application is {resultValue.AsFSharpString}")
                         // do Console.ReadLine() |> ignore
 
-                        return
-                          TypeValue.SetSourceMapping(resultValue, source),
-                          resultKind
+                        return TypeValue.SetSourceMapping(resultValue, source), resultKind
                     }
-                    |> state.MapError(
-                      Errors.MapPriority(replaceWith ErrorPriority.High)
-                    )
+                    |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 })
                 (state {
                   let! f_i = f |> TypeValue.AsImported |> ofSum
@@ -766,16 +580,14 @@ module Eval =
 
                       if a_k <> f_k_i then
                         return!
-                          (fun () ->
-                            $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}")
+                          (fun () -> $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}")
                           |> error
                           |> state.Throw
                       else
                         match f_i.Parameters with
                         | [] ->
                           return!
-                            (fun () ->
-                              $"Error: cannot apply imported type {f_i.Id.Name} with no parameters")
+                            (fun () -> $"Error: cannot apply imported type {f_i.Id.Name} with no parameters")
                             |> error
                             |> state.Throw
                         | _ :: ps ->
@@ -786,9 +598,7 @@ module Eval =
                                   Arguments = f_i.Arguments @ [ a ] },
                             f_k_o
                     }
-                    |> state.MapError(
-                      Errors.MapPriority(replaceWith ErrorPriority.High)
-                    )
+                    |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 })
                 (state {
                   let! f_l = f |> TypeValue.AsLookup |> ofSum
@@ -800,20 +610,13 @@ module Eval =
 
                       if a_k <> f_k_i then
                         return!
-                          (fun () ->
-                            $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}")
+                          (fun () -> $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}")
                           |> error
                           |> state.Throw
                       else
-                        return
-                          TypeValue.CreateApplication(
-                            SymbolicTypeApplication.Lookup(f_l, a)
-                          ),
-                          f_k_o
+                        return TypeValue.CreateApplication(SymbolicTypeApplication.Lookup(f_l, a)), f_k_o
                     }
-                    |> state.MapError(
-                      Errors.MapPriority(replaceWith ErrorPriority.High)
-                    )
+                    |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 })
                 (state {
                   let! { value = f_app } = f |> TypeValue.AsApplication |> ofSum
@@ -825,20 +628,13 @@ module Eval =
 
                       if a_k <> f_k_i then
                         return!
-                          (fun () ->
-                            $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}")
+                          (fun () -> $"Error: cannot apply type {f} of input kind {f_k_i} to argument of kind {a_k}")
                           |> error
                           |> state.Throw
                       else
-                        return
-                          TypeValue.CreateApplication(
-                            SymbolicTypeApplication.Application(f_app, a)
-                          ),
-                          f_k_o
+                        return TypeValue.CreateApplication(SymbolicTypeApplication.Application(f_app, a)), f_k_o
                     }
-                    |> state.MapError(
-                      Errors.MapPriority(replaceWith ErrorPriority.High)
-                    )
+                    |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 })
                 (state {
                   do! f |> TypeValue.AsQueryTypeFunction |> ofSum
@@ -858,22 +654,15 @@ module Eval =
                               state {
                                 match a_t with
                                 | TypeQueryRow.Json j -> return j, Kind.Star
-                                | TypeQueryRow.PrimaryKey k ->
-                                  return k, Kind.Star
+                                | TypeQueryRow.PrimaryKey k -> return k, Kind.Star
                                 | TypeQueryRow.PrimitiveType(pt, false) ->
                                   return TypeValue.CreatePrimitive pt, Kind.Star
                                 | TypeQueryRow.PrimitiveType(pt, true) ->
                                   return
-                                    TypeValue.CreateSum
-                                      [ TypeValue.CreateUnit()
-                                        TypeValue.CreatePrimitive pt ],
+                                    TypeValue.CreateSum [ TypeValue.CreateUnit(); TypeValue.CreatePrimitive pt ],
                                     Kind.Star
                                 | TypeQueryRow.Tuple ts ->
-                                  let! ts =
-                                    ts
-                                    |> List.map (fun t -> try_convert t)
-                                    |> state.All
-
+                                  let! ts = ts |> List.map (fun t -> try_convert t) |> state.All
                                   let ts = ts |> List.map fst
                                   return TypeValue.CreateTuple ts, Kind.Star
                                 | TypeQueryRow.Record _ ->
@@ -889,34 +678,23 @@ module Eval =
 
                             let! result, _ = a_t |> try_convert
 
-                            return
-                              TypeValue.SetSourceMapping(result, source),
-                              Kind.Star
+                            return TypeValue.SetSourceMapping(result, source), Kind.Star
                           })
                           (state {
                             let! a_t = a_t |> TypeValue.AsLookup |> ofSum
-
-                            return
-                              TypeValue.CreateApplication(
-                                SymbolicTypeApplication.FromQueryRow a_t
-                              ),
-                              Kind.Star
+                            return TypeValue.CreateApplication(SymbolicTypeApplication.FromQueryRow a_t), Kind.Star
                           })
                           (state {
                             let! a_t = a_t |> TypeValue.AsVar |> ofSum
 
                             return
                               TypeValue.CreateApplication(
-                                SymbolicTypeApplication.FromQueryRow(
-                                  a_t.Name |> Identifier.LocalScope
-                                )
+                                SymbolicTypeApplication.FromQueryRow(a_t.Name |> Identifier.LocalScope)
                               ),
                               Kind.Star
                           })
                     }
-                    |> state.MapError(
-                      Errors.MapPriority(replaceWith ErrorPriority.High)
-                    )
+                    |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 })
               |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
           | TypeExpr.Lambda(param, bodyExpr) ->
@@ -938,12 +716,8 @@ module Eval =
               !bodyExpr
               // |> TypeExpr.KindEval n loc0
               |> state.MapContext(
-                TypeCheckContext.Updaters.TypeParameters(
-                  Map.add param.Name param.Kind
-                )
-                >> TypeCheckContext.Updaters.TypeVariables(
-                  Map.remove param.Name
-                )
+                TypeCheckContext.Updaters.TypeParameters(Map.add param.Name param.Kind)
+                >> TypeCheckContext.Updaters.TypeVariables(Map.remove param.Name)
               )
 
             // do Console.WriteLine($"Evaluated type lambda body to {body_t}")
@@ -1048,8 +822,7 @@ module Eval =
 
             let mappedCasesFixThis =
               cases
-              |> OrderedMap.map (fun _ _ ->
-                TypeValue.CreatePrimitive PrimitiveType.Unit)
+              |> OrderedMap.map (fun _ _ -> TypeValue.CreatePrimitive PrimitiveType.Unit)
 
             return
               TypeValue.Union
@@ -1079,13 +852,10 @@ module Eval =
             do! tk |> Kind.AsStar |> ofSum |> state.Ignore
 
             let failure =
-              (fun () ->
-                $"Error: cannot evaluate record destructuring {tv}.{comp}")
+              (fun () -> $"Error: cannot evaluate record destructuring {tv}.{comp}")
               |> error
               |> state.Throw
-              |> state.MapError(
-                Errors.MapPriority(replaceWith ErrorPriority.High)
-              )
+              |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
             match comp with
             | Left field ->
@@ -1097,11 +867,9 @@ module Eval =
                     let! (_, (field_t, field_k)) =
                       fields
                       |> OrderedMap.toSeq
-                      |> Seq.tryFind (fun (k, _) ->
-                        k.Name.LocalName = field.Name)
+                      |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = field.Name)
                       |> Sum.fromOption (fun () ->
-                        (fun () ->
-                          $"Error: cannot find field {field} in record type {tv}")
+                        (fun () -> $"Error: cannot find field {field} in record type {tv}")
                         |> Errors.Singleton loc0)
                       |> state.OfSum
 
@@ -1113,16 +881,13 @@ module Eval =
                       let! (_, case_t) =
                         cases
                         |> OrderedMap.toSeq
-                        |> Seq.tryFind (fun (k, _) ->
-                          k.Name.LocalName = field.Name)
+                        |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = field.Name)
                         |> Sum.fromOption (fun () ->
-                          (fun () ->
-                            $"Error: cannot find case {field} in union type {tv}")
+                          (fun () -> $"Error: cannot find case {field} in union type {tv}")
                           |> Errors.Singleton loc0)
                         |> state.OfSum
 
-                      return
-                        TypeValue.SetSourceMapping(case_t, source), Kind.Star
+                      return TypeValue.SetSourceMapping(case_t, source), Kind.Star
                     }
                     failure ]
                 )
@@ -1134,8 +899,7 @@ module Eval =
 
                     if item < 1 || item > items.Length then
                       return!
-                        (fun () ->
-                          $"Error: tuple index {item} is out of bounds for tuple type {tv}")
+                        (fun () -> $"Error: tuple index {item} is out of bounds for tuple type {tv}")
                         |> Errors.Singleton loc0
                         |> state.Throw
                     else
@@ -1143,21 +907,18 @@ module Eval =
                         items
                         |> Seq.tryItem (item - 1)
                         |> Sum.fromOption (fun () ->
-                          (fun () ->
-                            $"Error: cannot find tuple index {item} in tuple type {tv}")
+                          (fun () -> $"Error: cannot find tuple index {item} in tuple type {tv}")
                           |> Errors.Singleton loc0)
                         |> state.OfSum
 
-                      return
-                        TypeValue.SetSourceMapping(item_t, source), Kind.Star
+                      return TypeValue.SetSourceMapping(item_t, source), Kind.Star
                   },
                   [ state {
                       let! items = tv |> TypeValue.AsSum |> ofSum
 
                       if item < 1 || item > items.Length then
                         return!
-                          (fun () ->
-                            $"Error: sum case {item} is out of bounds for sum type {tv}")
+                          (fun () -> $"Error: sum case {item} is out of bounds for sum type {tv}")
                           |> Errors.Singleton loc0
                           |> state.Throw
                       else
@@ -1165,13 +926,11 @@ module Eval =
                           items
                           |> Seq.tryItem (item - 1)
                           |> Sum.fromOption (fun () ->
-                            (fun () ->
-                              $"Error: cannot find sum case {item} in sum type {tv}")
+                            (fun () -> $"Error: cannot find sum case {item} in sum type {tv}")
                             |> Errors.Singleton loc0)
                           |> state.OfSum
 
-                        return
-                          TypeValue.SetSourceMapping(item_t, source), Kind.Star
+                        return TypeValue.SetSourceMapping(item_t, source), Kind.Star
                     }
                     state {
                       let! imported = tv |> TypeValue.AsImported |> ofSum
@@ -1180,13 +939,11 @@ module Eval =
                         imported.Arguments
                         |> List.tryItem (item - 1)
                         |> Sum.fromOption (fun () ->
-                          (fun () ->
-                            $"Error: cannot find argument {item} in imported type {tv}")
+                          (fun () -> $"Error: cannot find argument {item} in imported type {tv}")
                           |> Errors.Singleton loc0)
                         |> state.OfSum
 
-                      return
-                        TypeValue.SetSourceMapping(item_t, source), Kind.Star
+                      return TypeValue.SetSourceMapping(item_t, source), Kind.Star
                     }
                     failure ]
                 )
@@ -1199,11 +956,9 @@ module Eval =
             return!
               state.Either3
                 (state {
-                  let! cases1 =
-                    type1 |> TypeValue.AsUnion |> sum.Map snd |> ofSum
+                  let! cases1 = type1 |> TypeValue.AsUnion |> sum.Map snd |> ofSum
 
-                  let! cases2 =
-                    type2 |> TypeValue.AsUnion |> sum.Map snd |> ofSum
+                  let! cases2 = type2 |> TypeValue.AsUnion |> sum.Map snd |> ofSum
 
                   let cases1 = cases1 |> OrderedMap.toSeq
                   let keys1 = cases1 |> Seq.map fst |> Set.ofSeq
@@ -1222,8 +977,7 @@ module Eval =
                       Kind.Star
                   else
                     return!
-                      (fun () ->
-                        $"Error: cannot flatten types with overlapping keys: {keys1} and {keys2}")
+                      (fun () -> $"Error: cannot flatten types with overlapping keys: {keys1} and {keys2}")
                       |> error
                       |> state.Throw
                 })
@@ -1239,8 +993,7 @@ module Eval =
                   let keys2 = fields2 |> Seq.map fst |> Set.ofSeq
 
                   if keys1 |> Set.intersect keys2 |> Set.isEmpty then
-                    let fields =
-                      fields1 |> Seq.append fields2 |> OrderedMap.ofSeq
+                    let fields = fields1 |> Seq.append fields2 |> OrderedMap.ofSeq
 
                     return
                       TypeValue.Record
@@ -1250,20 +1003,12 @@ module Eval =
                       Kind.Star
                   else
                     return!
-                      (fun () ->
-                        $"Error: cannot flatten types with overlapping keys: {keys1} and {keys2}")
+                      (fun () -> $"Error: cannot flatten types with overlapping keys: {keys1} and {keys2}")
                       |> error
                       |> state.Throw
                 })
-                (state {
-                  return!
-                    (fun () -> $"Error: cannot evaluate flattening ")
-                    |> error
-                    |> state.Throw
-                 }
-                 |> state.MapError(
-                   Errors.MapPriority(replaceWith ErrorPriority.High)
-                 ))
+                (state { return! (fun () -> $"Error: cannot evaluate flattening ") |> error |> state.Throw }
+                 |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High)))
           | TypeExpr.Exclude(type1, type2) ->
             let! type1, type1_k = !type1
             let! type2, type2_k = !type2
@@ -1273,18 +1018,12 @@ module Eval =
             return!
               state.Either3
                 (state {
-                  let! cases1 =
-                    type1 |> TypeValue.AsUnion |> sum.Map snd |> ofSum
+                  let! cases1 = type1 |> TypeValue.AsUnion |> sum.Map snd |> ofSum
 
-                  let! cases2 =
-                    type2 |> TypeValue.AsUnion |> sum.Map snd |> ofSum
+                  let! cases2 = type2 |> TypeValue.AsUnion |> sum.Map snd |> ofSum
 
                   let keys2 = cases2 |> OrderedMap.keys |> Set.ofSeq
-
-                  let cases =
-                    cases1
-                    |> OrderedMap.filter (fun k _ ->
-                      keys2 |> Set.contains k |> not)
+                  let cases = cases1 |> OrderedMap.filter (fun k _ -> keys2 |> Set.contains k |> not)
 
                   return
                     TypeValue.Union
@@ -1300,9 +1039,7 @@ module Eval =
                   let keys2 = fields2 |> OrderedMap.keys |> Set.ofSeq
 
                   let fields =
-                    fields1
-                    |> OrderedMap.filter (fun k _ ->
-                      keys2 |> Set.contains k |> not)
+                    fields1 |> OrderedMap.filter (fun k _ -> keys2 |> Set.contains k |> not)
 
                   return
                     TypeValue.Record
@@ -1311,15 +1048,8 @@ module Eval =
                         typeCheckScopeSource = ctx.Scope },
                     Kind.Star
                 })
-                (state {
-                  return!
-                    (fun () -> $"Error: cannot evaluate exclude ")
-                    |> error
-                    |> state.Throw
-                 }
-                 |> state.MapError(
-                   Errors.MapPriority(replaceWith ErrorPriority.High)
-                 ))
+                (state { return! (fun () -> $"Error: cannot evaluate exclude ") |> error |> state.Throw }
+                 |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High)))
           | TypeExpr.Rotate(t) ->
             let! t, t_k = !t
             do! t_k |> Kind.AsStar |> ofSum |> state.Ignore
@@ -1342,8 +1072,7 @@ module Eval =
 
                   let! _ =
                     fields
-                    |> OrderedMap.map (fun _ (_, k) ->
-                      k |> Kind.AsStar |> ofSum |> state.Ignore)
+                    |> OrderedMap.map (fun _ (_, k) -> k |> Kind.AsStar |> ofSum |> state.Ignore)
                     |> OrderedMap.toList
                     |> List.map snd
                     |> state.All
@@ -1355,23 +1084,14 @@ module Eval =
                         typeCheckScopeSource = ctx.Scope },
                     Kind.Star
                 })
-                (state {
-                  return!
-                    (fun () -> $"Error: cannot evaluate rotation")
-                    |> error
-                    |> state.Throw
-                 }
-                 |> state.MapError(
-                   Errors.MapPriority(replaceWith ErrorPriority.High)
-                 ))
+                (state { return! (fun () -> $"Error: cannot evaluate rotation") |> error |> state.Throw }
+                 |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High)))
           | TypeExpr.QueryRow q_row ->
 
             let! q_row = !!!q_row
 
             return TypeValue.QueryRow q_row, Kind.QueryRow
 
-          | TypeExpr.FromQueryRow ->
-            return
-              TypeValue.QueryTypeFunction, Kind.Arrow(Kind.QueryRow, Kind.Star)
+          | TypeExpr.FromQueryRow -> return TypeValue.QueryTypeFunction, Kind.Arrow(Kind.QueryRow, Kind.Star)
 
         }

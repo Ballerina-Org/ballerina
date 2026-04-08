@@ -22,46 +22,28 @@ module UnionDes =
       (fromRootJson: TypeCheckedExprParser<'valueExt>)
       (value: JsonValue)
       : TypeCheckedExprParserReader<'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue
-        discriminator
-        value
-        (fun unionDesJson ->
-          reader {
-            let! (_, idFromJson) = reader.GetContext()
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun unionDesJson ->
+        reader {
+          let! (_, idFromJson) = reader.GetContext()
+          let! caseHandlers = unionDesJson |> JsonValue.AsArray |> reader.OfSum
 
-            let! caseHandlers =
-              unionDesJson |> JsonValue.AsArray |> reader.OfSum
+          let! caseHandlers =
+            caseHandlers
+            |> Seq.map (fun caseHandler ->
+              reader {
+                let! (caseName, handler) = caseHandler |> JsonValue.AsPair |> reader.OfSum
+                let! caseName = caseName |> idFromJson |> reader.OfSum
+                let! handlerVar, handlerBody = handler |> JsonValue.AsPair |> reader.OfSum
+                let! handlerVar = handlerVar |> JsonValue.AsString |> reader.OfSum
+                let handlerVar = handlerVar |> Var.Create |> Some
+                let! handlerBody = handlerBody |> fromRootJson
+                return (caseName, (handlerVar, handlerBody))
+              })
+            |> reader.All
+            |> reader.Map Map.ofSeq
 
-            let! caseHandlers =
-              caseHandlers
-              |> Seq.map (fun caseHandler ->
-                reader {
-                  let! (caseName, handler) =
-                    caseHandler |> JsonValue.AsPair |> reader.OfSum
-
-                  let! caseName = caseName |> idFromJson |> reader.OfSum
-
-                  let! handlerVar, handlerBody =
-                    handler |> JsonValue.AsPair |> reader.OfSum
-
-                  let! handlerVar =
-                    handlerVar |> JsonValue.AsString |> reader.OfSum
-
-                  let handlerVar = handlerVar |> Var.Create |> Some
-                  let! handlerBody = handlerBody |> fromRootJson
-                  return (caseName, (handlerVar, handlerBody))
-                })
-              |> reader.All
-              |> reader.Map Map.ofSeq
-
-            return
-              TypeCheckedExpr.UnionDes(
-                caseHandlers,
-                None,
-                TypeValue.CreateUnit(),
-                Kind.Star
-              )
-          })
+          return TypeCheckedExpr.UnionDes(caseHandlers, None, TypeValue.CreateUnit(), Kind.Star)
+        })
 
     static member ToJsonUnionDes
       (rootToJson: TypeCheckedExprEncoder<'valueExt>)
@@ -90,7 +72,5 @@ module UnionDes =
             })
           |> reader.All
 
-        return
-          JsonValue.Array(List.toArray cases)
-          |> Json.discriminator discriminator
+        return JsonValue.Array(List.toArray cases) |> Json.discriminator discriminator
       }

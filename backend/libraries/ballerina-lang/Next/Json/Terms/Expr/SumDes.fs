@@ -20,42 +20,33 @@ module SumDes =
       (fromRootJson: ExprParser<'T, 'Id, 'valueExt>)
       (value: JsonValue)
       : ExprParserReader<'T, 'Id, 'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue
-        discriminator
-        value
-        (fun sumDesJson ->
-          reader {
-            let! caseHandlers = sumDesJson |> JsonValue.AsArray |> reader.OfSum
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun sumDesJson ->
+        reader {
+          let! caseHandlers = sumDesJson |> JsonValue.AsArray |> reader.OfSum
 
-            let! caseHandlers =
-              caseHandlers
-              |> Seq.map (fun caseHandler ->
-                reader {
-                  let! handlerCase, handlerCount, handlerVar, handlerBody =
-                    caseHandler |> JsonValue.AsQuadruple |> reader.OfSum
+          let! caseHandlers =
+            caseHandlers
+            |> Seq.map (fun caseHandler ->
+              reader {
+                let! handlerCase, handlerCount, handlerVar, handlerBody =
+                  caseHandler |> JsonValue.AsQuadruple |> reader.OfSum
 
-                  let! handlerCase =
-                    handlerCase |> JsonValue.AsInt |> reader.OfSum
+                let! handlerCase = handlerCase |> JsonValue.AsInt |> reader.OfSum
+                let! handlerCount = handlerCount |> JsonValue.AsInt |> reader.OfSum
+                let! handlerVar = handlerVar |> JsonValue.AsString |> reader.OfSum
+                let handlerVar = Var.Create handlerVar
+                let! handlerBody = handlerBody |> fromRootJson
 
-                  let! handlerCount =
-                    handlerCount |> JsonValue.AsInt |> reader.OfSum
+                return
+                  ({ Case = handlerCase
+                     Count = handlerCount }),
+                  (Some handlerVar, handlerBody)
+              })
+            |> reader.All
+            |> reader.Map(Map.ofSeq)
 
-                  let! handlerVar =
-                    handlerVar |> JsonValue.AsString |> reader.OfSum
-
-                  let handlerVar = Var.Create handlerVar
-                  let! handlerBody = handlerBody |> fromRootJson
-
-                  return
-                    ({ Case = handlerCase
-                       Count = handlerCount }),
-                    (Some handlerVar, handlerBody)
-                })
-              |> reader.All
-              |> reader.Map(Map.ofSeq)
-
-            return Expr.SumDes(caseHandlers)
-          })
+          return Expr.SumDes(caseHandlers)
+        })
 
     static member ToJsonSumDes
       (rootToJson: ExprEncoder<'T, 'Id, 'valueExt>)
@@ -77,6 +68,4 @@ module SumDes =
           return [| i; n; v; h |] |> JsonValue.Array
         })
       |> reader.All
-      |> reader.Map(
-        Array.ofList >> JsonValue.Array >> Json.discriminator discriminator
-      )
+      |> reader.Map(Array.ofList >> JsonValue.Array >> Json.discriminator discriminator)

@@ -18,13 +18,11 @@ module LookupTypeExpr =
     static member FromJsonLookup: TypeExprParser<'valueExt> =
       Sum.assertDiscriminatorAndContinueWithValue
         discriminator
-        (JsonValue.AsString
-         >>= (Identifier.LocalScope >> TypeExpr.Lookup >> sum.Return))
+        (JsonValue.AsString >>= (Identifier.LocalScope >> TypeExpr.Lookup >> sum.Return))
 
     static member ToJsonLookup(id: Identifier) : JsonValue =
       match id with
-      | Identifier.LocalScope name ->
-        name |> JsonValue.String |> Json.discriminator discriminator
+      | Identifier.LocalScope name -> name |> JsonValue.String |> Json.discriminator discriminator
       | Identifier.FullyQualified(scope, name) ->
         (name :: scope |> Seq.map JsonValue.String |> Seq.toArray)
         |> JsonValue.Array

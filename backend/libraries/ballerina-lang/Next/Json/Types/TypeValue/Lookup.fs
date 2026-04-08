@@ -15,21 +15,17 @@ module Lookup =
   let private discriminator = "lookup"
 
   type TypeValue<'valueExt> with
-    static member FromJsonLookup
-      : JsonValue -> Sum<TypeValue<'valueExt>, Errors<_>> =
-      Sum.assertDiscriminatorAndContinueWithValue
-        discriminator
-        (fun lookupFields ->
-          sum {
-            let! name = lookupFields |> JsonValue.AsString
+    static member FromJsonLookup: JsonValue -> Sum<TypeValue<'valueExt>, Errors<_>> =
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun lookupFields ->
+        sum {
+          let! name = lookupFields |> JsonValue.AsString
 
-            return TypeValue.Lookup(Identifier.LocalScope name)
-          })
+          return TypeValue.Lookup(Identifier.LocalScope name)
+        })
 
     static member ToJsonLookup(id: Identifier) : JsonValue =
       match id with
-      | Identifier.LocalScope name ->
-        name |> JsonValue.String |> Json.discriminator discriminator
+      | Identifier.LocalScope name -> name |> JsonValue.String |> Json.discriminator discriminator
       | Identifier.FullyQualified(scope, name) ->
         (name :: scope |> Seq.map JsonValue.String |> Seq.toArray)
         |> JsonValue.Array

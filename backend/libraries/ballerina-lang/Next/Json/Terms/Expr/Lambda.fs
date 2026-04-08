@@ -21,17 +21,14 @@ module Lambda =
       (fromRootJson: ExprParser<'T, 'Id, 'valueExt>)
       (value: JsonValue)
       : ExprParserReader<'T, 'Id, 'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue
-        discriminator
-        value
-        (fun lambdaJson ->
-          reader {
-            let! var, body = lambdaJson |> JsonValue.AsPair |> reader.OfSum
-            let! var = var |> JsonValue.AsString |> reader.OfSum
-            let var = Var.Create var
-            let! body = body |> fromRootJson
-            return Expr.Lambda(var, None, body, None)
-          })
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun lambdaJson ->
+        reader {
+          let! var, body = lambdaJson |> JsonValue.AsPair |> reader.OfSum
+          let! var = var |> JsonValue.AsString |> reader.OfSum
+          let var = Var.Create var
+          let! body = body |> fromRootJson
+          return Expr.Lambda(var, None, body, None)
+        })
 
     static member ToJsonLambda
       (rootToJson: ExprEncoder<'T, 'Id, 'valueExt>)

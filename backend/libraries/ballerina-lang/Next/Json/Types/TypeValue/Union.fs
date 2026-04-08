@@ -22,35 +22,30 @@ module Union =
   type TypeValue<'valueExt> with
     static member FromJsonUnion
       (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors<unit>>)
-      : JsonValue
-          -> Sum<OrderedMap<TypeSymbol, TypeValue<'valueExt>>, Errors<unit>>
-      =
-      Sum.assertDiscriminatorAndContinueWithValue
-        discriminator
-        (fun unionFields ->
-          sum {
-            let! cases = unionFields |> JsonValue.AsArray
+      : JsonValue -> Sum<OrderedMap<TypeSymbol, TypeValue<'valueExt>>, Errors<unit>> =
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun unionFields ->
+        sum {
+          let! cases = unionFields |> JsonValue.AsArray
 
-            let! caseTypes =
-              cases
-              |> Array.map (fun case ->
-                sum {
-                  let! (caseKey, caseValue) = case |> JsonValue.AsPair
-                  let! caseType = fromRootJson caseValue
-                  let! caseKey = caseKey |> TypeSymbol.FromJson
-                  return (caseKey, caseType)
-                })
-              |> sum.All
-              |> sum.Map OrderedMap.ofSeq
+          let! caseTypes =
+            cases
+            |> Array.map (fun case ->
+              sum {
+                let! (caseKey, caseValue) = case |> JsonValue.AsPair
+                let! caseType = fromRootJson caseValue
+                let! caseKey = caseKey |> TypeSymbol.FromJson
+                return (caseKey, caseType)
+              })
+            |> sum.All
+            |> sum.Map OrderedMap.ofSeq
 
-            return caseTypes
-          })
+          return caseTypes
+        })
 
     static member ToJsonUnion
       (rootToJson: TypeValue<'valueExt> -> JsonValue)
       : OrderedMap<TypeSymbol, TypeValue<'valueExt>> -> JsonValue =
       OrderedMap.toArray
-      >> Array.map (fun (symbol, value) ->
-        JsonValue.Array [| TypeSymbol.ToJson symbol; rootToJson value |])
+      >> Array.map (fun (symbol, value) -> JsonValue.Array [| TypeSymbol.ToJson symbol; rootToJson value |])
       >> JsonValue.Array
       >> Json.discriminator discriminator

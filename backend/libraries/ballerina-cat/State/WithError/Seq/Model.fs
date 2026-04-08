@@ -11,10 +11,7 @@ module Seq =
 
     member this.run(c, s) = let (State p) = this in p (c, s)
 
-    static member map<'b>
-      (f: 'a -> 'b)
-      ((State p): SeqState<'a, 'c, 's, 'e>)
-      : SeqState<'b, 'c, 's, 'e> =
+    static member map<'b> (f: 'a -> 'b) ((State p): SeqState<'a, 'c, 's, 'e>) : SeqState<'b, 'c, 's, 'e> =
       State(fun s0 ->
         match p s0 with
         | Sum.Left(res, u_s) -> Sum.Left(res |> Seq.map f, u_s)
@@ -23,9 +20,7 @@ module Seq =
     static member fromValue(res: 'a) = State(fun _ -> Sum.Left([ res ], None))
     static member zero() = State(fun _ -> Sum.Left([], None))
 
-    static member flatten
-      ((State p): SeqState<SeqState<'a, 'c, 's, 'e>, 'c, 's, 'e>)
-      : SeqState<'a, 'c, 's, 'e> =
+    static member flatten((State p): SeqState<SeqState<'a, 'c, 's, 'e>, 'c, 's, 'e>) : SeqState<'a, 'c, 's, 'e> =
       State(fun (c, s0) ->
         match p (c, s0) with
         | Sum.Left(ps, s1) ->
@@ -58,36 +53,22 @@ module Seq =
           | Sum.Left(res, s) -> Sum.Left(res, Some s)
         | Sum.Right e -> Sum.Right e)
 
-    static member bind
-      (p: SeqState<'a, 'c, 's, 'e>)
-      (k: 'a -> SeqState<'b, 'c, 's, 'e>)
-      : SeqState<'b, 'c, 's, 'e> =
+    static member bind (p: SeqState<'a, 'c, 's, 'e>) (k: 'a -> SeqState<'b, 'c, 's, 'e>) : SeqState<'b, 'c, 's, 'e> =
       SeqState.map k p |> SeqState.flatten
 
 
   type SeqStateBuilder() =
     member _.Map f p = SeqState.map f p
     member _.Zero<'a, 'c, 's, 'e>() = SeqState.zero<'a, 'c, 's, 'e> ()
-
-    member _.Return<'a, 'c, 's, 'e>(result: 'a) =
-      SeqState.fromValue<'c, 's, 'e> result
-
+    member _.Return<'a, 'c, 's, 'e>(result: 'a) = SeqState.fromValue<'c, 's, 'e> result
     member _.Yield(result: 'a) = SeqState.fromValue<'c, 's, 'e> result
-
-    member _.Bind
-      (p: SeqState<'a, 'c, 's, 'e>, k: 'a -> SeqState<'b, 'c, 's, 'e>)
-      =
-      SeqState.bind p k
-
-    member _.Combine(p: SeqState<'b, 'c, 's, 'e>, k: SeqState<'a, 'c, 's, 'e>) =
-      SeqState.bind p (fun _ -> k)
+    member _.Bind(p: SeqState<'a, 'c, 's, 'e>, k: 'a -> SeqState<'b, 'c, 's, 'e>) = SeqState.bind p k
+    member _.Combine(p: SeqState<'b, 'c, 's, 'e>, k: SeqState<'a, 'c, 's, 'e>) = SeqState.bind p (fun _ -> k)
     //   member _.Any(ps:List<Coroutine<'a, 's, 'c, 'e>>) =
     //     Co(fun _ -> CoroutineResult.Any(ps), None, None)
     //   // member _.All(ps:List<Coroutine<'a, 's, 'c, 'e>>) =
     //   //   Co(fun _ -> CoroutineResult.Any(ps), None, None)
-    member state.Repeat
-      (p: SeqState<'a, 'c, 's, 'e>)
-      : SeqState<'a, 'c, 's, 'e> =
+    member state.Repeat(p: SeqState<'a, 'c, 's, 'e>) : SeqState<'a, 'c, 's, 'e> =
       state.Bind(p, fun _ -> state.Repeat(p))
 
     member _.GetContext() = State(fun (c, _) -> Sum.Left(c, None))
@@ -113,8 +94,7 @@ module Seq =
 
     member state.For(seq, body: _ -> SeqState<_, _, _, _>) =
       match seq |> Seq.tryHead with
-      | Some first ->
-        state.Combine(body first, state.For(seq |> Seq.tail, body))
+      | Some first -> state.Combine(body first, state.For(seq |> Seq.tail, body))
       | None -> state.Zero()
     // member state.All<'a,'c,'s,'e>
     //   (e:{| concat:'e * 'e -> 'e |}, ps:List<State<'a,'c,'s,'e>>) =

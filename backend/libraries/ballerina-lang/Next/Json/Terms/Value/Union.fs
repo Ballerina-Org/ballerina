@@ -23,16 +23,13 @@ module Union =
       (fromJsonRoot: ValueParser<'T, ResolvedIdentifier, 'valueExtension>)
       (json: JsonValue)
       : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
-      Reader.assertDiscriminatorAndContinueWithValue
-        discriminator
-        json
-        (fun caseJson ->
-          reader {
-            let! k, v = caseJson |> JsonValue.AsPair |> reader.OfSum
-            let! k = k |> ResolvedIdentifier.FromJson |> reader.OfSum
-            let! v = fromJsonRoot v
-            return Value.UnionCase(k, v)
-          })
+      Reader.assertDiscriminatorAndContinueWithValue discriminator json (fun caseJson ->
+        reader {
+          let! k, v = caseJson |> JsonValue.AsPair |> reader.OfSum
+          let! k = k |> ResolvedIdentifier.FromJson |> reader.OfSum
+          let! v = fromJsonRoot v
+          return Value.UnionCase(k, v)
+        })
 
     static member ToJsonUnion
       (rootToJson: ValueEncoder<'T, 'valueExtension>)
@@ -49,14 +46,11 @@ module Union =
       (_fromJsonRoot: ValueParser<'T, ResolvedIdentifier, 'valueExtension>)
       (json: JsonValue)
       : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
-      Reader.assertDiscriminatorAndContinueWithValue
-        discriminator_cons
-        json
-        (fun caseJson ->
-          reader {
-            let! k = caseJson |> ResolvedIdentifier.FromJson |> reader.OfSum
-            return Value.UnionCons(k)
-          })
+      Reader.assertDiscriminatorAndContinueWithValue discriminator_cons json (fun caseJson ->
+        reader {
+          let! k = caseJson |> ResolvedIdentifier.FromJson |> reader.OfSum
+          return Value.UnionCons(k)
+        })
 
     static member ToJsonUnionCons
       (_rootToJson: ValueEncoder<'T, 'valueExtension>)

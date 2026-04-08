@@ -141,31 +141,21 @@ entrypoint view aStringRecord : StringRecord {
 
   let compilerInput: FormCompiler.FormCompilerInput<ValueExt> =
     { Types =
-        { Preludes =
-            NonEmptyList.One(
-              FileBuildConfiguration.FromFile("test.bl", typesString)
-            )
+        { Preludes = NonEmptyList.One(FileBuildConfiguration.FromFile("test.bl", typesString))
           Source = "test.types" }
       ApiTypes = Map.empty
       Forms =
         { Program = formsString
           Source = "test.forms" } }
 
-  let extensions, languageContext, typeCheckingConfig, cache =
-    hddcacheWithStdExtensions
-      (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
-      (db_ops ())
-      id
-      id
+  let extensions, languageContext, typeEvalConfig =
+    db_ops ()
+    |> stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
 
-  match
-    FormCompiler.compileForms
-      compilerInput
-      cache
-      languageContext
-      extensions
-      typeCheckingConfig
-  with
+  let cache =
+    memcache (languageContext.TypeCheckContext, languageContext.TypeCheckState)
+
+  match FormCompiler.compileForms compilerInput cache languageContext extensions typeEvalConfig with
   | Right errors -> Assert.Fail($"Compilation failed: {errors}")
   | Left formDefinitions ->
     let result = FormDefinitions.toV1Json formDefinitions
@@ -634,31 +624,21 @@ entrypoint view letTestRecord : LetTestRecord {
 
   let compilerInput: FormCompiler.FormCompilerInput<ValueExt> =
     { Types =
-        { Preludes =
-            NonEmptyList.One(
-              FileBuildConfiguration.FromFile("test.bl", typesString)
-            )
+        { Preludes = NonEmptyList.One(FileBuildConfiguration.FromFile("test.bl", typesString))
           Source = "test.types" }
       ApiTypes = Map.empty
       Forms =
         { Program = formsString
           Source = "test.forms" } }
 
-  let extensions, languageContext, typeCheckingConfig, cache =
-    hddcacheWithStdExtensions
-      (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
-      (db_ops ())
-      id
-      id
+  let extensions, languageContext, typeEvalConfig =
+    db_ops ()
+    |> stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
 
-  match
-    FormCompiler.compileForms
-      compilerInput
-      cache
-      languageContext
-      extensions
-      typeCheckingConfig
-  with
+  let cache =
+    memcache (languageContext.TypeCheckContext, languageContext.TypeCheckState)
+
+  match FormCompiler.compileForms compilerInput cache languageContext extensions typeEvalConfig with
   | Right errors -> Assert.Fail($"Compilation failed: {errors}")
   | Left formDefinitions ->
     let result = FormDefinitions.toV1Json formDefinitions

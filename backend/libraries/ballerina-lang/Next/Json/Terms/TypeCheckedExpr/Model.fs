@@ -36,54 +36,43 @@ module ExprJson =
             TypeCheckedExpr.FromJsonIf TypeCheckedExpr.FromJson json
             TypeCheckedExpr.FromJsonPrimitive(json)
             TypeCheckedExpr.FromJsonLookup(json)
-            Errors.Singleton () (fun () ->
-              $"Unknown Expr JSON: {json.AsFSharpString.ReasonablyClamped}")
+            fun () -> $"Unknown Expr JSON: {json.AsFSharpString.ReasonablyClamped}"
+            |> Errors.Singleton()
             |> Errors.MapPriority(replaceWith ErrorPriority.Medium)
             |> reader.Throw ]
         )
         |> reader.MapError(Errors.HighestPriority)
-        |> reader.MapError(
-          Errors.Map(fun e ->
-            $"{e}\n..when parsing {json.ToString().ReasonablyClamped}")
-        )
+        |> reader.MapError(Errors.Map(fun e -> $"{e}\n..when parsing {json.ToString().ReasonablyClamped}"))
 
     static member ToJson: TypeCheckedExprEncoder<'valueExt> =
       fun expr ->
         match expr.Expr with
         | TypeCheckedExprRec.Lambda({ TypeCheckedExprLambda.Param = name
                                       ParamType = _
-                                      Body = body }) ->
-          TypeCheckedExpr.ToJsonLambda TypeCheckedExpr.ToJson name body
+                                      Body = body }) -> TypeCheckedExpr.ToJsonLambda TypeCheckedExpr.ToJson name body
         | TypeCheckedExprRec.TypeLambda({ TypeCheckedExprTypeLambda.Param = name
                                           Body = body }) ->
           TypeCheckedExpr.ToJsonTypeLambda TypeCheckedExpr.ToJson name body
         | TypeCheckedExprRec.TypeApply({ TypeCheckedExprTypeApply.TypeArg = t
-                                         Func = e }) ->
-          TypeCheckedExpr.ToJsonTypeApply TypeCheckedExpr.ToJson e t
+                                         Func = e }) -> TypeCheckedExpr.ToJsonTypeApply TypeCheckedExpr.ToJson e t
         | TypeCheckedExprRec.Apply({ TypeCheckedExprApply.F = e1
-                                     Arg = e2 }) ->
-          TypeCheckedExpr.ToJsonApply TypeCheckedExpr.ToJson e1 e2
+                                     Arg = e2 }) -> TypeCheckedExpr.ToJsonApply TypeCheckedExpr.ToJson e1 e2
         | TypeCheckedExprRec.FromValue({ TypeCheckedExprFromValue.Value = _
                                          ValueType = _
-                                         ValueKind = _ }) ->
-          failwith "Not implemented"
+                                         ValueKind = _ }) -> failwith "Not implemented"
         | TypeCheckedExprRec.Let({ TypeCheckedExprLet.Var = v
                                    Type = _
                                    Val = e1
-                                   Rest = e2 }) ->
-          TypeCheckedExpr.ToJsonLet TypeCheckedExpr.ToJson v e1 e2
+                                   Rest = e2 }) -> TypeCheckedExpr.ToJsonLet TypeCheckedExpr.ToJson v e1 e2
         | TypeCheckedExprRec.Do({ TypeCheckedExprDo.Val = e1
-                                  Rest = e2 }) ->
-          TypeCheckedExpr.ToJsonDo TypeCheckedExpr.ToJson e1 e2
+                                  Rest = e2 }) -> TypeCheckedExpr.ToJsonDo TypeCheckedExpr.ToJson e1 e2
         | TypeCheckedExprRec.TypeLet({ TypeCheckedExprTypeLet.Name = v
                                        TypeDef = t
-                                       Body = e }) ->
-          TypeCheckedExpr.ToJsonTypeLet TypeCheckedExpr.ToJson v t e
+                                       Body = e }) -> TypeCheckedExpr.ToJsonTypeLet TypeCheckedExpr.ToJson v t e
         | TypeCheckedExprRec.RecordCons { Fields = fields } ->
           TypeCheckedExpr.ToJsonRecordCons TypeCheckedExpr.ToJson fields
         | TypeCheckedExprRec.RecordWith _ -> failwith "not implemented"
-        | TypeCheckedExprRec.TupleCons { Items = items } ->
-          TypeCheckedExpr.ToJsonTupleCons TypeCheckedExpr.ToJson items
+        | TypeCheckedExprRec.TupleCons { Items = items } -> TypeCheckedExpr.ToJsonTupleCons TypeCheckedExpr.ToJson items
         | TypeCheckedExprRec.SumCons({ TypeCheckedExprSumCons.Selector = selector }) ->
           TypeCheckedExpr.ToJsonSumCons TypeCheckedExpr.ToJson selector
         | TypeCheckedExprRec.RecordDes({ TypeCheckedExprRecordDes.Expr = record
@@ -95,8 +84,7 @@ module ExprJson =
         | TypeCheckedExprRec.TupleDes({ TypeCheckedExprTupleDes.Tuple = tuple
                                         Item = selector }) ->
           TypeCheckedExpr.ToJsonTupleDes TypeCheckedExpr.ToJson tuple selector
-        | TypeCheckedExprRec.SumDes { Handlers = cases } ->
-          TypeCheckedExpr.ToJsonSumDes TypeCheckedExpr.ToJson cases
+        | TypeCheckedExprRec.SumDes { Handlers = cases } -> TypeCheckedExpr.ToJsonSumDes TypeCheckedExpr.ToJson cases
         | TypeCheckedExprRec.If({ TypeCheckedExprIf.Cond = cond
                                   Then = thenExpr
                                   Else = elseExpr }) ->

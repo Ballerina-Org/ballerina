@@ -9,8 +9,7 @@ open Ballerina.Collections.TaskSum
 
 let private liftLeft: int -> Sum<int, string> Task = Task.FromResult << Left
 
-let private liftRight: string -> Sum<int, string> Task =
-  Task.FromResult << Right
+let private liftRight: string -> Sum<int, string> Task = Task.FromResult << Right
 
 let private leftShouldEqualTo (expected: 'a) (sum: Sum<'a, 'b>) =
   match sum with
@@ -66,9 +65,7 @@ let ``When sum is Right expect let! preserve the sum`` expected =
   }
 
 [<Test; AutoData>]
-let ``When sum is Right expect let! ignore the rest of the computation``
-  expected
-  =
+let ``When sum is Right expect let! ignore the rest of the computation`` expected =
   let mutable flag = true
 
   task {

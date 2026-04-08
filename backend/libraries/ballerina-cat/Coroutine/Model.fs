@@ -13,12 +13,7 @@ module Model =
   type Coroutine<'a, 's, 'c, 'event, 'err> =
     | Co of
       ('s * 'c * OrderedMap<Guid, 'event> * DeltaT
-        -> Sum<
-          CoroutineResult<'a, 's, 'c, 'event, 'err> *
-          Option<U<'s>> *
-          Option<U<OrderedMap<Guid, 'event>>>,
-          'err
-         >)
+        -> Sum<CoroutineResult<'a, 's, 'c, 'event, 'err> * Option<U<'s>> * Option<U<OrderedMap<Guid, 'event>>>, 'err>)
 
     static member map<'a, 'b, 's, 'c, 'event, 'err>
       (f: ('a -> 'b))
@@ -26,8 +21,7 @@ module Model =
       : Coroutine<'b, 's, 'c, 'event, 'err> =
       Co(fun (s, c, e, dt) ->
         p (s, c, e, dt)
-        |> Sum.map (fun (p_result, s_updater, e_updater) ->
-          (CoroutineResult.map f p_result, s_updater, e_updater)))
+        |> Sum.map (fun (p_result, s_updater, e_updater) -> (CoroutineResult.map f p_result, s_updater, e_updater)))
 
   and CoroutineResult<'a, 's, 'c, 'event, 'err> =
     | Return of 'a
@@ -40,11 +34,8 @@ module Model =
     | Await of Task<'a>
     // | Awaiting of Guid * Async<'a> * Task<'a>
     | MapContext of (Updater<'c> * Coroutine<'a, 's, 'c, 'event, 'err>)
-    | Then of
-      (Coroutine<Coroutine<'a, 's, 'c, 'event, 'err>, 's, 'c, 'event, 'err>)
-    | Combine of
-      (Coroutine<Unit, 's, 'c, 'event, 'err> *
-      Coroutine<'a, 's, 'c, 'event, 'err>)
+    | Then of (Coroutine<Coroutine<'a, 's, 'c, 'event, 'err>, 's, 'c, 'event, 'err>)
+    | Combine of (Coroutine<Unit, 's, 'c, 'event, 'err> * Coroutine<'a, 's, 'c, 'event, 'err>)
     | Repeat of Coroutine<'a, 's, 'c, 'event, 'err>
 
     static member map<'a, 'b, 's, 'c, 'event, 'err>
@@ -75,19 +66,14 @@ module Model =
             return f x
           }
         )
-      | Then(p_p) ->
-        p_p |> Coroutine.map (Coroutine.map f) |> CoroutineResult.Then
+      | Then(p_p) -> p_p |> Coroutine.map (Coroutine.map f) |> CoroutineResult.Then
       // Then(p', k >> (Coroutine.map f))
       | Combine(p, k) -> Combine(p, k |> Coroutine.map f)
       | Repeat(p) -> Repeat(p |> Coroutine.map f)
       | MapContext(u_c, p) -> MapContext(u_c, p |> Coroutine.map f)
 
   type Coroutine<'a, 's, 'c, 'event, 'err> with
-    static member bind
-      (
-        p: Coroutine<'a, 's, 'c, 'event, 'err>,
-        k: 'a -> Coroutine<'b, 's, 'c, 'event, 'err>
-      ) =
+    static member bind(p: Coroutine<'a, 's, 'c, 'event, 'err>, k: 'a -> Coroutine<'b, 's, 'c, 'event, 'err>) =
       Co(fun _ -> Left(Then(p |> Coroutine.map k), None, None))
 
   type CoroutineBuilder() =
@@ -105,25 +91,12 @@ module Model =
       Co(fun _ -> Left(CoroutineResult.Return(result), None, None))
 
     member co.Yield() =
-      Co(fun _ ->
-        Left(
-          CoroutineResult.Wait(TimeSpan.FromMilliseconds 0., co.Return()),
-          None,
-          None
-        ))
+      Co(fun _ -> Left(CoroutineResult.Wait(TimeSpan.FromMilliseconds 0., co.Return()), None, None))
 
-    member _.Bind
-      (
-        p: Coroutine<'a, 's, 'c, 'event, 'err>,
-        k: 'a -> Coroutine<'b, 's, 'c, 'event, 'err>
-      ) =
+    member _.Bind(p: Coroutine<'a, 's, 'c, 'event, 'err>, k: 'a -> Coroutine<'b, 's, 'c, 'event, 'err>) =
       Coroutine.bind (p, k)
 
-    member _.Combine
-      (
-        p: Coroutine<Unit, 's, 'c, 'event, 'err>,
-        k: Coroutine<'a, 's, 'c, 'event, 'err>
-      ) =
+    member _.Combine(p: Coroutine<Unit, 's, 'c, 'event, 'err>, k: Coroutine<'a, 's, 'c, 'event, 'err>) =
       Co(fun _ -> Left(CoroutineResult.Combine(p, k), None, None))
 
     member _.Any(ps: List<Coroutine<'a, 's, 'c, 'event, 'err>>) =
@@ -168,9 +141,7 @@ module Model =
     member _.Spawn(p: Coroutine<Unit, 's, 'c, 'event, 'err>) =
       Co(fun _ -> Left(CoroutineResult.Spawn(p), None, None))
 
-    member _.Repeat
-      (p: Coroutine<'a, 's, 'c, 'event, 'err>)
-      : Coroutine<'a, 's, 'c, 'event, 'err> =
+    member _.Repeat(p: Coroutine<'a, 's, 'c, 'event, 'err>) : Coroutine<'a, 's, 'c, 'event, 'err> =
       Co(fun _ -> Left(CoroutineResult.Repeat(p), None, None))
 
     member _.mapContext (f) p =
@@ -188,12 +159,7 @@ module Model =
     member co.Produce(new_event) =
       co.YieldAfter(
         Co(fun _ ->
-          Left(
-            CoroutineResult.Return(),
-            None,
-            Some(fun es ->
-              let (id, e) = new_event in es |> OrderedMap.add id e)
-          ))
+          Left(CoroutineResult.Return(), None, Some(fun es -> let (id, e) = new_event in es |> OrderedMap.add id e)))
       )
 
     member co.ofSum(p: Sum<'a, 'err>) =
@@ -223,18 +189,9 @@ module Model =
       Option<U<'s>> *
       Option<U<OrderedMap<Guid, 'event>>> *
       Option<Coroutine<'a, 's, 'c, 'event, 'err>>
-    | Active of
-      Coroutine<'a, 's, 'c, 'event, 'err> *
-      Option<U<'s>> *
-      Option<U<OrderedMap<Guid, 'event>>>
-    | Listening of
-      Coroutine<'a, 's, 'c, 'event, 'err> *
-      Option<U<'s>> *
-      Option<U<OrderedMap<Guid, 'event>>>
-    | Waiting of
-      WaitingCoroutine<'a, 's, 'c, 'event, 'err> *
-      Option<U<'s>> *
-      Option<U<OrderedMap<Guid, 'event>>>
+    | Active of Coroutine<'a, 's, 'c, 'event, 'err> * Option<U<'s>> * Option<U<OrderedMap<Guid, 'event>>>
+    | Listening of Coroutine<'a, 's, 'c, 'event, 'err> * Option<U<'s>> * Option<U<OrderedMap<Guid, 'event>>>
+    | Waiting of WaitingCoroutine<'a, 's, 'c, 'event, 'err> * Option<U<'s>> * Option<U<OrderedMap<Guid, 'event>>>
     | WaitingOrListening of
       WaitingCoroutine<'a, 's, 'c, 'event, 'err> *
       Option<U<'s>> *
@@ -248,8 +205,7 @@ module Model =
       | Active(x, u_s', u_e') -> Active(x, u_s >>? u_s', u_e >>? u_e')
       | Listening(x, u_s', u_e') -> Listening(x, u_s >>? u_s', u_e >>? u_e')
       | Waiting(x, u_s', u_e') -> Waiting(x, u_s >>? u_s', u_e >>? u_e')
-      | WaitingOrListening(x, u_s', u_e') ->
-        WaitingOrListening(x, u_s >>? u_s', u_e >>? u_e')
+      | WaitingOrListening(x, u_s', u_e') -> WaitingOrListening(x, u_s >>? u_s', u_e >>? u_e')
       | Error err -> Error err
 
   type EvaluatedCoroutines<'s, 'c, 'event, 'err> =
@@ -258,8 +214,7 @@ module Model =
       crashed: Map<Guid, 'err>
       waiting: Map<Guid, WaitingCoroutine<Unit, 's, 'c, 'event, 'err>>
       listening: Map<Guid, Coroutine<Unit, 's, 'c, 'event, 'err>>
-      waitingOrListening:
-        Map<Guid, WaitingCoroutine<Unit, 's, 'c, 'event, 'err>> }
+      waitingOrListening: Map<Guid, WaitingCoroutine<Unit, 's, 'c, 'event, 'err>> }
 
   type Coroutine<'a, 's, 'c, 'event, 'err> with
     static member eval<'a>
@@ -280,39 +235,16 @@ module Model =
           | Done(p, u_s, u_e) ->
             let res = Coroutine.eval p ctx
             res.After(u_s, u_e)
-          | Spawned(p',
-                    u_s,
-                    u_e,
-                    rest:
-                      Option<
-                        Coroutine<
-                          Coroutine<'a, 's, 'c, 'event, 'err>,
-                          's,
-                          'c,
-                          'event,
-                          'err
-                         >
-                       >) ->
+          | Spawned(p', u_s, u_e, rest: Option<Coroutine<Coroutine<'a, 's, 'c, 'event, 'err>, 's, 'c, 'event, 'err>>) ->
             Spawned(
               p',
               u_s,
               u_e,
               rest
-              |> Option.map (fun rest_p ->
-                Co(fun _ -> Left(CoroutineResult.Then(rest_p), None, None)))
+              |> Option.map (fun rest_p -> Co(fun _ -> Left(CoroutineResult.Then(rest_p), None, None)))
             )
-          | Active(p_p', u_s, u_e) ->
-            Active(
-              Co(fun _ -> Left(CoroutineResult.Then(p_p'), None, None)),
-              u_s,
-              u_e
-            )
-          | Listening(p_p', u_s, u_e) ->
-            Listening(
-              Co(fun _ -> Left(CoroutineResult.Then(p_p'), None, None)),
-              u_s,
-              u_e
-            )
+          | Active(p_p', u_s, u_e) -> Active(Co(fun _ -> Left(CoroutineResult.Then(p_p'), None, None)), u_s, u_e)
+          | Listening(p_p', u_s, u_e) -> Listening(Co(fun _ -> Left(CoroutineResult.Then(p_p'), None, None)), u_s, u_e)
           | Waiting(w, u_s, u_e) ->
             Waiting(
               { P = Co(fun _ -> Left(CoroutineResult.Then(w.P), None, None))
@@ -370,27 +302,15 @@ module Model =
                 | Choice1Of3(ps', spawned', u_s, u_e) ->
                   match Coroutine.eval p ctx with
                   | Error err -> Choice3Of3 err
-                  | Done(res, u_s', u_e') ->
-                    Choice2Of3(res, u_s >>? u_s', u_e >>? u_e')
+                  | Done(res, u_s', u_e') -> Choice2Of3(res, u_s >>? u_s', u_e >>? u_e')
                   | Spawned(p', u_s', u_e', rest) ->
-                    Choice1Of3(
-                      ps' @ Option.toList rest,
-                      p' @ spawned',
-                      u_s >>? u_s',
-                      u_e >>? u_e'
-                    )
+                    Choice1Of3(ps' @ Option.toList rest, p' @ spawned', u_s >>? u_s', u_e >>? u_e')
                   | Active(p', u_s', u_e')
-                  | Listening(p', u_s', u_e') ->
-                    Choice1Of3(p' :: ps', spawned', u_s >>? u_s', u_e >>? u_e')
+                  | Listening(p', u_s', u_e') -> Choice1Of3(p' :: ps', spawned', u_s >>? u_s', u_e >>? u_e')
                   | Waiting({ P = p'; Until = until }, u_s', u_e')
                   | WaitingOrListening({ P = p'; Until = until }, u_s', u_e') ->
                     Choice1Of3(
-                      Co(fun _ ->
-                        Left(
-                          CoroutineResult.Wait(until - DateTime.Now, p'),
-                          None,
-                          None
-                        ))
+                      Co(fun _ -> Left(CoroutineResult.Wait(until - DateTime.Now, p'), None, None))
                       :: ps',
                       spawned',
                       u_s >>? u_s',
@@ -400,8 +320,7 @@ module Model =
 
           match res with
           | Choice1Of3(ps', [], u_s, u_e) -> Active(co.Any ps', u_s, u_e)
-          | Choice1Of3(ps', spawned, u_s, u_e) ->
-            Spawned(spawned, u_s, u_e, Some(co.Any ps'))
+          | Choice1Of3(ps', spawned, u_s, u_e) -> Spawned(spawned, u_s, u_e, Some(co.Any ps'))
           | Choice2Of3(res, u_s, u_e) -> Done(res, u_s, u_e)
           | Choice3Of3 err -> Error err
         | Wait(timeSpan, p': Coroutine<'a, 's, 'c, 'event, 'err>) ->
@@ -431,8 +350,7 @@ module Model =
               | Some _, _ -> true
               | _ -> false)
           with
-          | Some(Some res, e) ->
-            Done(res, None, Some(OrderedMap.remove (e |> fst)))
+          | Some(Some res, e) -> Done(res, None, Some(OrderedMap.remove (e |> fst)))
           | _ -> Active(co.On p_e, None, None)
         | Spawn(p) -> Spawned([ p ], None, None, None)
         | Do(f) -> Done(f c, None, None)
@@ -453,10 +371,7 @@ module Model =
     static member evalMany<'s, 'c, 'event, 'err>
       (ps: Map<Guid, Coroutine<Unit, 's, 'c, 'event, 'err>>)
       ((s, c, es, dt): 's * 'c * OrderedMap<Guid, 'event> * DeltaT)
-      : EvaluatedCoroutines<'s, 'c, 'event, 'err> *
-        Option<U<'s>> *
-        Option<U<OrderedMap<Guid, 'event>>>
-      =
+      : EvaluatedCoroutines<'s, 'c, 'event, 'err> * Option<U<'s>> * Option<U<OrderedMap<Guid, 'event>>> =
       let ctx = (s, c, es, dt)
       let mutable u_s: Option<U<'s>> = None
       let mutable u_e: Option<U<OrderedMap<Guid, 'event>>> = None

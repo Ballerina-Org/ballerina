@@ -23,24 +23,15 @@ module StripProps =
   open Ballerina
   open Ballerina.DSL.Next.StdLib.DB
 
-  let DBStripPropertiesExtension<'runtimeContext, 'db, 'ext
-    when 'ext: comparison>
+  let DBStripPropertiesExtension<'runtimeContext, 'db, 'ext when 'ext: comparison>
     (_listSet: List<Value<TypeValue<'ext>, 'ext>> -> 'ext)
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
     : ResolvedIdentifier *
-      OperationExtension<
-        'runtimeContext,
-        'ext,
-        DBValues<'runtimeContext, 'db, 'ext>
-       > *
+      OperationExtension<'runtimeContext, 'ext, DBValues<'runtimeContext, 'db, 'ext>> *
       (DBTypeClass<'runtimeContext, 'db, 'ext>
         -> Value<TypeValue<'ext>, 'ext>
         -> EntityRef<'db, 'ext>
-        -> Reader<
-          Value<TypeValue<'ext>, 'ext>,
-          ExprEvalContext<'runtimeContext, 'ext>,
-          Errors<Location>
-         >)
+        -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Location>>)
     =
     let memoryDBStripPropertyId =
       Identifier.FullyQualified([ "DB" ], "@@@stripSchemaProperty")
@@ -75,27 +66,18 @@ module StripProps =
                   let! vField =
                     vFields
                     |> Map.tryFind fieldName
-                    |> sum.OfOption(
-                      Errors.Singleton loc0 (fun () ->
-                        $"Field {fieldName.Name} not found in record")
-                    )
+                    |> sum.OfOption(Errors.Singleton loc0 (fun () -> $"Field {fieldName.Name} not found in record"))
                     |> reader.OfSum
 
                   let! valueWithProps =
                     TypeCheckedExpr.UnsafeApplyForUntypedEval(
                       TypeCheckedExpr.FromValue(
-                        (DBValues.StripProperty { op with Path = ps }
-                         |> valueLens.Set,
-                         Some memoryDBStripPropertyId)
+                        (DBValues.StripProperty { op with Path = ps } |> valueLens.Set, Some memoryDBStripPropertyId)
                         |> Ext,
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star
                       ),
-                      TypeCheckedExpr.FromValue(
-                        vField,
-                        TypeValue.CreatePrimitive PrimitiveType.Unit,
-                        Kind.Star
-                      )
+                      TypeCheckedExpr.FromValue(vField, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                     )
                     |> fun e -> NonEmptyList.OfList(e, _rest)
                     |> Expr.Eval
@@ -103,18 +85,12 @@ module StripProps =
                       match segment_binding with
                       | Some id ->
                         ExprEvalContext.Updaters.Values(
-                          Map.add
-                            (id.Name
-                             |> Identifier.LocalScope
-                             |> TypeCheckScope.Empty.Resolve)
-                            vField
+                          Map.add (id.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) vField
                         )
                       | None -> id
                     )
 
-                  let valueWithProps =
-                    Value.Record(vFields |> Map.add fieldName valueWithProps)
-
+                  let valueWithProps = Value.Record(vFields |> Map.add fieldName valueWithProps)
                   return valueWithProps
                 | SchemaPathTypeDecomposition.Item fieldName ->
                   let! vFields =
@@ -126,27 +102,18 @@ module StripProps =
                   let! vField =
                     vFields
                     |> Seq.tryItem (fieldName.Index - 1)
-                    |> sum.OfOption(
-                      Errors.Singleton loc0 (fun () ->
-                        $"Item {fieldName.Index} not found in tuple")
-                    )
+                    |> sum.OfOption(Errors.Singleton loc0 (fun () -> $"Item {fieldName.Index} not found in tuple"))
                     |> reader.OfSum
 
                   let! valueWithProps =
                     TypeCheckedExpr.UnsafeApplyForUntypedEval(
                       TypeCheckedExpr.FromValue(
-                        (DBValues.StripProperty { op with Path = ps }
-                         |> valueLens.Set,
-                         Some memoryDBStripPropertyId)
+                        (DBValues.StripProperty { op with Path = ps } |> valueLens.Set, Some memoryDBStripPropertyId)
                         |> Ext,
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star
                       ),
-                      TypeCheckedExpr.FromValue(
-                        vField,
-                        TypeValue.CreatePrimitive PrimitiveType.Unit,
-                        Kind.Star
-                      )
+                      TypeCheckedExpr.FromValue(vField, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                     )
                     |> fun e -> NonEmptyList.OfList(e, _rest)
                     |> Expr.Eval
@@ -154,11 +121,7 @@ module StripProps =
                       match segment_binding with
                       | Some id ->
                         ExprEvalContext.Updaters.Values(
-                          Map.add
-                            (id.Name
-                             |> Identifier.LocalScope
-                             |> TypeCheckScope.Empty.Resolve)
-                            vField
+                          Map.add (id.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) vField
                         )
                       | None -> id
                     )
@@ -166,8 +129,7 @@ module StripProps =
                   let valueWithProps =
                     Value.Tuple(
                       vFields
-                      |> Seq.mapi (fun i v ->
-                        if i = fieldName.Index - 1 then valueWithProps else v)
+                      |> Seq.mapi (fun i v -> if i = fieldName.Index - 1 then valueWithProps else v)
                       |> Seq.toList
                     )
 
@@ -185,18 +147,12 @@ module StripProps =
                     let! vCaseContentWithProps =
                       TypeCheckedExpr.UnsafeApplyForUntypedEval(
                         TypeCheckedExpr.FromValue(
-                          (DBValues.StripProperty { op with Path = ps }
-                           |> valueLens.Set,
-                           Some memoryDBStripPropertyId)
+                          (DBValues.StripProperty { op with Path = ps } |> valueLens.Set, Some memoryDBStripPropertyId)
                           |> Ext,
                           TypeValue.CreatePrimitive PrimitiveType.Unit,
                           Kind.Star
                         ),
-                        TypeCheckedExpr.FromValue(
-                          vCaseContent,
-                          TypeValue.CreatePrimitive PrimitiveType.Unit,
-                          Kind.Star
-                        )
+                        TypeCheckedExpr.FromValue(vCaseContent, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                       )
                       |> fun e -> NonEmptyList.OfList(e, _rest)
                       |> Expr.Eval
@@ -204,17 +160,12 @@ module StripProps =
                         match segment_binding with
                         | Some id ->
                           ExprEvalContext.Updaters.Values(
-                            Map.add
-                              (id.Name
-                               |> Identifier.LocalScope
-                               |> TypeCheckScope.Empty.Resolve)
-                              vCaseContent
+                            Map.add (id.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) vCaseContent
                           )
                         | None -> id
                       )
 
-                    let valueWithProps =
-                      Value.UnionCase(actualCaseId, vCaseContentWithProps)
+                    let valueWithProps = Value.UnionCase(actualCaseId, vCaseContentWithProps)
 
                     return valueWithProps
                 | SchemaPathTypeDecomposition.SumCase expectedCaseId ->
@@ -230,18 +181,12 @@ module StripProps =
                     let! vCaseContentWithProps =
                       TypeCheckedExpr.UnsafeApplyForUntypedEval(
                         TypeCheckedExpr.FromValue(
-                          (DBValues.StripProperty { op with Path = ps }
-                           |> valueLens.Set,
-                           Some memoryDBStripPropertyId)
+                          (DBValues.StripProperty { op with Path = ps } |> valueLens.Set, Some memoryDBStripPropertyId)
                           |> Ext,
                           TypeValue.CreatePrimitive PrimitiveType.Unit,
                           Kind.Star
                         ),
-                        TypeCheckedExpr.FromValue(
-                          vCaseContent,
-                          TypeValue.CreatePrimitive PrimitiveType.Unit,
-                          Kind.Star
-                        )
+                        TypeCheckedExpr.FromValue(vCaseContent, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                       )
                       |> fun e -> NonEmptyList.OfList(e, _rest)
                       |> Expr.Eval
@@ -249,17 +194,12 @@ module StripProps =
                         match segment_binding with
                         | Some id ->
                           ExprEvalContext.Updaters.Values(
-                            Map.add
-                              (id.Name
-                               |> Identifier.LocalScope
-                               |> TypeCheckScope.Empty.Resolve)
-                              vCaseContent
+                            Map.add (id.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) vCaseContent
                           )
                         | None -> id
                       )
 
-                    let valueWithProps =
-                      Value.Sum(actualCaseId, vCaseContentWithProps)
+                    let valueWithProps = Value.Sum(actualCaseId, vCaseContentWithProps)
 
                     return valueWithProps
                 | SchemaPathTypeDecomposition.Iterator iterator ->
@@ -279,27 +219,20 @@ module StripProps =
                           TypeValue.CreatePrimitive PrimitiveType.Unit,
                           TypeCheckedExpr.UnsafeApplyForUntypedEval(
                             TypeCheckedExpr.FromValue(
-                              (DBValues.StripProperty { op with Path = ps }
-                               |> valueLens.Set,
+                              (DBValues.StripProperty { op with Path = ps } |> valueLens.Set,
                                Some memoryDBStripPropertyId)
                               |> Ext,
                               TypeValue.CreatePrimitive PrimitiveType.Unit,
                               Kind.Star
                             ),
                             TypeCheckedExpr.UnsafeLookupForUntypedEval(
-                              lambda_var_name
-                              |> Identifier.LocalScope
-                              |> TypeCheckScope.Empty.Resolve
+                              lambda_var_name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve
                             )
                           ),
                           TypeValue.CreatePrimitive PrimitiveType.Unit
                         )
                       ),
-                      TypeCheckedExpr.FromValue(
-                        v,
-                        TypeValue.CreatePrimitive PrimitiveType.Unit,
-                        Kind.Star
-                      )
+                      TypeCheckedExpr.FromValue(v, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                     )
                     |> fun e -> NonEmptyList.OfList(e, _rest)
                     |> Expr.Eval
@@ -313,13 +246,7 @@ module StripProps =
                   |> sum.MapError(Errors.MapContext(replaceWith loc0))
                   |> reader.OfSum
 
-                return
-                  Value.Record(
-                    vFields
-                    |> Map.remove (
-                      op.PropertyName.Name |> ResolvedIdentifier.Create
-                    )
-                  )
+                return Value.Record(vFields |> Map.remove (op.PropertyName.Name |> ResolvedIdentifier.Create))
             } }
 
     let stripProps
@@ -347,21 +274,13 @@ module StripProps =
                   TypeValue.CreatePrimitive PrimitiveType.Unit,
                   Kind.Star
                 ),
-                TypeCheckedExpr.FromValue(
-                  valueSoFar,
-                  TypeValue.CreatePrimitive PrimitiveType.Unit,
-                  Kind.Star
-                )
+                TypeCheckedExpr.FromValue(valueSoFar, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
               )
               |> NonEmptyList.One
               |> Expr.Eval
               |> reader.MapContext(
                 ExprEvalContext.Updaters.Values(
-                  Map.add
-                    ("self"
-                     |> Identifier.LocalScope
-                     |> TypeCheckScope.Empty.Resolve)
-                    v
+                  Map.add ("self" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) v
                 )
               )
           })

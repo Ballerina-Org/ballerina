@@ -24,17 +24,14 @@ module SchemaEntityHookOnDeleting =
       match onDeleting with
       | None -> return None
       | Some on_deleting ->
-        let error_type =
-          TypeValue.Lookup(Identifier.FullyQualified([], "Error"))
+        let error_type = TypeValue.Lookup(Identifier.FullyQualified([], "Error"))
 
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
         let! on_deleting_expr, _ =
           typeCheckExpr None on_deleting
-          |> state.MapContext(
-            TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
-          )
+          |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
 
         let on_deleting_t = on_deleting_expr.Type
 
@@ -51,17 +48,12 @@ module SchemaEntityHookOnDeleting =
               TypeValue.Schema schema,
               TypeValue.CreateArrow(
                 e.Id,
-                TypeValue.CreateArrow(
-                  e.TypeWithProps,
-                  TypeValue.CreateSum [ TypeValue.CreateUnit(); error_type ]
-                )
+                TypeValue.CreateArrow(e.TypeWithProps, TypeValue.CreateSum [ TypeValue.CreateUnit(); error_type ])
               )
             )
           )
           |> Expr.liftUnification
-          |> state.MapContext(
-            TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
-          )
+          |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
 
         return Some on_deleting_expr
     }

@@ -14,15 +14,9 @@ module TypeHooksAndProperties =
   open Ballerina
 
   type TypeExprParser<'valueExt> =
-    Parser<
-      Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-      LocalizedToken,
-      Location,
-      Errors<Location>
-     >
+    Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>>
 
-  type TypeDeclParser<'valueExt> =
-    Parser<TypeExpr<'valueExt>, LocalizedToken, Location, Errors<Location>>
+  type TypeDeclParser<'valueExt> = Parser<TypeExpr<'valueExt>, LocalizedToken, Location, Errors<Location>>
 
   let relation_hooks (parseExpr: TypeExprParser<'valueExt>) () =
     let onHook (hookKeyword, hookKeywordParser) =
@@ -39,8 +33,7 @@ module TypeHooksAndProperties =
         let! loc = parser.Location
 
         match startsWithHookKeyword with
-        | Right _ ->
-          return! parser.Throw(Errors.Singleton loc (fun () -> "No hook found"))
+        | Right _ -> return! parser.Throw(Errors.Singleton loc (fun () -> "No hook found"))
         | Left _ ->
           do! letKeyword
           do! onKeyword
@@ -73,8 +66,7 @@ module TypeHooksAndProperties =
         let! loc = parser.Location
 
         match startsWithHookKeyword with
-        | Right _ ->
-          return! parser.Throw(Errors.Singleton loc (fun () -> "No hook found"))
+        | Right _ -> return! parser.Throw(Errors.Singleton loc (fun () -> "No hook found"))
         | Left _ ->
           do! letKeyword
           do! preHookKeyword
@@ -104,13 +96,7 @@ module TypeHooksAndProperties =
     parseSchemaPath
     (parseTypeDecl: unit -> TypeDeclParser<'valueExt>)
     ()
-    : Parser<
-        SchemaEntityPropertyExpr<'valueExt> list,
-        LocalizedToken,
-        Location,
-        Errors<Location>
-       >
-    =
+    : Parser<SchemaEntityPropertyExpr<'valueExt> list, LocalizedToken, Location, Errors<Location>> =
     parser.Many(
       parser {
         do! letKeyword
@@ -134,13 +120,7 @@ module TypeHooksAndProperties =
   let entity_vectors
     (parseExpr: TypeExprParser<'valueExt>)
     ()
-    : Parser<
-        SchemaEntityVectorExpr<'valueExt> list,
-        LocalizedToken,
-        Location,
-        Errors<Location>
-       >
-    =
+    : Parser<SchemaEntityVectorExpr<'valueExt> list, LocalizedToken, Location, Errors<Location>> =
     parser.Many(
       parser {
         do! letKeyword

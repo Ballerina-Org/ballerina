@@ -25,9 +25,7 @@ module FileDB =
       let context = context.RuntimeContext
 
       return
-        FileContentManager.Create<
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>
-         >(
+        FileContentManager.Create<MutableMemoryDB<FileDBRuntimeContext, 'customExt>>(
           directory,
           extension,
           context.TenantId,
@@ -44,32 +42,19 @@ module FileDB =
       DBTypeClass<
         FileDBRuntimeContext,
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     (update: bool)
-    (refUpdater:
-      MutableMemoryDB<FileDBRuntimeContext, 'customExt> -> 'ref -> unit)
+    (refUpdater: MutableMemoryDB<FileDBRuntimeContext, 'customExt> -> 'ref -> unit)
     (opExtractor:
       DBTypeClass<
         FileDBRuntimeContext,
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >
         -> 'ref
         -> 'arg
-        -> Reader<
-          'result,
-          ExprEvalContext<FileDBRuntimeContext, _>,
-          Errors<Unit>
-         >)
+        -> Reader<'result, ExprEvalContext<FileDBRuntimeContext, _>, Errors<Unit>>)
     =
     reader {
       let! fileManager = makeFileManager directory extension
@@ -97,11 +82,7 @@ module FileDB =
     (entityRef:
       EntityRef<
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     : unit =
 
@@ -113,11 +94,7 @@ module FileDB =
     (relationRef:
       RelationRef<
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     : unit =
     let _, currentDb, _, _, _, _ = relationRef
@@ -130,20 +107,12 @@ module FileDB =
       DBTypeClass<
         FileDBRuntimeContext,
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     (entity_ref:
       EntityRef<
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     create_arg
     =
@@ -164,20 +133,12 @@ module FileDB =
       DBTypeClass<
         FileDBRuntimeContext,
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     (entity_ref:
       EntityRef<
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     update_arg
     =
@@ -198,20 +159,12 @@ module FileDB =
       DBTypeClass<
         FileDBRuntimeContext,
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     (entity_ref:
       EntityRef<
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     id_to_delete
     =
@@ -232,20 +185,12 @@ module FileDB =
       DBTypeClass<
         FileDBRuntimeContext,
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     (entity_ref:
       EntityRef<
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     ids_to_delete
     =
@@ -266,20 +211,12 @@ module FileDB =
       DBTypeClass<
         FileDBRuntimeContext,
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     (relation_ref:
       RelationRef<
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     link_arg
     =
@@ -300,11 +237,7 @@ module FileDB =
       DBTypeClass<
         FileDBRuntimeContext,
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     relation_ref
     unlink_arg
@@ -326,11 +259,7 @@ module FileDB =
       DBTypeClass<
         FileDBRuntimeContext,
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     relation_ref
     relation_id
@@ -352,11 +281,7 @@ module FileDB =
       DBTypeClass<
         FileDBRuntimeContext,
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     entity_ref
     entityId
@@ -378,11 +303,7 @@ module FileDB =
       DBTypeClass<
         FileDBRuntimeContext,
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     entity_ref
     (skip, take)
@@ -404,11 +325,7 @@ module FileDB =
       DBTypeClass<
         FileDBRuntimeContext,
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     relation_ref
     source
@@ -422,9 +339,7 @@ module FileDB =
       memoryDbOps
       false
       relationRefUpdater
-      (fun dbTypeClass ->
-        fun relation_ref (source, dir) ->
-          dbTypeClass.LookupMaybe relation_ref source dir)
+      (fun dbTypeClass -> fun relation_ref (source, dir) -> dbTypeClass.LookupMaybe relation_ref source dir)
 
   let private lookupOne<'customExt when 'customExt: comparison>
     directory
@@ -433,11 +348,7 @@ module FileDB =
       DBTypeClass<
         FileDBRuntimeContext,
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     relation_ref
     source
@@ -451,9 +362,7 @@ module FileDB =
       memoryDbOps
       false
       relationRefUpdater
-      (fun dbTypeClass ->
-        fun relation_ref (source, dir) ->
-          dbTypeClass.LookupOne relation_ref source dir)
+      (fun dbTypeClass -> fun relation_ref (source, dir) -> dbTypeClass.LookupOne relation_ref source dir)
 
   let private lookupMany<'customExt when 'customExt: comparison>
     directory
@@ -462,11 +371,7 @@ module FileDB =
       DBTypeClass<
         FileDBRuntimeContext,
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >)
     relation_ref
     source
@@ -513,18 +418,12 @@ module FileDB =
     : DBTypeClass<
         FileDBRuntimeContext,
         MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-        ValueExt<
-          FileDBRuntimeContext,
-          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
-          'customExt
-         >
+        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, 'customExt>, 'customExt>
        >
     =
 
     let memoryDbOps = db_ops<FileDBRuntimeContext, 'customExt> ()
-
-    let directory, extension =
-      dbFileConfig.DbDirectory, dbFileConfig.DbExtension
+    let directory, extension = dbFileConfig.DbDirectory, dbFileConfig.DbExtension
 
     { DB = memoryDbOps.DB
       BeginTransaction = memoryDbOps.BeginTransaction
@@ -557,7 +456,6 @@ module FileDB =
 
             match range with
             | None -> return values |> Seq.toList
-            | Some(skip, take) ->
-              return values |> Seq.skip skip |> Seq.truncate take |> Seq.toList
+            | Some(skip, take) -> return values |> Seq.skip skip |> Seq.truncate take |> Seq.toList
 
           } }

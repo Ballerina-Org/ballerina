@@ -41,30 +41,22 @@ module TypeValueApply =
     (app: SymbolicTypeApplication<'valueExt>)
     : JsonValue =
     match app with
-    | SymbolicTypeApplication.FromQueryRow(q_row) ->
-      JsonValue.Array [| Identifier.ToJson q_row |]
-    | SymbolicTypeApplication.Lookup(f, a) ->
-      JsonValue.Array [| Identifier.ToJson f; rootToJson a |]
+    | SymbolicTypeApplication.FromQueryRow(q_row) -> JsonValue.Array [| Identifier.ToJson q_row |]
+    | SymbolicTypeApplication.Lookup(f, a) -> JsonValue.Array [| Identifier.ToJson f; rootToJson a |]
     | SymbolicTypeApplication.Application(f, a) ->
-      JsonValue.Array
-        [| toJsonSymbolicTypeApplication rootToJson f; rootToJson a |]
+      JsonValue.Array [| toJsonSymbolicTypeApplication rootToJson f; rootToJson a |]
 
   type TypeValue<'valueExt> with
     static member FromJsonApplication
       (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors<_>>)
       : JsonValue -> Sum<SymbolicTypeApplication<'valueExt>, Errors<_>> =
-      Sum.assertDiscriminatorAndContinueWithValue
-        discriminator
-        (fun applyFields ->
-          sum {
-            let! symbolicApp =
-              applyFields |> fromJsonSymbolicTypeApplication fromRootJson
-
-            return symbolicApp
-          })
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun applyFields ->
+        sum {
+          let! symbolicApp = applyFields |> fromJsonSymbolicTypeApplication fromRootJson
+          return symbolicApp
+        })
 
     static member ToJsonApplication
       (rootToJson: TypeValue<'valueExt> -> JsonValue)
       : SymbolicTypeApplication<'valueExt> -> JsonValue =
-      toJsonSymbolicTypeApplication rootToJson
-      >> Json.discriminator discriminator
+      toJsonSymbolicTypeApplication rootToJson >> Json.discriminator discriminator

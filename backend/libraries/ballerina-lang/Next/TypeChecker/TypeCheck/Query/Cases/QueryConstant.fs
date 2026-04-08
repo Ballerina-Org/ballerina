@@ -9,9 +9,5 @@ module QueryCaseConstant =
   let typeCheckQueryConstant<'valueExt when 'valueExt: comparison>
     (expr: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
     c
-    : TypeCheckerResult<
-        (TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>),
-        'valueExt
-       >
-    =
+    : TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt> =
     query_constant_to_type expr.Location c

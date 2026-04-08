@@ -27,13 +27,9 @@ module SumDes =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckSumDes<'valueExt when 'valueExt: comparison>
-      (config: TypeCheckingConfig<'valueExt>)
+      (config: TypeEvalConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
-      : TypeChecker<
-          ExprSumDes<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-          'valueExt
-         >
-      =
+      : TypeChecker<ExprSumDes<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Handlers = handlers }) ->
         let (!) = typeCheckExpr None
 
@@ -100,19 +96,11 @@ module SumDes =
                       let guid = Guid.CreateVersion7()
 
                       let fresh_var =
-                        { TypeVar.Name =
-                            var.Name
-                            + $"_{_k.Case}Of{_k.Count}_"
-                            + guid.ToString()
+                        { TypeVar.Name = var.Name + $"_{_k.Case}Of{_k.Count}_" + guid.ToString()
                           Synthetic = true
                           Guid = guid }
 
-                      do!
-                        state.SetState(
-                          TypeCheckState.Updaters.Vars(
-                            UnificationState.EnsureVariableExists fresh_var
-                          )
-                        )
+                      do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists fresh_var))
 
                       return TypeValue.Var fresh_var
                     | Some(t_i, _t_o), _ ->
@@ -126,38 +114,25 @@ module SumDes =
                 let add_var =
                   var
                   |> Option.map (fun v ->
-                    Map.add
-                      (v.Name |> Identifier.LocalScope |> ctx.Scope.Resolve)
-                      (var_t, Kind.Star))
+                    Map.add (v.Name |> Identifier.LocalScope |> ctx.Scope.Resolve) (var_t, Kind.Star))
                   |> Option.defaultValue id
 
-                let! body, _ =
-                  !body
-                  |> state.MapContext(TypeCheckContext.Updaters.Values add_var)
-
+                let! body, _ = !body |> state.MapContext(TypeCheckContext.Updaters.Values add_var)
                 let body_t = body.Type
                 let body_k = body.Kind
 
                 do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                do!
-                  TypeValue.Unify(loc0, body_t, result_var_t)
-                  |> Expr.liftUnification
+                do! TypeValue.Unify(loc0, body_t, result_var_t) |> Expr.liftUnification
 
                 let! var_t =
-                  TypeValue.Instantiate
-                    ()
-                    (TypeExpr.Eval config typeCheckExpr)
-                    loc0
-                    var_t
+                  TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0 var_t
                   |> Expr.liftInstantiation
 
                 return (var, body), var_t
               })
             |> state.AllMap
-            |> state.MapError(
-              Errors.MapPriority(replaceWith ErrorPriority.High)
-            )
+            |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
           let handlersSorted =
             handlers
@@ -171,22 +146,14 @@ module SumDes =
           let handlerTypes = handlersSorted |> List.map snd
 
           let! result_t =
-            TypeValue.Instantiate
-              ()
-              (TypeExpr.Eval config typeCheckExpr)
-              loc0
-              result_var_t
+            TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0 result_var_t
             |> Expr.liftInstantiation
 
           let sumValue = TypeValue.CreateSum handlerTypes
           let arrowValue = TypeValue.CreateArrow(sumValue, result_t)
 
           let! arrowValue =
-            TypeValue.Instantiate
-              ()
-              (TypeExpr.Eval config typeCheckExpr)
-              loc0
-              arrowValue
+            TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0 arrowValue
             |> Expr.liftInstantiation
 
           // for kv in handler_vars do
@@ -200,13 +167,5 @@ module SumDes =
           //       |> TypeValue.EquivalenceClassesOp
           //       |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
-          return
-            TypeCheckedExpr.SumDes(
-              handlerExprs,
-              arrowValue,
-              Kind.Star,
-              loc0,
-              ctx.Scope
-            ),
-            ctx
+          return TypeCheckedExpr.SumDes(handlerExprs, arrowValue, Kind.Star, loc0, ctx.Scope), ctx
         }

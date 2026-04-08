@@ -42,14 +42,11 @@ module Extension =
 
       let! v =
         lens.Get v
-        |> sum.OfOption(
-          (fun () -> "cannot get list value") |> Errors<Unit>.Singleton()
-        )
+        |> sum.OfOption((fun () -> "cannot get list value") |> Errors<Unit>.Singleton())
         |> reader.OfSum
 
       let! v = v |> ListValues.AsList |> reader.OfSum
       let! elements = v |> List.map rootValueEncoder |> reader.All
 
-      return
-        elements |> List.toArray |> JsonValue.Array |> Json.discriminator "list"
+      return elements |> List.toArray |> JsonValue.Array |> Json.discriminator "list"
     }

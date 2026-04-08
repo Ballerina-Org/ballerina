@@ -25,8 +25,7 @@ module DBRun =
   open Ballerina
   open Ballerina.DSL.Next.StdLib.DB
 
-  let MemoryDBSchemaToDescriptors<'runtimeContext, 'db, 'ext
-    when 'ext: comparison>
+  let MemoryDBSchemaToDescriptors<'runtimeContext, 'db, 'ext when 'ext: comparison>
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
     (db: 'db)
     (schema: Schema<'ext>)
@@ -39,21 +38,13 @@ module DBRun =
           sum {
             let! from =
               schema.Entities
-              |> OrderedMap.tryFind (
-                v.From.LocalName |> SchemaEntityName.Create
-              )
-              |> sum.OfOption(
-                Errors.Singleton () (fun () ->
-                  $"Entity {v.From.LocalName} not found in schema")
-              )
+              |> OrderedMap.tryFind (v.From.LocalName |> SchemaEntityName.Create)
+              |> sum.OfOption(Errors.Singleton () (fun () -> $"Entity {v.From.LocalName} not found in schema"))
 
             let! to_ =
               schema.Entities
               |> OrderedMap.tryFind (v.To.LocalName |> SchemaEntityName.Create)
-              |> sum.OfOption(
-                Errors.Singleton () (fun () ->
-                  $"Entity {v.To.LocalName} not found in schema")
-              )
+              |> sum.OfOption(Errors.Singleton () (fun () -> $"Entity {v.To.LocalName} not found in schema"))
 
             return k.Name |> ResolvedIdentifier.Create, (v, from, to_)
           })
@@ -66,9 +57,7 @@ module DBRun =
             |> OrderedMap.toSeq
             |> Seq.map (fun (k, v) ->
               k.Name |> ResolvedIdentifier.Create,
-              (DBValues.EntityRef(schema, db, v, { Value = lazy res })
-               |> valueLens.Set,
-               None)
+              (DBValues.EntityRef(schema, db, v, { Value = lazy res }) |> valueLens.Set, None)
               |> Ext)
             |> Map.ofSeq
           )
@@ -79,14 +68,7 @@ module DBRun =
               k,
               Value.Record(
                 [ "Relation" |> ResolvedIdentifier.Create,
-                  (DBValues.RelationRef(
-                    schema,
-                    db,
-                    v,
-                    from,
-                    to_,
-                    { Value = lazy res }
-                   )
+                  (DBValues.RelationRef(schema, db, v, from, to_, { Value = lazy res })
                    |> valueLens.Set,
                    None)
                   |> Ext
@@ -121,13 +103,7 @@ module DBRun =
     when 'ext: comparison and 'extDTO: not null and 'extDTO: not struct>
     (db_ops: DBTypeClass<'runtimeContext, 'db, 'ext>)
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
-    : TypeLambdaExtension<
-        'runtimeContext,
-        'ext,
-        'extDTO,
-        DBValues<'runtimeContext, 'db, 'ext>
-       >
-    =
+    : TypeLambdaExtension<'runtimeContext, 'ext, 'extDTO, DBValues<'runtimeContext, 'db, 'ext>> =
 
     let dbIOId = Identifier.LocalScope "DBIO"
     let dbIOResolvedId = dbIOId |> TypeCheckScope.Empty.Resolve
@@ -171,12 +147,9 @@ module DBRun =
         )
       )
 
-    let memoryDBRunKind =
-      Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Star))
+    let memoryDBRunKind = Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Star))
 
-    let typeApply
-      (typeValue: TypeValue<'ext>)
-      : ExprEvaluator<'runtimeContext, 'ext, Value<TypeValue<'ext>, 'ext>> =
+    let typeApply (typeValue: TypeValue<'ext>) : ExprEvaluator<'runtimeContext, 'ext, Value<TypeValue<'ext>, 'ext>> =
       reader {
         let! schema =
           typeValue
@@ -184,28 +157,18 @@ module DBRun =
           |> Sum.mapRight (Errors.MapContext(replaceWith Location.Unknown))
           |> reader.OfSum
 
-        return
-          (DBValues.TypeAppliedRun(schema, db_ops.DB) |> valueLens.Set, None)
-          |> Ext
+        return (DBValues.TypeAppliedRun(schema, db_ops.DB) |> valueLens.Set, None) |> Ext
       }
 
     let evalToTypeApplicable
       (loc0: Location)
       (_rest: List<TypeCheckedExpr<'ext>>)
       (v: 'ext)
-      : ExprEvaluator<
-          'runtimeContext,
-          'ext,
-          ExtEvalResult<'runtimeContext, 'ext>
-         >
-      =
+      : ExprEvaluator<'runtimeContext, 'ext, ExtEvalResult<'runtimeContext, 'ext>> =
       reader {
         let! v =
           valueLens.Get v
-          |> sum.OfOption(
-            (fun () -> $"Error: cannot get value from extension")
-            |> Errors.Singleton loc0
-          )
+          |> sum.OfOption((fun () -> $"Error: cannot get value from extension") |> Errors.Singleton loc0)
           |> reader.OfSum
 
         do!
@@ -235,10 +198,7 @@ module DBRun =
         let! ctx = reader.GetContext()
 
         let! (schema_value: Value<TypeValue<'ext>, 'ext>) =
-          MemoryDBSchemaToDescriptors<'runtimeContext, 'db, 'ext>
-            valueLens
-            db
-            schema
+          MemoryDBSchemaToDescriptors<'runtimeContext, 'db, 'ext> valueLens db schema
           |> sum.MapError(Errors.MapContext(replaceWith _loc0))
           |> reader.OfSum
 
@@ -256,19 +216,11 @@ module DBRun =
       (loc0: Location)
       (_rest: List<TypeCheckedExpr<'ext>>)
       (v: 'ext)
-      : ExprEvaluator<
-          'runtimeContext,
-          'ext,
-          ExtEvalResult<'runtimeContext, 'ext>
-         >
-      =
+      : ExprEvaluator<'runtimeContext, 'ext, ExtEvalResult<'runtimeContext, 'ext>> =
       reader {
         let! v =
           valueLens.Get v
-          |> sum.OfOption(
-            (fun () -> $"Error: cannot get value from extension")
-            |> Errors.Singleton loc0
-          )
+          |> sum.OfOption((fun () -> $"Error: cannot get value from extension") |> Errors.Singleton loc0)
           |> reader.OfSum
 
         let! schema, db =

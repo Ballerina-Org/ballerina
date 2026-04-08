@@ -27,11 +27,7 @@ type MemoryDBBackgroundJobExecutor
         -> string
         -> bool
         -> Sum<
-          DbDescriptor<
-            FileDBRuntimeContext,
-            MutableMemoryDB.MutableMemoryDB<FileDBRuntimeContext, _>,
-            unit
-           >,
+          DbDescriptor<FileDBRuntimeContext, MutableMemoryDB.MutableMemoryDB<FileDBRuntimeContext, _>, unit>,
           Errors<Location>
          >,
     injectBackgroundContext: Updater<ExprEvalContext<FileDBRuntimeContext, _>>,
@@ -64,11 +60,7 @@ type MemoryDBBackgroundJobExecutor
             try
               for schema in schemas do
                 sum {
-                  let! descriptor =
-                    descriptorFetcher
-                      schema.TenantId
-                      schema.SchemaName
-                      schema.IsDraft
+                  let! descriptor = descriptorFetcher schema.TenantId schema.SchemaName schema.IsDraft
 
                   descriptor.DbExtension.DB
                   |> updateFromFileSystem dbFileConfig
@@ -85,21 +77,14 @@ type MemoryDBBackgroundJobExecutor
                        |> Option.defaultValue false)
                   |> Seq.iter (fun (KeyValue(entity, job)) ->
                     option {
-                      let! entityDef =
-                        dbio.Schema.Entities
-                        |> OrderedMap.tryFind entity.EntityName
-
+                      let! entityDef = dbio.Schema.Entities |> OrderedMap.tryFind entity.EntityName
                       let! backgroundJob = entityDef.Hooks.OnBackground
-
-                      let! values =
-                        dbio.DB.entities |> Map.tryFind entity.EntityName
-
+                      let! values = dbio.DB.entities |> Map.tryFind entity.EntityName
                       let! value = values |> Map.tryFind entity.EntityId
 
                       Console.WriteLine $"Executing job for {entity}"
 
-                      updateBackgroundJobs
-                      <| Map.add entity { job with HasStarted = true }
+                      updateBackgroundJobs <| Map.add entity { job with HasStarted = true }
                       |> Reader.Run descriptor.EvalContext
 
                       let result =
@@ -118,26 +103,20 @@ type MemoryDBBackgroundJobExecutor
 
                         match delayBeforeNextExecution with
                         | Some delayBeforeNextExecution ->
-                          let nextExecution =
-                            (timeProvider ()).Add delayBeforeNextExecution
+                          let nextExecution = (timeProvider ()).Add delayBeforeNextExecution
 
                           updateBackgroundJobs
-                          <| Map.add
-                            entity
-                            (MemoryDBBackgroundJob.ScheduleAt nextExecution)
+                          <| Map.add entity (MemoryDBBackgroundJob.ScheduleAt nextExecution)
                           |> Reader.Run descriptor.EvalContext
 
-                          Console.WriteLine
-                            $"Next execution scheduled at {nextExecution}"
+                          Console.WriteLine $"Next execution scheduled at {nextExecution}"
                         | None ->
-                          updateBackgroundJobs
-                          <| Map.add entity MemoryDBBackgroundJob.Finished
+                          updateBackgroundJobs <| Map.add entity MemoryDBBackgroundJob.Finished
                           |> Reader.Run descriptor.EvalContext
 
                           Console.WriteLine "Job is finished"
                       | Right errors ->
-                        updateBackgroundJobs
-                        <| Map.add entity MemoryDBBackgroundJob.Finished
+                        updateBackgroundJobs <| Map.add entity MemoryDBBackgroundJob.Finished
                         |> Reader.Run descriptor.EvalContext
 
                         Console.WriteLine $"Failed {errors}"

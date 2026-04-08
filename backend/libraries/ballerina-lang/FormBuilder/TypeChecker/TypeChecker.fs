@@ -19,14 +19,7 @@ module TypeChecker =
   open Ballerina.DSL.Next.StdLib.List.Model
 
   let makeListType
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (typeArgument: TypeValue<'valueExt>)
     =
     { ImportedTypeValue.Id = stdExtensions.List.TypeName |> fst
@@ -39,14 +32,7 @@ module TypeChecker =
     }
 
   let makeMapType
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (keyType: TypeValue<'valueExt>)
     (valueType: TypeValue<'valueExt>)
     =
@@ -59,23 +45,13 @@ module TypeChecker =
 
     }
 
-  let assertType
-    (typeAssert: TypeValue<'valueExt> -> Sum<'t, Errors<Unit>>)
-    (typeValue: TypeValue<'valueExt>)
-    =
+  let assertType (typeAssert: TypeValue<'valueExt> -> Sum<'t, Errors<Unit>>) (typeValue: TypeValue<'valueExt>) =
     typeAssert typeValue
     |> state.OfSum
     |> State.mapError (Errors.MapContext(replaceWith Location.Unknown))
 
   let assertList
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     =
     state {
@@ -94,21 +70,13 @@ module TypeChecker =
       else
         return!
           state.Throw(
-            Errors.Singleton Location.Unknown (fun () ->
-              $"Expected list but {importedType.Id} was given.")
+            Errors.Singleton Location.Unknown (fun () -> $"Expected list but {importedType.Id} was given.")
             |> Errors.MapPriority(replaceWith ErrorPriority.High)
           )
     }
 
   let assertMap
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     =
     state {
@@ -126,8 +94,7 @@ module TypeChecker =
       else
         return!
           state.Throw(
-            Errors.Singleton Location.Unknown (fun () ->
-              $"Expected map but {importedType.Id} was given.")
+            Errors.Singleton Location.Unknown (fun () -> $"Expected map but {importedType.Id} was given.")
             |> Errors.MapPriority(replaceWith ErrorPriority.High)
           )
     }
@@ -162,20 +129,8 @@ module TypeChecker =
         |> Errors.MapPriority(replaceWith ErrorPriority.High))
 
   let runUnification
-    (unificationState:
-      State<
-        Unit,
-        UnificationContext<'valueExt>,
-        UnificationState<'valueExt>,
-        Errors<Location>
-       >)
-    : State<
-        Unit,
-        FormTypeCheckingContext<'valueExt>,
-        FormTypeCheckerState<'valueExt>,
-        Errors<Location>
-       >
-    =
+    (unificationState: State<Unit, UnificationContext<'valueExt>, UnificationState<'valueExt>, Errors<Location>>)
+    : State<Unit, FormTypeCheckingContext<'valueExt>, FormTypeCheckerState<'valueExt>, Errors<Location>> =
     unificationState
     |> Expr<'T, 'Id, 'valueExt>.liftUnification
     |> State.mapState
@@ -183,15 +138,12 @@ module TypeChecker =
       (fun (unificationState, _) typeCheckState ->
         { typeCheckState with
             BallerinaTypeCheckState = unificationState })
-    |> State.mapContext (fun typeCheckContext ->
-      typeCheckContext.TypeCheckContext)
+    |> State.mapContext (fun typeCheckContext -> typeCheckContext.TypeCheckContext)
 
   type FormTypeCheckingError =
     { FormTypeCheckErrors: List<string> }
 
-    static member Concat
-      (err1: FormTypeCheckingError, err2: FormTypeCheckingError)
-      =
+    static member Concat(err1: FormTypeCheckingError, err2: FormTypeCheckingError) =
       { FormTypeCheckErrors =
           List.concat (
             seq {
@@ -200,88 +152,37 @@ module TypeChecker =
             }
           ) }
 
-  let unifyPrimitive
-    (targetType: TypeValue<'valueExt>)
-    (rendererType: TypeValue<'valueExt>)
-    =
+  let unifyPrimitive (targetType: TypeValue<'valueExt>) (rendererType: TypeValue<'valueExt>) =
     state {
-      do!
-        TypeValue.Unify(Location.Unknown, targetType, rendererType)
-        |> runUnification
-
+      do! TypeValue.Unify(Location.Unknown, targetType, rendererType) |> runUnification
       return targetType
     }
 
-  let checkPrimitive
-    (targetType: TypeValue<'valueExt>)
-    (primitive: PrimitiveRendererKind)
-    =
+  let checkPrimitive (targetType: TypeValue<'valueExt>) (primitive: PrimitiveRendererKind) =
     state {
       match primitive with
       | PrimitiveRendererKind.String
       | PrimitiveRendererKind.StringId
       | PrimitiveRendererKind.Base64
       | PrimitiveRendererKind.Secret ->
-        return!
-          unifyPrimitive
-            targetType
-            (TypeValue.CreatePrimitive PrimitiveType.String)
-      | PrimitiveRendererKind.Int32 ->
-        return!
-          unifyPrimitive
-            targetType
-            (TypeValue.CreatePrimitive PrimitiveType.Int32)
-      | PrimitiveRendererKind.Int64 ->
-        return!
-          unifyPrimitive
-            targetType
-            (TypeValue.CreatePrimitive PrimitiveType.Int64)
+        return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.String)
+      | PrimitiveRendererKind.Int32 -> return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.Int32)
+      | PrimitiveRendererKind.Int64 -> return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.Int64)
       | PrimitiveRendererKind.Float32 ->
-        return!
-          unifyPrimitive
-            targetType
-            (TypeValue.CreatePrimitive PrimitiveType.Float32)
+        return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.Float32)
       | PrimitiveRendererKind.Float ->
-        return!
-          unifyPrimitive
-            targetType
-            (TypeValue.CreatePrimitive PrimitiveType.Float64)
+        return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.Float64)
       | PrimitiveRendererKind.Date ->
-        return!
-          unifyPrimitive
-            targetType
-            (TypeValue.CreatePrimitive PrimitiveType.DateTime)
+        return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.DateTime)
       | PrimitiveRendererKind.DateOnly ->
-        return!
-          unifyPrimitive
-            targetType
-            (TypeValue.CreatePrimitive PrimitiveType.DateOnly)
-      | PrimitiveRendererKind.Bool ->
-        return!
-          unifyPrimitive
-            targetType
-            (TypeValue.CreatePrimitive PrimitiveType.Bool)
-      | PrimitiveRendererKind.Guid ->
-        return!
-          unifyPrimitive
-            targetType
-            (TypeValue.CreatePrimitive PrimitiveType.Guid)
-      | PrimitiveRendererKind.Unit ->
-        return!
-          unifyPrimitive
-            targetType
-            (TypeValue.CreatePrimitive PrimitiveType.Unit)
+        return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.DateOnly)
+      | PrimitiveRendererKind.Bool -> return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.Bool)
+      | PrimitiveRendererKind.Guid -> return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.Guid)
+      | PrimitiveRendererKind.Unit -> return! unifyPrimitive targetType (TypeValue.CreatePrimitive PrimitiveType.Unit)
     }
 
   let rec checkTuple
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (tupleRenderer: TupleRenderer<Unchecked>)
     =
@@ -300,14 +201,11 @@ module TypeChecker =
         let! itemRenderers =
           state.All(
             List.zip tupleTargetItemTypes tupleRenderer.Items
-            |> List.map (fun (targetItemType, renderer) ->
-              checkRenderer stdExtensions targetItemType renderer)
+            |> List.map (fun (targetItemType, renderer) -> checkRenderer stdExtensions targetItemType renderer)
           )
 
         let rendererTupleType =
-          TypeValue.CreateTuple(
-            itemRenderers |> List.map (fun renderer -> renderer.Type)
-          )
+          TypeValue.CreateTuple(itemRenderers |> List.map (fun renderer -> renderer.Type))
 
         do!
           TypeValue.Unify(Location.Unknown, targetType, rendererTupleType)
@@ -321,20 +219,12 @@ module TypeChecker =
 
   and unionCaseMismatchError (expectedCases: int) (givenCases: int) =
     state.Throw(
-      Errors.Singleton Location.Unknown (fun () ->
-        $"Expected {expectedCases} cases but {givenCases} given.")
+      Errors.Singleton Location.Unknown (fun () -> $"Expected {expectedCases} cases but {givenCases} given.")
       |> Errors.MapPriority(replaceWith ErrorPriority.High)
     )
 
   and checkSum
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (sumRenderer: SumRenderer<Unchecked>)
     =
@@ -343,18 +233,14 @@ module TypeChecker =
 
       match sumTargetType with
       | firstCaseType :: [ secondCaseType ] ->
-        let! leftRendererTypedExpr =
-          checkRenderer stdExtensions firstCaseType sumRenderer.Left
-
-        let! rightRendererTypedExpr =
-          checkRenderer stdExtensions secondCaseType sumRenderer.Right
+        let! leftRendererTypedExpr = checkRenderer stdExtensions firstCaseType sumRenderer.Left
+        let! rightRendererTypedExpr = checkRenderer stdExtensions secondCaseType sumRenderer.Right
 
         do!
           TypeValue.Unify(
             Location.Unknown,
             targetType,
-            TypeValue.CreateSum
-              [ leftRendererTypedExpr.Type; rightRendererTypedExpr.Type ]
+            TypeValue.CreateSum [ leftRendererTypedExpr.Type; rightRendererTypedExpr.Type ]
           )
           |> runUnification
 
@@ -367,14 +253,7 @@ module TypeChecker =
     }
 
   and checkUnion
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (unionRenderer: UnionRenderer<Unchecked>)
     =
@@ -388,21 +267,16 @@ module TypeChecker =
           state {
             match
               targetCases.data
-              |> Map.tryFindKey (fun targetCase _ ->
-                targetCase.Name = LocalScope case)
+              |> Map.tryFindKey (fun targetCase _ -> targetCase.Name = LocalScope case)
             with
             | Some targetCase ->
               let targetCaseType = targetCases.data.[targetCase]
-
-              let! rendererType =
-                checkRenderer stdExtensions targetCaseType renderer
-
+              let! rendererType = checkRenderer stdExtensions targetCaseType renderer
               return targetCase, rendererType, CaseIdentifier case
             | None ->
               return!
                 state.Throw(
-                  Errors.Singleton Location.Unknown (fun () ->
-                    $"Cannot find union case {case}.")
+                  Errors.Singleton Location.Unknown (fun () -> $"Cannot find union case {case}.")
                   |> Errors.MapPriority(replaceWith ErrorPriority.High)
                 )
           })
@@ -421,10 +295,7 @@ module TypeChecker =
 
       return
         { Union = unionRenderer.Union
-          Cases =
-            casesTypedExprs
-            |> List.map (fun (_, expr, case) -> case, expr)
-            |> Map.ofList
+          Cases = casesTypedExprs |> List.map (fun (_, expr, case) -> case, expr) |> Map.ofList
           Type = targetType }
     }
 
@@ -472,16 +343,12 @@ module TypeChecker =
   and checkApi (apiName: string) (keyType: TypeValue<'valueExt>) =
     state {
       let! context = state.GetContext()
-
-      let! api, linkedEntityType =
-        FormTypeCheckingContext.FindTargetEntityKeyType keyType context
-        |> state.OfSum
+      let! api, linkedEntityType = FormTypeCheckingContext.FindTargetEntityKeyType keyType context |> state.OfSum
 
       if api <> apiName then
         return!
           state.Throw(
-            Errors.Singleton Location.Unknown (fun () ->
-              $"Undefined api {apiName}.")
+            Errors.Singleton Location.Unknown (fun () -> $"Undefined api {apiName}.")
             |> Errors.MapPriority(replaceWith ErrorPriority.High)
           )
 
@@ -489,14 +356,7 @@ module TypeChecker =
     }
 
   and checkOne
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (oneRenderer: OneRenderer<Unchecked>)
     : State<
@@ -514,14 +374,10 @@ module TypeChecker =
         state {
           match oneRenderer.Preview with
           | None -> return None
-          | Some expr ->
-            return!
-              checkRenderer stdExtensions linkedEntityType expr
-              |> state.Map Some
+          | Some expr -> return! checkRenderer stdExtensions linkedEntityType expr |> state.Map Some
         }
 
-      let! typedDetailsExpression =
-        checkRenderer stdExtensions linkedEntityType oneRenderer.Details
+      let! typedDetailsExpression = checkRenderer stdExtensions linkedEntityType oneRenderer.Details
 
       return
         { Api = oneRenderer.Api
@@ -532,14 +388,7 @@ module TypeChecker =
     }
 
   and checkMany
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (manyRenderer: ManyRenderer<Unchecked>)
     =
@@ -552,17 +401,13 @@ module TypeChecker =
         state {
           match manyRenderer.Body with
           | LinkedUnlinked linkedUnlinked ->
-            let! linkedTypedExpr =
-              checkRenderer stdExtensions linkedEntityType linkedUnlinked.Linked
+            let! linkedTypedExpr = checkRenderer stdExtensions linkedEntityType linkedUnlinked.Linked
 
             let! unlinkedTypedExpr =
               state {
                 match linkedUnlinked.Unlinked with
                 | None -> return None
-                | Some unlinked ->
-                  return!
-                    checkRenderer stdExtensions linkedEntityType unlinked
-                    |> state.Map Some
+                | Some unlinked -> return! checkRenderer stdExtensions linkedEntityType unlinked |> state.Map Some
               }
 
             return
@@ -570,9 +415,7 @@ module TypeChecker =
                 { Linked = linkedTypedExpr
                   Unlinked = unlinkedTypedExpr }
           | Element renderer ->
-            let! typedRendererExpr =
-              checkRenderer stdExtensions linkedEntityType renderer
-
+            let! typedRendererExpr = checkRenderer stdExtensions linkedEntityType renderer
             return Element typedRendererExpr
         }
 
@@ -590,22 +433,13 @@ module TypeChecker =
     the type of the renderer expression and unify it with the target type.
   *)
   and checkList
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (listRenderer: ListRenderer<Unchecked>)
     =
     state {
       let! listArgType = assertList stdExtensions targetType
-
-      let! rendererElementTypedExpr =
-        checkRenderer stdExtensions listArgType listRenderer.Element
+      let! rendererElementTypedExpr = checkRenderer stdExtensions listArgType listRenderer.Element
 
       do!
         TypeValue.Unify(
@@ -624,14 +458,7 @@ module TypeChecker =
     }
 
   and checkMap
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (mapRenderer: MapRenderer<Unchecked>)
     =
@@ -657,20 +484,12 @@ module TypeChecker =
     }
 
   and checkReadonly
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (readonlyRenderer: ReadonlyRenderer<Unchecked>)
     =
     state {
-      let! rendererTypedExpr =
-        checkRenderer stdExtensions targetType readonlyRenderer.Value
+      let! rendererTypedExpr = checkRenderer stdExtensions targetType readonlyRenderer.Value
 
       return
         { Readonly = readonlyRenderer.Readonly
@@ -681,13 +500,7 @@ module TypeChecker =
 
   and checkFormByReference
     (formIdentifier: FormIdentifier)
-    : State<
-        TypeValue<'valueExt>,
-        FormTypeCheckingContext<'valueExt>,
-        FormTypeCheckerState<'valueExt>,
-        Errors<Location>
-       >
-    =
+    : State<TypeValue<'valueExt>, FormTypeCheckingContext<'valueExt>, FormTypeCheckerState<'valueExt>, Errors<Location>> =
     state {
       match!
         state.GetState()
@@ -699,8 +512,7 @@ module TypeChecker =
 
         return!
           state.Throw(
-            Errors.Singleton Location.Unknown (fun () ->
-              $"Undefined form {formName}")
+            Errors.Singleton Location.Unknown (fun () -> $"Undefined form {formName}")
             |> Errors.MapPriority(replaceWith ErrorPriority.High)
           )
     }
@@ -724,8 +536,7 @@ module TypeChecker =
       | None ->
         return!
           state.Throw(
-            Errors.Singleton Location.Unknown (fun () ->
-              $"The field {fieldName} cannot be found in type {formName}")
+            Errors.Singleton Location.Unknown (fun () -> $"The field {fieldName} cannot be found in type {formName}")
             |> Errors.MapPriority(replaceWith ErrorPriority.High)
           )
       | Some fieldSymbol ->
@@ -734,14 +545,7 @@ module TypeChecker =
     }
 
   and checkField
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (formIdentifier: FormIdentifier)
     (fieldTypes: OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>)
     (field: Field<Unchecked>)
@@ -754,16 +558,10 @@ module TypeChecker =
     =
     state {
       let! fieldType = findFieldType formIdentifier fieldTypes field.Name
-
-      let! fieldRendererTypedExpr =
-        checkRenderer stdExtensions fieldType field.Renderer
+      let! fieldRendererTypedExpr = checkRenderer stdExtensions fieldType field.Renderer
 
       do!
-        TypeValue.Unify(
-          Location.Unknown,
-          fieldType,
-          fieldRendererTypedExpr.Type
-        )
+        TypeValue.Unify(Location.Unknown, fieldType, fieldRendererTypedExpr.Type)
         |> runUnification
 
       return
@@ -775,11 +573,7 @@ module TypeChecker =
           Type = fieldType }
     }
 
-  and checkTab
-    (formId: FormIdentifier)
-    (fieldTypes: OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>)
-    (tab: Tab)
-    =
+  and checkTab (formId: FormIdentifier) (fieldTypes: OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>) (tab: Tab) =
     let checkAllTabFields =
       [ for _, column in tab.Columns |> Map.toList do
           for _, group in column.Groups |> Map.toList do
@@ -794,14 +588,7 @@ module TypeChecker =
     checkAllTabFields |> state.All |> state.Ignore
 
   and checkMembers
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (formIdentifier: FormIdentifier)
     (fieldTypes: OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>)
     (members: Members<Unchecked>)
@@ -809,8 +596,7 @@ module TypeChecker =
     state {
       let! fieldWithTypes =
         members.Fields
-        |> Map.map (fun _ field ->
-          checkField stdExtensions formIdentifier fieldTypes field)
+        |> Map.map (fun _ field -> checkField stdExtensions formIdentifier fieldTypes field)
         |> Map.values
         |> state.All
 
@@ -822,10 +608,7 @@ module TypeChecker =
         |> state.Ignore
 
       return
-        { Fields =
-            fieldWithTypes
-            |> List.map (fun field -> field.Name, field)
-            |> Map.ofList
+        { Fields = fieldWithTypes |> List.map (fun field -> field.Name, field) |> Map.ofList
           Tabs = members.Tabs }
     }
 
@@ -852,22 +635,13 @@ module TypeChecker =
     |> state.Ignore
 
   and checkFormBody
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (formId: FormIdentifier)
     (fieldTypes: OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>)
     (formBody: FormBody<Unchecked>)
     =
     state {
-      let! checkedMembers =
-        checkMembers stdExtensions formId fieldTypes formBody.Members
-
+      let! checkedMembers = checkMembers stdExtensions formId fieldTypes formBody.Members
       do! checkDisabledFields formId fieldTypes formBody.DisabledFields
       do! checkHighlights formId fieldTypes formBody.Highlights
 
@@ -876,18 +650,10 @@ module TypeChecker =
           match formBody.Details with
           | None -> return None
           | Some details ->
-            let! detailsExpr =
-              checkRenderer
-                stdExtensions
-                (TypeValue.CreateRecord fieldTypes)
-                details
+            let! detailsExpr = checkRenderer stdExtensions (TypeValue.CreateRecord fieldTypes) details
 
             do!
-              TypeValue.Unify(
-                Location.Unknown,
-                TypeValue.CreateRecord fieldTypes,
-                detailsExpr.Type
-              )
+              TypeValue.Unify(Location.Unknown, TypeValue.CreateRecord fieldTypes, detailsExpr.Type)
               |> runUnification
 
             return Some detailsExpr
@@ -902,39 +668,20 @@ module TypeChecker =
 
   and expectedFieldRecordTypeError (fieldId: string) =
     state.Throw(
-      Errors.Singleton Location.Unknown (fun () ->
-        $"Expected record type for field {fieldId}")
+      Errors.Singleton Location.Unknown (fun () -> $"Expected record type for field {fieldId}")
       |> Errors.MapPriority(replaceWith ErrorPriority.High)
     )
 
   and checkRecord
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (recordRenderer: RecordRenderer<Unchecked>)
     =
     state {
       let! recordTargetType = assertType TypeValue.AsRecord targetType
       let anonymousFormId = FormIdentifier "anonymous record"
-
-      do!
-        checkDisabledFields
-          anonymousFormId
-          recordTargetType
-          recordRenderer.DisabledFields
-
-      let! checkedMembers =
-        checkMembers
-          stdExtensions
-          anonymousFormId
-          recordTargetType
-          recordRenderer.Members
+      do! checkDisabledFields anonymousFormId recordTargetType recordRenderer.DisabledFields
+      let! checkedMembers = checkMembers stdExtensions anonymousFormId recordTargetType recordRenderer.Members
 
       return
         { DisabledFields = recordRenderer.DisabledFields
@@ -944,27 +691,14 @@ module TypeChecker =
     }
 
   and checkInlineForm
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (inlineFormRenderer: InlineFormRenderer<Unchecked>)
     =
     state {
       let! recordTargetType = assertType TypeValue.AsRecord targetType
       let formIdentifier = FormIdentifier "anonymous form"
-
-      let! typedFormBody =
-        checkFormBody
-          stdExtensions
-          formIdentifier
-          recordTargetType
-          inlineFormRenderer.Body
+      let! typedFormBody = checkFormBody stdExtensions formIdentifier recordTargetType inlineFormRenderer.Body
 
       return
         { Body = typedFormBody
@@ -974,14 +708,7 @@ module TypeChecker =
 
 
   and checkRenderer
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (targetType: TypeValue<'valueExt>)
     (renderer: RendererExpression<Unchecked>)
     : State<
@@ -1004,25 +731,14 @@ module TypeChecker =
                   Renderer = primitive.Renderer
                   Type = primitiveType }
           }
-      | Map map ->
-        return! checkMap stdExtensions targetType map |> state.Map Map
+      | Map map -> return! checkMap stdExtensions targetType map |> state.Map Map
       | RendererExpression.Tuple tuple ->
-        return!
-          checkTuple stdExtensions targetType tuple
-          |> state.Map RendererExpression.Tuple
+        return! checkTuple stdExtensions targetType tuple |> state.Map RendererExpression.Tuple
       | RendererExpression.List list ->
-        return!
-          checkList stdExtensions targetType list
-          |> state.Map RendererExpression.List
-      | Readonly readonly ->
-        return!
-          checkReadonly stdExtensions targetType readonly |> state.Map Readonly
-      | RendererExpression.Sum sum ->
-        return!
-          checkSum stdExtensions targetType sum
-          |> state.Map RendererExpression.Sum
-      | Union union ->
-        return! checkUnion stdExtensions targetType union |> state.Map Union
+        return! checkList stdExtensions targetType list |> state.Map RendererExpression.List
+      | Readonly readonly -> return! checkReadonly stdExtensions targetType readonly |> state.Map Readonly
+      | RendererExpression.Sum sum -> return! checkSum stdExtensions targetType sum |> state.Map RendererExpression.Sum
+      | Union union -> return! checkUnion stdExtensions targetType union |> state.Map Union
       | RendererExpression.Record record ->
         return!
           checkRecord stdExtensions targetType record
@@ -1035,33 +751,17 @@ module TypeChecker =
         | None ->
           return!
             state.Throw(
-              Errors.Singleton Location.Unknown (fun () ->
-                $"Undefined form {formName}")
+              Errors.Singleton Location.Unknown (fun () -> $"Undefined form {formName}")
               |> Errors.MapPriority(replaceWith ErrorPriority.High)
             )
         | Some formType -> return Form(formId, formType)
-      | InlineForm inlineform ->
-        return!
-          checkInlineForm stdExtensions targetType inlineform
-          |> state.Map InlineForm
-      | _ ->
-        return!
-          state.Throw(
-            Errors.Singleton Location.Unknown (fun () ->
-              $"Unsupported renderer {renderer}.")
-          )
+      | InlineForm inlineform -> return! checkInlineForm stdExtensions targetType inlineform |> state.Map InlineForm
+      | _ -> return! state.Throw(Errors.Singleton Location.Unknown (fun () -> $"Unsupported renderer {renderer}."))
     }
 
   let checkForm
     (form: Form<Unchecked>)
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     : State<
         Form<TypeValue<'valueExt>>,
         FormTypeCheckingContext<'valueExt>,
@@ -1079,15 +779,12 @@ module TypeChecker =
       | None ->
         return!
           state.Throw(
-            Errors.Singleton Location.Unknown (fun () ->
-              $"Type {formTypeId} is undefined.")
+            Errors.Singleton Location.Unknown (fun () -> $"Type {formTypeId} is undefined.")
             |> Errors.MapPriority(replaceWith ErrorPriority.High)
           )
       | Some formType ->
         let! recordType = assertType TypeValue.AsRecord formType
-
-        let! typeCheckedBody =
-          checkFormBody stdExtensions form.Form recordType form.Body
+        let! typeCheckedBody = checkFormBody stdExtensions form.Form recordType form.Body
 
         let typeCheckedForm =
           { Body = typeCheckedBody
@@ -1100,25 +797,14 @@ module TypeChecker =
         do!
           state.SetState(fun state ->
             { state with
-                FormTypes =
-                  state.FormTypes.Add(
-                    typeCheckedForm.Form,
-                    typeCheckedForm.Type
-                  ) })
+                FormTypes = state.FormTypes.Add(typeCheckedForm.Form, typeCheckedForm.Type) })
 
         return typeCheckedForm
     }
 
   let checkFormDefinitions
     (formDefinition: FormDefinitions<Unchecked>)
-    (stdExtensions:
-      StdExtensions<
-        'runtimeContext,
-        'valueExt,
-        'valueExtDTO,
-        'deltaExt,
-        'deltaExtDTO
-       >)
+    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     =
     state {
       let! checkedForms =

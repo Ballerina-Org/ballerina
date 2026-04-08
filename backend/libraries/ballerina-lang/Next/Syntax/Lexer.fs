@@ -246,19 +246,10 @@ module Lexer =
   let tokenizer =
     ParserBuilder<Symbol, Location, Errors<Location>>(
       {| Step = Location.Step |},
-      {| UnexpectedEndOfFile =
-          fun loc ->
-            (fun () -> $"Unexpected end of file at {loc}")
-            |> Errors.Singleton loc
-         AnyFailed =
-          fun loc -> (fun () -> "No matching token") |> Errors.Singleton loc
-         NotFailed =
-          fun loc ->
-            (fun () -> $"Expected token not found at {loc}")
-            |> Errors.Singleton loc
-         UnexpectedSymbol =
-          fun loc c ->
-            (fun () -> $"Unexpected symbol: {c}") |> Errors.Singleton loc
+      {| UnexpectedEndOfFile = fun loc -> (fun () -> $"Unexpected end of file at {loc}") |> Errors.Singleton loc
+         AnyFailed = fun loc -> (fun () -> "No matching token") |> Errors.Singleton loc
+         NotFailed = fun loc -> (fun () -> $"Expected token not found at {loc}") |> Errors.Singleton loc
+         UnexpectedSymbol = fun loc c -> (fun () -> $"Unexpected symbol: {c}") |> Errors.Singleton loc
          FilterHighestPriorityOnly = Errors<Location>.FilterHighestPriorityOnly
          Concat = Errors.Concat<Location> |}
     )
@@ -279,9 +270,7 @@ module Lexer =
 
   let word (s: string) =
     tokenizer {
-      do!
-        tokenizer.All(s |> Seq.toList |> List.map tokenizer.Exactly)
-        |> tokenizer.Ignore
+      do! tokenizer.All(s |> Seq.toList |> List.map tokenizer.Exactly) |> tokenizer.Ignore
 
       return! tokenizer.Location
     }
@@ -318,8 +307,7 @@ module Lexer =
       Keyword.Union.ToString(), LocalizedToken.FromKeyword Keyword.Union
       Keyword.Array.ToString(), LocalizedToken.FromKeyword Keyword.Array
       Keyword.Ascending.ToString(), LocalizedToken.FromKeyword Keyword.Ascending
-      Keyword.Descending.ToString(),
-      LocalizedToken.FromKeyword Keyword.Descending
+      Keyword.Descending.ToString(), LocalizedToken.FromKeyword Keyword.Descending
       "true", LocalizedToken.FromBoolLiteral true
       "false", LocalizedToken.FromBoolLiteral false ]
     |> List.sortByDescending (fun (w, _) -> w.Length)
@@ -342,71 +330,46 @@ module Lexer =
 
   let operator =
     tokenizer.Any
-      [ word "->"
-        |> tokenizer.Map(LocalizedToken.FromOperator Operator.SingleArrow)
-        word "=>"
-        |> tokenizer.Map(LocalizedToken.FromOperator Operator.DoubleArrow)
-        word ".."
-        |> tokenizer.Map(LocalizedToken.FromOperator Operator.DoubleDot)
+      [ word "->" |> tokenizer.Map(LocalizedToken.FromOperator Operator.SingleArrow)
+        word "=>" |> tokenizer.Map(LocalizedToken.FromOperator Operator.DoubleArrow)
+        word ".." |> tokenizer.Map(LocalizedToken.FromOperator Operator.DoubleDot)
         word "." |> tokenizer.Map(LocalizedToken.FromOperator Operator.Dot)
         word "," |> tokenizer.Map(LocalizedToken.FromOperator Operator.Comma)
         word "@" |> tokenizer.Map(LocalizedToken.FromOperator Operator.At)
         word "==" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Equal)
         word "=" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Equals)
-        word "!="
-        |> tokenizer.Map(LocalizedToken.FromOperator Operator.NotEqual)
-        word "|>"
-        |> tokenizer.Map(LocalizedToken.FromOperator Operator.PipeGreaterThan)
+        word "!=" |> tokenizer.Map(LocalizedToken.FromOperator Operator.NotEqual)
+        word "|>" |> tokenizer.Map(LocalizedToken.FromOperator Operator.PipeGreaterThan)
         word ">>"
         |> tokenizer.Map(LocalizedToken.FromOperator Operator.DoubleGreaterThan)
-        word ">="
-        |> tokenizer.Map(LocalizedToken.FromOperator Operator.GreaterEqual)
-        word "<="
-        |> tokenizer.Map(LocalizedToken.FromOperator Operator.LessThanOrEqual)
-        word ">"
-        |> tokenizer.Map(LocalizedToken.FromOperator Operator.GreaterThan)
+        word ">=" |> tokenizer.Map(LocalizedToken.FromOperator Operator.GreaterEqual)
+        word "<=" |> tokenizer.Map(LocalizedToken.FromOperator Operator.LessThanOrEqual)
+        word ">" |> tokenizer.Map(LocalizedToken.FromOperator Operator.GreaterThan)
         word "<" |> tokenizer.Map(LocalizedToken.FromOperator Operator.LessThan)
         word "-" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Minus)
         word "("
-        |> tokenizer.Map(
-          LocalizedToken.FromOperator(Operator.RoundBracket Open)
-        )
+        |> tokenizer.Map(LocalizedToken.FromOperator(Operator.RoundBracket Open))
         word ")"
-        |> tokenizer.Map(
-          LocalizedToken.FromOperator(Operator.RoundBracket Close)
-        )
+        |> tokenizer.Map(LocalizedToken.FromOperator(Operator.RoundBracket Close))
         word "{"
-        |> tokenizer.Map(
-          LocalizedToken.FromOperator(Operator.CurlyBracket Open)
-        )
+        |> tokenizer.Map(LocalizedToken.FromOperator(Operator.CurlyBracket Open))
         word "}"
-        |> tokenizer.Map(
-          LocalizedToken.FromOperator(Operator.CurlyBracket Close)
-        )
+        |> tokenizer.Map(LocalizedToken.FromOperator(Operator.CurlyBracket Close))
         word "["
-        |> tokenizer.Map(
-          LocalizedToken.FromOperator(Operator.SquareBracket Open)
-        )
+        |> tokenizer.Map(LocalizedToken.FromOperator(Operator.SquareBracket Open))
         word "]"
-        |> tokenizer.Map(
-          LocalizedToken.FromOperator(Operator.SquareBracket Close)
-        )
-        word "::"
-        |> tokenizer.Map(LocalizedToken.FromOperator Operator.DoubleColon)
+        |> tokenizer.Map(LocalizedToken.FromOperator(Operator.SquareBracket Close))
+        word "::" |> tokenizer.Map(LocalizedToken.FromOperator Operator.DoubleColon)
         word ":" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Colon)
-        word ";"
-        |> tokenizer.Map(LocalizedToken.FromOperator Operator.SemiColon)
-        word "||"
-        |> tokenizer.Map(LocalizedToken.FromOperator Operator.DoublePipe)
-        word "&&"
-        |> tokenizer.Map(LocalizedToken.FromOperator Operator.DoubleAmpersand)
+        word ";" |> tokenizer.Map(LocalizedToken.FromOperator Operator.SemiColon)
+        word "||" |> tokenizer.Map(LocalizedToken.FromOperator Operator.DoublePipe)
+        word "&&" |> tokenizer.Map(LocalizedToken.FromOperator Operator.DoubleAmpersand)
         word "|" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Pipe)
         word "*" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Times)
         word "+" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Plus)
         word "/" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Div)
         word "!" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Bang)
-        word "%"
-        |> tokenizer.Map(LocalizedToken.FromOperator Operator.Percentage) ]
+        word "%" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Percentage) ]
 
   let letter = tokenizer.Exactly Char.IsLetter
   let digit = tokenizer.Exactly Char.IsDigit
@@ -417,8 +380,7 @@ module Lexer =
     tokenizer {
       let! start = [ letter; underscore; tick ] |> tokenizer.Any
 
-      let! rest =
-        [ letter; digit; underscore; tick ] |> tokenizer.Any |> tokenizer.Many
+      let! rest = [ letter; digit; underscore; tick ] |> tokenizer.Any |> tokenizer.Many
 
       let id = String.Concat(start :: rest)
       let! loc = tokenizer.Location
@@ -438,17 +400,12 @@ module Lexer =
   let stringLiteral =
     tokenizer {
       do! tokenizer.Exactly '\"' |> tokenizer.Ignore
-
-      let! literal =
-        tokenizer.Many(tokenizer.Exactly(fun c -> c <> '\"' && c <> '\n'))
-
+      let! literal = tokenizer.Many(tokenizer.Exactly(fun c -> c <> '\"' && c <> '\n'))
       do! tokenizer.Exactly '\"' |> tokenizer.Ignore
 
       do!
         tokenizer.Lookahead(
-          tokenizer.Exactly(
-            (fun c -> c |> Char.IsLetter || c = '_' || c = '\'') >> not
-          )
+          tokenizer.Exactly((fun c -> c |> Char.IsLetter || c = '_' || c = '\'') >> not)
           |> tokenizer.Ignore
         )
 
@@ -460,9 +417,7 @@ module Lexer =
     tokenizer {
       let! minus = tokenizer.Exactly '-' |> tokenizer.Try
       let minus = minus.IsLeft
-
-      let! int_part =
-        digit |> tokenizer.AtLeastOne |> tokenizer.Map NonEmptyList.ToList
+      let! int_part = digit |> tokenizer.AtLeastOne |> tokenizer.Map NonEmptyList.ToList
 
       let! frac_part =
         tokenizer {
@@ -486,9 +441,7 @@ module Lexer =
       | Some frac ->
         let literal = String.Concat(int_part) + "." + String.Concat(frac)
 
-        let! floatSuffix =
-          floatSuffixString |> tokenizer.Exactly |> tokenizer.Try
-
+        let! floatSuffix = floatSuffixString |> tokenizer.Exactly |> tokenizer.Try
         let isFloat = floatSuffix.IsLeft
         let mutable floatValue = 0f
 
@@ -502,9 +455,7 @@ module Lexer =
             let value = if minus then -floatValue else floatValue
             return LocalizedToken.FromFloat32Literal value loc
         else
-          let! doubleSuffix =
-            doubleSuffixString |> tokenizer.Exactly |> tokenizer.Try
-
+          let! doubleSuffix = doubleSuffixString |> tokenizer.Exactly |> tokenizer.Try
           let isDouble = doubleSuffix.IsLeft
           let mutable doubleValue = 0.0
 
@@ -540,9 +491,7 @@ module Lexer =
 
         if isLong then
           if not (System.Int64.TryParse(longLiteral, &longValue)) then
-            do
-              Console.WriteLine
-                $"Cannot parse int64 literal {longLiteral} at {loc}"
+            do Console.WriteLine $"Cannot parse int64 literal {longLiteral} at {loc}"
 
             return!
               (fun () -> $"Cannot parse int64 literal {longLiteral} at {loc}")
@@ -576,8 +525,7 @@ module Lexer =
 
             if not (System.Int32.TryParse(ofTotal, &total)) then
               return!
-                (fun () ->
-                  $"Cannot parse case literal total {ofTotal} at {loc}")
+                (fun () -> $"Cannot parse case literal total {ofTotal} at {loc}")
                 |> Errors.Singleton loc
                 |> tokenizer.Throw
             else

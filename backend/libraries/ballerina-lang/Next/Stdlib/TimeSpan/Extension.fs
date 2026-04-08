@@ -15,8 +15,7 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open System.Globalization
 
-  let TimeSpanExtension<'runtimeContext, 'ext, 'extDTO
-    when 'extDTO: not null and 'extDTO: not struct>
+  let TimeSpanExtension<'runtimeContext, 'ext, 'extDTO when 'extDTO: not null and 'extDTO: not struct>
     (operationLens: PartialLens<'ext, TimeSpanOperations<'ext>>)
     : OperationsExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
 
@@ -31,9 +30,7 @@ module Extension =
       Identifier.FullyQualified([ "timeSpan" ], "toString")
       |> TypeCheckScope.Empty.Resolve
 
-    let toStringOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let toStringOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       timeSpanToStringId,
       { PublicIdentifiers =
           Some(
@@ -44,8 +41,7 @@ module Extension =
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | TimeSpanOperations.TimeSpan_ToString ->
-              Some(TimeSpanOperations.TimeSpan_ToString)
+            | TimeSpanOperations.TimeSpan_ToString -> Some(TimeSpanOperations.TimeSpan_ToString)
             | _ -> None)
         Apply =
           fun loc0 _rest (op, v) ->
@@ -70,27 +66,17 @@ module Extension =
 
               return
                 Value<TypeValue<'ext>, 'ext>
-                  .Primitive(
-                    PrimitiveValue.String(
-                      v.ToString("c", CultureInfo.InvariantCulture)
-                    )
-                  )
+                  .Primitive(PrimitiveValue.String(v.ToString("c", CultureInfo.InvariantCulture)))
             } }
 
     let TimeSpanPlusId =
-      Identifier.FullyQualified([ "timeSpan" ], "+")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "timeSpan" ], "+") |> TypeCheckScope.Empty.Resolve
 
-    let plusOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let plusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       TimeSpanPlusId,
       { PublicIdentifiers =
           Some(
-            TypeValue.CreateArrow(
-              timeSpanTypeValue,
-              TypeValue.CreateArrow(timeSpanTypeValue, timeSpanTypeValue)
-            ),
+            TypeValue.CreateArrow(timeSpanTypeValue, TypeValue.CreateArrow(timeSpanTypeValue, timeSpanTypeValue)),
             Kind.Star,
             TimeSpanOperations.Plus {| v1 = None |}
           )
@@ -123,23 +109,15 @@ module Extension =
               match op with
               | None ->
                 return
-                  (TimeSpanOperations.Plus({| v1 = Some v |})
-                   |> operationLens.Set,
-                   Some TimeSpanPlusId)
+                  (TimeSpanOperations.Plus({| v1 = Some v |}) |> operationLens.Set, Some TimeSpanPlusId)
                   |> Ext
-              | Some vClosure ->
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.TimeSpan(vClosure + v))
+              | Some vClosure -> return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.TimeSpan(vClosure + v))
             } }
 
     let TimeSpanMinusId =
-      Identifier.FullyQualified([ "timeSpan" ], "-")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "timeSpan" ], "-") |> TypeCheckScope.Empty.Resolve
 
-    let minusOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let minusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       TimeSpanMinusId,
       { PublicIdentifiers =
           Some(
@@ -167,25 +145,17 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return
-                Value<TypeValue<'ext>, 'ext>
-                  .Primitive(PrimitiveValue.TimeSpan(-v))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.TimeSpan(-v))
             } }
 
     let TimeSpanEqualId =
-      Identifier.FullyQualified([ "timeSpan" ], "==")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "timeSpan" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       TimeSpanEqualId,
       { PublicIdentifiers =
           Some(
-            TypeValue.CreateArrow(
-              timeSpanTypeValue,
-              TypeValue.CreateArrow(timeSpanTypeValue, boolTypeValue)
-            ),
+            TypeValue.CreateArrow(timeSpanTypeValue, TypeValue.CreateArrow(timeSpanTypeValue, boolTypeValue)),
             Kind.Star,
             TimeSpanOperations.Equal {| v1 = None |}
           )
@@ -218,38 +188,26 @@ module Extension =
               match op with
               | None ->
                 return
-                  (TimeSpanOperations.Equal({| v1 = Some v |})
-                   |> operationLens.Set,
-                   Some TimeSpanEqualId)
+                  (TimeSpanOperations.Equal({| v1 = Some v |}) |> operationLens.Set, Some TimeSpanEqualId)
                   |> Ext
-              | Some vClosure ->
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Bool(vClosure = v))
+              | Some vClosure -> return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
     let TimeSpanNotEqualId =
-      Identifier.FullyQualified([ "timeSpan" ], "!=")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "timeSpan" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       TimeSpanNotEqualId,
       { PublicIdentifiers =
           Some(
-            TypeValue.CreateArrow(
-              timeSpanTypeValue,
-              TypeValue.CreateArrow(timeSpanTypeValue, boolTypeValue)
-            ),
+            TypeValue.CreateArrow(timeSpanTypeValue, TypeValue.CreateArrow(timeSpanTypeValue, boolTypeValue)),
             Kind.Star,
             TimeSpanOperations.NotEqual {| v1 = None |}
           )
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | TimeSpanOperations.NotEqual v ->
-              Some(TimeSpanOperations.NotEqual v)
+            | TimeSpanOperations.NotEqual v -> Some(TimeSpanOperations.NotEqual v)
             | _ -> None)
         Apply =
           fun loc0 _rest (op, v) ->
@@ -275,38 +233,26 @@ module Extension =
               match op with
               | None ->
                 return
-                  (TimeSpanOperations.NotEqual({| v1 = Some v |})
-                   |> operationLens.Set,
-                   Some TimeSpanNotEqualId)
+                  (TimeSpanOperations.NotEqual({| v1 = Some v |}) |> operationLens.Set, Some TimeSpanNotEqualId)
                   |> Ext
-              | Some vClosure ->
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Bool(vClosure <> v))
+              | Some vClosure -> return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
     let TimeSpanGreaterThanId =
-      Identifier.FullyQualified([ "timeSpan" ], ">")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "timeSpan" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       TimeSpanGreaterThanId,
       { PublicIdentifiers =
           Some(
-            TypeValue.CreateArrow(
-              timeSpanTypeValue,
-              TypeValue.CreateArrow(timeSpanTypeValue, boolTypeValue)
-            ),
+            TypeValue.CreateArrow(timeSpanTypeValue, TypeValue.CreateArrow(timeSpanTypeValue, boolTypeValue)),
             Kind.Star,
             TimeSpanOperations.GreaterThan {| v1 = None |}
           )
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | TimeSpanOperations.GreaterThan v ->
-              Some(TimeSpanOperations.GreaterThan v)
+            | TimeSpanOperations.GreaterThan v -> Some(TimeSpanOperations.GreaterThan v)
             | _ -> None)
         Apply =
           fun loc0 _rest (op, v) ->
@@ -332,38 +278,27 @@ module Extension =
               match op with
               | None ->
                 return
-                  (TimeSpanOperations.GreaterThan({| v1 = Some v |})
-                   |> operationLens.Set,
-                   Some TimeSpanGreaterThanId)
+                  (TimeSpanOperations.GreaterThan({| v1 = Some v |}) |> operationLens.Set, Some TimeSpanGreaterThanId)
                   |> Ext
-              | Some vClosure ->
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Bool(vClosure > v))
+              | Some vClosure -> return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure > v))
             } }
 
     let TimeSpanGreaterThanOrEqualId =
-      Identifier.FullyQualified([ "timeSpan" ], ">=")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "timeSpan" ], ">=") |> TypeCheckScope.Empty.Resolve
 
     let greaterThanOrEqualOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       TimeSpanGreaterThanOrEqualId,
       { PublicIdentifiers =
           Some(
-            TypeValue.CreateArrow(
-              timeSpanTypeValue,
-              TypeValue.CreateArrow(timeSpanTypeValue, boolTypeValue)
-            ),
+            TypeValue.CreateArrow(timeSpanTypeValue, TypeValue.CreateArrow(timeSpanTypeValue, boolTypeValue)),
             Kind.Star,
             TimeSpanOperations.GreaterThanOrEqual {| v1 = None |}
           )
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | TimeSpanOperations.GreaterThanOrEqual v ->
-              Some(TimeSpanOperations.GreaterThanOrEqual v)
+            | TimeSpanOperations.GreaterThanOrEqual v -> Some(TimeSpanOperations.GreaterThanOrEqual v)
             | _ -> None)
         Apply =
           fun loc0 _rest (op, v) ->
@@ -389,38 +324,27 @@ module Extension =
               match op with
               | None ->
                 return
-                  (TimeSpanOperations.GreaterThanOrEqual({| v1 = Some v |})
-                   |> operationLens.Set,
+                  (TimeSpanOperations.GreaterThanOrEqual({| v1 = Some v |}) |> operationLens.Set,
                    Some TimeSpanGreaterThanOrEqualId)
                   |> Ext
-              | Some vClosure ->
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Bool(vClosure >= v))
+              | Some vClosure -> return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
     let TimeSpanLessThanId =
-      Identifier.FullyQualified([ "timeSpan" ], "<")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "timeSpan" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let lessThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       TimeSpanLessThanId,
       { PublicIdentifiers =
           Some(
-            TypeValue.CreateArrow(
-              timeSpanTypeValue,
-              TypeValue.CreateArrow(timeSpanTypeValue, boolTypeValue)
-            ),
+            TypeValue.CreateArrow(timeSpanTypeValue, TypeValue.CreateArrow(timeSpanTypeValue, boolTypeValue)),
             Kind.Star,
             TimeSpanOperations.LessThan {| v1 = None |}
           )
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | TimeSpanOperations.LessThan v ->
-              Some(TimeSpanOperations.LessThan v)
+            | TimeSpanOperations.LessThan v -> Some(TimeSpanOperations.LessThan v)
             | _ -> None)
         Apply =
           fun loc0 _rest (op, v) ->
@@ -446,38 +370,27 @@ module Extension =
               match op with
               | None ->
                 return
-                  (TimeSpanOperations.LessThan({| v1 = Some v |})
-                   |> operationLens.Set,
-                   Some TimeSpanLessThanId)
+                  (TimeSpanOperations.LessThan({| v1 = Some v |}) |> operationLens.Set, Some TimeSpanLessThanId)
                   |> Ext
-              | Some vClosure ->
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Bool(vClosure < v))
+              | Some vClosure -> return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
     let TimeSpanLessThanOrEqualId =
-      Identifier.FullyQualified([ "timeSpan" ], "<=")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "timeSpan" ], "<=") |> TypeCheckScope.Empty.Resolve
 
     let lessThanOrEqualOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       TimeSpanLessThanOrEqualId,
       { PublicIdentifiers =
           Some(
-            TypeValue.CreateArrow(
-              timeSpanTypeValue,
-              TypeValue.CreateArrow(timeSpanTypeValue, boolTypeValue)
-            ),
+            TypeValue.CreateArrow(timeSpanTypeValue, TypeValue.CreateArrow(timeSpanTypeValue, boolTypeValue)),
             Kind.Star,
             TimeSpanOperations.LessThanOrEqual {| v1 = None |}
           )
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | TimeSpanOperations.LessThanOrEqual v ->
-              Some(TimeSpanOperations.LessThanOrEqual v)
+            | TimeSpanOperations.LessThanOrEqual v -> Some(TimeSpanOperations.LessThanOrEqual v)
             | _ -> None)
         Apply =
           fun loc0 _rest (op, v) ->
@@ -503,30 +416,20 @@ module Extension =
               match op with
               | None ->
                 return
-                  (TimeSpanOperations.LessThanOrEqual({| v1 = Some v |})
-                   |> operationLens.Set,
+                  (TimeSpanOperations.LessThanOrEqual({| v1 = Some v |}) |> operationLens.Set,
                    Some TimeSpanLessThanOrEqualId)
                   |> Ext
-              | Some vClosure ->
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Bool(vClosure <= v))
+              | Some vClosure -> return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))
             } }
 
     let timeSpanGetDaysId =
       Identifier.FullyQualified([ "timeSpan" ], "getDays")
       |> TypeCheckScope.Empty.Resolve
 
-    let getDaysOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let getDaysOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       timeSpanGetDaysId,
       { PublicIdentifiers =
-          Some(
-            TypeValue.CreateArrow(timeSpanTypeValue, int32TypeValue),
-            Kind.Star,
-            TimeSpanOperations.Days
-          )
+          Some(TypeValue.CreateArrow(timeSpanTypeValue, int32TypeValue), Kind.Star, TimeSpanOperations.Days)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -547,25 +450,17 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return
-                Value<TypeValue<'ext>, 'ext>
-                  .Primitive(PrimitiveValue.Int32(v.Days))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.Days))
             } }
 
     let timeSpanGetHoursId =
       Identifier.FullyQualified([ "timeSpan" ], "getHours")
       |> TypeCheckScope.Empty.Resolve
 
-    let getHoursOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let getHoursOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       timeSpanGetHoursId,
       { PublicIdentifiers =
-          Some(
-            TypeValue.CreateArrow(timeSpanTypeValue, int32TypeValue),
-            Kind.Star,
-            TimeSpanOperations.Hours
-          )
+          Some(TypeValue.CreateArrow(timeSpanTypeValue, int32TypeValue), Kind.Star, TimeSpanOperations.Hours)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -586,25 +481,17 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return
-                Value<TypeValue<'ext>, 'ext>
-                  .Primitive(PrimitiveValue.Int32(v.Hours))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.Hours))
             } }
 
     let timeSpanGetMinutesId =
       Identifier.FullyQualified([ "timeSpan" ], "getMinutes")
       |> TypeCheckScope.Empty.Resolve
 
-    let getMinutesOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let getMinutesOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       timeSpanGetMinutesId,
       { PublicIdentifiers =
-          Some(
-            TypeValue.CreateArrow(timeSpanTypeValue, int32TypeValue),
-            Kind.Star,
-            TimeSpanOperations.Minutes
-          )
+          Some(TypeValue.CreateArrow(timeSpanTypeValue, int32TypeValue), Kind.Star, TimeSpanOperations.Minutes)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -625,25 +512,17 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return
-                Value<TypeValue<'ext>, 'ext>
-                  .Primitive(PrimitiveValue.Int32(v.Minutes))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.Minutes))
             } }
 
     let timeSpanGetSecondsId =
       Identifier.FullyQualified([ "timeSpan" ], "getSeconds")
       |> TypeCheckScope.Empty.Resolve
 
-    let getSecondsOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let getSecondsOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       timeSpanGetSecondsId,
       { PublicIdentifiers =
-          Some(
-            TypeValue.CreateArrow(timeSpanTypeValue, int32TypeValue),
-            Kind.Star,
-            TimeSpanOperations.Seconds
-          )
+          Some(TypeValue.CreateArrow(timeSpanTypeValue, int32TypeValue), Kind.Star, TimeSpanOperations.Seconds)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -664,9 +543,7 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return
-                Value<TypeValue<'ext>, 'ext>
-                  .Primitive(PrimitiveValue.Int32(v.Seconds))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.Seconds))
             } }
 
     let timeSpanGetMillisecondsId =
@@ -674,20 +551,14 @@ module Extension =
       |> TypeCheckScope.Empty.Resolve
 
     let getMillisecondsOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       timeSpanGetMillisecondsId,
       { PublicIdentifiers =
-          Some(
-            TypeValue.CreateArrow(timeSpanTypeValue, int32TypeValue),
-            Kind.Star,
-            TimeSpanOperations.Milliseconds
-          )
+          Some(TypeValue.CreateArrow(timeSpanTypeValue, int32TypeValue), Kind.Star, TimeSpanOperations.Milliseconds)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | TimeSpanOperations.Milliseconds ->
-              Some(TimeSpanOperations.Milliseconds)
+            | TimeSpanOperations.Milliseconds -> Some(TimeSpanOperations.Milliseconds)
             | _ -> None)
         Apply =
           fun loc0 _rest (_, v) ->
@@ -704,25 +575,17 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return
-                Value<TypeValue<'ext>, 'ext>
-                  .Primitive(PrimitiveValue.Int32(v.Milliseconds))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(v.Milliseconds))
             } }
 
     let timeSpanGetTotalDaysId =
       Identifier.FullyQualified([ "timeSpan" ], "totalDays")
       |> TypeCheckScope.Empty.Resolve
 
-    let getTotalDaysOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let getTotalDaysOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       timeSpanGetTotalDaysId,
       { PublicIdentifiers =
-          Some(
-            TypeValue.CreateArrow(timeSpanTypeValue, float64TypeValue),
-            Kind.Star,
-            TimeSpanOperations.TotalDays
-          )
+          Some(TypeValue.CreateArrow(timeSpanTypeValue, float64TypeValue), Kind.Star, TimeSpanOperations.TotalDays)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -743,30 +606,21 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return
-                Value<TypeValue<'ext>, 'ext>
-                  .Primitive(PrimitiveValue.Float64(v.TotalDays))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float64(v.TotalDays))
             } }
 
     let timeSpanGetTotalHoursId =
       Identifier.FullyQualified([ "timeSpan" ], "totalHours")
       |> TypeCheckScope.Empty.Resolve
 
-    let getTotalHoursOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let getTotalHoursOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       timeSpanGetTotalHoursId,
       { PublicIdentifiers =
-          Some(
-            TypeValue.CreateArrow(timeSpanTypeValue, float64TypeValue),
-            Kind.Star,
-            TimeSpanOperations.TotalHours
-          )
+          Some(TypeValue.CreateArrow(timeSpanTypeValue, float64TypeValue), Kind.Star, TimeSpanOperations.TotalHours)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | TimeSpanOperations.TotalHours ->
-              Some(TimeSpanOperations.TotalHours)
+            | TimeSpanOperations.TotalHours -> Some(TimeSpanOperations.TotalHours)
             | _ -> None)
         Apply =
           fun loc0 _rest (_, v) ->
@@ -783,9 +637,7 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return
-                Value<TypeValue<'ext>, 'ext>
-                  .Primitive(PrimitiveValue.Float64(v.TotalHours))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float64(v.TotalHours))
             } }
 
     let timeSpanGetTotalMinutesId =
@@ -793,20 +645,14 @@ module Extension =
       |> TypeCheckScope.Empty.Resolve
 
     let getTotalMinutesOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       timeSpanGetTotalMinutesId,
       { PublicIdentifiers =
-          Some(
-            TypeValue.CreateArrow(timeSpanTypeValue, float64TypeValue),
-            Kind.Star,
-            TimeSpanOperations.TotalMinutes
-          )
+          Some(TypeValue.CreateArrow(timeSpanTypeValue, float64TypeValue), Kind.Star, TimeSpanOperations.TotalMinutes)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | TimeSpanOperations.TotalMinutes ->
-              Some(TimeSpanOperations.TotalMinutes)
+            | TimeSpanOperations.TotalMinutes -> Some(TimeSpanOperations.TotalMinutes)
             | _ -> None)
         Apply =
           fun loc0 _rest (_, v) ->
@@ -823,9 +669,7 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return
-                Value<TypeValue<'ext>, 'ext>
-                  .Primitive(PrimitiveValue.Float64(v.TotalMinutes))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float64(v.TotalMinutes))
             } }
 
     let timeSpanGetTotalSecondsId =
@@ -833,20 +677,14 @@ module Extension =
       |> TypeCheckScope.Empty.Resolve
 
     let getTotalSecondsOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       timeSpanGetTotalSecondsId,
       { PublicIdentifiers =
-          Some(
-            TypeValue.CreateArrow(timeSpanTypeValue, float64TypeValue),
-            Kind.Star,
-            TimeSpanOperations.TotalSeconds
-          )
+          Some(TypeValue.CreateArrow(timeSpanTypeValue, float64TypeValue), Kind.Star, TimeSpanOperations.TotalSeconds)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | TimeSpanOperations.TotalSeconds ->
-              Some(TimeSpanOperations.TotalSeconds)
+            | TimeSpanOperations.TotalSeconds -> Some(TimeSpanOperations.TotalSeconds)
             | _ -> None)
         Apply =
           fun loc0 _rest (_, v) ->
@@ -863,9 +701,7 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return
-                Value<TypeValue<'ext>, 'ext>
-                  .Primitive(PrimitiveValue.Float64(v.TotalSeconds))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float64(v.TotalSeconds))
             } }
 
     let timeSpanGetTotalMillisecondsId =
@@ -873,8 +709,7 @@ module Extension =
       |> TypeCheckScope.Empty.Resolve
 
     let getTotalMillisecondsOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       timeSpanGetTotalMillisecondsId,
       { PublicIdentifiers =
           Some(
@@ -885,8 +720,7 @@ module Extension =
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | TimeSpanOperations.TotalMilliseconds ->
-              Some(TimeSpanOperations.TotalMilliseconds)
+            | TimeSpanOperations.TotalMilliseconds -> Some(TimeSpanOperations.TotalMilliseconds)
             | _ -> None)
         Apply =
           fun loc0 _rest (_, v) ->
@@ -903,30 +737,21 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return
-                Value<TypeValue<'ext>, 'ext>
-                  .Primitive(PrimitiveValue.Float64(v.TotalMilliseconds))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Float64(v.TotalMilliseconds))
             } }
 
     let timeSpanFromSecondsId =
       Identifier.FullyQualified([ "timeSpan" ], "fromSeconds")
       |> TypeCheckScope.Empty.Resolve
 
-    let timeSpanFromSeconds
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let timeSpanFromSeconds: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       timeSpanFromSecondsId,
       { PublicIdentifiers =
-          Some(
-            TypeValue.CreateArrow(decimalTypeValue, timeSpanTypeValue),
-            Kind.Star,
-            TimeSpanOperations.FromSeconds
-          )
+          Some(TypeValue.CreateArrow(decimalTypeValue, timeSpanTypeValue), Kind.Star, TimeSpanOperations.FromSeconds)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | TimeSpanOperations.FromSeconds ->
-              Some(TimeSpanOperations.FromSeconds)
+            | TimeSpanOperations.FromSeconds -> Some(TimeSpanOperations.FromSeconds)
             | _ -> None)
         Apply =
           fun loc0 _rest (_, v) ->
@@ -944,33 +769,21 @@ module Extension =
                 |> reader.OfSum
 
               return
-                Value<TypeValue<'ext>, 'ext>
-                  .Primitive(
-                    PrimitiveValue.TimeSpan(
-                      System.TimeSpan.FromSeconds(float v)
-                    )
-                  )
+                Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan.FromSeconds(float v)))
             } }
 
     let timeSpanFromMinutesId =
       Identifier.FullyQualified([ "timeSpan" ], "fromMinutes")
       |> TypeCheckScope.Empty.Resolve
 
-    let timeSpanFromMinutes
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let timeSpanFromMinutes: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       timeSpanFromMinutesId,
       { PublicIdentifiers =
-          Some(
-            TypeValue.CreateArrow(decimalTypeValue, timeSpanTypeValue),
-            Kind.Star,
-            TimeSpanOperations.FromMinutes
-          )
+          Some(TypeValue.CreateArrow(decimalTypeValue, timeSpanTypeValue), Kind.Star, TimeSpanOperations.FromMinutes)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | TimeSpanOperations.FromMinutes ->
-              Some(TimeSpanOperations.FromMinutes)
+            | TimeSpanOperations.FromMinutes -> Some(TimeSpanOperations.FromMinutes)
             | _ -> None)
         Apply =
           fun loc0 _rest (_, v) ->
@@ -988,28 +801,17 @@ module Extension =
                 |> reader.OfSum
 
               return
-                Value<TypeValue<'ext>, 'ext>
-                  .Primitive(
-                    PrimitiveValue.TimeSpan(
-                      System.TimeSpan.FromMinutes(float v)
-                    )
-                  )
+                Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan.FromMinutes(float v)))
             } }
 
     let timeSpanFromHoursId =
       Identifier.FullyQualified([ "timeSpan" ], "fromHours")
       |> TypeCheckScope.Empty.Resolve
 
-    let timeSpanFromHours
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let timeSpanFromHours: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       timeSpanFromHoursId,
       { PublicIdentifiers =
-          Some(
-            TypeValue.CreateArrow(decimalTypeValue, timeSpanTypeValue),
-            Kind.Star,
-            TimeSpanOperations.FromHours
-          )
+          Some(TypeValue.CreateArrow(decimalTypeValue, timeSpanTypeValue), Kind.Star, TimeSpanOperations.FromHours)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -1030,27 +832,17 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return
-                Value<TypeValue<'ext>, 'ext>
-                  .Primitive(
-                    PrimitiveValue.TimeSpan(System.TimeSpan.FromHours(float v))
-                  )
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan.FromHours(float v)))
             } }
 
     let timeSpanFromDaysId =
       Identifier.FullyQualified([ "timeSpan" ], "fromDays")
       |> TypeCheckScope.Empty.Resolve
 
-    let timeSpanFromDays
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let timeSpanFromDays: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       timeSpanFromDaysId,
       { PublicIdentifiers =
-          Some(
-            TypeValue.CreateArrow(decimalTypeValue, timeSpanTypeValue),
-            Kind.Star,
-            TimeSpanOperations.FromDays
-          )
+          Some(TypeValue.CreateArrow(decimalTypeValue, timeSpanTypeValue), Kind.Star, TimeSpanOperations.FromDays)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -1071,11 +863,7 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return
-                Value<TypeValue<'ext>, 'ext>
-                  .Primitive(
-                    PrimitiveValue.TimeSpan(System.TimeSpan.FromDays(float v))
-                  )
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan.FromDays(float v)))
             } }
 
 
@@ -1084,9 +872,7 @@ module Extension =
       Identifier.FullyQualified([ "timeSpan" ], "tryParse")
       |> TypeCheckScope.Empty.Resolve
 
-    let timeSpanTryParse
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let timeSpanTryParse: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       timeSpanTryParseId,
       { PublicIdentifiers =
           Some(
@@ -1103,8 +889,7 @@ module Extension =
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | TimeSpanOperations.TimeSpan_New ->
-              Some(TimeSpanOperations.TimeSpan_New)
+            | TimeSpanOperations.TimeSpan_New -> Some(TimeSpanOperations.TimeSpan_New)
             | _ -> None)
         Apply =
           fun loc0 _rest (_, v) ->
@@ -1125,26 +910,17 @@ module Extension =
                 try
                   Value.Sum(
                     { Case = 2; Count = 2 },
-                    Value.Primitive(
-                      PrimitiveValue.TimeSpan(
-                        System.TimeSpan.Parse(v, CultureInfo.InvariantCulture)
-                      )
-                    )
+                    Value.Primitive(PrimitiveValue.TimeSpan(System.TimeSpan.Parse(v, CultureInfo.InvariantCulture)))
                   )
                 with _ ->
-                  Value.Sum(
-                    { Case = 1; Count = 2 },
-                    Value.Primitive(PrimitiveValue.Unit)
-                  )
+                  Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit))
             } }
 
     let timeSpanZeroId =
       Identifier.FullyQualified([ "timeSpan" ], "zero")
       |> TypeCheckScope.Empty.Resolve
 
-    let timeSpanZero
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
+    let timeSpanZero: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, TimeSpanOperations<'ext>> =
       timeSpanZeroId,
       { PublicIdentifiers =
           Some(
@@ -1158,8 +934,7 @@ module Extension =
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | TimeSpanOperations.TimeSpan_Zero ->
-              Some(TimeSpanOperations.TimeSpan_Zero)
+            | TimeSpanOperations.TimeSpan_Zero -> Some(TimeSpanOperations.TimeSpan_Zero)
             | _ -> None)
         Apply =
           fun loc0 _rest (_, v) ->
@@ -1176,8 +951,7 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return
-                Value.Primitive(PrimitiveValue.TimeSpan System.TimeSpan.Zero)
+              return Value.Primitive(PrimitiveValue.TimeSpan System.TimeSpan.Zero)
             } }
 
     { TypeVars = []

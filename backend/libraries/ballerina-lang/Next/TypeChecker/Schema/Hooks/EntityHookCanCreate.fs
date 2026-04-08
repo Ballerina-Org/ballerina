@@ -19,13 +19,7 @@ module SchemaEntityHookCanCreate =
     (loc0: Location)
     (schema: Schema<'ve>)
     (canCreate: Option<Expr<TypeExpr<'ve>, Identifier, 've>>)
-    : State<
-        Option<TypeCheckedExpr<'ve>>,
-        TypeCheckContext<'ve>,
-        TypeCheckState<'ve>,
-        Errors<Location>
-       >
-    =
+    : State<Option<TypeCheckedExpr<'ve>>, TypeCheckContext<'ve>, TypeCheckState<'ve>, Errors<Location>> =
     state {
       match canCreate with
       | None -> return None
@@ -39,12 +33,8 @@ module SchemaEntityHookCanCreate =
         let! can_create_expr, _ =
           typeCheckExpr None can_create
           |> state.MapContext(
-            TypeCheckContext.Updaters.Values(
-              Map.merge (fun _ -> id) extra_scope
-            )
-            >> TypeCheckContext.Updaters.Scope(
-              TypeCheckScope.Empty |> replaceWith
-            )
+            TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope)
+            >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
           )
 
         let can_create_t = can_create_expr.Type
@@ -58,15 +48,10 @@ module SchemaEntityHookCanCreate =
           TypeValue.Unify(
             can_create.Location,
             can_create_t,
-            TypeValue.CreateArrow(
-              TypeValue.Schema schema,
-              TypeValue.CreateBool()
-            )
+            TypeValue.CreateArrow(TypeValue.Schema schema, TypeValue.CreateBool())
           )
           |> Expr.liftUnification
-          |> state.MapContext(
-            TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
-          )
+          |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
 
         return Some can_create_expr
     }

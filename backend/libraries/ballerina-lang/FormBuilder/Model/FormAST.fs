@@ -65,8 +65,7 @@ module FormAST =
       Type: 'typeValue }
 
 
-  and [<Obsolete("EnumRenderer is deprecated. Use One or Many instead.")>] EnumRenderer<'typeValue>
-    =
+  and [<Obsolete("EnumRenderer is deprecated. Use One or Many instead.")>] EnumRenderer<'typeValue> =
     { Enum: RendererIdentifier
       Cardinality: Cardinality
       Api: ApiIdentifier
@@ -100,8 +99,7 @@ module FormAST =
       Right: RendererExpression<'typeValue>
       Type: 'typeValue }
 
-  and [<Obsolete("StreamRenderer is deprecated. Use One or Many instead.")>] StreamRenderer<'typeValue>
-    =
+  and [<Obsolete("StreamRenderer is deprecated. Use One or Many instead.")>] StreamRenderer<'typeValue> =
     { Stream: RendererIdentifier
       Cardinality: Cardinality
       Api: ApiIdentifier

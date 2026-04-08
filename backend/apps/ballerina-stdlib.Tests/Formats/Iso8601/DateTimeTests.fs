@@ -20,9 +20,7 @@ let ``Expect printUtc to return an Iso6801 date string``
   (expected: string)
   =
   let date =
-    DateTime(year, month, day, hours, minutes, seconds, ms, DateTimeKind.Utc)
-      .AddTicks
-      ticks
+    DateTime(year, month, day, hours, minutes, seconds, ms, DateTimeKind.Utc).AddTicks ticks
 
   let actual = Iso8601.DateTime.printUtc date
   Assert.That(actual, Is.EqualTo expected)
@@ -35,30 +33,10 @@ let ``Expect printUtc to return an Iso6801 date string``
   TestCase(2023, 9, 15, 14, 30, 45, 123, 0, "2023-09-15T14:30:45.123Z");
   TestCase(2023, 9, 15, 14, 30, 45, 123, 4567, "2023-09-15T14:30:45.1234567Z");
   TestCase(2023, 9, 15, 12, 30, 45, 123, 0, "2023-09-15T14:30:45.123+02:00");
-  TestCase(2023,
-           9,
-           15,
-           19,
-           30,
-           45,
-           123,
-           4567,
-           "2023-09-15T14:30:45.1234567-05:00")>]
-let ``Expect tryParse to return Some date``
-  year
-  month
-  day
-  hours
-  minutes
-  seconds
-  ms
-  ticks
-  input
-  =
+  TestCase(2023, 9, 15, 19, 30, 45, 123, 4567, "2023-09-15T14:30:45.1234567-05:00")>]
+let ``Expect tryParse to return Some date`` year month day hours minutes seconds ms ticks input =
   let expected =
-    DateTime(year, month, day, hours, minutes, seconds, ms, DateTimeKind.Utc)
-      .AddTicks
-      ticks
+    DateTime(year, month, day, hours, minutes, seconds, ms, DateTimeKind.Utc).AddTicks ticks
 
   match Iso8601.DateTime.tryParse input with
   | Some actual -> Assert.That(actual, Is.EqualTo expected)
@@ -83,20 +61,9 @@ let ``Expect tryParse to return None on wrong date formats`` input =
   TestCase(2023, 9, 15, 14, 30, 45, 0, 0);
   TestCase(2023, 9, 15, 14, 30, 45, 123, 0);
   TestCase(2023, 9, 15, 14, 30, 45, 123, 4567)>]
-let ``Expect printUtc then tryParse to return Some initial value``
-  year
-  month
-  day
-  hours
-  minutes
-  seconds
-  ms
-  ticks
-  =
+let ``Expect printUtc then tryParse to return Some initial value`` year month day hours minutes seconds ms ticks =
   let expected =
-    DateTime(year, month, day, hours, minutes, seconds, ms, DateTimeKind.Utc)
-      .AddTicks
-      ticks
+    DateTime(year, month, day, hours, minutes, seconds, ms, DateTimeKind.Utc).AddTicks ticks
 
   match Iso8601.DateTime.printUtc >> Iso8601.DateTime.tryParse <| expected with
   | Some actual -> Assert.That(actual, Is.EqualTo expected)
@@ -107,9 +74,6 @@ let ``Expect printUtc then tryParse to return Some initial value``
   TestCase "2023-09-15T14:30:45.1230000Z";
   TestCase "2023-09-15T14:30:45.1234567Z">]
 let ``Expect tryParse then printUtc to return Some initial value`` expected =
-  match
-    Iso8601.DateTime.tryParse >> Option.map Iso8601.DateTime.printUtc
-    <| expected
-  with
+  match Iso8601.DateTime.tryParse >> Option.map Iso8601.DateTime.printUtc <| expected with
   | Some actual -> Assert.That(actual, Is.EqualTo expected)
   | None -> Assert.Fail $"Cannot parse {expected}"

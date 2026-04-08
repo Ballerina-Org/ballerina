@@ -20,13 +20,7 @@ module SchemaEntityHookOnBackground =
     (schema: Schema<'ve>)
     (e: SchemaEntity<'ve>)
     (onBackground: Option<Expr<TypeExpr<'ve>, Identifier, 've>>)
-    : State<
-        Option<TypeCheckedExpr<'ve>>,
-        TypeCheckContext<'ve>,
-        TypeCheckState<'ve>,
-        Errors<Location>
-       >
-    =
+    : State<Option<TypeCheckedExpr<'ve>>, TypeCheckContext<'ve>, TypeCheckState<'ve>, Errors<Location>> =
     state {
       match onBackground with
       | None -> return None
@@ -40,12 +34,8 @@ module SchemaEntityHookOnBackground =
         let! on_background_expr, _ =
           typeCheckExpr None on_background
           |> state.MapContext(
-            TypeCheckContext.Updaters.Values(
-              Map.merge (fun _ -> id) extra_scope
-            )
-            >> TypeCheckContext.Updaters.Scope(
-              TypeCheckScope.Empty |> replaceWith
-            )
+            TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope)
+            >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
           )
 
         let on_background_t = on_background_expr.Type
@@ -65,16 +55,13 @@ module SchemaEntityHookOnBackground =
                 e.Id,
                 TypeValue.CreateArrow(
                   e.TypeWithProps,
-                  TypeValue.CreateSum
-                    [ TypeValue.CreateUnit(); TypeValue.CreateTimeSpan() ]
+                  TypeValue.CreateSum [ TypeValue.CreateUnit(); TypeValue.CreateTimeSpan() ]
                 )
               )
             )
           )
           |> Expr.liftUnification
-          |> state.MapContext(
-            TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
-          )
+          |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
 
         return Some on_background_expr
     }

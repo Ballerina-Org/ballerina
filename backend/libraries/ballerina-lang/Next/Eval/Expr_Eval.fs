@@ -36,25 +36,13 @@ module Eval =
         RecordFields = ctx.RecordFields
         UnionCases = ctx.UnionCases }
 
-    static member Append
-      (s1: ExprEvalContextSymbols)
-      (s2: ExprEvalContextSymbols)
-      =
+    static member Append (s1: ExprEvalContextSymbols) (s2: ExprEvalContextSymbols) =
       { Types = Map.fold (fun acc k v -> Map.add k v acc) s1.Types s2.Types
-        RecordFields =
-          Map.fold
-            (fun acc k v -> Map.add k v acc)
-            s1.RecordFields
-            s2.RecordFields
-        UnionCases =
-          Map.fold (fun acc k v -> Map.add k v acc) s1.UnionCases s2.UnionCases }
+        RecordFields = Map.fold (fun acc k v -> Map.add k v acc) s1.RecordFields s2.RecordFields
+        UnionCases = Map.fold (fun acc k v -> Map.add k v acc) s1.UnionCases s2.UnionCases }
 
   type ExprEvalContextScope<'valueExtension> =
-    { Values:
-        Map<
-          ResolvedIdentifier,
-          Value<TypeValue<'valueExtension>, 'valueExtension>
-         >
+    { Values: Map<ResolvedIdentifier, Value<TypeValue<'valueExtension>, 'valueExtension>>
       Symbols: ExprEvalContextSymbols }
 
   type ExprEvalContext<'runtimeContext, 'valueExtension> =
@@ -68,72 +56,36 @@ module Eval =
       -> List<TypeCheckedExpr<'valueExtension>>
       -> 'valueExtension
       -> Value<TypeValue<'valueExtension>, 'valueExtension>
-      -> ExprEvaluator<
-        'runtimeContext,
-        'valueExtension,
-        Value<TypeValue<'valueExtension>, 'valueExtension>
-       >)
+      -> ExprEvaluator<'runtimeContext, 'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
 
   and ExtEvalResult<'runtimeContext, 'valueExtension> =
     | Result of Value<TypeValue<'valueExtension>, 'valueExtension>
-    | Async of
-      Coroutine<
-        ExtEvalResult<'runtimeContext, 'valueExtension>,
-        Unit,
-        Unit,
-        Unit,
-        Errors<Location>
-       >
+    | Async of Coroutine<ExtEvalResult<'runtimeContext, 'valueExtension>, Unit, Unit, Unit, Errors<Location>>
     | Applicable of
       (Value<TypeValue<'valueExtension>, 'valueExtension>
-        -> ExprEvaluator<
-          'runtimeContext,
-          'valueExtension,
-          Value<TypeValue<'valueExtension>, 'valueExtension>
-         >)
+        -> ExprEvaluator<'runtimeContext, 'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
     | TypeApplicable of
       (TypeValue<'valueExtension>
-        -> ExprEvaluator<
-          'runtimeContext,
-          'valueExtension,
-          Value<TypeValue<'valueExtension>, 'valueExtension>
-         >)
+        -> ExprEvaluator<'runtimeContext, 'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
     | Matchable of
       (Map<ResolvedIdentifier, TypeCheckedCaseHandler<'valueExtension>>
-        -> ExprEvaluator<
-          'runtimeContext,
-          'valueExtension,
-          Value<TypeValue<'valueExtension>, 'valueExtension>
-         >)
+        -> ExprEvaluator<'runtimeContext, 'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>>)
 
   and ExtensionEvaluator<'runtimeContext, 'valueExtension> =
     Location
       -> List<TypeCheckedExpr<'valueExtension>>
       -> 'valueExtension
-      -> ExprEvaluator<
-        'runtimeContext,
-        'valueExtension,
-        ExtEvalResult<'runtimeContext, 'valueExtension>
-       >
+      -> ExprEvaluator<'runtimeContext, 'valueExtension, ExtEvalResult<'runtimeContext, 'valueExtension>>
 
   and ValueExtensionOps<'runtimeContext, 'valueExtension> =
     { Eval: ExtensionEvaluator<'runtimeContext, 'valueExtension>
-      Applicables:
-        Map<
-          ResolvedIdentifier,
-          ApplicableExtEvalResult<'runtimeContext, 'valueExtension>
-         > }
+      Applicables: Map<ResolvedIdentifier, ApplicableExtEvalResult<'runtimeContext, 'valueExtension>> }
 
   and ExprEvaluator<'runtimeContext, 'valueExtension, 'res> =
-    Reader<
-      'res,
-      ExprEvalContext<'runtimeContext, 'valueExtension>,
-      Errors<Location>
-     >
+    Reader<'res, ExprEvalContext<'runtimeContext, 'valueExtension>, Errors<Location>>
 
   type ExprEvalContext<'runtimeContext, 'valueExtension> with
-    static member Empty
-      : 'runtimeContext -> ExprEvalContext<'runtimeContext, 'valueExtension> =
+    static member Empty: 'runtimeContext -> ExprEvalContext<'runtimeContext, 'valueExtension> =
       fun runtimeContext ->
         { RootLevelEval = true
           RuntimeContext = runtimeContext
@@ -156,20 +108,12 @@ module Eval =
           Scope =
             { ctx.Scope with
                 Symbols =
-                  ExprEvalContextSymbols.Append
-                    ctx.Scope.Symbols
-                    (ExprEvalContextSymbols.FromTypeChecker symbols) } }
+                  ExprEvalContextSymbols.Append ctx.Scope.Symbols (ExprEvalContextSymbols.FromTypeChecker symbols) } }
 
     static member Getters =
-      {| Values =
-          fun (c: ExprEvalContext<'runtimeContext, 'valueExtension>) ->
-            c.Scope.Values
-         ExtensionOps =
-          fun (c: ExprEvalContext<'runtimeContext, 'valueExtension>) ->
-            c.ExtensionOps
-         Symbols =
-          fun (c: ExprEvalContext<'runtimeContext, 'valueExtension>) ->
-            c.Scope.Symbols |}
+      {| Values = fun (c: ExprEvalContext<'runtimeContext, 'valueExtension>) -> c.Scope.Values
+         ExtensionOps = fun (c: ExprEvalContext<'runtimeContext, 'valueExtension>) -> c.ExtensionOps
+         Symbols = fun (c: ExprEvalContext<'runtimeContext, 'valueExtension>) -> c.Scope.Symbols |}
 
     static member Updaters =
       {| Values =
@@ -206,18 +150,12 @@ module Eval =
           reader {
             let closure =
               closure
-              |> Map.add
-                (fVVar.Name
-                 |> Identifier.LocalScope
-                 |> TypeCheckScope.Empty.Resolve)
-                argV
+              |> Map.add (fVVar.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve) argV
 
             let! res =
               NonEmptyList.OfList(fvBody, rest)
               |> Expr.Eval
-              |> reader.MapContext(
-                ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) closure)
-              )
+              |> reader.MapContext(ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) closure))
               |> reader.Catch
 
             match res with
@@ -229,25 +167,17 @@ module Eval =
               // do Console.ReadLine() |> ignore
               return! err |> reader.Throw
           }
-          |> reader.MapError(
-            Errors<Location>.MapPriority(replaceWith ErrorPriority.High)
-          )
+          |> reader.MapError(Errors<Location>.MapPriority(replaceWith ErrorPriority.High))
       }
 
     // NOTE: expressions are concatenated in the order of the input (the returned value is of the type of the last expression)
     static member Eval<'runtimeContext, 'valueExtension>
       (NonEmptyList(e, rest): NonEmptyList<TypeCheckedExpr<'valueExtension>>)
-      : ExprEvaluator<
-          'runtimeContext,
-          'valueExtension,
-          Value<TypeValue<'valueExtension>, 'valueExtension>
-         >
-      =
+      : ExprEvaluator<'runtimeContext, 'valueExtension, Value<TypeValue<'valueExtension>, 'valueExtension>> =
       let (!) = NonEmptyList.One >> Expr.Eval<'runtimeContext, 'valueExtension>
 
       let (!!) =
-        fun e ->
-          Expr.Eval<'runtimeContext, 'valueExtension>(NonEmptyList(e, rest))
+        fun e -> Expr.Eval<'runtimeContext, 'valueExtension>(NonEmptyList(e, rest))
 
       let loc0 = e.Location
 
@@ -281,11 +211,7 @@ module Eval =
           return!
             !!body
             |> reader.MapContext(
-              ExprEvalContext.Updaters.Values(
-                Map.add
-                  (var.Name |> Identifier.LocalScope |> e.Scope.Resolve)
-                  value
-              )
+              ExprEvalContext.Updaters.Values(Map.add (var.Name |> Identifier.LocalScope |> e.Scope.Resolve) value)
             )
         | TypeCheckedExprRec.Do { Val = e1; Rest = e2 } ->
           let! _ = !e1
@@ -295,11 +221,7 @@ module Eval =
 
           let! res =
             ctx.Scope.Values
-            |> Map.tryFindWithError
-              id
-              "variables"
-              (fun () -> id.AsFSharpString)
-              loc0
+            |> Map.tryFindWithError id "variables" (fun () -> id.AsFSharpString) loc0
             |> reader.OfSum
             |> reader.Catch
 
@@ -364,11 +286,7 @@ module Eval =
 
           return!
             recordV
-            |> Map.tryFindWithError
-              fieldId
-              "record field"
-              (fun () -> fieldId.AsFSharpString)
-              loc0
+            |> Map.tryFindWithError fieldId "record field" (fun () -> fieldId.AsFSharpString) loc0
             |> reader.OfSum
 
         | TypeCheckedExprRec.TupleCons { Items = fields } ->
@@ -389,8 +307,7 @@ module Eval =
             recordV
             |> List.tryItem (fieldId.Index - 1)
             |> sum.OfOption(
-              (fun () ->
-                $"Error: tuple index {fieldId.Index} out of bounds, size {List.length recordV}")
+              (fun () -> $"Error: tuple index {fieldId.Index} out of bounds, size {List.length recordV}")
               |> Errors.Singleton loc0
             )
             |> reader.OfSum
@@ -403,11 +320,7 @@ module Eval =
               Var.Create "x",
               TypeCheckedExpr.Apply(
                 TypeCheckedExpr.SumCons(selector, t_unit, k_star),
-                TypeCheckedExpr.Lookup(
-                  "x" |> Identifier.LocalScope |> e.Scope.Resolve,
-                  t_unit,
-                  k_star
-                ),
+                TypeCheckedExpr.Lookup("x" |> Identifier.LocalScope |> e.Scope.Resolve, t_unit, k_star),
                 t_unit,
                 k_star
               ),
@@ -437,11 +350,7 @@ module Eval =
 
                     let! caseHandler =
                       cases
-                      |> Map.tryFindWithError
-                        unionVCase
-                        "union case"
-                        (fun () -> unionVCase.AsFSharpString)
-                        loc0
+                      |> Map.tryFindWithError unionVCase "union case" (fun () -> unionVCase.AsFSharpString) loc0
                       |> reader.OfSum
                       |> reader.Catch
                       |> reader.Map(Sum.toOption)
@@ -453,18 +362,9 @@ module Eval =
                       let add_var =
                         match caseVar with
                         | None -> id
-                        | Some caseVar ->
-                          Map.add
-                            (caseVar.Name
-                             |> Identifier.LocalScope
-                             |> e.Scope.Resolve)
-                            unionV
+                        | Some caseVar -> Map.add (caseVar.Name |> Identifier.LocalScope |> e.Scope.Resolve) unionV
 
-                      return!
-                        !!caseBody
-                        |> reader.MapContext(
-                          ExprEvalContext.Updaters.Values add_var
-                        )
+                      return! !!caseBody |> reader.MapContext(ExprEvalContext.Updaters.Values add_var)
                     | None ->
                       match fallback with
                       | Some fallback -> return! !fallback
@@ -475,9 +375,7 @@ module Eval =
                           |> Errors.Singleton loc0
                           |> reader.Throw
                   }
-                  |> reader.MapError(
-                    Errors.MapPriority(replaceWith ErrorPriority.High)
-                  )
+                  |> reader.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
               })
               (reader {
                 let! unionV, _ =
@@ -495,14 +393,11 @@ module Eval =
                     | Matchable f -> return! f cases
                     | _ ->
                       return!
-                        (fun () ->
-                          "Expected an applicable or matchable extension function")
+                        (fun () -> "Expected an applicable or matchable extension function")
                         |> Errors.Singleton loc0
                         |> reader.Throw
                   }
-                  |> reader.MapError(
-                    Errors.MapPriority(replaceWith ErrorPriority.High)
-                  )
+                  |> reader.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
               })
             |> reader.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
@@ -518,11 +413,7 @@ module Eval =
 
           let! caseHandler =
             cases.Handlers
-            |> Map.tryFindWithError
-              sumVCase
-              "sum case"
-              (fun () -> sumVCase.AsFSharpString)
-              loc0
+            |> Map.tryFindWithError sumVCase "sum case" (fun () -> sumVCase.AsFSharpString) loc0
             |> reader.OfSum
 
           let caseVar, caseBody = caseHandler
@@ -530,14 +421,9 @@ module Eval =
           let add_var =
             match caseVar with
             | None -> id
-            | Some caseVar ->
-              Map.add
-                (caseVar.Name |> Identifier.LocalScope |> e.Scope.Resolve)
-                sumV
+            | Some caseVar -> Map.add (caseVar.Name |> Identifier.LocalScope |> e.Scope.Resolve) sumV
 
-          return!
-            !!caseBody
-            |> reader.MapContext(ExprEvalContext.Updaters.Values(add_var))
+          return! !!caseBody |> reader.MapContext(ExprEvalContext.Updaters.Values(add_var))
 
         | TypeCheckedExprRec.FromValue({ Value = v
                                          ValueType = _
@@ -585,9 +471,7 @@ module Eval =
 
                       return Value.UnionCase(fUnionCons, argV)
                     }
-                    |> reader.MapError(
-                      Errors.MapPriority(replaceWith ErrorPriority.High)
-                    )
+                    |> reader.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 }
                 reader {
                   let! fieldId =
@@ -607,19 +491,11 @@ module Eval =
 
                       return!
                         recordV
-                        |> Map.tryFindWithError
-                          fieldId
-                          "record field"
-                          (fun () -> fieldId.ToString())
-                          loc0
+                        |> Map.tryFindWithError fieldId "record field" (fun () -> fieldId.ToString()) loc0
                         |> reader.OfSum
-                        |> reader.MapError(
-                          Errors.Map(String.append $" in record {argV}")
-                        )
+                        |> reader.MapError(Errors.Map(String.append $" in record {argV}"))
                     }
-                    |> reader.MapError(
-                      Errors.MapPriority(replaceWith ErrorPriority.High)
-                    )
+                    |> reader.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 }
                 reader {
                   let! fExt, app_id =
@@ -635,8 +511,7 @@ module Eval =
                       match app_id with
                       | Some app_id ->
 
-                        let f =
-                          ctx.ExtensionOps.Applicables |> Map.tryFind app_id
+                        let f = ctx.ExtensionOps.Applicables |> Map.tryFind app_id
 
                         match f with
                         | Some f -> return! f loc0 rest fExt argV
@@ -645,26 +520,16 @@ module Eval =
 
                           match fExt with
                           | Applicable f -> return! f argV
-                          | _ ->
-                            return!
-                              (fun () -> $"Cannot apply {fExt}")
-                              |> Errors.Singleton loc0
-                              |> reader.Throw
+                          | _ -> return! (fun () -> $"Cannot apply {fExt}") |> Errors.Singleton loc0 |> reader.Throw
                       | None ->
                         let! fExt = ctx.ExtensionOps.Eval loc0 rest fExt
 
                         match fExt with
                         | Applicable f -> return! f argV
-                        | _ ->
-                          return!
-                            (fun () -> $"Cannot apply {fExt}")
-                            |> Errors.Singleton loc0
-                            |> reader.Throw
+                        | _ -> return! (fun () -> $"Cannot apply {fExt}") |> Errors.Singleton loc0 |> reader.Throw
 
                     }
-                    |> reader.MapError(
-                      Errors.MapPriority(replaceWith ErrorPriority.High)
-                    )
+                    |> reader.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
                 } ]
             )
             |> reader.MapError(Errors<Location>.FilterHighestPriorityOnly)
@@ -674,24 +539,16 @@ module Eval =
                                       Body = body } ->
           let! context = reader.GetContext()
           return Value.Lambda(var, body, context.Scope.Values, e.Scope)
-        | TypeCheckedExprRec.TypeLambda({ Param = _tp; Body = body }) ->
-          return! !body
+        | TypeCheckedExprRec.TypeLambda({ Param = _tp; Body = body }) -> return! !body
         | TypeCheckedExprRec.TypeLet({ TypeCheckedExprTypeLet.Name = typeName
                                        TypeDef = typeDefinition
                                        Body = body }) ->
 
-          let scope =
-            e.Scope |> TypeCheckScope.Updaters.Type(replaceWith (Some typeName))
+          let scope = e.Scope |> TypeCheckScope.Updaters.Type(replaceWith (Some typeName))
 
           let bind_component
             (n, v)
-            : Updater<
-                Map<
-                  ResolvedIdentifier,
-                  Value<TypeValue<'valueExtension>, 'valueExtension>
-                 >
-               >
-            =
+            : Updater<Map<ResolvedIdentifier, Value<TypeValue<'valueExtension>, 'valueExtension>>> =
             Map.add n v
 
           let! definition_as_union =
@@ -711,22 +568,15 @@ module Eval =
               |> Seq.map (fun (k, _) ->
                 reader {
                   return
-                    bind_component (
-                      k.Name |> scope.Resolve,
-                      Value.UnionCons(k.Name |> scope.Resolve)
-                    )
+                    bind_component (k.Name |> scope.Resolve, Value.UnionCons(k.Name |> scope.Resolve))
                     >> bind_component (
-                      k.Name.LocalName
-                      |> Identifier.LocalScope
-                      |> TypeCheckScope.Empty.Resolve,
+                      k.Name.LocalName |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve,
                       Value.UnionCons(k.Name |> scope.Resolve)
                     )
                 })
               |> reader.All)
             |> reader.RunOption
-            |> reader.Map(
-              Option.map (List.fold (>>) id) >> Option.defaultValue id
-            )
+            |> reader.Map(Option.map (List.fold (>>) id) >> Option.defaultValue id)
 
           let! definition_fields =
             typeDefinition
@@ -744,30 +594,19 @@ module Eval =
               |> Seq.map (fun (k, _) ->
                 reader {
                   return
-                    bind_component (
-                      k.Name |> scope.Resolve,
-                      Value.RecordDes(k.Name |> scope.Resolve)
-                    )
+                    bind_component (k.Name |> scope.Resolve, Value.RecordDes(k.Name |> scope.Resolve))
                     >> bind_component (
-                      k.Name.LocalName
-                      |> Identifier.LocalScope
-                      |> TypeCheckScope.Empty.Resolve,
+                      k.Name.LocalName |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve,
                       Value.RecordDes(k.Name |> scope.Resolve)
                     )
                 })
               |> reader.All)
             |> reader.RunOption
-            |> reader.Map(
-              Option.map (List.fold (>>) id) >> Option.defaultValue id
-            )
+            |> reader.Map(Option.map (List.fold (>>) id) >> Option.defaultValue id)
 
           return!
             !!body
-            |> reader.MapContext(
-              ExprEvalContext.Updaters.Values(
-                bind_definition_cases >> bind_definition_fields
-              )
-            )
+            |> reader.MapContext(ExprEvalContext.Updaters.Values(bind_definition_cases >> bind_definition_fields))
         | TypeCheckedExprRec.TypeApply({ TypeCheckedExprTypeApply.Func = typeLambda
                                          TypeArg = typeArg }) ->
           return!
@@ -789,8 +628,7 @@ module Eval =
                 | TypeApplicable f -> return! f typeArg
                 | _ ->
                   return!
-                    (fun () ->
-                      $"Expected extension to be type applicable, got {ext}")
+                    (fun () -> $"Expected extension to be type applicable, got {ext}")
                     |> Errors.Singleton loc0
                     |> reader.Throw
               },
@@ -810,9 +648,7 @@ module Eval =
           let! entities_v =
             s_v
             |> Map.tryFindWithError
-              ("Entities"
-               |> Identifier.LocalScope
-               |> TypeCheckScope.Empty.Resolve)
+              ("Entities" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
               "entities schema field"
               (fun () -> "Entities")
               loc0
@@ -831,9 +667,7 @@ module Eval =
           let! relations_v =
             s_v
             |> Map.tryFindWithError
-              ("Relations"
-               |> Identifier.LocalScope
-               |> TypeCheckScope.Empty.Resolve)
+              ("Relations" |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
               "relations schema field"
               (fun () -> "Relations")
               loc0
@@ -852,9 +686,7 @@ module Eval =
           let! entity_v =
             s_v
             |> Map.tryFindWithError
-              (entityName.Name
-               |> Identifier.LocalScope
-               |> TypeCheckScope.Empty.Resolve)
+              (entityName.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
               "entity schema field"
               (fun () -> entityName.Name)
               loc0
@@ -874,9 +706,7 @@ module Eval =
           let! relation_v =
             s_v
             |> Map.tryFindWithError
-              (relationName.Name
-               |> Identifier.LocalScope
-               |> TypeCheckScope.Empty.Resolve)
+              (relationName.Name |> Identifier.LocalScope |> TypeCheckScope.Empty.Resolve)
               "relation schema field"
               (fun () -> relationName.Name)
               loc0
@@ -924,16 +754,10 @@ module Eval =
             |> sum.MapError(Errors.MapContext(replaceWith loc0))
             |> reader.OfSum
 
-          return
-            Value.Query(
-              ValueQuery.ValueUnionQueries(v1, v2, v1.DeserializeFrom)
-            )
+          return Value.Query(ValueQuery.ValueUnionQueries(v1, v2, v1.DeserializeFrom))
         | TypeCheckedExprRec.Query q ->
 
-          let rec replace_closure_lookups
-            closure
-            (e: TypeCheckedExprQueryExpr<_>)
-            =
+          let rec replace_closure_lookups closure (e: TypeCheckedExprQueryExpr<_>) =
             reader {
               let (!) = replace_closure_lookups closure
 
@@ -951,38 +775,21 @@ module Eval =
 
                 return
                   { e with
-                      Expr =
-                        TypeCheckedExprQueryExprRec.QueryRecordDes(
-                          expr,
-                          field,
-                          isJson
-                        ) }
+                      Expr = TypeCheckedExprQueryExprRec.QueryRecordDes(expr, field, isJson) }
               | TypeCheckedExprQueryExprRec.QueryTupleDes(expr, item, isJson) ->
                 let! expr = !expr
 
                 return
                   { e with
-                      Expr =
-                        TypeCheckedExprQueryExprRec.QueryTupleDes(
-                          expr,
-                          item,
-                          isJson
-                        ) }
-              | TypeCheckedExprQueryExprRec.QueryConditional(cond,
-                                                             ``then``,
-                                                             ``else``) ->
+                      Expr = TypeCheckedExprQueryExprRec.QueryTupleDes(expr, item, isJson) }
+              | TypeCheckedExprQueryExprRec.QueryConditional(cond, ``then``, ``else``) ->
                 let! cond = !cond
                 let! ``then`` = !``then``
                 let! ``else`` = !``else``
 
                 return
                   { e with
-                      Expr =
-                        TypeCheckedExprQueryExprRec.QueryConditional(
-                          cond,
-                          ``then``,
-                          ``else``
-                        ) }
+                      Expr = TypeCheckedExprQueryExprRec.QueryConditional(cond, ``then``, ``else``) }
               | TypeCheckedExprQueryExprRec.QueryUnionDes(expr, handlers) ->
                 let! expr = !expr
 
@@ -998,11 +805,7 @@ module Eval =
 
                 return
                   { e with
-                      Expr =
-                        TypeCheckedExprQueryExprRec.QueryUnionDes(
-                          expr,
-                          handlers
-                        ) }
+                      Expr = TypeCheckedExprQueryExprRec.QueryUnionDes(expr, handlers) }
               | TypeCheckedExprQueryExprRec.QuerySumDes(expr, handlers) ->
                 let! expr = !expr
 
@@ -1018,8 +821,7 @@ module Eval =
 
                 return
                   { e with
-                      Expr =
-                        TypeCheckedExprQueryExprRec.QuerySumDes(expr, handlers) }
+                      Expr = TypeCheckedExprQueryExprRec.QuerySumDes(expr, handlers) }
               | TypeCheckedExprQueryExprRec.QueryApply(func, arg) ->
                 let! func = !func
                 let! arg = !arg
@@ -1033,8 +835,7 @@ module Eval =
                 | Some(v, t) ->
                   return
                     { e with
-                        Expr =
-                          TypeCheckedExprQueryExprRec.QueryClosureValue(v, t) }
+                        Expr = TypeCheckedExprQueryExprRec.QueryClosureValue(v, t) }
               | TypeCheckedExprQueryExprRec.QueryClosureValue(_, _) -> return e
               | TypeCheckedExprQueryExprRec.QueryCastTo(e, t) ->
                 let! e = !e
@@ -1094,8 +895,7 @@ module Eval =
                 let! ctx = reader.GetContext()
 
                 let closure =
-                  ctx.Scope.Values
-                  |> Map.filter (fun k _ -> q.Closure |> Map.containsKey k)
+                  ctx.Scope.Values |> Map.filter (fun k _ -> q.Closure |> Map.containsKey k)
 
                 let closure = closure |> Map.map (fun k v -> v, q.Closure.[k])
 
@@ -1104,11 +904,8 @@ module Eval =
                   |> Option.map (
                     NonEmptyList.map (fun join ->
                       reader {
-                        let! leftV =
-                          join.Left |> replace_closure_lookups closure
-
-                        let! rightV =
-                          join.Right |> replace_closure_lookups closure
+                        let! leftV = join.Left |> replace_closure_lookups closure
+                        let! rightV = join.Right |> replace_closure_lookups closure
 
                         return
                           { join with
@@ -1119,10 +916,7 @@ module Eval =
                   )
                   |> reader.RunOption
 
-                let! where =
-                  q.Where
-                  |> Option.map (replace_closure_lookups closure)
-                  |> reader.RunOption
+                let! where = q.Where |> Option.map (replace_closure_lookups closure) |> reader.RunOption
 
                 let! select = replace_closure_lookups closure q.Select
 
@@ -1135,10 +929,7 @@ module Eval =
                     })
                   |> reader.RunOption
 
-                let! distinct =
-                  q.Distinct
-                  |> Option.map (replace_closure_lookups closure)
-                  |> reader.RunOption
+                let! distinct = q.Distinct |> Option.map (replace_closure_lookups closure) |> reader.RunOption
 
                 return
                   ValueQuery.ValueQuerySimple

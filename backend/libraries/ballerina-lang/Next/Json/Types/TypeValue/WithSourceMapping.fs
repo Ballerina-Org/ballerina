@@ -20,33 +20,14 @@ module WithSourceMapping =
           let fields = Map.ofArray fields
 
 
-          let! ty =
-            fields
-            |> Map.tryFindWithError
-              "type"
-              "TypeCheckScope"
-              (fun () -> "type")
-              ()
-
+          let! ty = fields |> Map.tryFindWithError "type" "TypeCheckScope" (fun () -> "type") ()
           let ty = JsonValue.AsString ty |> Sum.toOption
-
-          let! md =
-            fields
-            |> Map.tryFindWithError
-              "module"
-              "TypeCheckScope"
-              (fun () -> "module")
-              ()
-
+          let! md = fields |> Map.tryFindWithError "module" "TypeCheckScope" (fun () -> "module") ()
           let! md = JsonValue.AsString md
 
           let! assembly =
             fields
-            |> Map.tryFindWithError
-              "assembly"
-              "TypeCheckScope"
-              (fun () -> "assembly")
-              ()
+            |> Map.tryFindWithError "assembly" "TypeCheckScope" (fun () -> "assembly") ()
 
           let! assembly = JsonValue.AsString assembly
 
@@ -78,21 +59,13 @@ module WithSourceMapping =
 
           let! ty =
             mapping
-            |> Map.tryFindWithError
-              "type"
-              "TypeExprSourceMapping"
-              (fun () -> "type")
-              ()
+            |> Map.tryFindWithError "type" "TypeExprSourceMapping" (fun () -> "type") ()
 
           let! ty = JsonValue.AsString ty
 
           let! value =
             mapping
-            |> Map.tryFindWithError
-              "value"
-              "TypeExprSourceMapping"
-              (fun () -> "value")
-              ()
+            |> Map.tryFindWithError "value" "TypeExprSourceMapping" (fun () -> "value") ()
 
           match ty with
           | "noSourceMapping" ->
@@ -106,30 +79,17 @@ module WithSourceMapping =
 
             let! bindingName =
               fields
-              |> Map.tryFindWithError
-                "bindingName"
-                "originTypeExprLet"
-                (fun () -> "bindingName")
-                ()
+              |> Map.tryFindWithError "bindingName" "originTypeExprLet" (fun () -> "bindingName") ()
               |> Sum.bind JsonValue.AsString
 
             let! typeExpr =
               fields
-              |> Map.tryFindWithError
-                "typeExpr"
-                "originTypeExprLet"
-                (fun () -> "typeExpr")
-                ()
+              |> Map.tryFindWithError "typeExpr" "originTypeExprLet" (fun () -> "typeExpr") ()
               |> Sum.bind typeExprFromJson
 
-            return
-              OriginExprTypeLet(ExprTypeLetBindingName bindingName, typeExpr)
+            return OriginExprTypeLet(ExprTypeLetBindingName bindingName, typeExpr)
           | other ->
-            return!
-              sum.Throw(
-                Errors.Singleton () (fun () ->
-                  $"Unexpected TypeExprSourceMapping type: {other}")
-              )
+            return! sum.Throw(Errors.Singleton () (fun () -> $"Unexpected TypeExprSourceMapping type: {other}"))
         }
 
     static member ToJson
@@ -137,9 +97,7 @@ module WithSourceMapping =
       : TypeExprSourceMapping<'valueExt> -> JsonValue =
       function
       | NoSourceMapping s ->
-        JsonValue.Record
-          [| "type", JsonValue.String "noSourceMapping"
-             "value", JsonValue.String s |]
+        JsonValue.Record [| "type", JsonValue.String "noSourceMapping"; "value", JsonValue.String s |]
       | OriginTypeExpr typeExpr ->
         JsonValue.Record
           [| "type", JsonValue.String "originTypeExpr"
@@ -160,49 +118,33 @@ module WithSourceMapping =
       (valueFromJson: JsonValue -> Sum<'v, Errors<_>>)
       (typeExprFromJson: JsonValue -> Sum<TypeExpr<'valueExt>, Errors<_>>)
       : JsonValue -> Sum<WithSourceMapping<'v, 'valueExt>, Errors<_>> =
-      Sum.assertDiscriminatorAndContinueWithValue
-        discriminator
-        (fun withSourceMapping ->
-          sum {
-            let! withSourceMapping =
-              withSourceMapping |> JsonValue.AsRecord |> sum.Map Map.ofArray
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun withSourceMapping ->
+        sum {
+          let! withSourceMapping = withSourceMapping |> JsonValue.AsRecord |> sum.Map Map.ofArray
 
-            let! scope =
-              withSourceMapping
-              |> Map.tryFindWithError
-                "typeCheckScopeSource"
-                "WithSourceMapping"
-                (fun () -> "typeCheckScopeSource")
-                ()
+          let! scope =
+            withSourceMapping
+            |> Map.tryFindWithError "typeCheckScopeSource" "WithSourceMapping" (fun () -> "typeCheckScopeSource") ()
 
-            let! scope = TypeCheckScope.FromJson scope
+          let! scope = TypeCheckScope.FromJson scope
 
-            let! typeExpr =
-              withSourceMapping
-              |> Map.tryFindWithError
-                "typeExprSource"
-                "WithSourceMapping"
-                (fun () -> "typeExprSource")
-                ()
+          let! typeExpr =
+            withSourceMapping
+            |> Map.tryFindWithError "typeExprSource" "WithSourceMapping" (fun () -> "typeExprSource") ()
 
-            let! typeExpr =
-              TypeExprSourceMapping.FromJson typeExprFromJson typeExpr
+          let! typeExpr = TypeExprSourceMapping.FromJson typeExprFromJson typeExpr
 
-            let! value =
-              withSourceMapping
-              |> Map.tryFindWithError
-                "value"
-                "WithSourceMapping"
-                (fun () -> "value")
-                ()
+          let! value =
+            withSourceMapping
+            |> Map.tryFindWithError "value" "WithSourceMapping" (fun () -> "value") ()
 
-            let! value = valueFromJson value
+          let! value = valueFromJson value
 
-            return
-              { value = value
-                typeExprSource = typeExpr
-                typeCheckScopeSource = scope }
-          })
+          return
+            { value = value
+              typeExprSource = typeExpr
+              typeCheckScopeSource = scope }
+        })
 
     static member ToJson
       (valueToJson: 'v -> JsonValue)
@@ -210,8 +152,7 @@ module WithSourceMapping =
       (mapping: WithSourceMapping<'v, 'valueExt>)
 
       : JsonValue =
-      let typeCheckScopeSource =
-        TypeCheckScope.ToJson mapping.typeCheckScopeSource
+      let typeCheckScopeSource = TypeCheckScope.ToJson mapping.typeCheckScopeSource
 
       let typeExprSource =
         TypeExprSourceMapping.ToJson typeExprToJson mapping.typeExprSource

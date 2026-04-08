@@ -26,15 +26,11 @@ module Extension =
       Identifier.FullyQualified([ "int32" ], "toString")
       |> TypeCheckScope.Empty.Resolve
 
-    let toStringOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
+    let toStringOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32ToStringId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(int32TypeValue, stringTypeValue),
-              Kind.Star,
-              Int32Operations.String)
+          <| (TypeValue.CreateArrow(int32TypeValue, stringTypeValue), Kind.Star, Int32Operations.String)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -61,18 +57,14 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return
-                Value<TypeValue<'ext>, 'ext>
-                  .Primitive(PrimitiveValue.String(v |> string))
+              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.String(v |> string))
             } }
 
     let int32TryParseId =
       Identifier.FullyQualified([ "int32" ], "tryParse")
       |> TypeCheckScope.Empty.Resolve
 
-    let tryParseOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
+    let tryParseOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32TryParseId,
       { PublicIdentifiers =
           Some
@@ -112,32 +104,18 @@ module Extension =
 
               return
                 match System.Int32.TryParse(v) with
-                | true, result ->
-                  Value.Sum(
-                    { Case = 2; Count = 2 },
-                    Value.Primitive(PrimitiveValue.Int32 result)
-                  )
-                | false, _ ->
-                  Value.Sum(
-                    { Case = 1; Count = 2 },
-                    Value.Primitive(PrimitiveValue.Unit)
-                  )
+                | true, result -> Value.Sum({ Case = 2; Count = 2 }, Value.Primitive(PrimitiveValue.Int32 result))
+                | false, _ -> Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit))
             } }
 
     let int32PlusId =
-      Identifier.FullyQualified([ "int32" ], "+")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "int32" ], "+") |> TypeCheckScope.Empty.Resolve
 
-    let plusOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
+    let plusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32PlusId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                int32TypeValue,
-                TypeValue.CreateArrow(int32TypeValue, int32TypeValue)
-              ),
+          <| (TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, int32TypeValue)),
               Kind.Star,
               Int32Operations.Plus {| v1 = None |})
         OperationsLens =
@@ -169,30 +147,21 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Int32Operations.Plus({| v1 = Some v |}) |> operationLens.Set,
-                   Some int32PlusId)
+                  (Int32Operations.Plus({| v1 = Some v |}) |> operationLens.Set, Some int32PlusId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Int32(vClosure + v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(vClosure + v))
             } }
 
     let int32MinusId =
-      Identifier.FullyQualified([ "int32" ], "-")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "int32" ], "-") |> TypeCheckScope.Empty.Resolve
 
-    let minusOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
+    let minusOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32MinusId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                int32TypeValue,
-                TypeValue.CreateArrow(int32TypeValue, int32TypeValue)
-              ),
+          <| (TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, int32TypeValue)),
               Kind.Star,
               Int32Operations.Minus {| v1 = None |})
         OperationsLens =
@@ -224,31 +193,22 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Int32Operations.Minus({| v1 = Some v |}) |> operationLens.Set,
-                   Some int32MinusId)
+                  (Int32Operations.Minus({| v1 = Some v |}) |> operationLens.Set, Some int32MinusId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Int32(vClosure - v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(vClosure - v))
             } }
 
 
     let int32TimesId =
-      Identifier.FullyQualified([ "int32" ], "*")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "int32" ], "*") |> TypeCheckScope.Empty.Resolve
 
-    let timesOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
+    let timesOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32TimesId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                int32TypeValue,
-                TypeValue.CreateArrow(int32TypeValue, int32TypeValue)
-              ),
+          <| (TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, int32TypeValue)),
               Kind.Star,
               Int32Operations.Times {| v1 = None |})
         OperationsLens =
@@ -280,31 +240,22 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Int32Operations.Times({| v1 = Some v |}) |> operationLens.Set,
-                   Some int32TimesId)
+                  (Int32Operations.Times({| v1 = Some v |}) |> operationLens.Set, Some int32TimesId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Int32(vClosure * v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(vClosure * v))
             } }
 
 
     let int32DivideId =
-      Identifier.FullyQualified([ "int32" ], "/")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "int32" ], "/") |> TypeCheckScope.Empty.Resolve
 
-    let divideOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
+    let divideOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32DivideId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                int32TypeValue,
-                TypeValue.CreateArrow(int32TypeValue, int32TypeValue)
-              ),
+          <| (TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, int32TypeValue)),
               Kind.Star,
               Int32Operations.Divide {| v1 = None |})
         OperationsLens =
@@ -336,31 +287,21 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Int32Operations.Divide({| v1 = Some v |})
-                   |> operationLens.Set,
-                   Some int32DivideId)
+                  (Int32Operations.Divide({| v1 = Some v |}) |> operationLens.Set, Some int32DivideId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Int32(vClosure / v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(vClosure / v))
             } }
 
     let int32PowerId =
-      Identifier.FullyQualified([ "int32" ], "**")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "int32" ], "**") |> TypeCheckScope.Empty.Resolve
 
-    let powerOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
+    let powerOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32PowerId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                int32TypeValue,
-                TypeValue.CreateArrow(int32TypeValue, int32TypeValue)
-              ),
+          <| (TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, int32TypeValue)),
               Kind.Star,
               Int32Operations.Power {| v1 = None |})
         OperationsLens =
@@ -393,30 +334,21 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Int32Operations.Power({| v1 = Some v |}) |> operationLens.Set,
-                   Some int32PowerId)
+                  (Int32Operations.Power({| v1 = Some v |}) |> operationLens.Set, Some int32PowerId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Int32(pown vClosure v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(pown vClosure v))
             } }
 
     let int32ModId =
-      Identifier.FullyQualified([ "int32" ], "%")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "int32" ], "%") |> TypeCheckScope.Empty.Resolve
 
-    let modOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
+    let modOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32ModId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                int32TypeValue,
-                TypeValue.CreateArrow(int32TypeValue, int32TypeValue)
-              ),
+          <| (TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, int32TypeValue)),
               Kind.Star,
               Int32Operations.Mod {| v1 = None |})
         OperationsLens =
@@ -448,30 +380,21 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Int32Operations.Mod({| v1 = Some v |}) |> operationLens.Set,
-                   Some int32ModId)
+                  (Int32Operations.Mod({| v1 = Some v |}) |> operationLens.Set, Some int32ModId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Int32(vClosure % v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Int32(vClosure % v))
             } }
 
     let int32EqualId =
-      Identifier.FullyQualified([ "int32" ], "==")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "int32" ], "==") |> TypeCheckScope.Empty.Resolve
 
-    let equalOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
+    let equalOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32EqualId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                int32TypeValue,
-                TypeValue.CreateArrow(int32TypeValue, boolTypeValue)
-              ),
+          <| (TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, boolTypeValue)),
               Kind.Star,
               Int32Operations.Equal {| v1 = None |})
         OperationsLens =
@@ -503,30 +426,21 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Int32Operations.Equal({| v1 = Some v |}) |> operationLens.Set,
-                   Some int32EqualId)
+                  (Int32Operations.Equal({| v1 = Some v |}) |> operationLens.Set, Some int32EqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Bool(vClosure = v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure = v))
             } }
 
     let int32NotEqualId =
-      Identifier.FullyQualified([ "int32" ], "!=")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "int32" ], "!=") |> TypeCheckScope.Empty.Resolve
 
-    let notEqualOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
+    let notEqualOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32NotEqualId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                int32TypeValue,
-                TypeValue.CreateArrow(int32TypeValue, boolTypeValue)
-              ),
+          <| (TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, boolTypeValue)),
               Kind.Star,
               Int32Operations.NotEqual {| v1 = None |})
         OperationsLens =
@@ -558,38 +472,27 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Int32Operations.NotEqual({| v1 = Some v |})
-                   |> operationLens.Set,
-                   Some int32NotEqualId)
+                  (Int32Operations.NotEqual({| v1 = Some v |}) |> operationLens.Set, Some int32NotEqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Bool(vClosure <> v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <> v))
             } }
 
     let int32GreaterThanId =
-      Identifier.FullyQualified([ "int32" ], ">")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "int32" ], ">") |> TypeCheckScope.Empty.Resolve
 
-    let greaterThanOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
+    let greaterThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32GreaterThanId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                int32TypeValue,
-                TypeValue.CreateArrow(int32TypeValue, boolTypeValue)
-              ),
+          <| (TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, boolTypeValue)),
               Kind.Star,
               Int32Operations.GreaterThan {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | Int32Operations.GreaterThan v ->
-              Some(Int32Operations.GreaterThan v)
+            | Int32Operations.GreaterThan v -> Some(Int32Operations.GreaterThan v)
             | _ -> None)
         Apply =
           fun loc0 _rest (op, v) ->
@@ -615,39 +518,29 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Int32Operations.GreaterThan({| v1 = Some v |})
-                   |> operationLens.Set,
-                   Some int32GreaterThanId)
+                  (Int32Operations.GreaterThan({| v1 = Some v |}) |> operationLens.Set, Some int32GreaterThanId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
                 let res = vClosure > v
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Bool(res))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(res))
             } }
 
     let int32GreaterThanOrEqualId =
-      Identifier.FullyQualified([ "int32" ], ">=")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "int32" ], ">=") |> TypeCheckScope.Empty.Resolve
 
     let greaterThanOrEqualOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
+      : ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32GreaterThanOrEqualId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                int32TypeValue,
-                TypeValue.CreateArrow(int32TypeValue, boolTypeValue)
-              ),
+          <| (TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, boolTypeValue)),
               Kind.Star,
               Int32Operations.GreaterThanOrEqual {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | Int32Operations.GreaterThanOrEqual v ->
-              Some(Int32Operations.GreaterThanOrEqual v)
+            | Int32Operations.GreaterThanOrEqual v -> Some(Int32Operations.GreaterThanOrEqual v)
             | _ -> None)
         Apply =
           fun loc0 _rest (op, v) ->
@@ -673,31 +566,22 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Int32Operations.GreaterThanOrEqual({| v1 = Some v |})
-                   |> operationLens.Set,
+                  (Int32Operations.GreaterThanOrEqual({| v1 = Some v |}) |> operationLens.Set,
                    Some int32GreaterThanOrEqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Bool(vClosure >= v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure >= v))
             } }
 
     let int32LessThanId =
-      Identifier.FullyQualified([ "int32" ], "<")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "int32" ], "<") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
+    let lessThanOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32LessThanId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                int32TypeValue,
-                TypeValue.CreateArrow(int32TypeValue, boolTypeValue)
-              ),
+          <| (TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, boolTypeValue)),
               Kind.Star,
               Int32Operations.LessThan {| v1 = None |})
         OperationsLens =
@@ -729,38 +613,27 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Int32Operations.LessThan({| v1 = Some v |})
-                   |> operationLens.Set,
-                   Some int32LessThanId)
+                  (Int32Operations.LessThan({| v1 = Some v |}) |> operationLens.Set, Some int32LessThanId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Bool(vClosure < v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure < v))
             } }
 
     let int32LessThanOrEqualId =
-      Identifier.FullyQualified([ "int32" ], "<=")
-      |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "int32" ], "<=") |> TypeCheckScope.Empty.Resolve
 
-    let lessThanOrEqualOperation
-      : ResolvedIdentifier *
-        OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
+    let lessThanOrEqualOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, Int32Operations<'ext>> =
       int32LessThanOrEqualId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(
-                int32TypeValue,
-                TypeValue.CreateArrow(int32TypeValue, boolTypeValue)
-              ),
+          <| (TypeValue.CreateArrow(int32TypeValue, TypeValue.CreateArrow(int32TypeValue, boolTypeValue)),
               Kind.Star,
               Int32Operations.LessThanOrEqual {| v1 = None |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | Int32Operations.LessThanOrEqual v ->
-              Some(Int32Operations.LessThanOrEqual v)
+            | Int32Operations.LessThanOrEqual v -> Some(Int32Operations.LessThanOrEqual v)
             | _ -> None)
         Apply =
           fun loc0 _rest (op, v) ->
@@ -786,15 +659,11 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (Int32Operations.LessThanOrEqual({| v1 = Some v |})
-                   |> operationLens.Set,
-                   Some int32LessThanOrEqualId)
+                  (Int32Operations.LessThanOrEqual({| v1 = Some v |}) |> operationLens.Set, Some int32LessThanOrEqualId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return
-                  Value<TypeValue<'ext>, 'ext>
-                    .Primitive(PrimitiveValue.Bool(vClosure <= v))
+                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure <= v))
             } }
 
     { TypeVars = []

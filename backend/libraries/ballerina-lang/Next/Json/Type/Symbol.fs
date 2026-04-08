@@ -34,11 +34,7 @@ module TypeSymbolJson =
             { Name = name |> Identifier.LocalScope
               Guid = parsedGuid }
         | false, _ ->
-          return!
-            sum.Throw(
-              Errors.Singleton () (fun () ->
-                $"Error: Invalid GUID format '{guid}' in 'TypeSymbol'.")
-            )
+          return! sum.Throw(Errors.Singleton () (fun () -> $"Error: Invalid GUID format '{guid}' in 'TypeSymbol'."))
       }
 
     static member ToJson(ts: TypeSymbol) : JsonValue =

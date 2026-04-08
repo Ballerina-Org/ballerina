@@ -20,10 +20,7 @@ module CRUD =
     inherit Crud<'a>
 
     abstract member getN:
-      Quotations.Expr<'a -> bool> ->
-      Quotations.Expr<'a -> 'key> ->
-      Ballerina.Range ->
-        Linq.IQueryable<'a>
+      Quotations.Expr<'a -> bool> -> Quotations.Expr<'a -> 'key> -> Ballerina.Range -> Linq.IQueryable<'a>
 
   type Crud<'a> with
     static member FromDbSet
@@ -48,10 +45,7 @@ module CRUD =
 
           member this.update id u =
             db.ChangeTracker.Clear()
-
-            let es =
-              dbSet.AsNoTracking().Where(entity.getId id |> ToLinq).ToList()
-
+            let es = dbSet.AsNoTracking().Where(entity.getId id |> ToLinq).ToList()
             let es = es.Select(u)
             dbSet.UpdateRange(es)
             do db.SaveChanges() |> ignore
@@ -79,11 +73,7 @@ module CRUD =
           member this.get id = crud.get id
 
           member this.getN predicate ordering range =
-            dbSet
-              .Where(ToLinq predicate)
-              .OrderBy(ToLinq ordering)
-              .Skip(range.skip)
-              .Take(range.take) }
+            dbSet.Where(ToLinq predicate).OrderBy(ToLinq ordering).Skip(range.skip).Take(range.take) }
 
 // type Crud<'a> =
 //   abstract member setId:Guid -> Updater<'a>

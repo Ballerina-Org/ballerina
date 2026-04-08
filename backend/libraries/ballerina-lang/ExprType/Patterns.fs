@@ -11,27 +11,22 @@ module Patterns =
   open Ballerina.DSL.Expr.Model
 
   type ExprType with
-    static member GetFields
-      (t: ExprType)
-      : Sum<List<string * ExprType>, Errors<unit>> =
+    static member GetFields(t: ExprType) : Sum<List<string * ExprType>, Errors<unit>> =
       match t with
-      | ExprType.RecordType fs ->
-        sum { return fs |> Seq.map (fun v -> v.Key, v.Value) |> List.ofSeq }
+      | ExprType.RecordType fs -> sum { return fs |> Seq.map (fun v -> v.Key, v.Value) |> List.ofSeq }
       | _ ->
         sum.Throw(
-          Errors.Singleton () (fun () ->
-            sprintf "Error: type %A is no record and thus has no fields" t)
+          fun () -> sprintf "Error: type %A is no record and thus has no fields" t
+          |> Errors.Singleton()
         )
 
-    static member GetCases
-      (t: ExprType)
-      : Sum<Map<CaseName, UnionCase>, Errors<unit>> =
+    static member GetCases(t: ExprType) : Sum<Map<CaseName, UnionCase>, Errors<unit>> =
       match t with
       | ExprType.UnionType cs -> sum { return cs }
       | _ ->
         sum.Throw(
-          Errors.Singleton () (fun () ->
-            sprintf "Error: type %A is no union and thus has no cases" t)
+          (fun () -> sprintf "Error: type %A is no union and thus has no cases" t)
+          |> Errors.Singleton()
         )
 
     static member AsSet(t: ExprType) : Sum<ExprType, Errors<_>> =
@@ -39,11 +34,7 @@ module Patterns =
         match t with
         | ExprType.SetType e -> return e
         | _ ->
-          return!
-            sum.Throw(
-              Errors.Singleton () (fun () ->
-                $$"""Error: type {{t}} cannot be converted to a Set.""")
-            )
+          return! sum.Throw(Errors.Singleton () (fun () -> $$"""Error: type {{t}} cannot be converted to a Set."""))
       }
 
     static member AsTable(t: ExprType) : Sum<ExprType, Errors<unit>> =
@@ -51,11 +42,7 @@ module Patterns =
         match t with
         | ExprType.TableType e -> return e
         | _ ->
-          return!
-            sum.Throw(
-              Errors.Singleton () (fun () ->
-                $$"""Error: type {{t}} cannot be converted to a Table.""")
-            )
+          return! sum.Throw(Errors.Singleton () (fun () -> $$"""Error: type {{t}} cannot be converted to a Table."""))
       }
 
     static member AsLookupId(t: ExprType) : Sum<ExprTypeId, Errors<unit>> =
@@ -63,25 +50,15 @@ module Patterns =
         match t with
         | ExprType.LookupType l -> return l
         | _ ->
-          return!
-            sum.Throw(
-              Errors.Singleton () (fun () ->
-                $$"""Error: type {{t}} cannot be converted to a lookup.""")
-            )
+          return! sum.Throw(Errors.Singleton () (fun () -> $$"""Error: type {{t}} cannot be converted to a lookup."""))
       }
 
-    static member AsRecord
-      (t: ExprType)
-      : Sum<Map<string, ExprType>, Errors<unit>> =
+    static member AsRecord(t: ExprType) : Sum<Map<string, ExprType>, Errors<unit>> =
       sum {
         match t with
         | ExprType.RecordType l -> return l
         | _ ->
-          return!
-            sum.Throw(
-              Errors.Singleton () (fun () ->
-                $$"""Error: type {{t}} cannot be converted to a record.""")
-            )
+          return! sum.Throw(Errors.Singleton () (fun () -> $$"""Error: type {{t}} cannot be converted to a record."""))
       }
 
     static member AsTuple(t: ExprType) : Sum<List<ExprType>, Errors<unit>> =
@@ -89,11 +66,7 @@ module Patterns =
         match t with
         | ExprType.TupleType l -> return l
         | _ ->
-          return!
-            sum.Throw(
-              Errors.Singleton () (fun () ->
-                $$"""Error: type {{t}} cannot be converted to a tuple.""")
-            )
+          return! sum.Throw(Errors.Singleton () (fun () -> $$"""Error: type {{t}} cannot be converted to a tuple."""))
       }
 
     static member AsUnion(t: ExprType) : Sum<_, Errors<unit>> =
@@ -101,11 +74,7 @@ module Patterns =
         match t with
         | ExprType.UnionType c -> return c
         | _ ->
-          return!
-            sum.Throw(
-              Errors.Singleton () (fun () ->
-                $$"""Error: type {{t}} cannot be converted to a union.""")
-            )
+          return! sum.Throw(Errors.Singleton () (fun () -> $$"""Error: type {{t}} cannot be converted to a union."""))
       }
 
     static member AsMap(m: ExprType) : Sum<_, Errors<unit>> =
@@ -113,11 +82,7 @@ module Patterns =
         match m with
         | ExprType.MapType(k, v) -> return (k, v)
         | _ ->
-          return!
-            sum.Throw(
-              Errors.Singleton () (fun () ->
-                $$"""Error: type {{m}} cannot be converted to a map.""")
-            )
+          return! sum.Throw(Errors.Singleton () (fun () -> $$"""Error: type {{m}} cannot be converted to a map."""))
       }
 
     static member AsUnit(t: ExprType) : Sum<Unit, Errors<unit>> =
@@ -125,11 +90,7 @@ module Patterns =
         match t with
         | ExprType.UnitType -> return ()
         | _ ->
-          return!
-            sum.Throw(
-              Errors.Singleton () (fun () ->
-                $$"""Error: type {{t}} cannot be converted to a unit.""")
-            )
+          return! sum.Throw(Errors.Singleton () (fun () -> $$"""Error: type {{t}} cannot be converted to a unit."""))
       }
 
     static member AsLambda(t: ExprType) : Sum<_, Errors<unit>> =
@@ -137,22 +98,13 @@ module Patterns =
         match t with
         | ExprType.ArrowType(i, o) -> return (i, o)
         | _ ->
-          return!
-            sum.Throw(
-              Errors.Singleton () (fun () ->
-                $$"""Error: type {{t}} cannot be converted to a lambda.""")
-            )
+          return! sum.Throw(Errors.Singleton () (fun () -> $$"""Error: type {{t}} cannot be converted to a lambda."""))
       }
 
-    static member CreateEnum
-      (cases: NonEmptyList<string>)
-      : Map<CaseName, UnionCase> =
+    static member CreateEnum(cases: NonEmptyList<string>) : Map<CaseName, UnionCase> =
       let createEnumCase (caseName: string) : CaseName * UnionCase =
         { CaseName = caseName },
         { CaseName = caseName
           Fields = ExprType.UnitType }
 
-      cases
-      |> NonEmptyList.map createEnumCase
-      |> NonEmptyList.ToList
-      |> Map.ofList
+      cases |> NonEmptyList.map createEnumCase |> NonEmptyList.ToList |> Map.ofList

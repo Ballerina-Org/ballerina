@@ -11,81 +11,47 @@ module Patterns =
 
   type DateTimeOperations<'ext> with
 
-    static member AsToString
-      (op: DateTimeOperations<'ext>)
-      : Sum<Unit, Errors<Unit>> =
+    static member AsToString(op: DateTimeOperations<'ext>) : Sum<Unit, Errors<Unit>> =
       match op with
       | DateTimeOperations.DateTime_ToString -> () |> sum.Return
-      | _ ->
-        sum.Throw(Errors.Singleton () (fun () -> "Expected ToString operation"))
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected ToString operation"))
 
-    static member AsPlus
-      (op: DateTimeOperations<'ext>)
-      : Sum<Option<DateTime>, Errors<Unit>> =
+    static member AsPlus(op: DateTimeOperations<'ext>) : Sum<Option<DateTime>, Errors<Unit>> =
       match op with
       | DateTimeOperations.Plus v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw(Errors.Singleton () (fun () -> "Expected Plus operation"))
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected Plus operation"))
 
-    static member AsDiff
-      (op: DateTimeOperations<'ext>)
-      : Sum<Option<DateTime>, Errors<Unit>> =
+    static member AsDiff(op: DateTimeOperations<'ext>) : Sum<Option<DateTime>, Errors<Unit>> =
       match op with
       | DateTimeOperations.Diff v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw(Errors.Singleton () (fun () -> "Expected Diff operation"))
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected Diff operation"))
 
-    static member AsEqual
-      (op: DateTimeOperations<'ext>)
-      : Sum<Option<DateTime>, Errors<Unit>> =
+    static member AsEqual(op: DateTimeOperations<'ext>) : Sum<Option<DateTime>, Errors<Unit>> =
       match op with
       | DateTimeOperations.Equal v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw(Errors.Singleton () (fun () -> "Expected Equal operation"))
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected Equal operation"))
 
-    static member AsNotEqual
-      (op: DateTimeOperations<'ext>)
-      : Sum<Option<DateTime>, Errors<Unit>> =
+    static member AsNotEqual(op: DateTimeOperations<'ext>) : Sum<Option<DateTime>, Errors<Unit>> =
       match op with
       | DateTimeOperations.NotEqual v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw(Errors.Singleton () (fun () -> "Expected NotEqual operation"))
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected NotEqual operation"))
 
-    static member AsGreaterThan
-      (op: DateTimeOperations<'ext>)
-      : Sum<Option<DateTime>, Errors<Unit>> =
+    static member AsGreaterThan(op: DateTimeOperations<'ext>) : Sum<Option<DateTime>, Errors<Unit>> =
       match op with
       | DateTimeOperations.GreaterThan v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw(
-          Errors.Singleton () (fun () -> "Expected GreaterThan operation")
-        )
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected GreaterThan operation"))
 
-    static member AsGreaterThanOrEqual
-      (op: DateTimeOperations<'ext>)
-      : Sum<Option<DateTime>, Errors<Unit>> =
+    static member AsGreaterThanOrEqual(op: DateTimeOperations<'ext>) : Sum<Option<DateTime>, Errors<Unit>> =
       match op with
       | DateTimeOperations.GreaterThanOrEqual v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw(
-          Errors.Singleton () (fun () ->
-            "Expected GreaterThanOrEqual operation")
-        )
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected GreaterThanOrEqual operation"))
 
-    static member AsLessThan
-      (op: DateTimeOperations<'ext>)
-      : Sum<Option<DateTime>, Errors<Unit>> =
+    static member AsLessThan(op: DateTimeOperations<'ext>) : Sum<Option<DateTime>, Errors<Unit>> =
       match op with
       | DateTimeOperations.LessThan v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw(Errors.Singleton () (fun () -> "Expected LessThan operation"))
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected LessThan operation"))
 
-    static member AsLessThanOrEqual
-      (op: DateTimeOperations<'ext>)
-      : Sum<Option<DateTime>, Errors<Unit>> =
+    static member AsLessThanOrEqual(op: DateTimeOperations<'ext>) : Sum<Option<DateTime>, Errors<Unit>> =
       match op with
       | DateTimeOperations.LessThanOrEqual v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw(
-          Errors.Singleton () (fun () -> "Expected LessThanOrEqual operation")
-        )
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected LessThanOrEqual operation"))

@@ -6,39 +6,29 @@ module Forms =
   open Ballerina.Cat.Collections.OrderedMap
   open FSharp.Data
 
-  let private generateListActionsJson
-    (actions: Set<ListAction>)
-    : JsonValue option =
+  let private generateListActionsJson (actions: Set<ListAction>) : JsonValue option =
     let generateListAction (action: ListAction) : string * JsonValue =
       match action with
       | ListAction.Add -> "add", JsonValue.String "list.actions.add"
       | ListAction.Remove -> "remove", JsonValue.String "list.actions.remove"
       | ListAction.Clear -> "clear", JsonValue.String "list.actions.clear"
       | ListAction.Move -> "move", JsonValue.String "list.actions.move"
-      | ListAction.Duplicate ->
-        "duplicate", JsonValue.String "list.actions.duplicate"
+      | ListAction.Duplicate -> "duplicate", JsonValue.String "list.actions.duplicate"
 
     match actions with
     | actions when actions.IsEmpty -> None
-    | _ ->
-      Some(
-        JsonValue.Record(
-          Array.ofList (actions |> Set.toList |> List.map generateListAction)
-        )
-      )
+    | _ -> Some(JsonValue.Record(Array.ofList (actions |> Set.toList |> List.map generateListAction)))
 
   let rec private generateRendererJson<'typeValue>
     (renderer: RendererExpression<'typeValue>)
     : list<string * JsonValue> =
     match renderer with
-    | RendererExpression.Primitive { Primitive = RendererIdentifier id } ->
-      [ "renderer", JsonValue.String id ]
+    | RendererExpression.Primitive { Primitive = RendererIdentifier id } -> [ "renderer", JsonValue.String id ]
     | RendererExpression.List { List = RendererIdentifier id
                                 Element = element
                                 Actions = actions } ->
       [ "renderer", JsonValue.String id
-        "elementRenderer",
-        JsonValue.Record(Array.ofList (generateRendererJson element)) ]
+        "elementRenderer", JsonValue.Record(Array.ofList (generateRendererJson element)) ]
       @ match generateListActionsJson actions with
         | Some actions -> [ "actions", actions ]
         | None -> []
@@ -46,10 +36,8 @@ module Forms =
                                Left = left
                                Right = right } ->
       [ "renderer", JsonValue.String id
-        "leftRenderer",
-        JsonValue.Record(Array.ofList (generateRendererJson left))
-        "rightRenderer",
-        JsonValue.Record(Array.ofList (generateRendererJson right)) ]
+        "leftRenderer", JsonValue.Record(Array.ofList (generateRendererJson left))
+        "rightRenderer", JsonValue.Record(Array.ofList (generateRendererJson right)) ]
     | RendererExpression.Tuple { Tuple = RendererIdentifier id
                                  Items = items } ->
       [ "renderer", JsonValue.String id
@@ -57,8 +45,7 @@ module Forms =
         JsonValue.Array(
           Array.ofList (
             items
-            |> List.map (fun item ->
-              JsonValue.Record(Array.ofList (generateRendererJson item)))
+            |> List.map (fun item -> JsonValue.Record(Array.ofList (generateRendererJson item)))
           )
         ) ]
     | RendererExpression.Union { Union = RendererIdentifier id
@@ -73,17 +60,13 @@ module Forms =
                    cases
                    |> Map.toSeq
                    |> Seq.map (fun ((CaseIdentifier caseName), renderer) ->
-                     caseName,
-                     JsonValue.Record(
-                       Array.ofList (generateRendererJson renderer)
-                     ))
+                     caseName, JsonValue.Record(Array.ofList (generateRendererJson renderer)))
                  )
                )
                "type", JsonValue.String(renderer.Type.ToString()) ])
           )
         ) ]
-    | RendererExpression.Form(FormIdentifier formName, _) ->
-      [ "renderer", JsonValue.String formName ]
+    | RendererExpression.Form(FormIdentifier formName, _) -> [ "renderer", JsonValue.String formName ]
     // Preferably we make no distinction between inline forms and regular forms inthe AST
     | RendererExpression.InlineForm(inlineForm) ->
       let form: Form<'typeValue> =
@@ -119,22 +102,17 @@ module Forms =
                                Value = value } ->
       [ "renderer", JsonValue.String id
         "keyRenderer", JsonValue.Record(Array.ofList (generateRendererJson key))
-        "valueRenderer",
-        JsonValue.Record(Array.ofList (generateRendererJson value)) ]
+        "valueRenderer", JsonValue.Record(Array.ofList (generateRendererJson value)) ]
     | RendererExpression.Readonly { Readonly = RendererIdentifier readonly
                                     Value = value } ->
       [ "renderer", JsonValue.String readonly
-        "childRenderer",
-        JsonValue.Record(Array.ofList (generateRendererJson value)) ]
-    | RendererExpression.Table _ ->
-      failwith $"Table Renderers are not supported"
+        "childRenderer", JsonValue.Record(Array.ofList (generateRendererJson value)) ]
+    | RendererExpression.Table _ -> failwith $"Table Renderers are not supported"
     | RendererExpression.One _ -> failwith $"One Renderers are not supported"
     | RendererExpression.Many _ -> failwith $"Many Renderers are not supported"
     | _ -> failwith $"Renderer {renderer} not supported"
 
-  and private generateFieldJson<'typeValue>
-    (field: Field<'typeValue>)
-    : JsonValue =
+  and private generateFieldJson<'typeValue> (field: Field<'typeValue>) : JsonValue =
     let (FieldIdentifier fieldName) = field.Name
     let typeProp = [ "type", JsonValue.String fieldName ]
 
@@ -145,41 +123,30 @@ module Forms =
 
     let tooltipProp =
       field.Tooltip
-      |> Option.map (fun (Tooltip tooltip) ->
-        "tooltip", JsonValue.String tooltip)
+      |> Option.map (fun (Tooltip tooltip) -> "tooltip", JsonValue.String tooltip)
       |> Option.toList
 
     let detailsProp =
       field.Details
-      |> Option.map (fun (Details details) ->
-        "details", JsonValue.String details)
+      |> Option.map (fun (Details details) -> "details", JsonValue.String details)
       |> Option.toList
 
     let rendererProp = generateRendererJson field.Renderer
+    JsonValue.Record(Array.ofList (typeProp @ labelProp @ tooltipProp @ detailsProp @ rendererProp))
 
-    JsonValue.Record(
-      Array.ofList (
-        typeProp @ labelProp @ tooltipProp @ detailsProp @ rendererProp
-      )
-    )
-
-  and private generateFormJson<'typeValue>
-    (form: Form<'typeValue>)
-    : JsonValue =
+  and private generateFormJson<'typeValue> (form: Form<'typeValue>) : JsonValue =
     let (TypeIdentifier typeName) = form.TypeIdentifier
     let baseProps = [ "type", JsonValue.String typeName ]
 
     let rendererProp =
       form.RendererId
-      |> Option.map (fun (RendererIdentifier id) ->
-        "renderer", JsonValue.String id)
+      |> Option.map (fun (RendererIdentifier id) -> "renderer", JsonValue.String id)
       |> Option.toList
 
     let fieldsProp =
       form.Body.Members.Fields
       |> Map.toSeq
-      |> Seq.map (fun ((FieldIdentifier fieldName), field) ->
-        fieldName, generateFieldJson field)
+      |> Seq.map (fun ((FieldIdentifier fieldName), field) -> fieldName, generateFieldJson field)
       |> Array.ofSeq
 
     let disabledFieldsProp =
@@ -204,19 +171,16 @@ module Forms =
                 let fieldsArray =
                   group
                   |> Set.toSeq
-                  |> Seq.map (fun (FieldIdentifier fieldName) ->
-                    JsonValue.String fieldName)
+                  |> Seq.map (fun (FieldIdentifier fieldName) -> JsonValue.String fieldName)
                   |> Array.ofSeq
 
                 groupName, JsonValue.Array fieldsArray)
               |> Array.ofSeq
 
-            columnName,
-            JsonValue.Record [| "groups", JsonValue.Record groupsProps |])
+            columnName, JsonValue.Record [| "groups", JsonValue.Record groupsProps |])
           |> Array.ofSeq
 
-        tabName,
-        JsonValue.Record [| "columns", JsonValue.Record columnsProps |])
+        tabName, JsonValue.Record [| "columns", JsonValue.Record columnsProps |])
       |> Array.ofSeq
 
     let tabsProp = [ "tabs", JsonValue.Record tabsProps ]
@@ -231,9 +195,7 @@ module Forms =
       )
     )
 
-  and internal generateForms<'typeValue>
-    (forms: OrderedMap<FormIdentifier, Form<'typeValue>>)
-    : JsonValue =
+  and internal generateForms<'typeValue> (forms: OrderedMap<FormIdentifier, Form<'typeValue>>) : JsonValue =
     forms
     |> OrderedMap.toSeq
     |> Seq.distinctBy fst

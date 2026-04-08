@@ -15,19 +15,15 @@ module ArrowTypeExpr =
   let private discriminator = "arrow"
 
   type TypeExpr<'valueExt> with
-    static member FromJsonArrow
-      (fromJsonRoot: JsonValue -> Sum<TypeExpr<'valueExt>, Errors<_>>)
-      =
-      Sum.assertDiscriminatorAndContinueWithValue
-        discriminator
-        (fun arrowFields ->
-          sum {
-            let! (param, returnType) = arrowFields |> JsonValue.AsPair
-            let! param = param |> fromJsonRoot
-            let! returnType = returnType |> fromJsonRoot
+    static member FromJsonArrow(fromJsonRoot: JsonValue -> Sum<TypeExpr<'valueExt>, Errors<_>>) =
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun arrowFields ->
+        sum {
+          let! (param, returnType) = arrowFields |> JsonValue.AsPair
+          let! param = param |> fromJsonRoot
+          let! returnType = returnType |> fromJsonRoot
 
-            return TypeExpr.Arrow(param, returnType)
-          })
+          return TypeExpr.Arrow(param, returnType)
+        })
 
     static member ToJsonArrow
       (rootToJson: TypeExpr<'valueExt> -> JsonValue)

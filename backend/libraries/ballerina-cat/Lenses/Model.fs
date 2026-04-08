@@ -8,10 +8,7 @@ module Partial =
     { Get: 'a -> Option<'b>; Set: 'b -> 'a }
 
   type PartialLens<'a, 'b> with
-    static member BindGet
-      (f: 'b -> Option<'b>)
-      (lens: PartialLens<'a, 'b>)
-      : PartialLens<'a, 'b> =
+    static member BindGet (f: 'b -> Option<'b>) (lens: PartialLens<'a, 'b>) : PartialLens<'a, 'b> =
       { lens with
           Get =
             fun v ->

@@ -6,8 +6,6 @@ module SerializerConfig =
 
   let jsonSerializationConfiguration =
     let options =
-      new JsonSerializerOptions(
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-      )
+      new JsonSerializerOptions(DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)
 
     options

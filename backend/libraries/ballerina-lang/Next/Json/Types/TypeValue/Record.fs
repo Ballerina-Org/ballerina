@@ -21,37 +21,27 @@ module Record =
   type TypeValue<'valueExt> with
     static member FromJsonRecord
       (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors<unit>>)
-      : JsonValue
-          -> Sum<
-            OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>,
-            Errors<unit>
-           >
-      =
-      Sum.assertDiscriminatorAndContinueWithValue
-        discriminator
-        (fun recordFields ->
-          sum {
-            let! fields = recordFields |> JsonValue.AsArray
+      : JsonValue -> Sum<OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>, Errors<unit>> =
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun recordFields ->
+        sum {
+          let! fields = recordFields |> JsonValue.AsArray
 
-            let! fieldTypes =
-              fields
-              |> Array.map (fun field ->
-                sum {
-                  let! fieldKey, fieldValueAndKind = field |> JsonValue.AsPair
+          let! fieldTypes =
+            fields
+            |> Array.map (fun field ->
+              sum {
+                let! fieldKey, fieldValueAndKind = field |> JsonValue.AsPair
+                let! fieldValue, fieldKind = fieldValueAndKind |> JsonValue.AsPair
+                let! fieldType = fromRootJson fieldValue
+                let! fieldKind = fieldKind |> Kind.FromJson
+                let! fieldKey = fieldKey |> TypeSymbol.FromJson
+                return fieldKey, (fieldType, fieldKind)
+              })
+            |> sum.All
+            |> sum.Map OrderedMap.ofSeq
 
-                  let! fieldValue, fieldKind =
-                    fieldValueAndKind |> JsonValue.AsPair
-
-                  let! fieldType = fromRootJson fieldValue
-                  let! fieldKind = fieldKind |> Kind.FromJson
-                  let! fieldKey = fieldKey |> TypeSymbol.FromJson
-                  return fieldKey, (fieldType, fieldKind)
-                })
-              |> sum.All
-              |> sum.Map OrderedMap.ofSeq
-
-            return fieldTypes
-          })
+          return fieldTypes
+        })
 
     static member ToJsonRecord
       (rootToJson: TypeValue<'valueExt> -> JsonValue)
@@ -63,9 +53,6 @@ module Record =
          let fieldKeyJson = fieldKey |> TypeSymbol.ToJson
          let fieldValueJson = fieldValue |> rootToJson
          let fieldKindJson = fieldKind |> Kind.ToJson
-
-         JsonValue.Array
-           [| fieldKeyJson
-              JsonValue.Array [| fieldValueJson; fieldKindJson |] |])
+         JsonValue.Array [| fieldKeyJson; JsonValue.Array [| fieldValueJson; fieldKindJson |] |])
        >> JsonValue.Array)
       >> Json.discriminator discriminator

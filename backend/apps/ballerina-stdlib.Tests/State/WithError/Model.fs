@@ -36,9 +36,7 @@ let ``Should correctly map state`` () =
 
   let withOuterState: State<string, unit, OuterState, Errors<_>> =
     withInnerState
-    |> State.mapState
-      (fst >> OuterState.Getters.Inner)
-      (fst >> OuterState.Replacers.Inner)
+    |> State.mapState (fst >> OuterState.Getters.Inner) (fst >> OuterState.Replacers.Inner)
 
   let result = withOuterState.run ((), { inner = { age = 30 }; name = "John" })
 
@@ -47,10 +45,6 @@ let ``Should correctly map state`` () =
     Assert.That(res, Is.EqualTo value)
 
     match state with
-    | Some s ->
-      Assert.That(s, Is.EqualTo { inner = { age = 31 }; name = "John" })
+    | Some s -> Assert.That(s, Is.EqualTo { inner = { age = 31 }; name = "John" })
     | None -> Assert.Fail "Expected state, but got None"
-  | Sum.Right(e, _) ->
-    Assert.Fail(
-      sprintf "Expected success, but got error %s" (Errors.ToString(e, "\n"))
-    )
+  | Sum.Right(e, _) -> Assert.Fail(sprintf "Expected success, but got error %s" (Errors.ToString(e, "\n")))

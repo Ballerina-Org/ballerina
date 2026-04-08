@@ -30,13 +30,9 @@ module TypeExtraction =
     (hostType: TypeValue<'valueExt>)
     : ExtractionTree =
 
-    let resolveIdentifier (id: Identifier) : ResolvedIdentifier option =
-      Map.tryFind id resolvedIdentifiers
+    let resolveIdentifier (id: Identifier) : ResolvedIdentifier option = Map.tryFind id resolvedIdentifiers
 
-    let mkTree
-      (selfMatch: bool)
-      (children: Map<ExtractionStep, ExtractionTree>)
-      : ExtractionTree option =
+    let mkTree (selfMatch: bool) (children: Map<ExtractionStep, ExtractionTree>) : ExtractionTree option =
       if selfMatch || not (Map.isEmpty children) then
         Some
           { SelfMatch = selfMatch
@@ -44,10 +40,7 @@ module TypeExtraction =
       else
         None
 
-    let rec find
-      (visited: Set<ResolvedIdentifier>)
-      (t: TypeValue<'valueExt>)
-      : ExtractionTree option =
+    let rec find (visited: Set<ResolvedIdentifier>) (t: TypeValue<'valueExt>) : ExtractionTree option =
       let selfMatch = isTarget t
 
       let selfMatch', children =
@@ -58,8 +51,7 @@ module TypeExtraction =
             match Map.tryFind resolvedId bindings with
             | Some(typeValue, _) ->
               match find (Set.add resolvedId visited) typeValue with
-              | Some resolvedTree ->
-                selfMatch || resolvedTree.SelfMatch, resolvedTree.Children
+              | Some resolvedTree -> selfMatch || resolvedTree.SelfMatch, resolvedTree.Children
               | None -> selfMatch, Map.empty
             | None -> selfMatch, Map.empty
           | _ -> selfMatch, Map.empty
@@ -69,17 +61,14 @@ module TypeExtraction =
           fields
           |> OrderedMap.toList
           |> List.choose (fun (sym, (fieldType, _)) ->
-            find visited fieldType
-            |> Option.map (fun child -> RecordField sym, child))
+            find visited fieldType |> Option.map (fun child -> RecordField sym, child))
           |> Map.ofList
 
         | TypeValue.Tuple { value = elements } ->
           selfMatch,
           elements
           |> List.indexed
-          |> List.choose (fun (i, elemType) ->
-            find visited elemType
-            |> Option.map (fun child -> TupleElement i, child))
+          |> List.choose (fun (i, elemType) -> find visited elemType |> Option.map (fun child -> TupleElement i, child))
           |> Map.ofList
 
         | TypeValue.Union { value = cases } ->
@@ -87,8 +76,7 @@ module TypeExtraction =
           cases
           |> OrderedMap.toList
           |> List.choose (fun (sym, caseType) ->
-            find visited caseType
-            |> Option.map (fun child -> UnionCase sym, child))
+            find visited caseType |> Option.map (fun child -> UnionCase sym, child))
           |> Map.ofList
 
         | TypeValue.Sum { value = alternatives } ->
@@ -119,8 +107,7 @@ module TypeExtraction =
           |> List.indexed
           |> List.choose (fun (i, argType) ->
             find visited argType
-            |> Option.map (fun child ->
-              ContainerElement(ImportedContainer(containerId, i)), child))
+            |> Option.map (fun child -> ContainerElement(ImportedContainer(containerId, i)), child))
           |> Map.ofList
 
         | TypeValue.Arrow _
@@ -175,10 +162,7 @@ module TypeExtraction =
     (bindings: TypeBindings<'valueExt>)
     (name: string)
     : ResolvedIdentifier option =
-    bindings
-    |> Map.toSeq
-    |> Seq.map fst
-    |> Seq.tryFind (fun rid -> rid.Name = name)
+    bindings |> Map.toSeq |> Seq.map fst |> Seq.tryFind (fun rid -> rid.Name = name)
 
   let private tryResolveLookupToBoundType<'valueExt when 'valueExt: comparison>
     (state: TypeCheckState<'valueExt>)
@@ -189,8 +173,7 @@ module TypeExtraction =
     let resolvedIdOpt =
       state.Symbols.IdentifiersResolver
       |> Map.tryFind id
-      |> Option.orElseWith (fun () ->
-        tryFindResolvedIdByName state.Bindings fallbackResolvedId.Name)
+      |> Option.orElseWith (fun () -> tryFindResolvedIdByName state.Bindings fallbackResolvedId.Name)
 
     resolvedIdOpt |> Option.bind (tryFindBoundTypeByResolvedId state.Bindings)
 
@@ -201,12 +184,7 @@ module TypeExtraction =
     : ExtractionTree =
     let hostType' =
       match hostType with
-      | TypeValue.Lookup id ->
-        tryResolveLookupToBoundType state id |> Option.defaultValue hostType
+      | TypeValue.Lookup id -> tryResolveLookupToBoundType state id |> Option.defaultValue hostType
       | _ -> hostType
 
-    findExtractionTree
-      isTarget
-      state.Bindings
-      state.Symbols.IdentifiersResolver
-      hostType'
+    findExtractionTree isTarget state.Bindings state.Symbols.IdentifiersResolver hostType'

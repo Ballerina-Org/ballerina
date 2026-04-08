@@ -22,29 +22,16 @@ module Let =
       (fromRootJson: TypeCheckedExprParser<'valueExt>)
       (value: JsonValue)
       : TypeCheckedExprParserReader<'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue
-        discriminator
-        value
-        (fun letJson ->
-          reader {
-            let! (var, value, body) =
-              letJson |> JsonValue.AsTriple |> reader.OfSum
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun letJson ->
+        reader {
+          let! (var, value, body) = letJson |> JsonValue.AsTriple |> reader.OfSum
+          let! var = var |> JsonValue.AsString |> reader.OfSum
+          let var = Var.Create var
+          let! value = value |> fromRootJson
+          let! body = body |> fromRootJson
 
-            let! var = var |> JsonValue.AsString |> reader.OfSum
-            let var = Var.Create var
-            let! value = value |> fromRootJson
-            let! body = body |> fromRootJson
-
-            return
-              TypeCheckedExpr.Let(
-                var,
-                TypeValue.CreateUnit(),
-                value,
-                body,
-                TypeValue.CreateUnit(),
-                Kind.Star
-              )
-          })
+          return TypeCheckedExpr.Let(var, TypeValue.CreateUnit(), value, body, TypeValue.CreateUnit(), Kind.Star)
+        })
 
     static member ToJsonLet
       (rootToJson: TypeCheckedExprEncoder<'valueExt>)
@@ -56,9 +43,5 @@ module Let =
         let var = var.Name |> JsonValue.String
         let! value = value |> rootToJson
         let! body = body |> rootToJson
-
-        return
-          [| var; value; body |]
-          |> JsonValue.Array
-          |> Json.discriminator discriminator
+        return [| var; value; body |] |> JsonValue.Array |> Json.discriminator discriminator
       }

@@ -8,9 +8,6 @@ module HddCache =
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.DSL.Next.Types.TypeChecker.Expr
-  open Ballerina.DSL.Next.StdLib.DB.Model
-  open Ballerina.DSL.Next.StdLib.Extensions
-  open Ballerina.DSL.Next.StdLib.String.Extension
   open Ballerina.Serialization.MessagePack
   open System.IO
 
@@ -24,16 +21,9 @@ module HddCache =
       State: TypeCheckState<'valueExt> }
 
     member this.ToDomain() =
-      (this.Checksum,
-       this.PrevFilesChecksums |> List.ofArray,
-       this.Expr,
-       this.TypeValue,
-       this.Context,
-       this.State)
+      (this.Checksum, this.PrevFilesChecksums |> List.ofArray, this.Expr, this.TypeValue, this.Context, this.State)
 
-    static member FromDomain
-      (checksum, prevFilesChecksums, expr, typeValue, context, state)
-      =
+    static member FromDomain(checksum, prevFilesChecksums, expr, typeValue, context, state) =
       { Checksum = checksum
         PrevFilesChecksums = prevFilesChecksums |> Array.ofList
         Expr = expr
@@ -68,9 +58,7 @@ module HddCache =
       entries
       |> Array.fold
         (fun acc (filePath, payload) ->
-          match
-            acc, serializer.Deserialize<BuildCacheDto<'valueExt>>(payload)
-          with
+          match acc, serializer.Deserialize<BuildCacheDto<'valueExt>>(payload) with
           | Some cache, Left dto ->
             let fileName: ProjectModel.FileName = { Path = filePath }
             Some(cache |> Map.add fileName (dto.ToDomain()))
@@ -82,15 +70,10 @@ module HddCache =
       if File.Exists cacheFilePath then
         let bytes = File.ReadAllBytes cacheFilePath
 
-        match
-          serializer.Deserialize<BuildCacheContainerDto<'valueExt>>(bytes)
-        with
-        | Left container ->
-          decodeEntries container.Entries,
-          container.QueryTypeSymbol,
-          container.ListTypeSymbol
+        match serializer.Deserialize<BuildCacheContainerDto<'valueExt>>(bytes) with
+        | Left container -> decodeEntries container.Entries, container.QueryTypeSymbol, container.ListTypeSymbol
         | Right _ ->
-          // Legacy cache format has no TypeCheckingConfig and can lead to symbol mismatches.
+          // Legacy cache format has no TypeEvalConfig and can lead to symbol mismatches.
           // Force a clean rebuild so the next persisted cache includes the config.
           Map.empty, None, None
       else
@@ -98,17 +81,9 @@ module HddCache =
     with _ ->
       Map.empty, None, None
 
-  let private tryDeleteCacheFile (cacheFilePath: string) =
-    try
-      if File.Exists cacheFilePath then
-        File.Delete cacheFilePath
-    with _ ->
-      ()
-
-  let private tryLoadTypeCheckingConfig<'valueExt when 'valueExt: comparison>
-    (cacheFilePath: string)
-    : Option<TypeCheckingConfig<'valueExt>> =
+  let tryLoadTypeEvalConfig<'valueExt when 'valueExt: comparison> () : Option<TypeEvalConfig<'valueExt>> =
     let serializer = MessagePackSerializerAdapter()
+    let cacheFilePath = Path.Combine(".build-cache", "build-cache.msgpack")
 
     let _, queryTypeSymbol, listTypeSymbol =
       loadPersistedCacheData<'valueExt> serializer cacheFilePath
@@ -137,14 +112,10 @@ module HddCache =
                   Sym = listTypeSymbol
                   Parameters = []
                   Arguments = [ inner ] } }
-    | _ ->
-      // If symbols are missing while cache file exists, assume format mismatch and invalidate.
-      tryDeleteCacheFile cacheFilePath
-      None
+    | _ -> None
 
-  let private hardDriveCacheWithTypeCheckingConfig<'valueExt
-    when 'valueExt: comparison>
-    (typeCheckingConfig: Option<TypeCheckingConfig<'valueExt>>)
+  let hardDriveCacheWithTypeEvalConfig<'valueExt when 'valueExt: comparison>
+    (typeEvalConfig: Option<TypeEvalConfig<'valueExt>>)
     (ctx0: TypeCheckContext<'valueExt>, st0: TypeCheckState<'valueExt>)
     : ProjectModel.ProjectCache<'valueExt> =
     let serializer = MessagePackSerializerAdapter()
@@ -152,9 +123,7 @@ module HddCache =
     let cacheFilePath = Path.Combine(cacheFolder, "build-cache.msgpack")
 
     let loadCache () =
-      let cache, _, _ =
-        loadPersistedCacheData<'valueExt> serializer cacheFilePath
-
+      let cache, _, _ = loadPersistedCacheData<'valueExt> serializer cacheFilePath
       cache
 
     let persistCache (cache: Map<ProjectModel.FileName, _>) =
@@ -163,19 +132,15 @@ module HddCache =
           cache
           |> Map.toSeq
           |> Seq.choose (fun (fileName, data) ->
-            match
-              serializer.Serialize(BuildCacheDto<'valueExt>.FromDomain data)
-            with
+            match serializer.Serialize(BuildCacheDto<'valueExt>.FromDomain data) with
             | Left payload -> Some(fileName.Path, payload)
             | Right _ -> None)
           |> Array.ofSeq
 
         let container: BuildCacheContainerDto<'valueExt> =
           { Entries = entries
-            QueryTypeSymbol =
-              typeCheckingConfig |> Option.map (fun cfg -> cfg.QueryTypeSymbol)
-            ListTypeSymbol =
-              typeCheckingConfig |> Option.map (fun cfg -> cfg.ListTypeSymbol) }
+            QueryTypeSymbol = typeEvalConfig |> Option.map (fun cfg -> cfg.QueryTypeSymbol)
+            ListTypeSymbol = typeEvalConfig |> Option.map (fun cfg -> cfg.ListTypeSymbol) }
 
         match serializer.Serialize(container) with
         | Left bytes ->
@@ -201,11 +166,7 @@ module HddCache =
       { TryGet =
           fun file ->
             cache
-            |> Map.tryFindWithError
-              file
-              "build cache"
-              (fun () -> file.Path)
-              Location.Unknown
+            |> Map.tryFindWithError file "build cache" (fun () -> file.Path) Location.Unknown
             |> Sum.toOption
 
         Set =
@@ -214,40 +175,3 @@ module HddCache =
             persistCache cache }
 
     Caching.abstract_build_cache hddCache (ctx0, st0)
-
-  let hddcacheWithStdExtensions<'runtimeContext, 'db when 'db: comparison>
-    (stringOps: StringTypeClass<ValueExt<'runtimeContext, 'db, unit>>)
-    (dbOps:
-      DBTypeClass<'runtimeContext, 'db, ValueExt<'runtimeContext, 'db, unit>>)
-    (updateTypeCheckContext:
-      TypeCheckContext<ValueExt<'runtimeContext, 'db, unit>>
-        -> TypeCheckContext<ValueExt<'runtimeContext, 'db, unit>>)
-    (updateTypeCheckState:
-      TypeCheckState<ValueExt<'runtimeContext, 'db, unit>>
-        -> TypeCheckState<ValueExt<'runtimeContext, 'db, unit>>)
-    =
-    let cacheFilePath = Path.Combine(".build-cache", "build-cache.msgpack")
-
-    let deserializedTypeCheckingConfig =
-      tryLoadTypeCheckingConfig<ValueExt<'runtimeContext, 'db, unit>>
-        cacheFilePath
-
-    let extensions, languageContext, effectiveTypeCheckingConfig =
-      match deserializedTypeCheckingConfig with
-      | Some typeCheckingConfig ->
-        stdExtensions<'runtimeContext, 'db> stringOps dbOps typeCheckingConfig
-      | None -> bootstrapStdExtensions<'runtimeContext, 'db> stringOps dbOps
-
-    let languageContext =
-      { languageContext with
-          TypeCheckContext =
-            languageContext.TypeCheckContext |> updateTypeCheckContext
-          TypeCheckState =
-            languageContext.TypeCheckState |> updateTypeCheckState }
-
-    let cache =
-      hardDriveCacheWithTypeCheckingConfig
-        (Some effectiveTypeCheckingConfig)
-        (languageContext.TypeCheckContext, languageContext.TypeCheckState)
-
-    extensions, languageContext, effectiveTypeCheckingConfig, cache

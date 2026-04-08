@@ -9,112 +9,67 @@ module Patterns =
   open Ballerina.DSL.Next.Types
 
   type Int64Operations<'ext> with
-    static member AsToString
-      (op: Int64Operations<'ext>)
-      : Sum<Unit, Errors<Unit>> =
+    static member AsToString(op: Int64Operations<'ext>) : Sum<Unit, Errors<Unit>> =
       match op with
       | Int64Operations.String -> () |> sum.Return
-      | _ ->
-        sum.Throw(Errors.Singleton () (fun () -> "Expected ToString operation"))
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected ToString operation"))
 
-    static member AsTryParse
-      (op: Int64Operations<'ext>)
-      : Sum<Unit, Errors<Unit>> =
+    static member AsTryParse(op: Int64Operations<'ext>) : Sum<Unit, Errors<Unit>> =
       match op with
       | Int64Operations.TryParse -> () |> sum.Return
-      | _ ->
-        sum.Throw(Errors.Singleton () (fun () -> "Expected TryParse operation"))
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected TryParse operation"))
 
-    static member AsPlus
-      (op: Int64Operations<'ext>)
-      : Sum<Option<int64>, Errors<Unit>> =
+    static member AsPlus(op: Int64Operations<'ext>) : Sum<Option<int64>, Errors<Unit>> =
       match op with
       | Int64Operations.Plus v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw(Errors.Singleton () (fun () -> "Expected Plus operation"))
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected Plus operation"))
 
-    static member AsMinus
-      (op: Int64Operations<'ext>)
-      : Sum<Option<int64>, Errors<Unit>> =
+    static member AsMinus(op: Int64Operations<'ext>) : Sum<Option<int64>, Errors<Unit>> =
       match op with
       | Int64Operations.Minus v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw(Errors.Singleton () (fun () -> "Expected Minus operation"))
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected Minus operation"))
 
-    static member AsDivide
-      (op: Int64Operations<'ext>)
-      : Sum<Option<int64>, Errors<Unit>> =
+    static member AsDivide(op: Int64Operations<'ext>) : Sum<Option<int64>, Errors<Unit>> =
       match op with
       | Int64Operations.Divide v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw(Errors.Singleton () (fun () -> "Expected Divide operation"))
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected Divide operation"))
 
-    static member AsPower
-      (op: Int64Operations<'ext>)
-      : Sum<Option<int64>, Errors<Unit>> =
+    static member AsPower(op: Int64Operations<'ext>) : Sum<Option<int64>, Errors<Unit>> =
       match op with
       | Int64Operations.Power v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw(Errors.Singleton () (fun () -> "Expected Power operation"))
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected Power operation"))
 
-    static member AsMod
-      (op: Int64Operations<'ext>)
-      : Sum<Option<int64>, Errors<Unit>> =
+    static member AsMod(op: Int64Operations<'ext>) : Sum<Option<int64>, Errors<Unit>> =
       match op with
       | Int64Operations.Mod v -> v.v1 |> sum.Return
       | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected Mod operation"))
 
-    static member AsEqual
-      (op: Int64Operations<'ext>)
-      : Sum<Option<int64>, Errors<Unit>> =
+    static member AsEqual(op: Int64Operations<'ext>) : Sum<Option<int64>, Errors<Unit>> =
       match op with
       | Int64Operations.Equal v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw(Errors.Singleton () (fun () -> "Expected Equal operation"))
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected Equal operation"))
 
-    static member AsNotEqual
-      (op: Int64Operations<'ext>)
-      : Sum<Option<int64>, Errors<Unit>> =
+    static member AsNotEqual(op: Int64Operations<'ext>) : Sum<Option<int64>, Errors<Unit>> =
       match op with
       | Int64Operations.NotEqual v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw(Errors.Singleton () (fun () -> "Expected NotEqual operation"))
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected NotEqual operation"))
 
-    static member AsGreaterThan
-      (op: Int64Operations<'ext>)
-      : Sum<Option<int64>, Errors<Unit>> =
+    static member AsGreaterThan(op: Int64Operations<'ext>) : Sum<Option<int64>, Errors<Unit>> =
       match op with
       | Int64Operations.GreaterThan v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw(
-          Errors.Singleton () (fun () -> "Expected GreaterThan operation")
-        )
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected GreaterThan operation"))
 
-    static member AsGreaterThanOrEqual
-      (op: Int64Operations<'ext>)
-      : Sum<Option<int64>, Errors<Unit>> =
+    static member AsGreaterThanOrEqual(op: Int64Operations<'ext>) : Sum<Option<int64>, Errors<Unit>> =
       match op with
       | Int64Operations.GreaterThanOrEqual v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw(
-          Errors.Singleton () (fun () ->
-            "Expected GreaterThanOrEqual operation")
-        )
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected GreaterThanOrEqual operation"))
 
-    static member AsLessThan
-      (op: Int64Operations<'ext>)
-      : Sum<Option<int64>, Errors<Unit>> =
+    static member AsLessThan(op: Int64Operations<'ext>) : Sum<Option<int64>, Errors<Unit>> =
       match op with
       | Int64Operations.LessThan v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw(Errors.Singleton () (fun () -> "Expected LessThan operation"))
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected LessThan operation"))
 
-    static member AsLessThanOrEqual
-      (op: Int64Operations<'ext>)
-      : Sum<Option<int64>, Errors<Unit>> =
+    static member AsLessThanOrEqual(op: Int64Operations<'ext>) : Sum<Option<int64>, Errors<Unit>> =
       match op with
       | Int64Operations.LessThanOrEqual v -> v.v1 |> sum.Return
-      | _ ->
-        sum.Throw(
-          Errors.Singleton () (fun () -> "Expected LessThanOrEqual operation")
-        )
+      | _ -> sum.Throw(Errors.Singleton () (fun () -> "Expected LessThanOrEqual operation"))

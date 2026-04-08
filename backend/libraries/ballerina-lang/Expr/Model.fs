@@ -9,8 +9,7 @@ module Model =
 
   let optionCaseNames = {| Some = "some"; None = "none" |}
 
-  type Vars<'ExprExtension, 'ValueExtension> =
-    Map<VarName, Value<'ExprExtension, 'ValueExtension>>
+  type Vars<'ExprExtension, 'ValueExtension> = Map<VarName, Value<'ExprExtension, 'ValueExtension>>
 
   and TranslationOverride = { Label: string; KeyType: ExprType }
 
@@ -27,11 +26,7 @@ module Model =
     | CaseCons of string * Value<'ExprExtension, 'ValueExtension>
     | Tuple of List<Value<'ExprExtension, 'ValueExtension>>
     | Record of Map<string, Value<'ExprExtension, 'ValueExtension>>
-    | Lambda of
-      VarName *
-      option<ExprType> *
-      option<ExprType> *
-      Expr<'ExprExtension, 'ValueExtension>
+    | Lambda of VarName * option<ExprType> * option<ExprType> * Expr<'ExprExtension, 'ValueExtension>
     | GenericLambda of ExprTypeId * Expr<'ExprExtension, 'ValueExtension>
     | Extension of 'ValueExtension
 
@@ -57,8 +52,7 @@ module Model =
           fs
           |> Map.toSeq
           |> Seq.sortBy (fun (fieldName, _) -> fieldName)
-          |> Seq.map (fun (fieldName, expr) ->
-            $"{fieldName} = {expr.ToString()}")
+          |> Seq.map (fun (fieldName, expr) -> $"{fieldName} = {expr.ToString()}")
 
         $"""{{ {String.Join("; ", formattedFields)} }}"""
       | Value.Tuple vs ->
@@ -69,9 +63,7 @@ module Model =
 
   and Expr<'ExprExtension, 'ValueExtension> =
     | Value of Value<'ExprExtension, 'ValueExtension>
-    | Apply of
-      Expr<'ExprExtension, 'ValueExtension> *
-      Expr<'ExprExtension, 'ValueExtension>
+    | Apply of Expr<'ExprExtension, 'ValueExtension> * Expr<'ExprExtension, 'ValueExtension>
     | VarLookup of VarName
     | MakeRecord of Map<string, Expr<'ExprExtension, 'ValueExtension>>
     | RecordFieldLookup of Expr<'ExprExtension, 'ValueExtension> * string
@@ -79,13 +71,8 @@ module Model =
     | MakeSet of List<Expr<'ExprExtension, 'ValueExtension>>
     | Project of Expr<'ExprExtension, 'ValueExtension> * int
     | MakeCase of string * Expr<'ExprExtension, 'ValueExtension>
-    | MatchCase of
-      Expr<'ExprExtension, 'ValueExtension> *
-      Map<string, VarName * Expr<'ExprExtension, 'ValueExtension>>
-    | Let of
-      VarName *
-      Expr<'ExprExtension, 'ValueExtension> *
-      Expr<'ExprExtension, 'ValueExtension>
+    | MatchCase of Expr<'ExprExtension, 'ValueExtension> * Map<string, VarName * Expr<'ExprExtension, 'ValueExtension>>
+    | Let of VarName * Expr<'ExprExtension, 'ValueExtension> * Expr<'ExprExtension, 'ValueExtension>
     | LetType of ExprTypeId * ExprType * Expr<'ExprExtension, 'ValueExtension>
     | GenericApply of Expr<'ExprExtension, 'ValueExtension> * ExprType
     | Annotate of Expr<'ExprExtension, 'ValueExtension> * ExprType
@@ -102,14 +89,11 @@ module Model =
           fs
           |> Map.toSeq
           |> Seq.sortBy (fun (fieldName, _) -> fieldName)
-          |> Seq.map (fun (fieldName, expr) ->
-            $"{fieldName} = {expr.ToString()}")
+          |> Seq.map (fun (fieldName, expr) -> $"{fieldName} = {expr.ToString()}")
 
         $"""{{ {String.Join("; ", formattedFields)} }}"""
-      | MakeTuple fs ->
-        $"""({String.Join(", ", fs |> Seq.map (fun f -> f.ToString()))})"""
-      | MakeSet fs ->
-        $"""{{{String.Join("; ", fs |> Seq.map (fun f -> f.ToString()))}}}"""
+      | MakeTuple fs -> $"""({String.Join(", ", fs |> Seq.map (fun f -> f.ToString()))})"""
+      | MakeSet fs -> $"""{{{String.Join("; ", fs |> Seq.map (fun f -> f.ToString()))}}}"""
       | RecordFieldLookup(e, f) -> $"{e.ToString()}.{f}"
       | MakeCase(c, e) -> $"{c.ToString()}({e.ToString()})"
       | Project(e, f) -> $"{e.ToString()}.π{f}"
@@ -118,8 +102,7 @@ module Model =
           cases
           |> Map.toSeq
           |> Seq.sortBy (fun (caseName, _) -> caseName)
-          |> Seq.map (fun (caseName, (varName, expr)) ->
-            $"| {caseName}({varName.VarName}) -> {expr.ToString()}")
+          |> Seq.map (fun (caseName, (varName, expr)) -> $"| {caseName}({varName.VarName}) -> {expr.ToString()}")
 
         let casesJoined = String.Join(' ', cases)
         $"match {e.ToString()} with {casesJoined}"
@@ -218,22 +201,19 @@ module Model =
       | ExprType.ManyType t -> $"Many<{!t}>"
       | ExprType.MapType(k, v) -> $"Map<{!k},{!v}>"
       | ExprType.SumType(l, r) -> $"Sum<{!l},{!r}>"
-      | ExprType.TupleType ts ->
-        $"({ts |> List.map (!) |> (fun s -> String.Join(',', s))})"
+      | ExprType.TupleType ts -> $"({ts |> List.map (!) |> (fun s -> String.Join(',', s))})"
       | ExprType.UnionType cs ->
         let cs = cs |> Map.values |> List.ofSeq
         let printCase (c: UnionCase) = $"{c.CaseName} of {!c.Fields}"
         $"({cs |> List.map printCase |> (fun s -> String.Join('|', s))})"
       | ExprType.RecordType fs ->
-        let printField (fieldName: string, fieldType: ExprType) =
-          $"{fieldName}:{!fieldType}"
+        let printField (fieldName: string, fieldType: ExprType) = $"{fieldName}:{!fieldType}"
 
         $"{{ {fs
               |> Seq.map ((fun kv -> kv.Key, kv.Value) >> printField)
               |> fun s -> String.Join(';', s)} }}"
       | ExprType.ArrowType(l, r) -> $"({!l}) -> {!r}"
-      | GenericType(typeName, kind, exprType) ->
-        $"{typeName} :: {kind} => {!exprType}"
+      | GenericType(typeName, kind, exprType) -> $"{typeName} :: {kind} => {!exprType}"
       | GenericApplicationType(f, a) -> $"{!f} {!a}"
       | TranslationOverride label -> $"TranslationOverride \"{label}\" "
       | AllTranslationOverrides _ -> $"AllTranslationOverrides"
@@ -249,13 +229,9 @@ module Model =
 
   type TranslationOverride with
     static member Type({ KeyType = keyType }: TranslationOverride) : ExprType =
-      ExprType.MapType(
-        TranslationOverride.MapKeyType keyType,
-        ExprType.PrimitiveType PrimitiveType.StringType
-      )
+      ExprType.MapType(TranslationOverride.MapKeyType keyType, ExprType.PrimitiveType PrimitiveType.StringType)
 
-    static member MapKeyType(keyType: ExprType) : ExprType =
-      ExprType.OptionType keyType
+    static member MapKeyType(keyType: ExprType) : ExprType = ExprType.OptionType keyType
 
 
 // type Value<'ExprExtension, 'ValueExtension> with

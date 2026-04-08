@@ -15,14 +15,8 @@ module Rotate =
   let private discriminator = "rotate"
 
   type TypeExpr<'valueExt> with
-    static member FromJsonRotate
-      (fromJsonRoot: TypeExprParser<'valueExt>)
-      : TypeExprParser<'valueExt> =
-      Sum.assertDiscriminatorAndContinueWithValue
-        discriminator
-        (fromJsonRoot >>= (TypeExpr.Rotate >> sum.Return))
+    static member FromJsonRotate(fromJsonRoot: TypeExprParser<'valueExt>) : TypeExprParser<'valueExt> =
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fromJsonRoot >>= (TypeExpr.Rotate >> sum.Return))
 
-    static member ToJsonRotate
-      (rootToJson: TypeExpr<'valueExt> -> JsonValue)
-      : TypeExpr<'valueExt> -> JsonValue =
+    static member ToJsonRotate(rootToJson: TypeExpr<'valueExt> -> JsonValue) : TypeExpr<'valueExt> -> JsonValue =
       rootToJson >> Json.discriminator discriminator

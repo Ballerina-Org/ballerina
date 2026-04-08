@@ -36,30 +36,23 @@ module ExprJson =
             Expr.FromJsonIf Expr.FromJson json
             Expr.FromJsonPrimitive(json)
             Expr.FromJsonLookup(json)
-            Errors.Singleton () (fun () ->
-              $"Unknown Expr JSON: {json.AsFSharpString.ReasonablyClamped}")
+            fun () -> $"Unknown Expr JSON: {json.AsFSharpString.ReasonablyClamped}"
+            |> Errors.Singleton()
             |> Errors.MapPriority(replaceWith ErrorPriority.Medium)
             |> reader.Throw ]
         )
         |> reader.MapError(Errors.HighestPriority)
-        |> reader.MapError(
-          Errors.Map(fun e ->
-            $"{e}\n..when parsing {json.ToString().ReasonablyClamped}")
-        )
+        |> reader.MapError(Errors.Map(fun e -> $"{e}\n..when parsing {json.ToString().ReasonablyClamped}"))
 
     static member ToJson: ExprEncoder<'T, 'Id, 'valueExt> =
       fun expr ->
         match expr.Expr with
         | ExprRec.Lambda({ Param = name
                            ParamType = _
-                           Body = body }) ->
-          Expr.ToJsonLambda Expr.ToJson name body
-        | ExprRec.TypeLambda({ Param = name; Body = body }) ->
-          Expr.ToJsonTypeLambda Expr.ToJson name body
-        | ExprRec.TypeApply({ TypeArg = t; Func = e }) ->
-          Expr.ToJsonTypeApply Expr.ToJson e t
-        | ExprRec.Apply({ F = e1; Arg = e2 }) ->
-          Expr.ToJsonApply Expr.ToJson e1 e2
+                           Body = body }) -> Expr.ToJsonLambda Expr.ToJson name body
+        | ExprRec.TypeLambda({ Param = name; Body = body }) -> Expr.ToJsonTypeLambda Expr.ToJson name body
+        | ExprRec.TypeApply({ TypeArg = t; Func = e }) -> Expr.ToJsonTypeApply Expr.ToJson e t
+        | ExprRec.Apply({ F = e1; Arg = e2 }) -> Expr.ToJsonApply Expr.ToJson e1 e2
         | ExprRec.FromValue({ Value = _
                               ValueType = _
                               ValueKind = _ }) -> failwith "Not implemented"
@@ -71,26 +64,18 @@ module ExprJson =
         | ExprRec.TypeLet({ ExprTypeLet.Name = v
                             TypeDef = t
                             Body = e }) -> Expr.ToJsonTypeLet Expr.ToJson v t e
-        | ExprRec.RecordCons { Fields = fields } ->
-          Expr.ToJsonRecordCons Expr.ToJson fields
+        | ExprRec.RecordCons { Fields = fields } -> Expr.ToJsonRecordCons Expr.ToJson fields
         | ExprRec.RecordWith _ -> failwith "not implemented"
-        | ExprRec.TupleCons { Items = items } ->
-          Expr.ToJsonTupleCons Expr.ToJson items
-        | ExprRec.SumCons({ Selector = selector }) ->
-          Expr.ToJsonSumCons Expr.ToJson selector
-        | ExprRec.RecordDes({ Expr = record; Field = field }) ->
-          Expr.ToJsonRecordDes Expr.ToJson record field
+        | ExprRec.TupleCons { Items = items } -> Expr.ToJsonTupleCons Expr.ToJson items
+        | ExprRec.SumCons({ Selector = selector }) -> Expr.ToJsonSumCons Expr.ToJson selector
+        | ExprRec.RecordDes({ Expr = record; Field = field }) -> Expr.ToJsonRecordDes Expr.ToJson record field
         | ExprRec.UnionDes({ Handlers = cases
-                             Fallback = fallback }) ->
-          Expr.ToJsonUnionDes Expr.ToJson cases fallback
-        | ExprRec.TupleDes({ Tuple = tuple; Item = selector }) ->
-          Expr.ToJsonTupleDes Expr.ToJson tuple selector
-        | ExprRec.SumDes { Handlers = cases } ->
-          Expr.ToJsonSumDes Expr.ToJson cases
+                             Fallback = fallback }) -> Expr.ToJsonUnionDes Expr.ToJson cases fallback
+        | ExprRec.TupleDes({ Tuple = tuple; Item = selector }) -> Expr.ToJsonTupleDes Expr.ToJson tuple selector
+        | ExprRec.SumDes { Handlers = cases } -> Expr.ToJsonSumDes Expr.ToJson cases
         | ExprRec.If({ Cond = cond
                        Then = thenExpr
-                       Else = elseExpr }) ->
-          Expr.ToJsonIf Expr.ToJson cond thenExpr elseExpr
+                       Else = elseExpr }) -> Expr.ToJsonIf Expr.ToJson cond thenExpr elseExpr
         | ExprRec.Primitive p -> Expr.ToJsonPrimitive p
         | ExprRec.Lookup s -> Expr.ToJsonLookup s
         | ExprRec.EntitiesDes _ -> failwith "Not implemented"

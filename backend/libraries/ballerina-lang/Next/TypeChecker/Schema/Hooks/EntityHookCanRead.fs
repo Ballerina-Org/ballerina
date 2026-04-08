@@ -21,13 +21,7 @@ module SchemaEntityHookCanRead =
     (schema: Schema<'ve>)
     (e: SchemaEntity<'ve>)
     (canRead: Option<Expr<TypeExpr<'ve>, Identifier, 've>>)
-    : State<
-        Option<TypeCheckedExpr<'ve>>,
-        TypeCheckContext<'ve>,
-        TypeCheckState<'ve>,
-        Errors<Location>
-       >
-    =
+    : State<Option<TypeCheckedExpr<'ve>>, TypeCheckContext<'ve>, TypeCheckState<'ve>, Errors<Location>> =
     state {
       match canRead with
       | None -> return None
@@ -41,12 +35,8 @@ module SchemaEntityHookCanRead =
         let! can_read_expr, _ =
           typeCheckExpr None can_read
           |> state.MapContext(
-            TypeCheckContext.Updaters.Values(
-              Map.merge (fun _ -> id) extra_scope
-            )
-            >> TypeCheckContext.Updaters.Scope(
-              TypeCheckScope.Empty |> replaceWith
-            )
+            TypeCheckContext.Updaters.Values(Map.merge (fun _ -> id) extra_scope)
+            >> TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
           )
 
         let can_read_t = can_read_expr.Type
@@ -60,15 +50,10 @@ module SchemaEntityHookCanRead =
           TypeValue.Unify(
             can_read.Location,
             can_read_t,
-            TypeValue.CreateArrow(
-              TypeValue.Schema schema,
-              mkQueryType schema (TypeQueryRow.PrimaryKey e.Id)
-            )
+            TypeValue.CreateArrow(TypeValue.Schema schema, mkQueryType schema (TypeQueryRow.PrimaryKey e.Id))
           )
           |> Expr.liftUnification
-          |> state.MapContext(
-            TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
-          )
+          |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
 
         return Some can_read_expr
     }

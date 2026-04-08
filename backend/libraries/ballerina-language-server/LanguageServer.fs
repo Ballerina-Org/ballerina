@@ -20,7 +20,8 @@ type BuildErrorDTO =
     Column: int }
 
 type InlayHintDTO =
-  { Type: string
+  { Identifier: string
+    Type: string
     File: string
     Line: int
     Column: int }
@@ -68,26 +69,20 @@ module Cli =
 
 module BuildServer =
 
-  let projectFromPath
-    (path: string)
-    : Sum<ProjectBuildConfiguration, Errors<Location>> =
+  let projectFromPath (path: string) : Sum<ProjectBuildConfiguration, Errors<Location>> =
     if path.EndsWith ".blproj" then
       let projectDir =
-        System.IO.Path.GetDirectoryName path
-        |> Option.ofObj
-        |> Option.defaultValue "."
+        System.IO.Path.GetDirectoryName path |> Option.ofObj |> Option.defaultValue "."
 
       ProjectBuildConfiguration.FromProjectFile(path, projectDir)
     elif path.EndsWith ".bl" then
       ProjectBuildConfiguration.FromSingleFile path
     else
-      Errors.Singleton Location.Unknown (fun () ->
-        $"Unsupported file type: {path}")
+      Errors.Singleton Location.Unknown (fun () -> $"Unsupported file type: {path}")
       |> Sum.Right
 
   let buildResultFromPath
-    (buildProjectOnly:
-      ProjectBuildConfiguration -> Sum<InlayHintDTO[], Errors<Location>>)
+    (buildProjectOnly: ProjectBuildConfiguration -> Sum<InlayHintDTO[], Errors<Location>>)
     (path: string)
     : BuildResultDTO =
     match projectFromPath path with
@@ -126,14 +121,13 @@ module BuildServer =
         Errors = errorDtos
         InlayHints = [||] }
 
-  let inlayHintDtosFromTypeCheckState
-    (state: TypeCheckState<'valueExt>)
-    : InlayHintDTO[] =
+  let inlayHintDtosFromTypeCheckState (state: TypeCheckState<'valueExt>) : InlayHintDTO[] =
     state.InlayHints
     |> Map.toList
     |> List.sortBy (fun (loc, _) -> loc.File, loc.Line, loc.Column)
     |> List.map (fun (loc, hint) ->
-      { Type = hint.Type.ToInlayString()
+      { Identifier = hint.Identifier
+        Type = hint.Type.ToString()
         File = loc.File
         Line = loc.Line
         Column = loc.Column })

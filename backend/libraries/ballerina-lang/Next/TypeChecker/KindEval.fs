@@ -38,34 +38,23 @@ module KindEval =
 
             return!
               ctx
-              |> Map.tryFindWithError
-                id.LocalName
-                "variables"
-                (fun () -> "kind")
-                loc0
+              |> Map.tryFindWithError id.LocalName "variables" (fun () -> "kind") loc0
               |> state.OfSum
           | TypeExpr.Lambda(param, body) ->
-            let! bodyKind =
-              !!body |> state.MapContext(Map.add param.Name param.Kind)
-
+            let! bodyKind = !!body |> state.MapContext(Map.add param.Name param.Kind)
             return Kind.Arrow(param.Kind, bodyKind)
           | TypeExpr.Apply(func, arg) ->
             let! funcKind = !!func
             let! argKind = !!arg
 
             match funcKind with
-            | Kind.Arrow(paramKind, returnKind) when paramKind = argKind ->
-              return returnKind
-            | _ ->
-              return!
-                (fun () -> $"Error: kind mismatch") |> error |> state.Throw
+            | Kind.Arrow(paramKind, returnKind) when paramKind = argKind -> return returnKind
+            | _ -> return! (fun () -> $"Error: kind mismatch") |> error |> state.Throw
           | _ -> return Kind.Star
         }
 
   and TypeValue<'valueExt> with
-    static member KindEval<'ve when 've: comparison>
-      ()
-      : TypeValueKindEval<'ve> =
+    static member KindEval<'ve when 've: comparison>() : TypeValueKindEval<'ve> =
       fun _n loc0 t ->
         state {
 
@@ -83,16 +72,10 @@ module KindEval =
 
             return!
               ctx
-              |> Map.tryFindWithError
-                id.LocalName
-                "variables"
-                (fun () -> "kind")
-                loc0
+              |> Map.tryFindWithError id.LocalName "variables" (fun () -> "kind") loc0
               |> state.OfSum
           | TypeValue.Lambda { value = (param, body) } ->
-            let! bodyKind =
-              !!body |> state.MapContext(Map.add param.Name param.Kind)
-
+            let! bodyKind = !!body |> state.MapContext(Map.add param.Name param.Kind)
             return Kind.Arrow(param.Kind, bodyKind)
           // | TypeValue.Apply { value = (var, arg) } ->
           //   let! funcKind = !(TypeValue.Lookup(var.Name |> Identifier.LocalScope))
@@ -103,16 +86,10 @@ module KindEval =
           //   | _ -> return! $"Error: kind mismatch" |> error |> state.Throw
           | TypeValue.Imported i ->
             let paramKinds = i.Parameters |> List.map (fun p -> p.Kind)
-
-            return
-              List.foldBack
-                (fun k acc -> Kind.Arrow(k, acc))
-                paramKinds
-                Kind.Star
+            return List.foldBack (fun k acc -> Kind.Arrow(k, acc)) paramKinds Kind.Star
 
           | TypeValue.QueryRow _ -> return Kind.QueryRow
-          | TypeValue.QueryTypeFunction ->
-            return Kind.Arrow(Kind.QueryRow, Kind.Star)
+          | TypeValue.QueryTypeFunction -> return Kind.Arrow(Kind.QueryRow, Kind.Star)
 
           | _ -> return Kind.Star
         }

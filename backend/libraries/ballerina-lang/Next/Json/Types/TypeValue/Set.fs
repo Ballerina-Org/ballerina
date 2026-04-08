@@ -21,15 +21,11 @@ module Set =
     static member FromJsonSet
       (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors<unit>>)
       : JsonValue -> Sum<TypeValue<'valueExt>, Errors<unit>> =
-      Sum.assertDiscriminatorAndContinueWithValue
-        discriminator
-        (fun elementType ->
-          sum {
-            let! elementType = elementType |> fromRootJson
-            return elementType
-          })
+      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun elementType ->
+        sum {
+          let! elementType = elementType |> fromRootJson
+          return elementType
+        })
 
-    static member ToJsonSet
-      (toRootJson: TypeValue<'valueExt> -> JsonValue)
-      : TypeValue<'valueExt> -> JsonValue =
+    static member ToJsonSet(toRootJson: TypeValue<'valueExt> -> JsonValue) : TypeValue<'valueExt> -> JsonValue =
       toRootJson >> Json.discriminator discriminator

@@ -20,9 +20,7 @@ module PocoObjects =
   type SumConsSelector with
     member this.ToDTO = $"{this.Case}Of{this.Count}"
 
-    static member TryParse
-      (sumCaseDTO: string)
-      : Sum<SumConsSelector, Errors<unit>> =
+    static member TryParse(sumCaseDTO: string) : Sum<SumConsSelector, Errors<unit>> =
       sum {
         let tryParseInt (intString: string) (error: Errors<unit>) =
           sum {
@@ -37,23 +35,10 @@ module PocoObjects =
         let split = sumCaseDTO.Split "Of"
 
         if split.Length <> 2 then
-          return!
-            sum.Throw(
-              Errors.Singleton () (fun _ -> "Failed to parse sum selector.")
-            )
+          return! sum.Throw(Errors.Singleton () (fun _ -> "Failed to parse sum selector."))
         else
-          let! case =
-            tryParseInt
-              split.[0]
-              (Errors.Singleton () (fun _ ->
-                "Failed to parse case of sum selector."))
-
-          let! count =
-            tryParseInt
-              split.[1]
-              (Errors.Singleton () (fun _ ->
-                "Failed to parse count of sum selector."))
-
+          let! case = tryParseInt split.[0] (Errors.Singleton () (fun _ -> "Failed to parse case of sum selector."))
+          let! count = tryParseInt split.[1] (Errors.Singleton () (fun _ -> "Failed to parse count of sum selector."))
           return { Case = case; Count = count }
       }
 
@@ -78,9 +63,7 @@ module PocoObjects =
 
       $"{assemblyName}{moduleName}{typeName}{this.Name}"
 
-    static member TryParse
-      (resolvedIdentifierDTO: string)
-      : Sum<ResolvedIdentifier, Errors<unit>> =
+    static member TryParse(resolvedIdentifierDTO: string) : Sum<ResolvedIdentifier, Errors<unit>> =
       sum {
 
         let split = resolvedIdentifierDTO.Split("::") |> Array.rev
@@ -110,12 +93,7 @@ module PocoObjects =
               Type = Some split.[1]
               Module = split.[2]
               Assembly = split.[3] }
-        | _ ->
-          return!
-            sum.Throw(
-              Errors.Singleton () (fun _ ->
-                $"Failed to parse resolved identifier DTO.")
-            )
+        | _ -> return! sum.Throw(Errors.Singleton () (fun _ -> $"Failed to parse resolved identifier DTO."))
       }
 
   [<RequireQualifiedAccess>]
@@ -242,9 +220,7 @@ module PocoObjects =
 
       then this.TimeSpan <- Nullable span
 
-  and ExtDTO<'valueExt when 'valueExt: not null and 'valueExt: not struct>
-    [<JsonConstructor>]
-    (value: 'valueExt) =
+  and ExtDTO<'valueExt when 'valueExt: not null and 'valueExt: not struct> [<JsonConstructor>] (value: 'valueExt) =
     member val Value: 'valueExt = value with get, set
     member val ApplicableId: ResolvedIdentifierDTO = null with get, set
 
@@ -253,35 +229,20 @@ module PocoObjects =
       then this.ApplicableId <- applicableId
 
   and ValueDTO<'valueExt when 'valueExt: not null and 'valueExt: not struct>() =
-    member val Record: Dictionary<ResolvedIdentifierDTO, ValueDTO<'valueExt>> =
-      null with get, set
-
-    member val UnionCase: Dictionary<ResolvedIdentifierDTO, ValueDTO<'valueExt>> =
-      null with get, set
-
+    member val Record: Dictionary<ResolvedIdentifierDTO, ValueDTO<'valueExt>> = null with get, set
+    member val UnionCase: Dictionary<ResolvedIdentifierDTO, ValueDTO<'valueExt>> = null with get, set
     member val RecordDes: ResolvedIdentifierDTO | null = null with get, set
     member val UnionCons: ResolvedIdentifierDTO | null = null with get, set
     member val Tuple: ValueDTO<'valueExt>[] | null = null with get, set
-
-    member val Sum: Dictionary<SumCaseDTO, ValueDTO<'valueExt>> =
-      null with get, set
-
+    member val Sum: Dictionary<SumCaseDTO, ValueDTO<'valueExt>> = null with get, set
     member val Primitive: PrimitiveValueDTO | null = null with get, set
     member val Var: Var | null = null with get, set
     member val Ext: 'valueExt | null = null with get, set
-
-    member val ExtWithId: Dictionary<ResolvedIdentifierDTO, 'valueExt> =
-      null with get, set
+    member val ExtWithId: Dictionary<ResolvedIdentifierDTO, 'valueExt> = null with get, set
 
     member this.GetRecordFieldPositions
       (typeValue: TypeValue<'ext>)
-      : State<
-          Map<TypeSymbol, int>,
-          TypeCheckContext<'ext>,
-          TypeCheckState<'ext>,
-          Errors<Location>
-         >
-      =
+      : State<Map<TypeSymbol, int>, TypeCheckContext<'ext>, TypeCheckState<'ext>, Errors<Location>> =
       state {
         let! record =
           TypeValue.AsRecord typeValue
@@ -295,17 +256,13 @@ module PocoObjects =
             |> List.map (fun (typeSymbol, _) ->
               state {
                 let! typeSymbolResolvedIdentifierDTO =
-                  TypeCheckState.TryResolveIdentifier(
-                    typeSymbol,
-                    Location.Unknown
-                  )
+                  TypeCheckState.TryResolveIdentifier(typeSymbol, Location.Unknown)
                   |> state.Map(fun identifier -> identifier.ToDTO)
 
 
                 let! index =
                   this.Record.Keys
-                  |> Seq.tryFindIndex (fun recordField ->
-                    recordField = typeSymbolResolvedIdentifierDTO)
+                  |> Seq.tryFindIndex (fun recordField -> recordField = typeSymbolResolvedIdentifierDTO)
                   |> sum.OfOption(
                     Errors.Singleton Location.Unknown (fun _ ->
                       $"The field {typeSymbol.Name} from the type value was not found in the dto.")
@@ -317,11 +274,7 @@ module PocoObjects =
             |> state.All
             |> state.Map Map.ofList
         else
-          return!
-            state.Throw(
-              Errors.Singleton Location.Unknown (fun _ ->
-                "The given value dto is not a record.")
-            )
+          return! state.Throw(Errors.Singleton Location.Unknown (fun _ -> "The given value dto is not a record."))
       }
 
     new(applicableId: Option<ResolvedIdentifierDTO>, ext: 'valueExt) as this =
@@ -335,18 +288,12 @@ module PocoObjects =
           extDictionary.Add(id, ext)
           this.ExtWithId <- extDictionary
 
-    new
-      (record:
-        System.Collections.Generic.Dictionary<
-          ResolvedIdentifierDTO,
-          ValueDTO<'valueExt>
-         >) as this =
+    new(record: System.Collections.Generic.Dictionary<ResolvedIdentifierDTO, ValueDTO<'valueExt>>) as this =
       ValueDTO<'valueExt>()
 
       then this.Record <- record
 
-    new
-      (case: Dictionary<ResolvedIdentifierDTO, ValueDTO<'valueExt>>, isSum: bool) as this =
+    new(case: Dictionary<ResolvedIdentifierDTO, ValueDTO<'valueExt>>, isSum: bool) as this =
       ValueDTO<'valueExt>()
 
       then if isSum then this.Sum <- case else this.UnionCase <- case

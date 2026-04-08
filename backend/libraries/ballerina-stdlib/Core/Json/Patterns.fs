@@ -23,8 +23,7 @@ module Patterns =
       | JsonValue.Record fields -> sum.Return fields
       | _ ->
         sum.Throw(
-          Errors.Singleton () (fun () ->
-            $"Error: expected record, found '{json.AsFSharpString.ReasonablyClamped}'")
+          Errors.Singleton () (fun () -> $"Error: expected record, found '{json.AsFSharpString.ReasonablyClamped}'")
         )
 
     static member AsRecordMap json =
@@ -32,8 +31,7 @@ module Patterns =
       | JsonValue.Record fields -> fields |> Map.ofSeq |> sum.Return
       | _ ->
         sum.Throw(
-          Errors.Singleton () (fun () ->
-            $"Error: expected record, found '{json.AsFSharpString.ReasonablyClamped}'")
+          Errors.Singleton () (fun () -> $"Error: expected record, found '{json.AsFSharpString.ReasonablyClamped}'")
         )
 
     static member AsRecordKeys(json: JsonValue) =
@@ -46,8 +44,7 @@ module Patterns =
       | JsonValue.Array fields -> sum.Return fields
       | _ ->
         sum.Throw(
-          Errors.Singleton () (fun () ->
-            $"Error: expected array, found '{json.AsFSharpString.ReasonablyClamped}'")
+          Errors.Singleton () (fun () -> $"Error: expected array, found '{json.AsFSharpString.ReasonablyClamped}'")
         )
 
     static member AsSingleton json =
@@ -61,22 +58,18 @@ module Patterns =
 
     static member AsPair json =
       match json with
-      | JsonValue.Array [| firstJson; secondJson |] ->
-        sum.Return(firstJson, secondJson)
+      | JsonValue.Array [| firstJson; secondJson |] -> sum.Return(firstJson, secondJson)
       | _ ->
         sum.Throw(
-          Errors.Singleton () (fun () ->
-            $"Error: expected pair, found '{json.AsFSharpString.ReasonablyClamped}'")
+          Errors.Singleton () (fun () -> $"Error: expected pair, found '{json.AsFSharpString.ReasonablyClamped}'")
         )
 
     static member AsTriple json =
       match json with
-      | JsonValue.Array [| firstJson; secondJson; thirdJson |] ->
-        sum.Return(firstJson, secondJson, thirdJson)
+      | JsonValue.Array [| firstJson; secondJson; thirdJson |] -> sum.Return(firstJson, secondJson, thirdJson)
       | _ ->
         sum.Throw(
-          Errors.Singleton () (fun () ->
-            $"Error: expected triple, found '{json.AsFSharpString.ReasonablyClamped}'")
+          Errors.Singleton () (fun () -> $"Error: expected triple, found '{json.AsFSharpString.ReasonablyClamped}'")
         )
 
     static member AsQuadruple json =
@@ -85,8 +78,7 @@ module Patterns =
         sum.Return(firstJson, secondJson, thirdJson, fourthJson)
       | _ ->
         sum.Throw(
-          Errors.Singleton () (fun () ->
-            $"Error: expected quadruple, found '{json.AsFSharpString.ReasonablyClamped}'")
+          Errors.Singleton () (fun () -> $"Error: expected quadruple, found '{json.AsFSharpString.ReasonablyClamped}'")
         )
 
     static member AsString json =
@@ -94,8 +86,7 @@ module Patterns =
       | JsonValue.String fields -> sum.Return fields
       | _ ->
         sum.Throw(
-          Errors.Singleton () (fun () ->
-            $"Error: expected string, found '{json.AsFSharpString.ReasonablyClamped}'")
+          Errors.Singleton () (fun () -> $"Error: expected string, found '{json.AsFSharpString.ReasonablyClamped}'")
         )
 
     static member AsNull json =
@@ -103,14 +94,12 @@ module Patterns =
       | JsonValue.Null -> sum.Return()
       | _ ->
         sum.Throw(
-          Errors.Singleton () (fun () ->
-            $"Error: expected null, found '{json.AsFSharpString.ReasonablyClamped}'")
+          Errors.Singleton () (fun () -> $"Error: expected null, found '{json.AsFSharpString.ReasonablyClamped}'")
         )
 
     static member AsEnum options json =
       match json with
-      | JsonValue.String value when options |> Set.contains value ->
-        sum.Return value
+      | JsonValue.String value when options |> Set.contains value -> sum.Return value
       | _ ->
         sum.Throw(
           Errors.Singleton () (fun () ->
@@ -122,8 +111,7 @@ module Patterns =
       | JsonValue.Boolean fields -> sum.Return fields
       | _ ->
         sum.Throw(
-          Errors.Singleton () (fun () ->
-            $"Error: expected boolean, found '{json.AsFSharpString.ReasonablyClamped}'")
+          Errors.Singleton () (fun () -> $"Error: expected boolean, found '{json.AsFSharpString.ReasonablyClamped}'")
         )
 
     static member AsInt json =
@@ -133,13 +121,11 @@ module Patterns =
           sum.Return(int fields)
         else
           sum.Throw(
-            Errors.Singleton () (fun () ->
-              $"Error: expected integer, found '{json.AsFSharpString.ReasonablyClamped}'")
+            Errors.Singleton () (fun () -> $"Error: expected integer, found '{json.AsFSharpString.ReasonablyClamped}'")
           )
       | _ ->
         sum.Throw(
-          Errors.Singleton () (fun () ->
-            $"Error: expected number, found '{json.AsFSharpString.ReasonablyClamped}'")
+          Errors.Singleton () (fun () -> $"Error: expected number, found '{json.AsFSharpString.ReasonablyClamped}'")
         )
 
     static member AsNumber json =
@@ -147,6 +133,5 @@ module Patterns =
       | JsonValue.Number fields -> sum.Return fields
       | _ ->
         sum.Throw(
-          Errors.Singleton () (fun () ->
-            $"Error: expected number, found '{json.AsFSharpString.ReasonablyClamped}'")
+          Errors.Singleton () (fun () -> $"Error: expected number, found '{json.AsFSharpString.ReasonablyClamped}'")
         )

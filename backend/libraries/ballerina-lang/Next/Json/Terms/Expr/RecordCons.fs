@@ -22,27 +22,24 @@ module RecordCons =
       (fromRootJson: ExprParser<'T, 'Id, 'valueExt>)
       (value: JsonValue)
       : ExprParserReader<'T, 'Id, 'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue
-        discriminator
-        value
-        (fun fieldsJson ->
-          reader {
-            let! fields = fieldsJson |> JsonValue.AsArray |> reader.OfSum
-            let! _, ctx = reader.GetContext()
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun fieldsJson ->
+        reader {
+          let! fields = fieldsJson |> JsonValue.AsArray |> reader.OfSum
+          let! _, ctx = reader.GetContext()
 
-            let! fields =
-              fields
-              |> Seq.map (fun field ->
-                reader {
-                  let! (k, v) = field |> JsonValue.AsPair |> reader.OfSum
-                  let! k = k |> ctx |> reader.OfSum
-                  let! v = v |> fromRootJson
-                  return (k, v)
-                })
-              |> reader.All
+          let! fields =
+            fields
+            |> Seq.map (fun field ->
+              reader {
+                let! (k, v) = field |> JsonValue.AsPair |> reader.OfSum
+                let! k = k |> ctx |> reader.OfSum
+                let! v = v |> fromRootJson
+                return (k, v)
+              })
+            |> reader.All
 
-            return Expr.RecordCons(fields)
-          })
+          return Expr.RecordCons(fields)
+        })
 
     static member ToJsonRecordCons
       (rootToJson: ExprEncoder<'T, 'Id, 'valueExt>)
@@ -61,9 +58,5 @@ module RecordCons =
             })
           |> reader.All
 
-        return
-          all
-          |> (List.toArray
-              >> JsonValue.Array
-              >> Json.discriminator discriminator)
+        return all |> (List.toArray >> JsonValue.Array >> Json.discriminator discriminator)
       }

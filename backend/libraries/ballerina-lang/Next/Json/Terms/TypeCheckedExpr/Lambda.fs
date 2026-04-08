@@ -21,26 +21,23 @@ module Lambda =
       (fromRootJson: TypeCheckedExprParser<'valueExt>)
       (value: JsonValue)
       : TypeCheckedExprParserReader<'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue
-        discriminator
-        value
-        (fun lambdaJson ->
-          reader {
-            let! var, body = lambdaJson |> JsonValue.AsPair |> reader.OfSum
-            let! var = var |> JsonValue.AsString |> reader.OfSum
-            let var = Var.Create var
-            let! body = body |> fromRootJson
+      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun lambdaJson ->
+        reader {
+          let! var, body = lambdaJson |> JsonValue.AsPair |> reader.OfSum
+          let! var = var |> JsonValue.AsString |> reader.OfSum
+          let var = Var.Create var
+          let! body = body |> fromRootJson
 
-            return
-              TypeCheckedExpr.Lambda(
-                var,
-                TypeValue.CreateUnit(),
-                body,
-                TypeValue.CreateUnit(),
-                TypeValue.CreateUnit(),
-                Kind.Star
-              )
-          })
+          return
+            TypeCheckedExpr.Lambda(
+              var,
+              TypeValue.CreateUnit(),
+              body,
+              TypeValue.CreateUnit(),
+              TypeValue.CreateUnit(),
+              Kind.Star
+            )
+        })
 
     static member ToJsonLambda
       (rootToJson: TypeCheckedExprEncoder<'valueExt>)

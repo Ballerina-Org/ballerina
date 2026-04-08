@@ -31,26 +31,14 @@ module UpdateMany =
         DBTypeClass<'runtimeContext, 'db, 'ext>
           -> Value<TypeValue<'ext>, 'ext>
           -> EntityRef<'db, 'ext>
-          -> Reader<
-            Value<TypeValue<'ext>, 'ext>,
-            ExprEvalContext<'runtimeContext, 'ext>,
-            Errors<Location>
-           >,
+          -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Location>>,
       stripProps:
         DBTypeClass<'runtimeContext, 'db, 'ext>
           -> Value<TypeValue<'ext>, 'ext>
           -> EntityRef<'db, 'ext>
-          -> Reader<
-            Value<TypeValue<'ext>, 'ext>,
-            ExprEvalContext<'runtimeContext, 'ext>,
-            Errors<Location>
-           >
+          -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Location>>
     )
-    (mapLens:
-      PartialLens<
-        'ext,
-        Map<Value<TypeValue<'ext>, 'ext>, Value<TypeValue<'ext>, 'ext>>
-       >)
+    (mapLens: PartialLens<'ext, Map<Value<TypeValue<'ext>, 'ext>, Value<TypeValue<'ext>, 'ext>>>)
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
     =
 
@@ -68,11 +56,7 @@ module UpdateMany =
             TypeExpr.Lambda(
               TypeParameter.Create("entityId", Kind.Star),
               TypeExpr.Arrow(
-                createSchemaEntityTypeApplication
-                  "schema"
-                  "entity"
-                  "entity_with_props"
-                  "entityId",
+                createSchemaEntityTypeApplication "schema" "entity" "entity_with_props" "entityId",
                 TypeExpr.Arrow(
                   TypeExpr.Apply(
                     TypeExpr.Apply(
@@ -80,9 +64,7 @@ module UpdateMany =
                       TypeExpr.Lookup("entityId" |> Identifier.LocalScope)
                     ),
                     TypeExpr.Arrow(
-                      TypeExpr.Lookup(
-                        "entity_with_props" |> Identifier.LocalScope
-                      ),
+                      TypeExpr.Lookup("entity_with_props" |> Identifier.LocalScope),
                       TypeExpr.Arrow(
                         TypeExpr.Lookup("entity" |> Identifier.LocalScope),
                         TypeExpr.Lookup("entity" |> Identifier.LocalScope)
@@ -96,9 +78,7 @@ module UpdateMany =
                     ),
                     TypeExpr.Sum
                       [ TypeExpr.Primitive PrimitiveType.Unit
-                        TypeExpr.Lookup(
-                          "entity_with_props" |> Identifier.LocalScope
-                        ) ]
+                        TypeExpr.Lookup("entity_with_props" |> Identifier.LocalScope) ]
                   )
                 )
               )
@@ -112,9 +92,7 @@ module UpdateMany =
     let UpdateManyOperation: OperationExtension<'runtimeContext, _, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBUpdateManyType,
-              memoryDBUpdateManyKind,
-              DBValues.UpdateMany {| EntityRef = None |})
+          <| (memoryDBUpdateManyType, memoryDBUpdateManyKind, DBValues.UpdateMany {| EntityRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -134,9 +112,7 @@ module UpdateMany =
                 let! v = extractEntityRefFromValue loc0 v valueLens
 
                 return
-                  (DBValues.UpdateMany({| EntityRef = Some v |})
-                   |> valueLens.Set,
-                   Some memoryDBUpdateManyId)
+                  (DBValues.UpdateMany({| EntityRef = Some v |}) |> valueLens.Set, Some memoryDBUpdateManyId)
                   |> Ext
               | Some entity_ref -> // the closure has the first operand - second step in the application
 
@@ -149,14 +125,10 @@ module UpdateMany =
                 let! vs =
                   vs
                   |> mapLens.Get
-                  |> sum.OfOption(
-                    Errors.Singleton loc0 (fun () ->
-                      "Cannot get value from extension")
-                  )
+                  |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
                   |> reader.OfSum
 
-                let! (res:
-                  Map<Value<TypeValue<'ext>, 'ext>, Value<TypeValue<'ext>, 'ext>>) =
+                let! (res: Map<Value<TypeValue<'ext>, 'ext>, Value<TypeValue<'ext>, 'ext>>) =
                   vs
                   |> Map.map (fun _entityId updateFunc ->
                     reader {
@@ -167,31 +139,23 @@ module UpdateMany =
                         |> reader.Map Sum.toOption
 
                       match existingValue with
-                      | None ->
-                        return
-                          Value.Sum(
-                            { Case = 1; Count = 2 },
-                            Value.Primitive PrimitiveValue.Unit
-                          )
+                      | None -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
                       | Some existingValue ->
                         let actual_update =
                           reader {
-                            let! existingValueWithoutProps =
-                              stripProps db_ops existingValue entity_ref
+                            let! existingValueWithoutProps = stripProps db_ops existingValue entity_ref
 
                             let! updatedValue =
                               TypeCheckedExpr.UnsafeApplyForUntypedEval(
                                 TypeCheckedExpr.UnsafeApplyForUntypedEval(
                                   TypeCheckedExpr.FromValue(
                                     updateFunc,
-                                    TypeValue.CreatePrimitive
-                                      PrimitiveType.Unit,
+                                    TypeValue.CreatePrimitive PrimitiveType.Unit,
                                     Kind.Star
                                   ),
                                   TypeCheckedExpr.FromValue(
                                     existingValue,
-                                    TypeValue.CreatePrimitive
-                                      PrimitiveType.Unit,
+                                    TypeValue.CreatePrimitive PrimitiveType.Unit,
                                     Kind.Star
                                   )
                                 ),
@@ -204,8 +168,7 @@ module UpdateMany =
                               |> NonEmptyList.One
                               |> Expr.Eval
 
-                            let! valueWithProps =
-                              calculateProps db_ops updatedValue entity_ref
+                            let! valueWithProps = calculateProps db_ops updatedValue entity_ref
 
                             let! valueWithProps =
                               onUpdatingHook
@@ -224,39 +187,20 @@ module UpdateMany =
                                 { Id = _entityId
                                   Previous = existingValue
                                   Value = valueWithProps }
-                              |> reader.MapError(
-                                Errors.MapContext(replaceWith loc0)
-                              )
+                              |> reader.MapError(Errors.MapContext(replaceWith loc0))
 
-                            do!
-                              onUpdatedHook
-                                db_ops
-                                entity_ref
-                                loc0
-                                _entityId
-                                existingValue
-                                valueWithProps
+                            do! onUpdatedHook db_ops entity_ref loc0 _entityId existingValue valueWithProps
 
-                            return
-                              Value.Sum(
-                                { Case = 2; Count = 2 },
-                                valueWithProps
-                              )
+                            return Value.Sum({ Case = 2; Count = 2 }, valueWithProps)
                           }
-                          |> reader.MapContext(
-                            ExprEvalContext.Updaters.RootLevelEval(
-                              replaceWith false
-                            )
-                          )
+                          |> reader.MapContext(ExprEvalContext.Updaters.RootLevelEval(replaceWith false))
 
                         return!
                           reader {
                             let _, _, entity, schema_value = entity_ref
                             let! ctx = reader.GetContext()
 
-                            match
-                              ctx.RootLevelEval, entity.Hooks.CanUpdate
-                            with
+                            match ctx.RootLevelEval, entity.Hooks.CanUpdate with
                             | true, Some canUpdateHook ->
                               match!
                                 TypeCheckedExpr.UnsafeApplyForUntypedEval(
@@ -270,16 +214,8 @@ module UpdateMany =
                                 |> NonEmptyList.One
                                 |> Expr.Eval
                               with
-                              | Value.Primitive(PrimitiveValue.Bool canUpdate) when
-                                canUpdate
-                                ->
-                                return! actual_update
-                              | _ ->
-                                return
-                                  Value.Sum(
-                                    { Case = 1; Count = 2 },
-                                    Value.Primitive PrimitiveValue.Unit
-                                  )
+                              | Value.Primitive(PrimitiveValue.Bool canUpdate) when canUpdate -> return! actual_update
+                              | _ -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
                             | _ -> return! actual_update
                           }
 
