@@ -106,10 +106,27 @@ module RecordCons =
           let fieldsExpr = fields |> List.map fst
           let fieldsTypes = fields |> List.map snd |> OrderedMap.ofList
 
+          let inferredRecordTypeName =
+            fieldsExpr
+            |> List.choose (fun (id, _v) -> id.Type)
+            |> List.distinct
+            |> function
+              | [ typeName ] -> Some typeName
+              | _ -> None
+
           let! return_t =
             TypeValue.CreateRecord fieldsTypes
             |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr.liftInstantiation
+
+          let return_t =
+            match inferredRecordTypeName with
+            | Some typeName ->
+              TypeValue.SetSourceMapping(
+                return_t,
+                TypeExprSourceMapping.OriginTypeExpr(TypeExpr.Lookup(Identifier.LocalScope typeName))
+              )
+            | None -> return_t
 
           return TypeCheckedExpr.RecordCons(fieldsExpr, return_t, Kind.Star, loc0, ctx.Scope), ctx
         }

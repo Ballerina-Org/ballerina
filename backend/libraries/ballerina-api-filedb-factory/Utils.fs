@@ -3,7 +3,9 @@ namespace Ballerina.API.MemoryDB
 module Utils =
   open Ballerina.DSL.Next.StdLib.Extensions
   open Ballerina.DSL.Next.StdLib.FileDB
+  open Ballerina.DSL.Next.Terms
   open Ballerina.Collections.Sum
+  open Ballerina.Collections.Map
   open Ballerina.DSL.Next.Runners
   open Ballerina.Collections.NonEmptyList
   open Ballerina.DSL.Next.Terms.Eval
@@ -41,6 +43,31 @@ module Utils =
     (schemaDefinitions: List<SchemaFileDefinition>)
     =
     sum {
+      let domainName = "Bise"
+
+      let injectedRuntimeValues =
+        [ ResolvedIdentifier.Create(domainName, "CurrentUser"),
+          Value.Sum(
+            { Case = 1; Count = 2 },
+            Value.Primitive(PrimitiveValue.Unit)
+          )
+          ResolvedIdentifier.Create(domainName, "CurrentOwner"),
+          Value.Sum(
+            { Case = 1; Count = 2 },
+            Value.Primitive(PrimitiveValue.Unit)
+          )
+          ResolvedIdentifier.Create(domainName, "CurrentManager"),
+          Value.Sum(
+            { Case = 1; Count = 2 },
+            Value.Primitive(PrimitiveValue.Unit)
+          )
+          ResolvedIdentifier.Create(domainName, "CurrentApiToken"),
+          Value.Sum(
+            { Case = 1; Count = 2 },
+            Value.Primitive(PrimitiveValue.Unit)
+          ) ]
+        |> Map.ofList
+
       let build_cache =
         memcache (
           languageContext.TypeCheckContext
@@ -70,7 +97,9 @@ module Utils =
           SchemaName = schemaName }
 
       let evalContext =
-        ExprEvalContext.Empty runtimeContext |> languageContext.ExprEvalContext
+        ExprEvalContext.Empty runtimeContext
+        |> languageContext.ExprEvalContext
+        |> ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) injectedRuntimeValues)
 
       let! evalResult =
         Expr.Eval(NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(expr, exprs)))
