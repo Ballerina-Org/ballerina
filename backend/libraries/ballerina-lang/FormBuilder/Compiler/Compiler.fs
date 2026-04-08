@@ -64,7 +64,7 @@ module FormCompiler =
     (cache: ProjectCache<'valueExt>)
     (languageContext: LanguageContext<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
     (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
-    (config: TypeCheckingConfig<'valueExt>)
+    (config: TypeEvalConfig<'valueExt>)
     =
     sum {
       let formsInitialLocation = Location.Initial input.Forms.Source

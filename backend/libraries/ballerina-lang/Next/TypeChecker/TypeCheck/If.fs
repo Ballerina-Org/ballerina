@@ -31,7 +31,7 @@ module If =
 
   type Expr<'T, 'Id, 'v when 'Id: comparison> with
     static member internal TypeCheckIf<'valueExt when 'valueExt: comparison>
-      (config: TypeCheckingConfig<'valueExt>)
+      (config: TypeEvalConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprIf<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun

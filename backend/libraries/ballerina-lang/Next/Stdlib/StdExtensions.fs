@@ -467,7 +467,7 @@ type StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaEx
 let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison>
   (string_ops: StringTypeClass<ValueExt<'runtimeContext, 'db, 'customExtension>>)
   (db_ops: DBTypeClass<'runtimeContext, 'db, ValueExt<'runtimeContext, 'db, 'customExtension>>)
-  (typeCheckingConfig: Option<TypeCheckingConfig<ValueExt<'runtimeContext, 'db, 'customExtension>>>)
+  (typeEvalConfig: Option<TypeEvalConfig<ValueExt<'runtimeContext, 'db, 'customExtension>>>)
   : StdExtensions<
       'runtimeContext,
       ValueExt<'runtimeContext, 'db, 'customExtension>,
@@ -482,7 +482,7 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
       DeltaExt<'runtimeContext, 'db, 'customExtension>,
       DeltaExtDTO
      > *
-    TypeCheckingConfig<ValueExt<'runtimeContext, 'db, 'customExtension>>
+    TypeEvalConfig<ValueExt<'runtimeContext, 'db, 'customExtension>>
   =
 
   let registerDBExtensions, query_sym, mk_query =
@@ -503,7 +503,7 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
           | _ -> None
         Set = Map.Model.MapValues.Map >> MapValues >> Choice6Of7 >> ValueExt.ValueExt }
       DBExt<_, _, _>.ValueLens
-      typeCheckingConfig
+      typeEvalConfig
 
   let listExtension, list_sym, mk_list_type =
     List.Extension.ListExtension<
@@ -522,7 +522,7 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
       ListExt<_, _, _>.ValueDTOLens
       DeltaExt<_, _, _>.ListDeltaLens
       DeltaExt<_, _, _>.ListDeltaDTOLens
-      (typeCheckingConfig |> Option.map (fun cfg -> cfg.ListTypeSymbol))
+      (typeEvalConfig |> Option.map (fun cfg -> cfg.ListTypeSymbol))
 
   let dateOnlyExtension =
     DateOnly.Extension.DateOnlyExtension<'runtimeContext, ValueExt<'runtimeContext, 'db, 'customExtension>, ValueExtDTO>
@@ -710,25 +710,23 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison a
       Map = mapExtension
       Updater = updaterExtension }
 
-  let typeCheckingConfig =
+  let typeEvalConfig =
     { QueryTypeSymbol = query_sym
       ListTypeSymbol = list_sym
       MkQueryType = mk_query
       MkListType = mk_list_type }
 
-  extensions, context, typeCheckingConfig
+  extensions, context, typeEvalConfig
 
 let stdExtensions<'runtimeContext, 'db when 'db: comparison> =
-  fun str_ops db_ops typeCheckingConfig ->
-    makeExtensions<'runtimeContext, 'db, unit> str_ops db_ops (Some typeCheckingConfig)
-
-let customStdExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> =
-  fun str_ops db_ops typeCheckingConfig ->
-    makeExtensions<'runtimeContext, 'db, 'customExtension> str_ops db_ops (Some typeCheckingConfig)
-
-let bootstrapStdExtensions<'runtimeContext, 'db when 'db: comparison> =
   fun str_ops db_ops -> makeExtensions<'runtimeContext, 'db, unit> str_ops db_ops None
 
-let bootstrapCustomStdExtensions<'runtimeContext, 'db, 'customExtension
-  when 'db: comparison and 'customExtension: comparison> =
+let stdExtensionsWithTypeEvalConfig<'runtimeContext, 'db when 'db: comparison> =
+  fun str_ops db_ops typeEvalConfig -> makeExtensions<'runtimeContext, 'db, unit> str_ops db_ops typeEvalConfig
+
+let customStdExtensions<'runtimeContext, 'db, 'customExtension when 'db: comparison and 'customExtension: comparison> =
   fun str_ops db_ops -> makeExtensions<'runtimeContext, 'db, 'customExtension> str_ops db_ops None
+
+let customStdExtensionsWithTypeEvalConfig<'runtimeContext, 'db, 'customExtension
+  when 'db: comparison and 'customExtension: comparison> =
+  makeExtensions<'runtimeContext, 'db, 'customExtension>

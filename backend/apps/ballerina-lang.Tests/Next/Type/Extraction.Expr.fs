@@ -49,9 +49,9 @@ let private runtimeListOps =
 
 let private runtimeMapOps = { MapToList = resolveFqId [ "Map" ] "mapToList" }
 
-let private runtimeOps, runtimeContext, typeCheckingConfig =
+let private runtimeOps, runtimeContext, typeEvalConfig =
   db_ops ()
-  |> bootstrapStdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
+  |> stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
 
 do ignore runtimeOps
 

@@ -8,9 +8,6 @@ module HddCache =
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.DSL.Next.Types.TypeChecker.Expr
-  open Ballerina.DSL.Next.StdLib.DB.Model
-  open Ballerina.DSL.Next.StdLib.Extensions
-  open Ballerina.DSL.Next.StdLib.String.Extension
   open Ballerina.Serialization.MessagePack
   open System.IO
 
@@ -76,7 +73,7 @@ module HddCache =
         match serializer.Deserialize<BuildCacheContainerDto<'valueExt>>(bytes) with
         | Left container -> decodeEntries container.Entries, container.QueryTypeSymbol, container.ListTypeSymbol
         | Right _ ->
-          // Legacy cache format has no TypeCheckingConfig and can lead to symbol mismatches.
+          // Legacy cache format has no TypeEvalConfig and can lead to symbol mismatches.
           // Force a clean rebuild so the next persisted cache includes the config.
           Map.empty, None, None
       else
@@ -84,17 +81,9 @@ module HddCache =
     with _ ->
       Map.empty, None, None
 
-  let private tryDeleteCacheFile (cacheFilePath: string) =
-    try
-      if File.Exists cacheFilePath then
-        File.Delete cacheFilePath
-    with _ ->
-      ()
-
-  let private tryLoadTypeCheckingConfig<'valueExt when 'valueExt: comparison>
-    (cacheFilePath: string)
-    : Option<TypeCheckingConfig<'valueExt>> =
+  let tryLoadTypeEvalConfig<'valueExt when 'valueExt: comparison> () : Option<TypeEvalConfig<'valueExt>> =
     let serializer = MessagePackSerializerAdapter()
+    let cacheFilePath = Path.Combine(".build-cache", "build-cache.msgpack")
 
     let _, queryTypeSymbol, listTypeSymbol =
       loadPersistedCacheData<'valueExt> serializer cacheFilePath
@@ -123,13 +112,10 @@ module HddCache =
                   Sym = listTypeSymbol
                   Parameters = []
                   Arguments = [ inner ] } }
-    | _ ->
-      // If symbols are missing while cache file exists, assume format mismatch and invalidate.
-      tryDeleteCacheFile cacheFilePath
-      None
+    | _ -> None
 
-  let private hardDriveCacheWithTypeCheckingConfig<'valueExt when 'valueExt: comparison>
-    (typeCheckingConfig: Option<TypeCheckingConfig<'valueExt>>)
+  let hardDriveCacheWithTypeEvalConfig<'valueExt when 'valueExt: comparison>
+    (typeEvalConfig: Option<TypeEvalConfig<'valueExt>>)
     (ctx0: TypeCheckContext<'valueExt>, st0: TypeCheckState<'valueExt>)
     : ProjectModel.ProjectCache<'valueExt> =
     let serializer = MessagePackSerializerAdapter()
@@ -153,8 +139,8 @@ module HddCache =
 
         let container: BuildCacheContainerDto<'valueExt> =
           { Entries = entries
-            QueryTypeSymbol = typeCheckingConfig |> Option.map (fun cfg -> cfg.QueryTypeSymbol)
-            ListTypeSymbol = typeCheckingConfig |> Option.map (fun cfg -> cfg.ListTypeSymbol) }
+            QueryTypeSymbol = typeEvalConfig |> Option.map (fun cfg -> cfg.QueryTypeSymbol)
+            ListTypeSymbol = typeEvalConfig |> Option.map (fun cfg -> cfg.ListTypeSymbol) }
 
         match serializer.Serialize(container) with
         | Left bytes ->
@@ -189,35 +175,3 @@ module HddCache =
             persistCache cache }
 
     Caching.abstract_build_cache hddCache (ctx0, st0)
-
-  let hddcacheWithStdExtensions<'runtimeContext, 'db when 'db: comparison>
-    (stringOps: StringTypeClass<ValueExt<'runtimeContext, 'db, unit>>)
-    (dbOps: DBTypeClass<'runtimeContext, 'db, ValueExt<'runtimeContext, 'db, unit>>)
-    (updateTypeCheckContext:
-      TypeCheckContext<ValueExt<'runtimeContext, 'db, unit>>
-        -> TypeCheckContext<ValueExt<'runtimeContext, 'db, unit>>)
-    (updateTypeCheckState:
-      TypeCheckState<ValueExt<'runtimeContext, 'db, unit>>
-        -> TypeCheckState<ValueExt<'runtimeContext, 'db, unit>>)
-    =
-    let cacheFilePath = Path.Combine(".build-cache", "build-cache.msgpack")
-
-    let deserializedTypeCheckingConfig =
-      tryLoadTypeCheckingConfig<ValueExt<'runtimeContext, 'db, unit>> cacheFilePath
-
-    let extensions, languageContext, effectiveTypeCheckingConfig =
-      match deserializedTypeCheckingConfig with
-      | Some typeCheckingConfig -> stdExtensions<'runtimeContext, 'db> stringOps dbOps typeCheckingConfig
-      | None -> bootstrapStdExtensions<'runtimeContext, 'db> stringOps dbOps
-
-    let languageContext =
-      { languageContext with
-          TypeCheckContext = languageContext.TypeCheckContext |> updateTypeCheckContext
-          TypeCheckState = languageContext.TypeCheckState |> updateTypeCheckState }
-
-    let cache =
-      hardDriveCacheWithTypeCheckingConfig
-        (Some effectiveTypeCheckingConfig)
-        (languageContext.TypeCheckContext, languageContext.TypeCheckState)
-
-    extensions, languageContext, effectiveTypeCheckingConfig, cache

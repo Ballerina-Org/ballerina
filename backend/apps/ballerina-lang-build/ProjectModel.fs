@@ -67,11 +67,11 @@ module ProjectModel =
 
   type InlayHint<'valueExt when 'valueExt: comparison> with
     member this.AsString() =
-      $": %s{this.Type.ToString()}"
+      $"%s{this.Identifier}: %s{this.Type.ToString()}"
 
   type TypeCheckState<'valueExt when 'valueExt: comparison> with
     static member InstantiateInlayHints
-      (config: TypeCheckingConfig<'valueExt>)
+      (config: TypeEvalConfig<'valueExt>)
       : State<TypeCheckState<'valueExt>, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>> =
       state {
         let typeCheckExpr =
@@ -100,8 +100,7 @@ module ProjectModel =
                   |> state.RunOption
                   |> state.Map ignore
 
-                let hint = { hint with Type = instantiatedType }
-                return location, hint
+                return location, { hint with Type = instantiatedType }
               | Right _ -> return location, hint
             })
           |> state.All
@@ -121,7 +120,7 @@ module ProjectModel =
 
   type ProjectBuildConfiguration with
     static member BuildCachedWithFileOutputs<'valueExt when 'valueExt: comparison>
-      (config: TypeCheckingConfig<'valueExt>)
+      (config: TypeEvalConfig<'valueExt>)
       (cache: ProjectCache<'valueExt>)
       (project: ProjectBuildConfiguration)
       : Sum<
@@ -214,7 +213,7 @@ module ProjectModel =
       }
 
     static member BuildCached<'valueExt when 'valueExt: comparison>
-      (config: TypeCheckingConfig<'valueExt>)
+      (config: TypeEvalConfig<'valueExt>)
       (cache: ProjectCache<'valueExt>)
       (project: ProjectBuildConfiguration)
       : Sum<

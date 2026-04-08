@@ -28,7 +28,7 @@ module InstantiateSyntheticVars =
 
   type TypeCheckedExpr<'ve> with
     static member InstantiateSyntheticVars<'valueExt when 'valueExt: comparison>
-      (config: TypeCheckingConfig<'valueExt>)
+      (config: TypeEvalConfig<'valueExt>)
       (typeCheckExpr)
       (expr: TypeCheckedExpr<'valueExt>)
       : TypeCheckerResult<TypeCheckedExpr<'valueExt>, 'valueExt> =

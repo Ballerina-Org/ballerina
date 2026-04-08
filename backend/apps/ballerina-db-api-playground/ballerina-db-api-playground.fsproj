@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.fs" />
+    <Content Include="sample.bl" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../libraries/ballerina-api-filedb-factory/ballerina-api-filedb-factory.fsproj" />

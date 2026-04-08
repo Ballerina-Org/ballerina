@@ -26,9 +26,9 @@ open Ballerina.Errors
 
 type private ValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
 
-let stdExtensions, languageContext, typeCheckingConfig =
+let stdExtensions, languageContext, typeEvalConfig =
   db_ops ()
-  |> bootstrapStdExtensions<Unit, _> (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
+  |> stdExtensions<Unit, _> (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
 
 let ``Assert Value<TypeValue> -> ToJson -> FromJson -> Value<TypeValue>``
   (expression: Value<TypeValue<ValueExt>, ValueExt>)

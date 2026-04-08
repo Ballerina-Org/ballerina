@@ -86,8 +86,8 @@ let roundtrip
     return deltaJson, deserializedDelta
   }
 
-let _, context, typeCheckingConfig =
-  db_ops () |> bootstrapStdExtensions (StringTypeClass<_>.Console())
+let _, context, typeEvalConfig =
+  db_ops () |> stdExtensions (StringTypeClass<_>.Console())
 
 [<EntryPoint>]
 let main _ =

@@ -221,13 +221,9 @@ module Unification =
             |> Map.map (fun k v1 ->
               reader {
                 let! v2 =
-                  match e2 |> Map.tryFind k with
-                  | Some v2 -> reader { return v2 }
-                  | None ->
-                    (fun () ->
-                      $"Cannot determine most specific query row type between {t1} and {t2}, missing record field '{k.Name}'")
-                    |> error
-                    |> reader.Throw
+                  e2
+                  |> Map.tryFindWithError k "query row record field" (fun () -> k.Name) loc0
+                  |> reader.OfSum
 
                 return! v1 == v2
               })
@@ -421,14 +417,8 @@ module Unification =
             e1.value
             |> OrderedMap.map (fun k (v1, k1) ->
               reader {
-                let! v2, _ =
-                  match e2.value |> OrderedMap.tryFind k with
-                  | Some(v2, k2) -> reader { return v2, k2 }
-                  | None ->
-                    (fun () ->
-                      $"Cannot determine most specific type between {t1} and {t2}, missing record field '{k.Name.LocalName}'")
-                    |> error
-                    |> reader.Throw
+                let ofSum = Sum.mapRight (Errors.MapContext(replaceWith loc0)) >> reader.OfSum
+                let! v2, _ = e2.value |> OrderedMap.tryFindWithError k "record" k.Name.LocalName |> ofSum
 
                 let! res = v1 == v2
                 return res, k1
@@ -441,14 +431,8 @@ module Unification =
             e1.value
             |> OrderedMap.map (fun k v1 ->
               reader {
-                let! v2 =
-                  match e2.value |> OrderedMap.tryFind k with
-                  | Some v2 -> reader { return v2 }
-                  | None ->
-                    (fun () ->
-                      $"Cannot determine most specific type between {t1} and {t2}, missing union case '{k.Name.LocalName}'")
-                    |> error
-                    |> reader.Throw
+                let ofSum = Sum.mapRight (Errors.MapContext(replaceWith loc0)) >> reader.OfSum
+                let! v2 = e2.value |> OrderedMap.tryFindWithError k "union" k.Name.LocalName |> ofSum
 
                 return! v1 == v2
               })
@@ -505,7 +489,12 @@ module Unification =
       // do Console.WriteLine($"Unifying {left} and {right}")
       // do Console.ReadLine() |> ignore
 
+      let left = TypeValue.DropSourceMapping left
+      let right = TypeValue.DropSourceMapping right
+
       let error e = Errors.Singleton loc0 e
+
+      let ofSum = Sum.mapRight (Errors.MapContext(replaceWith loc0)) >> state.OfSum
 
       let (==) a b = TypeValue.Unify(loc0, a, b)
       let (===) a b = TypeQueryRow.Unify(loc0, a, b)
@@ -518,7 +507,10 @@ module Unification =
             // && e1.DeclaredAtForNominalEquality = e2.DeclaredAtForNominalEquality
             )
           then
-            return! (fun () -> $"Cannot unify types: {left} and {right}") |> error |> state.Throw
+            return!
+              (fun () -> $"Cannot unify types: {left} and {right}, the number of entities and relations does not match")
+              |> error
+              |> state.Throw
           else
             for (k1, v1) in e1.Entities |> OrderedMap.toSeq do
               let ofSum = Sum.mapRight (Errors.MapContext(replaceWith loc0)) >> state.OfSum
@@ -677,14 +669,13 @@ module Unification =
             do! v1 == v2
         | TypeValue.Record { value = e1 }, TypeValue.Record { value = e2 } when e1.Count = e2.Count ->
           for (k1, (v1, _)) in e1 |> OrderedMap.toSeq do
-            match e2 |> OrderedMap.tryFind k1 with
-            | Some(v2, _) -> do! v1 == v2
-            | None -> return! (fun () -> $"Cannot unify types: {left} and {right}") |> error |> state.Throw
+            let! v2, _ = e2 |> OrderedMap.tryFindWithError k1 "record field" k1.Name.LocalName |> ofSum
+            do! v1 == v2
         | TypeValue.Union { value = e1 }, TypeValue.Union { value = e2 } when e1.Count = e2.Count ->
           for (k1, v1) in e1 |> OrderedMap.toSeq do
-            match e2 |> OrderedMap.tryFind k1 with
-            | Some v2 -> do! v1 == v2
-            | None -> return! (fun () -> $"Cannot unify types: {left} and {right}") |> error |> state.Throw
+            let ofSum = Sum.mapRight (Errors.MapContext(replaceWith loc0)) >> state.OfSum
+            let! v2 = e2 |> OrderedMap.tryFindWithError k1 "union field" k1.Name.LocalName |> ofSum
+            do! v1 == v2
         | TypeValue.Schema e1, TypeValue.Schema e2 -> do! unifySchemas e1 e2
         | TypeValue.Entities e1, TypeValue.Entities e2 -> do! unifySchemas e1 e2
         | TypeValue.Relations e1, TypeValue.Relations e2 -> do! unifySchemas e1 e2
@@ -730,6 +721,8 @@ module Unification =
 
       let error e = Errors.Singleton loc0 e
 
+      let ofSum = Sum.mapRight (Errors.MapContext(replaceWith loc0)) >> state.OfSum
+
       let (==) a b = TypeValue.Unify(loc0, a, b)
       let (===) a b = TypeQueryRow.Unify(loc0, a, b)
 
@@ -740,7 +733,10 @@ module Unification =
         | TypeQueryRow.PrimitiveType(p1, n1), TypeQueryRow.PrimitiveType(p2, n2) when p1 = p2 && n1 = n2 -> return ()
         | TypeQueryRow.Tuple(t1), TypeQueryRow.Tuple(t2) ->
           if t1.Length <> t2.Length then
-            return! (fun () -> $"Cannot unify query row types: {left} and {right}") |> error |> state.Throw
+            return!
+              (fun () -> $"Cannot unify query row types: {left} and {right}, tuple lengths do not match")
+              |> error
+              |> state.Throw
           else
             for v1, v2 in List.zip t1 t2 do
               do! v1 === v2
@@ -748,13 +744,14 @@ module Unification =
             return ()
         | TypeQueryRow.Record fields1, TypeQueryRow.Record fields2 ->
           if fields1.Count <> fields2.Count then
-            return! (fun () -> $"Cannot unify query row types: {left} and {right}") |> error |> state.Throw
+            return!
+              (fun () -> $"Cannot unify query row types: {left} and {right}, record field counts do not match")
+              |> error
+              |> state.Throw
           else
             for k1, v1 in fields1 |> Map.toSeq do
-              match fields2 |> Map.tryFind k1 with
-              | Some v2 -> do! v1 === v2
-              | None ->
-                return! (fun () -> $"Cannot unify query row types: {left} and {right}") |> error |> state.Throw
+              let! v2 = fields2 |> Map.tryFindWithError k1 "" (fun () -> "") loc0 |> ofSum
+              do! v1 === v2
         | _ ->
           return!
             (fun () -> $"Cannot unify query row types: {left} and {right}")
@@ -1058,10 +1055,7 @@ module Unification =
                      loc0
                    |> sum.Map(fun _ -> TypeValue.Lookup l)
                    |> state.OfSum)
-          | TypeValue.Lambda
-              { value = (par, body)
-                typeExprSource = n
-                typeCheckScopeSource = scope } ->
+          | TypeValue.Lambda { value = par, body } ->
             match body with
             | TypeExpr.FromTypeValue bodyTv ->
 
@@ -1072,17 +1066,8 @@ module Unification =
                   >> TypeInstantiateContext.Updaters.TypeVariables(Map.remove par.Name)
                 )
 
-              return
-                TypeValue.Lambda
-                  { value = (par, TypeExpr.FromTypeValue bodyTv')
-                    typeExprSource = n
-                    typeCheckScopeSource = scope }
-            | _ ->
-              return
-                TypeValue.Lambda
-                  { value = (par, body)
-                    typeExprSource = n
-                    typeCheckScopeSource = scope }
+              return TypeValue.CreateLambda(par, TypeExpr.FromTypeValue bodyTv')
+            | _ -> return TypeValue.CreateLambda(par, body)
           | TypeValue.Arrow { value = l, r
                               typeExprSource = n
                               typeCheckScopeSource = scope } ->

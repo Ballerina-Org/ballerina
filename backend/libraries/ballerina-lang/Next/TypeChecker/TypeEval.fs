@@ -27,7 +27,7 @@ module Eval =
   open Ballerina.DSL.Next.Terms.Patterns
 
   type TypeQueryRowExpr<'valueExt> with
-    static member Eval<'ve when 've: comparison>(config: TypeCheckingConfig<'ve>) : TypeQueryRowExprEval<'ve> =
+    static member Eval<'ve when 've: comparison>(config: TypeEvalConfig<'ve>) : TypeQueryRowExprEval<'ve> =
       fun typeCheckExpr _n loc0 q_row ->
         state {
           let (!) = TypeExpr.Eval<'ve> config typeCheckExpr None loc0
@@ -80,7 +80,7 @@ module Eval =
         }
 
   and TypeExpr<'valueExt> with
-    static member EvalAsSymbol<'ve when 've: comparison>(config: TypeCheckingConfig<'ve>) : TypeExprSymbolEval<'ve> =
+    static member EvalAsSymbol<'ve when 've: comparison>(config: TypeEvalConfig<'ve>) : TypeExprSymbolEval<'ve> =
       fun exprTypeCheck loc0 t ->
         state {
           let (!) = TypeExpr.EvalAsSymbol config exprTypeCheck loc0
@@ -128,7 +128,7 @@ module Eval =
               |> state.Throw
         }
 
-    static member Eval<'ve when 've: comparison>(config: TypeCheckingConfig<'ve>) : TypeExprEval<'ve> =
+    static member Eval<'ve when 've: comparison>(config: TypeEvalConfig<'ve>) : TypeExprEval<'ve> =
       fun typeCheckExpr n loc0 t ->
         state {
           let { QueryTypeSymbol = _query_type_symbol
@@ -250,7 +250,7 @@ module Eval =
 
             return TypeValue.CreateRelationLookupMany(a_schema, t', f_id, t_id), Kind.Star
           | TypeExpr.Schema parsed_schema ->
-            return! SchemaTypeEval.evalSchemaExpr config typeCheckExpr (!) loc0 source parsed_schema
+            return! SchemaTypeEval.evalSchemaExpr config typeCheckExpr (!) loc0 parsed_schema
           | TypeExpr.FromTypeValue tv ->
             // do Console.WriteLine($"Instantiating type value {tv}")
             let! (ctx: TypeCheckContext<'ve>) = state.GetContext()

@@ -29,16 +29,15 @@ module Lambda =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckLambda<'valueExt when 'valueExt: comparison>
-      (config: TypeCheckingConfig<'valueExt>)
+      (config: TypeEvalConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
-      : TypeChecker<Location * ExprLambda<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
+      : TypeChecker<ExprLambda<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun
           context_t
-          (lambdaLoc,
-            { Param = x
-              ParamType = t
-              Body = body
-              BodyType = bt }) ->
+          { Param = x
+            ParamType = t
+            Body = body
+            BodyType = bt } ->
         // let (!) = typeCheckExpr context_t
         let (=>) c e = typeCheckExpr c e
         let loc0 = body.Location
@@ -131,15 +130,7 @@ module Lambda =
             |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
             |> Expr.liftInstantiation
 
-          let paramHintLoc =
-            { lambdaLoc with
-                Column = lambdaLoc.Column + x.Name.Length }
-
-          if not ctx.IsTypeCheckingLetValue then
-            do!
-              match t with
-              | Some _ -> state { return () }
-              | None -> TypeCheckState.bindInlayHint (paramHintLoc, x.Name, t_x)
+          do! TypeCheckState.bindInlayHint (loc0, x.Name, fst var_type)
 
           return TypeCheckedExpr.Lambda(x, t_x, body, t_body, t_res, Kind.Star, loc0, ctx.Scope), ctx
         }

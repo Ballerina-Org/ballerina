@@ -24,11 +24,10 @@ module SchemaTypeEval =
   open Ballerina.DSL.Next.Terms.Patterns
 
   let evalSchemaExpr<'ve when 've: comparison>
-    (config: TypeCheckingConfig<'ve>)
+    (config: TypeEvalConfig<'ve>)
     (typeCheckExpr: ExprTypeChecker<'ve>)
     (evalTypeExpr: TypeExpr<'ve> -> TypeExprEvalResult<'ve>)
     (loc0: Location)
-    (source: TypeExprSourceMapping<'ve>)
     parsed_schema
     : TypeExprEvalResult<'ve> =
     state {
@@ -623,7 +622,6 @@ module SchemaTypeEval =
 
           let resulting_schema_without_hooks =
             { DeclaredAtForNominalEquality = loc0
-              Source = source
               Entities = entities |> OrderedMap.mergeSecondAfterFirst included_entities
               Relations = relations |> OrderedMap.mergeSecondAfterFirst included_relations
               Included = included_schema }

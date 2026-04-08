@@ -34,7 +34,7 @@ module RecordWith =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckRecordWith<'valueExt when 'valueExt: comparison>
-      (config: TypeCheckingConfig<'valueExt>)
+      (config: TypeEvalConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprRecordWith<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Record = record; Fields = fields }) ->

@@ -50,7 +50,6 @@ module Model =
 
   type TypeCheckContext<'valueExt> =
     { Scope: TypeCheckScope
-      IsTypeCheckingLetValue: bool
       TypeVariables: TypeVariablesScope<'valueExt>
       TypeParameters: TypeParametersScope
       Values: Map<ResolvedIdentifier, TypeValue<'valueExt> * Kind>
@@ -119,7 +118,7 @@ module Model =
       BackgroundHooksExtraScope: Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)>
       PermissionHooksExtraScope: Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)> }
 
-  type TypeCheckingConfig<'valueExt when 'valueExt: comparison> =
+  type TypeEvalConfig<'valueExt when 'valueExt: comparison> =
     { QueryTypeSymbol: TypeSymbol
       ListTypeSymbol: TypeSymbol
       MkQueryType: Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>

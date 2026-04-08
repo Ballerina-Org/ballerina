@@ -3,9 +3,7 @@ namespace Ballerina.API.MemoryDB
 module Utils =
   open Ballerina.DSL.Next.StdLib.Extensions
   open Ballerina.DSL.Next.StdLib.FileDB
-  open Ballerina.DSL.Next.Terms
   open Ballerina.Collections.Sum
-  open Ballerina.Collections.Map
   open Ballerina.DSL.Next.Runners
   open Ballerina.Collections.NonEmptyList
   open Ballerina.DSL.Next.Terms.Eval
@@ -24,15 +22,13 @@ module Utils =
 
 
   let contextFactory (dbFileConfig: DbFileConfig) =
-    hddcacheWithStdExtensions
-      (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
-      (fileDbOps dbFileConfig)
-      id
-      id
-    |> fun (_, languageContext, typeCheckingConfig, _) -> languageContext, typeCheckingConfig
+    stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()) (fileDbOps dbFileConfig)
+    |> fun (_, languageContext, typeEvalConfig) -> languageContext, typeEvalConfig
 
   let buildSchemaDefinition
-    (dbFileConfig: DbFileConfig)
+    (languageContext:
+      LanguageContext<FileDBRuntimeContext, FileDbValueExtension, ValueExtDTO, FileDbDeltaExtension, DeltaExtDTO>)
+    typeEvalConfig
     (addPermissionHookScope:
       Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>
         -> Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>)
@@ -45,38 +41,13 @@ module Utils =
     (schemaDefinitions: List<SchemaFileDefinition>)
     =
     sum {
-      let _, languageContext, typeCheckingConfig, build_cache =
-        hddcacheWithStdExtensions
-          (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
-          (fileDbOps dbFileConfig)
-          (TypeCheckContext.Updaters.BackgroundHooksExtraScope addBackgroundHookScope
-           >> TypeCheckContext.Updaters.PermissionHooksExtraScope addPermissionHookScope)
-          id
-
-      let domainName = "Bise"
-
-      let injectedRuntimeValues =
-        [ ResolvedIdentifier.Create(domainName, "CurrentUser"),
-          Value.Sum(
-            { Case = 1; Count = 2 },
-            Value.Primitive(PrimitiveValue.Unit)
-          )
-          ResolvedIdentifier.Create(domainName, "CurrentOwner"),
-          Value.Sum(
-            { Case = 1; Count = 2 },
-            Value.Primitive(PrimitiveValue.Unit)
-          )
-          ResolvedIdentifier.Create(domainName, "CurrentManager"),
-          Value.Sum(
-            { Case = 1; Count = 2 },
-            Value.Primitive(PrimitiveValue.Unit)
-          )
-          ResolvedIdentifier.Create(domainName, "CurrentApiToken"),
-          Value.Sum(
-            { Case = 1; Count = 2 },
-            Value.Primitive(PrimitiveValue.Unit)
-          ) ]
-        |> Map.ofList
+      let build_cache =
+        memcache (
+          languageContext.TypeCheckContext
+          |> TypeCheckContext.Updaters.BackgroundHooksExtraScope addBackgroundHookScope
+          |> TypeCheckContext.Updaters.PermissionHooksExtraScope addPermissionHookScope,
+          languageContext.TypeCheckState
+        )
 
       let files =
         schemaDefinitions
@@ -92,16 +63,14 @@ module Utils =
       let project: ProjectBuildConfiguration = { Files = files }
 
       let! NonEmptyList(expr, exprs), _, typeCheckContext, typeCheckState =
-        ProjectBuildConfiguration.BuildCached typeCheckingConfig build_cache project
+        ProjectBuildConfiguration.BuildCached typeEvalConfig build_cache project
 
       let runtimeContext: FileDBRuntimeContext =
         { TenantId = tenantId
           SchemaName = schemaName }
 
       let evalContext =
-        ExprEvalContext.Empty runtimeContext
-        |> languageContext.ExprEvalContext
-        |> ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) injectedRuntimeValues)
+        ExprEvalContext.Empty runtimeContext |> languageContext.ExprEvalContext
 
       let! evalResult =
         Expr.Eval(NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(expr, exprs)))
