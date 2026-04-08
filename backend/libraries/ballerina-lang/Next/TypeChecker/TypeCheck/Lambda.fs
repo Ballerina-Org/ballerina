@@ -41,7 +41,7 @@ module Lambda =
               BodyType = bt }) ->
         // let (!) = typeCheckExpr context_t
         let (=>) c e = typeCheckExpr c e
-        let loc0 = body.Location
+        let loc0 = lambdaLoc
 
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum

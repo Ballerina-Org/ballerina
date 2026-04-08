@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOTNET_VERSION: '10.0.x'
+
+jobs:
+  test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore backend/backend.sln
+
+    - name: Build backend
+      run: dotnet build backend/backend.sln --configuration Release --no-restore
+
+    - name: Build CLI
+      run: dotnet build ballerina/ballerina.fsproj --configuration Release --no-restore
+
+    - name: Run integration tests
+      run: dotnet run --project backend/apps/ballerina-samples-integration-test/ballerina-samples-integration-test.fsproj --configuration Release --no-build
+      env:
+        BALLERINA_SAMPLES_DIR: ${{ github.workspace }}/samples
+
+    - name: Test samples with CLI
+      run: |
+        cd ballerina
+        for f in ../samples/*.blproj; do 
+          result=$(dotnet run --project ballerina.fsproj --configuration Release -- -f "$f" 2>&1)
+          if echo "$result" | grep -q "built successfully"; then 
+            echo "✓ PASS: $(basename $f)"
+          else 
+            echo "✗ FAIL: $(basename $f)"
+            echo "$result"
+            exit 1
+          fi
+        done

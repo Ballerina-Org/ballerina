@@ -291,10 +291,11 @@ module Common =
 
       return!
         parser {
-          let! res = p ()
+          let! res = p () |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
           do! closeRoundBracketOperator
           return res
         }
+        |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
         |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
 

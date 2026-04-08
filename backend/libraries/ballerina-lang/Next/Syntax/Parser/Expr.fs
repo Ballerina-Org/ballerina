@@ -57,6 +57,7 @@ module Expr =
     let singleIdentifier = singleTermIdentifier
 
     let typeDecl v = typeDecl (expr parseAllComplexShapes) v
+
     // let indent = "--"
 
     let stringLiteral () =
@@ -623,27 +624,48 @@ module Expr =
 
     let argExpr () =
       parser {
-        return!
-          parser {
-            let! res =
-              parser.Any
-                [ expr (Set.singleton ComplexExpressionKind.RecordDes) |> parser.Map Sum.Left
-                  (fun () -> typeDecl parseAllComplexTypeShapes)
-                  |> betweenSquareBrackets
-                  |> parser.Map(Sum.Right) ]
-              |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+        let! res =
+          parser.Any
+            [ expr (Set.singleton ComplexExpressionKind.RecordDes) |> parser.Map Sum.Left
+              (fun () -> typeDecl parseAllComplexTypeShapes)
+              |> betweenSquareBrackets
+              |> parser.Map(Sum.Right) ]
+          |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+          |> parser.MapError(Errors<_>.DeduplicateByMessageKeepBest)
 
-            return res
-          }
-          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+        return res
       }
       |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+      |> parser.MapError(Errors<_>.DeduplicateByMessageKeepBest)
 
     let application () =
       parser {
         let! args = parser.AtLeastOne(argExpr ())
         return args |> ComplexExpression.ApplicationArguments
       }
+      |> parser.MapError(Errors<_>.DeduplicateByMessageKeepBest)
+
+    let startsApplicationArgument (t: LocalizedToken) =
+      match t.Token with
+      | Token.Identifier _
+      | Token.StringLiteral _
+      | Token.BoolLiteral _
+      | Token.IntLiteral _
+      | Token.Int64Literal _
+      | Token.DecimalLiteral _
+      | Token.Float32Literal _
+      | Token.Float64Literal _
+      | Token.CaseLiteral _
+      | Token.Keyword Keyword.Fun
+      | Token.Keyword Keyword.If
+      | Token.Keyword Keyword.Match
+      | Token.Keyword Keyword.Query
+      | Token.Operator(Operator.RoundBracket Bracket.Open)
+      | Token.Operator(Operator.SquareBracket Bracket.Open)
+      | Token.Operator(Operator.CurlyBracket Bracket.Open)
+      | Token.Operator Operator.Minus
+      | Token.Operator Operator.Bang -> true
+      | _ -> false
 
     let simpleShapes =
       [ stringLiteral ()
@@ -765,10 +787,39 @@ module Expr =
             complexShapes
 
         let! res =
-          complexShapes
-          |> parser.Any
-          |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
-          |> parser.Many
+          parser {
+            let! stream = parser.Stream
+
+            let commitToFirstComplexShape =
+              match stream with
+              | t :: _ ->
+                parseComplexShapes.Contains ComplexExpressionKind.ApplicationArguments
+                && startsApplicationArgument t
+              | [] -> false
+
+            if commitToFirstComplexShape then
+              let! firstComplexShape =
+                complexShapes
+                |> parser.Any
+                |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+                |> parser.MapError(Errors<_>.DeduplicateByMessageKeepBest)
+
+              let! remainingComplexShapes =
+                complexShapes
+                |> parser.Any
+                |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+                |> parser.MapError(Errors<_>.DeduplicateByMessageKeepBest)
+                |> parser.Many
+
+              return firstComplexShape :: remainingComplexShapes
+            else
+              return!
+                complexShapes
+                |> parser.Any
+                |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+                |> parser.MapError(Errors<_>.DeduplicateByMessageKeepBest)
+                |> parser.Many
+          }
 
         // do Console.WriteLine $"~~{res.ToFSharpString}"
         // do Console.ReadLine() |> ignore

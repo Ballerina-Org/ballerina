@@ -117,6 +117,40 @@ module Errors =
               Errors = fun () -> NonEmptyList.OfList(x, xs) }
         | [] -> e
 
+    static member DeduplicateByMessageKeepBest (e: Errors<'context>) : Errors<'context> =
+      let priorityRank p =
+        match p with
+        | ErrorPriority.High -> 3
+        | ErrorPriority.Medium -> 2
+        | ErrorPriority.Low -> 1
+
+      let pickBestError current candidate =
+        let currentRank = priorityRank current.Priority
+        let candidateRank = priorityRank candidate.Priority
+
+        if candidateRank > currentRank then
+          candidate
+        else if candidateRank = currentRank && candidate.Message.Length > current.Message.Length then
+          candidate
+        else
+          current
+
+      let uniqueErrors =
+        e.Errors()
+        |> NonEmptyList.ToList
+        |> List.fold
+          (fun acc err ->
+            match Map.tryFind err.Context acc with
+            | Some existing -> acc |> Map.add err.Context (pickBestError existing err)
+            | None -> acc |> Map.add err.Context err)
+          Map.empty
+        |> Map.values
+        |> Seq.toList
+
+      match uniqueErrors with
+      | x :: xs -> { Errors = fun () -> NonEmptyList.OfList(x, xs) }
+      | [] -> e
+
     static member Filter (e: Errors<'context>) (predicate: Error<'context> -> bool) : Option<Errors<'context>> =
       let errors = e.Errors() |> NonEmptyList.ToList
 
