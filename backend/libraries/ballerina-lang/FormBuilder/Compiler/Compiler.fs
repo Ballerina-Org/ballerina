@@ -30,17 +30,25 @@ module FormCompiler =
       Forms: FormsInput }
 
   let memoizeTypes (expr: TypeCheckedExpr<'valueExt>) =
-    let rec memoizeTypeRec (expr: TypeCheckedExpr<'valueExt>) (table: Map<string, TypeValue<'valueExt>>) =
+    let rec memoizeTypeRec
+      (expr: TypeCheckedExpr<'valueExt>)
+      (table: Map<string, TypeValue<'valueExt>>)
+      =
       sum {
         match expr.Expr with
         | TypeCheckedExprRec.TypeLet typeLet ->
-          return! memoizeTypeRec typeLet.Body (table.Add(typeLet.Name, typeLet.TypeDef))
-        | TypeCheckedExprRec.Let letExpr -> return! memoizeTypeRec letExpr.Rest table
+          return!
+            memoizeTypeRec
+              typeLet.Body
+              (table.Add(typeLet.Name, typeLet.TypeDef))
+        | TypeCheckedExprRec.Let letExpr ->
+          return! memoizeTypeRec letExpr.Rest table
         | TypeCheckedExprRec.Primitive PrimitiveValue.Unit -> return table
         | _ ->
           return!
             Right(
-              Errors.Singleton Location.Unknown (fun () -> $"Expected type let but {expr.Expr} was given")
+              Errors.Singleton Location.Unknown (fun () ->
+                $"Expected type let but {expr.Expr} was given")
               |> Errors.MapPriority(replaceWith ErrorPriority.High)
             )
       }
@@ -62,15 +70,30 @@ module FormCompiler =
     and 'deltaExtDTO: not struct>
     (input: FormCompilerInput<'valueExt>)
     (cache: ProjectCache<'valueExt>)
-    (languageContext: LanguageContext<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
-    (stdExtensions: StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>)
+    (languageContext:
+      LanguageContext<
+        'runtimeContext,
+        'valueExt,
+        'valueExtDTO,
+        'deltaExt,
+        'deltaExtDTO
+       >)
+    (stdExtensions:
+      StdExtensions<
+        'runtimeContext,
+        'valueExt,
+        'valueExtDTO,
+        'deltaExt,
+        'deltaExtDTO
+       >)
     (config: TypeCheckingConfig<'valueExt>)
     =
     sum {
       let formsInitialLocation = Location.Initial input.Forms.Source
 
       let! types, _, _, typeCheckState =
-        let project: ProjectBuildConfiguration = { Files = input.Types.Preludes }
+        let project: ProjectBuildConfiguration =
+          { Files = input.Types.Preludes }
 
         ProjectBuildConfiguration.BuildCached config cache project
         |> Sum.mapRight _.ToString()
@@ -93,10 +116,12 @@ module FormCompiler =
         |> sum.Map(Map.mergeMany (fun _ v2 -> v2))
         |> Sum.mapRight _.ToString()
 
-      let formTypeCheckState = FormTypeCheckerState<'valueExt>.Init typeCheckState
+      let formTypeCheckState =
+        FormTypeCheckerState<'valueExt>.Init typeCheckState
 
       let formTypeCheckContext =
-        FormTypeCheckingContext<ValueExt<'runtimeContext, 'db, 'customExtension>>.Init
+        FormTypeCheckingContext<ValueExt<'runtimeContext, 'db, 'customExtension>>
+          .Init
           memoizedTypes
           languageContext.TypeCheckContext
           input.ApiTypes

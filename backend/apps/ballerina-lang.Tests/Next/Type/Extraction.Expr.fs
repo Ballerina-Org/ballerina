@@ -51,19 +51,29 @@ let private runtimeMapOps = { MapToList = resolveFqId [ "Map" ] "mapToList" }
 
 let private runtimeOps, runtimeContext, typeCheckingConfig =
   db_ops ()
-  |> bootstrapStdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
+  |> bootstrapStdExtensions (
+    Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()
+  )
 
 do ignore runtimeOps
 
 let private evalTyped (program: TypeCheckedExpr<RuntimeExt>) =
   let evalContext = ExprEvalContext.Empty() |> runtimeContext.ExprEvalContext
 
-  Expr.Eval(NonEmptyList.prependList runtimeContext.TypeCheckedPreludes (NonEmptyList.One program))
+  Expr.Eval(
+    NonEmptyList.prependList
+      runtimeContext.TypeCheckedPreludes
+      (NonEmptyList.One program)
+  )
   |> Reader.Run evalContext
 
-let private assertEvalInt (expected: int) (program: TypeCheckedExpr<RuntimeExt>) =
+let private assertEvalInt
+  (expected: int)
+  (program: TypeCheckedExpr<RuntimeExt>)
+  =
   match evalTyped program with
-  | Left(Value.Primitive(PrimitiveValue.Int32 actual)) -> Assert.That(actual, Is.EqualTo(expected))
+  | Left(Value.Primitive(PrimitiveValue.Int32 actual)) ->
+    Assert.That(actual, Is.EqualTo(expected))
   | Left other -> Assert.Fail $"Expected int32 {expected}, got {other}"
   | Right err -> Assert.Fail $"Evaluation failed: {err}"
 
@@ -73,7 +83,9 @@ let private treeFromSteps (paths: ExtractionStep list list) : ExtractionTree =
     | [] -> { tree with SelfMatch = true }
     | step :: rest ->
       let child =
-        tree.Children |> Map.tryFind step |> Option.defaultValue emptyExtractionTree
+        tree.Children
+        |> Map.tryFind step
+        |> Option.defaultValue emptyExtractionTree
 
       let child' = add rest child
 
@@ -85,14 +97,19 @@ let private treeFromSteps (paths: ExtractionStep list list) : ExtractionTree =
 [<Test>]
 let ``buildExtractionExpr with empty tree returns lambda wrapping Nil`` () =
   let expr =
-    buildExtractionExpr<IComparable> listOps mapOps Map.empty emptyExtractionTree
+    buildExtractionExpr<IComparable>
+      listOps
+      mapOps
+      Map.empty
+      emptyExtractionTree
 
   match expr.Expr with
   | TypeCheckedExprRec.Lambda { Body = body } ->
     match body.Expr with
     | TypeCheckedExprRec.Apply { F = nilLookup; Arg = unitArg } ->
       match nilLookup.Expr with
-      | TypeCheckedExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(listOps.Nil))
+      | TypeCheckedExprRec.Lookup { Id = id } ->
+        Assert.That(id, Is.EqualTo(listOps.Nil))
       | other -> Assert.Fail $"Expected Nil lookup, got {other}"
 
       match unitArg.Expr with
@@ -102,7 +119,9 @@ let ``buildExtractionExpr with empty tree returns lambda wrapping Nil`` () =
   | other -> Assert.Fail $"Expected Lambda, got {other}"
 
 [<Test>]
-let ``buildExtractionExpr with single RecordField branch generates RecordDes wrapped in Cons`` () =
+let ``buildExtractionExpr with single RecordField branch generates RecordDes wrapped in Cons``
+  ()
+  =
   let fieldSym = makeSym "evidence"
   let fieldResolved = resolveId "evidence"
 
@@ -116,7 +135,8 @@ let ``buildExtractionExpr with single RecordField branch generates RecordDes wra
     match body.Expr with
     | TypeCheckedExprRec.Apply { F = consLookup; Arg = tupleArg } ->
       match consLookup.Expr with
-      | TypeCheckedExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(listOps.Cons))
+      | TypeCheckedExprRec.Lookup { Id = id } ->
+        Assert.That(id, Is.EqualTo(listOps.Cons))
       | other -> Assert.Fail $"Expected Cons lookup, got {other}"
 
       match tupleArg.Expr with
@@ -124,26 +144,32 @@ let ``buildExtractionExpr with single RecordField branch generates RecordDes wra
         match items with
         | [ recordDes; nilExpr ] ->
           match recordDes.Expr with
-          | TypeCheckedExprRec.RecordDes { Field = field } -> Assert.That(field, Is.EqualTo(fieldResolved))
+          | TypeCheckedExprRec.RecordDes { Field = field } ->
+            Assert.That(field, Is.EqualTo(fieldResolved))
           | other -> Assert.Fail $"Expected RecordDes, got {other}"
 
           match nilExpr.Expr with
           | TypeCheckedExprRec.Apply { F = nilLookup; Arg = unitArg } ->
             match nilLookup.Expr with
-            | TypeCheckedExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(listOps.Nil))
+            | TypeCheckedExprRec.Lookup { Id = id } ->
+              Assert.That(id, Is.EqualTo(listOps.Nil))
             | other -> Assert.Fail $"Expected Nil lookup, got {other}"
 
             match unitArg.Expr with
             | TypeCheckedExprRec.Primitive PrimitiveValue.Unit -> Assert.Pass()
-            | other -> Assert.Fail $"Expected Unit primitive arg for Nil, got {other}"
+            | other ->
+              Assert.Fail $"Expected Unit primitive arg for Nil, got {other}"
           | other -> Assert.Fail $"Expected Apply(Nil, Unit), got {other}"
         | other -> Assert.Fail $"Expected tuple [record; nil], got {other}"
       | other -> Assert.Fail $"Expected TupleCons argument to Cons, got {other}"
-    | other -> Assert.Fail $"Expected Apply(Cons, Tuple(record, nil)), got {other}"
+    | other ->
+      Assert.Fail $"Expected Apply(Cons, Tuple(record, nil)), got {other}"
   | other -> Assert.Fail $"Expected Lambda, got {other}"
 
 [<Test>]
-let ``buildExtractionExpr with ContainerElement self-match returns host directly`` () =
+let ``buildExtractionExpr with ContainerElement self-match returns host directly``
+  ()
+  =
   let tree = treeFromSteps [ [ ContainerElement SetContainer ] ]
 
   let expr = buildExtractionExpr<IComparable> listOps mapOps Map.empty tree
@@ -152,16 +178,21 @@ let ``buildExtractionExpr with ContainerElement self-match returns host directly
   | TypeCheckedExprRec.Lambda { Body = body } ->
     match body.Expr with
     | TypeCheckedExprRec.Lookup _ -> Assert.Pass()
-    | other -> Assert.Fail $"Expected Lookup(host) for pass-through, got {other}"
+    | other ->
+      Assert.Fail $"Expected Lookup(host) for pass-through, got {other}"
   | other -> Assert.Fail $"Expected Lambda, got {other}"
 
 [<Test>]
-let ``buildExtractionExpr with ContainerElement plus RecordField uses Fold`` () =
+let ``buildExtractionExpr with ContainerElement plus RecordField uses Fold``
+  ()
+  =
   let fieldSym = makeSym "evidence"
   let fieldResolved = resolveId "evidence"
 
   let symbolResolver = Map.ofList [ fieldSym, fieldResolved ]
-  let tree = treeFromSteps [ [ ContainerElement SetContainer; RecordField fieldSym ] ]
+
+  let tree =
+    treeFromSteps [ [ ContainerElement SetContainer; RecordField fieldSym ] ]
 
   let expr = buildExtractionExpr<IComparable> listOps mapOps symbolResolver tree
 
@@ -174,17 +205,21 @@ let ``buildExtractionExpr with ContainerElement plus RecordField uses Fold`` () 
         match foldWithInit.Expr with
         | TypeCheckedExprRec.Apply { F = foldLookup } ->
           match foldLookup.Expr with
-          | TypeCheckedExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(listOps.Fold))
+          | TypeCheckedExprRec.Lookup { Id = id } ->
+            Assert.That(id, Is.EqualTo(listOps.Fold))
           | other -> Assert.Fail $"Expected Fold lookup, got {other}"
         | other -> Assert.Fail $"Expected Apply(Fold, fn), got {other}"
-      | other -> Assert.Fail $"Expected Apply(Apply(Fold, fn), init), got {other}"
+      | other ->
+        Assert.Fail $"Expected Apply(Apply(Fold, fn), init), got {other}"
     | other -> Assert.Fail $"Expected Apply(..., host), got {other}"
   | other -> Assert.Fail $"Expected Lambda, got {other}"
 
 [<Test>]
 let ``buildExtractionExpr with Map container uses MapToList before Fold`` () =
   let mapTypeId = resolveId "Map"
-  let tree = treeFromSteps [ [ ContainerElement(ImportedContainer(mapTypeId, 1)) ] ]
+
+  let tree =
+    treeFromSteps [ [ ContainerElement(ImportedContainer(mapTypeId, 1)) ] ]
 
   let expr = buildExtractionExpr<IComparable> listOps mapOps Map.empty tree
 
@@ -197,15 +232,18 @@ let ``buildExtractionExpr with Map container uses MapToList before Fold`` () =
         match foldWithInit.Expr with
         | TypeCheckedExprRec.Apply { F = foldLookup } ->
           match foldLookup.Expr with
-          | TypeCheckedExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(listOps.Fold))
+          | TypeCheckedExprRec.Lookup { Id = id } ->
+            Assert.That(id, Is.EqualTo(listOps.Fold))
           | other -> Assert.Fail $"Expected Fold lookup, got {other}"
         | other -> Assert.Fail $"Expected Apply(Fold, fn), got {other}"
-      | other -> Assert.Fail $"Expected Apply(Apply(Fold, fn), init), got {other}"
+      | other ->
+        Assert.Fail $"Expected Apply(Apply(Fold, fn), init), got {other}"
 
       match mappedHost.Expr with
       | TypeCheckedExprRec.Apply { F = mapToListLookup } ->
         match mapToListLookup.Expr with
-        | TypeCheckedExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(mapOps.MapToList))
+        | TypeCheckedExprRec.Lookup { Id = id } ->
+          Assert.That(id, Is.EqualTo(mapOps.MapToList))
         | other -> Assert.Fail $"Expected MapToList lookup, got {other}"
       | other -> Assert.Fail $"Expected Apply(MapToList, host), got {other}"
     | other -> Assert.Fail $"Expected Apply(Fold..., mappedHost), got {other}"
@@ -216,7 +254,9 @@ let ``buildExtractionExpr with multiple branches uses Append`` () =
   let sym1 = makeSym "ev1"
   let sym2 = makeSym "ev2"
 
-  let symbolResolver = Map.ofList [ sym1, resolveId "ev1"; sym2, resolveId "ev2" ]
+  let symbolResolver =
+    Map.ofList [ sym1, resolveId "ev1"; sym2, resolveId "ev2" ]
+
   let tree = treeFromSteps [ [ RecordField sym1 ]; [ RecordField sym2 ] ]
 
   let expr = buildExtractionExpr<IComparable> listOps mapOps symbolResolver tree
@@ -228,14 +268,18 @@ let ``buildExtractionExpr with multiple branches uses Append`` () =
       match appendApplied.Expr with
       | TypeCheckedExprRec.Apply { F = appendLookup } ->
         match appendLookup.Expr with
-        | TypeCheckedExprRec.Lookup { Id = id } -> Assert.That(id, Is.EqualTo(listOps.Append))
+        | TypeCheckedExprRec.Lookup { Id = id } ->
+          Assert.That(id, Is.EqualTo(listOps.Append))
         | other -> Assert.Fail $"Expected Append lookup, got {other}"
       | other -> Assert.Fail $"Expected Apply(Append, list1), got {other}"
-    | other -> Assert.Fail $"Expected Apply(Apply(Append, ...), list2), got {other}"
+    | other ->
+      Assert.Fail $"Expected Apply(Apply(Append, ...), list2), got {other}"
   | other -> Assert.Fail $"Expected Lambda, got {other}"
 
 [<Test>]
-let ``buildExtractionExpr with UnionCase branch generates UnionDes with fallback`` () =
+let ``buildExtractionExpr with UnionCase branch generates UnionDes with fallback``
+  ()
+  =
   let caseSym = makeSym "HasEvidence"
   let caseResolved = resolveId "HasEvidence"
 
@@ -251,37 +295,55 @@ let ``buildExtractionExpr with UnionCase branch generates UnionDes with fallback
       match unionDes.Expr with
       | TypeCheckedExprRec.UnionDes { Handlers = handlers
                                       Fallback = fallback } ->
-        Assert.That(handlers |> Map.containsKey caseResolved, Is.True, "Should have handler for matching case")
+        Assert.That(
+          handlers |> Map.containsKey caseResolved,
+          Is.True,
+          "Should have handler for matching case"
+        )
+
         Assert.That(fallback.IsSome, Is.True, "Should have a fallback (Nil)")
       | other -> Assert.Fail $"Expected UnionDes, got {other}"
     | other -> Assert.Fail $"Expected Apply(UnionDes, host), got {other}"
   | other -> Assert.Fail $"Expected Lambda, got {other}"
 
 [<Test>]
-let ``buildExtractionExpr fails upfront when symbol resolver is missing entries`` () =
+let ``buildExtractionExpr fails upfront when symbol resolver is missing entries``
+  ()
+  =
   let fieldSym = makeSym "evidence"
 
   let tree = treeFromSteps [ [ RecordField fieldSym ] ]
 
-  Assert.Throws<System.Exception>(fun () -> buildExtractionExpr<IComparable> listOps mapOps Map.empty tree |> ignore)
+  Assert.Throws<System.Exception>(fun () ->
+    buildExtractionExpr<IComparable> listOps mapOps Map.empty tree |> ignore)
   |> fun ex -> Assert.That(ex.Message, Does.Contain("missing symbol mappings"))
 
 [<Test>]
-let ``buildExtractionExpr runtime: extracts single int field to one-element list`` () =
+let ``buildExtractionExpr runtime: extracts single int field to one-element list``
+  ()
+  =
   let evidenceSym = makeSym "evidence"
   let evidenceId = resolveId "evidence"
   let symbolResolver = Map.ofList [ evidenceSym, evidenceId ]
   let tree = treeFromSteps [ [ RecordField evidenceSym ] ]
 
   let extractor =
-    buildExtractionExpr<RuntimeExt> runtimeListOps runtimeMapOps symbolResolver tree
+    buildExtractionExpr<RuntimeExt>
+      runtimeListOps
+      runtimeMapOps
+      symbolResolver
+      tree
     |> unbox<TypeCheckedExpr<RuntimeExt>>
 
   let hostType =
-    TypeValue.CreateRecord(OrderedMap.ofList [ evidenceSym, (TypeValue.CreateInt32(), Kind.Star) ])
+    TypeValue.CreateRecord(
+      OrderedMap.ofList [ evidenceSym, (TypeValue.CreateInt32(), Kind.Star) ]
+    )
 
   let hostValue: Value<TypeValue<RuntimeExt>, RuntimeExt> =
-    Value.Record(Map.ofList [ evidenceId, Value.Primitive(PrimitiveValue.Int32 42) ])
+    Value.Record(
+      Map.ofList [ evidenceId, Value.Primitive(PrimitiveValue.Int32 42) ]
+    )
 
   let extracted =
     TypeCheckedExpr.Apply(
@@ -293,7 +355,11 @@ let ``buildExtractionExpr runtime: extracts single int field to one-element list
 
   let listLength =
     TypeCheckedExpr.Apply(
-      TypeCheckedExpr.Lookup(resolveFqId [ "List" ] "length", TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
+      TypeCheckedExpr.Lookup(
+        resolveFqId [ "List" ] "length",
+        TypeValue.CreatePrimitive PrimitiveType.Unit,
+        Kind.Star
+      ),
       extracted,
       TypeValue.CreatePrimitive PrimitiveType.Unit,
       Kind.Star
@@ -302,7 +368,9 @@ let ``buildExtractionExpr runtime: extracts single int field to one-element list
   assertEvalInt 1 listLength
 
 [<Test>]
-let ``buildExtractionExpr runtime: extracts multiple int fields with correct aggregate`` () =
+let ``buildExtractionExpr runtime: extracts multiple int fields with correct aggregate``
+  ()
+  =
   let ev1Sym = makeSym "ev1"
   let ev2Sym = makeSym "ev2"
   let ev1Id = resolveId "ev1"
@@ -311,7 +379,11 @@ let ``buildExtractionExpr runtime: extracts multiple int fields with correct agg
   let tree = treeFromSteps [ [ RecordField ev1Sym ]; [ RecordField ev2Sym ] ]
 
   let extractor =
-    buildExtractionExpr<RuntimeExt> runtimeListOps runtimeMapOps symbolResolver tree
+    buildExtractionExpr<RuntimeExt>
+      runtimeListOps
+      runtimeMapOps
+      symbolResolver
+      tree
     |> unbox<TypeCheckedExpr<RuntimeExt>>
 
   let hostType =
@@ -338,7 +410,11 @@ let ``buildExtractionExpr runtime: extracts multiple int fields with correct agg
 
   let listLength =
     TypeCheckedExpr.Apply(
-      TypeCheckedExpr.Lookup(resolveFqId [ "List" ] "length", TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
+      TypeCheckedExpr.Lookup(
+        resolveFqId [ "List" ] "length",
+        TypeValue.CreatePrimitive PrimitiveType.Unit,
+        Kind.Star
+      ),
       extracted,
       TypeValue.CreatePrimitive PrimitiveType.Unit,
       Kind.Star
@@ -350,7 +426,11 @@ let ``buildExtractionExpr runtime: extracts multiple int fields with correct agg
   let xVar, xId = Var.Create "x", resolveId "x"
 
   let foldFnBody =
-    TypeCheckedExpr.Lookup(xId, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+    TypeCheckedExpr.Lookup(
+      xId,
+      TypeValue.CreatePrimitive PrimitiveType.Unit,
+      Kind.Star
+    )
 
   let foldFn =
     TypeCheckedExpr.Lambda(
@@ -373,12 +453,20 @@ let ``buildExtractionExpr runtime: extracts multiple int fields with correct agg
     TypeCheckedExpr.Apply(
       TypeCheckedExpr.Apply(
         TypeCheckedExpr.Apply(
-          TypeCheckedExpr.Lookup(resolveFqId [ "List" ] "fold", TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
+          TypeCheckedExpr.Lookup(
+            resolveFqId [ "List" ] "fold",
+            TypeValue.CreatePrimitive PrimitiveType.Unit,
+            Kind.Star
+          ),
           foldFn,
           TypeValue.CreatePrimitive PrimitiveType.Unit,
           Kind.Star
         ),
-        TypeCheckedExpr.Primitive(PrimitiveValue.Int32 -1, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
+        TypeCheckedExpr.Primitive(
+          PrimitiveValue.Int32 -1,
+          TypeValue.CreatePrimitive PrimitiveType.Unit,
+          Kind.Star
+        ),
         TypeValue.CreatePrimitive PrimitiveType.Unit,
         Kind.Star
       ),

@@ -9,8 +9,11 @@ module AutomaticSymbolCreation =
   open Ballerina.Errors
 
   let wrapWithLet
-    (typeExpr: TypeExpr<'valueExt>, lookupsRepresentingSymbols: List<TypeExpr<'valueExt>>, symbolsKind: SymbolsKind)
-    : Sum<TypeExpr<'valueExt>, Errors<Location>> =
+    (
+      typeExpr: TypeExpr<'valueExt>,
+      lookupsRepresentingSymbols: List<TypeExpr<'valueExt>>,
+      symbolsKind: SymbolsKind
+    ) : Sum<TypeExpr<'valueExt>, Errors<Location>> =
     sum {
       let! symbolNames =
         lookupsRepresentingSymbols
@@ -27,7 +30,8 @@ module AutomaticSymbolCreation =
           })
         |> sum.All
 
-      let wrappedTypeExpr = TypeExpr.LetSymbols(symbolNames, symbolsKind, typeExpr)
+      let wrappedTypeExpr =
+        TypeExpr.LetSymbols(symbolNames, symbolsKind, typeExpr)
 
       return wrappedTypeExpr
     }

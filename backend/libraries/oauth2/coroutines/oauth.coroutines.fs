@@ -24,7 +24,13 @@ let rec private refresh
 
 let processToken
   (retryGetTokenInterval: TimeSpan)
-  : Coroutine<unit, unit, OAuthContext<'refreshToken, 'accessToken, 'error>, 'error> =
+  : Coroutine<
+      unit,
+      unit,
+      OAuthContext<'refreshToken, 'accessToken, 'error>,
+      'error
+     >
+  =
   co.Repeat(
     co {
       match! co.Await(fun ctxt -> ctxt.GetToken()) with

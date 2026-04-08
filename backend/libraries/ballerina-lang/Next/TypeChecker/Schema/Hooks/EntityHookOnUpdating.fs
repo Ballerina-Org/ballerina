@@ -24,14 +24,17 @@ module SchemaEntityHookOnUpdating =
       match onUpdating with
       | None -> return None
       | Some on_updating ->
-        let error_type = TypeValue.Lookup(Identifier.FullyQualified([], "Error"))
+        let error_type =
+          TypeValue.Lookup(Identifier.FullyQualified([], "Error"))
 
         let ofSum (p: Sum<'a, Errors<Unit>>) =
           p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
         let! on_updating_expr, _ =
           typeCheckExpr None on_updating
-          |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+          |> state.MapContext(
+            TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
+          )
 
         let on_updating_t = on_updating_expr.Type
 
@@ -54,7 +57,8 @@ module SchemaEntityHookOnUpdating =
                     e.TypeOriginal,
                     TypeValue.CreateArrow(
                       e.TypeWithProps,
-                      TypeValue.CreateSum [ TypeValue.CreateUnit(); error_type; e.TypeOriginal ]
+                      TypeValue.CreateSum
+                        [ TypeValue.CreateUnit(); error_type; e.TypeOriginal ]
                     )
                   )
                 )
@@ -62,7 +66,9 @@ module SchemaEntityHookOnUpdating =
             )
           )
           |> Expr.liftUnification
-          |> state.MapContext(TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith))
+          |> state.MapContext(
+            TypeCheckContext.Updaters.Scope(TypeCheckScope.Empty |> replaceWith)
+          )
 
         return Some on_updating_expr
     }

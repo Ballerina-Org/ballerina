@@ -40,7 +40,11 @@ module Model =
         |> Set.isEmpty
         ->
         Map.merge (fun a _ -> a) fields1 fields2 |> ExprType.RecordType |> Left
-      | _ -> Right(Errors.Singleton () (fun () -> $$"""Error: cannot merge types {{t1}} and {{t2}}."""))
+      | _ ->
+        Right(
+          Errors.Singleton () (fun () ->
+            $$"""Error: cannot merge types {{t1}} and {{t2}}.""")
+        )
 
     static member GetTypesFreeVars(t: ExprType) : Set<ExprTypeId> =
       let (!) = ExprType.GetTypesFreeVars
@@ -65,7 +69,8 @@ module Model =
       | ExprType.UnionType cs ->
         let cs = cs |> Map.values |> List.ofSeq
         cs |> Seq.map (fun c -> !c.Fields) |> Seq.fold (+) Set.empty
-      | ExprType.RecordType fs -> fs |> Map.values |> Seq.map (!) |> Seq.fold (+) Set.empty
+      | ExprType.RecordType fs ->
+        fs |> Map.values |> Seq.map (!) |> Seq.fold (+) Set.empty
       | ExprType.ArrowType(l, r) -> !l + !r
       | ExprType.GenericApplicationType(l, r) -> !l + !r
       | ExprType.GenericType(_, _, e) -> !e
@@ -98,10 +103,15 @@ module Model =
       | ExprType.MapType(k, v) -> ExprType.MapType(!k, !v)
       | ExprType.SumType(l, r) -> ExprType.SumType(!l, !r)
       | ExprType.TupleType ts -> ExprType.TupleType(!!ts)
-      | ExprType.UnionType cs -> ExprType.UnionType(cs |> Map.map (fun _ c -> { c with Fields = !c.Fields }))
-      | ExprType.RecordType fs -> ExprType.RecordType(fs |> Map.map (fun _ -> (!)))
+      | ExprType.UnionType cs ->
+        ExprType.UnionType(
+          cs |> Map.map (fun _ c -> { c with Fields = !c.Fields })
+        )
+      | ExprType.RecordType fs ->
+        ExprType.RecordType(fs |> Map.map (fun _ -> (!)))
       | ExprType.ArrowType(l, r) -> ExprType.ArrowType(!l, !r)
-      | ExprType.GenericApplicationType(l, r) -> ExprType.GenericApplicationType(!l, !r)
+      | ExprType.GenericApplicationType(l, r) ->
+        ExprType.GenericApplicationType(!l, !r)
       | ExprType.GenericType(v, k, e) -> ExprType.GenericType(v, k, !e)
       | ExprType.AllTranslationOverrides { KeyType = keyType } ->
         ExprType.AllTranslationOverrides { KeyType = !keyType }
@@ -117,7 +127,8 @@ module Model =
         | PrimitiveType.StringType -> JsonValue.String "string"
         | PrimitiveType.EntityIdStringType -> JsonValue.String "entityIdString"
         | PrimitiveType.EntityIdUUIDType -> JsonValue.String "entityIdUUID"
-        | PrimitiveType.CalculatedDisplayValueType -> JsonValue.String "calculatedDisplayValue"
+        | PrimitiveType.CalculatedDisplayValueType ->
+          JsonValue.String "calculatedDisplayValue"
         | PrimitiveType.IntType -> JsonValue.String "int"
         | PrimitiveType.FloatType -> JsonValue.String "float"
         | PrimitiveType.BoolType -> JsonValue.String "boolean"
@@ -127,38 +138,68 @@ module Model =
       | ExprType.CustomType s -> JsonValue.String s
       | ExprType.LookupType l -> JsonValue.String l.VarName
       | ExprType.OptionType t ->
-        JsonValue.Record [| "fun", JsonValue.String "Option"; "args", JsonValue.Array [| !t |] |]
-      | ExprType.OneType t -> JsonValue.Record [| "fun", JsonValue.String "One"; "args", JsonValue.Array [| !t |] |]
+        JsonValue.Record
+          [| "fun", JsonValue.String "Option"
+             "args", JsonValue.Array [| !t |] |]
+      | ExprType.OneType t ->
+        JsonValue.Record
+          [| "fun", JsonValue.String "One"; "args", JsonValue.Array [| !t |] |]
       | ExprType.ReadOnlyType t ->
-        JsonValue.Record [| "fun", JsonValue.String "ReadOnly"; "args", JsonValue.Array [| !t |] |]
-      | ExprType.ManyType t -> JsonValue.Record [| "fun", JsonValue.String "Many"; "args", JsonValue.Array [| !t |] |]
+        JsonValue.Record
+          [| "fun", JsonValue.String "ReadOnly"
+             "args", JsonValue.Array [| !t |] |]
+      | ExprType.ManyType t ->
+        JsonValue.Record
+          [| "fun", JsonValue.String "Many"; "args", JsonValue.Array [| !t |] |]
       | ExprType.SetType t ->
-        JsonValue.Record [| "fun", JsonValue.String "MultiSelection"; "args", JsonValue.Array [| !t |] |]
-      | ExprType.ListType t -> JsonValue.Record [| "fun", JsonValue.String "List"; "args", JsonValue.Array [| !t |] |]
-      | ExprType.TableType t -> JsonValue.Record [| "fun", JsonValue.String "Table"; "args", JsonValue.Array [| !t |] |]
+        JsonValue.Record
+          [| "fun", JsonValue.String "MultiSelection"
+             "args", JsonValue.Array [| !t |] |]
+      | ExprType.ListType t ->
+        JsonValue.Record
+          [| "fun", JsonValue.String "List"; "args", JsonValue.Array [| !t |] |]
+      | ExprType.TableType t ->
+        JsonValue.Record
+          [| "fun", JsonValue.String "Table"
+             "args", JsonValue.Array [| !t |] |]
       | ExprType.TupleType ts ->
         let jsonTypes = ts |> List.map (!) |> List.toArray
-        JsonValue.Record [| "fun", JsonValue.String "Tuple"; "args", JsonValue.Array jsonTypes |]
+
+        JsonValue.Record
+          [| "fun", JsonValue.String "Tuple"
+             "args", JsonValue.Array jsonTypes |]
       | ExprType.MapType(k, v) ->
-        JsonValue.Record [| "fun", JsonValue.String "Map"; "args", JsonValue.Array [| !k; !v |] |]
+        JsonValue.Record
+          [| "fun", JsonValue.String "Map"
+             "args", JsonValue.Array [| !k; !v |] |]
       | ExprType.SumType(l, r) ->
-        JsonValue.Record [| "fun", JsonValue.String "Sum"; "args", JsonValue.Array [| !l; !r |] |]
+        JsonValue.Record
+          [| "fun", JsonValue.String "Sum"
+             "args", JsonValue.Array [| !l; !r |] |]
       | ExprType.UnionType cases ->
         let jsonCases =
           cases
           |> Map.values
           |> Seq.map (fun case ->
-            JsonValue.Record [| "caseName", JsonValue.String case.CaseName; "fields", !case.Fields |])
+            JsonValue.Record
+              [| "caseName", JsonValue.String case.CaseName
+                 "fields", !case.Fields |])
           |> Seq.toArray
 
-        JsonValue.Record [| "fun", JsonValue.String "Union"; "args", JsonValue.Array jsonCases |]
+        JsonValue.Record
+          [| "fun", JsonValue.String "Union"
+             "args", JsonValue.Array jsonCases |]
       | ExprType.KeyOf(t, excludedKeys) ->
         JsonValue.Record
           [| "fun", JsonValue.String "KeyOf"
              "args",
              JsonValue.Array
                [| !t
-                  JsonValue.Array(excludedKeys |> List.map (fun k -> JsonValue.String k) |> List.toArray) |] |]
+                  JsonValue.Array(
+                    excludedKeys
+                    |> List.map (fun k -> JsonValue.String k)
+                    |> List.toArray
+                  ) |] |]
       | ExprType.RecordType fields ->
         let jsonFields =
           fields
@@ -167,7 +208,9 @@ module Model =
 
         JsonValue.Record [| "fields", JsonValue.Record jsonFields |]
       | ExprType.ArrowType(l, r) ->
-        JsonValue.Record [| "fun", JsonValue.String "Arrow"; "args", JsonValue.Array [| !l; !r |] |]
+        JsonValue.Record
+          [| "fun", JsonValue.String "Arrow"
+             "args", JsonValue.Array [| !l; !r |] |]
       | ExprType.GenericType(v, k, e) ->
         JsonValue.Record
           [| "fun", JsonValue.String "Generic"

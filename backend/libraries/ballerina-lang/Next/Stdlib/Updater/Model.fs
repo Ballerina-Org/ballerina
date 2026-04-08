@@ -7,7 +7,9 @@ module Model =
   open Ballerina.Errors
   open PolyType
 
-  type UpdaterType<'ext> = Value<TypeValue<'ext>, 'ext> -> Sum<Value<TypeValue<'ext>, 'ext>, Errors<unit>>
+  type UpdaterType<'ext> =
+    Value<TypeValue<'ext>, 'ext>
+      -> Sum<Value<TypeValue<'ext>, 'ext>, Errors<unit>>
 
   [<TypeShape(Kind = TypeShapeKind.None)>]
   type UpdaterFunction<'ext> = { Updater: UpdaterType<'ext> }

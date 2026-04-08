@@ -23,8 +23,10 @@ let rec abrepos =
                    fun id ->
                      fun e ->
                        (match e |> ABEvent.ToUnion with
-                        | absample.models.AEvent a -> absample.models.AEvent { a with event.ABEventId = id }
-                        | absample.models.BEvent b -> absample.models.BEvent { b with event.ABEventId = id })
+                        | absample.models.AEvent a ->
+                          absample.models.AEvent { a with event.ABEventId = id }
+                        | absample.models.BEvent b ->
+                          absample.models.BEvent { b with event.ABEventId = id })
                        |> ABEvent.FromUnion |})
               db
 
@@ -82,8 +84,12 @@ let rec abrepos =
                      fun id ->
                        fun e ->
                          (match e |> ABEvent.ToUnion with
-                          | absample.models.AEvent a -> absample.models.AEvent { a with event.ABEventId = id }
-                          | absample.models.BEvent b -> absample.models.BEvent { b with event.ABEventId = id })
+                          | absample.models.AEvent a ->
+                            absample.models.AEvent
+                              { a with event.ABEventId = id }
+                          | absample.models.BEvent b ->
+                            absample.models.BEvent
+                              { b with event.ABEventId = id })
                          |> ABEvent.FromUnion |})
                 db in
 

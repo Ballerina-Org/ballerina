@@ -17,21 +17,38 @@ module SyntheticData =
 
     static member Default = { ManyItemsLength = GENERATED_MANY_ITEMS_LENGTH }
 
-  let configWithRandom<'importedCfg> seed (imported: 'importedCfg option) : GeneratorConfig<'importedCfg> =
+  let configWithRandom<'importedCfg>
+    seed
+    (imported: 'importedCfg option)
+    : GeneratorConfig<'importedCfg> =
     let emptyConfig = GeneratorConfig<'importedCfg>.Empty
 
-    GeneratorConfig<'importedCfg>.Updaters.Random (fun _ -> Random(seed)) emptyConfig
+    GeneratorConfig<'importedCfg>.Updaters.Random
+      (fun _ -> Random(seed))
+      emptyConfig
     |> GeneratorConfig<'importedCfg>.Updaters.ImportedConfig(fun _ -> imported)
 
-  let private emptyContext<'valueExt when 'valueExt: comparison> () : TypeCheckContext<'valueExt> =
+  let private emptyContext<'valueExt when 'valueExt: comparison>
+    ()
+    : TypeCheckContext<'valueExt> =
     TypeCheckContext.Empty("", "")
 
-  let private emptyState<'valueExt when 'valueExt: comparison> () : TypeCheckState<'valueExt> = TypeCheckState.Empty
+  let private emptyState<'valueExt when 'valueExt: comparison>
+    ()
+    : TypeCheckState<'valueExt> =
+    TypeCheckState.Empty
 
   let listImportedGenerators<'runtimeContext, 'db, 'customExtension
     when 'customExtension: comparison and 'db: comparison>
     ()
-    : Map<ResolvedIdentifier, ImportedGenerator<ValueExt<'runtimeContext, 'db, 'customExtension>, ListConfig>> =
+    : Map<
+        ResolvedIdentifier,
+        ImportedGenerator<
+          ValueExt<'runtimeContext, 'db, 'customExtension>,
+          ListConfig
+         >
+       >
+    =
     let stdlib, _ = db_ops () |> bootstrapStdExtensions
     let listTypeId = stdlib.List.TypeName |> fst
 
@@ -69,14 +86,22 @@ module SyntheticData =
                     yield
                       s
                       |> sum.Map(fun values ->
-                        let listValues = Ballerina.DSL.Next.StdLib.List.Model.ListValues.List values
-                        let extValue = ValueExt.ValueExt(Choice1Of7(ListExt.ListValues listValues))
+                        let listValues =
+                          Ballerina.DSL.Next.StdLib.List.Model.ListValues.List
+                            values
+
+                        let extValue =
+                          ValueExt.ValueExt(
+                            Choice1Of7(ListExt.ListValues listValues)
+                          )
+
                         Value.Ext(extValue, None))
               }
             | _ ->
               seq {
                 yield
-                  (fun () -> $"Expected 1 list type argument, got {imported.Arguments.Length}")
+                  (fun () ->
+                    $"Expected 1 list type argument, got {imported.Arguments.Length}")
                   |> Errors.Singleton()
                   |> sum.Throw
               } }

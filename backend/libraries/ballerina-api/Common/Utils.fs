@@ -29,15 +29,23 @@ module APIUtils =
       httpContext.Request.Query.TryGetValue param
       |> function
         | true, v -> Left(v.ToString())
-        | _ -> Right(Errors.Singleton Location.Unknown (fun _ -> $"Missing mandatory query parameter {param}"))
+        | _ ->
+          Right(
+            Errors.Singleton Location.Unknown (fun _ ->
+              $"Missing mandatory query parameter {param}")
+          )
 
     [<Extension>]
-    static member TryGetSchema(httpContext: HttpContext) = httpContext.TryGetValue "schema"
+    static member TryGetSchema(httpContext: HttpContext) =
+      httpContext.TryGetValue "schema"
 
-  let toUknonwLocation (s: Sum<'a, Errors<'context>>) : Sum<'a, Errors<Location>> =
+  let toUknonwLocation
+    (s: Sum<'a, Errors<'context>>)
+    : Sum<'a, Errors<Location>> =
     s |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
 
-  let typeCheckValue<'runtimeContext, 'db, 'customExtension when 'customExtension: comparison and 'db: comparison>
+  let typeCheckValue<'runtimeContext, 'db, 'customExtension
+    when 'customExtension: comparison and 'db: comparison>
     (value:
       Value<
         TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>,
@@ -52,14 +60,18 @@ module APIUtils =
         DeltaExt<'runtimeContext, 'db, 'customExtension>,
         DeltaExtDTO
        >)
-    (typeCheckContext: TypeCheckContext<ValueExt<'runtimeContext, 'db, 'customExtension>>)
-    (typeCheckState: TypeCheckState<ValueExt<'runtimeContext, 'db, 'customExtension>>)
+    (typeCheckContext:
+      TypeCheckContext<ValueExt<'runtimeContext, 'db, 'customExtension>>)
+    (typeCheckState:
+      TypeCheckState<ValueExt<'runtimeContext, 'db, 'customExtension>>)
     : Sum<unit, APIError<'runtimeContext, 'db, 'customExtension, Location>> =
     sum {
       let! extensionChecker =
         languageContext.ExtTypeChecker
         |> Sum.fromOption (fun _ ->
-          { Errors = Errors.Singleton Location.Unknown (fun _ -> "Undefined extension value type checker.")
+          { Errors =
+              Errors.Singleton Location.Unknown (fun _ ->
+                "Undefined extension value type checker.")
             TypeError =
               Some
                 { ExpectedType = typeValue
@@ -94,7 +106,10 @@ module APIUtils =
     (converter:
       Reader<
         'result,
-        DSL.Next.Serialization.SerializationContext<ValueExt<'runtimeContext, 'db, 'customExtension>, ValueExtDTO>,
+        DSL.Next.Serialization.SerializationContext<
+          ValueExt<'runtimeContext, 'db, 'customExtension>,
+          ValueExtDTO
+         >,
         Errors<unit>
        >)
     =
@@ -139,7 +154,12 @@ module APIUtils =
 
   let entityDescriptorFromDb<'runtimeContext, 'db, 'customExtension
     when 'customExtension: comparison and 'db: comparison>
-    (dbio: DBIO<'runtimeContext, 'db, ValueExt<'runtimeContext, 'db, 'customExtension>>)
+    (dbio:
+      DBIO<
+        'runtimeContext,
+        'db,
+        ValueExt<'runtimeContext, 'db, 'customExtension>
+       >)
     (entityName: string)
     =
     sum {
@@ -148,7 +168,9 @@ module APIUtils =
       let! entities =
         schema
         |> Map.tryFindWithError
-          ("Entities" |> Identifier.LocalScope |> ResolvedIdentifier.FromIdentifier)
+          ("Entities"
+           |> Identifier.LocalScope
+           |> ResolvedIdentifier.FromIdentifier)
           "schema"
           (fun () -> "Entities")
           ()
@@ -158,7 +180,9 @@ module APIUtils =
       let! entityDescriptor =
         entities
         |> Map.tryFindWithError
-          (entityName |> Identifier.LocalScope |> ResolvedIdentifier.FromIdentifier)
+          (entityName
+           |> Identifier.LocalScope
+           |> ResolvedIdentifier.FromIdentifier)
           "schema"
           (fun () -> "Entities")
           ()
@@ -168,7 +192,12 @@ module APIUtils =
 
   let lookupDescriptorFromDb<'runtimeContext, 'db, 'customExtension
     when 'customExtension: comparison and 'db: comparison>
-    (dbio: DBIO<'runtimeContext, 'db, ValueExt<'runtimeContext, 'db, 'customExtension>>)
+    (dbio:
+      DBIO<
+        'runtimeContext,
+        'db,
+        ValueExt<'runtimeContext, 'db, 'customExtension>
+       >)
     (relationName: string)
     (direction: string)
     =
@@ -178,7 +207,9 @@ module APIUtils =
       let! relations =
         schema
         |> Map.tryFindWithError
-          ("Relations" |> Identifier.LocalScope |> ResolvedIdentifier.FromIdentifier)
+          ("Relations"
+           |> Identifier.LocalScope
+           |> ResolvedIdentifier.FromIdentifier)
           "schema"
           (fun () -> "Relations")
           ()
@@ -188,7 +219,9 @@ module APIUtils =
       let! relationDescriptor =
         relations
         |> Map.tryFindWithError
-          (relationName |> Identifier.LocalScope |> ResolvedIdentifier.FromIdentifier)
+          (relationName
+           |> Identifier.LocalScope
+           |> ResolvedIdentifier.FromIdentifier)
           "schema"
           (fun () -> relationName)
           ()
@@ -198,7 +231,9 @@ module APIUtils =
       let! lookupDescriptor =
         relationDescriptorFields
         |> Map.tryFindWithError
-          (direction |> Identifier.LocalScope |> ResolvedIdentifier.FromIdentifier)
+          (direction
+           |> Identifier.LocalScope
+           |> ResolvedIdentifier.FromIdentifier)
           "schema"
           (fun () -> direction)
           ()
@@ -207,14 +242,28 @@ module APIUtils =
     }
 
   let createUpdaterFromDelta
-    (delta: Delta<ValueExt<'runtimeContext, 'db, 'customExtension>, DeltaExt<'runtimeContext, 'db, 'customExtension>>)
-    : Sum<TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>>, Errors<unit>> =
+    (delta:
+      Delta<
+        ValueExt<'runtimeContext, 'db, 'customExtension>,
+        DeltaExt<'runtimeContext, 'db, 'customExtension>
+       >)
+    : Sum<
+        TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>>,
+        Errors<unit>
+       >
+    =
     sum {
 
       let! updater = delta |> Delta.ToUpdater DeltaExt.ToUpdater
 
       let updaterExtension =
-        ValueExt(Choice4Of7(CompositeType(Choice5Of5(UpdaterOperations(Apply { Updater = updater })))))
+        ValueExt(
+          Choice4Of7(
+            CompositeType(
+              Choice5Of5(UpdaterOperations(Apply { Updater = updater }))
+            )
+          )
+        )
 
       return
         TypeCheckedExpr.FromValue(
@@ -234,11 +283,19 @@ module APIUtils =
     (tenantId: 'tenantId)
     (schemaName: 'schemaName)
     (draft: bool)
-    (context: APIContext<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
+    (context:
+      APIContext<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
     : Sum<
-        DBIO<'runtimeContext, 'db, ValueExt<'runtimeContext, 'db, 'customExtension>> *
+        DBIO<
+          'runtimeContext,
+          'db,
+          ValueExt<'runtimeContext, 'db, 'customExtension>
+         > *
         APILanguageContext<'runtimeContext, 'db, 'customExtension> *
-        ExprEvalContext<'runtimeContext, ValueExt<'runtimeContext, 'db, 'customExtension>> *
+        ExprEvalContext<
+          'runtimeContext,
+          ValueExt<'runtimeContext, 'db, 'customExtension>
+         > *
         TypeCheckContext<ValueExt<'runtimeContext, 'db, 'customExtension>> *
         TypeCheckState<ValueExt<'runtimeContext, 'db, 'customExtension>>,
         APIError<'runtimeContext, 'db, 'customExtension, Location>
@@ -251,10 +308,14 @@ module APIUtils =
       dbDescriptor.EvalContext,
       dbDescriptor.TypeCheckContext,
       dbDescriptor.TypeCheckState)
-    |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+    |> sum.MapError
+      APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
   let apiResponseFromSum<'runtimeContext, 'db, 'deltaDb, 'customExtension, 'context, 'a, 'b
-    when 'customExtension: comparison and 'context: comparison and 'db: comparison and 'deltaDb: comparison>
+    when 'customExtension: comparison
+    and 'context: comparison
+    and 'db: comparison
+    and 'deltaDb: comparison>
     (body: Sum<'a, APIError<'runtimeContext, 'db, 'customExtension, 'context>>)
     (onSuccess: 'a -> 'b)
     : IResult =

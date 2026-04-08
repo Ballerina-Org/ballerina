@@ -47,8 +47,10 @@ module QueryOperators =
           PrimitiveType.Decimal
           PrimitiveType.String ]
       )
-      QueryIntrinsic.And, NonEmptyList.ofList<PrimitiveType> (PrimitiveType.Bool, [])
-      QueryIntrinsic.Or, NonEmptyList.ofList<PrimitiveType> (PrimitiveType.Bool, []) ]
+      QueryIntrinsic.And,
+      NonEmptyList.ofList<PrimitiveType> (PrimitiveType.Bool, [])
+      QueryIntrinsic.Or,
+      NonEmptyList.ofList<PrimitiveType> (PrimitiveType.Bool, []) ]
     |> List.map (fun (op, types) -> op, types)
     |> Map.ofList
 

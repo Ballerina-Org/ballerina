@@ -19,44 +19,60 @@ module Kind =
 
   type Kind with
     static member private FromJsonSymbol: JsonValue -> Sum<Kind, Errors<_>> =
-      Sum.assertDiscriminatorAndContinue "symbol" (fun _ -> sum { return Kind.Symbol })
+      Sum.assertDiscriminatorAndContinue "symbol" (fun _ ->
+        sum { return Kind.Symbol })
 
     static member private ToJsonSymbol: JsonValue =
       JsonValue.Record([| discriminatorKey, JsonValue.String "symbol" |])
 
     static member private FromJsonStar: JsonValue -> Sum<Kind, Errors<_>> =
-      Sum.assertDiscriminatorAndContinue "star" (fun _ -> sum { return Kind.Star })
+      Sum.assertDiscriminatorAndContinue "star" (fun _ ->
+        sum { return Kind.Star })
 
     static member private ToJsonStar: JsonValue =
       JsonValue.Record([| discriminatorKey, JsonValue.String "star" |])
 
     static member private FromJsonSchema: JsonValue -> Sum<Kind, Errors<_>> =
-      Sum.assertDiscriminatorAndContinue "schema" (fun _ -> sum { return Kind.Schema })
+      Sum.assertDiscriminatorAndContinue "schema" (fun _ ->
+        sum { return Kind.Schema })
 
     static member private ToJsonSchema: JsonValue =
       JsonValue.Record([| discriminatorKey, JsonValue.String "schema" |])
 
     static member private FromJsonArrow =
-      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun arrowFields ->
-        sum {
-          let! arrowFields = arrowFields |> JsonValue.AsRecordMap
+      Sum.assertDiscriminatorAndContinueWithValue
+        discriminator
+        (fun arrowFields ->
+          sum {
+            let! arrowFields = arrowFields |> JsonValue.AsRecordMap
 
-          let! param =
-            arrowFields
-            |> (Map.tryFindWithError "param" "arrow" (fun () -> "param") () >>= Kind.FromJson)
+            let! param =
+              arrowFields
+              |> (Map.tryFindWithError "param" "arrow" (fun () -> "param") ()
+                  >>= Kind.FromJson)
 
-          let! returnType =
-            arrowFields
-            |> (Map.tryFindWithError "returnType" "arrow" (fun () -> "returnType") ()
-                >>= Kind.FromJson)
+            let! returnType =
+              arrowFields
+              |> (Map.tryFindWithError
+                    "returnType"
+                    "arrow"
+                    (fun () -> "returnType")
+                    ()
+                  >>= Kind.FromJson)
 
-          return Kind.Arrow(param, returnType)
-        })
+            return Kind.Arrow(param, returnType)
+          })
 
-    static member private ToJsonArrow (param: Kind) (returnType: Kind) : JsonValue =
+    static member private ToJsonArrow
+      (param: Kind)
+      (returnType: Kind)
+      : JsonValue =
       JsonValue.Record
         [| discriminatorKey, JsonValue.String discriminator
-           valueKey, JsonValue.Record [| "param", Kind.ToJson param; "returnType", Kind.ToJson returnType |] |]
+           valueKey,
+           JsonValue.Record
+             [| "param", Kind.ToJson param
+                "returnType", Kind.ToJson returnType |] |]
 
     static member FromJson(json: JsonValue) : Sum<Kind, Errors<_>> =
       sum.Any(
@@ -74,4 +90,5 @@ module Kind =
         | Kind.Star -> Kind.ToJsonStar
         | Kind.Schema -> Kind.ToJsonSchema
         | Kind.Arrow(param, returnType) -> Kind.ToJsonArrow param returnType
-        | Kind.QueryRow -> failwith "QueryRow kinds should not be serialized as Json kinds"
+        | Kind.QueryRow ->
+          failwith "QueryRow kinds should not be serialized as Json kinds"

@@ -20,7 +20,11 @@ module QueryCaseLookupLocalScope =
     (expr: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
     v
     l
-    : TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt> =
+    : TypeCheckerResult<
+        (TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>),
+        'valueExt
+       >
+    =
     let ofSum (p: Sum<'a, Errors<Unit>>) =
       p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
@@ -36,7 +40,9 @@ module QueryCaseLookupLocalScope =
           |> ofSum
 
         return
-          TypeCheckedExprQueryExprRec.QueryLookup(v |> ResolvedIdentifier.Create)
+          TypeCheckedExprQueryExprRec.QueryLookup(
+            v |> ResolvedIdentifier.Create
+          )
           |> TypeCheckedExprQueryExpr.Create expr.Location,
           t
       })

@@ -18,14 +18,17 @@ module Sum =
       (fromJsonRoot: ValueParser<'T, ResolvedIdentifier, 'valueExtension>)
       (json: JsonValue)
       : ValueParserReader<'T, ResolvedIdentifier, 'valueExtension> =
-      Reader.assertDiscriminatorAndContinueWithValue discriminator json (fun elementsJson ->
-        reader {
-          let! k, n, v = elementsJson |> JsonValue.AsTriple |> reader.OfSum
-          let! k = k |> JsonValue.AsInt |> reader.OfSum
-          let! n = n |> JsonValue.AsInt |> reader.OfSum
-          let! v = fromJsonRoot v
-          return Value.Sum({ Case = k; Count = n }, v)
-        })
+      Reader.assertDiscriminatorAndContinueWithValue
+        discriminator
+        json
+        (fun elementsJson ->
+          reader {
+            let! k, n, v = elementsJson |> JsonValue.AsTriple |> reader.OfSum
+            let! k = k |> JsonValue.AsInt |> reader.OfSum
+            let! n = n |> JsonValue.AsInt |> reader.OfSum
+            let! v = fromJsonRoot v
+            return Value.Sum({ Case = k; Count = n }, v)
+          })
 
     static member ToJsonSum
       (rootToJson: ValueEncoder<'T, 'valueExtension>)
@@ -36,5 +39,7 @@ module Sum =
         let i = selector.Case |> decimal |> JsonValue.Number
         let n = selector.Count |> decimal |> JsonValue.Number
         let! v = rootToJson v
-        return [| i; n; v |] |> JsonValue.Array |> Json.discriminator discriminator
+
+        return
+          [| i; n; v |] |> JsonValue.Array |> Json.discriminator discriminator
       }

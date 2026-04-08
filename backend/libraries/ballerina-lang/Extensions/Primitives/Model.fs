@@ -35,14 +35,19 @@ module Primitives =
     | Or
 
 
-  type ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> =
-    | Binary of BinaryOperator * Expr<'ExprExtension, 'ValueExtension> * Expr<'ExprExtension, 'ValueExtension>
+  type ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
+    =
+    | Binary of
+      BinaryOperator *
+      Expr<'ExprExtension, 'ValueExtension> *
+      Expr<'ExprExtension, 'ValueExtension>
     | Unary of UnaryOperator * Expr<'ExprExtension, 'ValueExtension>
     | Rest of 'ExprExtensionTail
 
     override e.ToString() =
       match e with
-      | Binary(op, e1, e2) -> $"({e1.ToString()} {op.ToString()} {e2.ToString()})"
+      | Binary(op, e1, e2) ->
+        $"({e1.ToString()} {op.ToString()} {e2.ToString()})"
       | Unary(op, e) -> $"({op.ToString()}{e.ToString()}"
       | Rest t -> t.ToString()
 
@@ -66,17 +71,36 @@ module Primitives =
       | ConstDate v -> Iso8601.DateOnly.print v
       | Rest e -> e.ToString()
 
-  type ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail> =
+  type ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
+    =
     { fromExpr:
         Expr<'ExprExtension, 'ValueExtension>
-          -> Sum<ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>, Errors<unit>>
+          -> Sum<
+            ExprExtension<
+              'ExprExtension,
+              'ValueExtension,
+              'ExprExtensionTail,
+              'ValueExtensionTail
+             >,
+            Errors<unit>
+           >
       toExpr:
-        ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
+        ExprExtension<
+          'ExprExtension,
+          'ValueExtension,
+          'ExprExtensionTail,
+          'ValueExtensionTail
+         >
           -> Expr<'ExprExtension, 'ValueExtension>
       fromValue:
         Value<'ExprExtension, 'ValueExtension>
-          -> Sum<ValueExtension<'ExprExtensionTail, 'ValueExtensionTail>, Errors<unit>>
-      toValue: ValueExtension<'ExprExtensionTail, 'ValueExtensionTail> -> Value<'ExprExtension, 'ValueExtension> }
+          -> Sum<
+            ValueExtension<'ExprExtensionTail, 'ValueExtensionTail>,
+            Errors<unit>
+           >
+      toValue:
+        ValueExtension<'ExprExtensionTail, 'ValueExtensionTail>
+          -> Value<'ExprExtension, 'ValueExtension> }
 
   type BinaryOperator with
     static member ByName =
@@ -95,13 +119,22 @@ module Primitives =
       |> Map.ofSeq
 
     static member ToName =
-      BinaryOperator.ByName |> Map.toSeq |> Seq.map (fun (k, v) -> v, k) |> Map.ofSeq
+      BinaryOperator.ByName
+      |> Map.toSeq
+      |> Seq.map (fun (k, v) -> v, k)
+      |> Map.ofSeq
 
     static member AllNames = BinaryOperator.ByName |> Map.keys |> Set.ofSeq
 
   type ValueExtension<'ExprExtensionTail, 'ValueExtensionTail> with
     static member AsInt
-      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx:
+        ExtensionContext<
+          'ExprExtension,
+          'ValueExtension,
+          'ExprExtensionTail,
+          'ValueExtensionTail
+         >)
       (v: Value<'ExprExtension, 'ValueExtension>)
       : Sum<int, Errors<unit>> =
       sum {
@@ -109,11 +142,22 @@ module Primitives =
 
         match v with
         | ValueExtension.ConstInt v -> return v
-        | _ -> return! sum.Throw(Errors.Singleton () (fun () -> $"Error: expected int, found {v.ToString()}"))
+        | _ ->
+          return!
+            sum.Throw(
+              Errors.Singleton () (fun () ->
+                $"Error: expected int, found {v.ToString()}")
+            )
       }
 
     static member AsFloat
-      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx:
+        ExtensionContext<
+          'ExprExtension,
+          'ValueExtension,
+          'ExprExtensionTail,
+          'ValueExtensionTail
+         >)
       (v: Value<'ExprExtension, 'ValueExtension>)
       : Sum<decimal, Errors<unit>> =
       sum {
@@ -121,12 +165,23 @@ module Primitives =
 
         match v with
         | ValueExtension.ConstFloat v -> return v
-        | _ -> return! sum.Throw(Errors.Singleton () (fun () -> $"Error: expected float, found {v.ToString()}"))
+        | _ ->
+          return!
+            sum.Throw(
+              Errors.Singleton () (fun () ->
+                $"Error: expected float, found {v.ToString()}")
+            )
       }
 
   type Expr<'ExprExtension, 'ValueExtension> with
     static member private ParseIntForBackwardCompatibility
-      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx:
+        ExtensionContext<
+          'ExprExtension,
+          'ValueExtension,
+          'ExprExtensionTail,
+          'ValueExtensionTail
+         >)
       (json: JsonValue)
       : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors<unit>> =
       sum {
@@ -135,7 +190,13 @@ module Primitives =
       }
 
     static member private ParseFloat
-      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx:
+        ExtensionContext<
+          'ExprExtension,
+          'ValueExtension,
+          'ExprExtensionTail,
+          'ValueExtensionTail
+         >)
       (json: JsonValue)
       : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors<unit>> =
       sum {
@@ -147,14 +208,26 @@ module Primitives =
             let! value = JsonValue.AsString valueJson
 
             match System.Decimal.TryParse value with
-            | true, v -> return ValueExtension.ConstFloat v |> ctx.toValue |> Expr.Value
-            | false, _ -> return! sum.Throw(Errors.Singleton () (fun () -> $"Error: could not parse {value} as float"))
+            | true, v ->
+              return ValueExtension.ConstFloat v |> ctx.toValue |> Expr.Value
+            | false, _ ->
+              return!
+                sum.Throw(
+                  Errors.Singleton () (fun () ->
+                    $"Error: could not parse {value} as float")
+                )
           }
           |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     static member private ParseInt
-      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx:
+        ExtensionContext<
+          'ExprExtension,
+          'ValueExtension,
+          'ExprExtensionTail,
+          'ValueExtensionTail
+         >)
       (json: JsonValue)
       : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors<unit>> =
       sum {
@@ -166,14 +239,26 @@ module Primitives =
             let! value = JsonValue.AsString valueJson
 
             match System.Int32.TryParse value with
-            | true, v -> return ValueExtension.ConstInt v |> ctx.toValue |> Expr.Value
-            | false, _ -> return! sum.Throw(Errors.Singleton () (fun () -> $"Error: could not parse {value} as int"))
+            | true, v ->
+              return ValueExtension.ConstInt v |> ctx.toValue |> Expr.Value
+            | false, _ ->
+              return!
+                sum.Throw(
+                  Errors.Singleton () (fun () ->
+                    $"Error: could not parse {value} as int")
+                )
           }
           |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     static member private ParseDate
-      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx:
+        ExtensionContext<
+          'ExprExtension,
+          'ValueExtension,
+          'ExprExtensionTail,
+          'ValueExtensionTail
+         >)
       (json: JsonValue)
       : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors<unit>> =
       sum {
@@ -185,14 +270,26 @@ module Primitives =
             let! value = JsonValue.AsString valueJson
 
             match Iso8601.DateOnly.tryParse value with
-            | Some v -> return ValueExtension.ConstDate v |> ctx.toValue |> Expr.Value
-            | None -> return! sum.Throw(Errors.Singleton () (fun () -> $"Error: could not parse {value} as date"))
+            | Some v ->
+              return ValueExtension.ConstDate v |> ctx.toValue |> Expr.Value
+            | None ->
+              return!
+                sum.Throw(
+                  Errors.Singleton () (fun () ->
+                    $"Error: could not parse {value} as date")
+                )
           }
           |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
     static member private ParseBool
-      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx:
+        ExtensionContext<
+          'ExprExtension,
+          'ValueExtension,
+          'ExprExtensionTail,
+          'ValueExtensionTail
+         >)
       (json: JsonValue)
       : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors<unit>> =
       sum {
@@ -201,7 +298,13 @@ module Primitives =
       }
 
     static member private ParseString
-      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx:
+        ExtensionContext<
+          'ExprExtension,
+          'ValueExtension,
+          'ExprExtensionTail,
+          'ValueExtensionTail
+         >)
       (json: JsonValue)
       : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors<unit>> =
       sum {
@@ -211,7 +314,13 @@ module Primitives =
 
     static member private ParseBinaryOperator
       (parseRoot: ExprParser<'ExprExtension, 'ValueExtension>)
-      (ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+      (ctx:
+        ExtensionContext<
+          'ExprExtension,
+          'ValueExtension,
+          'ExprExtensionTail,
+          'ValueExtensionTail
+         >)
       (json: JsonValue)
       : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors<unit>> =
       sum {
@@ -228,7 +337,11 @@ module Primitives =
 
             let! operator =
               BinaryOperator.ByName
-              |> Map.tryFindWithError operator "binary operator" (fun () -> operator) ()
+              |> Map.tryFindWithError
+                operator
+                "binary operator"
+                (fun () -> operator)
+                ()
 
             return ExprExtension.Binary(operator, first, second) |> ctx.toExpr
           }
@@ -237,7 +350,12 @@ module Primitives =
       }
 
   let parse
-    : ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
+    : ExtensionContext<
+        'ExprExtension,
+        'ValueExtension,
+        'ExprExtensionTail,
+        'ValueExtensionTail
+       >
         -> ExprParser<'ExprExtension, 'ValueExtension>
         -> JsonValue
         -> Sum<Expr<'ExprExtension, 'ValueExtension>, Errors<unit>> =
@@ -256,13 +374,24 @@ module Primitives =
       )
 
   let eval
-    : ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
-        -> (ExprEval<'ExprExtension, 'ValueExtension> -> EvalFrom<'ExprExtension, 'ValueExtension, 'ExprExtensionTail>)
+    : ExtensionContext<
+        'ExprExtension,
+        'ValueExtension,
+        'ExprExtensionTail,
+        'ValueExtensionTail
+       >
+        -> (ExprEval<'ExprExtension, 'ValueExtension>
+          -> EvalFrom<'ExprExtension, 'ValueExtension, 'ExprExtensionTail>)
         -> ExprEval<'ExprExtension, 'ValueExtension>
         -> EvalFrom<
           'ExprExtension,
           'ValueExtension,
-          ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>
+          ExprExtension<
+            'ExprExtension,
+            'ValueExtension,
+            'ExprExtensionTail,
+            'ValueExtensionTail
+           >
          > =
     fun ctx evalTail evalRoot e ->
       let (!) = evalRoot
@@ -304,14 +433,19 @@ module Primitives =
   let toJsonValue
     (_toJsonExprTail: 'ExprExtensionTail -> Sum<JsonValue, Errors<unit>>)
     (toJsonValueTail: 'ValueExtensionTail -> Sum<JsonValue, Errors<unit>>)
-    (_toJsonRootExpr: Expr<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors<unit>>)
-    (_toJsonRootValue: Value<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors<unit>>)
+    (_toJsonRootExpr:
+      Expr<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors<unit>>)
+    (_toJsonRootValue:
+      Value<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors<unit>>)
     (value: ValueExtension<'ExprExtensionTail, 'ValueExtensionTail>)
     : Sum<JsonValue, Errors<unit>> =
     sum {
       match value with
       | ConstInt i ->
-        return JsonValue.Record [| "kind", JsonValue.String "int"; "value", JsonValue.String(i.ToString()) |]
+        return
+          JsonValue.Record
+            [| "kind", JsonValue.String "int"
+               "value", JsonValue.String(i.ToString()) |]
       | ConstFloat value ->
         return
           JsonValue.Record
@@ -335,9 +469,17 @@ module Primitives =
   let toJsonExpr
     (toJsonExprTail: 'ExprExtensionTail -> Sum<JsonValue, Errors<unit>>)
     (_toJsonValueTail: 'ValueExtensionTail -> Sum<JsonValue, Errors<unit>>)
-    (toJsonRootExpr: Expr<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors<unit>>)
-    (_toJsonRootValue: Value<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors<unit>>)
-    (expr: ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+    (toJsonRootExpr:
+      Expr<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors<unit>>)
+    (_toJsonRootValue:
+      Value<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors<unit>>)
+    (expr:
+      ExprExtension<
+        'ExprExtension,
+        'ValueExtension,
+        'ExprExtensionTail,
+        'ValueExtensionTail
+       >)
     : Sum<JsonValue, Errors<unit>> =
     sum {
       match expr with
@@ -347,27 +489,49 @@ module Primitives =
 
         let! operatorName =
           Map.tryFind op BinaryOperator.ToName
-          |> Sum.fromOption (fun () -> Errors.Singleton () (fun () -> $"No name for binary operator {op}"))
+          |> Sum.fromOption (fun () ->
+            Errors.Singleton () (fun () -> $"No name for binary operator {op}"))
 
         return
           JsonValue.Record
             [| "kind", JsonValue.String operatorName
                "operands", JsonValue.Array [| jsonL; jsonR |] |]
-      | Unary _ -> return! sum.Throw(Errors.Singleton () (fun () -> "Error: Unary not implemented"))
+      | Unary _ ->
+        return!
+          sum.Throw(
+            Errors.Singleton () (fun () -> "Error: Unary not implemented")
+          )
       | ExprExtension.Rest t -> return! toJsonExprTail t
     }
 
   let initialTypeBindings: TypeBindings = Map.empty
 
   let typeCheckExpr
-    (_ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+    (_ctx:
+      ExtensionContext<
+        'ExprExtension,
+        'ValueExtension,
+        'ExprExtensionTail,
+        'ValueExtensionTail
+       >)
     (typeCheckTail: TypeChecker<'ExprExtensionTail>)
     (typeCheckRootExpr: TypeChecker<Expr<'ExprExtension, 'ValueExtension>>)
     (_typeCheckRootValue: TypeChecker<Value<'ExprExtension, 'ValueExtension>>)
-    : TypeChecker<ExprExtension<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>> =
+    : TypeChecker<
+        ExprExtension<
+          'ExprExtension,
+          'ValueExtension,
+          'ExprExtensionTail,
+          'ValueExtensionTail
+         >
+       >
+    =
     fun typeBindings vars e ->
       let notImplementedError exprName =
-        sum.Throw(Errors.Singleton () (fun () -> $"Error: not implemented Expr type checker for expression {exprName}"))
+        sum.Throw(
+          Errors.Singleton () (fun () ->
+            $"Error: not implemented Expr type checker for expression {exprName}")
+        )
 
       let typeCheckBinaryOperator
         (vars: VarTypes)
@@ -384,8 +548,14 @@ module Primitives =
           match op with
           | Or
           | And ->
-            do! ExprType.Unify vars typeBindings t1 (PrimitiveType BoolType) |> Sum.map ignore
-            do! ExprType.Unify vars typeBindings t2 (PrimitiveType BoolType) |> Sum.map ignore
+            do!
+              ExprType.Unify vars typeBindings t1 (PrimitiveType BoolType)
+              |> Sum.map ignore
+
+            do!
+              ExprType.Unify vars typeBindings t2 (PrimitiveType BoolType)
+              |> Sum.map ignore
+
             return PrimitiveType BoolType
 
           | Equals ->
@@ -394,34 +564,53 @@ module Primitives =
             else
               return!
                 sum.Throw(
-                  fun () -> $$"""Error: cannot compare different types {{t1}} and {{t2}}"""
-                  |> Errors.Singleton()
+                  Errors.Singleton () (fun () ->
+                    $$"""Error: cannot compare different types {{t1}} and {{t2}}""")
                 )
 
           | Plus
           | Minus
           | Times
           | DividedBy ->
-            do! ExprType.Unify vars typeBindings t1 (PrimitiveType IntType) |> Sum.map ignore
-            do! ExprType.Unify vars typeBindings t2 (PrimitiveType IntType) |> Sum.map ignore
+            do!
+              ExprType.Unify vars typeBindings t1 (PrimitiveType IntType)
+              |> Sum.map ignore
+
+            do!
+              ExprType.Unify vars typeBindings t2 (PrimitiveType IntType)
+              |> Sum.map ignore
+
             return PrimitiveType IntType
 
           | GreaterThan
           | GreaterThanEquals ->
-            do! ExprType.Unify vars typeBindings t1 (PrimitiveType IntType) |> Sum.map ignore
-            do! ExprType.Unify vars typeBindings t2 (PrimitiveType IntType) |> Sum.map ignore
+            do!
+              ExprType.Unify vars typeBindings t1 (PrimitiveType IntType)
+              |> Sum.map ignore
+
+            do!
+              ExprType.Unify vars typeBindings t2 (PrimitiveType IntType)
+              |> Sum.map ignore
+
             return PrimitiveType BoolType
         }
 
       sum {
         match e with
-        | ExprExtension.Binary(op, e1, e2) -> return! typeCheckBinaryOperator vars op e1 e2
+        | ExprExtension.Binary(op, e1, e2) ->
+          return! typeCheckBinaryOperator vars op e1 e2
         | ExprExtension.Unary(_, _) -> return! notImplementedError "Unary"
         | ExprExtension.Rest t -> return! typeCheckTail typeBindings vars t
       }
 
   let typeCheckValue
-    (_ctx: ExtensionContext<'ExprExtension, 'ValueExtension, 'ExprExtensionTail, 'ValueExtensionTail>)
+    (_ctx:
+      ExtensionContext<
+        'ExprExtension,
+        'ValueExtension,
+        'ExprExtensionTail,
+        'ValueExtensionTail
+       >)
     (typeCheckTail: TypeChecker<'ValueExtensionTail>)
     (_typeCheckRootExpr: TypeChecker<Expr<'ExprExtension, 'ValueExtension>>)
     (_typeCheckRootValue: TypeChecker<Value<'ExprExtension, 'ValueExtension>>)
@@ -439,36 +628,121 @@ module Primitives =
       }
 
   let operatorEvalExtension
-    (tailOperatorEvalExtensions: OperatorEvalExtensions<'ExprExtension, 'ValueExtension, 'ValueExtensionTail>)
-    : OperatorEvalExtensions<'ExprExtension, 'ValueExtension, ValueExtension<'ExprExtensionTail, 'ValueExtensionTail>> =
+    (tailOperatorEvalExtensions:
+      OperatorEvalExtensions<
+        'ExprExtension,
+        'ValueExtension,
+        'ValueExtensionTail
+       >)
+    : OperatorEvalExtensions<
+        'ExprExtension,
+        'ValueExtension,
+        ValueExtension<'ExprExtensionTail, 'ValueExtensionTail>
+       >
+    =
     {| Apply =
         fun inputs ->
           match inputs.func with
-          | ConstInt _ -> co.Throw(Errors.Singleton () (fun () -> "Nothing to apply in primitives extension"))
-          | ConstFloat _ -> co.Throw(Errors.Singleton () (fun () -> "Nothing to apply in primitives extension"))
-          | ConstBool _ -> co.Throw(Errors.Singleton () (fun () -> "Nothing to apply in primitives extension"))
-          | ConstString _ -> co.Throw(Errors.Singleton () (fun () -> "Nothing to apply in primitives extension"))
-          | ConstGuid _ -> co.Throw(Errors.Singleton () (fun () -> "Nothing to apply in primitives extension"))
-          | ConstDate _ -> co.Throw(Errors.Singleton () (fun () -> "Nothing to apply in primitives extension"))
-          | Rest r -> tailOperatorEvalExtensions.Apply {| inputs with func = r |}
+          | ConstInt _ ->
+            co.Throw(
+              Errors.Singleton () (fun () ->
+                "Nothing to apply in primitives extension")
+            )
+          | ConstFloat _ ->
+            co.Throw(
+              Errors.Singleton () (fun () ->
+                "Nothing to apply in primitives extension")
+            )
+          | ConstBool _ ->
+            co.Throw(
+              Errors.Singleton () (fun () ->
+                "Nothing to apply in primitives extension")
+            )
+          | ConstString _ ->
+            co.Throw(
+              Errors.Singleton () (fun () ->
+                "Nothing to apply in primitives extension")
+            )
+          | ConstGuid _ ->
+            co.Throw(
+              Errors.Singleton () (fun () ->
+                "Nothing to apply in primitives extension")
+            )
+          | ConstDate _ ->
+            co.Throw(
+              Errors.Singleton () (fun () ->
+                "Nothing to apply in primitives extension")
+            )
+          | Rest r ->
+            tailOperatorEvalExtensions.Apply {| inputs with func = r |}
        GenericApply =
         fun inputs ->
           match inputs.typeFunc with
-          | ConstInt _ -> co.Throw(Errors.Singleton () (fun () -> "Nothing to generic apply in primitives extension"))
-          | ConstFloat _ -> co.Throw(Errors.Singleton () (fun () -> "Nothing to generic apply in primitives extension"))
-          | ConstBool _ -> co.Throw(Errors.Singleton () (fun () -> "Nothing to generic apply in primitives extension"))
+          | ConstInt _ ->
+            co.Throw(
+              Errors.Singleton () (fun () ->
+                "Nothing to generic apply in primitives extension")
+            )
+          | ConstFloat _ ->
+            co.Throw(
+              Errors.Singleton () (fun () ->
+                "Nothing to generic apply in primitives extension")
+            )
+          | ConstBool _ ->
+            co.Throw(
+              Errors.Singleton () (fun () ->
+                "Nothing to generic apply in primitives extension")
+            )
           | ConstString _ ->
-            co.Throw(Errors.Singleton () (fun () -> "Nothing to generic apply in primitives extension"))
-          | ConstGuid _ -> co.Throw(Errors.Singleton () (fun () -> "Nothing to generic apply in primitives extension"))
-          | ConstDate _ -> co.Throw(Errors.Singleton () (fun () -> "Nothing to generic apply in primitives extension"))
-          | Rest r -> tailOperatorEvalExtensions.GenericApply {| inputs with typeFunc = r |}
+            co.Throw(
+              Errors.Singleton () (fun () ->
+                "Nothing to generic apply in primitives extension")
+            )
+          | ConstGuid _ ->
+            co.Throw(
+              Errors.Singleton () (fun () ->
+                "Nothing to generic apply in primitives extension")
+            )
+          | ConstDate _ ->
+            co.Throw(
+              Errors.Singleton () (fun () ->
+                "Nothing to generic apply in primitives extension")
+            )
+          | Rest r ->
+            tailOperatorEvalExtensions.GenericApply
+              {| inputs with typeFunc = r |}
        MatchCase =
         fun inputs ->
           match inputs.value with
-          | ConstInt _ -> co.Throw(Errors.Singleton () (fun () -> "Nothing to match case in primitives extension"))
-          | ConstFloat _ -> co.Throw(Errors.Singleton () (fun () -> "Nothing to match case in primitives extension"))
-          | ConstBool _ -> co.Throw(Errors.Singleton () (fun () -> "Nothing to match case in primitives extension"))
-          | ConstString _ -> co.Throw(Errors.Singleton () (fun () -> "Nothing to match case in primitives extension"))
-          | ConstGuid _ -> co.Throw(Errors.Singleton () (fun () -> "Nothing to match case in primitives extension"))
-          | ConstDate _ -> co.Throw(Errors.Singleton () (fun () -> "Nothing to match case in primitives extension"))
-          | Rest r -> tailOperatorEvalExtensions.MatchCase {| inputs with value = r |} |}
+          | ConstInt _ ->
+            co.Throw(
+              Errors.Singleton () (fun () ->
+                "Nothing to match case in primitives extension")
+            )
+          | ConstFloat _ ->
+            co.Throw(
+              Errors.Singleton () (fun () ->
+                "Nothing to match case in primitives extension")
+            )
+          | ConstBool _ ->
+            co.Throw(
+              Errors.Singleton () (fun () ->
+                "Nothing to match case in primitives extension")
+            )
+          | ConstString _ ->
+            co.Throw(
+              Errors.Singleton () (fun () ->
+                "Nothing to match case in primitives extension")
+            )
+          | ConstGuid _ ->
+            co.Throw(
+              Errors.Singleton () (fun () ->
+                "Nothing to match case in primitives extension")
+            )
+          | ConstDate _ ->
+            co.Throw(
+              Errors.Singleton () (fun () ->
+                "Nothing to match case in primitives extension")
+            )
+          | Rest r ->
+            tailOperatorEvalExtensions.MatchCase {| inputs with value = r |} |}

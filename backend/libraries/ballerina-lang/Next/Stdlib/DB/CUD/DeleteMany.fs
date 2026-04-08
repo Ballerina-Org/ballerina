@@ -44,7 +44,11 @@ module DeleteMany =
             TypeExpr.Lambda(
               TypeParameter.Create("entityId", Kind.Star),
               TypeExpr.Arrow(
-                createSchemaEntityTypeApplication "schema" "entity" "entity_with_props" "entityId",
+                createSchemaEntityTypeApplication
+                  "schema"
+                  "entity"
+                  "entity_with_props"
+                  "entityId",
                 TypeExpr.Arrow(
                   TypeExpr.Apply(
                     TypeExpr.Lookup("List" |> Identifier.LocalScope),
@@ -70,7 +74,9 @@ module DeleteMany =
     let DeleteManyOperation: OperationExtension<'runtimeContext, _, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBDeleteManyType, memoryDBDeleteManyKind, DBValues.DeleteMany {| EntityRef = None |})
+          <| (memoryDBDeleteManyType,
+              memoryDBDeleteManyKind,
+              DBValues.DeleteMany {| EntityRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -90,7 +96,9 @@ module DeleteMany =
                 let! v = extractEntityRefFromValue loc0 v valueLens
 
                 return
-                  (DBValues.DeleteMany({| EntityRef = Some v |}) |> valueLens.Set, Some memoryDBDeleteManyId)
+                  (DBValues.DeleteMany({| EntityRef = Some v |})
+                   |> valueLens.Set,
+                   Some memoryDBDeleteManyId)
                   |> Ext
               | Some(entity_ref) -> // the closure has the first operand - second step in the application
 
@@ -103,7 +111,10 @@ module DeleteMany =
                 let! vs =
                   vs
                   |> listLens.Get
-                  |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
+                  |> sum.OfOption(
+                    Errors.Singleton loc0 (fun () ->
+                      "Cannot get value from extension")
+                  )
                   |> reader.OfSum
 
                 let! deletingValuesWithProps =
@@ -135,24 +146,52 @@ module DeleteMany =
                                     Kind.Star
                                   )
                                 ),
-                                TypeCheckedExpr.FromValue(_entityId, TypeValue.CreateUnit(), Kind.Star)
+                                TypeCheckedExpr.FromValue(
+                                  _entityId,
+                                  TypeValue.CreateUnit(),
+                                  Kind.Star
+                                )
                               ),
-                              TypeCheckedExpr.FromValue(currentValueWithProps, TypeValue.CreateUnit(), Kind.Star)
+                              TypeCheckedExpr.FromValue(
+                                currentValueWithProps,
+                                TypeValue.CreateUnit(),
+                                Kind.Star
+                              )
                             )
                             |> NonEmptyList.One
                             |> Expr.Eval
                           with
-                          | Value.Primitive(PrimitiveValue.Bool canDelete) when canDelete ->
+                          | Value.Primitive(PrimitiveValue.Bool canDelete) when
+                            canDelete
+                            ->
                             do!
-                              onDeletingHook db_ops entity_ref loc0 _entityId currentValueWithProps
-                              |> reader.MapContext(ExprEvalContext.Updaters.RootLevelEval(replaceWith false))
+                              onDeletingHook
+                                db_ops
+                                entity_ref
+                                loc0
+                                _entityId
+                                currentValueWithProps
+                              |> reader.MapContext(
+                                ExprEvalContext.Updaters.RootLevelEval(
+                                  replaceWith false
+                                )
+                              )
 
                             return _entityId, Some currentValueWithProps
                           | _ -> return _entityId, None
                         | _ ->
                           do!
-                            onDeletingHook db_ops entity_ref loc0 _entityId currentValueWithProps
-                            |> reader.MapContext(ExprEvalContext.Updaters.RootLevelEval(replaceWith false))
+                            onDeletingHook
+                              db_ops
+                              entity_ref
+                              loc0
+                              _entityId
+                              currentValueWithProps
+                            |> reader.MapContext(
+                              ExprEvalContext.Updaters.RootLevelEval(
+                                replaceWith false
+                              )
+                            )
 
                           return _entityId, Some currentValueWithProps
                     })
@@ -161,7 +200,9 @@ module DeleteMany =
                 let! _ =
                   db_ops.DeleteMany entity_ref vs
                   |> reader.MapError(Errors.MapContext(replaceWith loc0))
-                  |> reader.MapContext(ExprEvalContext.Updaters.RootLevelEval(replaceWith false))
+                  |> reader.MapContext(
+                    ExprEvalContext.Updaters.RootLevelEval(replaceWith false)
+                  )
 
                 do!
                   deletingValuesWithProps
@@ -171,12 +212,20 @@ module DeleteMany =
                       | None -> return ()
                       | Some currentValueWithProps ->
 
-                        do! onDeletedHook db_ops entity_ref loc0 _entityId currentValueWithProps
+                        do!
+                          onDeletedHook
+                            db_ops
+                            entity_ref
+                            loc0
+                            _entityId
+                            currentValueWithProps
 
                         return ()
                     })
                   |> reader.All
-                  |> reader.MapContext(ExprEvalContext.Updaters.RootLevelEval(replaceWith false))
+                  |> reader.MapContext(
+                    ExprEvalContext.Updaters.RootLevelEval(replaceWith false)
+                  )
                   |> reader.Ignore
 
                 return Value.Primitive(PrimitiveValue.Unit)

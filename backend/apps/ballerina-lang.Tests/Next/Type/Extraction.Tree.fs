@@ -25,7 +25,8 @@ let private makeRecord (fields: (string * TypeValue<IComparable>) list) =
   TypeValue.CreateRecord om
 
 let private makeUnion (cases: (string * TypeValue<IComparable>) list) =
-  let om = cases |> List.map (fun (name, tv) -> makeSym name, tv) |> OrderedMap.ofList
+  let om =
+    cases |> List.map (fun (name, tv) -> makeSym name, tv) |> OrderedMap.ofList
 
   TypeValue.CreateUnion om
 
@@ -35,9 +36,13 @@ let private makeLookup name =
 let private emptyBindings: TypeBindings<IComparable> = Map.empty
 let private emptyResolver: Map<Identifier, ResolvedIdentifier> = Map.empty
 
-let private makeBindingsAndResolver (types: (string * TypeValue<IComparable>) list) =
+let private makeBindingsAndResolver
+  (types: (string * TypeValue<IComparable>) list)
+  =
   let bindings: TypeBindings<IComparable> =
-    types |> List.map (fun (n, tv) -> resolveId n, (tv, Kind.Star)) |> Map.ofList
+    types
+    |> List.map (fun (n, tv) -> resolveId n, (tv, Kind.Star))
+    |> Map.ofList
 
   let resolver =
     types
@@ -54,22 +59,30 @@ let private isTargetNamed name (t: TypeValue<IComparable>) =
     | _ -> false
   | _ -> false
 
-let rec private extractionStepLists (tree: ExtractionTree) : ExtractionStep list list =
+let rec private extractionStepLists
+  (tree: ExtractionTree)
+  : ExtractionStep list list =
   let self = if tree.SelfMatch then [ [] ] else []
 
   let nested =
     tree.Children
     |> Map.toList
-    |> List.collect (fun (step, child) -> extractionStepLists child |> List.map (fun rest -> step :: rest))
+    |> List.collect (fun (step, child) ->
+      extractionStepLists child |> List.map (fun rest -> step :: rest))
 
   self @ nested
 
 [<Test>]
 let ``findExtractionTree returns empty for type with no target`` () =
-  let host = makeRecord [ "name", TypeValue.CreatePrimitive PrimitiveType.String ]
+  let host =
+    makeRecord [ "name", TypeValue.CreatePrimitive PrimitiveType.String ]
 
   let tree =
-    findExtractionTree (isTargetNamed "Evidence") emptyBindings emptyResolver host
+    findExtractionTree
+      (isTargetNamed "Evidence")
+      emptyBindings
+      emptyResolver
+      host
 
   let paths = extractionStepLists tree
   Assert.That(paths, Is.Empty)
@@ -82,15 +95,19 @@ let ``findExtractionTree finds direct Lookup field`` () =
         "name", TypeValue.CreatePrimitive PrimitiveType.String ]
 
   let bindings, resolver =
-    makeBindingsAndResolver [ "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
+    makeBindingsAndResolver
+      [ "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
 
-  let tree = findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+  let tree =
+    findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+
   let paths = extractionStepLists tree
 
   Assert.That(paths |> List.length, Is.EqualTo(1))
 
   match paths.[0] with
-  | [ RecordField sym ] -> Assert.That(sym.Name.ToString(), Is.EqualTo("evidence"))
+  | [ RecordField sym ] ->
+    Assert.That(sym.Name.ToString(), Is.EqualTo("evidence"))
   | other -> Assert.Fail $"Unexpected path: {other}"
 
 [<Test>]
@@ -103,9 +120,13 @@ let ``findExtractionTree finds nested field through Lookup resolution`` () =
         "name", TypeValue.CreatePrimitive PrimitiveType.String ]
 
   let bindings, resolver =
-    makeBindingsAndResolver [ "Inner", inner; "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
+    makeBindingsAndResolver
+      [ "Inner", inner
+        "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
 
-  let tree = findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+  let tree =
+    findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+
   let paths = extractionStepLists tree
 
   Assert.That(paths |> List.length, Is.EqualTo(1))
@@ -127,7 +148,9 @@ let ``findExtractionTree continues traversal after a match`` () =
   let host = makeRecord [ "nested", makeLookup "Inner" ]
 
   let bindings, resolver =
-    makeBindingsAndResolver [ "Inner", inner; "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
+    makeBindingsAndResolver
+      [ "Inner", inner
+        "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
 
   let tree = findExtractionTree isLookup bindings resolver host
   let paths = extractionStepLists tree
@@ -143,8 +166,17 @@ let ``findExtractionTree continues traversal after a match`` () =
         a.Name.ToString() = "nested" && b.Name.ToString() = "target"
       | _ -> false)
 
-  Assert.That(containsPath [ "nested" ], Is.True, "Should include the matched lookup itself")
-  Assert.That(containsPath [ "nested"; "target" ], Is.True, "Should also include nested lookup matches")
+  Assert.That(
+    containsPath [ "nested" ],
+    Is.True,
+    "Should include the matched lookup itself"
+  )
+
+  Assert.That(
+    containsPath [ "nested"; "target" ],
+    Is.True,
+    "Should also include nested lookup matches"
+  )
 
 [<Test>]
 let ``findExtractionTree finds multiple target fields`` () =
@@ -155,9 +187,12 @@ let ``findExtractionTree finds multiple target fields`` () =
         "name", TypeValue.CreatePrimitive PrimitiveType.String ]
 
   let bindings, resolver =
-    makeBindingsAndResolver [ "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
+    makeBindingsAndResolver
+      [ "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
 
-  let tree = findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+  let tree =
+    findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+
   let paths = extractionStepLists tree
 
   Assert.That(paths |> List.length, Is.EqualTo(2))
@@ -172,9 +207,12 @@ let ``findExtractionTree finds target inside union case`` () =
   let host = makeRecord [ "data", union ]
 
   let bindings, resolver =
-    makeBindingsAndResolver [ "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
+    makeBindingsAndResolver
+      [ "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
 
-  let tree = findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+  let tree =
+    findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+
   let paths = extractionStepLists tree
 
   Assert.That(paths |> List.length, Is.EqualTo(1))
@@ -188,14 +226,18 @@ let ``findExtractionTree finds target inside union case`` () =
 [<Test>]
 let ``findExtractionTree finds target inside sum alternative`` () =
   let sum =
-    TypeValue.CreateSum [ TypeValue.CreatePrimitive PrimitiveType.Unit; makeLookup "Evidence" ]
+    TypeValue.CreateSum
+      [ TypeValue.CreatePrimitive PrimitiveType.Unit; makeLookup "Evidence" ]
 
   let host = makeRecord [ "data", sum ]
 
   let bindings, resolver =
-    makeBindingsAndResolver [ "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
+    makeBindingsAndResolver
+      [ "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
 
-  let tree = findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+  let tree =
+    findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+
   let paths = extractionStepLists tree
 
   Assert.That(paths |> List.length, Is.EqualTo(1))
@@ -210,14 +252,18 @@ let ``findExtractionTree finds target inside sum alternative`` () =
 [<Test>]
 let ``findExtractionTree finds target inside tuple`` () =
   let tuple =
-    TypeValue.CreateTuple [ TypeValue.CreatePrimitive PrimitiveType.String; makeLookup "Evidence" ]
+    TypeValue.CreateTuple
+      [ TypeValue.CreatePrimitive PrimitiveType.String; makeLookup "Evidence" ]
 
   let host = makeRecord [ "pair", tuple ]
 
   let bindings, resolver =
-    makeBindingsAndResolver [ "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
+    makeBindingsAndResolver
+      [ "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
 
-  let tree = findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+  let tree =
+    findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+
   let paths = extractionStepLists tree
 
   Assert.That(paths |> List.length, Is.EqualTo(1))
@@ -240,9 +286,12 @@ let ``findExtractionTree finds target inside Imported type argument`` () =
   let host = makeRecord [ "items", listOfEvidence ]
 
   let bindings, resolver =
-    makeBindingsAndResolver [ "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
+    makeBindingsAndResolver
+      [ "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
 
-  let tree = findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+  let tree =
+    findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+
   let paths = extractionStepLists tree
 
   Assert.That(paths |> List.length, Is.EqualTo(1))
@@ -256,20 +305,24 @@ let ``findExtractionTree finds target inside Imported type argument`` () =
 [<Test>]
 let ``findExtractionTree handles recursive types without infinite loop`` () =
   let host =
-    makeRecord [ "self", makeLookup "Recursive"; "target", makeLookup "Evidence" ]
+    makeRecord
+      [ "self", makeLookup "Recursive"; "target", makeLookup "Evidence" ]
 
   let bindings, resolver =
     makeBindingsAndResolver
       [ "Recursive", makeRecord [ "self", makeLookup "Recursive" ]
         "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
 
-  let tree = findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+  let tree =
+    findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+
   let paths = extractionStepLists tree
 
   Assert.That(paths |> List.length, Is.EqualTo(1))
 
   match paths.[0] with
-  | [ RecordField sym ] -> Assert.That(sym.Name.ToString(), Is.EqualTo("target"))
+  | [ RecordField sym ] ->
+    Assert.That(sym.Name.ToString(), Is.EqualTo("target"))
   | other -> Assert.Fail $"Unexpected path: {other}"
 
 [<Test>]
@@ -296,15 +349,19 @@ let ``findExtractionTree finds target inside Set element type`` () =
   let host = makeRecord [ "tags", setOfEvidence ]
 
   let bindings, resolver =
-    makeBindingsAndResolver [ "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
+    makeBindingsAndResolver
+      [ "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
 
-  let tree = findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+  let tree =
+    findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+
   let paths = extractionStepLists tree
 
   Assert.That(paths |> List.length, Is.EqualTo(1))
 
   match paths.[0] with
-  | [ RecordField tagsSym; ContainerElement SetContainer ] -> Assert.That(tagsSym.Name.ToString(), Is.EqualTo("tags"))
+  | [ RecordField tagsSym; ContainerElement SetContainer ] ->
+    Assert.That(tagsSym.Name.ToString(), Is.EqualTo("tags"))
   | other -> Assert.Fail $"Unexpected path: {other}"
 
 [<Test>]
@@ -313,22 +370,34 @@ let ``findExtractionTree tracks argument index for multi-arg Imported`` () =
     TypeValue.Imported
       { Id = resolveId "Map"
         Sym = makeSym "Map"
-        Parameters = [ { Name = "k"; Kind = Kind.Star }; { Name = "v"; Kind = Kind.Star } ]
-        Arguments = [ TypeValue.CreatePrimitive PrimitiveType.String; makeLookup "Evidence" ] }
+        Parameters =
+          [ { Name = "k"; Kind = Kind.Star }; { Name = "v"; Kind = Kind.Star } ]
+        Arguments =
+          [ TypeValue.CreatePrimitive PrimitiveType.String
+            makeLookup "Evidence" ] }
 
   let host = makeRecord [ "lookup", mapType ]
 
   let bindings, resolver =
-    makeBindingsAndResolver [ "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
+    makeBindingsAndResolver
+      [ "Evidence", TypeValue.CreatePrimitive PrimitiveType.Bool ]
 
-  let tree = findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+  let tree =
+    findExtractionTree (isTargetNamed "Evidence") bindings resolver host
+
   let paths = extractionStepLists tree
 
   Assert.That(paths |> List.length, Is.EqualTo(1))
 
   match paths.[0] with
-  | [ RecordField lookupSym; ContainerElement(ImportedContainer(containerId, argIdx)) ] ->
+  | [ RecordField lookupSym
+      ContainerElement(ImportedContainer(containerId, argIdx)) ] ->
     Assert.That(lookupSym.Name.ToString(), Is.EqualTo("lookup"))
     Assert.That(containerId.Name, Is.EqualTo("Map"))
-    Assert.That(argIdx, Is.EqualTo(1), "Evidence is the second type argument (index 1)")
+
+    Assert.That(
+      argIdx,
+      Is.EqualTo(1),
+      "Evidence is the second type argument (index 1)"
+    )
   | other -> Assert.Fail $"Unexpected path: {other}"

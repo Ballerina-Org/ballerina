@@ -14,7 +14,9 @@ module StacklessStateWithError =
     | Catch of Node<'c, 's, 'e> * ErrorContinuation<'c, 's, 'e>
 
   and private SuccessContinuation<'c, 's, 'e> = Existential -> Node<'c, 's, 'e>
-  and private ErrorContinuation<'c, 's, 'e> = 'e * Option<'s> -> Node<'c, 's, 'e>
+
+  and private ErrorContinuation<'c, 's, 'e> =
+    'e * Option<'s> -> Node<'c, 's, 'e>
 
   type BindScope = int
 
@@ -25,7 +27,9 @@ module StacklessStateWithError =
     static member Return(a: 'a) : FreeNode<'a, 'c, 's, 'e> =
       FreeNodeCons(Ret(fun _ -> Left(box a, None)))
 
-    static member fromStep(f: 'c * 's -> MonadResult<'a, 's, 'e>) : FreeNode<'a, 'c, 's, 'e> =
+    static member fromStep
+      (f: 'c * 's -> MonadResult<'a, 's, 'e>)
+      : FreeNode<'a, 'c, 's, 'e> =
       FreeNodeCons(
         Ret(fun cs ->
           match f cs with
@@ -39,7 +43,10 @@ module StacklessStateWithError =
     static member getState: FreeNode<'s, 'c, 's, 'e> =
       FreeNodeCons(Ret(fun (_c, s) -> Left(box s, None)))
 
-    static member bind (m: FreeNode<'a, 'c, 's, 'e>) (f: 'a -> FreeNode<'b, 'c, 's, 'e>) : FreeNode<'b, 'c, 's, 'e> =
+    static member bind
+      (m: FreeNode<'a, 'c, 's, 'e>)
+      (f: 'a -> FreeNode<'b, 'c, 's, 'e>)
+      : FreeNode<'b, 'c, 's, 'e> =
       let (FreeNodeCons node) = m
 
       // we cannot know the type here, because the program can have many different types at any point, but we must fit them all into a single Node type
@@ -50,7 +57,9 @@ module StacklessStateWithError =
 
       FreeNodeCons(Bind(node, k))
 
-    static member catch(m: FreeNode<'a, 'c, 's, 'e>) : FreeNode<Sum<'a, 'e>, 'c, 's, 'e> =
+    static member catch
+      (m: FreeNode<'a, 'c, 's, 'e>)
+      : FreeNode<Sum<'a, 'e>, 'c, 's, 'e> =
       // catch returns a type Sum<'a, 'e>, which is the result of the actual computation
       // the key is that this is then always returned as a Left (as far as the monad understands)
       // such that regardless of the actual result, a continuation can be applied
@@ -70,7 +79,11 @@ module StacklessStateWithError =
         )
       )
 
-    static member run (c: 'c) (s0: 's) (m: FreeNode<'a, 'c, 's, 'e>) : MonadResult<'a, 's, 'e> =
+    static member run
+      (c: 'c)
+      (s0: 's)
+      (m: FreeNode<'a, 'c, 's, 'e>)
+      : MonadResult<'a, 's, 'e> =
       let (FreeNodeCons start) = m
       let mutable cur = start
       let mutable s = s0
@@ -82,7 +95,11 @@ module StacklessStateWithError =
 
       // error continuations/handlers, each paired with the bindStack (pointer) and state that must be restored on failure
       let mutable catchStack
-        : (ErrorContinuation<'c, 's, 'e> * SuccessContinuation<'c, 's, 'e> list * 's * 's option * BindScope) list =
+        : (ErrorContinuation<'c, 's, 'e> *
+          SuccessContinuation<'c, 's, 'e> list *
+          's *
+          's option *
+          BindScope) list =
         []
 
       let popExpiredCatches () =
@@ -92,7 +109,8 @@ module StacklessStateWithError =
 
         while keepPopping do
           match catchStack with
-          | (_, _, _, _, savedScope) :: rest when savedScope = curBindScope -> catchStack <- rest
+          | (_, _, _, _, savedScope) :: rest when savedScope = curBindScope ->
+            catchStack <- rest
           | _ -> keepPopping <- false
 
       let rec loop () =
@@ -143,7 +161,9 @@ module StacklessStateWithError =
           loop ()
 
         | Catch(sub, err_k) ->
-          catchStack <- (err_k, bindStack, s, latestState, curBindScope) :: catchStack
+          catchStack <-
+            (err_k, bindStack, s, latestState, curBindScope) :: catchStack
+
           cur <- sub
           loop ()
 
@@ -152,7 +172,10 @@ module StacklessStateWithError =
     static member throw(e: 'e) : FreeNode<'a, 'c, 's, 'e> =
       FreeNodeCons(Ret(fun (_c, _s) -> Right(e, None)))
 
-    static member any (concat: 'e * 'e -> 'e) (ps: List<FreeNode<'a, 'c, 's, 'e>>) : FreeNode<'a, 'c, 's, 'e> =
+    static member any
+      (concat: 'e * 'e -> 'e)
+      (ps: List<FreeNode<'a, 'c, 's, 'e>>)
+      : FreeNode<'a, 'c, 's, 'e> =
       let mutable acc: FreeNode<Sum<'a, 'e> option * 'e option, 'c, 's, 'e> =
         FreeNode.Return(None, None)
 
@@ -181,7 +204,9 @@ module StacklessStateWithError =
           | Some err -> FreeNode.throw err
           | None -> failwith "Unreachable: Any requires at least one element")
 
-    static member all(ps: List<FreeNode<'a, 'c, 's, 'e>>) : FreeNode<List<'a>, 'c, 's, 'e> =
+    static member all
+      (ps: List<FreeNode<'a, 'c, 's, 'e>>)
+      : FreeNode<List<'a>, 'c, 's, 'e> =
       let mutable acc: FreeNode<List<'a>, 'c, 's, 'e> = FreeNode.Return []
 
       for p in ps do

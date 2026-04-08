@@ -11,7 +11,9 @@ module Patterns =
   // type ListConstructors<'ext> with
 
   type ListOperations<'ext> with
-    static member AsMap(op: ListOperations<'ext>) : Sum<Option<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
+    static member AsMap
+      (op: ListOperations<'ext>)
+      : Sum<Option<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
       match op with
       | List_Map v -> v.f |> sum.Return
       | _ ->
@@ -19,7 +21,9 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsAppend(op: ListOperations<'ext>) : Sum<Option<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
+    static member AsAppend
+      (op: ListOperations<'ext>)
+      : Sum<Option<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
       match op with
       | List_Append v -> v.l |> sum.Return
       | _ ->
@@ -27,7 +31,9 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsFilter(op: ListOperations<'ext>) : Sum<Option<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
+    static member AsFilter
+      (op: ListOperations<'ext>)
+      : Sum<Option<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
       match op with
       | List_Filter v -> v.f |> sum.Return
       | _ ->
@@ -37,7 +43,12 @@ module Patterns =
 
     static member AsFold
       (op: ListOperations<'ext>)
-      : Sum<Option<Value<TypeValue<'ext>, 'ext>> * Option<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
+      : Sum<
+          Option<Value<TypeValue<'ext>, 'ext>> *
+          Option<Value<TypeValue<'ext>, 'ext>>,
+          Errors<Unit>
+         >
+      =
       match op with
       | List_Fold v -> (v.f, v.acc) |> sum.Return
       | _ ->
@@ -69,7 +80,9 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsDecompose(op: ListOperations<'ext>) : Sum<Unit, Errors<Unit>> =
+    static member AsDecompose
+      (op: ListOperations<'ext>)
+      : Sum<Unit, Errors<Unit>> =
       match op with
       | List_Decompose -> () |> sum.Return
       | _ ->
@@ -77,7 +90,9 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsOrderBy(op: ListOperations<'ext>) : Sum<Option<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
+    static member AsOrderBy
+      (op: ListOperations<'ext>)
+      : Sum<Option<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
       match op with
       | List_OrderBy v -> v.f |> sum.Return
       | _ ->
@@ -86,6 +101,8 @@ module Patterns =
         |> sum.Throw
 
   type ListValues<'ext> with
-    static member AsList(op: ListValues<'ext>) : Sum<List<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
+    static member AsList
+      (op: ListValues<'ext>)
+      : Sum<List<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
       match op with
       | ListValues.List v -> v |> sum.Return

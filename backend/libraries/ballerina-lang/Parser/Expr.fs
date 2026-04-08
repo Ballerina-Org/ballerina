@@ -18,7 +18,8 @@ module Expr =
   open Ballerina.State.WithError
   open System
 
-  type Parse<'ExprExtension, 'ValueExtension> = JsonValue -> Sum<Expr<'ExprExtension, 'ValueExtension>, Errors<unit>>
+  type Parse<'ExprExtension, 'ValueExtension> =
+    JsonValue -> Sum<Expr<'ExprExtension, 'ValueExtension>, Errors<unit>>
 
   let assertKindIs expected kindJson =
     kindJson |> JsonValue.AsEnum(Set.singleton expected) |> Sum.map ignore
@@ -43,7 +44,11 @@ module Expr =
     static member private ParseMatchCase
       (parseExpr: ExprParser<'ExprExtension, 'ValueExtension>)
       (json: JsonValue)
-      : Sum<string * VarName * Expr<'ExprExtension, 'ValueExtension>, Errors<Unit>> =
+      : Sum<
+          string * VarName * Expr<'ExprExtension, 'ValueExtension>,
+          Errors<Unit>
+         >
+      =
       sum {
         let! json = json |> JsonValue.AsRecord
         let! caseJson = json |> sum.TryFindField "caseName"
@@ -72,12 +77,18 @@ module Expr =
               | _ ->
                 // Parameter is a string, proceed with normal parsing
                 let! handler = handlerJson |> parseExpr
-                let! varName, _varType, _returnType, body = handler |> Expr.AsLambda
+
+                let! varName, _varType, _returnType, body =
+                  handler |> Expr.AsLambda
+
                 return caseName, varName, body
             else
               // Not a lambda, proceed with normal parsing
               let! handler = handlerJson |> parseExpr
-              let! varName, _varType, _returnType, body = handler |> Expr.AsLambda
+
+              let! varName, _varType, _returnType, body =
+                handler |> Expr.AsLambda
+
               return caseName, varName, body
           }
           |> sum.MapError(Errors.MapPriority(replaceWith High))
@@ -158,9 +169,15 @@ module Expr =
               sum.Any2
                 (sum {
                   let! parameterFields = parameterJson |> JsonValue.AsRecord
-                  let! parameterName = parameterFields |> sum.TryFindField "name"
+
+                  let! parameterName =
+                    parameterFields |> sum.TryFindField "name"
+
                   let! parameterName = parameterName |> JsonValue.AsString
-                  let! parameterType = parameterFields |> sum.TryFindField "type"
+
+                  let! parameterType =
+                    parameterFields |> sum.TryFindField "type"
+
                   return parameterName, Some parameterType
                 })
                 (sum {
@@ -170,7 +187,8 @@ module Expr =
 
             let! parameterType =
               match parameterType with
-              | Some parameterType -> parameterType |> ExprType.Parse |> sum.Map Some
+              | Some parameterType ->
+                parameterType |> ExprType.Parse |> sum.Map Some
               | None -> sum.Return None
 
             // Parse optional return type annotation
@@ -185,7 +203,15 @@ module Expr =
 
             let! bodyJson = fieldsJson |> sum.TryFindField "body"
             let! body = bodyJson |> parseExpr
-            Expr.Value(Value.Lambda({ VarName = parameterName }, parameterType, returnType, body))
+
+            Expr.Value(
+              Value.Lambda(
+                { VarName = parameterName },
+                parameterType,
+                returnType,
+                body
+              )
+            )
           }
           |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
@@ -255,8 +281,13 @@ module Expr =
               let valueJson = operandsJson.[0]
               let! value = parseExpr valueJson
               let casesJson = operandsJson |> Seq.skip 1 |> Seq.toList
-              let! cases = sum.All(casesJson |> Seq.map (Expr.ParseMatchCase parseExpr))
-              let cases = cases |> Seq.map (fun (c, v, b) -> (c, (v, b))) |> Map.ofSeq
+
+              let! cases =
+                sum.All(casesJson |> Seq.map (Expr.ParseMatchCase parseExpr))
+
+              let cases =
+                cases |> Seq.map (fun (c, v, b) -> (c, (v, b))) |> Map.ofSeq
+
               return Expr.MatchCase(value, cases)
           }
           |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
@@ -300,7 +331,10 @@ module Expr =
           sum {
             let! elementsJson = fieldsJson |> sum.TryFindField "elements"
             let! elementsArray = elementsJson |> JsonValue.AsArray
-            let! elements = elementsArray |> Array.toList |> List.map parseExpr |> sum.All
+
+            let! elements =
+              elementsArray |> Array.toList |> List.map parseExpr |> sum.All
+
             Expr.MakeTuple elements
           }
           |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
@@ -344,7 +378,9 @@ module Expr =
           |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
 
-    static member private ParseVarLookup(json: JsonValue) : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors<Unit>> =
+    static member private ParseVarLookup
+      (json: JsonValue)
+      : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors<Unit>> =
       sum {
         let! fieldsJson = assertKindIsAndGetFields "varLookup" json
 
@@ -385,12 +421,15 @@ module Expr =
         return!
           sum {
             let! operandsJson = fieldsJson |> sum.TryFindField "operands"
-            let! operandNewCasesJson, operandExprJson = JsonValue.AsPair operandsJson
+
+            let! operandNewCasesJson, operandExprJson =
+              JsonValue.AsPair operandsJson
 
             let! operandNewCases =
               operandNewCasesJson
               |> JsonValue.AsArray
-              |> Sum.bind (fun cases -> Seq.map JsonValue.AsString cases |> sum.All)
+              |> Sum.bind (fun cases ->
+                Seq.map JsonValue.AsString cases |> sum.All)
 
             let! operandExpr = operandExprJson |> parseExpr
             return Expr.Prepend(operandNewCases, operandExpr)
@@ -399,7 +438,9 @@ module Expr =
       }
 
     static member Parse
-      (parseExtension: ExprParser<'ExprExtension, 'ValueExtension> -> ExprParser<'ExprExtension, 'ValueExtension>)
+      (parseExtension:
+        ExprParser<'ExprExtension, 'ValueExtension>
+          -> ExprParser<'ExprExtension, 'ValueExtension>)
       (json: JsonValue)
       : Sum<Expr<'ExprExtension, 'ValueExtension>, Errors<Unit>> =
       sum.Any(
@@ -421,7 +462,8 @@ module Expr =
             Expr.ParsePrepend (Expr.Parse parseExtension) json
             parseExtension (Expr.Parse parseExtension) json
             sum.Throw(
-              Errors.Singleton () (fun () -> $"Error: cannot parse expression {json.AsFSharpString.ReasonablyClamped}.")
+              Errors.Singleton () (fun () ->
+                $"Error: cannot parse expression {json.AsFSharpString.ReasonablyClamped}.")
             ) ]
         )
       )
@@ -430,12 +472,14 @@ module Expr =
     static member ToJson
       (toJsonTailExpr:
         ((Expr<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors<Unit>>)
-          -> (Value<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors<Unit>>)
+          -> (Value<'ExprExtension, 'ValueExtension>
+            -> Sum<JsonValue, Errors<Unit>>)
           -> 'ExprExtension
           -> Sum<JsonValue, Errors<Unit>>))
       (toJsonTailValue:
         ((Expr<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors<Unit>>)
-          -> (Value<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors<Unit>>)
+          -> (Value<'ExprExtension, 'ValueExtension>
+            -> Sum<JsonValue, Errors<Unit>>)
           -> 'ValueExtension
           -> Sum<JsonValue, Errors<Unit>>))
       (expr: Expr<'ExprExtension, 'ValueExtension>)
@@ -470,7 +514,10 @@ module Expr =
           return
             JsonValue.Record
               [| "kind", JsonValue.String "matchCase"
-                 "operands", JsonValue.Array(Array.append [| jsonExpr |] (jsonCases |> List.toArray)) |]
+                 "operands",
+                 JsonValue.Array(
+                   Array.append [| jsonExpr |] (jsonCases |> List.toArray)
+                 ) |]
         | Expr.Apply(func, arg) ->
           let! jsonFunc = !func
           let! jsonArg = !arg
@@ -489,13 +536,15 @@ module Expr =
           return
             JsonValue.Record
               [| "kind", JsonValue.String "fieldLookup"
-                 "operands", JsonValue.Array [| jsonExpr; JsonValue.String fieldName |] |]
+                 "operands",
+                 JsonValue.Array [| jsonExpr; JsonValue.String fieldName |] |]
         | Expr.Project(expr, index) ->
           let! jsonExpr = !expr
 
           JsonValue.Record
             [| "kind", JsonValue.String "itemLookup"
-               "operands", JsonValue.Array [| jsonExpr; JsonValue.Number(decimal index) |] |]
+               "operands",
+               JsonValue.Array [| jsonExpr; JsonValue.Number(decimal index) |] |]
         | Expr.MakeRecord r ->
           let! jsonFields =
             r
@@ -510,10 +559,26 @@ module Expr =
           JsonValue.Record
             [| "kind", JsonValue.String "record"
                "fields", jsonFields |> Array.ofList |> JsonValue.Record |]
-        | Expr.MakeTuple _ -> return! sum.Throw(Errors.Singleton () (fun () -> "Error: MakeTuple not implemented"))
-        | Expr.MakeSet _ -> return! sum.Throw(Errors.Singleton () (fun () -> "Error: MakeSet not implemented"))
-        | Expr.MakeCase _ -> return! sum.Throw(Errors.Singleton () (fun () -> "Error: MakeCase not implemented"))
-        | Expr.Annotate _ -> return! sum.Throw(Errors.Singleton () (fun () -> "Error: Annotate not implemented"))
+        | Expr.MakeTuple _ ->
+          return!
+            sum.Throw(
+              Errors.Singleton () (fun () -> "Error: MakeTuple not implemented")
+            )
+        | Expr.MakeSet _ ->
+          return!
+            sum.Throw(
+              Errors.Singleton () (fun () -> "Error: MakeSet not implemented")
+            )
+        | Expr.MakeCase _ ->
+          return!
+            sum.Throw(
+              Errors.Singleton () (fun () -> "Error: MakeCase not implemented")
+            )
+        | Expr.Annotate _ ->
+          return!
+            sum.Throw(
+              Errors.Singleton () (fun () -> "Error: Annotate not implemented")
+            )
         | Expr.GenericApply(func, arg) ->
           let! jsonFunc = !func
 
@@ -521,7 +586,11 @@ module Expr =
             [| "kind", JsonValue.String "Apply"
                "function", jsonFunc
                "argument", ExprType.ToJson arg |]
-        | Expr.Let _ -> return! sum.Throw(Errors.Singleton () (fun () -> "Error: Let not implemented"))
+        | Expr.Let _ ->
+          return!
+            sum.Throw(
+              Errors.Singleton () (fun () -> "Error: Let not implemented")
+            )
         | Expr.LetType(typeName, typeDef, inner) ->
           let! inner = !inner
 
@@ -555,7 +624,9 @@ module Expr =
 
   and Value<'ExprExtension, 'ValueExtension> with
 
-    static member private ParseUnit(json: JsonValue) : Sum<Value<'ExprExtension, 'ValueExtension>, Errors<Unit>> =
+    static member private ParseUnit
+      (json: JsonValue)
+      : Sum<Value<'ExprExtension, 'ValueExtension>, Errors<Unit>> =
       sum {
         let! fieldsJson = JsonValue.AsRecord json
         let! kindJson = fieldsJson |> sum.TryFindField "kind"
@@ -563,18 +634,25 @@ module Expr =
         return Value.Unit
       }
 
-    static member Parse(json: JsonValue) : Sum<Value<'ExprExtension, 'ValueExtension>, Errors<Unit>> =
-      sum.Any(NonEmptyList.OfList(Value.ParseUnit, []) |> NonEmptyList.map (fun f -> f json))
+    static member Parse
+      (json: JsonValue)
+      : Sum<Value<'ExprExtension, 'ValueExtension>, Errors<Unit>> =
+      sum.Any(
+        NonEmptyList.OfList(Value.ParseUnit, [])
+        |> NonEmptyList.map (fun f -> f json)
+      )
 
     static member ToJson
       (toJsonTailExpr:
         (Expr<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors<Unit>>)
-          -> (Value<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors<Unit>>)
+          -> (Value<'ExprExtension, 'ValueExtension>
+            -> Sum<JsonValue, Errors<Unit>>)
           -> 'ExprExtension
           -> Sum<JsonValue, Errors<Unit>>)
       (toJsonTailValue:
         (Expr<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors<Unit>>)
-          -> (Value<'ExprExtension, 'ValueExtension> -> Sum<JsonValue, Errors<Unit>>)
+          -> (Value<'ExprExtension, 'ValueExtension>
+            -> Sum<JsonValue, Errors<Unit>>)
           -> 'ValueExtension
           -> Sum<JsonValue, Errors<Unit>>)
       (value: Value<'ExprExtension, 'ValueExtension>)
@@ -603,7 +681,10 @@ module Expr =
 
           let fieldsWithReturns =
             match returnType with
-            | Some returnType -> Array.append baseFields [| "returnType", returnType |> ExprType.ToJson |]
+            | Some returnType ->
+              Array.append
+                baseFields
+                [| "returnType", returnType |> ExprType.ToJson |]
             | None -> baseFields
 
           JsonValue.Record fieldsWithReturns
@@ -639,7 +720,11 @@ module Expr =
             [| "kind", JsonValue.String "varLookup"
                "varName", JsonValue.String v.VarName |]
         | Value.GenericLambda _ ->
-          return! sum.Throw(Errors.Singleton () (fun () -> "Error: GenericLambda not implemented"))
+          return!
+            sum.Throw(
+              Errors.Singleton () (fun () ->
+                "Error: GenericLambda not implemented")
+            )
         | Value.Extension varExt ->
           return!
             toJsonTailValue

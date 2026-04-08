@@ -5,7 +5,12 @@ open Ballerina.StdLib.Formats
 open NUnit.Framework
 
 [<Test; TestCase(1999, 10, 30, "1999-10-30"); TestCase(2000, 3, 4, "2000-03-04")>]
-let ``Expect print to return a yyyy-MM-dd date string`` year month day (expected: string) =
+let ``Expect print to return a yyyy-MM-dd date string``
+  year
+  month
+  day
+  (expected: string)
+  =
   let date = DateOnly(year, month, day)
   let actual = Iso8601.DateOnly.print date
   Assert.That(actual, Is.EqualTo expected)
@@ -48,6 +53,8 @@ let ``Expect print then tryParse to return Some initial value`` year month day =
 
 [<Test; TestCase "1999-10-30"; TestCase "2000-03-04">]
 let ``Expect tryParse then print to return Some initial value`` expected =
-  match Iso8601.DateOnly.tryParse >> Option.map Iso8601.DateOnly.print <| expected with
+  match
+    Iso8601.DateOnly.tryParse >> Option.map Iso8601.DateOnly.print <| expected
+  with
   | Some actual -> Assert.That(actual, Is.EqualTo expected)
   | None -> Assert.Fail $"Cannot parse {expected}"

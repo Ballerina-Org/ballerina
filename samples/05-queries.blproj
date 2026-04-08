@@ -1,0 +1,5 @@
+{
+  "name": "queries",
+  "sources": ["05-queries.bl"],
+  "inputProjects": []
+}

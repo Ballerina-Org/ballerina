@@ -22,15 +22,20 @@ module TypeLet =
       (fromRootJson: ExprParser<'T, 'Id, 'valueExt>)
       (value: JsonValue)
       : ExprParserReader<'T, 'Id, 'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun typeLetJson ->
-        reader {
-          let! (typeId, typeArg, body) = typeLetJson |> JsonValue.AsTriple |> reader.OfSum
-          let! typeId = typeId |> JsonValue.AsString |> reader.OfSum
-          let! ctx, _ = reader.GetContext()
-          let! typeArg = typeArg |> ctx |> reader.OfSum
-          let! body = body |> fromRootJson
-          return Expr.TypeLet(typeId, typeArg, body)
-        })
+      Reader.assertDiscriminatorAndContinueWithValue
+        discriminator
+        value
+        (fun typeLetJson ->
+          reader {
+            let! (typeId, typeArg, body) =
+              typeLetJson |> JsonValue.AsTriple |> reader.OfSum
+
+            let! typeId = typeId |> JsonValue.AsString |> reader.OfSum
+            let! ctx, _ = reader.GetContext()
+            let! typeArg = typeArg |> ctx |> reader.OfSum
+            let! body = body |> fromRootJson
+            return Expr.TypeLet(typeId, typeArg, body)
+          })
 
     static member ToJsonTypeLet
       (rootToJson: ExprEncoder<'T, 'Id, 'valueExt>)

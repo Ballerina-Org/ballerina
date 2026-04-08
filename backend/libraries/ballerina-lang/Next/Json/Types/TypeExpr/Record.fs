@@ -15,30 +15,38 @@ module RecordTypeExpr =
   let private discriminator = "record"
 
   type TypeExpr<'valueExt> with
-    static member FromJsonRecord(fromJsonRoot: TypeExprParser<'valueExt>) : TypeExprParser<'valueExt> =
-      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun recordFields ->
-        sum {
-          let! fields = recordFields |> JsonValue.AsArray
+    static member FromJsonRecord
+      (fromJsonRoot: TypeExprParser<'valueExt>)
+      : TypeExprParser<'valueExt> =
+      Sum.assertDiscriminatorAndContinueWithValue
+        discriminator
+        (fun recordFields ->
+          sum {
+            let! fields = recordFields |> JsonValue.AsArray
 
-          let! fieldTypes =
-            fields
-            |> Array.map (fun field ->
-              sum {
-                let! (fieldKey, fieldValue) = field |> JsonValue.AsPair
-                let! fieldType = fromJsonRoot fieldValue
-                let! fieldKey = fromJsonRoot fieldKey
-                return (fieldKey, fieldType)
-              })
-            |> sum.All
+            let! fieldTypes =
+              fields
+              |> Array.map (fun field ->
+                sum {
+                  let! (fieldKey, fieldValue) = field |> JsonValue.AsPair
+                  let! fieldType = fromJsonRoot fieldValue
+                  let! fieldKey = fromJsonRoot fieldKey
+                  return (fieldKey, fieldType)
+                })
+              |> sum.All
 
-          let record = TypeExpr.Record(fieldTypes)
+            let record = TypeExpr.Record(fieldTypes)
 
-          let! wrappedRecord =
-            AutomaticSymbolCreation.wrapWithLet (record, fieldTypes |> List.map fst, SymbolsKind.RecordFields)
-            |> sum.MapError(Errors.MapContext(replaceWith ()))
+            let! wrappedRecord =
+              AutomaticSymbolCreation.wrapWithLet (
+                record,
+                fieldTypes |> List.map fst,
+                SymbolsKind.RecordFields
+              )
+              |> sum.MapError(Errors.MapContext(replaceWith ()))
 
-          return wrappedRecord
-        })
+            return wrappedRecord
+          })
 
     static member ToJsonRecord
       (rootToJson: TypeExpr<'valueExt> -> JsonValue)
@@ -51,4 +59,5 @@ module RecordTypeExpr =
             let fieldTypeJson = rootToJson fieldType
             JsonValue.Array [| fieldKeyJson; fieldTypeJson |])
 
-        JsonValue.Array(fieldPairs |> Array.ofSeq) |> Json.discriminator discriminator
+        JsonValue.Array(fieldPairs |> Array.ofSeq)
+        |> Json.discriminator discriminator

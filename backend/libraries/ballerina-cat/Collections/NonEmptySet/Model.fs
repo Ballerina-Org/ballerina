@@ -15,7 +15,8 @@ module NonEmptySet =
     interface System.Collections.Generic.IReadOnlyCollection<'e> with
       member this.Count = let (NonEmptySet set) = this in set.Count
 
-    static member OfList(x: 'e, xs: 'e list) = x :: xs |> Set.ofList |> NonEmptySet
+    static member OfList(x: 'e, xs: 'e list) =
+      x :: xs |> Set.ofList |> NonEmptySet
 
     static member TryOfArray(array: 'e array) =
       match array with
@@ -50,4 +51,7 @@ module NonEmptySet =
   let intersect (NonEmptySet s1) (NonEmptySet s2) = Set.intersect s1 s2
 
   let unionMany (sets: 'a NonEmptySet seq) =
-    sets |> Seq.map (fun (NonEmptySet set) -> set) |> Set.unionMany |> NonEmptySet
+    sets
+    |> Seq.map (fun (NonEmptySet set) -> set)
+    |> Set.unionMany
+    |> NonEmptySet

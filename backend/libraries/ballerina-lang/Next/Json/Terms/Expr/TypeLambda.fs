@@ -22,13 +22,20 @@ module TypeLambda =
       (fromRootJson: ExprParser<'T, 'Id, 'valueExt>)
       (value: JsonValue)
       : ExprParserReader<'T, 'Id, 'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun typeParamJson ->
-        reader {
-          let! (typeParam, body) = typeParamJson |> JsonValue.AsPair |> reader.OfSum
-          let! typeParam = typeParam |> TypeParameter.FromJson |> reader.OfSum
-          let! body = body |> fromRootJson
-          return Expr.TypeLambda(typeParam, body)
-        })
+      Reader.assertDiscriminatorAndContinueWithValue
+        discriminator
+        value
+        (fun typeParamJson ->
+          reader {
+            let! (typeParam, body) =
+              typeParamJson |> JsonValue.AsPair |> reader.OfSum
+
+            let! typeParam =
+              typeParam |> TypeParameter.FromJson |> reader.OfSum
+
+            let! body = body |> fromRootJson
+            return Expr.TypeLambda(typeParam, body)
+          })
 
     static member ToJsonTypeLambda
       (rootToJson: ExprEncoder<'T, 'Id, 'valueExt>)

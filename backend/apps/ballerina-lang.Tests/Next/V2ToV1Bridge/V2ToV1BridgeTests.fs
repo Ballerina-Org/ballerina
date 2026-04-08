@@ -141,7 +141,10 @@ entrypoint view aStringRecord : StringRecord {
 
   let compilerInput: FormCompiler.FormCompilerInput<ValueExt> =
     { Types =
-        { Preludes = NonEmptyList.One(FileBuildConfiguration.FromFile("test.bl", typesString))
+        { Preludes =
+            NonEmptyList.One(
+              FileBuildConfiguration.FromFile("test.bl", typesString)
+            )
           Source = "test.types" }
       ApiTypes = Map.empty
       Forms =
@@ -155,7 +158,14 @@ entrypoint view aStringRecord : StringRecord {
       id
       id
 
-  match FormCompiler.compileForms compilerInput cache languageContext extensions typeCheckingConfig with
+  match
+    FormCompiler.compileForms
+      compilerInput
+      cache
+      languageContext
+      extensions
+      typeCheckingConfig
+  with
   | Right errors -> Assert.Fail($"Compilation failed: {errors}")
   | Left formDefinitions ->
     let result = FormDefinitions.toV1Json formDefinitions
@@ -624,7 +634,10 @@ entrypoint view letTestRecord : LetTestRecord {
 
   let compilerInput: FormCompiler.FormCompilerInput<ValueExt> =
     { Types =
-        { Preludes = NonEmptyList.One(FileBuildConfiguration.FromFile("test.bl", typesString))
+        { Preludes =
+            NonEmptyList.One(
+              FileBuildConfiguration.FromFile("test.bl", typesString)
+            )
           Source = "test.types" }
       ApiTypes = Map.empty
       Forms =
@@ -638,7 +651,14 @@ entrypoint view letTestRecord : LetTestRecord {
       id
       id
 
-  match FormCompiler.compileForms compilerInput cache languageContext extensions typeCheckingConfig with
+  match
+    FormCompiler.compileForms
+      compilerInput
+      cache
+      languageContext
+      extensions
+      typeCheckingConfig
+  with
   | Right errors -> Assert.Fail($"Compilation failed: {errors}")
   | Left formDefinitions ->
     let result = FormDefinitions.toV1Json formDefinitions

@@ -12,7 +12,11 @@ type Errors =
   { Errors: NonEmptyList<Error> }
 
   static member Concat(e1: Errors, e2: Errors) : Errors =
-    { Errors = NonEmptyList.OfList(e1.Errors.Head, e1.Errors.Tail @ (e2.Errors |> NonEmptyList.ToList)) }
+    { Errors =
+        NonEmptyList.OfList(
+          e1.Errors.Head,
+          e1.Errors.Tail @ (e2.Errors |> NonEmptyList.ToList)
+        ) }
 
   static member Singleton message =
     { Errors = NonEmptyList.One { Message = message } }
@@ -36,7 +40,9 @@ module Any =
     | Sum.Right _ -> Assert.Fail "Expected successful result"
 
   [<Test>]
-  let ``Test Any should return first successful result when first parser succeeds`` () =
+  let ``Test Any should return first successful result when first parser succeeds``
+    ()
+    =
     let successfulParser = state.Return 42
     let failingParser1 = state.Throw(Errors.Singleton "Error1")
     let failingParser2 = state.Throw(Errors.Singleton "Error2")
@@ -77,7 +83,8 @@ module Any =
     | Sum.Left _ -> Assert.Fail "Expected error"
     | Sum.Right(error, _) ->
       match error.Errors |> NonEmptyList.ToList with
-      | [ singleError ] -> Assert.That(singleError.Message, Is.EqualTo "SingleError")
+      | [ singleError ] ->
+        Assert.That(singleError.Message, Is.EqualTo "SingleError")
       | _ -> Assert.Fail "Expected single error"
 
   [<Test>]
@@ -97,16 +104,24 @@ module Any =
       let errorMessages =
         error.Errors |> NonEmptyList.ToList |> List.map (fun e -> e.Message)
 
-      Assert.That(errorMessages, Is.EquivalentTo [ "Error1"; "Error2"; "Error3" ])
+      Assert.That(
+        errorMessages,
+        Is.EquivalentTo [ "Error1"; "Error2"; "Error3" ]
+      )
 
   [<Test>]
-  let ``Test Any should return first successful result in case of multiple successful parsers`` () =
+  let ``Test Any should return first successful result in case of multiple successful parsers``
+    ()
+    =
     let successfulParser1 = state.Return 42
     let successfulParser2 = state.Return 43
     let failingParser = state.Throw(Errors.Singleton "Error")
 
     let parsers =
-      NonEmptyList.OfList(successfulParser1, [ successfulParser2; failingParser ])
+      NonEmptyList.OfList(
+        successfulParser1,
+        [ successfulParser2; failingParser ]
+      )
 
     let result = (state { return! parsers |> state.Any }).run ((), ())
 
@@ -141,7 +156,10 @@ module Any =
       }
 
     let parsers =
-      NonEmptyList.OfList(failingParser1, [ failingParser2; successfulParser; successfulParser2 ])
+      NonEmptyList.OfList(
+        failingParser1,
+        [ failingParser2; successfulParser; successfulParser2 ]
+      )
 
     let result = (state { return! parsers |> state.Any }).run ((), 1)
 

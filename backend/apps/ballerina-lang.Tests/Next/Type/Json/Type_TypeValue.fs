@@ -31,7 +31,10 @@ let toScopedJson name (str: string) =
   }},
   "value":{str}  }} }}"""
 
-let ``Assert TypeValue -> ToJson -> FromJson -> TypeValue`` (expression: TypeValue<Object>) (expectedJson: JsonValue) =
+let ``Assert TypeValue -> ToJson -> FromJson -> TypeValue``
+  (expression: TypeValue<Object>)
+  (expectedJson: JsonValue)
+  =
   let toStr (j: JsonValue) =
     j.ToString(JsonSaveOptions.DisableFormatting)
 
@@ -46,7 +49,8 @@ let ``Assert TypeValue -> ToJson -> FromJson -> TypeValue`` (expression: TypeVal
 
 let testCases guid : TypeValueTestCase list =
   [ { Name = "Var"
-      Json = $"""{{"discriminator":"var","value":{{"name":"MyTypeVar","guid":"{guid}"}}}}"""
+      Json =
+        $"""{{"discriminator":"var","value":{{"name":"MyTypeVar","guid":"{guid}"}}}}"""
       Expected =
         TypeValue<Object>.Var
           { Name = "MyTypeVar"
@@ -65,7 +69,12 @@ let testCases guid : TypeValueTestCase list =
               }
           }"""
         |> toScopedJson "Lambda"
-      Expected = TypeValue<Unit>.CreateLambda({ Name = "T"; Kind = Kind.Star }, TypeExpr.Primitive PrimitiveType.Int32) }
+      Expected =
+        TypeValue<Unit>
+          .CreateLambda(
+            { Name = "T"; Kind = Kind.Star },
+            TypeExpr.Primitive PrimitiveType.Int32
+          ) }
     { Name = "Arrow"
       Json =
         """{
@@ -76,7 +85,12 @@ let testCases guid : TypeValueTestCase list =
               }
           }"""
         |> toScopedJson "Arrow"
-      Expected = TypeValue<Unit>.CreateArrow(TypeValue<Unit>.CreateInt32(), TypeValue<Unit>.CreateString()) }
+      Expected =
+        TypeValue<Unit>
+          .CreateArrow(
+            TypeValue<Unit>.CreateInt32(),
+            TypeValue<Unit>.CreateString()
+          ) }
     { Name = "Union"
       Json =
         """{
@@ -89,13 +103,16 @@ let testCases guid : TypeValueTestCase list =
         |> toScopedJson "Union"
       Expected =
         [ { TypeSymbol.Name = "bar" |> Identifier.LocalScope
-            TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") },
+            TypeSymbol.Guid =
+              System.Guid("00000000-0000-0000-0000-000000000002") },
           TypeValue<Unit>.CreateString()
           { TypeSymbol.Name = "baz" |> Identifier.LocalScope
-            TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000003") },
+            TypeSymbol.Guid =
+              System.Guid("00000000-0000-0000-0000-000000000003") },
           TypeValue<Unit>.CreateBool()
           { TypeSymbol.Name = "foo" |> Identifier.LocalScope
-            TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000001") },
+            TypeSymbol.Guid =
+              System.Guid("00000000-0000-0000-0000-000000000001") },
           TypeValue<Unit>.CreateInt32() ]
         |> OrderedMap.ofList
         |> TypeValue<Unit>.CreateUnion }
@@ -109,7 +126,9 @@ let testCases guid : TypeValueTestCase list =
             ]
           }"""
         |> toScopedJson "Tuple"
-      Expected = TypeValue<Unit>.CreateTuple [ TypeValue<Unit>.CreateInt32(); TypeValue<Unit>.CreateString() ] }
+      Expected =
+        TypeValue<Unit>.CreateTuple
+          [ TypeValue<Unit>.CreateInt32(); TypeValue<Unit>.CreateString() ] }
     { Name = "Sum"
       Json =
         """{
@@ -146,10 +165,12 @@ let testCases guid : TypeValueTestCase list =
           .CreateRecord(
             OrderedMap.ofList
               [ { TypeSymbol.Name = "bar" |> Identifier.LocalScope
-                  TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000002") },
+                  TypeSymbol.Guid =
+                    System.Guid("00000000-0000-0000-0000-000000000002") },
                 (TypeValue<Unit>.CreateString(), Kind.Star)
                 { TypeSymbol.Name = "foo" |> Identifier.LocalScope
-                  TypeSymbol.Guid = System.Guid("00000000-0000-0000-0000-000000000001") },
+                  TypeSymbol.Guid =
+                    System.Guid("00000000-0000-0000-0000-000000000001") },
                 (TypeValue<Unit>.CreateInt32(), Kind.Star) ]
           ) }
     { Name = "Application (Lookup)"
@@ -163,7 +184,13 @@ let testCases guid : TypeValueTestCase list =
         }"""
         |> toScopedJson "Application"
       Expected =
-        TypeValue<Unit>.CreateApplication(SymbolicTypeApplication.Lookup(!"List", TypeValue<Unit>.CreateInt32())) }
+        TypeValue<Unit>
+          .CreateApplication(
+            SymbolicTypeApplication.Lookup(
+              !"List",
+              TypeValue<Unit>.CreateInt32()
+            )
+          ) }
     { Name = "Application (Nested Application)"
       Json =
         """{
@@ -181,7 +208,10 @@ let testCases guid : TypeValueTestCase list =
         TypeValue<Unit>
           .CreateApplication(
             SymbolicTypeApplication.Application(
-              SymbolicTypeApplication.Lookup(!"Map", TypeValue<Unit>.CreateString()),
+              SymbolicTypeApplication.Lookup(
+                !"Map",
+                TypeValue<Unit>.CreateString()
+              ),
               TypeValue<Unit>.CreateInt32()
             )
           ) }
@@ -197,7 +227,10 @@ let testCases guid : TypeValueTestCase list =
         |> toScopedJson "Lambda"
       Expected =
         TypeValue<Unit>
-          .CreateLambda({ Name = "T"; Kind = Kind.Star }, TypeExpr.FromTypeValue(TypeValue<Unit>.CreateString())) } ]
+          .CreateLambda(
+            { Name = "T"; Kind = Kind.Star },
+            TypeExpr.FromTypeValue(TypeValue<Unit>.CreateString())
+          ) } ]
 
 [<Test>]
 let ``Dsl:Type:TypeValue<Unit> json round-trip`` () =

@@ -28,8 +28,8 @@ module Value =
           Value.FromJsonVar json
           Value.FromJsonLambda json
           Value.FromJsonTypeLambda json
-          fun () -> $"Unknown Value JSON: {json.AsFSharpString.ReasonablyClamped}"
-          |> Errors.Singleton()
+          Errors.Singleton () (fun () ->
+            $"Unknown Value JSON: {json.AsFSharpString.ReasonablyClamped}")
           |> Errors.MapPriority(replaceWith ErrorPriority.Medium)
           |> reader.Throw ]
       )
@@ -50,5 +50,13 @@ module Value =
       | Value.Var v -> Value.ToJsonVar v |> reader.Return
       | Value.Lambda(a, b, _closure, _) -> Value.ToJsonLambda a b
       | Value.TypeLambda(a, b) -> Value.ToJsonTypeLambda a b
-      | Value.Query q -> reader.Throw(Errors.Singleton () (fun () -> $"Query parsing not yet implemented: {q}"))
-      | Value.Ext(e, _) -> reader.Throw(Errors.Singleton () (fun () -> $"Extension parsing not yet implemented: {e}"))
+      | Value.Query q ->
+        reader.Throw(
+          Errors.Singleton () (fun () ->
+            $"Query parsing not yet implemented: {q}")
+        )
+      | Value.Ext(e, _) ->
+        reader.Throw(
+          Errors.Singleton () (fun () ->
+            $"Extension parsing not yet implemented: {e}")
+        )

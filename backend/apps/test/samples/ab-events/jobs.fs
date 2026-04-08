@@ -101,7 +101,10 @@ let abEventLoop (createScope: Unit -> IServiceScope) =
     printfn
       "ABs=%A ABEvents=%A"
       (db.ABs.OrderBy(fun e -> e.ABId).ToArray())
-      (db.ABEvents.Where(fun e -> e.ProcessingStatus = ABEventStatus.Enqueued).OrderBy(fun e -> e.ABEventId).ToArray())
+      (db.ABEvents
+        .Where(fun e -> e.ProcessingStatus = ABEventStatus.Enqueued)
+        .OrderBy(fun e -> e.ABEventId)
+        .ToArray())
 
     ()
 
@@ -109,4 +112,10 @@ let abEventLoop (createScope: Unit -> IServiceScope) =
     db.Dispose()
     scope.Dispose()
 
-  Ballerina.Coroutines.Runner.runLoop init getSnapshot (fun _ -> ()) updateEvents log releaseSnapshot
+  Ballerina.Coroutines.Runner.runLoop
+    init
+    getSnapshot
+    (fun _ -> ())
+    updateEvents
+    log
+    releaseSnapshot

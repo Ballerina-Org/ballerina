@@ -30,7 +30,8 @@ module GetMany =
     =
 
     let memoryDBGetMany =
-      Identifier.FullyQualified([ "DB" ], "getMany") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "DB" ], "getMany")
+      |> TypeCheckScope.Empty.Resolve
 
     let memoryDBGetManyType =
       TypeValue.CreateLambda(
@@ -52,7 +53,9 @@ module GetMany =
                       ),
                       TypeExpr.Lookup("entity" |> Identifier.LocalScope)
                     ),
-                    TypeExpr.Lookup("entity_with_props" |> Identifier.LocalScope)
+                    TypeExpr.Lookup(
+                      "entity_with_props" |> Identifier.LocalScope
+                    )
                   ),
                   TypeExpr.Lookup("entityId" |> Identifier.LocalScope)
                 ),
@@ -64,7 +67,9 @@ module GetMany =
                     TypeExpr.Lookup("List" |> Identifier.LocalScope),
                     TypeExpr.Tuple
                       [ TypeExpr.Lookup("entityId" |> Identifier.LocalScope)
-                        TypeExpr.Lookup("entity_with_props" |> Identifier.LocalScope) ]
+                        TypeExpr.Lookup(
+                          "entity_with_props" |> Identifier.LocalScope
+                        ) ]
                   )
                 )
               )
@@ -74,12 +79,20 @@ module GetMany =
       )
 
     let memoryDBGetManyKind =
-      Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))))
+      Kind.Arrow(
+        Kind.Schema,
+        Kind.Arrow(
+          Kind.Star,
+          Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+        )
+      )
 
     let getManyOperation: OperationExtension<'runtimeContext, _, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBGetManyType, memoryDBGetManyKind, DBValues.GetMany {| EntityRef = None |})
+          <| (memoryDBGetManyType,
+              memoryDBGetManyKind,
+              DBValues.GetMany {| EntityRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -105,7 +118,10 @@ module GetMany =
                 let! v =
                   v
                   |> valueLens.Get
-                  |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
+                  |> sum.OfOption(
+                    Errors.Singleton loc0 (fun () ->
+                      "Cannot get value from extension")
+                  )
                   |> reader.OfSum
 
                 let! v =
@@ -115,7 +131,8 @@ module GetMany =
                   |> reader.OfSum
 
                 return
-                  (DBValues.GetMany({| EntityRef = Some v |}) |> valueLens.Set, Some memoryDBGetMany)
+                  (DBValues.GetMany({| EntityRef = Some v |}) |> valueLens.Set,
+                   Some memoryDBGetMany)
                   |> Ext
               | Some(entity_ref) -> // the closure has the first operand - second step in the application
 
@@ -126,7 +143,8 @@ module GetMany =
                   |> reader.OfSum
 
                 match v with
-                | [ Value.Primitive(PrimitiveValue.Int32 _offset); Value.Primitive(PrimitiveValue.Int32 _limit) ] ->
+                | [ Value.Primitive(PrimitiveValue.Int32 _offset)
+                    Value.Primitive(PrimitiveValue.Int32 _limit) ] ->
                   let! results =
                     db_ops.GetMany entity_ref (_offset, _limit)
                     |> reader.MapError(Errors.MapContext(replaceWith loc0))
@@ -134,7 +152,8 @@ module GetMany =
                   return (results |> listSet, None) |> Ext
                 | _ ->
                   return!
-                    Errors.Singleton loc0 (fun () -> "Expected a tuple of two Int32 values for offset and limit")
+                    Errors.Singleton loc0 (fun () ->
+                      "Expected a tuple of two Int32 values for offset and limit")
                     |> reader.Throw
             } }
 

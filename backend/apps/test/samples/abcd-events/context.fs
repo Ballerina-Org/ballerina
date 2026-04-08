@@ -16,8 +16,12 @@ let init_abcdContext () =
   let descriptors, allEntities, allFields = createABCDSchema ABs CDs EFs
 
   let schema: Schema =
-    { tryFindEntity = fun (entityDescriptorId: EntityDescriptorId) -> allEntities |> Map.tryFind entityDescriptorId
-      tryFindField = fun (fieldDescriptorId: FieldDescriptorId) -> allFields |> Map.tryFind fieldDescriptorId }
+    { tryFindEntity =
+        fun (entityDescriptorId: EntityDescriptorId) ->
+          allEntities |> Map.tryFind entityDescriptorId
+      tryFindField =
+        fun (fieldDescriptorId: FieldDescriptorId) ->
+          allFields |> Map.tryFind fieldDescriptorId }
 
   let createEF id E F = { EFId = id; E = E; F = F }
   let ef1 = createEF (Guid("6b3b39dc-24e8-425f-8bf3-7abd248f522f")) 3 4
@@ -65,7 +69,11 @@ let init_abcdContext () =
       Name = "Total1 = A1+B1+CD.C+CD.D"
       Priority = BusinessRulePriority.System
       Condition =
-        Expr.Exists(!"this", descriptors.AB.Entity.Descriptor.ToEntityDescriptorId, Expr.Value(Value.ConstBool true))
+        Expr.Exists(
+          !"this",
+          descriptors.AB.Entity.Descriptor.ToEntityDescriptorId,
+          Expr.Value(Value.ConstBool true)
+        )
       Actions =
         [ { Variable = !"this", [ descriptors.AB.Total1.ToFieldDescriptorId ]
             Value =
@@ -83,7 +91,11 @@ let init_abcdContext () =
       Name = "Total2 = A2+B2+CD.C+CD.D"
       Priority = BusinessRulePriority.System
       Condition =
-        Expr.Exists(!"this", descriptors.AB.Entity.Descriptor.ToEntityDescriptorId, Expr.Value(Value.ConstBool true))
+        Expr.Exists(
+          !"this",
+          descriptors.AB.Entity.Descriptor.ToEntityDescriptorId,
+          Expr.Value(Value.ConstBool true)
+        )
       Actions =
         [ { Variable = !"this", [ descriptors.AB.Весь2.ToFieldDescriptorId ]
             Value =
@@ -101,7 +113,11 @@ let init_abcdContext () =
       Name = "Total3 = A3+B3+CD.EF.E+CD.EF.F"
       Priority = BusinessRulePriority.System
       Condition =
-        Expr.Exists(!"this", descriptors.AB.Entity.Descriptor.ToEntityDescriptorId, Expr.Value(Value.ConstBool true))
+        Expr.Exists(
+          !"this",
+          descriptors.AB.Entity.Descriptor.ToEntityDescriptorId,
+          Expr.Value(Value.ConstBool true)
+        )
       Actions =
         [ { Variable = !"this", [ descriptors.AB.Σ3.ToFieldDescriptorId ]
             Value =
@@ -121,7 +137,11 @@ let init_abcdContext () =
         Name = "Total2 = Total1+1+Total3"
         Priority = BusinessRulePriority.System
         Condition =
-          Expr.Exists(!"this", descriptors.AB.Entity.Descriptor.ToEntityDescriptorId, Expr.Value(Value.ConstBool true))
+          Expr.Exists(
+            !"this",
+            descriptors.AB.Entity.Descriptor.ToEntityDescriptorId,
+            Expr.Value(Value.ConstBool true)
+          )
         Actions =
           [ { Variable = !"this", [ descriptors.AB.Весь2.ToFieldDescriptorId ]
               Value =
@@ -132,7 +152,11 @@ let init_abcdContext () =
         Name = "Total3 = Total2+1"
         Priority = BusinessRulePriority.System
         Condition =
-          Expr.Exists(!"this", descriptors.AB.Entity.Descriptor.ToEntityDescriptorId, Expr.Value(Value.ConstBool true))
+          Expr.Exists(
+            !"this",
+            descriptors.AB.Entity.Descriptor.ToEntityDescriptorId,
+            Expr.Value(Value.ConstBool true)
+          )
         Actions =
           [ { Variable = !"this", [ descriptors.AB.Σ3.ToFieldDescriptorId ]
               Value =
@@ -205,7 +229,8 @@ let init_abcdContext () =
                   )
                 )
               Actions =
-                [ { Variable = !"ab1", [ descriptors.AB.CD().ToFieldDescriptorId ]
+                [ { Variable =
+                      !"ab1", [ descriptors.AB.CD().ToFieldDescriptorId ]
                     Value = (Expr.Value(Value.ConstGuid cd2.CDId)) } ] }
           )
           ABCDEvent.Edit(

@@ -42,9 +42,17 @@ module Unlink =
             TypeCheckedExpr.UnsafeApplyForUntypedEval(
               TypeCheckedExpr.UnsafeApplyForUntypedEval(
                 hookExpr,
-                TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
+                TypeCheckedExpr.FromValue(
+                  _schema_as_value,
+                  TypeValue.CreateUnit(),
+                  Kind.Star
+                )
               ),
-              TypeCheckedExpr.FromValue(_fromId, TypeValue.CreateUnit(), Kind.Star)
+              TypeCheckedExpr.FromValue(
+                _fromId,
+                TypeValue.CreateUnit(),
+                Kind.Star
+              )
             ),
             TypeCheckedExpr.FromValue(_toId, TypeValue.CreateUnit(), Kind.Star)
           )
@@ -61,11 +69,17 @@ module Unlink =
         | 1 -> return ()
         | 2 ->
           return!
-            sum.Throw(Errors.Singleton loc0 (fun () -> $"Unlinking hook failed with error {result_value}"))
+            sum.Throw(
+              Errors.Singleton loc0 (fun () ->
+                $"Unlinking hook failed with error {result_value}")
+            )
             |> reader.OfSum
         | _ ->
           return!
-            sum.Throw(Errors.Singleton loc0 (fun () -> "Unlinking hook returned invalid result"))
+            sum.Throw(
+              Errors.Singleton loc0 (fun () ->
+                "Unlinking hook returned invalid result")
+            )
             |> reader.OfSum
     }
 
@@ -88,9 +102,17 @@ module Unlink =
             TypeCheckedExpr.UnsafeApplyForUntypedEval(
               TypeCheckedExpr.UnsafeApplyForUntypedEval(
                 hookExpr,
-                TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
+                TypeCheckedExpr.FromValue(
+                  _schema_as_value,
+                  TypeValue.CreateUnit(),
+                  Kind.Star
+                )
               ),
-              TypeCheckedExpr.FromValue(_fromId, TypeValue.CreateUnit(), Kind.Star)
+              TypeCheckedExpr.FromValue(
+                _fromId,
+                TypeValue.CreateUnit(),
+                Kind.Star
+              )
             ),
             TypeCheckedExpr.FromValue(_toId, TypeValue.CreateUnit(), Kind.Star)
           )
@@ -107,11 +129,17 @@ module Unlink =
         | 1 -> return ()
         | 2 ->
           return!
-            sum.Throw(Errors.Singleton loc0 (fun () -> $"Unlinking hook failed with error {result_value}"))
+            sum.Throw(
+              Errors.Singleton loc0 (fun () ->
+                $"Unlinking hook failed with error {result_value}")
+            )
             |> reader.OfSum
         | _ ->
           return!
-            sum.Throw(Errors.Singleton loc0 (fun () -> "Unlinking hook returned invalid result"))
+            sum.Throw(
+              Errors.Singleton loc0 (fun () ->
+                "Unlinking hook returned invalid result")
+            )
             |> reader.OfSum
     }
 
@@ -121,7 +149,8 @@ module Unlink =
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
     =
     let memoryDBUnlinkId =
-      Identifier.FullyQualified([ "DB" ], "unlink") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "DB" ], "unlink")
+      |> TypeCheckScope.Empty.Resolve
 
     let memoryDBUnlinkType =
       TypeValue.CreateLambda(
@@ -146,19 +175,31 @@ module Unlink =
                               TypeExpr.Apply(
                                 TypeExpr.Apply(
                                   TypeExpr.Apply(
-                                    TypeExpr.Lookup("SchemaRelation" |> Identifier.LocalScope),
-                                    TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+                                    TypeExpr.Lookup(
+                                      "SchemaRelation" |> Identifier.LocalScope
+                                    ),
+                                    TypeExpr.Lookup(
+                                      "schema" |> Identifier.LocalScope
+                                    )
 
                                   ),
-                                  TypeExpr.Lookup("from" |> Identifier.LocalScope)
+                                  TypeExpr.Lookup(
+                                    "from" |> Identifier.LocalScope
+                                  )
                                 ),
-                                TypeExpr.Lookup("from_with_props" |> Identifier.LocalScope)
+                                TypeExpr.Lookup(
+                                  "from_with_props" |> Identifier.LocalScope
+                                )
                               ),
-                              TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                              TypeExpr.Lookup(
+                                "from_id" |> Identifier.LocalScope
+                              )
                             ),
                             TypeExpr.Lookup("to" |> Identifier.LocalScope)
                           ),
-                          TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
+                          TypeExpr.Lookup(
+                            "to_with_props" |> Identifier.LocalScope
+                          )
                         ),
                         TypeExpr.Lookup("to_id" |> Identifier.LocalScope)
                       ),
@@ -166,7 +207,9 @@ module Unlink =
                         TypeExpr.Tuple
                           [ TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
                             TypeExpr.Lookup("to_id" |> Identifier.LocalScope) ],
-                        TypeExpr.Sum [ TypeExpr.Primitive PrimitiveType.Unit; TypeExpr.Primitive PrimitiveType.Unit ]
+                        TypeExpr.Sum
+                          [ TypeExpr.Primitive PrimitiveType.Unit
+                            TypeExpr.Primitive PrimitiveType.Unit ]
                       )
                     )
                   )
@@ -182,7 +225,9 @@ module Unlink =
     let UnlinkOperation: OperationExtension<'runtimeContext, _, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBUnlinkType, memoryDBUnlinkKind, DBValues.Unlink {| RelationRef = None |})
+          <| (memoryDBUnlinkType,
+              memoryDBUnlinkKind,
+              DBValues.Unlink {| RelationRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -202,7 +247,8 @@ module Unlink =
                 let! v = extractRelationRefFromValue loc0 v valueLens "Relation"
 
                 return
-                  (DBValues.Unlink({| RelationRef = Some v |}) |> valueLens.Set, Some memoryDBUnlinkId)
+                  (DBValues.Unlink({| RelationRef = Some v |}) |> valueLens.Set,
+                   Some memoryDBUnlinkId)
                   |> Ext
               | Some relation_ref -> // the closure has the first operand - second step in the application
 
@@ -218,16 +264,23 @@ module Unlink =
                   do! onUnlinkingHook db_ops relation_ref loc0 _fromId _toId
 
                   do!
-                    db_ops.Unlink relation_ref { FromId = _fromId; ToId = _toId }
+                    db_ops.Unlink
+                      relation_ref
+                      { FromId = _fromId; ToId = _toId }
                     |> reader.MapError(Errors.MapContext(replaceWith loc0))
 
                   do! onUnlinkedHook db_ops relation_ref loc0 _fromId _toId
 
-                  return Value.Sum({ Case = 2; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                  return
+                    Value.Sum(
+                      { Case = 2; Count = 2 },
+                      Value.Primitive PrimitiveValue.Unit
+                    )
                 | _ ->
                   return!
                     sum.Throw(
-                      Errors.Singleton loc0 (fun () -> "Expected a tuple with 2 elements when unlinking relation")
+                      Errors.Singleton loc0 (fun () ->
+                        "Expected a tuple with 2 elements when unlinking relation")
                     )
                     |> reader.OfSum
             } }
@@ -267,19 +320,31 @@ module Unlink =
                               TypeExpr.Apply(
                                 TypeExpr.Apply(
                                   TypeExpr.Apply(
-                                    TypeExpr.Lookup("SchemaRelation" |> Identifier.LocalScope),
-                                    TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+                                    TypeExpr.Lookup(
+                                      "SchemaRelation" |> Identifier.LocalScope
+                                    ),
+                                    TypeExpr.Lookup(
+                                      "schema" |> Identifier.LocalScope
+                                    )
 
                                   ),
-                                  TypeExpr.Lookup("from" |> Identifier.LocalScope)
+                                  TypeExpr.Lookup(
+                                    "from" |> Identifier.LocalScope
+                                  )
                                 ),
-                                TypeExpr.Lookup("from_with_props" |> Identifier.LocalScope)
+                                TypeExpr.Lookup(
+                                  "from_with_props" |> Identifier.LocalScope
+                                )
                               ),
-                              TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                              TypeExpr.Lookup(
+                                "from_id" |> Identifier.LocalScope
+                              )
                             ),
                             TypeExpr.Lookup("to" |> Identifier.LocalScope)
                           ),
-                          TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
+                          TypeExpr.Lookup(
+                            "to_with_props" |> Identifier.LocalScope
+                          )
                         ),
                         TypeExpr.Lookup("to_id" |> Identifier.LocalScope)
                       ),
@@ -287,10 +352,14 @@ module Unlink =
                         TypeExpr.Apply(
                           TypeExpr.Lookup("List" |> Identifier.LocalScope),
                           TypeExpr.Tuple
-                            [ TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                            [ TypeExpr.Lookup(
+                                "from_id" |> Identifier.LocalScope
+                              )
                               TypeExpr.Lookup("to_id" |> Identifier.LocalScope) ]
                         ),
-                        TypeExpr.Sum [ TypeExpr.Primitive PrimitiveType.Unit; TypeExpr.Primitive PrimitiveType.Unit ]
+                        TypeExpr.Sum
+                          [ TypeExpr.Primitive PrimitiveType.Unit
+                            TypeExpr.Primitive PrimitiveType.Unit ]
                       )
                     )
                   )
@@ -306,7 +375,9 @@ module Unlink =
     let UnlinkManyOperation: OperationExtension<'runtimeContext, _, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBUnlinkManyType, memoryDBUnlinkManyKind, DBValues.UnlinkMany {| RelationRef = None |})
+          <| (memoryDBUnlinkManyType,
+              memoryDBUnlinkManyKind,
+              DBValues.UnlinkMany {| RelationRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -326,7 +397,9 @@ module Unlink =
                 let! v = extractRelationRefFromValue loc0 v valueLens "Relation"
 
                 return
-                  (DBValues.UnlinkMany({| RelationRef = Some v |}) |> valueLens.Set, Some memoryDBUnlinkManyId)
+                  (DBValues.UnlinkMany({| RelationRef = Some v |})
+                   |> valueLens.Set,
+                   Some memoryDBUnlinkManyId)
                   |> Ext
               | Some relation_ref -> // the closure has the first operand - second step in the application
 
@@ -339,7 +412,10 @@ module Unlink =
                 let! (vs: List<Value<TypeValue<'ext>, 'ext>>) =
                   vs
                   |> listLens.Get
-                  |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
+                  |> sum.OfOption(
+                    Errors.Singleton loc0 (fun () ->
+                      "Cannot get value from extension")
+                  )
                   |> reader.OfSum
 
                 let! (results: List<Value<TypeValue<'ext>, 'ext>>) =
@@ -355,18 +431,35 @@ module Unlink =
                       match v with
                       | [ _fromId; _toId ] ->
 
-                        do! onUnlinkingHook db_ops relation_ref loc0 _fromId _toId
+                        do!
+                          onUnlinkingHook
+                            db_ops
+                            relation_ref
+                            loc0
+                            _fromId
+                            _toId
 
                         do!
-                          db_ops.Unlink relation_ref { FromId = _fromId; ToId = _toId }
-                          |> reader.MapError(Errors.MapContext(replaceWith loc0))
+                          db_ops.Unlink
+                            relation_ref
+                            { FromId = _fromId; ToId = _toId }
+                          |> reader.MapError(
+                            Errors.MapContext(replaceWith loc0)
+                          )
 
-                        do! onUnlinkedHook db_ops relation_ref loc0 _fromId _toId
-                        return Value.Sum({ Case = 2; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                        do!
+                          onUnlinkedHook db_ops relation_ref loc0 _fromId _toId
+
+                        return
+                          Value.Sum(
+                            { Case = 2; Count = 2 },
+                            Value.Primitive PrimitiveValue.Unit
+                          )
                       | _ ->
                         return!
                           sum.Throw(
-                            Errors.Singleton loc0 (fun () -> "Expected a tuple with 2 elements when linking relation")
+                            Errors.Singleton loc0 (fun () ->
+                              "Expected a tuple with 2 elements when linking relation")
                           )
                           |> reader.OfSum
                     })

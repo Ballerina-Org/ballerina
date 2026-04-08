@@ -11,7 +11,8 @@ module EquivalenceClasses =
   open Ballerina.Fun
   open Ballerina.StdLib.Object
 
-  type EquivalenceClass<'var, 'value when 'var: comparison and 'value: comparison> =
+  type EquivalenceClass<'var, 'value
+    when 'var: comparison and 'value: comparison> =
     { Representative: Option<'value>
       Variables: Set<'var> }
 
@@ -31,7 +32,9 @@ module EquivalenceClasses =
           fun u (s: EquivalenceClass<'var, 'value>) ->
             { s with
                 Representative = u s.Representative }
-         Variables = fun u (s: EquivalenceClass<'var, 'value>) -> { s with Variables = u s.Variables } |}
+         Variables =
+          fun u (s: EquivalenceClass<'var, 'value>) ->
+            { s with Variables = u s.Variables } |}
 
     static member Empty: EquivalenceClass<'var, 'value> =
       { Representative = None
@@ -47,7 +50,8 @@ module EquivalenceClasses =
         { Representative = None
           Variables = Set.singleton v }
 
-    static member Create: Set<'var> * Option<'value> -> EquivalenceClass<'var, 'value> =
+    static member Create
+      : Set<'var> * Option<'value> -> EquivalenceClass<'var, 'value> =
       fun (vars, rep) ->
         { Representative = rep
           Variables = vars }
@@ -64,7 +68,8 @@ module EquivalenceClasses =
            >
       tryCompare: 'value * 'value -> Option<'value> }
 
-  and EquivalenceClasses<'var, 'value when 'var: comparison and 'value: comparison> =
+  and EquivalenceClasses<'var, 'value
+    when 'var: comparison and 'value: comparison> =
     { Classes: Map<string, EquivalenceClass<'var, 'value>>
       Variables: Map<'var, string> }
 
@@ -79,20 +84,29 @@ module EquivalenceClasses =
       $"{{{classes}}}"
 
     static member Updaters =
-      {| Classes = fun u (c: EquivalenceClasses<'var, 'value>) -> { c with Classes = c.Classes |> u }
-         Variables = fun u (c: EquivalenceClasses<'var, 'value>) -> { c with Variables = c.Variables |> u } |}
+      {| Classes =
+          fun u (c: EquivalenceClasses<'var, 'value>) ->
+            { c with Classes = c.Classes |> u }
+         Variables =
+          fun u (c: EquivalenceClasses<'var, 'value>) ->
+            { c with Variables = c.Variables |> u } |}
 
     static member Empty: EquivalenceClasses<'var, 'value> =
       { Classes = Map.empty
         Variables = Map.empty }
 
-    static member EnsureVariableExists (var: 'var) (classes: EquivalenceClasses<'var, 'value>) =
+    static member EnsureVariableExists
+      (var: 'var)
+      (classes: EquivalenceClasses<'var, 'value>)
+      =
       if classes.Variables.ContainsKey var then
         classes
       else
         classes
         |> (EquivalenceClasses.Updaters.Variables(Map.add var $"{var}")
-            >> EquivalenceClasses.Updaters.Classes(Map.add $"{var}" (EquivalenceClass.FromVariable var)))
+            >> EquivalenceClasses.Updaters.Classes(
+              Map.add $"{var}" (EquivalenceClass.FromVariable var)
+            ))
 
     static member private tryGetKey(var: 'var, loc0: 'context) =
       state {
@@ -112,12 +126,17 @@ module EquivalenceClasses =
 
     static member private getKey(var: 'var, loc0: 'context) =
       state {
-        let! key = EquivalenceClasses<'var, 'value>.tryGetKey (var, loc0) |> state.Catch
+        let! key =
+          EquivalenceClasses<'var, 'value>.tryGetKey (var, loc0) |> state.Catch
 
         match key with
         | Left key -> return key
         | Right _ ->
-          do! state.SetState(EquivalenceClasses.Updaters.Variables(Map.add var $"{var}"))
+          do!
+            state.SetState(
+              EquivalenceClasses.Updaters.Variables(Map.add var $"{var}")
+            )
+
           return $"{var}"
       }
 
@@ -165,13 +184,18 @@ module EquivalenceClasses =
          >
       =
       state {
-        let! varClass = EquivalenceClasses.tryGetVarClass (key, loc0) |> state.Catch
+        let! varClass =
+          EquivalenceClasses.tryGetVarClass (key, loc0) |> state.Catch
 
         match varClass with
         | Left varClass -> return varClass
         | Right _ ->
           let initialClass = var |> EquivalenceClass.FromVariable
-          do! state.SetState(EquivalenceClasses.Updaters.Classes(Map.add key initialClass))
+
+          do!
+            state.SetState(
+              EquivalenceClasses.Updaters.Classes(Map.add key initialClass)
+            )
 
           return initialClass
       }
@@ -203,7 +227,10 @@ module EquivalenceClasses =
               |> state.Throw
           | None ->
             if var_class.Variables.Count = 1 then
-              do! state.SetState(EquivalenceClasses.Updaters.Classes(Map.remove var_key))
+              do!
+                state.SetState(
+                  EquivalenceClasses.Updaters.Classes(Map.remove var_key)
+                )
             else
               return!
                 (fun () ->
@@ -229,20 +256,34 @@ module EquivalenceClasses =
         else
           let! var_key = EquivalenceClasses.getKey (var, loc0)
           let! var_class = EquivalenceClasses.getVarClass loc0 var_key var
-          do! state.SetState(EquivalenceClasses.Updaters.Classes(Map.remove var_key))
+
+          do!
+            state.SetState(
+              EquivalenceClasses.Updaters.Classes(Map.remove var_key)
+            )
 
           for otherVar in var_class.Variables do
             let! other_var_key = EquivalenceClasses.getKey (otherVar, loc0)
-            let! other_var_class = EquivalenceClasses.getVarClass loc0 other_var_key otherVar
 
-            let other_var_class =
-              other_var_class |> EquivalenceClass.Updaters.Variables(Set.remove var)
+            let! other_var_class =
+              EquivalenceClasses.getVarClass loc0 other_var_key otherVar
 
             let other_var_class =
               other_var_class
-              |> EquivalenceClass.Updaters.Representative(Option.orElse var_class.Representative)
+              |> EquivalenceClass.Updaters.Variables(Set.remove var)
 
-            do! state.SetState(EquivalenceClasses.Updaters.Classes(Map.add other_var_key other_var_class))
+            let other_var_class =
+              other_var_class
+              |> EquivalenceClass.Updaters.Representative(
+                Option.orElse var_class.Representative
+              )
+
+            do!
+              state.SetState(
+                EquivalenceClasses.Updaters.Classes(
+                  Map.add other_var_key other_var_class
+                )
+              )
 
           return ()
       }
@@ -265,21 +306,26 @@ module EquivalenceClasses =
         | None ->
           return
             eqClass
-            |> EquivalenceClass.Updaters.Representative(value |> Some |> replaceWith)
+            |> EquivalenceClass.Updaters.Representative(
+              value |> Some |> replaceWith
+            )
         | Some currentValue ->
           do! valueOperations.equalize (currentValue, value)
 
           let! winner =
             valueOperations.tryCompare (currentValue, value)
             |> sum.OfOption(
-              (fun () -> $"unification cannot compare {value} and {currentValue}")
+              (fun () ->
+                $"unification cannot compare {value} and {currentValue}")
               |> Errors.Singleton loc0
             )
             |> state.OfSum
 
           return
             eqClass
-            |> EquivalenceClass.Updaters.Representative(winner |> Some |> replaceWith)
+            |> EquivalenceClass.Updaters.Representative(
+              winner |> Some |> replaceWith
+            )
       }
     //     { classes with
     //         Classes =
@@ -288,7 +334,9 @@ module EquivalenceClasses =
     //             | Some c -> c |> u |> Some
     //             | None -> EquivalenceClass.Empty |> u |> Some) })
 
-    static member private deleteVarClass key : State<unit, _, EquivalenceClasses<'var, 'value>, Errors<'context>> =
+    static member private deleteVarClass
+      key
+      : State<unit, _, EquivalenceClasses<'var, 'value>, Errors<'context>> =
       state.SetState(fun (classes: EquivalenceClasses<'var, 'value>) ->
         { classes with
             Classes = classes.Classes |> Map.remove key })
@@ -309,19 +357,33 @@ module EquivalenceClasses =
         match varOrvalue with
         | Right value ->
           let! varClass = EquivalenceClasses.getVarClass loc0 key var
-          let! varClass = EquivalenceClasses.mergeRepresentative loc0 varClass value
-          do! state.SetState(EquivalenceClasses.Updaters.Classes(Map.add key varClass))
+
+          let! varClass =
+            EquivalenceClasses.mergeRepresentative loc0 varClass value
+
+          do!
+            state.SetState(
+              EquivalenceClasses.Updaters.Classes(Map.add key varClass)
+            )
         | Left otherVar ->
           let! varClass = EquivalenceClasses.getVarClass loc0 key var
 
           if varClass.Variables.Contains otherVar then
             return ()
           else
-            let varClass = varClass |> EquivalenceClass.Updaters.Variables(Set.add otherVar)
-            do! state.SetState(EquivalenceClasses.Updaters.Classes(Map.add key varClass))
+            let varClass =
+              varClass |> EquivalenceClass.Updaters.Variables(Set.add otherVar)
+
+            do!
+              state.SetState(
+                EquivalenceClasses.Updaters.Classes(Map.add key varClass)
+              )
+
             let! otherKey = EquivalenceClasses.getKey (otherVar, loc0)
             do! EquivalenceClasses.bindKeyVar key otherVar
-            let! otherClassToBeMerged = EquivalenceClasses.tryGetVarClass (otherKey, loc0) |> state.Catch
+
+            let! otherClassToBeMerged =
+              EquivalenceClasses.tryGetVarClass (otherKey, loc0) |> state.Catch
 
             match otherClassToBeMerged with
             | Right _ ->
@@ -346,7 +408,13 @@ module EquivalenceClasses =
               | None -> return ()
               | Some value ->
                 let! varClass = EquivalenceClasses.getVarClass loc0 key var
-                let! varClass = EquivalenceClasses.mergeRepresentative loc0 varClass value
-                do! state.SetState(EquivalenceClasses.Updaters.Classes(Map.add key varClass))
+
+                let! varClass =
+                  EquivalenceClasses.mergeRepresentative loc0 varClass value
+
+                do!
+                  state.SetState(
+                    EquivalenceClasses.Updaters.Classes(Map.add key varClass)
+                  )
 
       }

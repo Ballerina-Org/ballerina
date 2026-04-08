@@ -29,11 +29,18 @@ module QueryCaseRecordDes =
     loc0
     (recur:
       ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>
-        -> TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt>)
+        -> TypeCheckerResult<
+          (TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>),
+          'valueExt
+         >)
     (expr: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
     (record: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
     (field: Identifier)
-    : TypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt> =
+    : TypeCheckerResult<
+        (TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>),
+        'valueExt
+       >
+    =
     let ofSum (p: Sum<'a, Errors<Unit>>) =
       p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
 
@@ -72,7 +79,9 @@ module QueryCaseRecordDes =
                   |> TypeCheckedExprQueryExpr.Create expr.Location,
                   field_t
               }
-              |> state.MapError(Errors<_>.MapPriority(replaceWith ErrorPriority.High))
+              |> state.MapError(
+                Errors<_>.MapPriority(replaceWith ErrorPriority.High)
+              )
           })
           (state {
             let! json_t = record_t |> TypeQueryRow.AsJson |> ofSum
@@ -82,7 +91,8 @@ module QueryCaseRecordDes =
                 (state {
                   let! record_t = json_t |> TypeValue.AsRecord |> ofSum
 
-                  let! field_id = TypeCheckState.TryResolveIdentifier(field, loc0)
+                  let! field_id =
+                    TypeCheckState.TryResolveIdentifier(field, loc0)
 
                   let! field_sym =
                     TypeCheckState.tryFindRecordFieldSymbol (field_id, loc0)
@@ -93,7 +103,8 @@ module QueryCaseRecordDes =
                     let availableFields =
                       record_t
                       |> OrderedMap.toSeq
-                      |> Seq.map (fun (fieldSym, _fieldType) -> fieldSym.Name.LocalName)
+                      |> Seq.map (fun (fieldSym, _fieldType) ->
+                        fieldSym.Name.LocalName)
                       |> formatAvailableFieldNames
 
                     record_t
@@ -104,7 +115,11 @@ module QueryCaseRecordDes =
                     |> ofSum
 
                   return
-                    TypeCheckedExprQueryExprRec.QueryRecordDes(record_e, field_id, true)
+                    TypeCheckedExprQueryExprRec.QueryRecordDes(
+                      record_e,
+                      field_id,
+                      true
+                    )
                     |> TypeCheckedExprQueryExpr.Create expr.Location,
                     field_t |> TypeQueryRow.Json
                 })
@@ -115,12 +130,14 @@ module QueryCaseRecordDes =
                     let availableFields =
                       record_t
                       |> OrderedMap.toSeq
-                      |> Seq.map (fun (fieldSym, _fieldType) -> fieldSym.Name.LocalName)
+                      |> Seq.map (fun (fieldSym, _fieldType) ->
+                        fieldSym.Name.LocalName)
                       |> formatAvailableFieldNames
 
                     record_t
                     |> OrderedMap.toSeq
-                    |> Seq.tryFind (fun (field_sym, _) -> field_sym.Name = field)
+                    |> Seq.tryFind (fun (field_sym, _) ->
+                      field_sym.Name = field)
                     |> sum.OfOption(
                       Errors.Singleton loc0 (fun () ->
                         $"Type checking error: record lookup failed, field %s{field.LocalName} not found. Available fields: %s{availableFields}")
@@ -136,7 +153,9 @@ module QueryCaseRecordDes =
                     |> TypeCheckedExprQueryExpr.Create expr.Location,
                     field_t |> TypeQueryRow.Json
                 })
-              |> state.MapError(Errors<_>.MapPriority(replaceWith ErrorPriority.High))
+              |> state.MapError(
+                Errors<_>.MapPriority(replaceWith ErrorPriority.High)
+              )
           })
         |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
     }

@@ -11,12 +11,18 @@ type DeltaSerializationContext<'valueExtension, 'valueExtensionDTO, 'deltaExtens
   and 'valueExtensionDTO: not struct
   and 'deltaExtensionDTO: not null
   and 'deltaExtensionDTO: not struct> =
-  { SerializationContext: SerializationContext<'valueExtension, 'valueExtensionDTO>
+  { SerializationContext:
+      SerializationContext<'valueExtension, 'valueExtensionDTO>
     ToDTO:
       'deltaExtension
         -> Reader<
           DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>,
-          DeltaSerializationContext<'valueExtension, 'valueExtensionDTO, 'deltaExtension, 'deltaExtensionDTO>,
+          DeltaSerializationContext<
+            'valueExtension,
+            'valueExtensionDTO,
+            'deltaExtension,
+            'deltaExtensionDTO
+           >,
           Errors<unit>
          >
 
@@ -24,17 +30,35 @@ type DeltaSerializationContext<'valueExtension, 'valueExtensionDTO, 'deltaExtens
       'deltaExtensionDTO
         -> Reader<
           Delta<'valueExtension, 'deltaExtension>,
-          DeltaSerializationContext<'valueExtension, 'valueExtensionDTO, 'deltaExtension, 'deltaExtensionDTO>,
+          DeltaSerializationContext<
+            'valueExtension,
+            'valueExtensionDTO,
+            'deltaExtension,
+            'deltaExtensionDTO
+           >,
           Errors<unit>
          > }
 
   static member Create
-    (serializationContext: SerializationContext<'valueExtension, 'valueExtensionDTO>)
-    : DeltaSerializationContext<'valueExtension, 'valueExtensionDTO, 'deltaExtension, 'deltaExtensionDTO> =
+    (serializationContext:
+      SerializationContext<'valueExtension, 'valueExtensionDTO>)
+    : DeltaSerializationContext<
+        'valueExtension,
+        'valueExtensionDTO,
+        'deltaExtension,
+        'deltaExtensionDTO
+       >
+    =
     { SerializationContext = serializationContext
       ToDTO =
         fun ext ->
-          reader.Throw(Errors.Singleton () (fun _ -> $"Undefined delta extension conversion to DTO for {ext}."))
+          reader.Throw(
+            Errors.Singleton () (fun _ ->
+              $"Undefined delta extension conversion to DTO for {ext}.")
+          )
       FromDTO =
         fun ext ->
-          reader.Throw(Errors.Singleton () (fun _ -> $"Undefined delta extension conversion from DTO for {ext}.")) }
+          reader.Throw(
+            Errors.Singleton () (fun _ ->
+              $"Undefined delta extension conversion from DTO for {ext}.")
+          ) }

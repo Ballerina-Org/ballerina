@@ -14,20 +14,35 @@ module DeltaDeserializer =
     (deltaDTO: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>)
     : Reader<
         Delta<'valueExtension, 'deltaExtension>,
-        DeltaSerializationContext<'valueExtension, 'valueExtensionDTO, 'deltaExtension, 'deltaExtensionDTO>,
+        DeltaSerializationContext<
+          'valueExtension,
+          'valueExtensionDTO,
+          'deltaExtension,
+          'deltaExtensionDTO
+         >,
         Errors<unit>
        >
     =
     reader {
       let! multipleDTO = assertValue deltaDTO.Multiple "multiple deltas"
-      return! multipleDTO |> Array.map deltaFromDTO |> reader.All |> reader.Map Multiple
+
+      return!
+        multipleDTO
+        |> Array.map deltaFromDTO
+        |> reader.All
+        |> reader.Map Multiple
     }
 
   and replaceFromDTO
     (deltaDTO: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>)
     : Reader<
         Delta<'valueExtension, 'deltaExtension>,
-        DeltaSerializationContext<'valueExtension, 'valueExtensionDTO, 'deltaExtension, 'deltaExtensionDTO>,
+        DeltaSerializationContext<
+          'valueExtension,
+          'valueExtensionDTO,
+          'deltaExtension,
+          'deltaExtensionDTO
+         >,
         Errors<unit>
        >
     =
@@ -36,7 +51,8 @@ module DeltaDeserializer =
 
       return!
         valueFromDTO valueDTO
-        |> reader.MapContext(fun deltaContext -> deltaContext.SerializationContext)
+        |> reader.MapContext(fun deltaContext ->
+          deltaContext.SerializationContext)
         |> reader.Map Replace
     }
 
@@ -44,13 +60,21 @@ module DeltaDeserializer =
     (deltaDTO: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>)
     : Reader<
         Delta<'valueExtension, 'deltaExtension>,
-        DeltaSerializationContext<'valueExtension, 'valueExtensionDTO, 'deltaExtension, 'deltaExtensionDTO>,
+        DeltaSerializationContext<
+          'valueExtension,
+          'valueExtensionDTO,
+          'deltaExtension,
+          'deltaExtensionDTO
+         >,
         Errors<unit>
        >
     =
     reader {
       let! recordDTO = assertValue deltaDTO.Record "record delta"
-      let! field, deltaDTO = assertSingleElementDictionary recordDTO "record delta"
+
+      let! field, deltaDTO =
+        assertSingleElementDictionary recordDTO "record delta"
+
       let! delta = deltaFromDTO deltaDTO
       return Record(field, delta)
     }
@@ -59,7 +83,12 @@ module DeltaDeserializer =
     (deltaDTO: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>)
     : Reader<
         Delta<'valueExtension, 'deltaExtension>,
-        DeltaSerializationContext<'valueExtension, 'valueExtensionDTO, 'deltaExtension, 'deltaExtensionDTO>,
+        DeltaSerializationContext<
+          'valueExtension,
+          'valueExtensionDTO,
+          'deltaExtension,
+          'deltaExtensionDTO
+         >,
         Errors<unit>
        >
     =
@@ -74,13 +103,21 @@ module DeltaDeserializer =
     (deltaDTO: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>)
     : Reader<
         Delta<'valueExtension, 'deltaExtension>,
-        DeltaSerializationContext<'valueExtension, 'valueExtensionDTO, 'deltaExtension, 'deltaExtensionDTO>,
+        DeltaSerializationContext<
+          'valueExtension,
+          'valueExtensionDTO,
+          'deltaExtension,
+          'deltaExtensionDTO
+         >,
         Errors<unit>
        >
     =
     reader {
       let! tupleDTO = assertValue deltaDTO.Tuple "tuple delta"
-      let! position, deltaDTO = assertSingleElementDictionary tupleDTO "tuple delta"
+
+      let! position, deltaDTO =
+        assertSingleElementDictionary tupleDTO "tuple delta"
+
       let! delta = deltaFromDTO deltaDTO
       return Tuple(position, delta)
     }
@@ -89,13 +126,21 @@ module DeltaDeserializer =
     (deltaDTO: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>)
     : Reader<
         Delta<'valueExtension, 'deltaExtension>,
-        DeltaSerializationContext<'valueExtension, 'valueExtensionDTO, 'deltaExtension, 'deltaExtensionDTO>,
+        DeltaSerializationContext<
+          'valueExtension,
+          'valueExtensionDTO,
+          'deltaExtension,
+          'deltaExtensionDTO
+         >,
         Errors<unit>
        >
     =
     reader {
       let! sumDTO = assertValue deltaDTO.Sum "sum delta"
-      let! caseIndex, deltaDTO = assertSingleElementDictionary sumDTO "sum delta"
+
+      let! caseIndex, deltaDTO =
+        assertSingleElementDictionary sumDTO "sum delta"
+
       let! delta = deltaFromDTO deltaDTO
       return Sum(caseIndex, delta)
     }
@@ -104,7 +149,12 @@ module DeltaDeserializer =
     (deltaDTO: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>)
     : Reader<
         Delta<'valueExtension, 'deltaExtension>,
-        DeltaSerializationContext<'valueExtension, 'valueExtensionDTO, 'deltaExtension, 'deltaExtensionDTO>,
+        DeltaSerializationContext<
+          'valueExtension,
+          'valueExtensionDTO,
+          'deltaExtension,
+          'deltaExtensionDTO
+         >,
         Errors<unit>
        >
     =
@@ -123,7 +173,12 @@ module DeltaDeserializer =
     (deltaDTO: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>)
     : Reader<
         Delta<'valueExtension, 'deltaExtension>,
-        DeltaSerializationContext<'valueExtension, 'valueExtensionDTO, 'deltaExtension, 'deltaExtensionDTO>,
+        DeltaSerializationContext<
+          'valueExtension,
+          'valueExtensionDTO,
+          'deltaExtension,
+          'deltaExtensionDTO
+         >,
         Errors<unit>
        >
     =
@@ -135,7 +190,10 @@ module DeltaDeserializer =
          tupleFromDTO deltaDTO
          sumFromDTO deltaDTO
          extFromDTO deltaDTO
-         reader.Throw(Errors.Singleton () (fun _ -> $"The value {deltaDTO} cannot be converted from DTO.")) ])
+         reader.Throw(
+           Errors.Singleton () (fun _ ->
+             $"The value {deltaDTO} cannot be converted from DTO.")
+         ) ])
       |> NonEmptyList
     )
 
@@ -144,13 +202,20 @@ module DeltaDeserializer =
       (json: string)
       : Reader<
           Delta<'valueExtension, 'deltaExtension>,
-          DeltaSerializationContext<'valueExtension, 'valueExtensionDTO, 'deltaExtension, 'deltaExtensionDTO>,
+          DeltaSerializationContext<
+            'valueExtension,
+            'valueExtensionDTO,
+            'deltaExtension,
+            'deltaExtensionDTO
+           >,
           Errors<unit>
          >
       =
       reader {
         let deltaDTO: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO> =
-          JsonSerializer.Deserialize<DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>>(
+          JsonSerializer.Deserialize<
+            DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>
+           >(
             json,
             jsonSerializationConfiguration
           )

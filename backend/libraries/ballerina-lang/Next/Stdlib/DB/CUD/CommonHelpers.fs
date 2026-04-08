@@ -19,7 +19,12 @@ module CommonHelpers =
     (loc0: Location)
     (v: Value<TypeValue<'ext>, 'ext>)
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
-    : Reader<EntityRef<'db, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Location>> =
+    : Reader<
+        EntityRef<'db, 'ext>,
+        ExprEvalContext<'runtimeContext, 'ext>,
+        Errors<Location>
+       >
+    =
 
     reader {
       let! v, _ =
@@ -31,7 +36,9 @@ module CommonHelpers =
       let! v =
         v
         |> valueLens.Get
-        |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
+        |> sum.OfOption(
+          Errors.Singleton loc0 (fun () -> "Cannot get value from extension")
+        )
         |> reader.OfSum
 
       let! v =
@@ -44,12 +51,18 @@ module CommonHelpers =
     }
 
   /// Extract relation ref from extension value in the first step of operation application
-  let extractRelationRefFromValue<'runtimeContext, 'db, 'ext when 'ext: comparison>
+  let extractRelationRefFromValue<'runtimeContext, 'db, 'ext
+    when 'ext: comparison>
     (loc0: Location)
     (v: Value<TypeValue<'ext>, 'ext>)
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
     (fieldName: string)
-    : Reader<RelationRef<'db, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Location>> =
+    : Reader<
+        RelationRef<'db, 'ext>,
+        ExprEvalContext<'runtimeContext, 'ext>,
+        Errors<Location>
+       >
+    =
     reader {
       let! v =
         v
@@ -60,7 +73,10 @@ module CommonHelpers =
       let! v =
         v
         |> Map.tryFind (ResolvedIdentifier.Create fieldName)
-        |> sum.OfOption(Errors.Singleton loc0 (fun () -> $"Cannot find '{fieldName}' field in operation"))
+        |> sum.OfOption(
+          Errors.Singleton loc0 (fun () ->
+            $"Cannot find '{fieldName}' field in operation")
+        )
         |> reader.OfSum
 
       let! v, _ =
@@ -72,7 +88,9 @@ module CommonHelpers =
       let! v =
         v
         |> valueLens.Get
-        |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
+        |> sum.OfOption(
+          Errors.Singleton loc0 (fun () -> "Cannot get value from extension")
+        )
         |> reader.OfSum
 
       let! v =

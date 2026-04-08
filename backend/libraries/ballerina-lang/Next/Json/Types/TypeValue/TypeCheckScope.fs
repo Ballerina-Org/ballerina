@@ -23,14 +23,33 @@ module TypeCheckScope =
           let fields = Map.ofArray fields
 
 
-          let! ty = fields |> Map.tryFindWithError "type" "TypeCheckScope" (fun () -> "type") ()
+          let! ty =
+            fields
+            |> Map.tryFindWithError
+              "type"
+              "TypeCheckScope"
+              (fun () -> "type")
+              ()
+
           let ty = JsonValue.AsString ty |> Sum.toOption
-          let! md = fields |> Map.tryFindWithError "module" "TypeCheckScope" (fun () -> "module") ()
+
+          let! md =
+            fields
+            |> Map.tryFindWithError
+              "module"
+              "TypeCheckScope"
+              (fun () -> "module")
+              ()
+
           let! md = JsonValue.AsString md
 
           let! assembly =
             fields
-            |> Map.tryFindWithError "assembly" "TypeCheckScope" (fun () -> "module") ()
+            |> Map.tryFindWithError
+              "assembly"
+              "TypeCheckScope"
+              (fun () -> "module")
+              ()
 
           let! assembly = JsonValue.AsString assembly
 

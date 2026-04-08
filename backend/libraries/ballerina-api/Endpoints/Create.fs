@@ -32,11 +32,20 @@ module Create =
   let create<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
     when 'customExtension: comparison and 'db: comparison>
     (app: IEndpointRouteBuilder)
-    (context: APIContext<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
+    (context:
+      APIContext<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
     =
     app.MapPost(
       "/{tenantId}/{schemaName}/{entityName}/create",
-      Func<HttpContext, 'tenantId, 'schemaName, string, bool, CreatePayload, IResult>
+      Func<
+        HttpContext,
+        'tenantId,
+        'schemaName,
+        string,
+        bool,
+        CreatePayload,
+        IResult
+       >
         (fun httpContext tenantId schemaName entityName draft payload ->
           let entityId = payload.Id
           let entity = payload.Entity
@@ -44,7 +53,11 @@ module Create =
 
           let result =
             sum {
-              let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
+              let! dbio,
+                   languageContext,
+                   evalContext,
+                   typeCheckContext,
+                   typeCheckState =
                 getDbDescriptor tenantId schemaName draft context
 
               let! _tableDescriptor =
@@ -53,53 +66,89 @@ module Create =
                 |> Sum.fromOption (fun () ->
                   Errors.Singleton Location.Unknown (fun () ->
                     $"Entity {entityName} not found in schema {dbio.Schema}."))
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let! schema =
                 dbio.SchemaAsValue
                 |> Value.AsRecord
                 |> toUknonwLocation
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let! entities =
                 schema
                 |> Map.tryFindWithError
-                  ("Entities" |> Identifier.LocalScope |> ResolvedIdentifier.FromIdentifier)
+                  ("Entities"
+                   |> Identifier.LocalScope
+                   |> ResolvedIdentifier.FromIdentifier)
                   "schema"
                   (fun () -> "Entities")
                   Location.Unknown
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let! entities =
                 entities
                 |> Value.AsRecord
-                |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError(
+                  Errors.MapContext(replaceWith Location.Unknown)
+                )
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let! entityDescriptor =
                 entities
                 |> Map.tryFindWithError
-                  (entityName |> Identifier.LocalScope |> ResolvedIdentifier.FromIdentifier)
+                  (entityName
+                   |> Identifier.LocalScope
+                   |> ResolvedIdentifier.FromIdentifier)
                   "schema"
                   (fun () -> "Entities")
                   Location.Unknown
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let! idValue =
                 runDTOConverter languageContext (valueFromDTO entityId)
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let! entityValue =
                 runDTOConverter languageContext (valueFromDTO entity)
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
-              let idType, entityType = _tableDescriptor.Id, _tableDescriptor.TypeOriginal
+              let idType, entityType =
+                _tableDescriptor.Id, _tableDescriptor.TypeOriginal
 
-              do! typeCheckValue idValue idType languageContext typeCheckContext typeCheckState
+              do!
+                typeCheckValue
+                  idValue
+                  idType
+                  languageContext
+                  typeCheckContext
+                  typeCheckState
 
-              do! typeCheckValue entityValue entityType languageContext typeCheckContext typeCheckState
+              do!
+                typeCheckValue
+                  entityValue
+                  entityType
+                  languageContext
+                  typeCheckContext
+                  typeCheckState
 
-              let doUpdateExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+              let doUpdateExpr
+                : TypeCheckedExpr<
+                    ValueExt<'runtimeContext, 'db, 'customExtension>
+                   > =
                 TypeCheckedExpr.UnsafeApplyForUntypedEval(
                   TypeCheckedExpr.UnsafeApplyForUntypedEval(
                     TypeCheckedExpr.UnsafeLookupForUntypedEval(
@@ -113,20 +162,36 @@ module Create =
                     )
                   ),
                   TypeCheckedExpr.UnsafeTupleConsForUntypedEval
-                    [ TypeCheckedExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-                      TypeCheckedExpr.FromValue(entityValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star) ]
+                    [ TypeCheckedExpr.FromValue(
+                        idValue,
+                        TypeValue.CreatePrimitive PrimitiveType.Unit,
+                        Kind.Star
+                      )
+                      TypeCheckedExpr.FromValue(
+                        entityValue,
+                        TypeValue.CreatePrimitive PrimitiveType.Unit,
+                        Kind.Star
+                      ) ]
                 )
 
               let! evalResult =
                 Expr.Eval(
-                  NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doUpdateExpr, []))
+                  NonEmptyList.prependList
+                    languageContext.TypeCheckedPreludes
+                    (NonEmptyList.OfList(doUpdateExpr, []))
                 )
-                |> Reader.Run(evalContext |> context.PermissionHookInjector httpContext)
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> Reader.Run(
+                  evalContext |> context.PermissionHookInjector httpContext
+                )
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let! result =
                 runDTOConverter languageContext (valueToDTO evalResult)
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               return result
             }

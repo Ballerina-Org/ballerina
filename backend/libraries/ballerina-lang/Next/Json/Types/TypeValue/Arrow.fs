@@ -21,22 +21,31 @@ module Arrow =
   type TypeValue<'valueExt> with
     static member FromJsonArrow<'valueExt>
       (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors<unit>>)
-      : JsonValue -> Sum<TypeValue<'valueExt> * TypeValue<'valueExt>, Errors<unit>> =
-      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun arrowFields ->
-        sum {
-          let! arrowFields = arrowFields |> JsonValue.AsRecordMap
+      : JsonValue
+          -> Sum<TypeValue<'valueExt> * TypeValue<'valueExt>, Errors<unit>>
+      =
+      Sum.assertDiscriminatorAndContinueWithValue
+        discriminator
+        (fun arrowFields ->
+          sum {
+            let! arrowFields = arrowFields |> JsonValue.AsRecordMap
 
-          let! param =
-            arrowFields
-            |> (Map.tryFindWithError "param" "arrow" (fun () -> "param") () >>= fromRootJson)
+            let! param =
+              arrowFields
+              |> (Map.tryFindWithError "param" "arrow" (fun () -> "param") ()
+                  >>= fromRootJson)
 
-          let! returnType =
-            arrowFields
-            |> (Map.tryFindWithError "returnType" "arrow" (fun () -> "returnType") ()
-                >>= fromRootJson)
+            let! returnType =
+              arrowFields
+              |> (Map.tryFindWithError
+                    "returnType"
+                    "arrow"
+                    (fun () -> "returnType")
+                    ()
+                  >>= fromRootJson)
 
-          return param, returnType
-        })
+            return param, returnType
+          })
 
     static member ToJsonArrow
       (rootToJson: TypeValue<'valueExt> -> JsonValue)

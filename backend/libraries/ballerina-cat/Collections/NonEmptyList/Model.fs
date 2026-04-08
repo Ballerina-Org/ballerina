@@ -24,9 +24,13 @@ module NonEmptyList =
       let l = l |> NonEmptyList.ToList |> List.rev
       NonEmptyList.OfList(l.Head, l.Tail)
 
-    static member map (f: 'e -> 'b) (NonEmptyList(h, t): NonEmptyList<'e>) = NonEmptyList(f h, t |> List.map f)
+    static member map (f: 'e -> 'b) (NonEmptyList(h, t): NonEmptyList<'e>) =
+      NonEmptyList(f h, t |> List.map f)
 
-    static member mapi (f: int -> 'e -> 'b) (NonEmptyList(h, t): NonEmptyList<'e>) : NonEmptyList<'b> =
+    static member mapi
+      (f: int -> 'e -> 'b)
+      (NonEmptyList(h, t): NonEmptyList<'e>)
+      : NonEmptyList<'b> =
       NonEmptyList(f 0 h, t |> List.mapi (fun i e -> f (i + 1) e))
 
     static member fold
@@ -41,7 +45,10 @@ module NonEmptyList =
       match l with
       | NonEmptyList(h, t) -> List.reduce f (h :: t)
 
-    static member append (NonEmptyList(head1, tail1): NonEmptyList<'e>) (NonEmptyList(head2, tail2): NonEmptyList<'e>) =
+    static member append
+      (NonEmptyList(head1, tail1): NonEmptyList<'e>)
+      (NonEmptyList(head2, tail2): NonEmptyList<'e>)
+      =
       NonEmptyList.OfList(head1, tail1 @ [ head2 ] @ tail2)
 
     static member ToList(l: NonEmptyList<'e>) =
@@ -70,11 +77,16 @@ module NonEmptyList =
 
     static member One(e: 'e) = NonEmptyList(e, [])
 
-    static member prependList (l: List<'e>) (NonEmptyList(head, tail): NonEmptyList<'e>) =
+    static member prependList
+      (l: List<'e>)
+      (NonEmptyList(head, tail): NonEmptyList<'e>)
+      =
       match l with
       | [] -> NonEmptyList(head, tail)
-      | listHead :: listTail -> NonEmptyList.OfList(listHead, listTail @ [ head ] @ tail)
+      | listHead :: listTail ->
+        NonEmptyList.OfList(listHead, listTail @ [ head ] @ tail)
 
     static member length(NonEmptyList(_, t): NonEmptyList<'e>) = t.Length + 1
 
-    static member contains(NonEmptyList(h, t), e) = t |> List.contains e || h = e
+    static member contains(NonEmptyList(h, t), e) =
+      t |> List.contains e || h = e

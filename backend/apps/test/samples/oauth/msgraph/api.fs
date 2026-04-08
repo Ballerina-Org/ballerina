@@ -40,7 +40,9 @@ let requestToken tenant clientId secret =
     match response.StatusCode with
     | HttpStatusCode.OK ->
       let! resultContent = response.Content.ReadAsStringAsync()
-      let deserializedContent = JsonSerializer.Deserialize<OAuthResponse>(resultContent)
+
+      let deserializedContent =
+        JsonSerializer.Deserialize<OAuthResponse>(resultContent)
 
       return
         Choice2Of2(
@@ -63,7 +65,10 @@ let getUsers (limit: int) (accessToken: string) =
     match response.StatusCode with
     | HttpStatusCode.OK ->
       let! resultContent = response.Content.ReadAsStringAsync()
-      let deserializedContent = JsonSerializer.Deserialize<OdataUserResult>(resultContent)
+
+      let deserializedContent =
+        JsonSerializer.Deserialize<OdataUserResult>(resultContent)
+
       return Choice2Of2(deserializedContent.Value)
     | _ -> return Choice1Of2 response.StatusCode
   }

@@ -32,7 +32,11 @@ open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.StdLib.String
 
 let _, languageContext, typeCheckingConfig, build_cache =
-  hddcacheWithStdExtensions<unit, MutableMemoryDB<unit, unit>> (StringTypeClass<_>.Console()) (db_ops ()) id id
+  hddcacheWithStdExtensions<unit, MutableMemoryDB<unit, unit>>
+    (StringTypeClass<_>.Console())
+    (db_ops ())
+    id
+    id
 
 let primitive (v: string) =
   $"""
@@ -139,26 +143,47 @@ in r2
 let typeCheckProgram (programName: string) (program: string) =
   sum {
     let project: ProjectBuildConfiguration =
-      { Files = NonEmptyList.OfList(FileBuildConfiguration.FromFile($"{programName}.bl", program), []) }
+      { Files =
+          NonEmptyList.OfList(
+            FileBuildConfiguration.FromFile($"{programName}.bl", program),
+            []
+          ) }
 
-    return! ProjectBuildConfiguration.BuildCached typeCheckingConfig build_cache project
+    return!
+      ProjectBuildConfiguration.BuildCached
+        typeCheckingConfig
+        build_cache
+        project
   }
 
-let runProgram expr exprs (st: TypeCheckState<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>) =
+let runProgram
+  expr
+  exprs
+  (st: TypeCheckState<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>)
+  =
   sum {
     let evalContext = ExprEvalContext.Empty()
 
     let evalContext =
-      ExprEvalContext.WithTypeCheckingSymbols (evalContext |> languageContext.ExprEvalContext) st.Symbols
+      ExprEvalContext.WithTypeCheckingSymbols
+        (evalContext |> languageContext.ExprEvalContext)
+        st.Symbols
 
     return!
-      Expr.Eval(NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(expr, exprs)))
+      Expr.Eval(
+        NonEmptyList.prependList
+          languageContext.TypeCheckedPreludes
+          (NonEmptyList.OfList(expr, exprs))
+      )
       |> Reader.Run evalContext
   }
 
 let buildAndRunProgram (programName: string) (program: string) =
   sum {
-    let! NonEmptyList(expr, exprs), _, _, (st: TypeCheckState<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>) =
+    let! NonEmptyList(expr, exprs),
+         _,
+         _,
+         (st: TypeCheckState<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>) =
       typeCheckProgram programName program
 
     return! runProgram expr exprs st
@@ -224,7 +249,9 @@ let runTests () =
 
 let testFieldIndices () =
   sum {
-    let! NonEmptyList(expr, exprs), typeValue, ctx, st = typeCheckProgram "testFieldIndices_complexType" testComplexType
+    let! NonEmptyList(expr, exprs), typeValue, ctx, st =
+      typeCheckProgram "testFieldIndices_complexType" testComplexType
+
     let! result = runProgram expr exprs st
 
     let! recordDTO =
@@ -252,7 +279,8 @@ let main _ =
   match run () with
   | Left(results, positions) ->
     for value, json, valueFromDTO in results do
-      Console.WriteLine $"PROGRAM EVALUATION:\n{value}\n\n{json}\n\n{valueFromDTO}\n============================="
+      Console.WriteLine
+        $"PROGRAM EVALUATION:\n{value}\n\n{json}\n\n{valueFromDTO}\n============================="
 
     Console.WriteLine($"POSITIONS: {positions}")
     0

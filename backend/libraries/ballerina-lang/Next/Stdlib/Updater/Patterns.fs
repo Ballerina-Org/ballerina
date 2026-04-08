@@ -6,6 +6,8 @@ module Patterns =
   open Ballerina.Errors
 
   type UpdaterOperations<'ext> with
-    static member AsApply(op: UpdaterOperations<'ext>) : Sum<UpdaterType<'ext>, Errors<unit>> =
+    static member AsApply
+      (op: UpdaterOperations<'ext>)
+      : Sum<UpdaterType<'ext>, Errors<unit>> =
       match op with
       | UpdaterOperations.Apply v -> v.Updater |> sum.Return

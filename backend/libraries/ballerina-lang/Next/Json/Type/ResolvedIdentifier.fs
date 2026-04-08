@@ -19,12 +19,16 @@ module ResolvedTypeIdentifier =
     static member FromJson =
       Sum.assertDiscriminatorAndContinueWithValue discriminator (fun nameJson ->
         sum {
-          let! assembly, module_, type_, name = nameJson |> JsonValue.AsQuadruple
+          let! assembly, module_, type_, name =
+            nameJson |> JsonValue.AsQuadruple
+
           let! assembly = assembly |> JsonValue.AsString
           let! module_ = module_ |> JsonValue.AsString
 
           let! type_ =
-            sum.Any2 (type_ |> JsonValue.AsString |> sum.Map Left) (type_ |> JsonValue.AsNull |> sum.Map Right)
+            sum.Any2
+              (type_ |> JsonValue.AsString |> sum.Map Left)
+              (type_ |> JsonValue.AsNull |> sum.Map Right)
 
           let! name = name |> JsonValue.AsString
 

@@ -23,7 +23,11 @@ type internal NonEmptyStringConverter() =
 
     match NonEmptyString.TryCreate s with
     | Some v -> v
-    | None -> raise (MessagePackSerializationException "Empty string cannot be deserialized as NonEmptyString")
+    | None ->
+      raise (
+        MessagePackSerializationException
+          "Empty string cannot be deserialized as NonEmptyString"
+      )
 
   override _.Write(writer, value, _context) =
     writer.Write(NonEmptyString.AsString value)
@@ -34,10 +38,12 @@ type internal NonEmptyStringConverter() =
 // Accepts a ConverterContext in the constructor so the serializer can inject it
 // when activating the open generic type on demand.
 // See: https://aarnott.github.io/Nerdbank.MessagePack/docs/custom-converters.html#caching-sub-converters-with-convertercontext
-type internal NonEmptySetConverter<'e when 'e: comparison>(context: ConverterContext) =
+type internal NonEmptySetConverter<'e when 'e: comparison>
+  (context: ConverterContext) =
   inherit MessagePackConverter<NonEmptySet<'e>>()
 
-  let elementConverter = context.GetConverter<'e>(ReflectionTypeShapeProvider.Default)
+  let elementConverter =
+    context.GetConverter<'e>(ReflectionTypeShapeProvider.Default)
 
   override _.Read(reader, context) =
     context.DepthStep()
@@ -50,7 +56,11 @@ type internal NonEmptySetConverter<'e when 'e: comparison>(context: ConverterCon
 
     match NonEmptySet.TryOfList(List.rev items) with
     | Some s -> s
-    | None -> raise (MessagePackSerializationException "Cannot deserialize empty collection as NonEmptySet")
+    | None ->
+      raise (
+        MessagePackSerializationException
+          "Cannot deserialize empty collection as NonEmptySet"
+      )
 
   override _.Write(writer, value, context) =
     context.DepthStep()
@@ -61,7 +71,9 @@ type internal NonEmptySetConverter<'e when 'e: comparison>(context: ConverterCon
       elementConverter.Write(&writer, &item, context)
 
 let private createSerializer (converters: MessagePackConverter seq) =
-  let defaultConverters = seq { NonEmptyStringConverter() :> MessagePackConverter }
+  let defaultConverters =
+    seq { NonEmptyStringConverter() :> MessagePackConverter }
+
   let converters = defaultConverters |> Seq.append converters
 
   MessagePackSerializer(
@@ -72,19 +84,24 @@ let private createSerializer (converters: MessagePackConverter seq) =
     // See: https://aarnott.github.io/Nerdbank.MessagePack/docs/security.html#stack-overflows
     StartingContext = SerializationContext(MaxDepth = 256),
     // Concrete (non-generic) converters are registered as instances via Converters.
-    Converters = ConverterCollection.Create(System.ReadOnlySpan(Array.ofSeq converters)),
+    Converters =
+      ConverterCollection.Create(System.ReadOnlySpan(Array.ofSeq converters)),
     // Open generic converters are registered as type definitions via ConverterTypes.
     // The serializer constructs closed instances on demand (e.g. NonEmptySetConverter<NonEmptyString>)
     // and injects the ConverterContext into the constructor automatically.
     ConverterTypes =
       ConverterTypeCollection.Create(
-        System.ReadOnlySpan [| ConverterTypeCollection.ConverterType typedefof<NonEmptySetConverter<_>> |]
+        System.ReadOnlySpan
+          [| ConverterTypeCollection.ConverterType
+               typedefof<NonEmptySetConverter<_>> |]
       )
   )
 
 type MessagePackSerializer<'value> = 'value -> Sum<byte array, Errors<Unit>>
 type MessagePackDeserializer<'value> = byte array -> Sum<'value, Errors<Unit>>
-type MessagePackAsyncDeserializer<'value> = CancellationToken -> Stream -> Tasks.ValueTask<'value>
+
+type MessagePackAsyncDeserializer<'value> =
+  CancellationToken -> Stream -> Tasks.ValueTask<'value>
 
 type MessagePackSerializerAdapter(serializer) =
   let serializer: MessagePackSerializer = serializer
@@ -95,18 +112,27 @@ type MessagePackSerializerAdapter(serializer) =
 
   member _.Serialize<'value>(value: 'value) : Sum<byte array, Errors<Unit>> =
     try
-      let typeShape = ReflectionTypeShapeProvider.Default.GetTypeShapeOrThrow<'value>()
+      let typeShape =
+        ReflectionTypeShapeProvider.Default.GetTypeShapeOrThrow<'value>()
+
       Left(serializer.Serialize(&value, typeShape))
     with ex ->
       Right(Errors.Singleton () (fun () -> ex.ToString()))
 
   member _.Deserialize<'value>(bytes: byte array) : Sum<'value, Errors<Unit>> =
     try
-      let typeShape = ReflectionTypeShapeProvider.Default.GetTypeShapeOrThrow<'value>()
+      let typeShape =
+        ReflectionTypeShapeProvider.Default.GetTypeShapeOrThrow<'value>()
+
       Left(serializer.Deserialize(bytes, typeShape))
     with ex ->
       Right(Errors.Singleton () (fun () -> ex.ToString()))
 
-  member _.DeserializeAsync<'value> (cancellation: CancellationToken) (stream: Stream) =
-    let typeShape = ReflectionTypeShapeProvider.Default.GetTypeShapeOrThrow<'value>()
+  member _.DeserializeAsync<'value>
+    (cancellation: CancellationToken)
+    (stream: Stream)
+    =
+    let typeShape =
+      ReflectionTypeShapeProvider.Default.GetTypeShapeOrThrow<'value>()
+
     serializer.DeserializeAsync(stream, typeShape, cancellation)

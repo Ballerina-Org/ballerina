@@ -31,7 +31,12 @@ module DBRunQuery =
     (listSet: List<Value<TypeValue<'ext>, 'ext>> -> 'ext)
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
     (queryTypeSymbol: Option<TypeSymbol>)
-    : TypeLambdaExtension<'runtimeContext, 'ext, 'extDTO, DBValues<'runtimeContext, 'db, 'ext>> *
+    : TypeLambdaExtension<
+        'runtimeContext,
+        'ext,
+        'extDTO,
+        DBValues<'runtimeContext, 'db, 'ext>
+       > *
       TypeSymbol *
       (Schema<'ext> -> TypeQueryRow<'ext> -> TypeValue<'ext>)
     =
@@ -40,7 +45,8 @@ module DBRunQuery =
     let dbQueryResolvedId = dbQueryId |> TypeCheckScope.Empty.Resolve
 
     let dbQuerySymbol =
-      queryTypeSymbol |> Option.defaultWith (fun () -> dbQueryId |> TypeSymbol.Create)
+      queryTypeSymbol
+      |> Option.defaultWith (fun () -> dbQueryId |> TypeSymbol.Create)
 
     let dbQueryType: TypeValue<'ext> =
       TypeValue.Imported
@@ -65,11 +71,13 @@ module DBRunQuery =
 
           }
 
-    let dbQueryKind = Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.QueryRow, Kind.Star))
+    let dbQueryKind =
+      Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.QueryRow, Kind.Star))
 
 
     let memoryDBRunId =
-      Identifier.FullyQualified([ "DB" ], "runQuery") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "DB" ], "runQuery")
+      |> TypeCheckScope.Empty.Resolve
 
     // runQuery : [s:Schema] [qt:QueryRow] => Query[s][qt] -> () + int*int -> List[QueryToType[qt]]
     let memoryDBRunType =
@@ -79,7 +87,10 @@ module DBRunQuery =
           TypeParameter.Create("row", Kind.QueryRow),
           TypeExpr.Arrow(
             TypeExpr.Apply(
-              TypeExpr.Apply(TypeExpr.Lookup(dbQueryId), TypeExpr.Lookup("schema" |> Identifier.LocalScope)),
+              TypeExpr.Apply(
+                TypeExpr.Lookup(dbQueryId),
+                TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+              ),
               TypeExpr.Lookup("row" |> Identifier.LocalScope)
             ),
             TypeExpr.Arrow(
@@ -90,14 +101,18 @@ module DBRunQuery =
                       TypeExpr.Primitive PrimitiveType.Int32 ] ],
               TypeExpr.Apply(
                 TypeExpr.Lookup("List" |> Identifier.LocalScope),
-                TypeExpr.Apply(TypeExpr.FromQueryRow, TypeExpr.Lookup("row" |> Identifier.LocalScope))
+                TypeExpr.Apply(
+                  TypeExpr.FromQueryRow,
+                  TypeExpr.Lookup("row" |> Identifier.LocalScope)
+                )
               )
             )
           )
         )
       )
 
-    let memoryDBRunKind = Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.QueryRow, Kind.Star))
+    let memoryDBRunKind =
+      Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.QueryRow, Kind.Star))
 
     let apply loc0 (query: Option<ValueQuery<TypeValue<'ext>, 'ext>>) value =
       reader {
@@ -112,12 +127,14 @@ module DBRunQuery =
             |> reader.OfSum
 
           return
-            (DBValues.QueryRun {| Query = Some q |} |> valueLens.Set, Some memoryDBRunId)
+            (DBValues.QueryRun {| Query = Some q |} |> valueLens.Set,
+             Some memoryDBRunId)
             |> Ext
         | Some q ->
           // unpack value into range, should either be 1Of2() or 2Of2(skip, take)
           match value with
-          | Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit) ->
+          | Value.Sum({ Case = 1; Count = 2 },
+                      Value.Primitive PrimitiveValue.Unit) ->
             let! res =
               db_ops.RunQuery q None
               // |> Reader.mapContext (replaceWith ctx.RuntimeContext)
@@ -144,11 +161,19 @@ module DBRunQuery =
       (loc0: Location)
       (_rest: List<TypeCheckedExpr<'ext>>)
       (v: 'ext)
-      : ExprEvaluator<'runtimeContext, 'ext, ExtEvalResult<'runtimeContext, 'ext>> =
+      : ExprEvaluator<
+          'runtimeContext,
+          'ext,
+          ExtEvalResult<'runtimeContext, 'ext>
+         >
+      =
       reader {
         let! db_value =
           valueLens.Get v
-          |> sum.OfOption((fun () -> $"Error: cannot get value from extension") |> Errors.Singleton loc0)
+          |> sum.OfOption(
+            (fun () -> $"Error: cannot get value from extension")
+            |> Errors.Singleton loc0
+          )
           |> reader.OfSum
 
         let! query =
@@ -165,12 +190,20 @@ module DBRunQuery =
       (loc0: Location)
       (_rest: List<TypeCheckedExpr<'ext>>)
       (v: 'ext)
-      : ExprEvaluator<'runtimeContext, 'ext, ExtEvalResult<'runtimeContext, 'ext>> =
+      : ExprEvaluator<
+          'runtimeContext,
+          'ext,
+          ExtEvalResult<'runtimeContext, 'ext>
+         >
+      =
       reader {
         let! v =
           v
           |> valueLens.Get
-          |> sum.OfOption((fun () -> $"Error: cannot get value from extension") |> Errors.Singleton loc0)
+          |> sum.OfOption(
+            (fun () -> $"Error: cannot get value from extension")
+            |> Errors.Singleton loc0
+          )
           |> reader.OfSum
 
         let! query =
@@ -183,7 +216,8 @@ module DBRunQuery =
       }
 
     { ExtensionType = memoryDBRunId, memoryDBRunType, memoryDBRunKind
-      ExtraBindings = [ (dbQueryResolvedId, (dbQueryType, dbQueryKind)) ] |> Map.ofList
+      ExtraBindings =
+        [ (dbQueryResolvedId, (dbQueryType, dbQueryKind)) ] |> Map.ofList
       Value = DBValues.QueryRun {| Query = None |}
       ValueLens = valueLens
       EvalToTypeApplicable = evalToTypeApplicable

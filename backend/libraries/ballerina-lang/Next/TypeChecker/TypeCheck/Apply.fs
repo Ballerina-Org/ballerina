@@ -32,7 +32,11 @@ module Apply =
     static member internal TypeCheckApply<'valueExt when 'valueExt: comparison>
       (config: TypeCheckingConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
-      : TypeChecker<ExprApply<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
+      : TypeChecker<
+          ExprApply<TypeExpr<'valueExt>, Identifier, 'valueExt>,
+          'valueExt
+         >
+      =
       fun context_t ({ F = f_expr; Arg = a_expr }) ->
         let (!) = typeCheckExpr None
         let (=>) c e = typeCheckExpr c e
@@ -53,19 +57,26 @@ module Apply =
           // do Console.ReadLine() |> ignore
 
           let ofSum (p: Sum<'a, Errors<Unit>>) =
-            p |> Sum.mapRight (Errors.MapContext(replaceWith loc0)) |> state.OfSum
+            p
+            |> Sum.mapRight (Errors.MapContext(replaceWith loc0))
+            |> state.OfSum
 
-          let rec subtype_schema (fixed_schema: Schema<'valueExt>) (sub: Schema<'valueExt>) =
+          let rec subtype_schema
+            (fixed_schema: Schema<'valueExt>)
+            (sub: Schema<'valueExt>)
+            =
             state {
               if
                 fixed_schema.Entities.Count < sub.Entities.Count
                 || fixed_schema.Relations.Count < sub.Relations.Count
               then
                 match sub.Included with
-                | Some included_schema -> return! subtype_schema fixed_schema included_schema
+                | Some included_schema ->
+                  return! subtype_schema fixed_schema included_schema
                 | None ->
                   return!
-                    (fun () -> $"Error: cannot unify schemas, {fixed_schema} is not a subtype of {sub}")
+                    (fun () ->
+                      $"Error: cannot unify schemas, {fixed_schema} is not a subtype of {sub}")
                     |> error
                     |> state.Throw
               else
@@ -76,18 +87,29 @@ module Apply =
             state {
               match f_input, t_a with
               | TypeValue.Schema fixed_schema, TypeValue.Schema sub_schema ->
-                let! (fixed_schema, sub_schema) = subtype_schema fixed_schema sub_schema
+                let! (fixed_schema, sub_schema) =
+                  subtype_schema fixed_schema sub_schema
 
                 let! res =
-                  TypeValue.Unify(loc0, fixed_schema |> TypeValue.CreateSchema, sub_schema |> TypeValue.CreateSchema)
+                  TypeValue.Unify(
+                    loc0,
+                    fixed_schema |> TypeValue.CreateSchema,
+                    sub_schema |> TypeValue.CreateSchema
+                  )
                   |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
                 return res
-              | _ -> return! TypeValue.Unify(loc0, f_input, t_a) |> Expr<'T, 'Id, 'valueExt>.liftUnification
+              | _ ->
+                return!
+                  TypeValue.Unify(loc0, f_input, t_a)
+                  |> Expr<'T, 'Id, 'valueExt>.liftUnification
             }
 
 
-          let rec pad f_constraint (f_expr: Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>) =
+          let rec pad
+            f_constraint
+            (f_expr: Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
+            =
             state {
               // do Console.WriteLine($"typechecking function expression {f_expr}...")
               // do Console.WriteLine($"with constraint {f_constraint}...")
@@ -109,7 +131,12 @@ module Apply =
                     Synthetic = true
                     Guid = guid }
 
-                do! state.SetState(TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists freshVar))
+                do!
+                  state.SetState(
+                    TypeCheckState.Updaters.Vars(
+                      UnificationState.EnsureVariableExists freshVar
+                    )
+                  )
 
                 do!
                   TypeCheckState.bindType
@@ -118,7 +145,12 @@ module Apply =
                   |> Expr.liftTypeEval
 
                 return!
-                  pad f_constraint (Expr.TypeApply(f_expr, freshVar.Name |> Identifier.LocalScope |> TypeExpr.Lookup))
+                  pad
+                    f_constraint
+                    (Expr.TypeApply(
+                      f_expr,
+                      freshVar.Name |> Identifier.LocalScope |> TypeExpr.Lookup
+                    ))
               | _ ->
                 // do Console.WriteLine($"padding done - t_f: {t_f}")
                 // do Console.WriteLine($"padding done - f_k: {f_k}")
@@ -136,7 +168,9 @@ module Apply =
                   state.Either3
                     (state {
                       let! (union_cons_t:
-                        TypeValue<'valueExt> * TypeParameter list * OrderedMap<TypeSymbol, TypeValue<'valueExt>>) =
+                        TypeValue<'valueExt> *
+                        TypeParameter list *
+                        OrderedMap<TypeSymbol, TypeValue<'valueExt>>) =
                         state {
                           match context_t with
                           | None ->
@@ -145,17 +179,25 @@ module Apply =
                               |> Errors.Singleton loc0
                               |> state.Throw
                           | Some context_t ->
-                            let! context_cases = context_t |> TypeValue.AsUnion |> sum.Map snd |> ofSum
+                            let! context_cases =
+                              context_t
+                              |> TypeValue.AsUnion
+                              |> sum.Map snd
+                              |> ofSum
 
                             let context_cases_by_id =
                               context_cases
                               |> OrderedMap.toSeq
-                              |> Seq.map (fun (k, v) -> (k.Name |> ctx.Scope.Resolve, (k, v)))
+                              |> Seq.map (fun (k, v) ->
+                                (k.Name |> ctx.Scope.Resolve, (k, v)))
                               |> OrderedMap.ofSeq
 
                             let! _case_k, case_t =
                               context_cases_by_id
-                              |> OrderedMap.tryFindWithError f_lookup "cases" f_lookup.AsFSharpString
+                              |> OrderedMap.tryFindWithError
+                                f_lookup
+                                "cases"
+                                f_lookup.AsFSharpString
                               |> ofSum
 
                             return case_t, [], context_cases
@@ -167,7 +209,9 @@ module Apply =
                           let t_a = a.Type
                           let _a_k = a.Kind
                           // do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
-                          let f_i, union_type_parameters, union_cases = union_cons_t
+                          let f_i, union_type_parameters, union_cases =
+                            union_cons_t
+
                           let f_o = union_cases |> TypeValue.CreateUnion
                           let f_k = Kind.Star
 
@@ -178,18 +222,25 @@ module Apply =
                                 let guid = Guid.CreateVersion7()
 
                                 let freshVar =
-                                  { TypeVar.Name = "fresh_var_application_" + guid.ToString()
+                                  { TypeVar.Name =
+                                      "fresh_var_application_"
+                                      + guid.ToString()
                                     Synthetic = true
                                     Guid = guid }
 
                                 do!
                                   state.SetState(
-                                    TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists freshVar)
+                                    TypeCheckState.Updaters.Vars(
+                                      UnificationState.EnsureVariableExists
+                                        freshVar
+                                    )
                                   )
 
                                 do!
                                   TypeCheckState.bindType
-                                    (freshVar.Name |> Identifier.LocalScope |> ctx.Scope.Resolve)
+                                    (freshVar.Name
+                                     |> Identifier.LocalScope
+                                     |> ctx.Scope.Resolve)
                                     (freshVar |> TypeValue.Var, tp.Kind)
                                   |> Expr.liftTypeEval
 
@@ -199,36 +250,65 @@ module Apply =
 
                           let f_o =
                             union_type_parameters
-                            |> List.fold (fun acc tp -> TypeExpr.Lambda(tp, acc)) (f_o |> TypeExpr.FromTypeValue)
+                            |> List.fold
+                              (fun acc tp -> TypeExpr.Lambda(tp, acc))
+                              (f_o |> TypeExpr.FromTypeValue)
 
                           let f_o =
                             union_type_parameters_fres_vars
                             |> List.fold
-                              (fun acc tp -> TypeExpr.Apply(acc, tp.Name |> Identifier.LocalScope |> TypeExpr.Lookup))
+                              (fun acc tp ->
+                                TypeExpr.Apply(
+                                  acc,
+                                  tp.Name
+                                  |> Identifier.LocalScope
+                                  |> TypeExpr.Lookup
+                                ))
                               f_o
 
                           let f_i =
                             union_type_parameters_fres_vars
                             |> List.fold
-                              (fun acc tp -> TypeExpr.Apply(acc, tp.Name |> Identifier.LocalScope |> TypeExpr.Lookup))
+                              (fun acc tp ->
+                                TypeExpr.Apply(
+                                  acc,
+                                  tp.Name
+                                  |> Identifier.LocalScope
+                                  |> TypeExpr.Lookup
+                                ))
                               (f_i |> TypeExpr.FromTypeValue)
 
-                          let! f_i, _ = f_i |> TypeExpr.Eval config typeCheckExpr None loc0 |> Expr.liftTypeEval
+                          let! f_i, _ =
+                            f_i
+                            |> TypeExpr.Eval config typeCheckExpr None loc0
+                            |> Expr.liftTypeEval
 
-                          do! TypeValue.Unify(loc0, f_i, t_a) |> Expr<'T, 'Id, 'valueExt>.liftUnification
+                          do!
+                            TypeValue.Unify(loc0, f_i, t_a)
+                            |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
-                          let! f_o, _ = f_o |> TypeExpr.Eval config typeCheckExpr None loc0 |> Expr.liftTypeEval
+                          let! f_o, _ =
+                            f_o
+                            |> TypeExpr.Eval config typeCheckExpr None loc0
+                            |> Expr.liftTypeEval
 
                           let! f_o =
                             f_o
-                            |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
+                            |> TypeValue.Instantiate
+                              ()
+                              (TypeExpr.Eval config typeCheckExpr)
+                              loc0
                             |> Expr.liftInstantiation
 
                           let f_lookup_t = TypeValue.CreateArrow(f_i, f_o)
 
                           return
                             TypeCheckedExpr.Apply(
-                              TypeCheckedExpr.Lookup(f_lookup, f_lookup_t, Kind.Star),
+                              TypeCheckedExpr.Lookup(
+                                f_lookup,
+                                f_lookup_t,
+                                Kind.Star
+                              ),
                               a,
                               f_o,
                               f_k,
@@ -237,10 +317,14 @@ module Apply =
                             ),
                             ctx
                         }
-                        |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+                        |> state.MapError(
+                          Errors.MapPriority(replaceWith ErrorPriority.High)
+                        )
                     })
                     (state {
-                      let! resolved = TypeCheckContext.TryFindVar(f_lookup, loc0) |> state.Catch
+                      let! resolved =
+                        TypeCheckContext.TryFindVar(f_lookup, loc0)
+                        |> state.Catch
 
                       match resolved with
                       | Left _resolved ->
@@ -252,7 +336,8 @@ module Apply =
                             let guid = Guid.CreateVersion7()
 
                             let freshVar =
-                              { TypeVar.Name = "_application_" + guid.ToString()
+                              { TypeVar.Name =
+                                  "_application_" + guid.ToString()
                                 Synthetic = true
                                 Guid = guid }
                               |> TypeValue.Var
@@ -272,7 +357,10 @@ module Apply =
 
                               let! t_res =
                                 t_f
-                                |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
+                                |> TypeValue.Instantiate
+                                  ()
+                                  (TypeExpr.Eval config typeCheckExpr)
+                                  loc0
                                 |> Expr.liftInstantiation
 
                               return t_res
@@ -289,7 +377,11 @@ module Apply =
                                 TypeValue.AsArrow t_f
                                 |> ofSum
                                 |> state.Map WithSourceMapping.Getters.Value
-                                |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium))
+                                |> state.MapError(
+                                  Errors.MapPriority(
+                                    replaceWith ErrorPriority.Medium
+                                  )
+                                )
 
                               let context_a =
                                 match f_input with
@@ -306,10 +398,22 @@ module Apply =
 
                               let! f_output =
                                 f_output
-                                |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
+                                |> TypeValue.Instantiate
+                                  ()
+                                  (TypeExpr.Eval config typeCheckExpr)
+                                  loc0
                                 |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
-                              return TypeCheckedExpr.Apply(f, a, f_output, Kind.Star, loc0, ctx.Scope), ctx
+                              return
+                                TypeCheckedExpr.Apply(
+                                  f,
+                                  a,
+                                  f_output,
+                                  Kind.Star,
+                                  loc0,
+                                  ctx.Scope
+                                ),
+                                ctx
                             })
                             (state {
                               let! a, _ = None => a_expr
@@ -327,34 +431,53 @@ module Apply =
                                     let guid = Guid.CreateVersion7()
 
                                     let freshVar =
-                                      { TypeVar.Name = "fresh_var_application_" + guid.ToString()
+                                      { TypeVar.Name =
+                                          "fresh_var_application_"
+                                          + guid.ToString()
                                         Synthetic = true
                                         Guid = guid }
 
                                     do!
                                       state.SetState(
-                                        TypeCheckState.Updaters.Vars(UnificationState.EnsureVariableExists freshVar)
+                                        TypeCheckState.Updaters.Vars(
+                                          UnificationState.EnsureVariableExists
+                                            freshVar
+                                        )
                                       )
 
                                     do!
                                       TypeCheckState.bindType
-                                        (freshVar.Name |> Identifier.LocalScope |> ctx.Scope.Resolve)
+                                        (freshVar.Name
+                                         |> Identifier.LocalScope
+                                         |> ctx.Scope.Resolve)
                                         (freshVar |> TypeValue.Var, input_k)
                                       |> Expr.liftTypeEval
 
                                     let f_t' =
-                                      TypeExpr.Apply(f_t, freshVar.Name |> Identifier.LocalScope |> TypeExpr.Lookup)
+                                      TypeExpr.Apply(
+                                        f_t,
+                                        freshVar.Name
+                                        |> Identifier.LocalScope
+                                        |> TypeExpr.Lookup
+                                      )
 
-                                    let! fresh_vars, f_t'', f_k = strip_type_lambda_args f_t' output_k
+                                    let! fresh_vars, f_t'', f_k =
+                                      strip_type_lambda_args f_t' output_k
 
 
-                                    return (freshVar, input_k) :: fresh_vars, f_t'', f_k
+                                    return
+                                      (freshVar, input_k) :: fresh_vars,
+                                      f_t'',
+                                      f_k
 
                                   | _ -> return [], f_t, f_k
                                 }
 
                               // do Console.WriteLine $"before stripping type lambdas {t_f}..."
-                              let! _fresh_vars, t_f', f_k = strip_type_lambda_args (t_f |> TypeExpr.FromTypeValue) f_k
+                              let! _fresh_vars, t_f', f_k =
+                                strip_type_lambda_args
+                                  (t_f |> TypeExpr.FromTypeValue)
+                                  f_k
                               // do Console.WriteLine $"after stripping type lambdas, t_f = {t_f'}"
                               // do Console.WriteLine $"after stripping type lambdas, f_k = {f_k}"
                               // do Console.WriteLine $"fresh_vars = {fresh_vars}"
@@ -374,7 +497,11 @@ module Apply =
                                 TypeValue.AsArrow t_f'
                                 |> ofSum
                                 |> state.Map WithSourceMapping.Getters.Value
-                                |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium))
+                                |> state.MapError(
+                                  Errors.MapPriority(
+                                    replaceWith ErrorPriority.Medium
+                                  )
+                                )
 
                               // do
                               //   Console.WriteLine
@@ -388,17 +515,34 @@ module Apply =
 
                               let! f_output =
                                 f_output
-                                |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
+                                |> TypeValue.Instantiate
+                                  ()
+                                  (TypeExpr.Eval config typeCheckExpr)
+                                  loc0
                                 |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
                               // do Console.WriteLine $"after instantiating function output type, f_output = {f_output}"
 
-                              return TypeCheckedExpr.Apply(f, a, f_output, Kind.Star, loc0, ctx.Scope), ctx
+                              return
+                                TypeCheckedExpr.Apply(
+                                  f,
+                                  a,
+                                  f_output,
+                                  Kind.Star,
+                                  loc0,
+                                  ctx.Scope
+                                ),
+                                ctx
                             })
-                            ((fun () -> $"Error: cannot resolve application, found variable {f_lookup}")
+                            ((fun () ->
+                              $"Error: cannot resolve application, found variable {f_lookup}")
                              |> error
                              |> state.Throw
-                             |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium)))
+                             |> state.MapError(
+                               Errors.MapPriority(
+                                 replaceWith ErrorPriority.Medium
+                               )
+                             ))
                           |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
                       | Right _ ->
                         let! a, _ = None => a_expr
@@ -406,10 +550,15 @@ module Apply =
                         let _a_k = a.Kind
                         // do! a_k |> Kind.AsStar |> ofSum |> state.Ignore
 
-                        if adHocPolymorphismBinaryAllOperatorNames.Contains f_lookup.Name then
+                        if
+                          adHocPolymorphismBinaryAllOperatorNames.Contains
+                            f_lookup.Name
+                        then
                           return!
                             state {
-                              let! a_primitive = t_a |> TypeValue.AsPrimitive |> ofSum
+                              let! a_primitive =
+                                t_a |> TypeValue.AsPrimitive |> ofSum
+
                               let a_primitive = a_primitive.value
 
                               let! adHocResolution =
@@ -422,7 +571,10 @@ module Apply =
                                 |> state.OfSum
 
                               let! adhoc_op, _ =
-                                !Expr.Lookup(Identifier.FullyQualified([ adHocResolution.Namespace ], f_lookup.Name),
+                                !Expr.Lookup(Identifier.FullyQualified(
+                                               [ adHocResolution.Namespace ],
+                                               f_lookup.Name
+                                             ),
                                              loc0,
                                              ctx.Scope)
 
@@ -430,16 +582,23 @@ module Apply =
 
                               let adhoc_op_k = adhoc_op.Kind
 
-                              do! adhoc_op_k |> Kind.AsStar |> ofSum |> state.Ignore
+                              do!
+                                adhoc_op_k
+                                |> Kind.AsStar
+                                |> ofSum
+                                |> state.Ignore
 
                               do!
                                 TypeValue.Unify(
                                   loc0,
                                   TypeValue.CreateArrow(
-                                    TypeValue.CreatePrimitive adHocResolution.MatchedInput,
+                                    TypeValue.CreatePrimitive
+                                      adHocResolution.MatchedInput,
                                     TypeValue.CreateArrow(
-                                      TypeValue.CreatePrimitive adHocResolution.OtherInput,
-                                      TypeValue.CreatePrimitive adHocResolution.Output
+                                      TypeValue.CreatePrimitive
+                                        adHocResolution.OtherInput,
+                                      TypeValue.CreatePrimitive
+                                        adHocResolution.Output
                                     )
                                   ),
                                   adhoc_op_t
@@ -448,63 +607,119 @@ module Apply =
 
                               let! t_res =
                                 TypeValue.CreateArrow(
-                                  TypeValue.CreatePrimitive adHocResolution.OtherInput,
-                                  TypeValue.CreatePrimitive adHocResolution.Output
+                                  TypeValue.CreatePrimitive
+                                    adHocResolution.OtherInput,
+                                  TypeValue.CreatePrimitive
+                                    adHocResolution.Output
                                 )
-                                |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
+                                |> TypeValue.Instantiate
+                                  ()
+                                  (TypeExpr.Eval config typeCheckExpr)
+                                  loc0
                                 |> Expr.liftInstantiation
 
                               let k_res = Kind.Star
-                              return TypeCheckedExpr.Apply(adhoc_op, a, t_res, k_res, loc0, ctx.Scope), ctx
+
+                              return
+                                TypeCheckedExpr.Apply(
+                                  adhoc_op,
+                                  a,
+                                  t_res,
+                                  k_res,
+                                  loc0,
+                                  ctx.Scope
+                                ),
+                                ctx
                             }
-                            |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium))
+                            |> state.MapError(
+                              Errors.MapPriority(
+                                replaceWith ErrorPriority.Medium
+                              )
+                            )
                         elif f_lookup.Name = "!" then
                           return!
                             state {
                               do!
-                                TypeValue.Unify(loc0, TypeValue.CreatePrimitive PrimitiveType.Bool, t_a)
+                                TypeValue.Unify(
+                                  loc0,
+                                  TypeValue.CreatePrimitive PrimitiveType.Bool,
+                                  t_a
+                                )
                                 |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
                               return!
                                 state {
                                   let! bool_op, _ =
-                                    !Expr.Lookup(Identifier.FullyQualified([ "bool" ], f_lookup.Name), loc0, ctx.Scope)
+                                    !Expr.Lookup(Identifier.FullyQualified(
+                                                   [ "bool" ],
+                                                   f_lookup.Name
+                                                 ),
+                                                 loc0,
+                                                 ctx.Scope)
 
                                   let bool_op_t = bool_op.Type
 
                                   let bool_op_k = bool_op.Kind
 
-                                  do! bool_op_k |> Kind.AsStar |> ofSum |> state.Ignore
+                                  do!
+                                    bool_op_k
+                                    |> Kind.AsStar
+                                    |> ofSum
+                                    |> state.Ignore
 
                                   do!
                                     TypeValue.Unify(
                                       loc0,
                                       TypeValue.CreateArrow(
-                                        TypeValue.CreatePrimitive PrimitiveType.Bool,
-                                        TypeValue.CreatePrimitive PrimitiveType.Bool
+                                        TypeValue.CreatePrimitive
+                                          PrimitiveType.Bool,
+                                        TypeValue.CreatePrimitive
+                                          PrimitiveType.Bool
                                       ),
                                       bool_op_t
                                     )
                                     |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
-                                  let t_res = TypeValue.CreatePrimitive PrimitiveType.Bool
+                                  let t_res =
+                                    TypeValue.CreatePrimitive PrimitiveType.Bool
+
                                   let k_res = Kind.Star
-                                  return TypeCheckedExpr.Apply(bool_op, a, t_res, k_res, loc0, ctx.Scope), ctx
+
+                                  return
+                                    TypeCheckedExpr.Apply(
+                                      bool_op,
+                                      a,
+                                      t_res,
+                                      k_res,
+                                      loc0,
+                                      ctx.Scope
+                                    ),
+                                    ctx
                                 }
-                                |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+                                |> state.MapError(
+                                  Errors.MapPriority(
+                                    replaceWith ErrorPriority.High
+                                  )
+                                )
 
                             }
                         else
                           return!
-                            (fun () -> $"Error: cannot resolve with ad-hoc polymorphism, found variable {f_lookup}")
+                            (fun () ->
+                              $"Error: cannot resolve with ad-hoc polymorphism, found variable {f_lookup}")
                             |> error
                             |> state.Throw
-                            |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Low))
+                            |> state.MapError(
+                              Errors.MapPriority(replaceWith ErrorPriority.Low)
+                            )
                     })
-                    ((fun () -> $"Error: cannot resolve application, found variable {f_lookup}")
+                    ((fun () ->
+                      $"Error: cannot resolve application, found variable {f_lookup}")
                      |> error
                      |> state.Throw
-                     |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.Medium)))
+                     |> state.MapError(
+                       Errors.MapPriority(replaceWith ErrorPriority.Medium)
+                     ))
                   |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
               })
               (state {
@@ -530,7 +745,10 @@ module Apply =
 
                           let! t_a =
                             t_a
-                            |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
+                            |> TypeValue.Instantiate
+                              ()
+                              (TypeExpr.Eval config typeCheckExpr)
+                              loc0
                             |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
                           return t_a, Some(TypeValue.CreateArrow(t_a, freshVar))
@@ -548,19 +766,35 @@ module Apply =
                     do! f_k |> Kind.AsStar |> ofSum |> state.Ignore
 
                     let! (f_input, f_output) =
-                      TypeValue.AsArrow t_f |> ofSum |> state.Map WithSourceMapping.Getters.Value
+                      TypeValue.AsArrow t_f
+                      |> ofSum
+                      |> state.Map WithSourceMapping.Getters.Value
 
                     // do Console.WriteLine $"Unifying function input type {f_input} with argument type {t_a}..."
                     do! unify_with_schema_subtyping f_input t_a
 
                     let! f_output =
                       f_output
-                      |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
+                      |> TypeValue.Instantiate
+                        ()
+                        (TypeExpr.Eval config typeCheckExpr)
+                        loc0
                       |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
-                    return TypeCheckedExpr.Apply(f, a, f_output, Kind.Star, loc0, ctx.Scope), ctx
+                    return
+                      TypeCheckedExpr.Apply(
+                        f,
+                        a,
+                        f_output,
+                        Kind.Star,
+                        loc0,
+                        ctx.Scope
+                      ),
+                      ctx
                   }
-                  |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+                  |> state.MapError(
+                    Errors.MapPriority(replaceWith ErrorPriority.High)
+                  )
               // $"Error: cannot resolve application"
               // |> error
               // |> state.Throw

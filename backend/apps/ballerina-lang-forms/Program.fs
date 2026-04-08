@@ -25,18 +25,30 @@ module Program =
   [<EntryPoint>]
   let main args =
     let typesFileArg =
-      new Option<string>(name = "--types", Description = "Path of the file with the type definitions for the forms.")
+      new Option<string>(
+        name = "--types",
+        Description =
+          "Path of the file with the type definitions for the forms."
+      )
 
     let formFileArg =
-      new Option<string>(name = "--forms", Description = "Path of the file with the form definitions.")
+      new Option<string>(
+        name = "--forms",
+        Description = "Path of the file with the form definitions."
+      )
 
     let logArg =
-      new Option<bool>(name = "--log", Description = "Log the result of the form type checking or the returned error.")
+      new Option<bool>(
+        name = "--log",
+        Description =
+          "Log the result of the form type checking or the returned error."
+      )
 
     let outputArg =
       new Option<string>(
         name = "--output",
-        Description = "Path of the output JSON file for the v1 generated spec result."
+        Description =
+          "Path of the output JSON file for the v1 generated spec result."
       )
 
     let rootCommand = new RootCommand "Command for the form compiler."
@@ -59,7 +71,10 @@ module Program =
 
         let compilerInput =
           { Types =
-              { Preludes = NonEmptyList.One(FileBuildConfiguration.FromFile(typesFilePath, types))
+              { Preludes =
+                  NonEmptyList.One(
+                    FileBuildConfiguration.FromFile(typesFilePath, types)
+                  )
                 Source = typesFilePath }
             ApiTypes = Map.empty
             Forms =
@@ -70,10 +85,21 @@ module Program =
           Directory.CreateDirectory logDirectory |> ignore
 
         let extensions, languageContext, typeCheckingConfig, cache =
-          hddcacheWithStdExtensions (StringTypeClass<_>.Console()) (db_ops ()) id id
+          hddcacheWithStdExtensions
+            (StringTypeClass<_>.Console())
+            (db_ops ())
+            id
+            id
 
 
-        match compileForms compilerInput cache languageContext extensions typeCheckingConfig with
+        match
+          compileForms
+            compilerInput
+            cache
+            languageContext
+            extensions
+            typeCheckingConfig
+        with
         | Left result ->
           let stringifiedResult = sprintf "%A" result
           Console.WriteLine stringifiedResult
@@ -91,7 +117,11 @@ module Program =
 
             let outputDir = Path.GetDirectoryName output
 
-            if outputDir <> null && outputDir <> "" && Directory.Exists outputDir |> not then
+            if
+              outputDir <> null
+              && outputDir <> ""
+              && Directory.Exists outputDir |> not
+            then
               Directory.CreateDirectory outputDir |> ignore
 
             File.WriteAllText(output, jsonString)
@@ -114,7 +144,9 @@ module Program =
                   StreamDisplayValueFieldName = "DisplayValue" }
 
               let schema = JsonValue.Parse jsonString
-              let parseResult = parseFromJson FormsGenTarget.golang schema codegenConfig
+
+              let parseResult =
+                parseFromJson FormsGenTarget.golang schema codegenConfig
 
               match parseResult with
               | Left(_, Some parsedForms) ->
@@ -123,14 +155,24 @@ module Program =
                     generatedLanguageSpecificConfig
                     parsedForms
                     blpLanguageExtension.typeCheck)
-                    .run (codegenConfig, { PredicateValidationHistory = Set.empty })
+                    .run (
+                      codegenConfig,
+                      { PredicateValidationHistory = Set.empty }
+                    )
                 with
-                | Left _ -> Console.WriteLine "Successfully parsed and validated forms using parseFromJson"
-                | Right validationErr -> Console.Error.WriteLine $"Validation error: {validationErr}"
-              | Left(_, None) -> Console.WriteLine "Warning: parseFromJson returned no parsed forms"
-              | Right err -> Console.Error.WriteLine $"Error from parseFromJson: {err}"
+                | Left _ ->
+                  Console.WriteLine
+                    "Successfully parsed and validated forms using parseFromJson"
+                | Right validationErr ->
+                  Console.Error.WriteLine $"Validation error: {validationErr}"
+              | Left(_, None) ->
+                Console.WriteLine
+                  "Warning: parseFromJson returned no parsed forms"
+              | Right err ->
+                Console.Error.WriteLine $"Error from parseFromJson: {err}"
             with exn ->
-              Console.Error.WriteLine $"Error calling parseFromJson: {exn.Message}"
+              Console.Error.WriteLine
+                $"Error calling parseFromJson: {exn.Message}"
 
           0
         | Right error ->

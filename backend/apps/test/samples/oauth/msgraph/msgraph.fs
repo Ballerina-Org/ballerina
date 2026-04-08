@@ -7,7 +7,8 @@ open Ballerina.Coroutines
 open OAuth.MSGraph.API
 
 let init () : EvaluatedCoroutines<_, _, _> =
-  { active = Map.empty.Add(Guid.NewGuid(), processToken (TimeSpan.FromMinutes(1.)))
+  { active =
+      Map.empty.Add(Guid.NewGuid(), processToken (TimeSpan.FromMinutes(1.)))
     waiting = Map.empty
     waitingOrListening = Map.empty
     listening = Map.empty

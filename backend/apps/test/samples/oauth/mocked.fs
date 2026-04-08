@@ -11,7 +11,8 @@ let random = new Random()
 let httpClient = new HttpClient()
 
 let init () : EvaluatedCoroutines<_, _, _> =
-  { active = Map.empty.Add(Guid.NewGuid(), processToken (TimeSpan.FromMinutes(1.)))
+  { active =
+      Map.empty.Add(Guid.NewGuid(), processToken (TimeSpan.FromMinutes(1.)))
     waiting = Map.empty
     waitingOrListening = Map.empty
     listening = Map.empty
@@ -27,7 +28,10 @@ let getSnapshot () : unit * OAuthContext<_, _, _> * Map<Guid, Unit> * unit =
         if (random.NextDouble() < 0.1) then
           Choice1Of2() |> Task.FromResult
         else
-          Choice2Of2({| AccessToken = DateTime.UtcNow |}, {| RefreshToken = DateTime.UtcNow |})
+          Choice2Of2(
+            {| AccessToken = DateTime.UtcNow |},
+            {| RefreshToken = DateTime.UtcNow |}
+          )
           |> Task.FromResult
     SaveAccessToken =
       fun accessToken ->
@@ -42,7 +46,10 @@ let getSnapshot () : unit * OAuthContext<_, _, _> * Map<Guid, Unit> * unit =
         if (random.NextDouble() < 0.1) then
           Choice1Of2() |> Task.FromResult
         else
-          Choice2Of2({| AccessToken = DateTime.UtcNow |}, {| RefreshToken = DateTime.UtcNow |})
+          Choice2Of2(
+            {| AccessToken = DateTime.UtcNow |},
+            {| RefreshToken = DateTime.UtcNow |}
+          )
           |> Task.FromResult
     GetExpiration = fun _ -> TimeSpan.FromSeconds 30. },
   Map.empty,

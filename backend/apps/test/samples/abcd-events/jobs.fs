@@ -36,7 +36,9 @@ let abcdEventLoop () =
         let! modifiedFields =
           co.Do(fun ctx ->
             let schema = ctx.Schema
-            let results = Expr.eval None schema Map.empty businessRule.Condition
+
+            let results =
+              Expr.eval None schema Map.empty businessRule.Condition
 
             let allModifiedFields =
               seq {
@@ -48,7 +50,8 @@ let abcdEventLoop () =
                   | _ -> ()
               }
 
-            allModifiedFields |> Seq.fold (Map.merge EntitiesIdentifiers.merge) Map.empty
+            allModifiedFields
+            |> Seq.fold (Map.merge EntitiesIdentifiers.merge) Map.empty
           // execute ctx.Schema vars e.Self.Assignment
           )
 
@@ -67,12 +70,22 @@ let abcdEventLoop () =
                 CurrentModifiedFields = modifiedFields
                 Trace = [] }
 
-            match executeRulesTransitively().run (businessRulesExecutionContext, businessRulesExecutionState) with
+            match
+              executeRulesTransitively()
+                .run (
+                  businessRulesExecutionContext,
+                  businessRulesExecutionState
+                )
+            with
             | Left _ ->
               do printfn "Transitive execution completed successfully"
               do Console.ReadLine() |> ignore
             | Right e ->
-              do printfn "Error %A, rule execution resulted in a possible loop that was interrupted" e
+              do
+                printfn
+                  "Error %A, rule execution resulted in a possible loop that was interrupted"
+                  e
+
               do Console.ReadLine() |> ignore)
       }
     )
@@ -113,7 +126,8 @@ let abcdEventLoop () =
     context <-
       { context with
           ActiveEvents =
-            (context.ActiveEvents |> List.filter (fun e -> removed |> Set.contains e |> not))
+            (context.ActiveEvents
+             |> List.filter (fun e -> removed |> Set.contains e |> not))
             @ added }
 
     ()
@@ -145,7 +159,9 @@ let abcdEventLoop () =
         (((context.CDs())[ab.CDId]).CDId.ToString().Substring(0, 4))
         ((context.CDs())[ab.CDId]).C
         ((context.CDs())[ab.CDId]).D
-        (((context.EFs())[((context.CDs())[ab.CDId]).EFId]).EFId.ToString().Substring(0, 4))
+        (((context.EFs())[((context.CDs())[ab.CDId]).EFId])
+          .EFId.ToString()
+          .Substring(0, 4))
         ((context.EFs())[((context.CDs())[ab.CDId]).EFId]).E
         ((context.EFs())[((context.CDs())[ab.CDId]).EFId]).F
         ab.А2
@@ -156,6 +172,13 @@ let abcdEventLoop () =
         ab.Σ3
 
   let releaseSnapshot (_: Unit) = ()
-  Ballerina.Coroutines.Runner.runLoop init getSnapshot updateState updateEvents log releaseSnapshot
+
+  Ballerina.Coroutines.Runner.runLoop
+    init
+    getSnapshot
+    updateState
+    updateEvents
+    log
+    releaseSnapshot
 
   ()

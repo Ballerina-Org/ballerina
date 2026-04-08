@@ -15,8 +15,16 @@ module OrderedMap =
     Assert.That(OrderedMap.isEmpty empty, Is.True)
     Assert.That(OrderedMap.count empty, Is.EqualTo(0))
     Assert.That(OrderedMap.keys empty, Is.EqualTo<int list>([]: int list))
-    Assert.That(OrderedMap.values empty, Is.EqualTo<string list>([]: string list))
-    Assert.That(OrderedMap.toList empty, Is.EqualTo<(int * string) list>([]: (int * string) list))
+
+    Assert.That(
+      OrderedMap.values empty,
+      Is.EqualTo<string list>([]: string list)
+    )
+
+    Assert.That(
+      OrderedMap.toList empty,
+      Is.EqualTo<(int * string) list>([]: (int * string) list)
+    )
 
   [<Test>]
   let ``AddKeyExistsOk should add new key`` () =
@@ -75,7 +83,13 @@ module OrderedMap =
     let withSecond = OrderedMap.Add withFirst 2 "second"
     let withThird = OrderedMap.Add withSecond 3 "third"
     let list = OrderedMap.toList withThird
-    Assert.That(list, Is.EqualTo<(int * string) list>([ (1, "first"); (2, "second"); (3, "third") ]))
+
+    Assert.That(
+      list,
+      Is.EqualTo<(int * string) list>(
+        [ (1, "first"); (2, "second"); (3, "third") ]
+      )
+    )
 
   [<Test>]
   let ``Map should transform values and preserve insertion order`` () =
@@ -94,7 +108,11 @@ module OrderedMap =
     let result = OrderedMap.ofList input
     Assert.That(OrderedMap.count result, Is.EqualTo(3))
     Assert.That(OrderedMap.keys result, Is.EqualTo<int list>([ 1; 2; 3 ]))
-    Assert.That(OrderedMap.values result, Is.EqualTo<string list>([ "first"; "second"; "third" ]))
+
+    Assert.That(
+      OrderedMap.values result,
+      Is.EqualTo<string list>([ "first"; "second"; "third" ])
+    )
 
   [<Test>]
   let ``OfListDuplicatesOk should handle duplicates by overwriting`` () =
@@ -102,7 +120,11 @@ module OrderedMap =
     let result = OrderedMap.ofList input
     Assert.That(OrderedMap.count result, Is.EqualTo(2))
     Assert.That(OrderedMap.keys result, Is.EqualTo<int list>([ 1; 2 ]))
-    Assert.That(OrderedMap.values result, Is.EqualTo<string list>([ "second"; "third" ]))
+
+    Assert.That(
+      OrderedMap.values result,
+      Is.EqualTo<string list>([ "second"; "third" ])
+    )
 
   [<Test>]
   let ``OfList should succeed for unique keys`` () =
@@ -113,17 +135,27 @@ module OrderedMap =
     | Left om ->
       Assert.That(OrderedMap.count om, Is.EqualTo(3))
       Assert.That(OrderedMap.keys om, Is.EqualTo<int list>([ 1; 2; 3 ]))
-      Assert.That(OrderedMap.values om, Is.EqualTo<string list>([ "first"; "second"; "third" ]))
+
+      Assert.That(
+        OrderedMap.values om,
+        Is.EqualTo<string list>([ "first"; "second"; "third" ])
+      )
     | Right _ -> Assert.Fail("Should have succeeded")
 
   [<Test>]
   let ``OfList should fail for duplicate keys`` () =
-    let input = [ (1, "first"); (1, "firstDup"); (2, "second"); (2, "secondDup") ]
+    let input =
+      [ (1, "first"); (1, "firstDup"); (2, "second"); (2, "secondDup") ]
+
     let result = OrderedMap.ofListIfNoDuplicates input
 
     match result with
     | Left _ -> Assert.Fail("Should have failed")
-    | Right errors -> Assert.That((errors.Errors()).Head.Message.Contains("Duplicate keys: [1; 2]"), Is.True)
+    | Right errors ->
+      Assert.That(
+        (errors.Errors()).Head.Message.Contains("Duplicate keys: [1; 2]"),
+        Is.True
+      )
 
   [<Test>]
   let ``ContainsKey should work correctly`` () =
@@ -150,14 +182,24 @@ module OrderedMap =
 
     Assert.That(OrderedMap.count step5, Is.EqualTo(3))
     Assert.That(OrderedMap.keys step5, Is.EqualTo<int list>([ 1; 2; 3 ]))
-    Assert.That(OrderedMap.values step5, Is.EqualTo<string list>([ "ONE"; "TWO"; "THREE" ]))
-    Assert.That(OrderedMap.toList step5, Is.EqualTo<(int * string) list>([ (1, "ONE"); (2, "TWO"); (3, "THREE") ]))
+
+    Assert.That(
+      OrderedMap.values step5,
+      Is.EqualTo<string list>([ "ONE"; "TWO"; "THREE" ])
+    )
+
+    Assert.That(
+      OrderedMap.toList step5,
+      Is.EqualTo<(int * string) list>([ (1, "ONE"); (2, "TWO"); (3, "THREE") ])
+    )
 
   [<Test>]
   let ``mergeSecondAfterFirst should succeed for non-conflicting maps`` () =
-    let map1 = OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second"
+    let map1 =
+      OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second"
 
-    let map2 = OrderedMap.Add (OrderedMap.Add OrderedMap.empty 3 "third") 4 "fourth"
+    let map2 =
+      OrderedMap.Add (OrderedMap.Add OrderedMap.empty 3 "third") 4 "fourth"
 
     let result = OrderedMap.mergeSecondAfterFirstIfNoDuplicates map1 map2
 
@@ -165,26 +207,39 @@ module OrderedMap =
     | Left merged ->
       Assert.That(OrderedMap.count merged, Is.EqualTo(4))
       Assert.That(OrderedMap.keys merged, Is.EqualTo<int list>([ 1; 2; 3; 4 ])) // om2 keys first, then om1 keys
-      Assert.That(OrderedMap.values merged, Is.EqualTo<string list>([ "first"; "second"; "third"; "fourth" ]))
+
+      Assert.That(
+        OrderedMap.values merged,
+        Is.EqualTo<string list>([ "first"; "second"; "third"; "fourth" ])
+      )
     | Right _ -> Assert.Fail("Should have succeeded")
 
   [<Test>]
   let ``mergeSecondAfterFirst should fail for conflicting keys`` () =
-    let map1 = OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second"
+    let map1 =
+      OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second"
 
-    let map2 = OrderedMap.Add (OrderedMap.Add OrderedMap.empty 2 "conflict") 3 "third"
+    let map2 =
+      OrderedMap.Add (OrderedMap.Add OrderedMap.empty 2 "conflict") 3 "third"
 
     let result = OrderedMap.mergeSecondAfterFirstIfNoDuplicates map1 map2
 
     match result with
     | Left _ -> Assert.Fail("Should have failed")
     | Right errors ->
-      Assert.That((errors.Errors()).Head.Message.Contains("Key conflicts during merge"), Is.True)
+      Assert.That(
+        (errors.Errors()).Head.Message.Contains("Key conflicts during merge"),
+        Is.True
+      )
+
       Assert.That((errors.Errors()).Head.Message.Contains("2"), Is.True)
 
   [<Test>]
-  let ``mergeSecondAfterFirstDuplicatesOk should merge with om1 values taking precedence`` () =
-    let map1 = OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second"
+  let ``mergeSecondAfterFirstDuplicatesOk should merge with om1 values taking precedence``
+    ()
+    =
+    let map1 =
+      OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second"
 
     let map2 =
       OrderedMap.Add (OrderedMap.Add OrderedMap.empty 2 "overwritten") 3 "third"
@@ -192,29 +247,44 @@ module OrderedMap =
     let result = OrderedMap.mergeSecondAfterFirst map1 map2
     Assert.That(OrderedMap.count result, Is.EqualTo(3))
     Assert.That(OrderedMap.keys result, Is.EqualTo<int list>([ 1; 2; 3 ])) // om2 non-conflicting keys first, then om1 keys
-    Assert.That(OrderedMap.values result, Is.EqualTo<string list>([ "first"; "second"; "third" ]))
+
+    Assert.That(
+      OrderedMap.values result,
+      Is.EqualTo<string list>([ "first"; "second"; "third" ])
+    )
+
     Assert.That(OrderedMap.tryFind 2 result, Is.EqualTo(Some "second")) // om2 value takes precedence
 
   [<Test>]
   let ``mergeSecondAfterFirstDuplicatesOk should handle empty first map`` () =
     let map1 = OrderedMap.empty
 
-    let map2 = OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second"
+    let map2 =
+      OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second"
 
     let result = OrderedMap.mergeSecondAfterFirst map1 map2
     Assert.That(OrderedMap.count result, Is.EqualTo(2))
     Assert.That(OrderedMap.keys result, Is.EqualTo<int list>([ 1; 2 ]))
-    Assert.That(OrderedMap.values result, Is.EqualTo<string list>([ "first"; "second" ]))
+
+    Assert.That(
+      OrderedMap.values result,
+      Is.EqualTo<string list>([ "first"; "second" ])
+    )
 
   [<Test>]
   let ``mergeSecondAfterFirstDuplicatesOk should handle empty second map`` () =
-    let map1 = OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second"
+    let map1 =
+      OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second"
 
     let map2 = OrderedMap.empty
     let result = OrderedMap.mergeSecondAfterFirst map1 map2
     Assert.That(OrderedMap.count result, Is.EqualTo(2))
     Assert.That(OrderedMap.keys result, Is.EqualTo<int list>([ 1; 2 ]))
-    Assert.That(OrderedMap.values result, Is.EqualTo<string list>([ "first"; "second" ]))
+
+    Assert.That(
+      OrderedMap.values result,
+      Is.EqualTo<string list>([ "first"; "second" ])
+    )
 
   [<Test>]
   let ``mergeSecondAfterFirstDuplicatesOk should handle both maps empty`` () =
@@ -225,7 +295,9 @@ module OrderedMap =
 
   [<Test>]
   let ``tryFindWithError should return value for existing key`` () =
-    let map = OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second"
+    let map =
+      OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second"
+
     let result = OrderedMap.tryFindWithError 1 "key" "1" map
 
     match result with
@@ -234,20 +306,33 @@ module OrderedMap =
 
   [<Test>]
   let ``tryFindWithError should return error for missing key`` () =
-    let map = OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second"
+    let map =
+      OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second"
+
     let result = OrderedMap.tryFindWithError 3 "key" "3" map
 
     match result with
     | Left _ -> Assert.Fail("Should have failed")
-    | Right errors -> Assert.That((errors.Errors()).Head.Message, Is.EqualTo("Cannot find key '3'"))
+    | Right errors ->
+      Assert.That(
+        (errors.Errors()).Head.Message,
+        Is.EqualTo("Cannot find key '3'")
+      )
 
   [<Test>]
   let ``tryFindByWithError should return first matching key-value pair`` () =
     let map =
-      OrderedMap.Add (OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second") 3 "third"
+      OrderedMap.Add
+        (OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second")
+        3
+        "third"
 
     let result =
-      OrderedMap.tryFindByWithError (fun (k: int, v: string) -> k > 1 && v.Length > 5) "item" "matching" map
+      OrderedMap.tryFindByWithError
+        (fun (k: int, v: string) -> k > 1 && v.Length > 5)
+        "item"
+        "matching"
+        map
 
     match result with
     | Left(key, value) ->
@@ -257,31 +342,46 @@ module OrderedMap =
 
   [<Test>]
   let ``tryFindByWithError should return error when no match found`` () =
-    let map = OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second"
+    let map =
+      OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second"
 
     let result =
       OrderedMap.tryFindByWithError (fun (k, _) -> k > 10) "item" "matching" map
 
     match result with
     | Left _ -> Assert.Fail("Should have failed")
-    | Right errors -> Assert.That((errors.Errors()).Head.Message, Is.EqualTo("Cannot find item 'matching'"))
+    | Right errors ->
+      Assert.That(
+        (errors.Errors()).Head.Message,
+        Is.EqualTo("Cannot find item 'matching'")
+      )
 
   [<Test>]
   let ``filter should keep only matching items`` () =
     let map =
-      OrderedMap.Add (OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second") 3 "third"
+      OrderedMap.Add
+        (OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second")
+        3
+        "third"
 
     let filtered = OrderedMap.filter (fun k _ -> k > 1) map
 
     Assert.That(OrderedMap.count filtered, Is.EqualTo(2))
     Assert.That(OrderedMap.keys filtered, Is.EqualTo<int list>([ 2; 3 ]))
-    Assert.That(OrderedMap.values filtered, Is.EqualTo<string list>([ "second"; "third" ]))
+
+    Assert.That(
+      OrderedMap.values filtered,
+      Is.EqualTo<string list>([ "second"; "third" ])
+    )
 
   [<Test>]
   let ``filter should preserve order of remaining items`` () =
     let map =
       OrderedMap.Add
-        (OrderedMap.Add (OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second") 3 "third")
+        (OrderedMap.Add
+          (OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second")
+          3
+          "third")
         4
         "fourth"
 
@@ -289,11 +389,17 @@ module OrderedMap =
 
     Assert.That(OrderedMap.count filtered, Is.EqualTo(2))
     Assert.That(OrderedMap.keys filtered, Is.EqualTo<int list>([ 2; 4 ]))
-    Assert.That(OrderedMap.values filtered, Is.EqualTo<string list>([ "second"; "fourth" ]))
+
+    Assert.That(
+      OrderedMap.values filtered,
+      Is.EqualTo<string list>([ "second"; "fourth" ])
+    )
 
   [<Test>]
   let ``filter should return empty map when no items match`` () =
-    let map = OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second"
+    let map =
+      OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second"
+
     let filtered = OrderedMap.filter (fun k _ -> k > 10) map
 
     Assert.That(OrderedMap.isEmpty filtered, Is.True)
@@ -312,7 +418,11 @@ module OrderedMap =
 
     Assert.That(OrderedMap.count result, Is.EqualTo(3))
     Assert.That(OrderedMap.keys result, Is.EqualTo<int list>([ 1; 2; 3 ]))
-    Assert.That(OrderedMap.values result, Is.EqualTo<string list>([ "first"; "second"; "third" ]))
+
+    Assert.That(
+      OrderedMap.values result,
+      Is.EqualTo<string list>([ "first"; "second"; "third" ])
+    )
 
   [<Test>]
   let ``ofSeq should handle duplicates by overwriting`` () =
@@ -327,22 +437,37 @@ module OrderedMap =
 
     Assert.That(OrderedMap.count result, Is.EqualTo(2))
     Assert.That(OrderedMap.keys result, Is.EqualTo<int list>([ 1; 2 ]))
-    Assert.That(OrderedMap.values result, Is.EqualTo<string list>([ "second"; "third" ]))
+
+    Assert.That(
+      OrderedMap.values result,
+      Is.EqualTo<string list>([ "second"; "third" ])
+    )
 
   [<Test>]
   let ``toSeq should convert to sequence preserving order`` () =
     let map =
-      OrderedMap.Add (OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second") 3 "third"
+      OrderedMap.Add
+        (OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second")
+        3
+        "third"
 
     let seq = OrderedMap.toSeq map
     let list = Seq.toList seq
 
-    Assert.That(list, Is.EqualTo<(int * string) list>([ (1, "first"); (2, "second"); (3, "third") ]))
+    Assert.That(
+      list,
+      Is.EqualTo<(int * string) list>(
+        [ (1, "first"); (2, "second"); (3, "third") ]
+      )
+    )
 
   [<Test>]
   let ``toArray should convert to array preserving order`` () =
     let map =
-      OrderedMap.Add (OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second") 3 "third"
+      OrderedMap.Add
+        (OrderedMap.Add (OrderedMap.Add OrderedMap.empty 1 "first") 2 "second")
+        3
+        "third"
 
     let array = OrderedMap.toArray map
 

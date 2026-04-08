@@ -19,7 +19,8 @@ module Utils =
   open Ballerina.DSL.Next.Types.TypeChecker
   open CacheCompilation
 
-  let internal compilationCache: CompilationCache<FileDBRuntimeContext, FileDbValueExtension> =
+  let internal compilationCache
+    : CompilationCache<FileDBRuntimeContext, FileDbValueExtension> =
     CompilationCache<FileDBRuntimeContext, FileDbValueExtension>.Empty
 
 
@@ -29,7 +30,8 @@ module Utils =
       (fileDbOps dbFileConfig)
       id
       id
-    |> fun (_, languageContext, typeCheckingConfig, _) -> languageContext, typeCheckingConfig
+    |> fun (_, languageContext, typeCheckingConfig, _) ->
+      languageContext, typeCheckingConfig
 
   let buildSchemaDefinition
     (dbFileConfig: DbFileConfig)
@@ -47,10 +49,13 @@ module Utils =
     sum {
       let _, languageContext, typeCheckingConfig, build_cache =
         hddcacheWithStdExtensions
-          (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
+          (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>
+            .Console())
           (fileDbOps dbFileConfig)
-          (TypeCheckContext.Updaters.BackgroundHooksExtraScope addBackgroundHookScope
-           >> TypeCheckContext.Updaters.PermissionHooksExtraScope addPermissionHookScope)
+          (TypeCheckContext.Updaters.BackgroundHooksExtraScope
+            addBackgroundHookScope
+           >> TypeCheckContext.Updaters.PermissionHooksExtraScope
+             addPermissionHookScope)
           id
 
       let domainName = "Bise"
@@ -80,19 +85,26 @@ module Utils =
 
       let files =
         schemaDefinitions
-        |> List.map (fun def -> FileBuildConfiguration.FromFile(def.Path, def.Content))
+        |> List.map (fun def ->
+          FileBuildConfiguration.FromFile(def.Path, def.Content))
 
       let! firstFile =
         files
         |> List.tryHead
-        |> sum.OfOption(Errors.Singleton Location.Unknown (fun _ -> "Expected at least one schema definitions."))
+        |> sum.OfOption(
+          Errors.Singleton Location.Unknown (fun _ ->
+            "Expected at least one schema definitions.")
+        )
 
       let otherFiles = files |> List.skip 1
       let files = NonEmptyList.OfList(firstFile, otherFiles)
       let project: ProjectBuildConfiguration = { Files = files }
 
       let! NonEmptyList(expr, exprs), _, typeCheckContext, typeCheckState =
-        ProjectBuildConfiguration.BuildCached typeCheckingConfig build_cache project
+        ProjectBuildConfiguration.BuildCached
+          typeCheckingConfig
+          build_cache
+          project
 
       let runtimeContext: FileDBRuntimeContext =
         { TenantId = tenantId
@@ -101,10 +113,16 @@ module Utils =
       let evalContext =
         ExprEvalContext.Empty runtimeContext
         |> languageContext.ExprEvalContext
-        |> ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) injectedRuntimeValues)
+        |> ExprEvalContext.Updaters.Values(
+          Map.merge (fun _ -> id) injectedRuntimeValues
+        )
 
       let! evalResult =
-        Expr.Eval(NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(expr, exprs)))
+        Expr.Eval(
+          NonEmptyList.prependList
+            languageContext.TypeCheckedPreludes
+            (NonEmptyList.OfList(expr, exprs))
+        )
         |> Reader.Run evalContext
 
       compilationCache.Add

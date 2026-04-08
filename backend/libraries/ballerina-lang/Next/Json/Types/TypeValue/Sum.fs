@@ -19,14 +19,21 @@ module Sum =
     static member FromJsonSum
       (fromRootJson: JsonValue -> Sum<TypeValue<'valueExt>, Errors<unit>>)
       : JsonValue -> Sum<List<TypeValue<'valueExt>>, Errors<unit>> =
-      Sum.assertDiscriminatorAndContinueWithValue discriminator (fun sumFields ->
-        sum {
-          let! cases = sumFields |> JsonValue.AsArray
-          let! caseTypes = cases |> Array.map (fun case -> case |> fromRootJson) |> sum.All
-          return caseTypes
-        })
+      Sum.assertDiscriminatorAndContinueWithValue
+        discriminator
+        (fun sumFields ->
+          sum {
+            let! cases = sumFields |> JsonValue.AsArray
 
-    static member ToJsonSum(rootToJson: TypeValue<'valueExt> -> JsonValue) : List<TypeValue<'valueExt>> -> JsonValue =
+            let! caseTypes =
+              cases |> Array.map (fun case -> case |> fromRootJson) |> sum.All
+
+            return caseTypes
+          })
+
+    static member ToJsonSum
+      (rootToJson: TypeValue<'valueExt> -> JsonValue)
+      : List<TypeValue<'valueExt>> -> JsonValue =
       List.toArray
       >> Array.map rootToJson
       >> JsonValue.Array

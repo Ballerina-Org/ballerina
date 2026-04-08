@@ -1,4 +1,0 @@
-[virtualenvs]
-in-project = true
-path = ".venv"
-prefer-active-python = true

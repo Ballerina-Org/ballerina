@@ -16,7 +16,10 @@ module OrderPreservingMap =
   open Ballerina.Reader.WithError
   open Ballerina
 
-  let private withError (e: unit -> string) (o: Option<'res>) : Sum<'res, Errors<Unit>> =
+  let private withError
+    (e: unit -> string)
+    (o: Option<'res>)
+    : Sum<'res, Errors<Unit>> =
     o |> Sum.fromOption<'res, Errors<Unit>> (fun () -> Errors.Singleton () e)
 
   type OrderedMap<'K, 'V when 'K: comparison> with
@@ -40,7 +43,9 @@ module OrderPreservingMap =
       |> Seq.tryFind predicate
       |> withError (fun () -> sprintf "Cannot find %s '%s'" k_category k_error)
     // new methods
-    static member ofListIfNoDuplicates(kvs: List<'K * 'V>) : Sum<OrderedMap<'K, 'V>, Errors<Unit>> =
+    static member ofListIfNoDuplicates
+      (kvs: List<'K * 'V>)
+      : Sum<OrderedMap<'K, 'V>, Errors<Unit>> =
       let duplicateKeys =
         kvs
         |> List.groupBy fst
@@ -50,7 +55,8 @@ module OrderPreservingMap =
       if duplicateKeys.IsEmpty then
         OrderedMap.ofList kvs |> Left
       else
-        Errors.Singleton () (fun () -> sprintf "Duplicate keys: %A" duplicateKeys)
+        Errors.Singleton () (fun () ->
+          sprintf "Duplicate keys: %A" duplicateKeys)
         |> Errors.MapPriority(replaceWith ErrorPriority.Medium)
         |> Right
 
@@ -58,7 +64,8 @@ module OrderPreservingMap =
       (om1: OrderedMap<'K, 'V>)
       (om2: OrderedMap<'K, 'V>)
       : Sum<OrderedMap<'K, 'V>, Errors<Unit>> =
-      let conflicts = om2.reverseOrder |> List.filter (fun k -> om1.data.ContainsKey k)
+      let conflicts =
+        om2.reverseOrder |> List.filter (fun k -> om1.data.ContainsKey k)
 
       if conflicts.IsEmpty then
         OrderedMap.mergeSecondAfterFirst om1 om2 |> Left
@@ -88,7 +95,8 @@ module OrderPreservingMap =
       |> state.Map(OrderedMap.ofSeq)
 
   type SumBuilder with
-    member inline sum.AllMapOrdered<'k, 'v, 'b when 'k: comparison and 'b: (static member Concat: 'b * 'b -> 'b)>
+    member inline sum.AllMapOrdered<'k, 'v, 'b
+      when 'k: comparison and 'b: (static member Concat: 'b * 'b -> 'b)>
       (ps: OrderedMap<'k, Sum<'v, 'b>>)
       : Sum<OrderedMap<'k, 'v>, 'b> =
       ps
@@ -102,13 +110,16 @@ module OrderPreservingMap =
       |> sum.Map OrderedMap.ofSeq
 
   type ReaderBuilder with
-    member inline _.AllMapOrdered<'c, 'a, 'e, 'k when 'k: comparison and 'e: (static member Concat: 'e * 'e -> 'e)>
+    member inline _.AllMapOrdered<'c, 'a, 'e, 'k
+      when 'k: comparison and 'e: (static member Concat: 'e * 'e -> 'e)>
       (readers: OrderedMap<'k, Reader<'a, 'c, 'e>>)
       : Reader<OrderedMap<'k, 'a>, 'c, 'e> =
       Reader(fun (c: 'c) ->
         sum {
           let! (results: OrderedMap<'k, 'a>) =
-            readers |> OrderedMap.map (fun _k (Reader p) -> p c) |> sum.AllMapOrdered
+            readers
+            |> OrderedMap.map (fun _k (Reader p) -> p c)
+            |> sum.AllMapOrdered
 
           return results
         })

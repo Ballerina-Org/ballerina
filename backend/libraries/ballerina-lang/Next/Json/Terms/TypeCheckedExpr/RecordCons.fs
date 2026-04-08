@@ -23,24 +23,32 @@ module RecordCons =
       (fromRootJson: TypeCheckedExprParser<'valueExt>)
       (value: JsonValue)
       : TypeCheckedExprParserReader<'valueExt> =
-      Reader.assertDiscriminatorAndContinueWithValue discriminator value (fun fieldsJson ->
-        reader {
-          let! fields = fieldsJson |> JsonValue.AsArray |> reader.OfSum
-          let! _, ctx = reader.GetContext()
+      Reader.assertDiscriminatorAndContinueWithValue
+        discriminator
+        value
+        (fun fieldsJson ->
+          reader {
+            let! fields = fieldsJson |> JsonValue.AsArray |> reader.OfSum
+            let! _, ctx = reader.GetContext()
 
-          let! fields =
-            fields
-            |> Seq.map (fun field ->
-              reader {
-                let! (k, v) = field |> JsonValue.AsPair |> reader.OfSum
-                let! k = k |> ctx |> reader.OfSum
-                let! v = v |> fromRootJson
-                return (k, v)
-              })
-            |> reader.All
+            let! fields =
+              fields
+              |> Seq.map (fun field ->
+                reader {
+                  let! (k, v) = field |> JsonValue.AsPair |> reader.OfSum
+                  let! k = k |> ctx |> reader.OfSum
+                  let! v = v |> fromRootJson
+                  return (k, v)
+                })
+              |> reader.All
 
-          return TypeCheckedExpr.RecordCons(fields, TypeValue.CreateUnit(), Kind.Star)
-        })
+            return
+              TypeCheckedExpr.RecordCons(
+                fields,
+                TypeValue.CreateUnit(),
+                Kind.Star
+              )
+          })
 
     static member ToJsonRecordCons
       (rootToJson: TypeCheckedExprEncoder<'valueExt>)
@@ -59,5 +67,9 @@ module RecordCons =
             })
           |> reader.All
 
-        return all |> (List.toArray >> JsonValue.Array >> Json.discriminator discriminator)
+        return
+          all
+          |> (List.toArray
+              >> JsonValue.Array
+              >> Json.discriminator discriminator)
       }

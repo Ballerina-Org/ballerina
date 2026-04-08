@@ -33,8 +33,8 @@ module TypeExpr =
             TypeExpr.FromJsonFlatten fromJson json
             TypeExpr.FromJsonExclude fromJson json
             TypeExpr.FromJsonFromTypeValue typeValueFromJson json
-            fun () -> $"Unknown TypeExpr JSON: {json.AsFSharpString.ReasonablyClamped}"
-            |> Errors.Singleton()
+            Errors.Singleton () (fun () ->
+              $"Unknown TypeExpr JSON: {json.AsFSharpString.ReasonablyClamped}")
             |> Errors.MapPriority(replaceWith ErrorPriority.High)
             |> sum.Throw ]
         )
@@ -42,13 +42,20 @@ module TypeExpr =
 
       fromJson json
 
-    static member FromJson(json: JsonValue) : Sum<TypeExpr<'valueExt>, Errors<_>> =
+    static member FromJson
+      (json: JsonValue)
+      : Sum<TypeExpr<'valueExt>, Errors<_>> =
       TypeExpr.FromJsonWith
         (fun _ ->
-          sum.Throw(Errors.Singleton () (fun () -> "Unexpected TypeExpr.FromTypeValue in TypeExpr-only context")))
+          sum.Throw(
+            Errors.Singleton () (fun () ->
+              "Unexpected TypeExpr.FromTypeValue in TypeExpr-only context")
+          ))
         json
 
-    static member ToJsonWith(typeValueToJson: TypeValue<'valueExt> -> JsonValue) : TypeExpr<'valueExt> -> JsonValue =
+    static member ToJsonWith
+      (typeValueToJson: TypeValue<'valueExt> -> JsonValue)
+      : TypeExpr<'valueExt> -> JsonValue =
       let toJsonFromTypeValue = TypeExpr.ToJsonFromTypeValue typeValueToJson
 
       let rec toJson typeExpr =
@@ -77,10 +84,14 @@ module TypeExpr =
         | TypeExpr.Relations _ -> failwith "Relations ToJson not implemented"
         | TypeExpr.Entity _ -> failwith "Entity ToJson not implemented"
         | TypeExpr.Relation _ -> failwith "Relation ToJson not implemented"
-        | TypeExpr.RecordDes(_, _) -> failwith "RecordDes ToJson not implemented"
-        | TypeExpr.RelationLookupOne _ -> failwith "RelationLookupOne ToJson not implemented"
-        | TypeExpr.RelationLookupOption _ -> failwith "RelationLookupOption ToJson not implemented"
-        | TypeExpr.RelationLookupMany _ -> failwith "RelationLookupMany ToJson not implemented"
+        | TypeExpr.RecordDes(_, _) ->
+          failwith "RecordDes ToJson not implemented"
+        | TypeExpr.RelationLookupOne _ ->
+          failwith "RelationLookupOne ToJson not implemented"
+        | TypeExpr.RelationLookupOption _ ->
+          failwith "RelationLookupOption ToJson not implemented"
+        | TypeExpr.RelationLookupMany _ ->
+          failwith "RelationLookupMany ToJson not implemented"
         | TypeExpr.FromQueryRow -> failwith "FromQueryRow Not Implemented"
         | TypeExpr.QueryRow(_) -> failwith "QueryRow Not Implemented"
 
@@ -89,5 +100,6 @@ module TypeExpr =
     static member ToJson(typeExpr: TypeExpr<'valueExt>) : JsonValue =
       TypeExpr.ToJsonWith
         // This lambda should never be called, but is here as a safeguard to prevent accidental use of TypeExpr.ToJson in TypeValue-only context
-        (fun _ -> failwith "Unexpected TypeExpr.FromTypeValue in TypeExpr-only context")
+        (fun _ ->
+          failwith "Unexpected TypeExpr.FromTypeValue in TypeExpr-only context")
         typeExpr
