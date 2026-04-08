@@ -24,20 +24,30 @@ module Project =
     ) : ProjectCache<'valueExt> =
     Caching.abstract_build_cache cache (ctx0, st0)
 
-  let memcache<'valueExt when 'valueExt: comparison>
-    (
-      ctx0: Ballerina.DSL.Next.Types.TypeChecker.Model.TypeCheckContext<'valueExt>,
-      st0: Ballerina.DSL.Next.Types.TypeChecker.Model.TypeCheckState<'valueExt>
-    ) : ProjectCache<'valueExt> =
-    MemCache.memcache (ctx0, st0)
-
-  let hardDriveCacheWithTypeEvalConfig<'valueExt when 'valueExt: comparison>
-    (typeEvalConfig: Option<Ballerina.DSL.Next.Types.TypeChecker.Model.TypeEvalConfig<'valueExt>>)
-    (
-      ctx0: Ballerina.DSL.Next.Types.TypeChecker.Model.TypeCheckContext<'valueExt>,
-      st0: Ballerina.DSL.Next.Types.TypeChecker.Model.TypeCheckState<'valueExt>
-    ) : ProjectCache<'valueExt> =
-    HddCache.hardDriveCacheWithTypeEvalConfig typeEvalConfig (ctx0, st0)
-
-  let tryLoadTypeEvalConfig<'valueExt when 'valueExt: comparison> () =
-    HddCache.tryLoadTypeEvalConfig<'valueExt> ()
+  let hddcacheWithStdExtensions<'runtimeContext, 'db when 'db: comparison>
+    (stringOps:
+      Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<
+        Ballerina.DSL.Next.StdLib.Extensions.ValueExt<'runtimeContext, 'db, unit>
+       >)
+    (dbOps:
+      Ballerina.DSL.Next.StdLib.DB.Model.DBTypeClass<
+        'runtimeContext,
+        'db,
+        Ballerina.DSL.Next.StdLib.Extensions.ValueExt<'runtimeContext, 'db, unit>
+       >)
+    (updateTypeCheckContext:
+      Ballerina.DSL.Next.Types.TypeChecker.Model.TypeCheckContext<
+        Ballerina.DSL.Next.StdLib.Extensions.ValueExt<'runtimeContext, 'db, unit>
+       >
+        -> Ballerina.DSL.Next.Types.TypeChecker.Model.TypeCheckContext<
+          Ballerina.DSL.Next.StdLib.Extensions.ValueExt<'runtimeContext, 'db, unit>
+         >)
+    (updateTypeCheckState:
+      Ballerina.DSL.Next.Types.TypeChecker.Model.TypeCheckState<
+        Ballerina.DSL.Next.StdLib.Extensions.ValueExt<'runtimeContext, 'db, unit>
+       >
+        -> Ballerina.DSL.Next.Types.TypeChecker.Model.TypeCheckState<
+          Ballerina.DSL.Next.StdLib.Extensions.ValueExt<'runtimeContext, 'db, unit>
+         >)
+    =
+    HddCache.hddcacheWithStdExtensions stringOps dbOps updateTypeCheckContext updateTypeCheckState

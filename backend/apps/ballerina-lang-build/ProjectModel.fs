@@ -71,7 +71,7 @@ module ProjectModel =
 
   type TypeCheckState<'valueExt when 'valueExt: comparison> with
     static member InstantiateInlayHints
-      (config: TypeEvalConfig<'valueExt>)
+      (config: TypeCheckingConfig<'valueExt>)
       : State<TypeCheckState<'valueExt>, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>> =
       state {
         let typeCheckExpr =
@@ -121,7 +121,7 @@ module ProjectModel =
 
   type ProjectBuildConfiguration with
     static member BuildCachedWithFileOutputs<'valueExt when 'valueExt: comparison>
-      (config: TypeEvalConfig<'valueExt>)
+      (config: TypeCheckingConfig<'valueExt>)
       (cache: ProjectCache<'valueExt>)
       (project: ProjectBuildConfiguration)
       : Sum<
@@ -214,7 +214,7 @@ module ProjectModel =
       }
 
     static member BuildCached<'valueExt when 'valueExt: comparison>
-      (config: TypeEvalConfig<'valueExt>)
+      (config: TypeCheckingConfig<'valueExt>)
       (cache: ProjectCache<'valueExt>)
       (project: ProjectBuildConfiguration)
       : Sum<

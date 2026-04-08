@@ -49,13 +49,10 @@ module Factory =
            >
          >)
     =
-    let languageContext, typeEvalConfig = contextFactory dbFileConfig
-
     let descriptorFetcher =
       descriptorFetcherFactory
-        languageContext
+        dbFileConfig
         schemaFileConfig
-        typeEvalConfig
         addPermissionHookScope
         addBackgroundHookScope
 

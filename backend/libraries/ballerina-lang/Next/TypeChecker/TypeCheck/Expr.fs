@@ -47,7 +47,7 @@ module Expr =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member TypeCheck<'valueExt when 'valueExt: comparison>
-      (config: TypeEvalConfig<'valueExt>)
+      (config: TypeCheckingConfig<'valueExt>)
       : TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t t ->
         let loc0 = t.Location

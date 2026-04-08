@@ -31,7 +31,7 @@ module UnionDes =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckUnionDes<'valueExt when 'valueExt: comparison>
-      (config: TypeEvalConfig<'valueExt>)
+      (config: TypeCheckingConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprUnionDes<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun

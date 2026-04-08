@@ -32,7 +32,7 @@ module SyntheticData =
     when 'customExtension: comparison and 'db: comparison>
     ()
     : Map<ResolvedIdentifier, ImportedGenerator<ValueExt<'runtimeContext, 'db, 'customExtension>, ListConfig>> =
-    let stdlib, _ = db_ops () |> stdExtensions
+    let stdlib, _ = db_ops () |> bootstrapStdExtensions
     let listTypeId = stdlib.List.TypeName |> fst
 
     let generator =

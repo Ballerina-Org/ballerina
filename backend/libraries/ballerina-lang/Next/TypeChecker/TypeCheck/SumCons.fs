@@ -34,7 +34,7 @@ module SumCons =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckSumCons<'valueExt when 'valueExt: comparison>
-      (config: TypeEvalConfig<'valueExt>)
+      (config: TypeCheckingConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
       : TypeChecker<ExprSumCons<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun _context_t ({ Selector = cons }) ->

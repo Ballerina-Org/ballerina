@@ -24,7 +24,7 @@ module SchemaTypeEval =
   open Ballerina.DSL.Next.Terms.Patterns
 
   let evalSchemaExpr<'ve when 've: comparison>
-    (config: TypeEvalConfig<'ve>)
+    (config: TypeCheckingConfig<'ve>)
     (typeCheckExpr: ExprTypeChecker<'ve>)
     (evalTypeExpr: TypeExpr<'ve> -> TypeExprEvalResult<'ve>)
     (loc0: Location)

@@ -13,6 +13,7 @@ open Ballerina.Collections.NonEmptyList
 open Ballerina.Errors
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.StdLib.MutableMemoryDB
+open Ballerina.DSL.Next.StdLib.String
 
 type private ValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
 
@@ -26,11 +27,10 @@ let private buildAndEvalFromConfiguredFiles
   : Sum<Value<TypeValue<ValueExt>, ValueExt> * TypeValue<ValueExt> * int, string> =
   let project: ProjectBuildConfiguration = { Files = files }
 
-  let context = Term.Expr_Eval.context
-  let cache = memcache (context.TypeCheckContext, context.TypeCheckState)
-  let typeEvalConfig = Term.Expr_Eval.typeEvalConfig
+  let _, context, typeCheckingConfig, cache =
+    hddcacheWithStdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()) (db_ops ()) id id
 
-  let buildResult = ProjectBuildConfiguration.BuildCached typeEvalConfig cache project
+  let buildResult = ProjectBuildConfiguration.BuildCached typeCheckingConfig cache project
 
   match buildResult with
   | Left(exprs, typeValue, _, finalState) ->

@@ -17,7 +17,7 @@ module TypeEval =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member TypeEval<'valueExt when 'valueExt: comparison>
-      (config: TypeEvalConfig<'valueExt>)
+      (config: TypeCheckingConfig<'valueExt>)
       : TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt>
           -> Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>
           -> State<

@@ -24,13 +24,15 @@ module Utils =
 
 
   let contextFactory (dbFileConfig: DbFileConfig) =
-    stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()) (fileDbOps dbFileConfig)
-    |> fun (_, languageContext, typeEvalConfig) -> languageContext, typeEvalConfig
+    hddcacheWithStdExtensions
+      (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
+      (fileDbOps dbFileConfig)
+      id
+      id
+    |> fun (_, languageContext, typeCheckingConfig, _) -> languageContext, typeCheckingConfig
 
   let buildSchemaDefinition
-    (languageContext:
-      LanguageContext<FileDBRuntimeContext, FileDbValueExtension, ValueExtDTO, FileDbDeltaExtension, DeltaExtDTO>)
-    typeEvalConfig
+    (dbFileConfig: DbFileConfig)
     (addPermissionHookScope:
       Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>
         -> Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>)
@@ -43,6 +45,14 @@ module Utils =
     (schemaDefinitions: List<SchemaFileDefinition>)
     =
     sum {
+      let _, languageContext, typeCheckingConfig, build_cache =
+        hddcacheWithStdExtensions
+          (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
+          (fileDbOps dbFileConfig)
+          (TypeCheckContext.Updaters.BackgroundHooksExtraScope addBackgroundHookScope
+           >> TypeCheckContext.Updaters.PermissionHooksExtraScope addPermissionHookScope)
+          id
+
       let domainName = "Bise"
 
       let injectedRuntimeValues =
@@ -68,14 +78,6 @@ module Utils =
           ) ]
         |> Map.ofList
 
-      let build_cache =
-        memcache (
-          languageContext.TypeCheckContext
-          |> TypeCheckContext.Updaters.BackgroundHooksExtraScope addBackgroundHookScope
-          |> TypeCheckContext.Updaters.PermissionHooksExtraScope addPermissionHookScope,
-          languageContext.TypeCheckState
-        )
-
       let files =
         schemaDefinitions
         |> List.map (fun def -> FileBuildConfiguration.FromFile(def.Path, def.Content))
@@ -90,7 +92,7 @@ module Utils =
       let project: ProjectBuildConfiguration = { Files = files }
 
       let! NonEmptyList(expr, exprs), _, typeCheckContext, typeCheckState =
-        ProjectBuildConfiguration.BuildCached typeEvalConfig build_cache project
+        ProjectBuildConfiguration.BuildCached typeCheckingConfig build_cache project
 
       let runtimeContext: FileDBRuntimeContext =
         { TenantId = tenantId

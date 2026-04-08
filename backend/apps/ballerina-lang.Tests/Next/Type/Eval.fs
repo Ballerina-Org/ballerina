@@ -18,14 +18,14 @@ open Ballerina.Cat.Collections.OrderedMap
 open Ballerina.LocalizedErrors
 open Ballerina.Errors
 
-let private typeCheck, typeEvalConfig =
-  let _, _, typeEvalConfig =
+let private typeCheck, typeCheckingConfig =
+  let _, _, typeCheckingConfig =
     db_ops ()
-    |> stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
+    |> bootstrapStdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
 
-  Expr.TypeCheck typeEvalConfig, typeEvalConfig
+  Expr.TypeCheck typeCheckingConfig, typeCheckingConfig
 
-let private evalFull = TypeExpr.Eval typeEvalConfig
+let private evalFull = TypeExpr.Eval typeCheckingConfig
 
 let private eval =
   // : TypeExpr<ValueExt<'a, MutableMemoryDB<'a, unit>, unit>>

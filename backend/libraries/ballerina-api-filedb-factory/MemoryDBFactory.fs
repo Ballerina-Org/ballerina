@@ -31,8 +31,12 @@ module MemoryDBAPIFactory =
   open CacheCompilation
 
   let contextFactory dbFileConfig =
-    stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()) (fileDbOps dbFileConfig)
-    |> fun (_, languageContext, typeEvalConfig) -> languageContext, typeEvalConfig
+    hddcacheWithStdExtensions
+      (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
+      (fileDbOps dbFileConfig)
+      id
+      id
+    |> fun (_, languageContext, typeCheckingConfig, _) -> languageContext, typeCheckingConfig
 
   let getSchemaVersion tenantId schemaName draft schemaFileConfig =
     sum {
@@ -65,10 +69,8 @@ module MemoryDBAPIFactory =
     }
 
   let descriptorFetcherFactory
-    (languageContext:
-      LanguageContext<FileDBRuntimeContext, FileDbValueExtension, ValueExtDTO, FileDbDeltaExtension, DeltaExtDTO>)
+    (dbFileConfig: DbFileConfig)
     (schemaFileConfig: SchemaFileConfig)
-    typeEvalConfig
     (addPermissionHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>)
     (addBackgroundHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>)
     (tenantId: Guid)
@@ -82,8 +84,7 @@ module MemoryDBAPIFactory =
         match compilationCache.TryFind(tenantId, schemaName, draft) with
         | None ->
           buildSchemaDefinition
-            languageContext
-            typeEvalConfig
+            dbFileConfig
             addPermissionHookScope
             addBackgroundHookScope
             tenantId

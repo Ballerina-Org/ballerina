@@ -31,8 +31,8 @@ open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.DSL.Next.StdLib.String
 
-let _, languageContext, typeEvalConfig =
-  stdExtensions<unit, MutableMemoryDB<unit, unit>> (StringTypeClass<_>.Console()) (db_ops ())
+let _, languageContext, typeCheckingConfig, build_cache =
+  hddcacheWithStdExtensions<unit, MutableMemoryDB<unit, unit>> (StringTypeClass<_>.Console()) (db_ops ()) id id
 
 let primitive (v: string) =
   $"""
@@ -136,15 +136,12 @@ in let r2 : R2 = {
 in r2
 """
 
-let build_cache =
-  memcache (languageContext.TypeCheckContext, languageContext.TypeCheckState)
-
 let typeCheckProgram (programName: string) (program: string) =
   sum {
     let project: ProjectBuildConfiguration =
       { Files = NonEmptyList.OfList(FileBuildConfiguration.FromFile($"{programName}.bl", program), []) }
 
-    return! ProjectBuildConfiguration.BuildCached typeEvalConfig build_cache project
+    return! ProjectBuildConfiguration.BuildCached typeCheckingConfig build_cache project
   }
 
 let runProgram expr exprs (st: TypeCheckState<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>) =

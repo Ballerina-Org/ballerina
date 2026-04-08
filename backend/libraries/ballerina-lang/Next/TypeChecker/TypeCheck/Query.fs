@@ -127,7 +127,7 @@ module Query =
 
   and Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckQuery<'valueExt when 'valueExt: comparison>
-      (config: TypeEvalConfig<'valueExt>)
+      (config: TypeCheckingConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeCheckerQuery<ExprQuery<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun

@@ -36,6 +36,7 @@ open Ballerina.DSL.Next.StdLib.Guid
 open Ballerina.DSL.Next.StdLib.TimeSpan
 open Ballerina.DSL.Next.StdLib
 open Ballerina.DSL.Next.StdLib.Extensions
+open Ballerina.DSL.Next.Runners.Project
 open Ballerina.Collections.NonEmptyList
 open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 
@@ -55,12 +56,12 @@ do ignore (=>)
 do ignore (!!)
 do ignore (=>>)
 
-let ops, context, typeEvalConfig =
-  db_ops () |> stdExtensions (StringTypeClass<_>.Console())
+let ops, context, typeCheckingConfig, cache =
+  hddcacheWithStdExtensions (StringTypeClass<_>.Console()) (db_ops ()) id id
 
 let evalContext = ExprEvalContext.Empty() |> context.ExprEvalContext
 
-let typeCheck = Expr.TypeCheck typeEvalConfig
+let typeCheck = Expr.TypeCheck typeCheckingConfig
 
 let private runTypeCheck (program: Expr<TypeExpr<ValueExt>, Identifier, ValueExt>) =
   typeCheck None program

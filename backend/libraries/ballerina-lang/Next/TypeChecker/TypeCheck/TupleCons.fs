@@ -41,7 +41,7 @@ module TupleCons =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckTupleCons<'valueExt when 'valueExt: comparison>
-      (config: TypeEvalConfig<'valueExt>)
+      (config: TypeCheckingConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprTupleCons<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Items = fields }) ->

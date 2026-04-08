@@ -13,7 +13,6 @@
   <ItemGroup>
     <Compile Include="ProjectModel.fs" />
     <Compile Include="Caching.fs" />
-    <Compile Include="MemCache.fs" />
     <Compile Include="HddCache.fs" />
     <Compile Include="Project.fs" />
   </ItemGroup>

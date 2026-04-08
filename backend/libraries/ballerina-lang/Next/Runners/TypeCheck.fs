@@ -19,15 +19,14 @@ module TypeCheck =
       and 'deltaExtDTO: not null
       and 'deltaExtDTO: not struct>
       (
-        { TypeCheckContext = typeCheckContext
-          TypeCheckState = typeCheckState }:
+        { TypeCheckContext = _
+          TypeCheckState = _ }:
           LanguageContext<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>,
-        config: TypeEvalConfig<'valueExt>
+        config: TypeCheckingConfig<'valueExt>,
+        cache: ProjectCache<'valueExt>
       )
       (program: string)
       : Sum<TypeCheckedExpr<'valueExt> * TypeValue<'valueExt> * TypeCheckState<'valueExt>, Errors<Location>> =
-      let cache = memcache (typeCheckContext, typeCheckState)
-
       let files =
         NonEmptyList.OfList(FileBuildConfiguration.FromFile("input.bl", program), [])
 

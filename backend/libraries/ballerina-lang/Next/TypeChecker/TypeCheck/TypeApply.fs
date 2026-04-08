@@ -42,7 +42,7 @@ module TypeApply =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckTypeApply<'valueExt when 'valueExt: comparison>
-      (config: TypeEvalConfig<'valueExt>)
+      (config: TypeCheckingConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<ExprTypeApply<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
       fun context_t ({ Func = fExpr; TypeArg = tExpr }) ->
