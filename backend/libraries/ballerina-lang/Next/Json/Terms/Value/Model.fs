@@ -28,9 +28,8 @@ module Value =
           Value.FromJsonVar json
           Value.FromJsonLambda json
           Value.FromJsonTypeLambda json
-          fun () ->
-            $"Unknown Value JSON: {json.AsFSharpString.ReasonablyClamped}"
-          |> Errors.Singleton()
+          Errors.Singleton () (fun () ->
+            $"Unknown Value JSON: {json.AsFSharpString.ReasonablyClamped}")
           |> Errors.MapPriority(replaceWith ErrorPriority.Medium)
           |> reader.Throw ]
       )

@@ -36,9 +36,8 @@ module ExprJson =
             TypeCheckedExpr.FromJsonIf TypeCheckedExpr.FromJson json
             TypeCheckedExpr.FromJsonPrimitive(json)
             TypeCheckedExpr.FromJsonLookup(json)
-            fun () ->
-              $"Unknown Expr JSON: {json.AsFSharpString.ReasonablyClamped}"
-            |> Errors.Singleton()
+            Errors.Singleton () (fun () ->
+              $"Unknown Expr JSON: {json.AsFSharpString.ReasonablyClamped}")
             |> Errors.MapPriority(replaceWith ErrorPriority.Medium)
             |> reader.Throw ]
         )

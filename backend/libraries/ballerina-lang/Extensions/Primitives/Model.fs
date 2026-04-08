@@ -564,9 +564,8 @@ module Primitives =
             else
               return!
                 sum.Throw(
-                  fun () ->
-                    $$"""Error: cannot compare different types {{t1}} and {{t2}}"""
-                  |> Errors.Singleton()
+                  Errors.Singleton () (fun () ->
+                    $$"""Error: cannot compare different types {{t1}} and {{t2}}""")
                 )
 
           | Plus

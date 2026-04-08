@@ -199,15 +199,13 @@ module Eval =
               | Some v -> return v
               | None ->
                 return!
-                  fun () ->
-                    $"runtime error: {fieldName} not found in record {e}"
-                  |> Errors.Singleton()
+                  Errors.Singleton () (fun () ->
+                    $"runtime error: {fieldName} not found in record {e}")
                   |> co.Throw
             | _ ->
               return!
-                fun () ->
-                  $"runtime error: {e} should be a record because it is field looked up"
-                |> Errors.Singleton()
+                Errors.Singleton () (fun () ->
+                  $"runtime error: {e} should be a record because it is field looked up")
                 |> co.Throw
 
           | Expr.GenericApply(typeF, typeArg) ->
@@ -225,14 +223,12 @@ module Eval =
                      types = ctx.Types |}
             | _ ->
               return!
-                fun () ->
-                  $"runtime error: {e} should be a generic lambda because it is applied"
-                |> Errors.Singleton()
+                Errors.Singleton () (fun () ->
+                  $"runtime error: {e} should be a generic lambda because it is applied")
                 |> co.Throw
           | Expr.Extension e -> return! evalExtension (!) e
           | e ->
             return!
-              (fun () -> $"runtime error: eval({e}) not implemented")
-              |> Errors.Singleton()
+              Errors.Singleton () (fun () -> $"runtime error: eval({e}) not implemented")
               |> co.Throw
         }

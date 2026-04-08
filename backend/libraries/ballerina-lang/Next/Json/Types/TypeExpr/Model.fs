@@ -33,9 +33,8 @@ module TypeExpr =
             TypeExpr.FromJsonFlatten fromJson json
             TypeExpr.FromJsonExclude fromJson json
             TypeExpr.FromJsonFromTypeValue typeValueFromJson json
-            fun () ->
-              $"Unknown TypeExpr JSON: {json.AsFSharpString.ReasonablyClamped}"
-            |> Errors.Singleton()
+            Errors.Singleton () (fun () ->
+              $"Unknown TypeExpr JSON: {json.AsFSharpString.ReasonablyClamped}")
             |> Errors.MapPriority(replaceWith ErrorPriority.High)
             |> sum.Throw ]
         )

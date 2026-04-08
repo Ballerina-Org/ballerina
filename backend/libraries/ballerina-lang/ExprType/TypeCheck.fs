@@ -221,12 +221,11 @@ module TypeCheck =
             | t ->
               return!
                 sum.Throw(
-                  fun () ->
+                  Errors.Singleton () (fun () ->
                     sprintf
                       "Error: unexpected matchCase on type %A when typechecking expression %A"
                       t
-                      e
-                  |> Errors.Singleton()
+                      e)
                 )
           }
 
@@ -331,17 +330,14 @@ module TypeCheck =
               else
                 return!
                   sum.Throw(
-                    fun () ->
-                      $"Error: invalid lookup index {i} when looking up {e.ToString()}."
-                    |> Errors.Singleton()
-                  )
+                    Errors.Singleton () (fun () ->
+                      $"Error: invalid lookup index {i} when looking up {e.ToString()}."))
 
             | _ ->
               return!
                 sum.Throw(
-                  fun () ->
-                    $"Error: invalid lookup type {t.ToString()} when looking up {e.ToString()}.Item{i}."
-                  |> Errors.Singleton()
+                  Errors.Singleton () (fun () ->
+                    $"Error: invalid lookup type {t.ToString()} when looking up {e.ToString()}.Item{i}.")
                 )
           }
 

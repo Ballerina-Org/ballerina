@@ -19,9 +19,8 @@ module Patterns =
         sum { return fs |> Seq.map (fun v -> v.Key, v.Value) |> List.ofSeq }
       | _ ->
         sum.Throw(
-          fun () ->
-            sprintf "Error: type %A is no record and thus has no fields" t
-          |> Errors.Singleton()
+          Errors.Singleton () (fun () ->
+            sprintf "Error: type %A is no record and thus has no fields" t)
         )
 
     static member GetCases
@@ -31,9 +30,8 @@ module Patterns =
       | ExprType.UnionType cs -> sum { return cs }
       | _ ->
         sum.Throw(
-          (fun () ->
+          Errors.Singleton () (fun () ->
             sprintf "Error: type %A is no union and thus has no cases" t)
-          |> Errors.Singleton()
         )
 
     static member AsSet(t: ExprType) : Sum<ExprType, Errors<_>> =

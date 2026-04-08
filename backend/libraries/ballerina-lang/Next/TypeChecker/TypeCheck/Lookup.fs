@@ -81,11 +81,11 @@ module Lookup =
                   ctx
 
               })
-              (fun () ->
-                $"Error: cannot resolve identifier '{id_resolved}'/'{id_original}'."
+              (state.Throw(
+                (fun () -> $"Error: cannot resolve identifier '{id_resolved}'/'{id_original}'.")
                |> error
                |> Errors<_>.MapPriority(replaceWith ErrorPriority.High)
-               |> state.Throw)
+              ))
             |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
 
         }
