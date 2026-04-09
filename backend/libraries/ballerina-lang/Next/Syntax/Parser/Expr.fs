@@ -414,10 +414,9 @@ module Expr =
 
         do!
           parser.Any
-            [ inKeyword
-              semicolonOperator
+            [ semicolonOperator
               (fun () ->
-                "Expected 'in', ';' or expression after 'do' expression")
+                "Expected ';' before expression after let binding")
               |> Errors.Singleton loc'
               |> Errors.MapPriority(replaceWith ErrorPriority.High)
               |> parser.Throw ]
