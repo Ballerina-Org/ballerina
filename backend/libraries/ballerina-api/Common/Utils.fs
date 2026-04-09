@@ -13,7 +13,6 @@ module APIUtils =
   open Ballerina.DSL.Next.Types.TypeChecker.Value
   open Ballerina.DSL.Next.Types.TypeChecker
   open System.Runtime.CompilerServices
-  open Ballerina.DSL.Next.SyntheticData.Generator
   open Ballerina.DSL.Next.Serialization.ValueSerializer
   // open SyntheticData
   open Ballerina.DSL.Next.Terms.Patterns
