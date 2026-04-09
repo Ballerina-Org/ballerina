@@ -158,9 +158,8 @@ module Apply =
                 return f, t_f, f_k
             }
 
-          return!
-            state.Either
-              (state {
+          let primaryBranch =
+            state {
                 let! { Id = f_lookup } = f |> Expr.AsLookup |> ofSum
                 let f_lookup = ctx.Scope.Resolve f_lookup
 
@@ -721,8 +720,10 @@ module Apply =
                        Errors.MapPriority(replaceWith ErrorPriority.Medium)
                      ))
                   |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
-              })
-              (state {
+              }
+
+          let fallbackBranch =
+            state {
                 let! a, _ = None => a_expr
                 let t_a = a.Type
                 let _a_k = a.Kind
@@ -799,7 +800,25 @@ module Apply =
               // |> error
               // |> state.Throw
               // |> state.MapError(Errors.MapPriority(replaceWith  ErrorPriority.Medium))
-              })
+              }
+
+          return!
+            state {
+              let! primaryResult = primaryBranch |> state.Catch
+
+              match primaryResult with
+              | Left result -> return result
+              | Right primaryError ->
+                let! fallbackResult = fallbackBranch |> state.Catch
+
+                match fallbackResult with
+                | Left result -> return result
+                | Right fallbackError ->
+                  return!
+                    Errors<_>.Concat(primaryError, fallbackError)
+                    |> Errors<_>.DeduplicateByMessageKeepBest
+                    |> state.Throw
+            }
             |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
         }
         |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
