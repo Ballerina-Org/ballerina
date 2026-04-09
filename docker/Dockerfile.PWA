@@ -1,7 +1,0 @@
-FROM node:20
-
-WORKDIR /app
-COPY . .
-WORKDIR /app/PWA
-
-CMD ["sh", "startup.sh"]
