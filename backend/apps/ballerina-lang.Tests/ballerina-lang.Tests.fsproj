@@ -19,7 +19,6 @@
     <Compile Include="Next\Integration.fs" />
     <Compile Include="Next\V2ToV1Bridge\V2ToV1BridgeTests.fs" />
     <Compile Include="Next\DTOs\Deltas.fs" />
-    <Compile Include="Next\SyntheticData\Generator.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
@@ -34,12 +33,10 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../libraries/ballerina-cat/ballerina-cat.fsproj" />
-    <ProjectReference Include="../../libraries/ballerina-lang-stdlib-json/ballerina-lang-stdlib-json.fsproj" />
     <ProjectReference Include="../../libraries/ballerina-lang/Next/Models/ballerina-lang-models.fsproj" />
     <ProjectReference Include="../../libraries/ballerina-lang/Next/ballerina-lang.fsproj" />
     <ProjectReference Include="../../libraries/ballerina-lang/FormBuilder/V2ToV1Bridge/v2-to-v1-bridge.fsproj" />
     <ProjectReference Include="../../libraries/ballerina-lang/FormBuilder/Compiler/form-builder-lang-compiler.fsproj" />
-    <ProjectReference Include="../../libraries/ballerina-lang-synthetic-data/ballerina-lang-synthetic-data.fsproj" />
     <ProjectReference Include="../../libraries/ballerina-memorydb/ballerina-memorydb.fsproj" />
   </ItemGroup>
 </Project>
