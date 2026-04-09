@@ -10,7 +10,7 @@
     <PackageReference Include="FSharp.SystemTextJson" Version="1.4.36" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="../../../apps/ballerina-lang-build/ballerina-lang-build.fsproj" />
+    <ProjectReference Include="../../ballerina-lang-build/ballerina-lang-build.fsproj" />
     <Compile Include="Runners/TypeCheck.fs" />
     <Compile Include="Runners\BackgroundJob.fs" />
   </ItemGroup>
