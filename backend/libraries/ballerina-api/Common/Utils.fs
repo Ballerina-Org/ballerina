@@ -13,9 +13,7 @@ module APIUtils =
   open Ballerina.DSL.Next.Types.TypeChecker.Value
   open Ballerina.DSL.Next.Types.TypeChecker
   open System.Runtime.CompilerServices
-  open Ballerina.DSL.Next.SyntheticData.Generator
   open Ballerina.DSL.Next.Serialization.ValueSerializer
-  // open SyntheticData
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.StdLib.DB
   open Ballerina.DSL.Next.Terms.Eval
@@ -122,34 +120,6 @@ module APIUtils =
     |> NonEmptyList.ToList
     |> List.toArray
     |> Array.map (fun error -> error.ToString())
-
-  // let generateExamples<'runtimeContext, 'db, 'customExtension when 'customExtension: comparison and 'db: comparison>
-  //   (apiError: APITypeError<'runtimeContext, 'db, 'customExtension>)
-  //   =
-  //   sum {
-  //     let config = configWithRandom 1 (Some ListConfig.Default)
-  //     let importedGenerators = listImportedGenerators ()
-
-  //     let! randomValues =
-  //       let generators =
-  //         seq {
-  //           for _ in [ 1..10 ] do
-  //             yield!
-  //               Generate
-  //                 config
-  //                 (apiError.TypeCheckContext, apiError.TypeCheckState)
-  //                 importedGenerators
-  //                 apiError.ExpectedType
-  //         }
-
-  //       generators |> Sum.All |> toUknonwLocation
-
-  //     return!
-  //       randomValues
-  //       |> List.map (fun value -> runDTOConverter apiError.LanguageContext (valueToDTO value))
-  //       |> Sum.All
-  //       |> Sum.map List.toArray
-  //   }
 
 
   let entityDescriptorFromDb<'runtimeContext, 'db, 'customExtension
@@ -327,16 +297,6 @@ module APIUtils =
       Results.BadRequest
         { Errors = serializedErrors
           Examples = [||] }
-    // match generateExamples typeError with
-    // | Left values ->
-    //   Results.BadRequest(
-    //     { Errors = serializedErrors
-    //       Examples = values }
-    //   )
-    // | Right errors ->
-    //   Results.BadRequest
-    //     { Errors = errorsToSerializable errors
-    //       Examples = [||] }
     | Right { Errors = errors; TypeError = None } ->
       Results.BadRequest
         { Errors = errorsToSerializable errors

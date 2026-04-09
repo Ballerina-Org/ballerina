@@ -1,9 +1,0 @@
-FROM node:20
-
-WORKDIR /app
-RUN git clone https://github.com/mobz/elasticsearch-head.git
-
-WORKDIR /app/elasticsearch-head
-RUN npm install
-
-CMD ["npm", "run", "start"]

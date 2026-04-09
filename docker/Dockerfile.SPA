@@ -1,9 +1,0 @@
-FROM node:20
-
-RUN yarn install
-WORKDIR /app
-COPY . .
-
-WORKDIR /app/Main
-
-CMD ["sh", "./EntryPoint/Frontend/startup.sh", "fe-watch"]
