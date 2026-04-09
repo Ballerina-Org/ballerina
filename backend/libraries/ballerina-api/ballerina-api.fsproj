@@ -6,7 +6,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Model/Model.fs" />
-    <!-- <Compile Include="Common/SyntheticData.fs" /> -->
     <Compile Include="Common/Utils.fs" />
     <Compile Include="Common/OpenAPI.fs" />
     <Compile Include="Endpoints/Create.fs" />
