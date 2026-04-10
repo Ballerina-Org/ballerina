@@ -31,8 +31,13 @@ module MemoryDBAPIFactory =
   open CacheCompilation
 
   let contextFactory dbFileConfig =
-    stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()) (fileDbOps dbFileConfig)
-    |> fun (_, languageContext, typeEvalConfig) -> languageContext, typeEvalConfig
+    hddcacheWithStdExtensions
+      (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
+      (fileDbOps dbFileConfig)
+      id
+      id
+    |> fun (_, languageContext, typeCheckingConfig, _) ->
+      languageContext, typeCheckingConfig
 
   let getSchemaVersion tenantId schemaName draft schemaFileConfig =
     sum {
@@ -40,7 +45,8 @@ module MemoryDBAPIFactory =
         schemaFileConfig.SchemaDirectory, schemaFileConfig.SchemaExtension
 
       let fileManager: FileContentManager<Schema> =
-        FileContentManager<Schema>.Create(schemaDirectory, schemaExtension, tenantId, schemaName)
+        FileContentManager<Schema>
+          .Create(schemaDirectory, schemaExtension, tenantId, schemaName)
 
       let! schema =
         fileManager.GetContent()
@@ -65,25 +71,33 @@ module MemoryDBAPIFactory =
     }
 
   let descriptorFetcherFactory
-    (languageContext:
-      LanguageContext<FileDBRuntimeContext, FileDbValueExtension, ValueExtDTO, FileDbDeltaExtension, DeltaExtDTO>)
+    (dbFileConfig: DbFileConfig)
     (schemaFileConfig: SchemaFileConfig)
-    typeEvalConfig
-    (addPermissionHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>)
-    (addBackgroundHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>)
+    (addPermissionHookScope:
+      Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>)
+    (addBackgroundHookScope:
+      Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>)
     (tenantId: Guid)
     (schemaName: string)
     (draft: bool)
-    : Sum<DbDescriptor<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, unit>, unit>, Errors<Location>> =
+    : Sum<
+        DbDescriptor<
+          FileDBRuntimeContext,
+          MutableMemoryDB<FileDBRuntimeContext, unit>,
+          unit
+         >,
+        Errors<Location>
+       >
+    =
     sum {
-      let! schemaVersion = getSchemaVersion tenantId schemaName draft schemaFileConfig
+      let! schemaVersion =
+        getSchemaVersion tenantId schemaName draft schemaFileConfig
 
       let! evalResult, typeCheckContext, typeCheckState, evalContext =
         match compilationCache.TryFind(tenantId, schemaName, draft) with
         | None ->
           buildSchemaDefinition
-            languageContext
-            typeEvalConfig
+            dbFileConfig
             addPermissionHookScope
             addBackgroundHookScope
             tenantId
@@ -121,14 +135,26 @@ module MemoryDBAPIFactory =
         schemaFileConfig: SchemaFileConfig,
         dbFileConfig: DbFileConfig,
         routeGroupBuilder: RouteGroupBuilder,
-        addPermissionHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>,
-        addBackgroundHookScope: Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>,
+        addPermissionHookScope:
+          Updater<
+            Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>
+           >,
+        addBackgroundHookScope:
+          Updater<
+            Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>
+           >,
         factory,
         schemaStream
       ) : Sum<unit, Errors<Location>> =
       sum {
         this
-          .MapPublish(schemaFileConfig, dbFileConfig, addPermissionHookScope, addBackgroundHookScope, schemaStream)
+          .MapPublish(
+            schemaFileConfig,
+            dbFileConfig,
+            addPermissionHookScope,
+            addBackgroundHookScope,
+            schemaStream
+          )
           .MapGetSchemaVersions(schemaFileConfig)
         |> ignore
 

@@ -28,7 +28,7 @@ module InstantiateSyntheticVars =
 
   type TypeCheckedExpr<'ve> with
     static member InstantiateSyntheticVars<'valueExt when 'valueExt: comparison>
-      (config: TypeEvalConfig<'valueExt>)
+      (config: TypeCheckingConfig<'valueExt>)
       (typeCheckExpr)
       (expr: TypeCheckedExpr<'valueExt>)
       : TypeCheckerResult<TypeCheckedExpr<'valueExt>, 'valueExt> =
@@ -40,29 +40,93 @@ module InstantiateSyntheticVars =
         match expr.Expr with
         | TypeCheckedExprRec.RecordDes({ Expr = r; Field = field }) ->
           let! r = !r
-          return TypeCheckedExpr.RecordDes(r, field, expr.Type, expr.Kind, loc0, expr.Scope)
+
+          return
+            TypeCheckedExpr.RecordDes(
+              r,
+              field,
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.RecordWith({ Record = r; Fields = fields }) ->
           let! r = !r
-          let! fields = fields |> List.map (fun (k, v) -> !v |> state.Map(fun v -> (k, v))) |> state.All
-          return TypeCheckedExpr.RecordWith(r, fields, expr.Type, expr.Kind, loc0, expr.Scope)
+
+          let! fields =
+            fields
+            |> List.map (fun (k, v) -> !v |> state.Map(fun v -> (k, v)))
+            |> state.All
+
+          return
+            TypeCheckedExpr.RecordWith(
+              r,
+              fields,
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.RecordCons({ Fields = fields }) ->
-          let! fields = fields |> List.map (fun (k, v) -> !v |> state.Map(fun v -> (k, v))) |> state.All
-          return TypeCheckedExpr.RecordCons(fields, expr.Type, expr.Kind, loc0, expr.Scope)
+          let! fields =
+            fields
+            |> List.map (fun (k, v) -> !v |> state.Map(fun v -> (k, v)))
+            |> state.All
+
+          return
+            TypeCheckedExpr.RecordCons(
+              fields,
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.TupleCons({ Items = items }) ->
           let! items = items |> List.map (!) |> state.All
-          return TypeCheckedExpr.TupleCons(items, expr.Type, expr.Kind, loc0, expr.Scope)
+
+          return
+            TypeCheckedExpr.TupleCons(
+              items,
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.TupleDes({ Tuple = t; Item = item }) ->
           let! t = !t
-          return TypeCheckedExpr.TupleDes(t, item, expr.Type, expr.Kind, loc0, expr.Scope)
+
+          return
+            TypeCheckedExpr.TupleDes(
+              t,
+              item,
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.SumCons c ->
-          return TypeCheckedExpr.SumCons(c.Selector, expr.Type, expr.Kind, loc0, expr.Scope)
+          return
+            TypeCheckedExpr.SumCons(
+              c.Selector,
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.SumDes({ Handlers = handlers }) ->
           let! handlers =
             handlers
             |> Map.map (fun _ (vn, v) -> !v |> state.Map(fun v -> (vn, v)))
             |> state.AllMap
 
-          return TypeCheckedExpr.SumDes(handlers, expr.Type, expr.Kind, loc0, expr.Scope)
+          return
+            TypeCheckedExpr.SumDes(
+              handlers,
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.UnionDes({ Handlers = handlers
                                         Fallback = fallback }) ->
           let! handlers =
@@ -71,7 +135,16 @@ module InstantiateSyntheticVars =
             |> state.AllMap
 
           let! fallback = fallback |> Option.map (!) |> state.RunOption
-          return TypeCheckedExpr.UnionDes(handlers, fallback, expr.Type, expr.Kind, loc0, expr.Scope)
+
+          return
+            TypeCheckedExpr.UnionDes(
+              handlers,
+              fallback,
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.Let({ Var = v
                                    Type = t
                                    Val = value
@@ -82,7 +155,9 @@ module InstantiateSyntheticVars =
         | TypeCheckedExprRec.Do({ Val = e1; Rest = e2 }) ->
           let! e1 = !e1
           let! e2 = !e2
-          return TypeCheckedExpr.Do(e1, e2, expr.Type, expr.Kind, loc0, expr.Scope)
+
+          return
+            TypeCheckedExpr.Do(e1, e2, expr.Type, expr.Kind, loc0, expr.Scope)
         | TypeCheckedExprRec.Lambda({ Param = p
                                       Body = b
                                       ParamType = pt
@@ -93,55 +168,143 @@ module InstantiateSyntheticVars =
           let! c = !c
           let! t = !t
           let! e = !e
-          return TypeCheckedExpr.If(c, t, e, expr.Type, expr.Kind, loc0, expr.Scope)
+
+          return
+            TypeCheckedExpr.If(c, t, e, expr.Type, expr.Kind, loc0, expr.Scope)
         | TypeCheckedExprRec.Apply({ F = f; Arg = a }) ->
           let! f = !f
           let! a = !a
-          return TypeCheckedExpr.Apply(f, a, expr.Type, expr.Kind, loc0, expr.Scope)
+
+          return
+            TypeCheckedExpr.Apply(f, a, expr.Type, expr.Kind, loc0, expr.Scope)
         | TypeCheckedExprRec.TypeApply({ Func = f
-                                         TypeArg = TypeValue.Var(t_var) as t_arg }) when t_var.Synthetic ->
+                                         TypeArg = TypeValue.Var(t_var) as t_arg }) when
+          t_var.Synthetic
+          ->
           let! e = !f
 
           let! t_arg =
             t_arg
-            |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
+            |> TypeValue.Instantiate
+              ()
+              (TypeExpr.Eval config typeCheckExpr)
+              loc0
             |> Expr.liftInstantiation
 
           let res = TypeCheckedExpr.TypeApply(e, t_arg, expr.Type, expr.Kind)
 
           return res
-        | TypeCheckedExprRec.Primitive p -> return TypeCheckedExpr.Primitive(p, expr.Type, expr.Kind, loc0, expr.Scope)
-        | TypeCheckedExprRec.Lookup l -> return TypeCheckedExpr.Lookup(l.Id, expr.Type, expr.Kind, loc0, expr.Scope)
+        | TypeCheckedExprRec.Primitive p ->
+          return
+            TypeCheckedExpr.Primitive(p, expr.Type, expr.Kind, loc0, expr.Scope)
+        | TypeCheckedExprRec.Lookup l ->
+          return
+            TypeCheckedExpr.Lookup(l.Id, expr.Type, expr.Kind, loc0, expr.Scope)
         | TypeCheckedExprRec.TypeLambda({ Param = p; Body = b }) ->
           let! b = !b
-          return TypeCheckedExpr.TypeLambda(p, b, expr.Type, expr.Kind, loc0, expr.Scope)
+
+          return
+            TypeCheckedExpr.TypeLambda(
+              p,
+              b,
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.TypeApply({ Func = f; TypeArg = t }) ->
           let! f = !f
-          return TypeCheckedExpr.TypeApply(f, t, expr.Type, expr.Kind, loc0, expr.Scope)
+
+          return
+            TypeCheckedExpr.TypeApply(
+              f,
+              t,
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.TypeLet({ Name = n; TypeDef = td; Body = b }) ->
           let! b = !b
-          return TypeCheckedExpr.TypeLet(n, td, b, expr.Type, expr.Kind, loc0, expr.Scope)
+
+          return
+            TypeCheckedExpr.TypeLet(
+              n,
+              td,
+              b,
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.FromValue({ Value = v
                                          ValueType = t
-                                         ValueKind = k }) -> return TypeCheckedExpr.FromValue(v, t, k, loc0, expr.Scope)
+                                         ValueKind = k }) ->
+          return TypeCheckedExpr.FromValue(v, t, k, loc0, expr.Scope)
         | TypeCheckedExprRec.EntitiesDes({ Expr = e }) ->
           let! e = !e
-          return TypeCheckedExpr.EntitiesDes(e, expr.Type, expr.Kind, loc0, expr.Scope)
+
+          return
+            TypeCheckedExpr.EntitiesDes(
+              e,
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.RelationsDes({ Expr = e }) ->
           let! e = !e
-          return TypeCheckedExpr.RelationsDes(e, expr.Type, expr.Kind, loc0, expr.Scope)
+
+          return
+            TypeCheckedExpr.RelationsDes(
+              e,
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.EntityDes({ Expr = e; EntityName = entityName }) ->
           let! e = !e
-          return TypeCheckedExpr.EntityDes(e, entityName, expr.Type, expr.Kind, loc0, expr.Scope)
+
+          return
+            TypeCheckedExpr.EntityDes(
+              e,
+              entityName,
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.RelationDes({ Expr = e
                                            RelationName = relationName }) ->
           let! e = !e
-          return TypeCheckedExpr.RelationDes(e, relationName, expr.Type, expr.Kind, loc0, expr.Scope)
+
+          return
+            TypeCheckedExpr.RelationDes(
+              e,
+              relationName,
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.RelationLookupDes({ Expr = e
                                                  RelationName = relationName
                                                  Direction = direction }) ->
           let! e = !e
-          return TypeCheckedExpr.RelationLookupDes(e, relationName, direction, expr.Type, expr.Kind, loc0, expr.Scope)
-        | TypeCheckedExprRec.Query q -> return TypeCheckedExpr.Query(q, expr.Type, expr.Kind, loc0, expr.Scope)
+
+          return
+            TypeCheckedExpr.RelationLookupDes(
+              e,
+              relationName,
+              direction,
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
+        | TypeCheckedExprRec.Query q ->
+          return
+            TypeCheckedExpr.Query(q, expr.Type, expr.Kind, loc0, expr.Scope)
 
       }

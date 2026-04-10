@@ -34,9 +34,19 @@ module Expr =
   type ComplexExpression<'valueExt> =
     | ScopedIdentifier of NonEmptyList<string>
     | RecordOrTupleDesChain of NonEmptyList<Sum<string, int>>
-    | TupleCons of NonEmptyList<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
-    | ApplicationArguments of NonEmptyList<Sum<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, TypeExpr<'valueExt>>>
-    | BinaryExpressionChain of NonEmptyList<BinaryExprOperator * Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
+    | TupleCons of
+      NonEmptyList<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
+    | ApplicationArguments of
+      NonEmptyList<
+        Sum<
+          Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
+          TypeExpr<'valueExt>
+         >
+       >
+    | BinaryExpressionChain of
+      NonEmptyList<
+        BinaryExprOperator * Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>
+       >
 
   let private parseAllComplexShapes: Set<ComplexExpressionKind> =
     [ ComplexExpressionKind.ApplicationArguments
@@ -51,39 +61,66 @@ module Expr =
   let rec expr
     (depth: int)
     (parseComplexShapes: Set<ComplexExpressionKind>)
-    : Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
+    : Parser<
+        Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
+        LocalizedToken,
+        Location,
+        Errors<Location>
+       >
+    =
 
     let expr = expr (depth + 1)
     let singleIdentifier = singleTermIdentifier
 
     let typeDecl v = typeDecl (expr parseAllComplexShapes) v
+
     // let indent = "--"
 
     let stringLiteral () =
       parser.Exactly(fun t ->
         match t.Token with
         | Token.StringLiteral s ->
-          Expr.Primitive(PrimitiveValue.String s, t.Location, TypeCheckScope.Empty)
+          Expr.Primitive(
+            PrimitiveValue.String s,
+            t.Location,
+            TypeCheckScope.Empty
+          )
           |> Some
         | _ -> None)
 
     let intLiteral () =
       parser.Exactly(fun t ->
         match t.Token with
-        | Token.IntLiteral s -> Expr.Primitive(PrimitiveValue.Int32 s, t.Location, TypeCheckScope.Empty) |> Some
+        | Token.IntLiteral s ->
+          Expr.Primitive(
+            PrimitiveValue.Int32 s,
+            t.Location,
+            TypeCheckScope.Empty
+          )
+          |> Some
         | _ -> None)
 
     let int64Literal () =
       parser.Exactly(fun t ->
         match t.Token with
-        | Token.Int64Literal s -> Expr.Primitive(PrimitiveValue.Int64 s, t.Location, TypeCheckScope.Empty) |> Some
+        | Token.Int64Literal s ->
+          Expr.Primitive(
+            PrimitiveValue.Int64 s,
+            t.Location,
+            TypeCheckScope.Empty
+          )
+          |> Some
         | _ -> None)
 
     let decimalLiteral () =
       parser.Exactly(fun t ->
         match t.Token with
         | Token.DecimalLiteral d ->
-          Expr.Primitive(PrimitiveValue.Decimal d, t.Location, TypeCheckScope.Empty)
+          Expr.Primitive(
+            PrimitiveValue.Decimal d,
+            t.Location,
+            TypeCheckScope.Empty
+          )
           |> Some
         | _ -> None)
 
@@ -91,7 +128,11 @@ module Expr =
       parser.Exactly(fun t ->
         match t.Token with
         | Token.Float32Literal s ->
-          Expr.Primitive(PrimitiveValue.Float32 s, t.Location, TypeCheckScope.Empty)
+          Expr.Primitive(
+            PrimitiveValue.Float32 s,
+            t.Location,
+            TypeCheckScope.Empty
+          )
           |> Some
         | _ -> None)
 
@@ -99,14 +140,24 @@ module Expr =
       parser.Exactly(fun t ->
         match t.Token with
         | Token.Float64Literal s ->
-          Expr.Primitive(PrimitiveValue.Float64 s, t.Location, TypeCheckScope.Empty)
+          Expr.Primitive(
+            PrimitiveValue.Float64 s,
+            t.Location,
+            TypeCheckScope.Empty
+          )
           |> Some
         | _ -> None)
 
     let boolLiteral () =
       parser.Exactly(fun t ->
         match t.Token with
-        | Token.BoolLiteral b -> Expr.Primitive(PrimitiveValue.Bool b, t.Location, TypeCheckScope.Empty) |> Some
+        | Token.BoolLiteral b ->
+          Expr.Primitive(
+            PrimitiveValue.Bool b,
+            t.Location,
+            TypeCheckScope.Empty
+          )
+          |> Some
         | _ -> None)
 
     let unitLiteral () =
@@ -149,9 +200,12 @@ module Expr =
                               let! loc = parser.Location
 
                               return!
-                                (fun () -> "Expected identifier or unit literal as pattern parameter.")
+                                (fun () ->
+                                  "Expected identifier or unit literal as pattern parameter.")
                                 |> Errors.Singleton loc
-                                |> Errors.MapPriority(replaceWith ErrorPriority.High)
+                                |> Errors.MapPriority(
+                                  replaceWith ErrorPriority.High
+                                )
                                 |> parser.Throw
                             } ]
                         |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
@@ -198,7 +252,8 @@ module Expr =
 
             if unionCases.Length > 0 && sumCases.Length > 0 then
               return!
-                (fun () -> "Error: cannot mix union cases and sum cases in match expression")
+                (fun () ->
+                  "Error: cannot mix union cases and sum cases in match expression")
                 |> Errors.Singleton loc
                 |> parser.Throw
             else if unionCases.Length > 0 then
@@ -215,7 +270,12 @@ module Expr =
               let sumCases = Map.ofList sumCases
 
               return
-                Expr.Apply(Expr.SumDes(sumCases, loc, TypeCheckScope.Empty), matchedExpr, loc, TypeCheckScope.Empty)
+                Expr.Apply(
+                  Expr.SumDes(sumCases, loc, TypeCheckScope.Empty),
+                  matchedExpr,
+                  loc,
+                  TypeCheckScope.Empty
+                )
 
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
@@ -244,7 +304,13 @@ module Expr =
         return!
           parser {
 
-            let! pars = parser.AtLeastOne(parser.Any [ typeParam |> parser.Map Left; termParam |> parser.Map Right ])
+            let! pars =
+              parser.AtLeastOne(
+                parser.Any
+                  [ typeParam |> parser.Map Left
+                    termParam |> parser.Map Right ]
+              )
+
             let pars = pars |> NonEmptyList.ToSeq
 
             let! colon = colonOperator |> parser.Try
@@ -252,7 +318,10 @@ module Expr =
             let! bodyType =
               match colon with
               | Left _ ->
-                typeDecl (parseAllComplexTypeShapes |> Set.remove ComplexTypeKind.BinaryExpressionChain)
+                typeDecl (
+                  parseAllComplexTypeShapes
+                  |> Set.remove ComplexTypeKind.BinaryExpressionChain
+                )
                 |> parser.Map Some
               | Right _ -> parser { return None }
 
@@ -303,7 +372,9 @@ module Expr =
                     do! closeRoundBracketOperator
                     return paramName, typeDecl |> Some
                   }
-                  |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+                  |> parser.MapError(
+                    Errors.MapPriority(replaceWith ErrorPriority.High)
+                  )
               }
               parser {
                 let! paramName = singleIdentifier
@@ -318,7 +389,9 @@ module Expr =
                             let! typeDecl = typeDecl parseAllComplexTypeShapes
                             return typeDecl |> Some
                           }
-                          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+                          |> parser.MapError(
+                            Errors.MapPriority(replaceWith ErrorPriority.High)
+                          )
                       }
                       parser { return None } ]
 
@@ -341,9 +414,9 @@ module Expr =
 
         do!
           parser.Any
-            [ inKeyword
-              semicolonOperator
-              (fun () -> "Expected 'in', ';' or expression after 'do' expression")
+            [ semicolonOperator
+              (fun () ->
+                "Expected ';' before expression after let binding")
               |> Errors.Singleton loc'
               |> Errors.MapPriority(replaceWith ErrorPriority.High)
               |> parser.Throw ]
@@ -353,7 +426,15 @@ module Expr =
           expr parseAllComplexShapes
           |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
-        return Expr.Let(paramName |> Var.Create, paramType, value, body, loc, TypeCheckScope.Empty)
+        return
+          Expr.Let(
+            paramName |> Var.Create,
+            paramType,
+            value,
+            body,
+            loc,
+            TypeCheckScope.Empty
+          )
       }
       |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
@@ -370,7 +451,8 @@ module Expr =
           parser.Any
             [ inKeyword
               semicolonOperator
-              (fun () -> "Expected 'in', ';' or expression after 'do' expression")
+              (fun () ->
+                "Expected 'in', ';' or expression after 'do' expression")
               |> Errors.Singleton loc
               |> Errors.MapPriority(replaceWith ErrorPriority.High)
               |> parser.Throw ]
@@ -396,7 +478,9 @@ module Expr =
             let! thenBranch = expr parseAllComplexShapes
             do! elseKeyword
             let! elseBranch = expr parseAllComplexShapes
-            return Expr.If(cond, thenBranch, elseBranch, loc, TypeCheckScope.Empty)
+
+            return
+              Expr.If(cond, thenBranch, elseBranch, loc, TypeCheckScope.Empty)
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
@@ -424,7 +508,9 @@ module Expr =
                         let! e =
                           e
                           |> Expr.AsLookup
-                          |> sum.MapError(Errors.MapContext(replaceWith e.Location))
+                          |> sum.MapError(
+                            Errors.MapContext(replaceWith e.Location)
+                          )
                           |> parser.OfSum
 
                         do! equalsOperator |> parser.Ignore
@@ -450,8 +536,11 @@ module Expr =
             do! closeCurlyBracketOperator
 
             match firstFieldOrWithExpr with
-            | Sum.Left({ Id = f }, v) -> return Expr.RecordCons((f, v) :: fields, loc, TypeCheckScope.Empty)
-            | Sum.Right e -> return Expr.RecordWith(e, fields, loc, TypeCheckScope.Empty)
+            | Sum.Left({ Id = f }, v) ->
+              return
+                Expr.RecordCons((f, v) :: fields, loc, TypeCheckScope.Empty)
+            | Sum.Right e ->
+              return Expr.RecordWith(e, fields, loc, TypeCheckScope.Empty)
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
@@ -466,7 +555,13 @@ module Expr =
               parser.AtLeastOne(
                 parser {
                   do! commaOperator
-                  let! value = expr (parseComplexShapes |> Set.remove ComplexExpressionKind.TupleCons)
+
+                  let! value =
+                    expr (
+                      parseComplexShapes
+                      |> Set.remove ComplexExpressionKind.TupleCons
+                    )
+
                   return value
                 }
               )
@@ -486,7 +581,11 @@ module Expr =
               parser.AtLeastOne(
                 parser {
                   do! dotOperator
-                  return! parser.Any [ singleIdentifier |> parser.Map Left; intLiteralToken () |> parser.Map Right ]
+
+                  return!
+                    parser.Any
+                      [ singleIdentifier |> parser.Map Left
+                        intLiteralToken () |> parser.Map Right ]
                 }
               )
 
@@ -561,7 +660,13 @@ module Expr =
         parser {
           do! parseOperator op
           let! loc = parser.Location
-          return Expr.Lookup(op.ToString() |> Identifier.LocalScope, loc, TypeCheckScope.Empty)
+
+          return
+            Expr.Lookup(
+              op.ToString() |> Identifier.LocalScope,
+              loc,
+              TypeCheckScope.Empty
+            )
         }
 
       singleOperator Operator.Bang
@@ -611,7 +716,13 @@ module Expr =
               parser.AtLeastOne(
                 parser {
                   let! op = binaryExprOperator
-                  let! value = expr (parseComplexShapes |> Set.remove ComplexExpressionKind.BinaryExpressionChain)
+
+                  let! value =
+                    expr (
+                      parseComplexShapes
+                      |> Set.remove ComplexExpressionKind.BinaryExpressionChain
+                    )
+
                   return op, value
                 }
               )
@@ -623,27 +734,49 @@ module Expr =
 
     let argExpr () =
       parser {
-        return!
-          parser {
-            let! res =
-              parser.Any
-                [ expr (Set.singleton ComplexExpressionKind.RecordDes) |> parser.Map Sum.Left
-                  (fun () -> typeDecl parseAllComplexTypeShapes)
-                  |> betweenSquareBrackets
-                  |> parser.Map(Sum.Right) ]
-              |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+        let! res =
+          parser.Any
+            [ expr (Set.singleton ComplexExpressionKind.RecordDes)
+              |> parser.Map Sum.Left
+              (fun () -> typeDecl parseAllComplexTypeShapes)
+              |> betweenSquareBrackets
+              |> parser.Map(Sum.Right) ]
+          |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+          |> parser.MapError(Errors<_>.DeduplicateByMessageKeepBest)
 
-            return res
-          }
-          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+        return res
       }
       |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+      |> parser.MapError(Errors<_>.DeduplicateByMessageKeepBest)
 
     let application () =
       parser {
         let! args = parser.AtLeastOne(argExpr ())
         return args |> ComplexExpression.ApplicationArguments
       }
+      |> parser.MapError(Errors<_>.DeduplicateByMessageKeepBest)
+
+    let startsApplicationArgument (t: LocalizedToken) =
+      match t.Token with
+      | Token.Identifier _
+      | Token.StringLiteral _
+      | Token.BoolLiteral _
+      | Token.IntLiteral _
+      | Token.Int64Literal _
+      | Token.DecimalLiteral _
+      | Token.Float32Literal _
+      | Token.Float64Literal _
+      | Token.CaseLiteral _
+      | Token.Keyword Keyword.Fun
+      | Token.Keyword Keyword.If
+      | Token.Keyword Keyword.Match
+      | Token.Keyword Keyword.Query
+      | Token.Operator(Operator.RoundBracket Bracket.Open)
+      | Token.Operator(Operator.SquareBracket Bracket.Open)
+      | Token.Operator(Operator.CurlyBracket Bracket.Open)
+      | Token.Operator Operator.Minus
+      | Token.Operator Operator.Bang -> true
+      | _ -> false
 
     let simpleShapes =
       [ stringLiteral ()
@@ -735,19 +868,27 @@ module Expr =
             } ]
 
         let complexShapes =
-          if parseComplexShapes.Contains ComplexExpressionKind.ScopedIdentifier then
+          if
+            parseComplexShapes.Contains ComplexExpressionKind.ScopedIdentifier
+          then
             scopedIdentifier () :: complexShapes
           else
             complexShapes
 
         let complexShapes =
-          if parseComplexShapes.Contains ComplexExpressionKind.BinaryExpressionChain then
+          if
+            parseComplexShapes.Contains
+              ComplexExpressionKind.BinaryExpressionChain
+          then
             binaryExpressionChainTail () :: complexShapes
           else
             complexShapes
 
         let complexShapes =
-          if parseComplexShapes.Contains ComplexExpressionKind.ApplicationArguments then
+          if
+            parseComplexShapes.Contains
+              ComplexExpressionKind.ApplicationArguments
+          then
             application () :: complexShapes
           else
             complexShapes
@@ -765,16 +906,50 @@ module Expr =
             complexShapes
 
         let! res =
-          complexShapes
-          |> parser.Any
-          |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
-          |> parser.Many
+          parser {
+            let! stream = parser.Stream
+
+            let commitToFirstComplexShape =
+              match stream with
+              | t :: _ ->
+                parseComplexShapes.Contains
+                  ComplexExpressionKind.ApplicationArguments
+                && startsApplicationArgument t
+              | [] -> false
+
+            if commitToFirstComplexShape then
+              let! firstComplexShape =
+                complexShapes
+                |> parser.Any
+                |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+                |> parser.MapError(Errors<_>.DeduplicateByMessageKeepBest)
+
+              let! remainingComplexShapes =
+                complexShapes
+                |> parser.Any
+                |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+                |> parser.MapError(Errors<_>.DeduplicateByMessageKeepBest)
+                |> parser.Many
+
+              return firstComplexShape :: remainingComplexShapes
+            else
+              return!
+                complexShapes
+                |> parser.Any
+                |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+                |> parser.MapError(Errors<_>.DeduplicateByMessageKeepBest)
+                |> parser.Many
+          }
 
         // do Console.WriteLine $"~~{res.ToFSharpString}"
         // do Console.ReadLine() |> ignore
         let! loc = parser.Location
 
-        let res: Sum<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, Errors<Location>> =
+        let res
+          : Sum<
+              Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
+              Errors<Location>
+             > =
           res
           |> List.fold
             (fun acc e ->
@@ -783,25 +958,37 @@ module Expr =
 
                 match e with
                 | BinaryExpressionChain fields ->
-                  let fields: List<BinaryOperatorsElement<Expr<_, _, _>, BinaryExprOperator>> =
+                  let fields
+                    : List<
+                        BinaryOperatorsElement<
+                          Expr<_, _, _>,
+                          BinaryExprOperator
+                         >
+                       > =
                     fields
                     |> NonEmptyList.ToList
                     |> Seq.collect (fun (op, e) ->
-                      [ op |> Precedence.Operator; (e, NonMergeable) |> Precedence.Operand ])
+                      [ op |> Precedence.Operator
+                        (e, NonMergeable) |> Precedence.Operand ])
                     |> List.ofSeq
 
                   let chain = Operand(acc, Mergeable) :: fields
 
                   let precedence: List<OperatorsPrecedence<BinaryExprOperator>> =
                     [ { Operators =
-                          [ BinaryExprOperator.DoubleGreaterThan; BinaryExprOperator.PipeGreaterThan ]
+                          [ BinaryExprOperator.DoubleGreaterThan
+                            BinaryExprOperator.PipeGreaterThan ]
                           |> Set.ofList
                         Associativity = AssociateLeft }
                       { Operators =
-                          [ BinaryExprOperator.Div; BinaryExprOperator.Times; BinaryExprOperator.Mod ]
+                          [ BinaryExprOperator.Div
+                            BinaryExprOperator.Times
+                            BinaryExprOperator.Mod ]
                           |> Set.ofList
                         Associativity = AssociateLeft }
-                      { Operators = [ BinaryExprOperator.Plus; BinaryExprOperator.Minus ] |> Set.ofList
+                      { Operators =
+                          [ BinaryExprOperator.Plus; BinaryExprOperator.Minus ]
+                          |> Set.ofList
                         Associativity = AssociateLeft }
                       { Operators =
                           [ BinaryExprOperator.GreaterEqual
@@ -812,7 +999,9 @@ module Expr =
                             BinaryExprOperator.NotEqual ]
                           |> Set.ofList
                         Associativity = AssociateLeft }
-                      { Operators = [ BinaryExprOperator.And; BinaryExprOperator.Or ] |> Set.ofList
+                      { Operators =
+                          [ BinaryExprOperator.And; BinaryExprOperator.Or ]
+                          |> Set.ofList
                         Associativity = AssociateLeft } ]
 
                   return!
@@ -829,7 +1018,11 @@ module Expr =
                                   e2,
                                   Expr.Apply(
                                     e1,
-                                    Expr.Lookup(Identifier.LocalScope("x"), loc, TypeCheckScope.Empty),
+                                    Expr.Lookup(
+                                      Identifier.LocalScope("x"),
+                                      loc,
+                                      TypeCheckScope.Empty
+                                    ),
                                     loc,
                                     TypeCheckScope.Empty
                                   ),
@@ -842,11 +1035,16 @@ module Expr =
                               ),
                               NonMergeable
                             | BinaryExprOperator.PipeGreaterThan ->
-                              Expr.Apply(e2, e1, loc, TypeCheckScope.Empty), NonMergeable
+                              Expr.Apply(e2, e1, loc, TypeCheckScope.Empty),
+                              NonMergeable
                             | _ ->
                               Expr.Apply(
                                 Expr.Apply(
-                                  Expr.Lookup(Identifier.LocalScope(op.ToString()), loc, TypeCheckScope.Empty),
+                                  Expr.Lookup(
+                                    Identifier.LocalScope(op.ToString()),
+                                    loc,
+                                    TypeCheckScope.Empty
+                                  ),
                                   e1,
                                   loc,
                                   TypeCheckScope.Empty
@@ -864,10 +1062,17 @@ module Expr =
                   match acc.Expr with
                   | ExprRec.Lookup({ Id = Identifier.LocalScope id }) ->
                     let ids = (id :: (ids |> NonEmptyList.ToList)) |> List.rev
-                    return Expr.Lookup(Identifier.FullyQualified(ids.Tail, ids.Head), loc, TypeCheckScope.Empty)
+
+                    return
+                      Expr.Lookup(
+                        Identifier.FullyQualified(ids.Tail, ids.Head),
+                        loc,
+                        TypeCheckScope.Empty
+                      )
                   | _ ->
                     return!
-                      (fun () -> $"Error: cannot collapse scoped identifier chain on non-identifier")
+                      (fun () ->
+                        $"Error: cannot collapse scoped identifier chain on non-identifier")
                       |> Errors.Singleton loc
                       |> sum.Throw
                 | RecordOrTupleDesChain ids ->
@@ -877,18 +1082,40 @@ module Expr =
                     |> List.fold
                       (fun acc id ->
                         match id with
-                        | Sum.Left id -> Expr.RecordDes(acc, id |> Identifier.LocalScope, loc, TypeCheckScope.Empty)
-                        | Sum.Right idx -> Expr.TupleDes(acc, { Index = idx }, loc, TypeCheckScope.Empty))
+                        | Sum.Left id ->
+                          Expr.RecordDes(
+                            acc,
+                            id |> Identifier.LocalScope,
+                            loc,
+                            TypeCheckScope.Empty
+                          )
+                        | Sum.Right idx ->
+                          Expr.TupleDes(
+                            acc,
+                            { Index = idx },
+                            loc,
+                            TypeCheckScope.Empty
+                          ))
                       acc
                 | TupleCons fields ->
-                  return Expr.TupleCons(acc :: (fields |> NonEmptyList.ToList), loc, TypeCheckScope.Empty)
+                  return
+                    Expr.TupleCons(
+                      acc :: (fields |> NonEmptyList.ToList),
+                      loc,
+                      TypeCheckScope.Empty
+                    )
                 | ApplicationArguments args ->
                   let smartApply (t1, t2) =
                     match t2 with
-                    | Sum.Left t2 -> Expr.Apply(t1, t2, loc, TypeCheckScope.Empty)
-                    | Sum.Right t2 -> Expr.TypeApply(t1, t2, loc, TypeCheckScope.Empty)
+                    | Sum.Left t2 ->
+                      Expr.Apply(t1, t2, loc, TypeCheckScope.Empty)
+                    | Sum.Right t2 ->
+                      Expr.TypeApply(t1, t2, loc, TypeCheckScope.Empty)
 
-                  return args |> NonEmptyList.ToList |> List.fold (fun acc e -> smartApply (acc, e)) acc
+                  return
+                    args
+                    |> NonEmptyList.ToList
+                    |> List.fold (fun acc e -> smartApply (acc, e)) acc
               })
             (Sum.Left e)
 
@@ -904,7 +1131,9 @@ module Expr =
         | Sum.Left res -> return res
     }
 
-  let program<'valueExt> () : Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, _, _, _> =
+  let program<'valueExt>
+    ()
+    : Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, _, _, _> =
     parser {
       let! e = expr 0 parseAllComplexShapes
       do! parser.EndOfStream()

@@ -34,9 +34,17 @@ module API =
     (languageContext:
       DSL.Next.Extensions.Model.LanguageContext<
         FileDBRuntimeContext,
-        ValueExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, unit>, unit>,
+        ValueExt<
+          FileDBRuntimeContext,
+          MutableMemoryDB<FileDBRuntimeContext, unit>,
+          unit
+         >,
         ValueExtDTO,
-        DeltaExt<FileDBRuntimeContext, MutableMemoryDB<FileDBRuntimeContext, unit>, unit>,
+        DeltaExt<
+          FileDBRuntimeContext,
+          MutableMemoryDB<FileDBRuntimeContext, unit>,
+          unit
+         >,
         DeltaExtDTO
        >)
     evalContext
@@ -46,14 +54,26 @@ module API =
     sum {
       let mainExpr =
         TypeCheckedExpr.Apply(
-          TypeCheckedExpr.FromValue(dbio.Main, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
-          TypeCheckedExpr.FromValue(dbio.SchemaAsValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
+          TypeCheckedExpr.FromValue(
+            dbio.Main,
+            TypeValue.CreatePrimitive PrimitiveType.Unit,
+            Kind.Star
+          ),
+          TypeCheckedExpr.FromValue(
+            dbio.SchemaAsValue,
+            TypeValue.CreatePrimitive PrimitiveType.Unit,
+            Kind.Star
+          ),
           TypeValue.CreatePrimitive PrimitiveType.Unit,
           Kind.Star
         )
 
       let! mainResult =
-        Expr.Eval(NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(mainExpr, [])))
+        Expr.Eval(
+          NonEmptyList.prependList
+            languageContext.TypeCheckedPreludes
+            (NonEmptyList.OfList(mainExpr, []))
+        )
         |> Reader.Run evalContext
 
       if showMainResult then
@@ -73,11 +93,19 @@ module API =
     =
     sum {
       let schemaDirectory, schemaExtension, schemaDefinition =
-        schemaFileConfig.SchemaDirectory, schemaFileConfig.SchemaExtension, payload.SchemaDefinition |> List.ofArray
+        schemaFileConfig.SchemaDirectory,
+        schemaFileConfig.SchemaExtension,
+        payload.SchemaDefinition |> List.ofArray
 
-      let dbFileManager: FileContentManager<MutableMemoryDB<FileDBRuntimeContext, unit>> =
+      let dbFileManager
+        : FileContentManager<MutableMemoryDB<FileDBRuntimeContext, unit>> =
         FileContentManager<MutableMemoryDB<FileDBRuntimeContext, unit>>
-          .Create(dbFileConfig.DbDirectory, dbFileConfig.DbExtension, tenantId, schemaName)
+          .Create(
+            dbFileConfig.DbDirectory,
+            dbFileConfig.DbExtension,
+            tenantId,
+            schemaName
+          )
 
       let emptyDb =
         { entities = Map.empty
@@ -98,17 +126,18 @@ module API =
       | Some _ -> do! sum.Zero()
 
       let fileManager: FileContentManager<Schema> =
-        FileContentManager<Schema>.Create(schemaDirectory, schemaExtension, tenantId, schemaName)
+        FileContentManager<Schema>
+          .Create(schemaDirectory, schemaExtension, tenantId, schemaName)
 
-      let languageContext, typeEvalConfig =
+      let languageContext, _ =
         contextFactory
           { DbDirectory = dbFileConfig.DbDirectory
             DbExtension = dbFileConfig.DbExtension }
 
       let! evalResult, _, _, evalContext =
         buildSchemaDefinition
-          languageContext
-          typeEvalConfig
+          { DbDirectory = dbFileConfig.DbDirectory
+            DbExtension = dbFileConfig.DbExtension }
           addPermissionHookScope
           addBackgroundHookScope
           tenantId
@@ -224,47 +253,54 @@ module API =
       ) =
       app.MapPost(
         "/publish/{tenantId}/{schemaName}",
-        Func<Guid, string, SchemaAPIPayload, IResult>(fun tenantId schemaName payload ->
-          match
-            publish
-              tenantId
-              schemaName
-              payload
-              schemaFileConfig
-              dbFileConfig
-              false
-              addPermissionHookScope
-              addBackgroundHookScope
-              schemaStream
-          with
-          | Left _ -> Results.Ok()
-          | Right errors ->
-            let input_files =
-              payload.SchemaDefinition
-              |> Seq.map (fun def -> def.Path, def.Content)
-              |> Map.ofSeq
+        Func<Guid, string, SchemaAPIPayload, IResult>
+          (fun tenantId schemaName payload ->
+            match
+              publish
+                tenantId
+                schemaName
+                payload
+                schemaFileConfig
+                dbFileConfig
+                false
+                addPermissionHookScope
+                addBackgroundHookScope
+                schemaStream
+            with
+            | Left _ -> Results.Ok()
+            | Right errors ->
+              let input_files =
+                payload.SchemaDefinition
+                |> Seq.map (fun def -> def.Path, def.Content)
+                |> Map.ofSeq
 
-            let acc = StringBuilder($"Build errors.\n")
+              let acc = StringBuilder($"Build errors.\n")
 
-            for e in (Errors<_>.FilterHighestPriorityOnly errors).Errors() do
-              let source =
-                match input_files |> Map.tryFind e.Context.File with
-                | Some file -> file
-                | None -> ""
+              for e in (Errors<_>.FilterHighestPriorityOnly errors).Errors() do
+                let source =
+                  match input_files |> Map.tryFind e.Context.File with
+                  | Some file -> file
+                  | None -> ""
 
-              let lines =
-                source.Split('\n')
-                |> Seq.skip (e.Context.Line - 1)
-                |> Seq.mapi (fun i line -> let fmt = "000" in $"{(e.Context.Line + i).ToString(fmt)} |   {line}")
-                |> Seq.truncate 3
-                |> Seq.toArray
+                let lines =
+                  source.Split('\n')
+                  |> Seq.skip (e.Context.Line - 1)
+                  |> Seq.mapi (fun i line ->
+                    let fmt = "000" in
+                    $"{(e.Context.Line + i).ToString(fmt)} |   {line}")
+                  |> Seq.truncate 3
+                  |> Seq.toArray
 
-              let lines = lines |> String.join "\n"
+                let lines = lines |> String.join "\n"
 
-              do acc.Append $"  Error: {e.Message} at line {e.Context.Line}:\n" |> ignore
-              do acc.Append lines |> ignore
+                do
+                  acc.Append
+                    $"  Error: {e.Message} at line {e.Context.Line}:\n"
+                  |> ignore
 
-            Results.BadRequest(acc.ToString()))
+                do acc.Append lines |> ignore
+
+              Results.BadRequest(acc.ToString()))
       )
       |> ignore
 
@@ -277,15 +313,25 @@ module API =
           let result =
             sum {
               let schemaDirectory, schemaExtension =
-                schemaFileConfig.SchemaDirectory, schemaFileConfig.SchemaExtension
+                schemaFileConfig.SchemaDirectory,
+                schemaFileConfig.SchemaExtension
 
               let fileManager: FileContentManager<Schema> =
-                FileContentManager<Schema>.Create(schemaDirectory, schemaExtension, tenantId, schemaName)
+                FileContentManager<Schema>
+                  .Create(
+                    schemaDirectory,
+                    schemaExtension,
+                    tenantId,
+                    schemaName
+                  )
 
               match! fileManager.TryReadContent() with
               | None ->
                 return!
-                  sum.Throw(Errors.Singleton () (fun _ -> $"Schema {schemaName} not found in tenant {tenantId}."))
+                  sum.Throw(
+                    Errors.Singleton () (fun _ ->
+                      $"Schema {schemaName} not found in tenant {tenantId}.")
+                  )
               | Some schema -> return SchemaDTO.FromSchema schema
             }
 

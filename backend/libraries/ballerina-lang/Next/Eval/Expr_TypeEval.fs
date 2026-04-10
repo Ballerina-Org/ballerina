@@ -17,7 +17,7 @@ module TypeEval =
 
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member TypeEval<'valueExt when 'valueExt: comparison>
-      (config: TypeEvalConfig<'valueExt>)
+      (config: TypeCheckingConfig<'valueExt>)
       : TypeChecker<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt>
           -> Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>
           -> State<
@@ -32,7 +32,9 @@ module TypeEval =
 
         let (!!) t =
           state {
-            let! t, _ = t |> TypeExpr.Eval config typeCheckExpr None expr.Location
+            let! t, _ =
+              t |> TypeExpr.Eval config typeCheckExpr None expr.Location
+
             return t
           }
 
@@ -54,7 +56,8 @@ module TypeEval =
             return Expr.Apply(funcType, argType, expr.Location, ctx.Scope)
           | ExprRec.FromValue({ Value = v
                                 ValueType = v_t
-                                ValueKind = v_k }) -> return Expr.FromValue(v, v_t, v_k, expr.Location, ctx.Scope)
+                                ValueKind = v_k }) ->
+            return Expr.FromValue(v, v_t, v_k, expr.Location, ctx.Scope)
           | ExprRec.Let({ Var = var
                           Type = var_type
                           Val = value
@@ -62,7 +65,16 @@ module TypeEval =
             let! valueType = !value
             let! bodyType = !body
             let! var_type = var_type |> Option.map (!!) |> state.RunOption
-            return Expr.Let(var, var_type, valueType, bodyType, expr.Location, ctx.Scope)
+
+            return
+              Expr.Let(
+                var,
+                var_type,
+                valueType,
+                bodyType,
+                expr.Location,
+                ctx.Scope
+              )
           | ExprRec.Do({ Val = e1; Rest = e2 }) ->
             let! e1Type = !e1
             let! e2Type = !e2
@@ -79,7 +91,8 @@ module TypeEval =
                 })
               |> state.All
 
-            return Expr.RecordWith(recordType, fieldTypes, expr.Location, ctx.Scope)
+            return
+              Expr.RecordWith(recordType, fieldTypes, expr.Location, ctx.Scope)
 
           | ExprRec.RecordCons { Fields = fields } ->
             let! fieldTypes =
@@ -95,10 +108,18 @@ module TypeEval =
           | ExprRec.TupleCons { Items = values } ->
             let! valueTypes = values |> List.map (!) |> state.All
             return Expr.TupleCons(valueTypes, expr.Location, ctx.Scope)
-          | ExprRec.SumCons({ Selector = selector }) -> return Expr.SumCons(selector, expr.Location, ctx.Scope)
+          | ExprRec.SumCons({ Selector = selector }) ->
+            return Expr.SumCons(selector, expr.Location, ctx.Scope)
           | ExprRec.RecordDes({ Expr = record; Field = field }) ->
             let! recordType = !record
-            return Expr.RecordDes(recordType, field |> ctx.Scope.Resolve, expr.Location, ctx.Scope)
+
+            return
+              Expr.RecordDes(
+                recordType,
+                field |> ctx.Scope.Resolve,
+                expr.Location,
+                ctx.Scope
+              )
           | ExprRec.UnionDes({ Handlers = cases
                                Fallback = fallback }) ->
             let! caseTypes =
@@ -129,34 +150,55 @@ module TypeEval =
               |> state.AllMap
 
             return Expr.SumDes(caseTypes, expr.Location, ctx.Scope)
-          | ExprRec.Primitive p -> return Expr.Primitive(p, expr.Location, ctx.Scope)
-          | ExprRec.Lookup { Id = name } -> return Expr.Lookup(name |> ctx.Scope.Resolve, expr.Location, ctx.Scope)
+          | ExprRec.Primitive p ->
+            return Expr.Primitive(p, expr.Location, ctx.Scope)
+          | ExprRec.Lookup { Id = name } ->
+            return
+              Expr.Lookup(name |> ctx.Scope.Resolve, expr.Location, ctx.Scope)
           | ExprRec.If({ Cond = cond
                          Then = thenExpr
                          Else = elseExpr }) ->
             let! condType = !cond
             let! thenType = !thenExpr
             let! elseType = !elseExpr
-            return Expr.If(condType, thenType, elseType, expr.Location, ctx.Scope)
+
+            return
+              Expr.If(condType, thenType, elseType, expr.Location, ctx.Scope)
           | ExprRec.TypeLambda({ Param = typeParam; Body = body }) ->
             let! bodyType = !body
-            return Expr.TypeLambda(typeParam, bodyType, expr.Location, ctx.Scope)
+
+            return
+              Expr.TypeLambda(typeParam, bodyType, expr.Location, ctx.Scope)
           | ExprRec.TypeApply({ ExprTypeApply.Func = typeExpr
                                 TypeArg = typeArg }) ->
             let! typeExprType = !typeExpr
 
-            let! typeArg, _ = typeArg |> TypeExpr.Eval config typeCheckExpr None expr.Location
+            let! typeArg, _ =
+              typeArg |> TypeExpr.Eval config typeCheckExpr None expr.Location
 
-            return Expr.TypeApply(typeExprType, typeArg, expr.Location, ctx.Scope)
+            return
+              Expr.TypeApply(typeExprType, typeArg, expr.Location, ctx.Scope)
           | ExprRec.TypeLet({ ExprTypeLet.Name = var
                               TypeDef = value
                               Body = body }) ->
-            let! valueType = value |> TypeExpr.Eval config typeCheckExpr None expr.Location
-            do! TypeCheckState.bindType (var |> Identifier.LocalScope |> ctx.Scope.Resolve) valueType
+            let! valueType =
+              value |> TypeExpr.Eval config typeCheckExpr None expr.Location
+
+            do!
+              TypeCheckState.bindType
+                (var |> Identifier.LocalScope |> ctx.Scope.Resolve)
+                valueType
 
             let! bodyType = !body
 
-            return Expr.TypeLet(var, valueType |> fst, bodyType, expr.Location, ctx.Scope)
+            return
+              Expr.TypeLet(
+                var,
+                valueType |> fst,
+                bodyType,
+                expr.Location,
+                ctx.Scope
+              )
           | ExprRec.EntitiesDes({ Expr = entities_expr }) ->
             let! entitiesType = !entities_expr
             return Expr.EntitiesDes(entitiesType, expr.Location, ctx.Scope)
@@ -166,16 +208,33 @@ module TypeEval =
           | ExprRec.EntityDes({ Expr = entity_expr
                                 EntityName = entity_name }) ->
             let! entityType = !entity_expr
-            return Expr.EntityDes(entityType, entity_name, expr.Location, ctx.Scope)
+
+            return
+              Expr.EntityDes(entityType, entity_name, expr.Location, ctx.Scope)
           | ExprRec.RelationDes({ Expr = relation_expr
                                   RelationName = relation_name }) ->
             let! relationType = !relation_expr
-            return Expr.RelationDes(relationType, relation_name, expr.Location, ctx.Scope)
+
+            return
+              Expr.RelationDes(
+                relationType,
+                relation_name,
+                expr.Location,
+                ctx.Scope
+              )
           | ExprRec.RelationLookupDes({ Expr = record_v
                                         RelationName = relation_name
                                         Direction = direction }) ->
             let! recordType = !record_v
-            return Expr.RelationLookupDes(recordType, relation_name, direction, expr.Location, ctx.Scope)
+
+            return
+              Expr.RelationLookupDes(
+                recordType,
+                relation_name,
+                direction,
+                expr.Location,
+                ctx.Scope
+              )
           | ExprRec.Query _q ->
             return!
               Errors.Singleton expr.Location (fun () ->

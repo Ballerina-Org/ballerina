@@ -48,7 +48,9 @@ module Model =
           | comparison -> comparison
       | comparison -> comparison
 
-    static member Create(assembly: string, module_: string, type_: Option<string>, name: string) : ResolvedIdentifier =
+    static member Create
+      (assembly: string, module_: string, type_: Option<string>, name: string)
+      : ResolvedIdentifier =
       { Assembly = assembly
         Module = module_
         Type = type_
@@ -68,7 +70,9 @@ module Model =
           Type = None
           Name = name }
 
-    static member FromLocalIdentifier(id: LocalIdentifier) : ResolvedIdentifier =
+    static member FromLocalIdentifier
+      (id: LocalIdentifier)
+      : ResolvedIdentifier =
       { Assembly = ""
         Module = ""
         Type = None
@@ -132,7 +136,9 @@ module Model =
 
       String.Join("::", elements)
 
-    static member Resolve(id: Identifier, scope: TypeCheckScope) : ResolvedIdentifier =
+    static member Resolve
+      (id: Identifier, scope: TypeCheckScope)
+      : ResolvedIdentifier =
       match id with
       | Identifier.FullyQualified(names, name) ->
         match names with
@@ -162,7 +168,8 @@ module Model =
           Type = scope.Type
           Name = name }
 
-    member scope.Resolve(id: Identifier) : ResolvedIdentifier = TypeCheckScope.Resolve(id, scope)
+    member scope.Resolve(id: Identifier) : ResolvedIdentifier =
+      TypeCheckScope.Resolve(id, scope)
 
 
 
@@ -303,7 +310,8 @@ module Model =
           ("canRead", self.CanRead)
           ("canUpdate", self.CanUpdate)
           ("canDelete", self.CanDelete) ]
-        |> List.choose (fun (name, body) -> body |> Option.map (fun b -> $"{name} -> {b}"))
+        |> List.choose (fun (name, body) ->
+          body |> Option.map (fun b -> $"{name} -> {b}"))
 
       let hooks = String.Join("; ", enabledHooks)
       $"hooks {{ {hooks} }}"
@@ -318,8 +326,12 @@ module Model =
       Hooks: SchemaEntityHooksExpr<'valueExt> }
 
     override self.ToString() =
-      let props = self.Properties |> List.map (fun p -> p.ToString()) |> String.join "; "
-      let vectors = self.Vectors |> List.map (fun v -> v.ToString()) |> String.join "; "
+      let props =
+        self.Properties |> List.map (fun p -> p.ToString()) |> String.join "; "
+
+      let vectors =
+        self.Vectors |> List.map (fun v -> v.ToString()) |> String.join "; "
+
       $"entity {self.Name} : {self.Type} id {self.Id} {{ {props} }} vectors {{ {vectors} }} {self.Hooks}"
 
   and Cardinality =
@@ -368,9 +380,12 @@ module Model =
       | Item i -> $"Item({i})"
       | UnionCase name -> $"UnionCase({name})"
       | SumCase name -> $"SumCase({name})"
-      | Iterator collection -> $"Iterator({collection.Mapper}::{collection.TypeDef})"
+      | Iterator collection ->
+        $"Iterator({collection.Mapper}::{collection.TypeDef})"
 
-  and SchemaPathSegmentExpr = Option<LocalIdentifier> * SchemaPathTypeDecompositionExpr
+  and SchemaPathSegmentExpr =
+    Option<LocalIdentifier> * SchemaPathTypeDecompositionExpr
+
   and SchemaPathExpr = List<SchemaPathSegmentExpr>
 
   and SchemaRelationHook =
@@ -398,7 +413,8 @@ module Model =
           ("unlinking", self.OnUnlinking)
           ("linked", self.OnLinked)
           ("unlinked", self.OnUnlinked) ]
-        |> List.choose (fun (name, body) -> body |> Option.map (fun b -> $"{name} -> {b}"))
+        |> List.choose (fun (name, body) ->
+          body |> Option.map (fun b -> $"{name} -> {b}"))
 
       let hooks = String.Join("; ", enabledHooks)
       $"hooks {{ {hooks} }}"
@@ -416,7 +432,9 @@ module Model =
       let toStr = fst self.To
 
       let cardStr =
-        self.Cardinality |> Option.map (fun c -> $" {c}") |> Option.defaultValue ""
+        self.Cardinality
+        |> Option.map (fun c -> $" {c}")
+        |> Option.defaultValue ""
 
       $"relation {self.Name} : {fromStr} -> {toStr}{cardStr} {self.Hooks}"
 
@@ -432,7 +450,8 @@ module Model =
       Relations: List<SchemaRelationExpr<'valueExt>> }
 
     override self.ToString() =
-      let entities = self.Entities |> List.map (fun e -> e.ToString()) |> String.join "; "
+      let entities =
+        self.Entities |> List.map (fun e -> e.ToString()) |> String.join "; "
 
       let relations =
         self.Relations |> List.map (fun r -> r.ToString()) |> String.join "; "
@@ -462,7 +481,11 @@ module Model =
     | Schema of SchemaExpr<'valueExt>
     | Entities of TypeExpr<'valueExt>
     | Relations of TypeExpr<'valueExt>
-    | Entity of s: TypeExpr<'valueExt> * e: TypeExpr<'valueExt> * e': TypeExpr<'valueExt> * e_id: TypeExpr<'valueExt>
+    | Entity of
+      s: TypeExpr<'valueExt> *
+      e: TypeExpr<'valueExt> *
+      e': TypeExpr<'valueExt> *
+      e_id: TypeExpr<'valueExt>
     | Relation of
       s: TypeExpr<'valueExt> *
       f: TypeExpr<'valueExt> *
@@ -501,7 +524,8 @@ module Model =
         | Sum.Right index -> $"{t.ToString()}.{index}"
       | Let(name, value, body) -> $"Let {name} = {value} in {body})"
       | LetSymbols(names, symbolsKind, body) ->
-        let comma = ", " in $"LetSymbols({String.Join(comma, names)}):{symbolsKind} in {body})"
+        let comma = ", " in
+        $"LetSymbols({String.Join(comma, names)}):{symbolsKind} in {body})"
       | NewSymbol name -> $"NewSymbol({name})"
       | Lookup id -> id.ToString()
       | Apply(f, a) -> $"({f})[{a}]"
@@ -527,15 +551,20 @@ module Model =
       | Flatten(t1, t2) -> $"Flatten[{t1}, {t2}]"
       | Exclude(t1, t2) -> $"Exclude[{t1}, {t2}]"
       | Rotate t -> $"Rotate[{t}]"
-      | Schema s -> $"Schema[{s.Entities.Length} Entities, {s.Relations.Length} Relations]"
+      | Schema s ->
+        $"Schema[{s.Entities.Length} Entities, {s.Relations.Length} Relations]"
       | Entities e -> $"SchemaEntities[{e}]"
       | Relations e -> $"SchemaRelations[{e}]"
-      | Entity(s, e, e_with_props, id) -> $"SchemaEntity[Schema[{s}][{e}][{e_with_props}][{id}]"
+      | Entity(s, e, e_with_props, id) ->
+        $"SchemaEntity[Schema[{s}][{e}][{e_with_props}][{id}]"
       | Relation(s, f, f_with_props, f_id, t, t_with_props, t_id) ->
         $"SchemaRelation[Schema[{s}][{f}][{f_with_props}][{f_id}][{t}][{t_with_props}][{t_id}]"
-      | RelationLookupOne(s, t', f_id, t_id) -> $"SchemaLookupOne[Schema[{s}][{t'}][{f_id}][{t_id}]"
-      | RelationLookupOption(s, t', f_id, t_id) -> $"SchemaLookupOption[Schema[{s}][{t'}][{f_id}][{t_id}]"
-      | RelationLookupMany(s, t', f_id, t_id) -> $"SchemaLookupMany[Schema[{s}][{t'}][{f_id}][{t_id}]"
+      | RelationLookupOne(s, t', f_id, t_id) ->
+        $"SchemaLookupOne[Schema[{s}][{t'}][{f_id}][{t_id}]"
+      | RelationLookupOption(s, t', f_id, t_id) ->
+        $"SchemaLookupOption[Schema[{s}][{t'}][{f_id}][{t_id}]"
+      | RelationLookupMany(s, t', f_id, t_id) ->
+        $"SchemaLookupMany[Schema[{s}][{t'}][{f_id}][{t_id}]"
       | FromQueryRow -> $"FromQueryRow"
       | QueryRow q -> $"QueryRow[{q}]"
 
@@ -551,7 +580,8 @@ module Model =
       match self with
       | PrimaryKey t -> $"PrimaryKey[{t}]"
       | Json t -> $"Json[{t}]"
-      | PrimitiveType(p, isNullable) -> $"PrimitiveType[{p}, IsNullable={isNullable}]"
+      | PrimitiveType(p, isNullable) ->
+        $"PrimitiveType[{p}, IsNullable={isNullable}]"
       | Tuple types ->
         let comma = " * "
         $"({String.Join(comma, types)})"
@@ -600,9 +630,12 @@ module Model =
       | Item i -> $"Item({i})"
       | UnionCase name -> $"UnionCase({name})"
       | SumCase name -> $"SumCase({name})"
-      | Iterator collection -> $"Iterator({collection.Mapper}::{collection.TypeDef})"
+      | Iterator collection ->
+        $"Iterator({collection.Mapper}::{collection.TypeDef})"
 
-  and SchemaPathSegment<'valueExt> = Option<LocalIdentifier> * SchemaPathTypeDecomposition<'valueExt>
+  and SchemaPathSegment<'valueExt> =
+    Option<LocalIdentifier> * SchemaPathTypeDecomposition<'valueExt>
+
   and SchemaPath<'valueExt> = List<SchemaPathSegment<'valueExt>>
 
   and SchemaEntityProperty<'valueExt> =
@@ -648,7 +681,8 @@ module Model =
           ("canRead", self.CanRead)
           ("canUpdate", self.CanUpdate)
           ("canDelete", self.CanDelete) ]
-        |> List.choose (fun (name, body) -> body |> Option.map (fun b -> $"{name} -> {b}"))
+        |> List.choose (fun (name, body) ->
+          body |> Option.map (fun b -> $"{name} -> {b}"))
 
       let hooks = String.Join("; ", enabledHooks)
       $"hooks {{ {hooks} }}"
@@ -677,7 +711,8 @@ module Model =
           ("unlinking", self.OnUnlinking)
           ("linked", self.OnLinked)
           ("unlinked", self.OnUnlinked) ]
-        |> List.choose (fun (name, body) -> body |> Option.map (fun b -> $"{name} -> {b}"))
+        |> List.choose (fun (name, body) ->
+          body |> Option.map (fun b -> $"{name} -> {b}"))
 
       let hooks = String.Join("; ", enabledHooks)
       $"hooks {{ {hooks} }}"
@@ -699,6 +734,7 @@ module Model =
 
   and Schema<'valueExt> =
     { DeclaredAtForNominalEquality: Location
+      Source: TypeExprSourceMapping<'valueExt>
       Entities: OrderedMap<SchemaEntityName, SchemaEntity<'valueExt>>
       Relations: OrderedMap<SchemaRelationName, SchemaRelation<'valueExt>>
       Included: Option<Schema<'valueExt>> }
@@ -723,19 +759,31 @@ module Model =
     | Primitive of WithSourceMapping<PrimitiveType, 'valueExt>
     | Var of TypeVar
     | Lookup of Identifier // TODO: Figure out what to do with this (orig name wise) after recursion in type checking is implement correctly
-    | Lambda of WithSourceMapping<TypeParameter * TypeExpr<'valueExt>, 'valueExt>
-    | Application of WithSourceMapping<SymbolicTypeApplication<'valueExt>, 'valueExt>
-    | Arrow of WithSourceMapping<TypeValue<'valueExt> * TypeValue<'valueExt>, 'valueExt>
-    | Record of WithSourceMapping<OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>, 'valueExt>
+    | Lambda of
+      WithSourceMapping<TypeParameter * TypeExpr<'valueExt>, 'valueExt>
+    | Application of
+      WithSourceMapping<SymbolicTypeApplication<'valueExt>, 'valueExt>
+    | Arrow of
+      WithSourceMapping<TypeValue<'valueExt> * TypeValue<'valueExt>, 'valueExt>
+    | Record of
+      WithSourceMapping<
+        OrderedMap<TypeSymbol, TypeValue<'valueExt> * Kind>,
+        'valueExt
+       >
     | Tuple of WithSourceMapping<List<TypeValue<'valueExt>>, 'valueExt>
-    | Union of WithSourceMapping<OrderedMap<TypeSymbol, TypeValue<'valueExt>>, 'valueExt>
+    | Union of
+      WithSourceMapping<OrderedMap<TypeSymbol, TypeValue<'valueExt>>, 'valueExt>
     | Sum of WithSourceMapping<List<TypeValue<'valueExt>>, 'valueExt>
     | Set of WithSourceMapping<TypeValue<'valueExt>, 'valueExt>
     | Imported of ImportedTypeValue<'valueExt> // FIXME: This should also have an orig name, implement once the extension is implemented completely
     | Schema of Schema<'valueExt>
     | Entities of Schema<'valueExt>
     | Relations of Schema<'valueExt>
-    | Entity of Schema<'valueExt> * e: TypeValue<'valueExt> * e': TypeValue<'valueExt> * e_id: TypeValue<'valueExt>
+    | Entity of
+      Schema<'valueExt> *
+      e: TypeValue<'valueExt> *
+      e': TypeValue<'valueExt> *
+      e_id: TypeValue<'valueExt>
     | Relation of
       Schema<'valueExt> *
       rn: SchemaRelationName *
@@ -774,6 +822,12 @@ module Model =
     | QueryRow of TypeQueryRow<'valueExt>
 
     override self.ToString() =
+      let schemaNameFromSource (source: TypeExprSourceMapping<'valueExt>) =
+        match source with
+        | OriginExprTypeLet(id, _) -> Some(id.ToString())
+        | OriginTypeExpr(TypeExpr.Lookup id) -> Some(id.ToString())
+        | _ -> None
+
       match self with
       | Union({ typeExprSource = OriginExprTypeLet(id, _) })
       | Record({ typeExprSource = OriginExprTypeLet(id, _) }) -> id.ToString()
@@ -783,7 +837,8 @@ module Model =
       | Arrow({ typeExprSource = OriginTypeExpr(TypeExpr.Lookup id) })
       | Tuple({ typeExprSource = OriginTypeExpr(TypeExpr.Lookup id) })
       | Union({ typeExprSource = OriginTypeExpr(TypeExpr.Lookup id) })
-      | Sum({ typeExprSource = OriginTypeExpr(TypeExpr.Lookup id) }) -> id.ToString()
+      | Sum({ typeExprSource = OriginTypeExpr(TypeExpr.Lookup id) }) ->
+        id.ToString()
       | Application { value = a } -> a.ToString()
       | Imported i -> i.ToString()
       | Primitive p -> p.value.ToString()
@@ -796,7 +851,9 @@ module Model =
         let comma = ", "
 
         let fieldStrs =
-          fields |> OrderedMap.toList |> List.map (fun (name, typ) -> $"{name}: {typ}")
+          fields
+          |> OrderedMap.toList
+          |> List.map (fun (name, typ) -> $"{name}: {typ}")
 
         $"{{{String.Join(comma, fieldStrs)}}}"
       | Tuple({ value = types }) ->
@@ -806,14 +863,20 @@ module Model =
         let comma = " | "
 
         let typeStrs =
-          types |> OrderedMap.toList |> List.map (fun (name, typ) -> $"{name}: {typ}")
+          types
+          |> OrderedMap.toList
+          |> List.map (fun (name, typ) -> $"{name}: {typ}")
 
         $"({String.Join(comma, typeStrs)})"
       | Set t -> $"Set[{t}]"
       | Sum({ value = types }) ->
         let comma = " + "
         $"({String.Join(comma, types)})"
-      | Schema s -> $"Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]"
+      | Schema s ->
+        match schemaNameFromSource s.Source with
+        | Some schemaName -> schemaName
+        | None ->
+          $"Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]"
       | Entities s -> $"SchemaEntities[{s.Entities.Count}]"
       | Entity(s, e, e_with_props, id) ->
         $"SchemaEntity[Schema[{s.Entities.Count} Entities, {s.Relations.Count} Relations]][{e}][{e_with_props}][{id}]"
@@ -831,9 +894,47 @@ module Model =
       | QueryTypeFunction -> $"Query"
       | QueryRow q -> $"QueryRow[{q}]"
 
+    member self.ToInlayString() : string =
+      match self with
+      | QueryRow q -> q.ToInlayString()
+      | Imported i ->
+        let args =
+          String.Join(
+            " ",
+            i.Arguments |> List.map (fun a -> $"[{a.ToInlayString()}]")
+          )
+
+        $"{i.Sym.Name}{args}"
+      | Arrow({ value = (t1, t2) }) ->
+        $"({t1.ToInlayString()} -> {t2.ToInlayString()})"
+      | Tuple({ value = types }) ->
+        let comma = " * "
+        $"({String.Join(comma, types |> List.map (fun t -> t.ToInlayString()))})"
+      | Record({ value = fields }) ->
+        let comma = ", "
+
+        let fieldStrs =
+          fields
+          |> OrderedMap.toList
+          |> List.map (fun (name, (fieldType, _)) ->
+            $"{name}: {fieldType.ToInlayString()}")
+
+        $"{{{String.Join(comma, fieldStrs)}}}"
+      | Union({ value = types }) ->
+        let comma = " | "
+
+        let typeStrs =
+          types
+          |> OrderedMap.toList
+          |> List.map (fun (name, typ) -> $"{name}: {typ.ToInlayString()}")
+
+        $"({String.Join(comma, typeStrs)})"
+      | _ -> self.ToString()
+
     static member IsOptionalPrimitive(t: TypeValue<_>) =
       match t with
-      | TypeValue.Sum({ value = [ TypeValue.Primitive { value = PrimitiveType.Unit }; TypeValue.Primitive _ ] }) -> true
+      | TypeValue.Sum({ value = [ TypeValue.Primitive { value = PrimitiveType.Unit }
+                                  TypeValue.Primitive _ ] }) -> true
       | _ -> false
 
   and TypeQueryRow<'valueExt> =
@@ -848,7 +949,8 @@ module Model =
       match self with
       | PrimaryKey t -> $"PrimaryKey[{t}]"
       | Json t -> $"Json[{t}]"
-      | PrimitiveType(p, isNullable) -> $"PrimitiveType[{p}, IsNullable={isNullable}]"
+      | PrimitiveType(p, isNullable) ->
+        $"PrimitiveType[{p}, IsNullable={isNullable}]"
       | Tuple types ->
         let comma = " * "
         $"({String.Join(comma, types)})"
@@ -860,6 +962,25 @@ module Model =
 
         $"{{{String.Join(comma, fieldStrs)}}}"
       | Array t -> $"Array[{t}]"
+
+    member self.ToInlayString() : string =
+      match self with
+      | PrimaryKey t -> $"{t.ToInlayString()}*"
+      | Json t -> t.ToInlayString()
+      | PrimitiveType(p, _) -> p.ToString()
+      | Tuple types ->
+        let comma = " * "
+        $"({String.Join(comma, types |> List.map (fun t -> t.ToInlayString()))})"
+      | Record fields ->
+        let comma = ", "
+
+        let fieldStrs =
+          fields
+          |> Map.toList
+          |> List.map (fun (name, typ) -> $"{name}: {typ.ToInlayString()}")
+
+        $"{{{String.Join(comma, fieldStrs)}}}"
+      | Array t -> $"{t.ToInlayString()}[]"
 
   and ExprTypeLetBindingName =
     | ExprTypeLetBindingName of string
@@ -897,7 +1018,8 @@ module Model =
       // let appliedPars =
       //   String.Join("", self.Parameters |> List.map (fun a -> $"[{a.Name}]"))
 
-      let args = String.Join(" ", self.Arguments |> List.map (fun a -> $"[{a}]"))
+      let args =
+        String.Join(" ", self.Arguments |> List.map (fun a -> $"[{a}]"))
       // $"{pars}{self.Sym.Name}{appliedPars}{args}"
       $"{self.Sym.Name}{args}"
 
@@ -1009,7 +1131,9 @@ module Model =
     { Fields: List<'Id * Expr<'T, 'Id, 'valueExt>> }
 
     override self.ToString() =
-      let fields = self.Fields |> List.map (fun (k, v) -> $"{k}: {v}") |> String.join "; "
+      let fields =
+        self.Fields |> List.map (fun (k, v) -> $"{k}: {v}") |> String.join "; "
+
       $"{{ {fields} }}"
 
   and ExprRecordWith<'T, 'Id, 'valueExt when 'Id: comparison> =
@@ -1017,7 +1141,9 @@ module Model =
       Fields: List<'Id * Expr<'T, 'Id, 'valueExt>> }
 
     override self.ToString() =
-      let fields = self.Fields |> List.map (fun (k, v) -> $"{k}: {v}") |> String.join "; "
+      let fields =
+        self.Fields |> List.map (fun (k, v) -> $"{k}: {v}") |> String.join "; "
+
       $"{{ {self.Record} with {fields} }}"
 
   and ExprTupleCons<'T, 'Id, 'valueExt when 'Id: comparison> =
@@ -1179,7 +1305,9 @@ module Model =
 
   and ExprQuery<'T, 'Id, 'valueExt when 'Id: comparison> =
     | SimpleQuery of SimpleQuery<'T, 'Id, 'valueExt>
-    | UnionQueries of ExprQuery<'T, 'Id, 'valueExt> * ExprQuery<'T, 'Id, 'valueExt>
+    | UnionQueries of
+      ExprQuery<'T, 'Id, 'valueExt> *
+      ExprQuery<'T, 'Id, 'valueExt>
 
     member self.Location =
       match self with
@@ -1196,7 +1324,9 @@ module Model =
       | SimpleQuery q -> q.ToString()
       | UnionQueries(q1, q2) ->
         let unionStrs =
-          [ q1; q2 ] |> List.map (fun q -> q.ToString()) |> String.join "\nunion\n"
+          [ q1; q2 ]
+          |> List.map (fun q -> q.ToString())
+          |> String.join "\nunion\n"
 
         $"(\n{unionStrs}\n)"
 
@@ -1224,8 +1354,14 @@ module Model =
 
   and ExprQueryExprRec<'T, 'Id, 'valueExt when 'Id: comparison> =
     | QueryTupleCons of List<ExprQueryExpr<'T, 'Id, 'valueExt>>
-    | QueryRecordDes of Expr: ExprQueryExpr<'T, 'Id, 'valueExt> * Field: 'Id * IsJsonField: bool
-    | QueryTupleDes of Expr: ExprQueryExpr<'T, 'Id, 'valueExt> * Item: TupleDesSelector * IsJsonItem: bool
+    | QueryRecordDes of
+      Expr: ExprQueryExpr<'T, 'Id, 'valueExt> *
+      Field: 'Id *
+      IsJsonField: bool
+    | QueryTupleDes of
+      Expr: ExprQueryExpr<'T, 'Id, 'valueExt> *
+      Item: TupleDesSelector *
+      IsJsonItem: bool
     | QueryConditional of
       Cond: ExprQueryExpr<'T, 'Id, 'valueExt> *
       Then: ExprQueryExpr<'T, 'Id, 'valueExt> *
@@ -1236,11 +1372,15 @@ module Model =
     | QuerySumDes of
       Expr: ExprQueryExpr<'T, 'Id, 'valueExt> *
       Handlers: Map<SumConsSelector, QueryCaseHandler<'T, 'Id, 'valueExt>>
-    | QueryApply of Func: ExprQueryExpr<'T, 'Id, 'valueExt> * Arg: ExprQueryExpr<'T, 'Id, 'valueExt>
+    | QueryApply of
+      Func: ExprQueryExpr<'T, 'Id, 'valueExt> *
+      Arg: ExprQueryExpr<'T, 'Id, 'valueExt>
     | QueryLookup of 'Id
     | QueryIntrinsic of QueryIntrinsic * ExpectedType: TypeQueryRow<'valueExt>
     | QueryConstant of PrimitiveValue
-    | QueryClosureValue of Value<TypeValue<'valueExt>, 'valueExt> * TypeQueryRow<'valueExt>
+    | QueryClosureValue of
+      Value<TypeValue<'valueExt>, 'valueExt> *
+      TypeQueryRow<'valueExt>
     | QueryCastTo of ExprQueryExpr<'T, 'Id, 'valueExt> * TypeQueryRow<'valueExt>
     | QueryCount of ExprQuery<'T, 'Id, 'valueExt>
     | QueryExists of ExprQuery<'T, 'Id, 'valueExt>
@@ -1252,7 +1392,9 @@ module Model =
     override self.ToString() =
       match self with
       | QueryTupleCons items ->
-        let itemStrs = items |> List.map (fun i -> i.ToString()) |> String.join ", "
+        let itemStrs =
+          items |> List.map (fun i -> i.ToString()) |> String.join ", "
+
         $"({itemStrs})"
       | QueryRecordDes(e, field, isJsonField) ->
         match isJsonField with
@@ -1262,12 +1404,14 @@ module Model =
         match isJsonItem with
         | false -> $"{e}.{item.Index}"
         | true -> $"{e} -> {item.Index - 1}"
-      | QueryConditional(cond, thenExpr, elseExpr) -> $"if {cond} then {thenExpr} else {elseExpr}"
+      | QueryConditional(cond, thenExpr, elseExpr) ->
+        $"if {cond} then {thenExpr} else {elseExpr}"
       | QueryUnionDes(e, handlers) ->
         let handlerStrs =
           handlers
           |> Map.toList
-          |> List.map (fun (case, handler) -> $"| {case} -> ({handler.Param} -> {handler.Body})")
+          |> List.map (fun (case, handler) ->
+            $"| {case} -> ({handler.Param} -> {handler.Body})")
 
         let space = " "
 
@@ -1276,7 +1420,8 @@ module Model =
         let handlerStrs =
           handlers
           |> Map.toList
-          |> List.map (fun (case, handler) -> $"| {case} ({handler.Param} -> {handler.Body})")
+          |> List.map (fun (case, handler) ->
+            $"| {case} ({handler.Param} -> {handler.Body})")
 
         let space = " "
 
@@ -1337,7 +1482,8 @@ module Model =
       | Or -> "||"
       | Not -> "!"
 
-  and ExprQueryIterators<'T, 'Id, 'valueExt when 'Id: comparison> = NonEmptyList<ExprQueryIterator<'T, 'Id, 'valueExt>>
+  and ExprQueryIterators<'T, 'Id, 'valueExt when 'Id: comparison> =
+    NonEmptyList<ExprQueryIterator<'T, 'Id, 'valueExt>>
 
   and ExprQueryIterator<'T, 'Id, 'valueExt when 'Id: comparison> =
     { Location: Location
@@ -1380,8 +1526,10 @@ module Model =
     override self.ToString() : string =
       match self with
       | ExprRec.TypeLambda({ ExprTypeLambda.Param = tp
-                             Body = body }) -> $"(Λ{tp.ToString()} => {body.ToString()})"
-      | TypeApply({ Func = e; TypeArg = t }) -> $"{e.ToString()} [{t.ToString()}]"
+                             Body = body }) ->
+        $"(Λ{tp.ToString()} => {body.ToString()})"
+      | TypeApply({ Func = e; TypeArg = t }) ->
+        $"{e.ToString()} [{t.ToString()}]"
       | Lambda({ Param = v
                  ParamType = topt
                  Body = body }) ->
@@ -1391,18 +1539,21 @@ module Model =
       | Apply({ F = e1; Arg = e2 }) -> $"({e1.ToString()} {e2.ToString()})"
       | FromValue({ Value = v
                     ValueType = t
-                    ValueKind = k }) -> $"({v.ToString()} : {t.ToString()} :: {k.ToString()}])"
+                    ValueKind = k }) ->
+        $"({v.ToString()} : {t.ToString()} :: {k.ToString()}])"
       | Let({ Var = v
               Type = topt
               Val = e1
               Rest = e2 }) ->
         match topt with
-        | Some t -> $"(let {v.Name}: {t.ToString()} = {e1.ToString()} in {e2.ToString()})"
+        | Some t ->
+          $"(let {v.Name}: {t.ToString()} = {e1.ToString()} in {e2.ToString()})"
         | None -> $"(let {v.Name} = {e1.ToString()} in {e2.ToString()})"
       | Do({ Val = e1; Rest = e2 }) -> $"(do {e1.ToString()}; {e2.ToString()})"
       | TypeLet({ Name = name
                   TypeDef = t
-                  Body = body }) -> $"(type {name} = {t.ToString()}; {body.ToString()})"
+                  Body = body }) ->
+        $"(type {name} = {t.ToString()}; {body.ToString()})"
       | RecordCons { Fields = fields } ->
         let fieldStr =
           fields
@@ -1418,16 +1569,22 @@ module Model =
 
         $"{{ {record.ToString()} with {fieldStr} }}"
       | TupleCons { Items = items } ->
-        let itemStr = items |> List.map (fun v -> v.ToString()) |> String.concat ", "
+        let itemStr =
+          items |> List.map (fun v -> v.ToString()) |> String.concat ", "
+
         $"({itemStr})"
       | SumCons({ Selector = selector }) -> $"{selector.Case}Of{selector.Count}"
-      | RecordDes({ Expr = record; Field = field }) -> $"{record.ToString()}.{field.ToString()}"
+      | RecordDes({ Expr = record; Field = field }) ->
+        $"{record.ToString()}.{field.ToString()}"
       | EntitiesDes({ Expr = entities }) -> $"{entities.ToString()}.Entities"
-      | RelationsDes({ Expr = relations }) -> $"{relations.ToString()}.Relations"
+      | RelationsDes({ Expr = relations }) ->
+        $"{relations.ToString()}.Relations"
       | EntityDes({ Expr = entity
-                    EntityName = entityName }) -> $"{entity.ToString()}.{entityName.ToString()}"
+                    EntityName = entityName }) ->
+        $"{entity.ToString()}.{entityName.ToString()}"
       | RelationDes({ Expr = relation
-                      RelationName = relationName }) -> $"{relation.ToString()}.{relationName.ToString()}"
+                      RelationName = relationName }) ->
+        $"{relation.ToString()}.{relationName.ToString()}"
       | RelationLookupDes({ Expr = relation
                             RelationName = _relationName
                             Direction = direction }) ->
@@ -1449,7 +1606,8 @@ module Model =
           |> String.concat " | "
 
         match defaultOpt with
-        | Some defaultExpr -> $"(match {handlerStr} | _ => {defaultExpr.ToString()})"
+        | Some defaultExpr ->
+          $"(match {handlerStr} | _ => {defaultExpr.ToString()})"
         | None -> $"(match {handlerStr})"
       | TupleDes({ ExprTupleDes.Tuple = tuple
                    Item = selector }) -> $"{tuple.ToString()}.{selector.Index}"
@@ -1468,7 +1626,8 @@ module Model =
       | Lookup id -> id.ToString()
       | If({ Cond = cond
              Then = thenExpr
-             Else = elseExpr }) -> $"(if {cond.ToString()} then {thenExpr.ToString()} else {elseExpr.ToString()})"
+             Else = elseExpr }) ->
+        $"(if {cond.ToString()} then {thenExpr.ToString()} else {elseExpr.ToString()})"
 
       | Query q -> q.ToString()
 
@@ -1547,7 +1706,9 @@ module Model =
     { Fields: List<ResolvedIdentifier * TypeCheckedExpr<'valueExt>> }
 
     override self.ToString() =
-      let fields = self.Fields |> List.map (fun (k, v) -> $"{k}: {v}") |> String.join "; "
+      let fields =
+        self.Fields |> List.map (fun (k, v) -> $"{k}: {v}") |> String.join "; "
+
       $"{{ {fields} }}"
 
   and [<RequireQualifiedAccess>] TypeCheckedExprRecordWith<'valueExt> =
@@ -1555,7 +1716,9 @@ module Model =
       Fields: List<ResolvedIdentifier * TypeCheckedExpr<'valueExt>> }
 
     override self.ToString() =
-      let fields = self.Fields |> List.map (fun (k, v) -> $"{k}: {v}") |> String.join "; "
+      let fields =
+        self.Fields |> List.map (fun (k, v) -> $"{k}: {v}") |> String.join "; "
+
       $"{{ {self.Record} with {fields} }}"
 
   and [<RequireQualifiedAccess>] TypeCheckedExprTupleCons<'valueExt> =
@@ -1681,8 +1844,14 @@ module Model =
 
   and [<RequireQualifiedAccess>] TypeCheckedExprQueryExprRec<'valueExt> =
     | QueryTupleCons of List<TypeCheckedExprQueryExpr<'valueExt>>
-    | QueryRecordDes of Expr: TypeCheckedExprQueryExpr<'valueExt> * Field: ResolvedIdentifier * IsJsonField: bool
-    | QueryTupleDes of Expr: TypeCheckedExprQueryExpr<'valueExt> * Item: TupleDesSelector * IsJsonItem: bool
+    | QueryRecordDes of
+      Expr: TypeCheckedExprQueryExpr<'valueExt> *
+      Field: ResolvedIdentifier *
+      IsJsonField: bool
+    | QueryTupleDes of
+      Expr: TypeCheckedExprQueryExpr<'valueExt> *
+      Item: TupleDesSelector *
+      IsJsonItem: bool
     | QueryConditional of
       Cond: TypeCheckedExprQueryExpr<'valueExt> *
       Then: TypeCheckedExprQueryExpr<'valueExt> *
@@ -1693,12 +1862,18 @@ module Model =
     | QuerySumDes of
       Expr: TypeCheckedExprQueryExpr<'valueExt> *
       Handlers: Map<SumConsSelector, TypeCheckedQueryCaseHandler<'valueExt>>
-    | QueryApply of Func: TypeCheckedExprQueryExpr<'valueExt> * Arg: TypeCheckedExprQueryExpr<'valueExt>
+    | QueryApply of
+      Func: TypeCheckedExprQueryExpr<'valueExt> *
+      Arg: TypeCheckedExprQueryExpr<'valueExt>
     | QueryLookup of ResolvedIdentifier
     | QueryIntrinsic of QueryIntrinsic * ExpectedType: TypeQueryRow<'valueExt>
     | QueryConstant of PrimitiveValue
-    | QueryClosureValue of Value<TypeValue<'valueExt>, 'valueExt> * TypeQueryRow<'valueExt>
-    | QueryCastTo of TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>
+    | QueryClosureValue of
+      Value<TypeValue<'valueExt>, 'valueExt> *
+      TypeQueryRow<'valueExt>
+    | QueryCastTo of
+      TypeCheckedExprQueryExpr<'valueExt> *
+      TypeQueryRow<'valueExt>
     | QueryCount of TypeCheckedExprQuery<'valueExt>
     | QueryExists of TypeCheckedExprQuery<'valueExt>
     | QueryArray of TypeCheckedExprQuery<'valueExt>
@@ -1709,7 +1884,9 @@ module Model =
     override self.ToString() =
       match self with
       | QueryTupleCons items ->
-        let itemStrs = items |> List.map (fun i -> i.ToString()) |> String.join ", "
+        let itemStrs =
+          items |> List.map (fun i -> i.ToString()) |> String.join ", "
+
         $"({itemStrs})"
       | QueryRecordDes(e, field, isJsonField) ->
         match isJsonField with
@@ -1719,12 +1896,14 @@ module Model =
         match isJsonItem with
         | false -> $"{e}.{item.Index}"
         | true -> $"{e} -> {item.Index - 1}"
-      | QueryConditional(cond, thenExpr, elseExpr) -> $"if {cond} then {thenExpr} else {elseExpr}"
+      | QueryConditional(cond, thenExpr, elseExpr) ->
+        $"if {cond} then {thenExpr} else {elseExpr}"
       | QueryUnionDes(e, handlers) ->
         let handlerStrs =
           handlers
           |> Map.toList
-          |> List.map (fun (case, handler) -> $"| {case} -> ({handler.Param} -> {handler.Body})")
+          |> List.map (fun (case, handler) ->
+            $"| {case} -> ({handler.Param} -> {handler.Body})")
 
         let handlersText = String.Join(" ", handlerStrs)
         $"match {e} with {{ {handlersText} }}"
@@ -1732,7 +1911,8 @@ module Model =
         let handlerStrs =
           handlers
           |> Map.toList
-          |> List.map (fun (case, handler) -> $"| {case} ({handler.Param} -> {handler.Body})")
+          |> List.map (fun (case, handler) ->
+            $"| {case} ({handler.Param} -> {handler.Body})")
 
         let handlersText = String.Join(" ", handlerStrs)
         $"match {e} with {{ {handlersText} }}"
@@ -1764,7 +1944,8 @@ module Model =
       let joins =
         match q.Joins with
         | Some joins ->
-          let joinToStr (j: TypeCheckedExprQueryJoin<'valueExt>) = $"({j.Left}) = ({j.Right})"
+          let joinToStr (j: TypeCheckedExprQueryJoin<'valueExt>) =
+            $"({j.Left}) = ({j.Right})"
 
           let joined =
             joins
@@ -1776,7 +1957,9 @@ module Model =
         | None -> ""
 
       let whereToStr =
-        q.Where |> Option.map (fun w -> $"\nwhere {w}") |> Option.defaultValue ""
+        q.Where
+        |> Option.map (fun w -> $"\nwhere {w}")
+        |> Option.defaultValue ""
 
       let selectToStr = $"\nselect {q.Select}"
 
@@ -1798,14 +1981,18 @@ module Model =
         |> String.join ", "
 
       let distinctStr =
-        q.Distinct |> Option.map (fun d -> $"\ndistinct {d}") |> Option.defaultValue ""
+        q.Distinct
+        |> Option.map (fun d -> $"\ndistinct {d}")
+        |> Option.defaultValue ""
 
       $"""(query {{ 
   from {iteratorVars} in {iteratorSources}{joins}{whereToStr}{selectToStr}{orderByToStr}}}){distinctStr}"""
 
   and [<RequireQualifiedAccess>] TypeCheckedExprQuery<'valueExt> =
     | SimpleQuery of TypeCheckedSimpleQuery<'valueExt>
-    | UnionQueries of TypeCheckedExprQuery<'valueExt> * TypeCheckedExprQuery<'valueExt>
+    | UnionQueries of
+      TypeCheckedExprQuery<'valueExt> *
+      TypeCheckedExprQuery<'valueExt>
 
     override self.ToString() =
       match self with
@@ -1874,10 +2061,14 @@ module Model =
                   TypeDef = t
                   Body = body }) -> $"(type {name} = {t}; {body})"
       | RecordCons { Fields = fields } ->
-        let fieldStr = fields |> List.map (fun (k, v) -> $"{k} = {v}") |> String.concat "; "
+        let fieldStr =
+          fields |> List.map (fun (k, v) -> $"{k} = {v}") |> String.concat "; "
+
         $"{{ {fieldStr} }}"
       | RecordWith({ Record = record; Fields = fields }) ->
-        let fieldStr = fields |> List.map (fun (k, v) -> $"{k} = {v}") |> String.concat "; "
+        let fieldStr =
+          fields |> List.map (fun (k, v) -> $"{k} = {v}") |> String.concat "; "
+
         $"{{ {record} with {fieldStr} }}"
       | TupleCons { Items = items } ->
         let itemStr = items |> List.map string |> String.concat ", "
@@ -1889,17 +2080,21 @@ module Model =
       | EntityDes({ Expr = entity
                     EntityName = entityName }) -> $"{entity}.{entityName}"
       | RelationDes({ Expr = relation
-                      RelationName = relationName }) -> $"{relation}.{relationName}"
+                      RelationName = relationName }) ->
+        $"{relation}.{relationName}"
       | RelationLookupDes({ Expr = relation
                             RelationName = relationName
-                            Direction = direction }) -> $"{relation}.{relationName}.{direction}"
+                            Direction = direction }) ->
+        $"{relation}.{relationName}.{direction}"
       | UnionDes({ Handlers = handlers
                    Fallback = defaultOpt }) ->
         let handlerStr =
           handlers
           |> Map.toList
           |> List.map (fun (k, (v, body)) ->
-            let p = v |> Option.map (fun var -> var.Name) |> Option.defaultValue "_"
+            let p =
+              v |> Option.map (fun var -> var.Name) |> Option.defaultValue "_"
+
             $"{k}({p}) => {body}")
           |> String.concat " | "
 
@@ -1913,7 +2108,9 @@ module Model =
           handlers
           |> Map.toList
           |> List.map (fun (k, (v, body)) ->
-            let p = v |> Option.map (fun var -> var.Name) |> Option.defaultValue "_"
+            let p =
+              v |> Option.map (fun var -> var.Name) |> Option.defaultValue "_"
+
             $"{k}({p}) => {body}")
           |> String.concat " | "
 
@@ -1922,7 +2119,8 @@ module Model =
       | Lookup id -> id.ToString()
       | If({ Cond = cond
              Then = thenExpr
-             Else = elseExpr }) -> $"(if {cond} then {thenExpr} else {elseExpr})"
+             Else = elseExpr }) ->
+        $"(if {cond} then {thenExpr} else {elseExpr})"
       | Query q -> q.ToString()
 
 
@@ -1935,9 +2133,11 @@ module Model =
 
     override self.ToString() : string = self.Expr.ToString()
 
-  and [<RequireQualifiedAccess>] TypeCheckedCaseHandler<'valueExt> = Option<Var> * TypeCheckedExpr<'valueExt>
+  and [<RequireQualifiedAccess>] TypeCheckedCaseHandler<'valueExt> =
+    Option<Var> * TypeCheckedExpr<'valueExt>
 
-  and CaseHandler<'T, 'Id, 'valueExt when 'Id: comparison> = Option<Var> * Expr<'T, 'Id, 'valueExt>
+  and CaseHandler<'T, 'Id, 'valueExt when 'Id: comparison> =
+    Option<Var> * Expr<'T, 'Id, 'valueExt>
 
   and PrimitiveValue =
     | Int32 of Int32
@@ -1983,7 +2183,8 @@ module Model =
       | TimeSpan v -> box v
       | Unit -> null
 
-  and ValueQueryIterators<'T, 'valueExt> = NonEmptyList<ValueQueryIterator<'T, 'valueExt>>
+  and ValueQueryIterators<'T, 'valueExt> =
+    NonEmptyList<ValueQueryIterator<'T, 'valueExt>>
 
   and ValueQueryIterator<'T, 'valueExt> =
     { Location: Location
@@ -2007,7 +2208,8 @@ module Model =
       let joins =
         match q.Joins with
         | Some joins ->
-          let joinToStr (j: TypeCheckedExprQueryJoin<'valueExt>) = $"({j.Left}) = ({j.Right})"
+          let joinToStr (j: TypeCheckedExprQueryJoin<'valueExt>) =
+            $"({j.Left}) = ({j.Right})"
 
           let joined =
             joins
@@ -2019,7 +2221,9 @@ module Model =
         | None -> ""
 
       let whereToStr =
-        q.Where |> Option.map (fun w -> $"\nwhere {w}") |> Option.defaultValue ""
+        q.Where
+        |> Option.map (fun w -> $"\nwhere {w}")
+        |> Option.defaultValue ""
 
       let selectToStr = $"\nselect {q.Select}"
 
@@ -2041,7 +2245,9 @@ module Model =
         |> String.join ", "
 
       let distinctStr =
-        q.Distinct |> Option.map (fun d -> $"\ndistinct {d}") |> Option.defaultValue ""
+        q.Distinct
+        |> Option.map (fun d -> $"\ndistinct {d}")
+        |> Option.defaultValue ""
 
       $"""(query {{ 
   from {iteratorVars} in {iteratorSources}{joins}{whereToStr}{selectToStr}{orderByToStr}}}){distinctStr}"""
@@ -2064,13 +2270,19 @@ module Model =
       | ValueQuerySimple q -> q.ToString()
       | ValueUnionQueries(q1, q2, _) ->
         let unionStrs =
-          [ q1; q2 ] |> List.map (fun q -> q.ToString()) |> String.join "\nunion\n"
+          [ q1; q2 ]
+          |> List.map (fun q -> q.ToString())
+          |> String.join "\nunion\n"
 
         $"(\n{unionStrs}\n)"
 
   and Value<'T, 'valueExt> =
     | TypeLambda of TypeParameter * TypeCheckedExpr<'valueExt>
-    | Lambda of Var * TypeCheckedExpr<'valueExt> * Map<ResolvedIdentifier, Value<'T, 'valueExt>> * TypeCheckScope
+    | Lambda of
+      Var *
+      TypeCheckedExpr<'valueExt> *
+      Map<ResolvedIdentifier, Value<'T, 'valueExt>> *
+      TypeCheckScope
     | Record of Map<ResolvedIdentifier, Value<'T, 'valueExt>>
     | UnionCase of ResolvedIdentifier * Value<'T, 'valueExt>
     | RecordDes of ResolvedIdentifier
@@ -2098,9 +2310,12 @@ module Model =
       | RecordDes ts -> ts.ToString()
       | UnionCons ts -> ts.ToString()
       | Tuple values ->
-        let valueStr = values |> List.map (fun v -> v.ToString()) |> String.concat ", "
+        let valueStr =
+          values |> List.map (fun v -> v.ToString()) |> String.concat ", "
+
         $"({valueStr})"
-      | Sum(selector, value) -> $"{selector.Case}Of{selector.Count}({value.ToString()})"
+      | Sum(selector, value) ->
+        $"{selector.Case}Of{selector.Count}({value.ToString()})"
       | Primitive p -> p.ToString()
       | Var v -> v.Name
       | Query q -> q.ToString()

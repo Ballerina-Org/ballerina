@@ -6,7 +6,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Model/Model.fs" />
-    <!-- <Compile Include="Common/SyntheticData.fs" /> -->
     <Compile Include="Common/Utils.fs" />
     <Compile Include="Common/OpenAPI/Model.fs" />
     <Compile Include="Common/OpenAPI/DataModelGeneration.fs" />
@@ -25,7 +24,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../ballerina-lang/Next/ballerina-lang.fsproj" />
-    <ProjectReference Include="../ballerina-lang-synthetic-data/ballerina-lang-synthetic-data.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

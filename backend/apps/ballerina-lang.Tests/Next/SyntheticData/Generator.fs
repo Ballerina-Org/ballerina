@@ -20,16 +20,28 @@ open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 open Ballerina.Errors
 open Ballerina.DSL.Next.StdLib.String
 
-let private emptyContext<'valueExt when 'valueExt: comparison> () : TypeCheckContext<'valueExt> =
+let private emptyContext<'valueExt when 'valueExt: comparison>
+  ()
+  : TypeCheckContext<'valueExt> =
   TypeCheckContext.Empty("", "")
 
-let private emptyState<'valueExt when 'valueExt: comparison> () : TypeCheckState<'valueExt> = TypeCheckState.Empty
+let private emptyState<'valueExt when 'valueExt: comparison>
+  ()
+  : TypeCheckState<'valueExt> =
+  TypeCheckState.Empty
 
 let listImportedGenerators<'valueExt when 'valueExt: comparison>
   ()
-  : Map<ResolvedIdentifier, ImportedGenerator<ValueExt<unit, MutableMemoryDB<unit, 'valueExt>, 'valueExt>, ListConfig>> =
-  let stdlib, _, _typeEvalConfig =
-    db_ops () |> stdExtensions (StringTypeClass<_>.Console())
+  : Map<
+      ResolvedIdentifier,
+      ImportedGenerator<
+        ValueExt<unit, MutableMemoryDB<unit, 'valueExt>, 'valueExt>,
+        ListConfig
+       >
+     >
+  =
+  let stdlib, _, _typeCheckingConfig =
+    db_ops () |> bootstrapStdExtensions (StringTypeClass<_>.Console())
 
   let listTypeId = stdlib.List.TypeName |> fst
 
@@ -68,13 +80,19 @@ let listImportedGenerators<'valueExt when 'valueExt: comparison>
                     s
                     |> sum.Map(fun values ->
                       let listValues = ListValues.List values
-                      let extValue = ValueExt.ValueExt(Choice1Of7(ListExt.ListValues listValues))
+
+                      let extValue =
+                        ValueExt.ValueExt(
+                          Choice1Of7(ListExt.ListValues listValues)
+                        )
+
                       Value.Ext(extValue, None))
             }
           | _ ->
             seq {
               yield
-                (fun () -> $"Expected 1 list type argument, got {imported.Arguments.Length}")
+                (fun () ->
+                  $"Expected 1 list type argument, got {imported.Arguments.Length}")
                 |> Errors.Singleton()
                 |> sum.Throw
             } }
@@ -97,7 +115,10 @@ let private assertPrimitive expected actual =
   | PrimitiveType.Unit, Value.Primitive PrimitiveValue.Unit -> ()
   | _ -> Assert.Fail $"Expected primitive {expected} but got {actual}"
 
-let private logGenerated (typeValue: TypeValue<_>) (value: Value<TypeValue<_>, _>) =
+let private logGenerated
+  (typeValue: TypeValue<_>)
+  (value: Value<TypeValue<_>, _>)
+  =
   Console.WriteLine $"Generated value: {value}"
   Console.WriteLine $"Generated type: {typeValue}"
 
@@ -111,7 +132,11 @@ let ``SyntheticData generates primitive values`` () =
   let importedGenerators = Map.empty
 
   let actual =
-    Ballerina.DSL.Next.SyntheticData.Generator.Generate config context importedGenerators (TypeValue.CreateInt32())
+    Ballerina.DSL.Next.SyntheticData.Generator.Generate
+      config
+      context
+      importedGenerators
+      (TypeValue.CreateInt32())
     |> Seq.head
 
   match actual with
@@ -128,14 +153,22 @@ let ``SyntheticData resolves lookups`` () =
 
   let context: TypeCheckContext<unit> =
     emptyContext ()
-    |> TypeCheckContext.Updaters.Values(fun _ -> Map.ofList [ resolved, (t, Kind.Star) ])
+    |> TypeCheckContext.Updaters.Values(fun _ ->
+      Map.ofList [ resolved, (t, Kind.Star) ])
 
   let config = configWithRandom 2 None
-  let context: TypeCheckContext<unit> * TypeCheckState<unit> = context, emptyState ()
+
+  let context: TypeCheckContext<unit> * TypeCheckState<unit> =
+    context, emptyState ()
+
   let importedGenerators = Map.empty
 
   let actual =
-    Ballerina.DSL.Next.SyntheticData.Generator.Generate config context importedGenerators (TypeValue.Lookup lookupId)
+    Ballerina.DSL.Next.SyntheticData.Generator.Generate
+      config
+      context
+      importedGenerators
+      (TypeValue.Lookup lookupId)
     |> Seq.head
 
   match actual with
@@ -150,14 +183,22 @@ let ``SyntheticData resolves type variables`` () =
 
   let context: TypeCheckContext<unit> =
     emptyContext ()
-    |> TypeCheckContext.Updaters.TypeVariables(fun _ -> Map.ofList [ tVar.Name, (TypeValue.CreateBool(), Kind.Star) ])
+    |> TypeCheckContext.Updaters.TypeVariables(fun _ ->
+      Map.ofList [ tVar.Name, (TypeValue.CreateBool(), Kind.Star) ])
 
   let config = configWithRandom 3 None
-  let context: TypeCheckContext<unit> * TypeCheckState<unit> = context, emptyState ()
+
+  let context: TypeCheckContext<unit> * TypeCheckState<unit> =
+    context, emptyState ()
+
   let importedGenerators = Map.empty
 
   let actual =
-    Ballerina.DSL.Next.SyntheticData.Generator.Generate config context importedGenerators (TypeValue.Var tVar)
+    Ballerina.DSL.Next.SyntheticData.Generator.Generate
+      config
+      context
+      importedGenerators
+      (TypeValue.Var tVar)
     |> Seq.head
 
   match actual with
@@ -188,11 +229,19 @@ let ``SyntheticData builds records and tuples`` () =
   let importedGenerators = Map.empty
 
   let recordValue =
-    Ballerina.DSL.Next.SyntheticData.Generator.Generate config context importedGenerators recordType
+    Ballerina.DSL.Next.SyntheticData.Generator.Generate
+      config
+      context
+      importedGenerators
+      recordType
     |> Seq.head
 
   let tupleValue =
-    Ballerina.DSL.Next.SyntheticData.Generator.Generate config context importedGenerators tupleType
+    Ballerina.DSL.Next.SyntheticData.Generator.Generate
+      config
+      context
+      importedGenerators
+      tupleType
     |> Seq.head
 
   match recordValue with
@@ -237,7 +286,8 @@ let ``SyntheticData builds union and sum cases`` () =
   let caseB = TypeSymbol.Create(Identifier.LocalScope "B")
 
   let unionType =
-    OrderedMap.ofList [ caseA, TypeValue.CreateInt32(); caseB, TypeValue.CreateString() ]
+    OrderedMap.ofList
+      [ caseA, TypeValue.CreateInt32(); caseB, TypeValue.CreateString() ]
     |> TypeValue.CreateUnion
 
   let sumType =
@@ -251,11 +301,19 @@ let ``SyntheticData builds union and sum cases`` () =
   let importedGenerators = Map.empty
 
   let unionValue =
-    Ballerina.DSL.Next.SyntheticData.Generator.Generate config context importedGenerators unionType
+    Ballerina.DSL.Next.SyntheticData.Generator.Generate
+      config
+      context
+      importedGenerators
+      unionType
     |> Seq.head
 
   let sumValue =
-    Ballerina.DSL.Next.SyntheticData.Generator.Generate config context importedGenerators sumType
+    Ballerina.DSL.Next.SyntheticData.Generator.Generate
+      config
+      context
+      importedGenerators
+      sumType
     |> Seq.head
 
   match unionValue with
@@ -360,7 +418,8 @@ in let t:T = { A=10; B=true; }
 in t
     """
 
-  let typeCheckResult = Expr.TypeCheckString (context, typeEvalConfig) program
+  let typeCheckResult =
+    Expr.TypeCheckString (context, typeCheckingConfig, cache) program
 
   match typeCheckResult with
   | Left(_expr, typeValue, finalState) ->
@@ -368,7 +427,11 @@ in t
     let importedGenerators = Map.empty
 
     let generated =
-      Generator.Generate config (context.TypeCheckContext, finalState) importedGenerators typeValue
+      Generator.Generate
+        config
+        (context.TypeCheckContext, finalState)
+        importedGenerators
+        typeValue
       |> Seq.head
 
     match generated with
@@ -377,7 +440,8 @@ in t
       | Sum.Left value -> logGenerated typeValue value
       | _ -> ()
 
-      let fieldNames = fields |> Map.keys |> Seq.map (fun k -> k.Name) |> Set.ofSeq
+      let fieldNames =
+        fields |> Map.keys |> Seq.map (fun k -> k.Name) |> Set.ofSeq
 
       Assert.That(fieldNames, Is.SupersetOf([ "A"; "B" ]))
     | Sum.Left other -> Assert.Fail $"Expected record value but got {other}"
@@ -401,7 +465,7 @@ in let l:L = List::Nil [int32] ()
 in (r, u, t, s, l)
     """
 
-  match Expr.TypeCheckString (context, typeEvalConfig) program with
+  match Expr.TypeCheckString (context, typeCheckingConfig, cache) program with
   | Left(_expr, _typeValue, finalState) ->
     let config = configWithRandom 9 (Some ListConfig.Default)
     let ctx = context.TypeCheckContext, finalState
@@ -410,7 +474,10 @@ in (r, u, t, s, l)
     let generate name =
       let typeValue = TypeValue.Lookup(Identifier.LocalScope name)
 
-      Generator.Generate<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>, ListConfig>
+      Generator.Generate<
+        ValueExt<unit, MutableMemoryDB<unit, unit>, unit>,
+        ListConfig
+       >
         config
         ctx
         importedGenerators
@@ -423,7 +490,9 @@ in (r, u, t, s, l)
         | Sum.Left value -> logGenerated typeValue value
         | _ -> ()
 
-        let fieldNames = fields |> Map.keys |> Seq.map (fun k -> k.Name) |> Set.ofSeq
+        let fieldNames =
+          fields |> Map.keys |> Seq.map (fun k -> k.Name) |> Set.ofSeq
+
         Assert.That(fieldNames, Is.SupersetOf([ "A"; "B"; "C" ]))
       | Sum.Left other -> Assert.Fail $"Expected record value but got {other}"
       | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
@@ -463,12 +532,16 @@ in (r, u, t, s, l)
 
     let assertList typeValue result =
       match result with
-      | Sum.Left(Value.Ext(ValueExt.ValueExt(Choice1Of7(ListExt.ListValues(ListValues.List items))), None)) ->
+      | Sum.Left(Value.Ext(ValueExt.ValueExt(Choice1Of7(ListExt.ListValues(ListValues.List items))),
+                           None)) ->
         match result with
         | Sum.Left value -> logGenerated typeValue value
         | _ -> ()
 
-        Assert.That(items.Length, Is.LessThanOrEqualTo GENERATED_MANY_ITEMS_LENGTH)
+        Assert.That(
+          items.Length,
+          Is.LessThanOrEqualTo GENERATED_MANY_ITEMS_LENGTH
+        )
       | Sum.Left other -> Assert.Fail $"Expected list value but got {other}"
       | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
 
@@ -498,24 +571,34 @@ in let o:Outer = { Inner={ X=1; Y=true; }; Tuple=(1, "a"); Choice=1Of2 1; Union=
 in o
     """
 
-  match Expr.TypeCheckString (context, typeEvalConfig) program with
+  match Expr.TypeCheckString (context, typeCheckingConfig, cache) program with
   | Left(_expr, _typeValue, finalState) ->
     let config = configWithRandom 10 None
     let ctx = context.TypeCheckContext, finalState
     let importedGenerators = Map.empty
 
     let generated =
-      Generator.Generate config ctx importedGenerators (TypeValue.Lookup(Identifier.LocalScope "Outer"))
+      Generator.Generate
+        config
+        ctx
+        importedGenerators
+        (TypeValue.Lookup(Identifier.LocalScope "Outer"))
       |> Seq.head
 
     match generated with
     | Sum.Left(Value.Record fields) as generatedResult ->
       match generatedResult with
-      | Sum.Left value -> logGenerated (TypeValue.Lookup(Identifier.LocalScope "Outer")) value
+      | Sum.Left value ->
+        logGenerated (TypeValue.Lookup(Identifier.LocalScope "Outer")) value
       | _ -> ()
 
-      let fieldNames = fields |> Map.keys |> Seq.map (fun k -> k.Name) |> Set.ofSeq
-      Assert.That(fieldNames, Is.SupersetOf [ "Inner"; "Tuple"; "Choice"; "Union" ])
+      let fieldNames =
+        fields |> Map.keys |> Seq.map (fun k -> k.Name) |> Set.ofSeq
+
+      Assert.That(
+        fieldNames,
+        Is.SupersetOf [ "Inner"; "Tuple"; "Choice"; "Union" ]
+      )
     | Sum.Left other -> Assert.Fail $"Expected record value but got {other}"
     | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
   | Right err -> Assert.Fail $"Type checking failed: {err}"
@@ -569,14 +652,18 @@ in let inner:Inner = { Rec=r; Tup=t; Choice=s; Union=u; List=l; }
 in inner
     """
 
-  match Expr.TypeCheckString (context, typeEvalConfig) program with
+  match Expr.TypeCheckString (context, typeCheckingConfig, cache) program with
   | Left(_expr, typeValue, finalState) ->
     let config = configWithRandom 42 (Some ListConfig.Default)
     let ctx = context.TypeCheckContext, finalState
     let importedGenerators = listImportedGenerators ()
 
     let generated =
-      Generator.Generate<ValueExt<_, _, _>, ListConfig> config ctx importedGenerators typeValue
+      Generator.Generate<ValueExt<_, _, _>, ListConfig>
+        config
+        ctx
+        importedGenerators
+        typeValue
 
     Console.WriteLine "=== All generated values for Complex type ==="
     let mutable count = 0

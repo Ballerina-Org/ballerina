@@ -28,10 +28,16 @@ module Model =
         | :? SchemaAsValue<'ext> as y -> compare x.Value.Value y.Value.Value
         | _ -> invalidArg "yobj" "cannot compare values of different types"
 
-  type EntityRef<'db, 'ext when 'ext: comparison> = Schema<'ext> * 'db * SchemaEntity<'ext> * SchemaAsValue<'ext>
+  type EntityRef<'db, 'ext when 'ext: comparison> =
+    Schema<'ext> * 'db * SchemaEntity<'ext> * SchemaAsValue<'ext>
 
   type RelationRef<'db, 'ext when 'ext: comparison> =
-    Schema<'ext> * 'db * SchemaRelation<'ext> * SchemaEntity<'ext> * SchemaEntity<'ext> * SchemaAsValue<'ext>
+    Schema<'ext> *
+    'db *
+    SchemaRelation<'ext> *
+    SchemaEntity<'ext> *
+    SchemaEntity<'ext> *
+    SchemaAsValue<'ext>
 
   // type RelationLookupRef<'runtimeContext, 'db, 'ext when 'ext: comparison> =
   //   Schema<'ext> * 'db * RelationLookupDirection * SchemaRelation<'ext> * SchemaEntity<'ext> * SchemaEntity<'ext>
@@ -65,15 +71,27 @@ module Model =
       RunQuery:
         ValueQuery<TypeValue<'ext>, 'ext>
           -> Option<int * int>
-          -> Reader<List<Value<TypeValue<'ext>, 'ext>>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
+          -> Reader<
+            List<Value<TypeValue<'ext>, 'ext>>,
+            ExprEvalContext<'runtimeContext, 'ext>,
+            Errors<Unit>
+           >
       Create:
         EntityRef<'db, 'ext>
           -> CreateArgs<'runtimeContext, 'db, 'ext>
-          -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
+          -> Reader<
+            Value<TypeValue<'ext>, 'ext>,
+            ExprEvalContext<'runtimeContext, 'ext>,
+            Errors<Unit>
+           >
       Update:
         EntityRef<'db, 'ext>
           -> UpsertArgs<'runtimeContext, 'db, 'ext>
-          -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
+          -> Reader<
+            Value<TypeValue<'ext>, 'ext>,
+            ExprEvalContext<'runtimeContext, 'ext>,
+            Errors<Unit>
+           >
       Delete:
         EntityRef<'db, 'ext>
           -> Value<TypeValue<'ext>, 'ext>
@@ -97,44 +115,71 @@ module Model =
       GetById:
         EntityRef<'db, 'ext>
           -> Value<TypeValue<'ext>, 'ext>
-          -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
+          -> Reader<
+            Value<TypeValue<'ext>, 'ext>,
+            ExprEvalContext<'runtimeContext, 'ext>,
+            Errors<Unit>
+           >
       GetMany:
         EntityRef<'db, 'ext>
           -> int * int
-          -> Reader<List<Value<TypeValue<'ext>, 'ext>>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
+          -> Reader<
+            List<Value<TypeValue<'ext>, 'ext>>,
+            ExprEvalContext<'runtimeContext, 'ext>,
+            Errors<Unit>
+           >
       LookupMaybe:
         RelationRef<'db, 'ext>
           -> Value<TypeValue<'ext>, 'ext>
           -> RelationLookupDirection
-          -> Reader<Option<Value<TypeValue<'ext>, 'ext>>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
+          -> Reader<
+            Option<Value<TypeValue<'ext>, 'ext>>,
+            ExprEvalContext<'runtimeContext, 'ext>,
+            Errors<Unit>
+           >
       LookupOne:
         RelationRef<'db, 'ext>
           -> Value<TypeValue<'ext>, 'ext>
           -> RelationLookupDirection
-          -> Reader<Value<TypeValue<'ext>, 'ext>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
+          -> Reader<
+            Value<TypeValue<'ext>, 'ext>,
+            ExprEvalContext<'runtimeContext, 'ext>,
+            Errors<Unit>
+           >
       LookupMany:
         RelationRef<'db, 'ext>
           -> Value<TypeValue<'ext>, 'ext>
           -> RelationLookupDirection
           -> int * int
-          -> Reader<List<Value<TypeValue<'ext>, 'ext>>, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>> }
+          -> Reader<
+            List<Value<TypeValue<'ext>, 'ext>>,
+            ExprEvalContext<'runtimeContext, 'ext>,
+            Errors<Unit>
+           > }
 
   let db_nonsense () =
     { DB = ()
       BeginTransaction = fun _ -> Left Guid.Empty
       CommitTransaction = fun _ _ -> Left()
       RunQuery = fun _ _ -> reader.Return []
-      Create = fun _ args -> reader.Return <| Value.Tuple [ args.Id; args.Value ]
-      Update = fun _ args -> reader.Return <| Value.Tuple [ args.Id; args.Previous; args.Value ]
+      Create =
+        fun _ args -> reader.Return <| Value.Tuple [ args.Id; args.Value ]
+      Update =
+        fun _ args ->
+          reader.Return <| Value.Tuple [ args.Id; args.Previous; args.Value ]
       Delete = fun _ _ -> reader.Return()
       DeleteMany = fun _ _ -> reader.Return()
       Link = fun _ _ -> reader.Return()
       Unlink = fun _ _ -> reader.Return()
       IsLinked = fun _ _ -> reader.Return false
-      GetById = fun _ _ -> reader.Throw <| Errors.Singleton () (fun () -> "No such entity")
+      GetById =
+        fun _ _ ->
+          reader.Throw <| Errors.Singleton () (fun () -> "No such entity")
       GetMany = fun _ _ -> reader.Return []
       LookupMaybe = fun _ _ _ -> reader.Return None
-      LookupOne = fun _ _ _ -> reader.Throw <| Errors.Singleton () (fun () -> "No such relation")
+      LookupOne =
+        fun _ _ _ ->
+          reader.Throw <| Errors.Singleton () (fun () -> "No such relation")
       LookupMany = fun _ _ _ _ -> reader.Return [] }
 
   type DBEvalProperty<'ext> =
@@ -168,7 +213,9 @@ module Model =
       member x.CompareTo yobj =
         match yobj with
         | :? DBIO<'runtimeContext, 'db, 'ext> as y ->
-          compare (x.Schema, x.SchemaAsValue, x.Main) (y.Schema, y.SchemaAsValue, y.Main)
+          compare
+            (x.Schema, x.SchemaAsValue, x.Main)
+            (y.Schema, y.SchemaAsValue, y.Main)
         | _ -> invalidArg "yobj" "cannot compare values of different types"
 
   type DBValues<'runtimeContext, 'db, 'ext when 'ext: comparison> =
@@ -179,8 +226,10 @@ module Model =
     | IsLinked of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
     | LinkMany of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
     | UnlinkMany of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
-    | LookupOne of {| RelationRef: Option<RelationRef<'db, 'ext> * RelationLookupDirection> |}
-    | LookupOption of {| RelationRef: Option<RelationRef<'db, 'ext> * RelationLookupDirection> |}
+    | LookupOne of
+      {| RelationRef: Option<RelationRef<'db, 'ext> * RelationLookupDirection> |}
+    | LookupOption of
+      {| RelationRef: Option<RelationRef<'db, 'ext> * RelationLookupDirection> |}
     | LookupMany of
       {| RelationRef: Option<RelationRef<'db, 'ext> * RelationLookupDirection>
          EntityId: Option<Value<TypeValue<'ext>, 'ext>> |}
@@ -204,7 +253,8 @@ module Model =
     override this.ToString() =
       match this with
       | EntityRef(_, _, entity, _) -> $"{entity.Name.Name}"
-      | RelationRef(_, _, relation, _fromEntity, _toEntity, _) -> $"{relation.Name.Name}"
+      | RelationRef(_, _, relation, _fromEntity, _toEntity, _) ->
+        $"{relation.Name.Name}"
       | Link link ->
         let relationStr =
           match link.RelationRef with
@@ -269,7 +319,8 @@ module Model =
           | None -> "None"
 
         $"LookupMany(Relation: {relationStr})"
-      | RelationLookupRef((_, _, relation, _fromEntity, _toEntity, _), direction) -> $"{relation.Name}[{direction}]"
+      | RelationLookupRef((_, _, relation, _fromEntity, _toEntity, _), direction) ->
+        $"{relation.Name}[{direction}]"
       | EvalProperty prop -> $"EvalProperty({prop.PropertyName})"
       | StripProperty prop -> $"StripProperty({prop.PropertyName})"
       | Create _ -> "Create"

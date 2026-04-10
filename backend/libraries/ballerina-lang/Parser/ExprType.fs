@@ -18,13 +18,18 @@ module ExprType =
   open Ballerina.State.WithError
 
   type ExprType with
-    static member ParseUnionCase(json: JsonValue) : Sum<UnionCase, Errors<unit>> =
+    static member ParseUnionCase
+      (json: JsonValue)
+      : Sum<UnionCase, Errors<unit>> =
       let (!) = ExprType.Parse
 
       sum {
         let! args = json |> JsonValue.AsRecord
 
-        let! caseJson, fieldsJson = sum.All2 (args |> sum.TryFindField "caseName") (args |> sum.TryFindField "fields")
+        let! caseJson, fieldsJson =
+          sum.All2
+            (args |> sum.TryFindField "caseName")
+            (args |> sum.TryFindField "fields")
 
 
         let! caseName = caseJson |> JsonValue.AsString
@@ -41,7 +46,12 @@ module ExprType =
                     let! fieldType = !fieldType
                     return fieldName, fieldType
                   }
-                  |> sum.MapError(Errors.Map(String.appendNewline $"\n...when parsing field {fieldName}")))
+                  |> sum.MapError(
+                    Errors.Map(
+                      String.appendNewline
+                        $"\n...when parsing field {fieldName}"
+                    )
+                  ))
                 |> Seq.toList
                 |> sum.All
 
@@ -118,7 +128,9 @@ module ExprType =
 
                     |> sum.Map ignore
 
-                  return ExprType.PrimitiveType PrimitiveType.CalculatedDisplayValueType
+                  return
+                    ExprType.PrimitiveType
+                      PrimitiveType.CalculatedDisplayValueType
                 }
                 sum {
                   do!
@@ -130,7 +142,11 @@ module ExprType =
                   return ExprType.PrimitiveType PrimitiveType.IntType
                 }
                 sum {
-                  do! json |> JsonValue.AsEnum(Set.singleton "int") |> sum.Map ignore
+                  do!
+                    json
+                    |> JsonValue.AsEnum(Set.singleton "int")
+                    |> sum.Map ignore
+
                   return ExprType.PrimitiveType PrimitiveType.IntType
                 }
                 sum {
@@ -165,20 +181,27 @@ module ExprType =
 
                   return!
                     sum { return ExprType.LookupType { VarName = typeName } }
-                    |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+                    |> sum.MapError(
+                      Errors.MapPriority(replaceWith ErrorPriority.High)
+                    )
                 }
                 sum {
                   let! fields = json |> JsonValue.AsRecord
                   let! kindJson = fields |> sum.TryFindField "kind"
 
-                  do! kindJson |> JsonValue.AsEnum(Set.singleton "VarLookup") |> sum.Map ignore
+                  do!
+                    kindJson
+                    |> JsonValue.AsEnum(Set.singleton "VarLookup")
+                    |> sum.Map ignore
 
                   let! varNameJson = fields |> sum.TryFindField "VarName"
                   let! varName = varNameJson |> JsonValue.AsString
 
                   return!
                     sum { return ExprType.VarType { VarName = varName } }
-                    |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+                    |> sum.MapError(
+                      Errors.MapPriority(replaceWith ErrorPriority.High)
+                    )
                 }
                 sum {
                   let! fields = json |> JsonValue.AsRecord
@@ -192,7 +215,12 @@ module ExprType =
                         let! fieldType = !fieldType
                         return fieldName, fieldType
                       }
-                      |> sum.MapError(Errors.Map(String.appendNewline $"\n...when parsing field {fieldName}")))
+                      |> sum.MapError(
+                        Errors.Map(
+                          String.appendNewline
+                            $"\n...when parsing field {fieldName}"
+                        )
+                      ))
                     |> Seq.toList
                     |> sum.All
 
@@ -220,17 +248,27 @@ module ExprType =
                           let! arg = !arg
                           cons arg
                         }
-                        |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+                        |> sum.MapError(
+                          Errors.MapPriority(replaceWith ErrorPriority.High)
+                        )
                     }
 
                   return!
                     sum.Any(
                       NonEmptyList.OfList(
-                        parseSingleArgLanguageConstruct ExprType.OptionType "SingleSelection",
-                        [ parseSingleArgLanguageConstruct ExprType.OptionType "Option"
+                        parseSingleArgLanguageConstruct
+                          ExprType.OptionType
+                          "SingleSelection",
+                        [ parseSingleArgLanguageConstruct
+                            ExprType.OptionType
+                            "Option"
                           parseSingleArgLanguageConstruct ExprType.OneType "One"
-                          parseSingleArgLanguageConstruct ExprType.ManyType "Many"
-                          parseSingleArgLanguageConstruct ExprType.SetType "MultiSelection"
+                          parseSingleArgLanguageConstruct
+                            ExprType.ManyType
+                            "Many"
+                          parseSingleArgLanguageConstruct
+                            ExprType.SetType
+                            "MultiSelection"
                           sum {
                             do!
                               funJson
@@ -240,68 +278,108 @@ module ExprType =
 
                             return!
                               sum {
-                                let! argsJson = (fields |> sum.TryFindField "args")
+                                let! argsJson =
+                                  (fields |> sum.TryFindField "args")
+
                                 let! args = JsonValue.AsArray argsJson
                                 let! args = args |> Seq.map (!) |> sum.All
                                 return ExprType.TupleType args
                               }
-                              |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+                              |> sum.MapError(
+                                Errors.MapPriority(
+                                  replaceWith ErrorPriority.High
+                                )
+                              )
                           }
-                          parseSingleArgLanguageConstruct ExprType.ListType "List"
-                          parseSingleArgLanguageConstruct ExprType.TableType "Table"
-                          parseSingleArgLanguageConstruct ExprType.ReadOnlyType "ReadOnly"
+                          parseSingleArgLanguageConstruct
+                            ExprType.ListType
+                            "List"
+                          parseSingleArgLanguageConstruct
+                            ExprType.TableType
+                            "Table"
+                          parseSingleArgLanguageConstruct
+                            ExprType.ReadOnlyType
+                            "ReadOnly"
                           sum {
                             do!
                               funJson
-                              |> JsonValue.AsEnum(Set.singleton "TranslationOverride")
+                              |> JsonValue.AsEnum(
+                                Set.singleton "TranslationOverride"
+                              )
 
                               |> sum.Map(ignore)
 
                             return!
                               sum {
-                                let! argsJson = (fields |> sum.TryFindField "args")
+                                let! argsJson =
+                                  (fields |> sum.TryFindField "args")
+
                                 let! args = JsonValue.AsArray argsJson
 
                                 match args with
                                 | [| keyType; label |] ->
                                   let! keyType = !keyType
                                   let! label = JsonValue.AsString label
-                                  return ExprType.TranslationOverride { Label = label; KeyType = keyType }
+
+                                  return
+                                    ExprType.TranslationOverride
+                                      { Label = label; KeyType = keyType }
                                 | _ ->
                                   return!
                                     sum.Throw(
                                       Errors.Singleton () (fun () ->
-                                        sprintf "Error: expected 2 arguments, got %d" args.Length)
+                                        sprintf
+                                          "Error: expected 2 arguments, got %d"
+                                          args.Length)
                                     )
                               }
-                              |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
-                              |> sum.WithErrorContext(fun () -> "...when parsing as TranslationOverride")
+                              |> sum.MapError(
+                                Errors.MapPriority(
+                                  replaceWith ErrorPriority.High
+                                )
+                              )
+                              |> sum.WithErrorContext(fun () ->
+                                "...when parsing as TranslationOverride")
                           }
                           sum {
                             do!
                               funJson
-                              |> JsonValue.AsEnum(Set.singleton "AllTranslationOverrides")
+                              |> JsonValue.AsEnum(
+                                Set.singleton "AllTranslationOverrides"
+                              )
 
                               |> sum.Map(ignore)
 
                             return!
                               sum {
-                                let! argsJson = (fields |> sum.TryFindField "args")
+                                let! argsJson =
+                                  (fields |> sum.TryFindField "args")
+
                                 let! args = JsonValue.AsArray argsJson
 
                                 match args with
                                 | [| keyType |] ->
                                   let! keyType = !keyType
-                                  return ExprType.AllTranslationOverrides { KeyType = keyType }
+
+                                  return
+                                    ExprType.AllTranslationOverrides
+                                      { KeyType = keyType }
                                 | _ ->
                                   return!
                                     sum.Throw(
                                       Errors.Singleton () (fun () ->
-                                        sprintf "Error: expected 1 argument, got %d" args.Length)
+                                        sprintf
+                                          "Error: expected 1 argument, got %d"
+                                          args.Length)
                                     )
                               }
-                              |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
-                              |> sum.WithErrorContext(fun () -> "...when parsing as AllTranslationOverrides")
+                              |> sum.MapError(
+                                Errors.MapPriority(
+                                  replaceWith ErrorPriority.High
+                                )
+                              )
+                              |> sum.WithErrorContext(fun () ->
+                                "...when parsing as AllTranslationOverrides")
                           }
                           sum {
                             do!
@@ -312,12 +390,18 @@ module ExprType =
 
                             return!
                               sum {
-                                let! argsJson = (fields |> sum.TryFindField "args")
+                                let! argsJson =
+                                  (fields |> sum.TryFindField "args")
+
                                 let! key, value = JsonValue.AsPair argsJson
                                 let! key, value = sum.All2 !key !value
                                 return ExprType.MapType(key, value)
                               }
-                              |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+                              |> sum.MapError(
+                                Errors.MapPriority(
+                                  replaceWith ErrorPriority.High
+                                )
+                              )
                           }
                           sum {
                             do!
@@ -328,12 +412,20 @@ module ExprType =
 
                             return!
                               sum {
-                                let! argsJson = (fields |> sum.TryFindField "args")
-                                let! leftJson, rightJson = JsonValue.AsPair argsJson
+                                let! argsJson =
+                                  (fields |> sum.TryFindField "args")
+
+                                let! leftJson, rightJson =
+                                  JsonValue.AsPair argsJson
+
                                 let! left, right = sum.All2 !leftJson !rightJson
                                 return ExprType.SumType(left, right)
                               }
-                              |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+                              |> sum.MapError(
+                                Errors.MapPriority(
+                                  replaceWith ErrorPriority.High
+                                )
+                              )
                           }
                           sum {
                             do!
@@ -344,17 +436,29 @@ module ExprType =
 
                             return!
                               sum {
-                                let! argsJson = (fields |> sum.TryFindField "args")
+                                let! argsJson =
+                                  (fields |> sum.TryFindField "args")
+
                                 let! cases = argsJson |> JsonValue.AsArray
 
-                                let! cases = sum.All(cases |> Seq.map (ExprType.ParseUnionCase))
+                                let! cases =
+                                  sum.All(
+                                    cases |> Seq.map (ExprType.ParseUnionCase)
+                                  )
 
                                 return
                                   ExprType.UnionType(
-                                    cases |> Seq.map (fun c -> { CaseName = c.CaseName }, c) |> Map.ofSeq
+                                    cases
+                                    |> Seq.map (fun c ->
+                                      { CaseName = c.CaseName }, c)
+                                    |> Map.ofSeq
                                   )
                               }
-                              |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+                              |> sum.MapError(
+                                Errors.MapPriority(
+                                  replaceWith ErrorPriority.High
+                                )
+                              )
                           }
                           sum {
                             do!
@@ -365,7 +469,9 @@ module ExprType =
 
                             return!
                               sum {
-                                let! argsJson = fields |> sum.TryFindField "args"
+                                let! argsJson =
+                                  fields |> sum.TryFindField "args"
+
                                 let! args = argsJson |> JsonValue.AsArray
 
                                 if args.Length = 1 || args.Length = 2 then
@@ -377,8 +483,16 @@ module ExprType =
                                     else
                                       sum.Return([||])
 
-                                  let! excludedKeys = sum.All(excludedKeys |> Seq.map JsonValue.AsString)
-                                  return ExprType.KeyOf(ExprType.LookupType { VarName = record }, excludedKeys)
+                                  let! excludedKeys =
+                                    sum.All(
+                                      excludedKeys |> Seq.map JsonValue.AsString
+                                    )
+
+                                  return
+                                    ExprType.KeyOf(
+                                      ExprType.LookupType { VarName = record },
+                                      excludedKeys
+                                    )
                                 else
                                   return!
                                     sum.Throw(
@@ -396,11 +510,20 @@ module ExprType =
                               //     |> Map.ofSeq
                               //   )
                               }
-                              |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+                              |> sum.MapError(
+                                Errors.MapPriority(
+                                  replaceWith ErrorPriority.High
+                                )
+                              )
                           }
 
-                          sum.Throw(Errors.Singleton () (fun () -> $"Error: cannot parse generic type {funJson}"))
-                          |> sum.MapError(Errors.MapPriority(replaceWith ErrorPriority.High)) ]
+                          sum.Throw(
+                            Errors.Singleton () (fun () ->
+                              $"Error: cannot parse generic type {funJson}")
+                          )
+                          |> sum.MapError(
+                            Errors.MapPriority(replaceWith ErrorPriority.High)
+                          ) ]
                       )
                     )
                     |> sum.MapError(Errors.HighestPriority)
@@ -451,7 +574,8 @@ module ExprType =
                         |> Sum.toOption
                         |> Option.defaultWith (fun () -> JsonValue.Array [||])
 
-                      let! fieldsJson = typeJsonArgs |> sum.TryFindField "fields" |> state.OfSum
+                      let! fieldsJson =
+                        typeJsonArgs |> sum.TryFindField "fields" |> state.OfSum
 
                       return!
                         state {
@@ -466,8 +590,12 @@ module ExprType =
                             extends
                             |> Seq.map (fun extendsJson ->
                               state {
-                                let! parsed = ExprType.Parse extendsJson |> state.OfSum
-                                return! ExprType.ResolveLookup s parsed |> state.OfSum
+                                let! parsed =
+                                  ExprType.Parse extendsJson |> state.OfSum
+
+                                return!
+                                  ExprType.ResolveLookup s parsed
+                                  |> state.OfSum
                               })
                             |> state.All
 
@@ -475,11 +603,16 @@ module ExprType =
                             fields
                             |> Seq.map (fun (fieldName, fieldType) ->
                               state {
-                                let! fieldType = ExprType.Parse fieldType |> state.OfSum
+                                let! fieldType =
+                                  ExprType.Parse fieldType |> state.OfSum
+
                                 return fieldName, fieldType
                               }
                               |> state.MapError(
-                                Errors.Map(String.appendNewline $"\n...when parsing field {fieldName}")
+                                Errors.Map(
+                                  String.appendNewline
+                                    $"\n...when parsing field {fieldName}"
+                                )
                               ))
                             |> Seq.toList
                             |> state.All
@@ -497,18 +630,30 @@ module ExprType =
                               (Left(ExprType.RecordType fields))
                             |> state.OfSum
 
-                          do! state.SetState(Map.add typeName { Type = exprType; TypeId = typeId })
+                          do!
+                            state.SetState(
+                              Map.add
+                                typeName
+                                { Type = exprType; TypeId = typeId }
+                            )
 
                           return ()
                         }
-                        |> state.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
+                        |> state.MapError(
+                          Errors.MapPriority(replaceWith ErrorPriority.High)
+                        )
                     },
                     [ state {
                         let typeId: ExprTypeId = { VarName = typeName }
 
                         let! parsedType = ExprType.Parse typeJson |> state.OfSum
 
-                        do! state.SetState(Map.add typeName { Type = parsedType; TypeId = typeId })
+                        do!
+                          state.SetState(
+                            Map.add
+                              typeName
+                              { Type = parsedType; TypeId = typeId }
+                          )
                       }
                       state.Throw(
                         Errors.Singleton () (fun () ->
@@ -519,7 +664,11 @@ module ExprType =
 
                 )
             }
-            |> state.MapError(Errors.Map(String.appendNewline $"\n...when parsing type {typeName}"))
+            |> state.MapError(
+              Errors.Map(
+                String.appendNewline $"\n...when parsing type {typeName}"
+              )
+            )
 
           let! ctx = state.GetState()
 
@@ -530,7 +679,8 @@ module ExprType =
               state {
                 match typeBinding.Type with
                 | KeyOf(LookupType t, excludedKeys) ->
-                  let! resolved = TypeContext.TryFindType ctx t.VarName |> state.OfSum
+                  let! resolved =
+                    TypeContext.TryFindType ctx t.VarName |> state.OfSum
 
                   match resolved.Type with
                   | RecordType record ->
@@ -539,7 +689,8 @@ module ExprType =
                       record
                       |> Map.tryFind key
                       |> Sum.fromOption (fun () ->
-                        Errors.Singleton () (fun () -> $"Error: key {key} not found in record {record}")))
+                        Errors.Singleton () (fun () ->
+                          $"Error: key {key} not found in record {record}")))
                     |> sum.All
                     |> state.OfSum
 
@@ -548,7 +699,8 @@ module ExprType =
 
                         record
                         |> Map.keys
-                        |> Seq.filter (fun (key) -> excludedKeys |> Seq.contains key |> not)
+                        |> Seq.filter (fun (key) ->
+                          excludedKeys |> Seq.contains key |> not)
                         |> Seq.map (fun key ->
                           { CaseName = key },
                           { CaseName = key
@@ -557,7 +709,10 @@ module ExprType =
                       )
 
 
-                    do! state.SetState(Map.add name { typeBinding with Type = union })
+                    do!
+                      state.SetState(
+                        Map.add name { typeBinding with Type = union }
+                      )
                   | _ -> return! state.Return()
                 | _ -> return! state.Return()
               })
@@ -565,4 +720,6 @@ module ExprType =
             |> state.Map ignore
 
       }
-      |> state.MapError(Errors.Map(String.appendNewline $"\n...when parsing types"))
+      |> state.MapError(
+        Errors.Map(String.appendNewline $"\n...when parsing types")
+      )

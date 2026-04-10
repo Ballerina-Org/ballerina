@@ -3,7 +3,9 @@ namespace Ballerina.API.MemoryDB
 module Utils =
   open Ballerina.DSL.Next.StdLib.Extensions
   open Ballerina.DSL.Next.StdLib.FileDB
+  open Ballerina.DSL.Next.Terms
   open Ballerina.Collections.Sum
+  open Ballerina.Collections.Map
   open Ballerina.DSL.Next.Runners
   open Ballerina.Collections.NonEmptyList
   open Ballerina.DSL.Next.Terms.Eval
@@ -17,18 +19,22 @@ module Utils =
   open Ballerina.DSL.Next.Types.TypeChecker
   open CacheCompilation
 
-  let internal compilationCache: CompilationCache<FileDBRuntimeContext, FileDbValueExtension> =
+  let internal compilationCache
+    : CompilationCache<FileDBRuntimeContext, FileDbValueExtension> =
     CompilationCache<FileDBRuntimeContext, FileDbValueExtension>.Empty
 
 
   let contextFactory (dbFileConfig: DbFileConfig) =
-    stdExtensions (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()) (fileDbOps dbFileConfig)
-    |> fun (_, languageContext, typeEvalConfig) -> languageContext, typeEvalConfig
+    hddcacheWithStdExtensions
+      (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
+      (fileDbOps dbFileConfig)
+      id
+      id
+    |> fun (_, languageContext, typeCheckingConfig, _) ->
+      languageContext, typeCheckingConfig
 
   let buildSchemaDefinition
-    (languageContext:
-      LanguageContext<FileDBRuntimeContext, FileDbValueExtension, ValueExtDTO, FileDbDeltaExtension, DeltaExtDTO>)
-    typeEvalConfig
+    (dbFileConfig: DbFileConfig)
     (addPermissionHookScope:
       Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>
         -> Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>)
@@ -41,39 +47,82 @@ module Utils =
     (schemaDefinitions: List<SchemaFileDefinition>)
     =
     sum {
-      let build_cache =
-        memcache (
-          languageContext.TypeCheckContext
-          |> TypeCheckContext.Updaters.BackgroundHooksExtraScope addBackgroundHookScope
-          |> TypeCheckContext.Updaters.PermissionHooksExtraScope addPermissionHookScope,
-          languageContext.TypeCheckState
-        )
+      let _, languageContext, typeCheckingConfig, build_cache =
+        hddcacheWithStdExtensions
+          (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>
+            .Console())
+          (fileDbOps dbFileConfig)
+          (TypeCheckContext.Updaters.BackgroundHooksExtraScope
+            addBackgroundHookScope
+           >> TypeCheckContext.Updaters.PermissionHooksExtraScope
+             addPermissionHookScope)
+          id
+
+      let domainName = "Bise"
+
+      let injectedRuntimeValues =
+        [ ResolvedIdentifier.Create(domainName, "CurrentUser"),
+          Value.Sum(
+            { Case = 1; Count = 2 },
+            Value.Primitive(PrimitiveValue.Unit)
+          )
+          ResolvedIdentifier.Create(domainName, "CurrentOwner"),
+          Value.Sum(
+            { Case = 1; Count = 2 },
+            Value.Primitive(PrimitiveValue.Unit)
+          )
+          ResolvedIdentifier.Create(domainName, "CurrentManager"),
+          Value.Sum(
+            { Case = 1; Count = 2 },
+            Value.Primitive(PrimitiveValue.Unit)
+          )
+          ResolvedIdentifier.Create(domainName, "CurrentApiToken"),
+          Value.Sum(
+            { Case = 1; Count = 2 },
+            Value.Primitive(PrimitiveValue.Unit)
+          ) ]
+        |> Map.ofList
 
       let files =
         schemaDefinitions
-        |> List.map (fun def -> FileBuildConfiguration.FromFile(def.Path, def.Content))
+        |> List.map (fun def ->
+          FileBuildConfiguration.FromFile(def.Path, def.Content))
 
       let! firstFile =
         files
         |> List.tryHead
-        |> sum.OfOption(Errors.Singleton Location.Unknown (fun _ -> "Expected at least one schema definitions."))
+        |> sum.OfOption(
+          Errors.Singleton Location.Unknown (fun _ ->
+            "Expected at least one schema definitions.")
+        )
 
       let otherFiles = files |> List.skip 1
       let files = NonEmptyList.OfList(firstFile, otherFiles)
       let project: ProjectBuildConfiguration = { Files = files }
 
       let! NonEmptyList(expr, exprs), _, typeCheckContext, typeCheckState =
-        ProjectBuildConfiguration.BuildCached typeEvalConfig build_cache project
+        ProjectBuildConfiguration.BuildCached
+          typeCheckingConfig
+          build_cache
+          project
 
       let runtimeContext: FileDBRuntimeContext =
         { TenantId = tenantId
           SchemaName = schemaName }
 
       let evalContext =
-        ExprEvalContext.Empty runtimeContext |> languageContext.ExprEvalContext
+        ExprEvalContext.Empty runtimeContext
+        |> languageContext.ExprEvalContext
+        |> ExprEvalContext.Updaters.Values(
+          Map.merge (fun _ -> id) injectedRuntimeValues
+        )
 
       let! evalResult =
-        Expr.Eval(NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(expr, exprs)))
+        Expr.Eval(
+          NonEmptyList.prependList
+            languageContext.TypeCheckedPreludes
+            (NonEmptyList.OfList(expr, exprs))
+        )
         |> Reader.Run evalContext
 
       compilationCache.Add

@@ -9,7 +9,10 @@ open Ballerina.DSL.Next.StdLib.List.Model
 open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 
 type private V =
-  Value<TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>, ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>
+  Value<
+    TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>,
+    ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
+   >
 
 let private intVal (i: int) : V = Value.Primitive(PrimitiveValue.Int32 i)
 
@@ -18,15 +21,22 @@ let private mkList (items: V list) : V =
 
 let private getListItems (v: V) : V list =
   match v with
-  | Value.Ext(ValueExt(Choice1Of7(ListValues(ListValues.List items))), _) -> items
+  | Value.Ext(ValueExt(Choice1Of7(ListValues(ListValues.List items))), _) ->
+    items
   | other -> failwith $"Expected list value but got {other}"
 
-let private applyMoveElement (fromIndex: int) (toIndex: int) (listValue: V) : V =
+let private applyMoveElement
+  (fromIndex: int)
+  (toIndex: int)
+  (listValue: V)
+  : V =
   let delta =
     DeltaExt<unit, MutableMemoryDB<unit, unit>, unit>
       .DeltaExtension(Choice1Of4(ListDeltaExt.MoveElement(fromIndex, toIndex)))
 
-  match DeltaExt<unit, MutableMemoryDB<unit, unit>, unit>.ToUpdater delta listValue with
+  match
+    DeltaExt<unit, MutableMemoryDB<unit, unit>, unit>.ToUpdater delta listValue
+  with
   | Sum.Left result -> result
   | Sum.Right err -> failwith $"MoveElement updater failed: {err}"
 

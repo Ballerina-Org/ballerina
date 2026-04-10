@@ -19,29 +19,47 @@ open Ballerina.DSL.Next.Types.TypeChecker.Model
 open Ballerina.DSL.Next.Types.TypeChecker.Patterns
 open Ballerina.DSL.Next.Types.TypeChecker
 
-let private typeCheck, typeEvalConfig =
-  let _, _, typeEvalConfig =
+let private typeCheck, typeCheckingConfig =
+  let _, _, typeCheckingConfig =
     db_ops ()
-    |> stdExtensions<_, MutableMemoryDB<_, unit>> (
+    |> bootstrapStdExtensions<_, MutableMemoryDB<_, unit>> (
       Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console()
     )
 
-  Expr.TypeCheck typeEvalConfig, typeEvalConfig
+  Expr.TypeCheck typeCheckingConfig, typeCheckingConfig
 
 [<Test>]
 let ``LangNext-Instantiate straightforward var to primitive`` () =
 
   let a = TypeVar.Create("a")
 
-  let classes: EquivalenceClasses<TypeVar, TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>> =
-    { Classes = Map.ofList [ "a", EquivalenceClass.Create(a |> Set.singleton, TypeValue.CreateInt32() |> Some) ]
+  let classes
+    : EquivalenceClasses<
+        TypeVar,
+        TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>
+       > =
+    { Classes =
+        Map.ofList
+          [ "a",
+            EquivalenceClass.Create(
+              a |> Set.singleton,
+              TypeValue.CreateInt32() |> Some
+            ) ]
       Variables = Map.ofList [ a, a.Name ] }
 
   let program = TypeValue.Var a
 
   let actual =
-    ((TypeValue.Instantiate () (TypeExpr.Eval typeEvalConfig typeCheck) Location.Unknown program)
-      .run (TypeInstantiateContext.Empty, UnificationState.Create classes |> TypeCheckState.CreateFromUnificationState))
+    ((TypeValue.Instantiate
+        ()
+        (TypeExpr.Eval typeCheckingConfig typeCheck)
+        Location.Unknown
+        program)
+      .run (
+        TypeInstantiateContext.Empty,
+        UnificationState.Create classes
+        |> TypeCheckState.CreateFromUnificationState
+      ))
 
   let expected: TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>> =
     TypeValue.CreateInt32()
@@ -55,15 +73,33 @@ let ``LangNext-Instantiate straightforward var to primitive`` () =
 let ``LangNext-Instantiate var nested inside generics to primitive`` () =
   let a = TypeVar.Create("a")
 
-  let classes: EquivalenceClasses<TypeVar, TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>> =
-    { Classes = Map.ofList [ "a", EquivalenceClass.Create(a |> Set.singleton, TypeValue.CreateInt32() |> Some) ]
+  let classes
+    : EquivalenceClasses<
+        TypeVar,
+        TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>
+       > =
+    { Classes =
+        Map.ofList
+          [ "a",
+            EquivalenceClass.Create(
+              a |> Set.singleton,
+              TypeValue.CreateInt32() |> Some
+            ) ]
       Variables = Map.ofList [ a, a.Name ] }
 
   let program = TypeValue.Var a |> TypeValue.CreateSet
 
   let actual =
-    ((TypeValue.Instantiate () (TypeExpr.Eval typeEvalConfig typeCheck) Location.Unknown program)
-      .run (TypeInstantiateContext.Empty, UnificationState.Create classes |> TypeCheckState.CreateFromUnificationState))
+    ((TypeValue.Instantiate
+        ()
+        (TypeExpr.Eval typeCheckingConfig typeCheck)
+        Location.Unknown
+        program)
+      .run (
+        TypeInstantiateContext.Empty,
+        UnificationState.Create classes
+        |> TypeCheckState.CreateFromUnificationState
+      ))
 
   let expected: TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>> =
     TypeValue.CreateInt32() |> TypeValue.CreateSet
@@ -73,22 +109,44 @@ let ``LangNext-Instantiate var nested inside generics to primitive`` () =
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
 
 [<Test>]
-let ``LangNext-Instantiate var nested inside generics via other bound var to primitive`` () =
+let ``LangNext-Instantiate var nested inside generics via other bound var to primitive``
+  ()
+  =
   let a = TypeVar.Create("a")
   let b = TypeVar.Create("b")
 
-  let classes: EquivalenceClasses<TypeVar, TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>> =
+  let classes
+    : EquivalenceClasses<
+        TypeVar,
+        TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>
+       > =
     { Classes =
         Map.ofList
-          [ "a", EquivalenceClass.Create(a |> Set.singleton, b |> TypeValue.Var |> TypeValue.CreateSet |> Some)
-            "b", EquivalenceClass.Create(b |> Set.singleton, TypeValue.CreateString() |> Some) ]
+          [ "a",
+            EquivalenceClass.Create(
+              a |> Set.singleton,
+              b |> TypeValue.Var |> TypeValue.CreateSet |> Some
+            )
+            "b",
+            EquivalenceClass.Create(
+              b |> Set.singleton,
+              TypeValue.CreateString() |> Some
+            ) ]
       Variables = Map.ofList [ a, a.Name; b, b.Name ] }
 
   let program = TypeValue.Var a |> TypeValue.CreateSet
 
   let actual =
-    ((TypeValue.Instantiate () (TypeExpr.Eval typeEvalConfig typeCheck) Location.Unknown program)
-      .run (TypeInstantiateContext.Empty, UnificationState.Create classes |> TypeCheckState.CreateFromUnificationState))
+    ((TypeValue.Instantiate
+        ()
+        (TypeExpr.Eval typeCheckingConfig typeCheck)
+        Location.Unknown
+        program)
+      .run (
+        TypeInstantiateContext.Empty,
+        UnificationState.Create classes
+        |> TypeCheckState.CreateFromUnificationState
+      ))
 
   let expected: TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>> =
     TypeValue.CreateString() |> TypeValue.CreateSet |> TypeValue.CreateSet
@@ -98,23 +156,45 @@ let ``LangNext-Instantiate var nested inside generics via other bound var to pri
   | Sum.Right err -> Assert.Fail $"Expected success but got error: {err}"
 
 [<Test>]
-let ``LangNext-Instantiate var nested inside generics via other bound and aliased var chain to primitive`` () =
+let ``LangNext-Instantiate var nested inside generics via other bound and aliased var chain to primitive``
+  ()
+  =
   let a = TypeVar.Create("a")
   let b = TypeVar.Create("b")
   let c = TypeVar.Create("c")
 
-  let classes: EquivalenceClasses<TypeVar, TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>> =
+  let classes
+    : EquivalenceClasses<
+        TypeVar,
+        TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>>
+       > =
     { Classes =
         Map.ofList
-          [ a.Name, EquivalenceClass.Create(a |> Set.singleton, b |> TypeValue.Var |> TypeValue.CreateSet |> Some)
-            c.Name, EquivalenceClass.Create(c |> Set.singleton, TypeValue.CreateString() |> Some) ]
+          [ a.Name,
+            EquivalenceClass.Create(
+              a |> Set.singleton,
+              b |> TypeValue.Var |> TypeValue.CreateSet |> Some
+            )
+            c.Name,
+            EquivalenceClass.Create(
+              c |> Set.singleton,
+              TypeValue.CreateString() |> Some
+            ) ]
       Variables = Map.ofList [ a, a.Name; b, c.Name; c, c.Name ] }
 
   let program = TypeValue.Var a |> TypeValue.CreateSet |> TypeValue.CreateSet
 
   let actual =
-    ((TypeValue.Instantiate () (TypeExpr.Eval typeEvalConfig typeCheck) Location.Unknown program)
-      .run (TypeInstantiateContext.Empty, UnificationState.Create classes |> TypeCheckState.CreateFromUnificationState))
+    ((TypeValue.Instantiate
+        ()
+        (TypeExpr.Eval typeCheckingConfig typeCheck)
+        Location.Unknown
+        program)
+      .run (
+        TypeInstantiateContext.Empty,
+        UnificationState.Create classes
+        |> TypeCheckState.CreateFromUnificationState
+      ))
 
   let expected: TypeValue<ValueExt<unit, MutableMemoryDB<unit, unit>, unit>> =
     TypeValue.CreateString()

@@ -136,6 +136,7 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+<<<<<<< HEAD
 
 # Editor directories and files
 .idea
@@ -177,3 +178,5 @@ project.lock.json
 project.assets.json
 
 *.pyc
+=======
+>>>>>>> 61c7981d (Initial commit)

@@ -100,9 +100,12 @@ module LogicTests =
     [<Category("StacklessWithError")>]
     let ``All should accumulate state from all computations`` () =
       let ps =
-        [ FreeNode.bind (setState (fun s -> s + "1")) (fun () -> FreeNode.Return 1)
-          FreeNode.bind (setState (fun s -> s + "2")) (fun () -> FreeNode.Return 2)
-          FreeNode.bind (setState (fun s -> s + "3")) (fun () -> FreeNode.Return 3) ]
+        [ FreeNode.bind (setState (fun s -> s + "1")) (fun () ->
+            FreeNode.Return 1)
+          FreeNode.bind (setState (fun s -> s + "2")) (fun () ->
+            FreeNode.Return 2)
+          FreeNode.bind (setState (fun s -> s + "3")) (fun () ->
+            FreeNode.Return 3) ]
 
       let m = FreeNode.all ps
       let result = FreeNode.run () "" m
@@ -121,7 +124,9 @@ module LogicTests =
     [<Test>]
     [<Category("StacklessWithError")>]
     let ``Any should return first successful value`` () =
-      let ps = [ FreeNode.throw "error1"; FreeNode.Return 42; FreeNode.throw "error2" ]
+      let ps =
+        [ FreeNode.throw "error1"; FreeNode.Return 42; FreeNode.throw "error2" ]
+
       let concat = fun (e1: string, e2: string) -> e1 + ";" + e2
       let m = FreeNode.any concat ps
       let result = FreeNode.run () "" m
@@ -134,7 +139,9 @@ module LogicTests =
     [<Category("StacklessWithError")>]
     let ``Any should combine errors when all fail`` () =
       let ps =
-        [ FreeNode.throw "error1"; FreeNode.throw "error2"; FreeNode.throw "error3" ]
+        [ FreeNode.throw "error1"
+          FreeNode.throw "error2"
+          FreeNode.throw "error3" ]
 
       let concat = fun (e1: string, e2: string) -> e1 + ";" + e2
       let m = FreeNode.any concat ps
@@ -148,9 +155,12 @@ module LogicTests =
     [<Category("StacklessWithError")>]
     let ``Any should use state from first successful computation`` () =
       let ps =
-        [ FreeNode.bind (setState (fun s -> s + "1")) (fun () -> FreeNode.throw "error1")
-          FreeNode.bind (setState (fun s -> s + "2")) (fun () -> FreeNode.Return 42)
-          FreeNode.bind (setState (fun s -> s + "3")) (fun () -> FreeNode.Return 43) ]
+        [ FreeNode.bind (setState (fun s -> s + "1")) (fun () ->
+            FreeNode.throw "error1")
+          FreeNode.bind (setState (fun s -> s + "2")) (fun () ->
+            FreeNode.Return 42)
+          FreeNode.bind (setState (fun s -> s + "3")) (fun () ->
+            FreeNode.Return 43) ]
 
       let concat = fun (e1: string, e2: string) -> e1 + ";" + e2
       let m = FreeNode.any concat ps
@@ -171,13 +181,17 @@ module LogicTests =
       let ps =
         [ FreeNode.bind (setState (fun s -> s + "p1")) (fun () ->
             FreeNode.bind
-              (FreeNode.catch (FreeNode.bind (setState (fun s -> s + "p1-inner")) (fun () -> FreeNode.throw "p1-err")))
+              (FreeNode.catch (
+                FreeNode.bind (setState (fun s -> s + "p1-inner")) (fun () ->
+                  FreeNode.throw "p1-err")
+              ))
               (fun res ->
                 match res with
                 | Left _ -> FreeNode.throw "p1-should-fail"
                 | Right e -> FreeNode.throw e))
           FreeNode.bind (setState (fun s -> s + "p2")) (fun () ->
-            FreeNode.bind (setState (fun s -> s + "p2-step2")) (fun () -> FreeNode.Return 42)) ]
+            FreeNode.bind (setState (fun s -> s + "p2-step2")) (fun () ->
+              FreeNode.Return 42)) ]
 
       let concat = fun (e1: string, e2: string) -> e1 + ";" + e2
       let m = FreeNode.any concat ps
@@ -190,8 +204,12 @@ module LogicTests =
         match state with
         | Some s -> Assert.That(s, Is.EqualTo "initp2p2-step2")
         | None -> Assert.Fail "Expected state update"
-      | Right(error, Some s) -> Assert.Fail $"Catch within any should succeed, got error '{error}', state={s}"
-      | Right(error, None) -> Assert.Fail $"Catch within any should succeed, got error '{error}' without state"
+      | Right(error, Some s) ->
+        Assert.Fail
+          $"Catch within any should succeed, got error '{error}', state={s}"
+      | Right(error, None) ->
+        Assert.Fail
+          $"Catch within any should succeed, got error '{error}' without state"
 
   module Catch =
     [<Test>]
@@ -217,7 +235,9 @@ module LogicTests =
     [<Category("StacklessWithError")>]
     let ``Catch must catch errors in its scope`` () =
       let m =
-        FreeNode.catch (FreeNode.bind (FreeNode.Return 1) (fun _ -> FreeNode.throw "boom"))
+        FreeNode.catch (
+          FreeNode.bind (FreeNode.Return 1) (fun _ -> FreeNode.throw "boom")
+        )
 
       let result = FreeNode.run () "" m
 
@@ -226,7 +246,9 @@ module LogicTests =
         match unbox<Sum<obj, string>> value with
         | Right err -> Assert.That(err, Is.EqualTo "boom")
         | Left _ -> Assert.Fail "Expected inner failure to be caught"
-      | Right _ -> Assert.Fail "Expected success: catch should convert inner failure into a value"
+      | Right _ ->
+        Assert.Fail
+          "Expected success: catch should convert inner failure into a value"
 
 module PerformanceTests =
 
@@ -238,7 +260,9 @@ module PerformanceTests =
 
       let m =
         [ 1..depth ]
-        |> List.fold (fun acc _ -> FreeNode.bind acc (fun x -> FreeNode.Return(x + 1))) (FreeNode.Return 0)
+        |> List.fold
+          (fun acc _ -> FreeNode.bind acc (fun x -> FreeNode.Return(x + 1)))
+          (FreeNode.Return 0)
 
       let result = FreeNode.run () "" m
 
@@ -256,11 +280,15 @@ module PerformanceTests =
         |> List.fold
           (fun acc i ->
             let ps =
-              [ FreeNode.bind (setState (fun s -> s + string i)) (fun () -> FreeNode.Return i)
-                FreeNode.bind (setState (fun s -> s + "-" + string i)) (fun () -> FreeNode.Return(i + 1)) ]
+              [ FreeNode.bind (setState (fun s -> s + string i)) (fun () ->
+                  FreeNode.Return i)
+                FreeNode.bind
+                  (setState (fun s -> s + "-" + string i))
+                  (fun () -> FreeNode.Return(i + 1)) ]
 
             FreeNode.bind acc (fun accValue ->
-              FreeNode.bind (FreeNode.all ps) (fun results -> FreeNode.Return(accValue + List.sum results))))
+              FreeNode.bind (FreeNode.all ps) (fun results ->
+                FreeNode.Return(accValue + List.sum results))))
           (FreeNode.Return 0)
 
       let result = FreeNode.run () "" m
@@ -280,11 +308,15 @@ module PerformanceTests =
         |> List.fold
           (fun acc i ->
             let ps =
-              [ FreeNode.bind (setState (fun s -> s + string i)) (fun () -> FreeNode.throw ("error" + string i))
-                FreeNode.bind (setState (fun s -> s + "-" + string i)) (fun () -> FreeNode.Return i) ]
+              [ FreeNode.bind (setState (fun s -> s + string i)) (fun () ->
+                  FreeNode.throw ("error" + string i))
+                FreeNode.bind
+                  (setState (fun s -> s + "-" + string i))
+                  (fun () -> FreeNode.Return i) ]
 
             FreeNode.bind acc (fun accValue ->
-              FreeNode.bind (FreeNode.any concat ps) (fun result -> FreeNode.Return(accValue + result))))
+              FreeNode.bind (FreeNode.any concat ps) (fun result ->
+                FreeNode.Return(accValue + result))))
           (FreeNode.Return 0)
 
       let result = FreeNode.run () "" m

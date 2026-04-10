@@ -26,11 +26,15 @@ module Extension =
       Identifier.FullyQualified([ "bool" ], "toString")
       |> TypeCheckScope.Empty.Resolve
 
-    let toStringOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, BoolOperations<'ext>> =
+    let toStringOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, BoolOperations<'ext>> =
       boolToStringId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(boolTypeValue, stringTypeValue), Kind.Star, BoolOperations.String)
+          <| (TypeValue.CreateArrow(boolTypeValue, stringTypeValue),
+              Kind.Star,
+              BoolOperations.String)
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -57,14 +61,18 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.String(v |> string))
+              return
+                Value<TypeValue<'ext>, 'ext>
+                  .Primitive(PrimitiveValue.String(v |> string))
             } }
 
     let boolTryParseId =
       Identifier.FullyQualified([ "bool" ], "tryParse")
       |> TypeCheckScope.Empty.Resolve
 
-    let tryParseOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, BoolOperations<'ext>> =
+    let tryParseOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, BoolOperations<'ext>> =
       boolTryParseId,
       { PublicIdentifiers =
           Some
@@ -104,18 +112,32 @@ module Extension =
 
               return
                 match System.Boolean.TryParse(v) with
-                | true, result -> Value.Sum({ Case = 2; Count = 2 }, Value.Primitive(PrimitiveValue.Bool result))
-                | false, _ -> Value.Sum({ Case = 1; Count = 2 }, Value.Primitive(PrimitiveValue.Unit))
+                | true, result ->
+                  Value.Sum(
+                    { Case = 2; Count = 2 },
+                    Value.Primitive(PrimitiveValue.Bool result)
+                  )
+                | false, _ ->
+                  Value.Sum(
+                    { Case = 1; Count = 2 },
+                    Value.Primitive(PrimitiveValue.Unit)
+                  )
             } }
 
     let boolAndId =
-      Identifier.FullyQualified([ "bool" ], "&&") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "bool" ], "&&")
+      |> TypeCheckScope.Empty.Resolve
 
-    let andOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, BoolOperations<'ext>> =
+    let andOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, BoolOperations<'ext>> =
       boolAndId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(boolTypeValue, TypeValue.CreateArrow(boolTypeValue, boolTypeValue)),
+          <| (TypeValue.CreateArrow(
+                boolTypeValue,
+                TypeValue.CreateArrow(boolTypeValue, boolTypeValue)
+              ),
               Kind.Star,
               BoolOperations.And {| v1 = None |})
         OperationsLens =
@@ -148,21 +170,30 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (BoolOperations.And({| v1 = Some v |}) |> operationLens.Set, Some boolAndId)
+                  (BoolOperations.And({| v1 = Some v |}) |> operationLens.Set,
+                   Some boolAndId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure && v))
+                return
+                  Value<TypeValue<'ext>, 'ext>
+                    .Primitive(PrimitiveValue.Bool(vClosure && v))
             } }
 
     let boolOrId =
-      Identifier.FullyQualified([ "bool" ], "||") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "bool" ], "||")
+      |> TypeCheckScope.Empty.Resolve
 
-    let orOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, BoolOperations<'ext>> =
+    let orOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, BoolOperations<'ext>> =
       boolOrId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(boolTypeValue, TypeValue.CreateArrow(boolTypeValue, boolTypeValue)),
+          <| (TypeValue.CreateArrow(
+                boolTypeValue,
+                TypeValue.CreateArrow(boolTypeValue, boolTypeValue)
+              ),
               Kind.Star,
               BoolOperations.Or {| v1 = None |})
         OperationsLens =
@@ -195,21 +226,28 @@ module Extension =
               match op with
               | None -> // the closure is empty - first step in the application
                 return
-                  (BoolOperations.Or({| v1 = Some v |}) |> operationLens.Set, Some boolOrId)
+                  (BoolOperations.Or({| v1 = Some v |}) |> operationLens.Set,
+                   Some boolOrId)
                   |> Ext
               | Some vClosure -> // the closure has the first operand - second step in the application
 
-                return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(vClosure || v))
+                return
+                  Value<TypeValue<'ext>, 'ext>
+                    .Primitive(PrimitiveValue.Bool(vClosure || v))
             } }
 
     let boolNotId =
       Identifier.FullyQualified([ "bool" ], "!") |> TypeCheckScope.Empty.Resolve
 
-    let notOperation: ResolvedIdentifier * OperationExtension<'runtimeContext, 'ext, BoolOperations<'ext>> =
+    let notOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, BoolOperations<'ext>> =
       boolNotId,
       { PublicIdentifiers =
           Some
-          <| (TypeValue.CreateArrow(boolTypeValue, boolTypeValue), Kind.Star, BoolOperations.Not {| v1 = () |})
+          <| (TypeValue.CreateArrow(boolTypeValue, boolTypeValue),
+              Kind.Star,
+              BoolOperations.Not {| v1 = () |})
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
@@ -231,7 +269,9 @@ module Extension =
                 |> sum.MapError(Errors.MapContext(replaceWith loc0))
                 |> reader.OfSum
 
-              return Value<TypeValue<'ext>, 'ext>.Primitive(PrimitiveValue.Bool(not v))
+              return
+                Value<TypeValue<'ext>, 'ext>
+                  .Primitive(PrimitiveValue.Bool(not v))
             } }
 
     { TypeVars = []

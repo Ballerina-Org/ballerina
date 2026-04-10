@@ -29,7 +29,9 @@ module Runner =
       let state, context, events, dataSource = getSnapshot ()
 
       let (evals', u_s, u_e) =
-        Coroutine<Unit, 'c, 's, 'event, 'err>.evalMany (active) (state, context, events, dT)
+        Coroutine<Unit, 'c, 's, 'event, 'err>.evalMany
+          (active)
+          (state, context, events, dT)
 
       match u_e with
       | Some u_e ->
@@ -41,10 +43,12 @@ module Runner =
       | Some u_s -> updateState u_s
       | None -> ()
 
-      let newWaiting = evals'.waiting |> Seq.map (fun w -> w.Key, w.Value) |> Seq.toList
+      let newWaiting =
+        evals'.waiting |> Seq.map (fun w -> w.Key, w.Value) |> Seq.toList
 
       let newWaiting =
-        newWaiting @ (stillWaiting |> Seq.map (fun w -> w.Key, w.Value) |> Seq.toList)
+        newWaiting
+        @ (stillWaiting |> Seq.map (fun w -> w.Key, w.Value) |> Seq.toList)
 
       let evals' =
         { evals' with

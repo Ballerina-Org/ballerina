@@ -24,6 +24,7 @@ module Factory =
   open System.Text.Json.Serialization
   open Ballerina.API.MemoryDB.MemoryDBAPIFactory
   open Ballerina.DSL.Next.Terms
+  open Ballerina.DSL.Next.Runners
   open Microsoft.AspNetCore.Http
   open Ballerina.API.MemoryDB.Utils
 
@@ -33,6 +34,31 @@ module Factory =
         return File.ReadAllText path
       else
         return! sum.Throw(Errors.Singleton () (fun _ -> $"File not found at {path}."))
+    }
+
+  let private loadProjectFilesFromPath
+    (path: string)
+    : Sum<SchemaFileDefinition array, Errors<Location>> =
+    sum {
+      let! project: ProjectBuildConfiguration =
+        if path.EndsWith(".blproj", StringComparison.OrdinalIgnoreCase) then
+          ProjectBuildConfiguration.FromProjectFile(
+            path,
+            Path.GetDirectoryName(path)
+          )
+        elif path.EndsWith(".bl", StringComparison.OrdinalIgnoreCase) then
+          ProjectBuildConfiguration.FromSingleFile(path)
+        else
+          Errors.Singleton Location.Unknown (fun _ ->
+            $"Unsupported input file type: {path}. Expected .bl or .blproj.")
+          |> Sum.Right
+
+      return
+        project.Files
+        |> Seq.map (fun file ->
+          { Path = file.FileName.Path
+            Content = file.Content() })
+        |> Seq.toArray
     }
 
   let private createFactory
@@ -49,13 +75,10 @@ module Factory =
            >
          >)
     =
-    let languageContext, typeEvalConfig = contextFactory dbFileConfig
-
     let descriptorFetcher =
       descriptorFetcherFactory
-        languageContext
+        dbFileConfig
         schemaFileConfig
-        typeEvalConfig
         addPermissionHookScope
         addBackgroundHookScope
 
@@ -97,6 +120,9 @@ module Factory =
     let sourceFilePathArg =
       new Option<string[]>(name = "--paths", Description = "file paths of ballerina source files.")
 
+    let fileArg =
+      new Option<string>(name = "--file", aliases = [| "-f" |], Description = "The .bl or .blproj file to publish.")
+
     sourceFilePathArg.AllowMultipleArgumentsPerToken <- true
     sourceFilePathArg.Arity <- ArgumentArity.OneOrMore
 
@@ -128,6 +154,7 @@ module Factory =
       new Option<bool>(name = "--show-eval", Description = "prints the evaluation of DB::run in the terminal.")
 
     let rootCommand = new RootCommand "Command line root command."
+    rootCommand.Add fileArg
     rootCommand.Add sourceFilePathArg
     rootCommand.Add publishArg
     rootCommand.Add schemaDirectoryArg
@@ -176,28 +203,48 @@ module Factory =
               DbExtension = dbExtension }
 
           let sourcePaths = parseResult.GetValue sourceFilePathArg
+          let sourceFilePath = parseResult.GetValue fileArg
           let schemaStream = new ReplaySubject<SchemaId> 1
 
           let isPublished = parseResult.GetValue publishArg
 
-          if isNull sourcePaths |> not && sourcePaths.Length > 0 then
+          let inputPaths =
+            [|
+              if String.IsNullOrWhiteSpace sourceFilePath |> not then
+                sourceFilePath
+
+              if isNull sourcePaths |> not then
+                yield! sourcePaths
+            |]
+            |> Array.distinct
+
+          if inputPaths.Length > 0 then
             let tenantId = parseResult.GetRequiredValue tenantIdArg
             let schemaName = parseResult.GetRequiredValue schemaNameArg
             let showEval = parseResult.GetValue showEvalArg
 
-            let! input_files =
-              sourcePaths
-              |> Array.map (fun path -> tryReadFile path |> sum.Map(fun res -> { Path = path; Content = res }))
+            let! input_files_nested =
+              inputPaths
+              |> Array.map loadProjectFilesFromPath
               |> sum.All
-              |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
+
+            let input_files =
+              input_files_nested
+              |> List.collect Array.toList
+              |> List.toArray
 
             let payload =
               { SchemaDefinition = input_files |> Seq.toArray
                 IsDraft = not isPublished }
 
-            let filePaths = sourcePaths |> Array.reduce (fun x y -> $"{x}, {y}")
+            let filePaths =
+              input_files
+              |> Array.map (fun file -> file.Path)
+              |> Array.distinct
+              |> Array.toList
+              |> String.concat ", "
 
-            let pluralization = if filePaths.Length > 1 then "s" else ""
+            let pluralization = if input_files.Length > 1 then "s" else ""
             Console.WriteLine $"Publishing schema from file{pluralization} {filePaths}..."
 
             do!
@@ -277,5 +324,10 @@ module Factory =
 
         1)
 
-    let parseResult = rootCommand.Parse args
+    let parseResult =
+      if args.Length = 0 then
+        rootCommand.Parse("--help")
+      else
+        rootCommand.Parse args
+
     parseResult.Invoke()

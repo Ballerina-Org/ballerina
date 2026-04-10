@@ -16,11 +16,15 @@ module QueryLookups =
   open Ballerina.DSL.Next.Types.TypeChecker.Model
   open Ballerina.DSL.Next.Types.TypeChecker.LiftOtherSteps
 
-  let rec get_lookups_from_context<'T, 'Id, 'valueExt when 'Id: comparison and 'valueExt: comparison>
+  let rec get_lookups_from_context<'T, 'Id, 'valueExt
+    when 'Id: comparison and 'valueExt: comparison>
     (typeCheckNestedQuery:
       ExprQuery<TypeExpr<'valueExt>, Identifier, 'valueExt>
         -> TypeCheckerResult<
-          (TypeCheckedExprQuery<'valueExt> * TypeValue<'valueExt> * Kind * TypeCheckContext<'valueExt>),
+          (TypeCheckedExprQuery<'valueExt> *
+          TypeValue<'valueExt> *
+          Kind *
+          TypeCheckContext<'valueExt>),
           'valueExt
          >)
     loc0
@@ -28,16 +32,26 @@ module QueryLookups =
     (ctx: TypeCheckContext<'valueExt>)
     (iterator_bindings: Map<LocalIdentifier, TypeQueryRow<'valueExt>>)
     (q: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
-    : TypeCheckerResult<Map<ResolvedIdentifier, TypeQueryRow<'valueExt>>, 'valueExt> =
+    : TypeCheckerResult<
+        Map<ResolvedIdentifier, TypeQueryRow<'valueExt>>,
+        'valueExt
+       >
+    =
     state {
       let get_lookups_from_context =
-        get_lookups_from_context<'T, 'Id, 'valueExt> typeCheckNestedQuery loc0 schema ctx iterator_bindings
+        get_lookups_from_context<'T, 'Id, 'valueExt>
+          typeCheckNestedQuery
+          loc0
+          schema
+          ctx
+          iterator_bindings
 
       match q.Expr with
       | ExprQueryExprRec.QueryLookup(l: Identifier) ->
         if
           l.IsLocalScope
-          && iterator_bindings |> Map.containsKey (l.LocalName |> LocalIdentifier.Create)
+          && iterator_bindings
+             |> Map.containsKey (l.LocalName |> LocalIdentifier.Create)
         then
           return Map.empty
         else
@@ -48,14 +62,16 @@ module QueryLookups =
             return Map.empty |> Map.add l (TypeQueryRow.PrimitiveType(p, false))
           | Some(TypeValue.Sum { value = [ TypeValue.Primitive { value = PrimitiveType.Unit }
                                            TypeValue.Primitive { value = p } ] },
-                 Kind.Star) -> return Map.empty |> Map.add l (TypeQueryRow.PrimitiveType(p, true))
+                 Kind.Star) ->
+            return Map.empty |> Map.add l (TypeQueryRow.PrimitiveType(p, true))
           | Some((TypeValue.Record _) as t, Kind.Star) ->
             let! entities =
               schema.Entities
               |> OrderedMap.values
               |> NonEmptyList.TryOfList
               |> sum.OfOption(
-                Errors.Singleton loc0 (fun () -> $"Type checking error: No entities found in schema for lookup {l}")
+                Errors.Singleton loc0 (fun () ->
+                  $"Type checking error: No entities found in schema for lookup {l}")
               )
               |> state.OfSum
 
@@ -71,7 +87,9 @@ module QueryLookups =
                 })
               |> state.Any
 
-            return Map.empty |> Map.add l (TypeQueryRow.PrimaryKey matching_entity_id)
+            return
+              Map.empty
+              |> Map.add l (TypeQueryRow.PrimaryKey matching_entity_id)
           | _ ->
             return!
               state.Throw(
@@ -81,7 +99,10 @@ module QueryLookups =
 
       | ExprQueryExprRec.QueryTupleCons items ->
         let! maps = items |> Seq.map get_lookups_from_context |> state.All
-        return maps |> Seq.fold (fun acc m -> Map.merge (fun _ -> id) acc m) Map.empty
+
+        return
+          maps
+          |> Seq.fold (fun acc m -> Map.merge (fun _ -> id) acc m) Map.empty
       | ExprQueryExprRec.QueryRecordDes(expr, _field, _) ->
         let! map = get_lookups_from_context expr
         return map
@@ -92,15 +113,22 @@ module QueryLookups =
         let! cond_map = get_lookups_from_context cond
         let! then_map = get_lookups_from_context ``then``
         let! else_map = get_lookups_from_context ``else``
-        return Map.merge (fun _ -> id) cond_map (Map.merge (fun _ -> id) then_map else_map)
+
+        return
+          Map.merge
+            (fun _ -> id)
+            cond_map
+            (Map.merge (fun _ -> id) then_map else_map)
       | ExprQueryExprRec.QueryUnionDes(_expr, _handlers) ->
         return!
-          (fun () -> $"Error: Query union destruction expressions are not supported in the current implementation")
+          (fun () ->
+            $"Error: Query union destruction expressions are not supported in the current implementation")
           |> Errors.Singleton q.Location
           |> state.Throw
       | ExprQueryExprRec.QuerySumDes(_, _) ->
         return!
-          (fun () -> $"Error: Query sum destruction expressions are not supported in the current implementation")
+          (fun () ->
+            $"Error: Query sum destruction expressions are not supported in the current implementation")
           |> Errors.Singleton q.Location
           |> state.Throw
       | ExprQueryExprRec.QueryApply(func, arg) ->

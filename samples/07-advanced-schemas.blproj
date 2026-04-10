@@ -1,0 +1,5 @@
+{
+  "name": "advanced-schemas",
+  "sources": ["07-advanced-schemas.bl"],
+  "inputProjects": []
+}

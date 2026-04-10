@@ -16,7 +16,9 @@ module Patterns =
 
   type DateOnlyOperations<'ext> with
 
-    static member AsDiff(op: DateOnlyOperations<'ext>) : Sum<Option<DateOnly>, Errors<Unit>> =
+    static member AsDiff
+      (op: DateOnlyOperations<'ext>)
+      : Sum<Option<DateOnly>, Errors<Unit>> =
       match op with
       | DateOnlyOperations.Diff v -> v.v1 |> sum.Return
       | _ ->
@@ -24,15 +26,20 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsToString(op: DateOnlyOperations<'ext>) : Sum<Unit, Errors<Unit>> =
+    static member AsToString
+      (op: DateOnlyOperations<'ext>)
+      : Sum<Unit, Errors<Unit>> =
       match op with
       | DateOnlyOperations.DateOnly_ToString -> () |> sum.Return
       | _ ->
-        (fun () -> $"Error: Expected DateOnlyOperations.DateOnly_ToString, found {op}")
+        (fun () ->
+          $"Error: Expected DateOnlyOperations.DateOnly_ToString, found {op}")
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsEqual(op: DateOnlyOperations<'ext>) : Sum<Option<DateOnly>, Errors<Unit>> =
+    static member AsEqual
+      (op: DateOnlyOperations<'ext>)
+      : Sum<Option<DateOnly>, Errors<Unit>> =
       match op with
       | DateOnlyOperations.Equal v -> v.v1 |> sum.Return
       | _ ->
@@ -40,7 +47,9 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsNotEqual(op: DateOnlyOperations<'ext>) : Sum<Option<DateOnly>, Errors<Unit>> =
+    static member AsNotEqual
+      (op: DateOnlyOperations<'ext>)
+      : Sum<Option<DateOnly>, Errors<Unit>> =
       match op with
       | DateOnlyOperations.NotEqual v -> v.v1 |> sum.Return
       | _ ->
@@ -48,23 +57,31 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsGreaterThan(op: DateOnlyOperations<'ext>) : Sum<Option<DateOnly>, Errors<Unit>> =
+    static member AsGreaterThan
+      (op: DateOnlyOperations<'ext>)
+      : Sum<Option<DateOnly>, Errors<Unit>> =
       match op with
       | DateOnlyOperations.GreaterThan v -> v.v1 |> sum.Return
       | _ ->
-        (fun () -> $"Error: Expected DateOnlyOperations.GreaterThan, found {op}")
+        (fun () ->
+          $"Error: Expected DateOnlyOperations.GreaterThan, found {op}")
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsGreaterThanOrEqual(op: DateOnlyOperations<'ext>) : Sum<Option<DateOnly>, Errors<Unit>> =
+    static member AsGreaterThanOrEqual
+      (op: DateOnlyOperations<'ext>)
+      : Sum<Option<DateOnly>, Errors<Unit>> =
       match op with
       | DateOnlyOperations.GreaterThanOrEqual v -> v.v1 |> sum.Return
       | _ ->
-        (fun () -> $"Error: Expected DateOnlyOperations.GreaterThanOrEqual, found {op}")
+        (fun () ->
+          $"Error: Expected DateOnlyOperations.GreaterThanOrEqual, found {op}")
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsLessThan(op: DateOnlyOperations<'ext>) : Sum<Option<DateOnly>, Errors<Unit>> =
+    static member AsLessThan
+      (op: DateOnlyOperations<'ext>)
+      : Sum<Option<DateOnly>, Errors<Unit>> =
       match op with
       | DateOnlyOperations.LessThan v -> v.v1 |> sum.Return
       | _ ->
@@ -72,15 +89,20 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsLessThanOrEqual(op: DateOnlyOperations<'ext>) : Sum<Option<DateOnly>, Errors<Unit>> =
+    static member AsLessThanOrEqual
+      (op: DateOnlyOperations<'ext>)
+      : Sum<Option<DateOnly>, Errors<Unit>> =
       match op with
       | DateOnlyOperations.LessThanOrEqual v -> v.v1 |> sum.Return
       | _ ->
-        (fun () -> $"Error: Expected DateOnlyOperations.LessThanOrEqual, found {op}")
+        (fun () ->
+          $"Error: Expected DateOnlyOperations.LessThanOrEqual, found {op}")
         |> Errors.Singleton()
         |> sum.Throw
 
-    static member AsToDateTime(op: DateOnlyOperations<'ext>) : Sum<Option<DateOnly>, Errors<Unit>> =
+    static member AsToDateTime
+      (op: DateOnlyOperations<'ext>)
+      : Sum<Option<DateOnly>, Errors<Unit>> =
       match op with
       | DateOnlyOperations.ToDateTime v -> v.v1 |> sum.Return
       | _ ->

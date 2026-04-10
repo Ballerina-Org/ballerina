@@ -66,36 +66,67 @@ module Query =
         Closure = closure }
 
   type QueryTypeCheckerResult<'r, 'valueExt when 'valueExt: comparison> =
-    State<'r, TypeCheckContext<'valueExt>, TypeCheckState<'valueExt>, Errors<Location>>
+    State<
+      'r,
+      TypeCheckContext<'valueExt>,
+      TypeCheckState<'valueExt>,
+      Errors<Location>
+     >
 
   type QueryTypeChecker<'input, 'valueExt when 'valueExt: comparison> =
     QueryTypeCheckContext<'valueExt>
       -> 'input
-      -> QueryTypeCheckerResult<TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>, 'valueExt>
+      -> QueryTypeCheckerResult<
+        TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>,
+        'valueExt
+       >
 
   type ExprQueryExpr<'T, 'Id, 've when 'Id: comparison> with
-    static member internal TypeCheckQueryExpr<'valueExt when 'valueExt: comparison>
+    static member internal TypeCheckQueryExpr<'valueExt
+      when 'valueExt: comparison>
       (typeCheckQuery:
         ExprQuery<TypeExpr<'valueExt>, Identifier, 'valueExt>
           -> TypeCheckerResult<
-            (TypeCheckedExprQuery<'valueExt> * TypeValue<'valueExt> * Kind * TypeCheckContext<'valueExt>),
+            (TypeCheckedExprQuery<'valueExt> *
+            TypeValue<'valueExt> *
+            Kind *
+            TypeCheckContext<'valueExt>),
             'valueExt
            >)
       (depth: int)
       (_loc0: Location)
-      : QueryTypeChecker<ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
+      : QueryTypeChecker<
+          ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
+          'valueExt
+         >
+      =
       fun identifiers_context expr ->
         let recurExpr
           (nextExpr: ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
-          : QueryTypeCheckerResult<(TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>), 'valueExt> =
-          ExprQueryExpr.TypeCheckQueryExpr typeCheckQuery (depth + 1) nextExpr.Location identifiers_context nextExpr
+          : QueryTypeCheckerResult<
+              (TypeCheckedExprQueryExpr<'valueExt> * TypeQueryRow<'valueExt>),
+              'valueExt
+             >
+          =
+          ExprQueryExpr.TypeCheckQueryExpr
+            typeCheckQuery
+            (depth + 1)
+            nextExpr.Location
+            identifiers_context
+            nextExpr
         // let (=>) c e = typeCheckExpr c e
 
         state {
           match expr.Expr with
-          | ExprQueryExprRec.QueryTupleCons args -> return! typeCheckQueryTupleCons recurExpr expr args
+          | ExprQueryExprRec.QueryTupleCons args ->
+            return! typeCheckQueryTupleCons recurExpr expr args
           | ExprQueryExprRec.QueryLookup(Identifier.FullyQualified _ as l) ->
-            return! typeCheckQueryLookupFullyQualified expr.Location identifiers_context.Closure expr l
+            return!
+              typeCheckQueryLookupFullyQualified
+                expr.Location
+                identifiers_context.Closure
+                expr
+                l
           | ExprQueryExprRec.QueryLookup(Identifier.LocalScope v as l) ->
             return!
               typeCheckQueryLookupLocalScope
@@ -107,29 +138,55 @@ module Query =
                 l
 
           | ExprQueryExprRec.QueryTupleDes(tuple, item, _) ->
-            return! typeCheckQueryTupleDes expr.Location recurExpr expr tuple item
+            return!
+              typeCheckQueryTupleDes expr.Location recurExpr expr tuple item
           | ExprQueryExprRec.QueryRecordDes(record, field, _) ->
-            return! typeCheckQueryRecordDes expr.Location recurExpr expr record field
-          | ExprQueryExprRec.QueryConstant c -> return! typeCheckQueryConstant expr c
+            return!
+              typeCheckQueryRecordDes expr.Location recurExpr expr record field
+          | ExprQueryExprRec.QueryConstant c ->
+            return! typeCheckQueryConstant expr c
 
-          | ExprQueryExprRec.QueryApply({ Expr = ExprQueryExprRec.QueryIntrinsic(intrinsic, _) }, arg) ->
-            return! typeCheckQueryApplyIntrinsic expr.Location recurExpr expr intrinsic arg
+          | ExprQueryExprRec.QueryApply({ Expr = ExprQueryExprRec.QueryIntrinsic(intrinsic,
+                                                                                 _) },
+                                        arg) ->
+            return!
+              typeCheckQueryApplyIntrinsic
+                expr.Location
+                recurExpr
+                expr
+                intrinsic
+                arg
 
-          | ExprQueryExprRec.QueryClosureValue(v, t) -> return! typeCheckQueryClosureValue expr v t
-          | ExprQueryExprRec.QueryCount q -> return! typeCheckQueryCount typeCheckQuery expr q
-          | ExprQueryExprRec.QueryExists q -> return! typeCheckQueryExists typeCheckQuery expr q
-          | ExprQueryExprRec.QueryArray q -> return! typeCheckQueryArray typeCheckQuery expr q
+          | ExprQueryExprRec.QueryClosureValue(v, t) ->
+            return! typeCheckQueryClosureValue expr v t
+          | ExprQueryExprRec.QueryCount q ->
+            return! typeCheckQueryCount typeCheckQuery expr q
+          | ExprQueryExprRec.QueryExists q ->
+            return! typeCheckQueryExists typeCheckQuery expr q
+          | ExprQueryExprRec.QueryArray q ->
+            return! typeCheckQueryArray typeCheckQuery expr q
           | ExprQueryExprRec.QueryConditional(cond, thenExpr, elseExpr) ->
-            return! typeCheckQueryConditional expr.Location recurExpr expr cond thenExpr elseExpr
+            return!
+              typeCheckQueryConditional
+                expr.Location
+                recurExpr
+                expr
+                cond
+                thenExpr
+                elseExpr
           | _ -> return! typeCheckQueryUnsupported expr
         }
 
 
   and Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckQuery<'valueExt when 'valueExt: comparison>
-      (config: TypeEvalConfig<'valueExt>)
+      (config: TypeCheckingConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
-      : TypeCheckerQuery<ExprQuery<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
+      : TypeCheckerQuery<
+          ExprQuery<TypeExpr<'valueExt>, Identifier, 'valueExt>,
+          'valueExt
+         >
+      =
       fun
           _context_t
           (closure_bindings: Map<LocalIdentifier, TypeQueryRow<'valueExt>>)
@@ -154,31 +211,55 @@ module Query =
           | UnionQueries(q1, q2) ->
             let! q1_e, q1_t, _q1_k, _ctx =
               q1
-              |> Expr.TypeCheckQuery config typeCheckExpr _context_t closure_bindings initial_lookups
+              |> Expr.TypeCheckQuery
+                config
+                typeCheckExpr
+                _context_t
+                closure_bindings
+                initial_lookups
 
             let! q2_e, q2_t, _q2_k, _ctx =
               q2
-              |> Expr.TypeCheckQuery config typeCheckExpr _context_t closure_bindings initial_lookups
+              |> Expr.TypeCheckQuery
+                config
+                typeCheckExpr
+                _context_t
+                closure_bindings
+                initial_lookups
 
             match q1_t, q2_t with
             | TypeValue.Imported { Sym = sym1
-                                   Arguments = [ TypeValue.Schema schema1; TypeValue.QueryRow query_row1 ] },
+                                   Arguments = [ TypeValue.Schema schema1
+                                                 TypeValue.QueryRow query_row1 ] },
               TypeValue.Imported { Sym = sym2
-                                   Arguments = [ TypeValue.Schema schema2; TypeValue.QueryRow query_row2 ] } when
+                                   Arguments = [ TypeValue.Schema schema2
+                                                 TypeValue.QueryRow query_row2 ] } when
               sym1 = query_type_symbol && sym2 = query_type_symbol
               ->
               do!
-                TypeValue.Unify(loc0, TypeValue.Schema schema1, TypeValue.Schema schema2)
+                TypeValue.Unify(
+                  loc0,
+                  TypeValue.Schema schema1,
+                  TypeValue.Schema schema2
+                )
                 |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
               do!
-                TypeValue.Unify(loc0, TypeValue.QueryRow query_row1, TypeValue.QueryRow query_row2)
+                TypeValue.Unify(
+                  loc0,
+                  TypeValue.QueryRow query_row1,
+                  TypeValue.QueryRow query_row2
+                )
                 |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
               let return_type = mk_query_type schema1 query_row1
               let! ctx = state.GetContext()
 
-              return TypeCheckedExprQuery.UnionQueries(q1_e, q2_e), return_type, Kind.Star, ctx
+              return
+                TypeCheckedExprQuery.UnionQueries(q1_e, q2_e),
+                return_type,
+                Kind.Star,
+                ctx
             | _ ->
               return!
                 (fun () ->
@@ -204,10 +285,17 @@ module Query =
                     state {
                       match t with
                       | TypeValue.Imported { Sym = sym
-                                             Arguments = [ TypeValue.Schema schema; TypeValue.QueryRow query_row ] } when
+                                             Arguments = [ TypeValue.Schema schema
+                                                           TypeValue.QueryRow query_row ] } when
                         sym = query_type_symbol
                         ->
-                        return schema, iterator.Var, type_checked_source_expr, query_row
+                        return
+                          schema,
+                          iterator.Var,
+                          iterator.VarType,
+                          iterator.Location,
+                          type_checked_source_expr,
+                          query_row
                       | TypeValue.Entity(schema, _, e', e_id) ->
                         let vectors =
                           match e' with
@@ -217,35 +305,64 @@ module Query =
                               |> OrderedMap.toMap
                               |> Map.filter (fun _k (t, _) ->
                                 match t with
-                                | TypeValue.Primitive { value = PrimitiveType.Vector } -> true
+                                | TypeValue.Primitive { value = PrimitiveType.Vector } ->
+                                  true
                                 | _ -> false)
 
                             fields'
                             |> Map.toSeq
                             |> Seq.map (fun (k, _) ->
                               k.Name.LocalName |> LocalIdentifier.Create,
-                              TypeQueryRow.PrimitiveType(PrimitiveType.Vector, false))
+                              TypeQueryRow.PrimitiveType(
+                                PrimitiveType.Vector,
+                                false
+                              ))
                             |> List.ofSeq
                           | _ -> []
 
                         let fields =
-                          ("Id" |> LocalIdentifier.Create, TypeQueryRow.PrimaryKey e_id)
-                          :: ("Value" |> LocalIdentifier.Create, TypeQueryRow.Json e')
+                          ("Id" |> LocalIdentifier.Create,
+                           TypeQueryRow.PrimaryKey e_id)
+                          :: ("Value" |> LocalIdentifier.Create,
+                              TypeQueryRow.Json e')
                           :: vectors
                           |> Map.ofList
 
-                        return schema, iterator.Var, type_checked_source_expr, fields |> TypeQueryRow.Record
-                      | TypeValue.Relation(schema, _, _, _f, _f', f_id, _t, _t', t_id) ->
+                        return
+                          schema,
+                          iterator.Var,
+                          iterator.VarType,
+                          iterator.Location,
+                          type_checked_source_expr,
+                          fields |> TypeQueryRow.Record
+                      | TypeValue.Relation(schema,
+                                           _,
+                                           _,
+                                           _f,
+                                           _f',
+                                           f_id,
+                                           _t,
+                                           _t',
+                                           t_id) ->
                         let fields =
-                          ("FromId" |> LocalIdentifier.Create, TypeQueryRow.PrimaryKey f_id)
-                          :: ("ToId" |> LocalIdentifier.Create, TypeQueryRow.PrimaryKey t_id)
+                          ("FromId" |> LocalIdentifier.Create,
+                           TypeQueryRow.PrimaryKey f_id)
+                          :: ("ToId" |> LocalIdentifier.Create,
+                              TypeQueryRow.PrimaryKey t_id)
                           :: []
                           |> Map.ofList
 
-                        return schema, iterator.Var, type_checked_source_expr, fields |> TypeQueryRow.Record
+                        return
+                          schema,
+                          iterator.Var,
+                          iterator.VarType,
+                          iterator.Location,
+                          type_checked_source_expr,
+                          fields |> TypeQueryRow.Record
                       | _ ->
                         return!
-                          (fun () -> $"Type checking error: Expected an entity or relation type, but got {t}")
+                          (fun () ->
+                            $"Type checking error: Expected an entity or relation type, but got {t}")
                           |> Errors.Singleton iterator.Location
                           |> state.Throw
                     }
@@ -255,14 +372,17 @@ module Query =
 
             // List<Var * Expr<TypeValue<'valueExt>,ResolvedIdentifier,'valueExt> * TypeValue<'valueExt>>
             let iterator_schemas =
-              iterators |> Seq.map (fun (schema, _, _, _) -> schema) |> Seq.toList
+              iterators
+              |> Seq.map (fun (schema, _, _, _, _, _) -> schema)
+              |> Seq.toList
 
             let! schema =
               state {
                 match iterator_schemas with
                 | [] ->
                   return!
-                    (fun () -> $"Type checking error: At least one iterator is required in a query expression")
+                    (fun () ->
+                      $"Type checking error: At least one iterator is required in a query expression")
                     |> Errors.Singleton loc0
                     |> state.Throw
                 | schema :: other_schemas ->
@@ -271,7 +391,11 @@ module Query =
                     |> Seq.map (fun other_schema ->
                       state {
                         do!
-                          TypeValue.Unify(loc0, TypeValue.Schema schema, TypeValue.Schema other_schema)
+                          TypeValue.Unify(
+                            loc0,
+                            TypeValue.Schema schema,
+                            TypeValue.Schema other_schema
+                          )
                           |> Expr<'T, 'Id, 'valueExt>.liftUnification
                       })
                     |> state.All
@@ -282,15 +406,35 @@ module Query =
 
             let iterator_bindings =
               iterators
-              |> Seq.map (fun (_, v, _, q) -> v.Name |> LocalIdentifier.Create, q)
+              |> Seq.map (fun (_, v, _, _, _, q) ->
+                v.Name |> LocalIdentifier.Create, q)
               |> Map.ofSeq
               |> Map.merge (fun _ -> id) closure_bindings
+
+            do!
+              iterators
+              |> Seq.map (fun (_, v, maybeVarType, varLoc, _, qRowType) ->
+                match maybeVarType with
+                | Some _ -> state { return () }
+                | None ->
+                  TypeCheckState.bindInlayHint (
+                    varLoc,
+                    v.Name,
+                    TypeValue.QueryRow qRowType
+                  ))
+              |> state.All
+              |> state.Ignore
 
             let! ctx = state.GetContext()
 
             let typeCheckNestedQuery q =
               q
-              |> Expr.TypeCheckQuery config typeCheckExpr _context_t iterator_bindings initial_lookups
+              |> Expr.TypeCheckQuery
+                config
+                typeCheckExpr
+                _context_t
+                iterator_bindings
+                initial_lookups
 
             let get_lookups_from_context =
               QueryLookups.get_lookups_from_context<'T, 'Id, 'valueExt>
@@ -308,12 +452,15 @@ module Query =
               }
 
             let! select_lookups = get_lookups_from_context select_expr
-            let select_lookups = where_lookups |> Map.merge (fun _ -> id) select_lookups
+
+            let select_lookups =
+              where_lookups |> Map.merge (fun _ -> id) select_lookups
 
             let! orderby_lookups =
               state {
                 match orderby_expr with
-                | Some(orderby_expr, _) -> return! get_lookups_from_context orderby_expr
+                | Some(orderby_expr, _) ->
+                  return! get_lookups_from_context orderby_expr
                 | None -> return Map.empty
               }
 
@@ -330,10 +477,17 @@ module Query =
               |> state.OfSum
 
             let queryTypeCheckingContext =
-              QueryTypeCheckContext<_>.Create iterator_bindings select_orderby_lookups
+              QueryTypeCheckContext<_>.Create
+                iterator_bindings
+                select_orderby_lookups
 
             let typeCheckQuery =
-              Expr.TypeCheckQuery config typeCheckExpr _context_t iterator_bindings initial_lookups
+              Expr.TypeCheckQuery
+                config
+                typeCheckExpr
+                _context_t
+                iterator_bindings
+                initial_lookups
 
             let! joins_expr' =
               state {
@@ -362,8 +516,11 @@ module Query =
                             queryTypeCheckingContext
                             join_expr.Right
 
-                        let! left_t = left_t |> TypeQueryRow.AsPrimaryKey |> ofSum
-                        let! right_t = right_t |> TypeQueryRow.AsPrimaryKey |> ofSum
+                        let! left_t =
+                          left_t |> TypeQueryRow.AsPrimaryKey |> ofSum
+
+                        let! right_t =
+                          right_t |> TypeQueryRow.AsPrimaryKey |> ofSum
 
                         do!
                           TypeValue.Unify(join_expr.Location, left_t, right_t)
@@ -409,7 +566,8 @@ module Query =
 
                   match where_expr'_t with
                   | TypeQueryRow.PrimitiveType(PrimitiveType.Bool, _)
-                  | TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Bool }) -> return Some where_expr'
+                  | TypeQueryRow.Json(TypeValue.Primitive { value = PrimitiveType.Bool }) ->
+                    return Some where_expr'
                   | _ ->
                     return!
                       (fun () ->
@@ -461,11 +619,13 @@ module Query =
             let return_expr: TypeCheckedExprQuery<'valueExt> =
               { TypeCheckedSimpleQuery.Iterators =
                   iterators
-                  |> NonEmptyList.map (fun (_, v, source_expr, q_row_t) ->
-                    { TypeCheckedExprQueryIterator.Location = source_expr.Location
-                      TypeCheckedExprQueryIterator.Var = v
-                      TypeCheckedExprQueryIterator.VarType = q_row_t
-                      TypeCheckedExprQueryIterator.Source = source_expr })
+                  |> NonEmptyList.map
+                    (fun (_, v, _, _, source_expr, q_row_t) ->
+                      { TypeCheckedExprQueryIterator.Location =
+                          source_expr.Location
+                        TypeCheckedExprQueryIterator.Var = v
+                        TypeCheckedExprQueryIterator.VarType = q_row_t
+                        TypeCheckedExprQueryIterator.Source = source_expr })
                 TypeCheckedSimpleQuery.Joins = joins_expr'
                 TypeCheckedSimpleQuery.Where = where_expr'
                 TypeCheckedSimpleQuery.Select = select_expr'

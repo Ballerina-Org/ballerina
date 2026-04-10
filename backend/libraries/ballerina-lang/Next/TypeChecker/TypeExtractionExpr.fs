@@ -20,13 +20,18 @@ module TypeExtractionExpr =
       MapOps: MapOps
       Resolve: TypeSymbol -> ResolvedIdentifier }
 
-  let private freshVar<'c> (prefix: string) : State<Var * ResolvedIdentifier, 'c, int> =
+  let private freshVar<'c>
+    (prefix: string)
+    : State<Var * ResolvedIdentifier, 'c, int> =
     state {
       let! current = state.GetState()
       let next = current + 1
       do! state.SetState(fun _ -> next)
       let name = sprintf "%s_%d" prefix next
-      return Var.Create name, TypeCheckScope.Empty.Resolve(Identifier.LocalScope name)
+
+      return
+        Var.Create name,
+        TypeCheckScope.Empty.Resolve(Identifier.LocalScope name)
     }
 
   // Compiles an extraction tree into an Expr that returns List<target>.
@@ -88,7 +93,10 @@ module TypeExtractionExpr =
         state {
           let! caseVar, caseId = freshVar "case"
           let! innerExpr = compileTree childTree (mkLookup caseId)
-          let handlers = Map.ofList [ ctx.Resolve sym, (Some caseVar, innerExpr) ]
+
+          let handlers =
+            Map.ofList [ ctx.Resolve sym, (Some caseVar, innerExpr) ]
+
           let fallback = Some nilExpr
           return mkApply (mkUnionDes handlers fallback) current
         }
@@ -117,7 +125,9 @@ module TypeExtractionExpr =
       let compileContainer kind childTree =
         let current', childTree' =
           match kind with
-          | ImportedContainer(containerId, argIndex) when containerId.Name = "Map" ->
+          | ImportedContainer(containerId, argIndex) when
+            containerId.Name = "Map"
+            ->
             let mapAsList = mkApply (mkLookup ctx.MapOps.MapToList) current
 
             let liftedTree =
@@ -140,7 +150,9 @@ module TypeExtractionExpr =
             let! innerList = compileTree childOnlyTree (mkLookup xId)
 
             let appendExpr =
-              mkApply (mkApply (mkLookup ctx.ListOps.Append) (mkLookup accId)) innerList
+              mkApply
+                (mkApply (mkLookup ctx.ListOps.Append) (mkLookup accId))
+                innerList
 
             let foldFn =
               mkLambda
@@ -154,12 +166,17 @@ module TypeExtractionExpr =
                 (TypeValue.CreatePrimitive(PrimitiveType.Unit))
 
             let foldedMatches =
-              mkApply (mkApply (mkApply (mkLookup ctx.ListOps.Fold) foldFn) nilExpr) current'
+              mkApply
+                (mkApply (mkApply (mkLookup ctx.ListOps.Fold) foldFn) nilExpr)
+                current'
 
             return appendMany (directMatches @ [ foldedMatches ])
         }
 
-      let rec compileGroups (groups: (ExtractionStep * ExtractionTree) list) (acc: TypeCheckedExpr<'valueExt> list) =
+      let rec compileGroups
+        (groups: (ExtractionStep * ExtractionTree) list)
+        (acc: TypeCheckedExpr<'valueExt> list)
+        =
         state {
 
           match groups with
@@ -167,13 +184,16 @@ module TypeExtractionExpr =
           | (step, childTree) :: restGroups ->
             let! compiled =
               match step with
-              | RecordField sym -> compileTree childTree (mkRecordDes current (ctx.Resolve sym))
+              | RecordField sym ->
+                compileTree childTree (mkRecordDes current (ctx.Resolve sym))
 
-              | TupleElement i -> compileTree childTree (mkTupleDes current { Index = i + 1 })
+              | TupleElement i ->
+                compileTree childTree (mkTupleDes current { Index = i + 1 })
 
               | UnionCase sym -> compileUnionCase sym childTree
 
-              | SumAlternative(case, count) -> compileSumAlternative case count childTree
+              | SumAlternative(case, count) ->
+                compileSumAlternative case count childTree
 
               | ContainerElement kind -> compileContainer kind childTree
 
@@ -184,7 +204,9 @@ module TypeExtractionExpr =
       return appendMany (selfMatchExpr @ branchExprs)
     }
 
-  let rec private collectSymbolsFromTree (tree: ExtractionTree) : Set<TypeSymbol> =
+  let rec private collectSymbolsFromTree
+    (tree: ExtractionTree)
+    : Set<TypeSymbol> =
     let symbolsFromStep (step: ExtractionStep) =
       match step with
       | RecordField sym
@@ -194,7 +216,9 @@ module TypeExtractionExpr =
     tree.Children
     |> Map.toList
     |> List.fold
-      (fun acc (step, child) -> Set.unionMany [ acc; symbolsFromStep step; collectSymbolsFromTree child ])
+      (fun acc (step, child) ->
+        Set.unionMany
+          [ acc; symbolsFromStep step; collectSymbolsFromTree child ])
       Set.empty
 
   // Builds a lambda Expr (host -> List<target>) from an extraction tree.
@@ -227,7 +251,13 @@ module TypeExtractionExpr =
         let! hostVar, hostId = freshVar "host"
 
         let! body =
-          compileTree tree (TypeCheckedExpr.Lookup(hostId, TypeValue.CreatePrimitive(PrimitiveType.Unit), Kind.Star))
+          compileTree
+            tree
+            (TypeCheckedExpr.Lookup(
+              hostId,
+              TypeValue.CreatePrimitive(PrimitiveType.Unit),
+              Kind.Star
+            ))
 
         return
           TypeCheckedExpr.Lambda(

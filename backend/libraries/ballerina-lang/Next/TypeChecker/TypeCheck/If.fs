@@ -31,9 +31,13 @@ module If =
 
   type Expr<'T, 'Id, 'v when 'Id: comparison> with
     static member internal TypeCheckIf<'valueExt when 'valueExt: comparison>
-      (config: TypeEvalConfig<'valueExt>)
+      (config: TypeCheckingConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
-      : TypeChecker<ExprIf<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
+      : TypeChecker<
+          ExprIf<TypeExpr<'valueExt>, Identifier, 'valueExt>,
+          'valueExt
+         >
+      =
       fun
           context_t
           ({ Cond = cond
@@ -53,7 +57,11 @@ module If =
           do! cond_k |> Kind.AsStar |> ofSum |> state.Ignore
 
           do!
-            TypeValue.Unify(loc0, t_cond, TypeValue.CreatePrimitive PrimitiveType.Bool)
+            TypeValue.Unify(
+              loc0,
+              t_cond,
+              TypeValue.CreatePrimitive PrimitiveType.Bool
+            )
             |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
           let! thenBranch, _ = !thenBranch
@@ -72,8 +80,21 @@ module If =
 
           let! t_then =
             t_then
-            |> TypeValue.Instantiate () (TypeExpr.Eval config typeCheckExpr) loc0
+            |> TypeValue.Instantiate
+              ()
+              (TypeExpr.Eval config typeCheckExpr)
+              loc0
             |> Expr<'T, 'Id, 'valueExt>.liftInstantiation
 
-          return TypeCheckedExpr.If(cond, thenBranch, elseBranch, t_then, Kind.Star, loc0, ctx.Scope), ctx
+          return
+            TypeCheckedExpr.If(
+              cond,
+              thenBranch,
+              elseBranch,
+              t_then,
+              Kind.Star,
+              loc0,
+              ctx.Scope
+            ),
+            ctx
         }

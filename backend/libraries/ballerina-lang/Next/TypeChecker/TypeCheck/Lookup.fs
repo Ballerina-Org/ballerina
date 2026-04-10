@@ -28,7 +28,11 @@ module Lookup =
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckLookup<'valueExt when 'valueExt: comparison>
       (_typeCheckExpr: ExprTypeChecker<'valueExt>, loc0: Location)
-      : TypeChecker<ExprLookup<TypeExpr<'valueExt>, Identifier, 'valueExt>, 'valueExt> =
+      : TypeChecker<
+          ExprLookup<TypeExpr<'valueExt>, Identifier, 'valueExt>,
+          'valueExt
+         >
+      =
       fun _context_t ({ Id = id }) ->
         state {
           let! ctx = state.GetContext()
@@ -50,7 +54,15 @@ module Lookup =
                     (TypeCheckContext.TryFindVar(id_resolved, loc0))
                     (TypeCheckState.TryFindType(id_resolved, loc0))
 
-                return TypeCheckedExpr.Lookup(id_resolved, t_id, id_k, loc0, ctx.Scope), ctx
+                return
+                  TypeCheckedExpr.Lookup(
+                    id_resolved,
+                    t_id,
+                    id_k,
+                    loc0,
+                    ctx.Scope
+                  ),
+                  ctx
               })
               (state {
                 let! t_id, id_k =
@@ -58,13 +70,22 @@ module Lookup =
                     (TypeCheckContext.TryFindVar(id_original, loc0))
                     (TypeCheckState.TryFindType(id_original, loc0))
 
-                return TypeCheckedExpr.Lookup(id_original, t_id, id_k, loc0, ctx.Scope), ctx
+                return
+                  TypeCheckedExpr.Lookup(
+                    id_original,
+                    t_id,
+                    id_k,
+                    loc0,
+                    ctx.Scope
+                  ),
+                  ctx
 
               })
-              (fun () -> $"Error: cannot resolve identifier '{id_resolved}'/'{id_original}'."
+              (state.Throw(
+                (fun () -> $"Error: cannot resolve identifier '{id_resolved}'/'{id_original}'.")
                |> error
                |> Errors<_>.MapPriority(replaceWith ErrorPriority.High)
-               |> state.Throw)
+              ))
             |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
 
         }

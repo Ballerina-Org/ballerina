@@ -21,10 +21,19 @@ module Parser =
   let parser =
     ParserBuilder<LocalizedToken, Location, Errors<Location>>(
       {| Step = fun lt _ -> lt.Location |},
-      {| UnexpectedEndOfFile = fun loc -> (loc, fun () -> $"Unexpected end of file at {loc}") ||> Errors.Singleton
-         AnyFailed = fun loc -> (loc, fun () -> "No matching token") ||> Errors.Singleton
-         NotFailed = fun loc -> (loc, fun () -> $"Expected token not found at {loc}") ||> Errors.Singleton
-         UnexpectedSymbol = fun loc c -> (loc, fun () -> $"Unexpected symbol: {c}") ||> Errors.Singleton
+      {| UnexpectedEndOfFile =
+          fun loc ->
+            (loc, fun () -> $"Unexpected end of file at {loc}")
+            ||> Errors.Singleton
+         AnyFailed =
+          fun loc -> (loc, fun () -> "No matching token") ||> Errors.Singleton
+         NotFailed =
+          fun loc ->
+            (loc, fun () -> $"Expected token not found at {loc}")
+            ||> Errors.Singleton
+         UnexpectedSymbol =
+          fun loc c ->
+            (loc, fun () -> $"Unexpected symbol: {c}") ||> Errors.Singleton
          FilterHighestPriorityOnly = Errors<_>.FilterHighestPriorityOnly
          Concat = Errors.Concat<Location> |}
     )
@@ -133,7 +142,8 @@ module Parser =
           | _ ->
             return!
               parser.Throw(
-                Errors.Singleton loc (fun () -> $"Unsupported parsed primitive: {primitiveKind.Token}")
+                Errors.Singleton loc (fun () ->
+                  $"Unsupported parsed primitive: {primitiveKind.Token}")
                 |> Errors.MapPriority(replaceWith ErrorPriority.High)
               )
 
@@ -257,7 +267,12 @@ module Parser =
       | Keyword Clear -> return ListAction.Clear
       | Keyword Move -> return ListAction.Move
       | Keyword Duplicate -> return ListAction.Duplicate
-      | _ -> return! parser.Throw(Errors.Singleton loc (fun () -> $"Invalid list action: {action.Token}"))
+      | _ ->
+        return!
+          parser.Throw(
+            Errors.Singleton loc (fun () ->
+              $"Invalid list action: {action.Token}")
+          )
     }
 
   and parseListActions (k: Keyword) =
@@ -316,7 +331,11 @@ module Parser =
             Right = parsedUnion.FirstCaseRenderer
             Type = Unchecked }
       | _ ->
-        return! twoCasesUnionError parsedUnion.CaseLocation parsedUnion.FirstCase.Token parsedUnion.SecondCase.Token
+        return!
+          twoCasesUnionError
+            parsedUnion.CaseLocation
+            parsedUnion.FirstCase.Token
+            parsedUnion.SecondCase.Token
     }
 
   and parseCardinality () =
@@ -394,7 +413,11 @@ module Parser =
         curly bracket because in such case it means that it should be parsing an inline form.
     *)
       do!
-        parser.Lookahead(parser.Exactly((fun token -> token.Token = Operator(CurlyBracket Open)) >> not))
+        parser.Lookahead(
+          parser.Exactly(
+            (fun token -> token.Token = Operator(CurlyBracket Open)) >> not
+          )
+        )
         |> parser.Ignore
 
       return FormIdentifier formConfig
@@ -411,7 +434,9 @@ module Parser =
 
   and parseUnionCases () =
     parser {
-      let rec parseOtherCases (caseMap: Map<CaseIdentifier, RendererExpression<Unchecked>>) =
+      let rec parseOtherCases
+        (caseMap: Map<CaseIdentifier, RendererExpression<Unchecked>>)
+        =
         parser {
           let! loc = parser.Location
 
@@ -424,7 +449,8 @@ module Parser =
             else
               return!
                 parser.Throw(
-                  Errors.Singleton loc (fun () -> $"Duplicate union case: {caseId}")
+                  Errors.Singleton loc (fun () ->
+                    $"Duplicate union case: {caseId}")
                   |> Errors.MapPriority(replaceWith ErrorPriority.High)
                 )
           | _ -> return caseMap
@@ -551,9 +577,15 @@ module Parser =
     }
 
   and parseFormMember () =
-    parser.Any([ parseFormField () |> parser.Map FormField; parseTab () |> parser.Map FormTab ])
+    parser.Any(
+      [ parseFormField () |> parser.Map FormField
+        parseTab () |> parser.Map FormTab ]
+    )
 
-  and parseMembers (fields: Map<FieldIdentifier, Field<Unchecked>>) (tabs: Map<TabIdentifier, Tab>) =
+  and parseMembers
+    (fields: Map<FieldIdentifier, Field<Unchecked>>)
+    (tabs: Map<TabIdentifier, Tab>)
+    =
     parser {
       let! loc = parser.Location
 
@@ -563,7 +595,8 @@ module Parser =
         if fields |> Map.containsKey field.Name then
           return!
             parser.Throw(
-              Errors.Singleton loc (fun () -> $"Field {field.Name} already defined.")
+              Errors.Singleton loc (fun () ->
+                $"Field {field.Name} already defined.")
               |> Errors.MapPriority(replaceWith ErrorPriority.High)
             )
         else
@@ -614,7 +647,8 @@ module Parser =
         match tabs.Count with
         | 0 ->
           parser.Throw(
-            Errors.Singleton loc (fun () -> "A record body must define at least one tab.")
+            Errors.Singleton loc (fun () ->
+              "A record body must define at least one tab.")
             |> Errors.MapPriority(replaceWith ErrorPriority.High)
           )
         | _ -> parser.Zero()
@@ -623,7 +657,8 @@ module Parser =
         match fields.Count with
         | 0 ->
           parser.Throw(
-            Errors.Singleton loc (fun () -> "A record body must define at least one field.")
+            Errors.Singleton loc (fun () ->
+              "A record body must define at least one field.")
             |> Errors.MapPriority(replaceWith ErrorPriority.High)
           )
         | _ -> parser.Zero()
@@ -637,8 +672,11 @@ module Parser =
 
       do! validateMembersExist loc fields tabs
 
-      let! disabledFields = parser.Try(parseDisableBlock ()) |> parser.Map Sum.toOption
-      let! detailsRenderer = parser.Try(parseDetailRenderer ()) |> parser.Map Sum.toOption
+      let! disabledFields =
+        parser.Try(parseDisableBlock ()) |> parser.Map Sum.toOption
+
+      let! detailsRenderer =
+        parser.Try(parseDetailRenderer ()) |> parser.Map Sum.toOption
 
       let! highlights =
         parser.Try(parseHighlights ())
@@ -669,7 +707,9 @@ module Parser =
 
       do! validateMembersExist loc fields tabs
 
-      let! disabledFields = parser.Try(parseDisableBlock ()) |> parser.Map Sum.toOption
+      let! disabledFields =
+        parser.Try(parseDisableBlock ()) |> parser.Map Sum.toOption
+
       do! operator (CurlyBracket Close)
 
       return
@@ -690,18 +730,23 @@ module Parser =
         parser.Try(parseRendererDef ())
         |> parser.Map(Sum.toOption >> Option.map RendererIdentifier)
 
-      let! fields, tabs, disabledFields, detailsRenderer, highlights = parseFormBody ()
+      let! fields, tabs, disabledFields, detailsRenderer, highlights =
+        parseFormBody ()
 
       return
         { InlineForm = rendererId
-          Body = createFormBody fields tabs disabledFields detailsRenderer highlights
+          Body =
+            createFormBody fields tabs disabledFields detailsRenderer highlights
           Type = Unchecked }
     }
 
   and parseBodyWithDetailsAndPreview () =
     parser {
       let! detailsRenderer = parseDetailRenderer ()
-      let! previewRenderer = parser.Try(parsePreviewRenderer ()) |> parser.Map Sum.toOption
+
+      let! previewRenderer =
+        parser.Try(parsePreviewRenderer ()) |> parser.Map Sum.toOption
+
       return detailsRenderer, previewRenderer
     }
 
@@ -741,7 +786,8 @@ module Parser =
   and parseManyBody () =
     parser.Any(
       [ parseLinkedUnlinked ()
-        |> parser.Map(fun (linked, unlinked) -> LinkedUnlinked { Linked = linked; Unlinked = unlinked })
+        |> parser.Map(fun (linked, unlinked) ->
+          LinkedUnlinked { Linked = linked; Unlinked = unlinked })
         parser {
           do! keyword Element
           return! parseRenderer ()
@@ -775,7 +821,8 @@ module Parser =
         parseEnum () |> parser.Map RendererExpression.Enum
         parseStream () |> parser.Map RendererExpression.Stream
         parseTable () |> parser.Map RendererExpression.Table
-        parseForm () |> parser.Map(fun expr -> RendererExpression.Form(expr, Unchecked))
+        parseForm ()
+        |> parser.Map(fun expr -> RendererExpression.Form(expr, Unchecked))
         parseInlineForm () |> parser.Map RendererExpression.InlineForm
         parseUnion () |> parser.Map RendererExpression.Union
         parseRecord () |> parser.Map RendererExpression.Record
@@ -795,7 +842,10 @@ module Parser =
 
   and parseFormTable () =
     parser {
-      let! isEntryPoint = parser.Try(keyword EntryPoint) |> parser.Map(Sum.toOption >> Option.isSome)
+      let! isEntryPoint =
+        parser.Try(keyword EntryPoint)
+        |> parser.Map(Sum.toOption >> Option.isSome)
+
       do! keyword View
 
       return!
@@ -807,14 +857,22 @@ module Parser =
           let! formName = identifier ()
           do! operator Colon
           let! typeName = identifier ()
-          let! fields, tabs, disabledFields, detailsRenderer, highlights = parseFormBody ()
+
+          let! fields, tabs, disabledFields, detailsRenderer, highlights =
+            parseFormBody ()
 
           return
             { IsEntryPoint = isEntryPoint
               RendererId = rendererId
               Form = FormIdentifier formName
               TypeIdentifier = TypeIdentifier typeName
-              Body = createFormBody fields tabs disabledFields detailsRenderer highlights
+              Body =
+                createFormBody
+                  fields
+                  tabs
+                  disabledFields
+                  detailsRenderer
+                  highlights
               Type = Unchecked }
         }
         |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))

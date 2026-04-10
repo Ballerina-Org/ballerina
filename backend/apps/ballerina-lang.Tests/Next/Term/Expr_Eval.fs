@@ -36,6 +36,7 @@ open Ballerina.DSL.Next.StdLib.Guid
 open Ballerina.DSL.Next.StdLib.TimeSpan
 open Ballerina.DSL.Next.StdLib
 open Ballerina.DSL.Next.StdLib.Extensions
+open Ballerina.DSL.Next.Runners.Project
 open Ballerina.Collections.NonEmptyList
 open Ballerina.DSL.Next.StdLib.MutableMemoryDB
 
@@ -55,19 +56,25 @@ do ignore (=>)
 do ignore (!!)
 do ignore (=>>)
 
-let ops, context, typeEvalConfig =
-  db_ops () |> stdExtensions (StringTypeClass<_>.Console())
+let ops, context, typeCheckingConfig, cache =
+  hddcacheWithStdExtensions (StringTypeClass<_>.Console()) (db_ops ()) id id
 
 let evalContext = ExprEvalContext.Empty() |> context.ExprEvalContext
 
-let typeCheck = Expr.TypeCheck typeEvalConfig
+let typeCheck = Expr.TypeCheck typeCheckingConfig
 
-let private runTypeCheck (program: Expr<TypeExpr<ValueExt>, Identifier, ValueExt>) =
+let private runTypeCheck
+  (program: Expr<TypeExpr<ValueExt>, Identifier, ValueExt>)
+  =
   typeCheck None program
   |> State.Run(context.TypeCheckContext, context.TypeCheckState)
 
 let private eval (program: TypeCheckedExpr<ValueExt>) =
-  Expr.Eval(NonEmptyList.prependList context.TypeCheckedPreludes (NonEmptyList.One program))
+  Expr.Eval(
+    NonEmptyList.prependList
+      context.TypeCheckedPreludes
+      (NonEmptyList.One program)
+  )
   |> Reader.Run evalContext
 
 
@@ -75,7 +82,10 @@ let private eval (program: TypeCheckedExpr<ValueExt>) =
 let ``Int32 addition operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("+")), Expr.Primitive(PrimitiveValue.Int32 5)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("+")),
+        Expr.Primitive(PrimitiveValue.Int32 5)
+      ),
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
@@ -84,7 +94,11 @@ let ``Int32 addition operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32())
+    )
 
     let evalResult = eval typedProgram
 
@@ -100,7 +114,10 @@ let ``Int32 addition operation works`` () =
 let ``Int32 multiplication operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("*")), Expr.Primitive(PrimitiveValue.Int32 5)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("*")),
+        Expr.Primitive(PrimitiveValue.Int32 5)
+      ),
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
@@ -109,7 +126,11 @@ let ``Int32 multiplication operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32())
+    )
 
     let evalResult = eval typedProgram
 
@@ -125,7 +146,10 @@ let ``Int32 multiplication operation works`` () =
 let ``Int32 subtraction operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("-")), Expr.Primitive(PrimitiveValue.Int32 10)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("-")),
+        Expr.Primitive(PrimitiveValue.Int32 10)
+      ),
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
@@ -134,7 +158,11 @@ let ``Int32 subtraction operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32())
+    )
 
     let evalResult = eval typedProgram
 
@@ -150,7 +178,10 @@ let ``Int32 subtraction operation works`` () =
 let ``Int32 equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("==")), Expr.Primitive(PrimitiveValue.Int32 5)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("==")),
+        Expr.Primitive(PrimitiveValue.Int32 5)
+      ),
       Expr.Primitive(PrimitiveValue.Int32 5)
     )
 
@@ -159,7 +190,11 @@ let ``Int32 equal operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -175,7 +210,10 @@ let ``Int32 equal operation works`` () =
 let ``Int32 not equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("!=")), Expr.Primitive(PrimitiveValue.Int32 5)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("!=")),
+        Expr.Primitive(PrimitiveValue.Int32 5)
+      ),
       Expr.Primitive(PrimitiveValue.Int32 5)
     )
 
@@ -184,7 +222,11 @@ let ``Int32 not equal operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -200,7 +242,10 @@ let ``Int32 not equal operation works`` () =
 let ``Int32 greater than operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope(">")), Expr.Primitive(PrimitiveValue.Int32 5)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope(">")),
+        Expr.Primitive(PrimitiveValue.Int32 5)
+      ),
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
@@ -209,7 +254,11 @@ let ``Int32 greater than operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -225,7 +274,10 @@ let ``Int32 greater than operation works`` () =
 let ``Int32 greater than or equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope(">=")), Expr.Primitive(PrimitiveValue.Int32 5)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope(">=")),
+        Expr.Primitive(PrimitiveValue.Int32 5)
+      ),
       Expr.Primitive(PrimitiveValue.Int32 5)
     )
 
@@ -234,7 +286,11 @@ let ``Int32 greater than or equal operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -250,7 +306,10 @@ let ``Int32 greater than or equal operation works`` () =
 let ``Int64 power operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("**")), Expr.Primitive(PrimitiveValue.Int64 12L)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("**")),
+        Expr.Primitive(PrimitiveValue.Int64 12L)
+      ),
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
@@ -259,7 +318,11 @@ let ``Int64 power operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt64()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt64())
+    )
 
     let evalResult = eval typedProgram
 
@@ -275,7 +338,10 @@ let ``Int64 power operation works`` () =
 let ``Int64 mod operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("%")), Expr.Primitive(PrimitiveValue.Int64 12L)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("%")),
+        Expr.Primitive(PrimitiveValue.Int64 12L)
+      ),
       Expr.Primitive(PrimitiveValue.Int64 5L)
     )
 
@@ -284,7 +350,11 @@ let ``Int64 mod operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt64()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt64())
+    )
 
     let evalResult = eval typedProgram
 
@@ -301,7 +371,10 @@ let ``Int64 mod operation works`` () =
 let ``Float32 plus operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("+")), Expr.Primitive(PrimitiveValue.Float32 5.0f)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("+")),
+        Expr.Primitive(PrimitiveValue.Float32 5.0f)
+      ),
       Expr.Primitive(PrimitiveValue.Float32 3.0f)
     )
 
@@ -310,7 +383,11 @@ let ``Float32 plus operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32())
+    )
 
     let evalResult = eval typedProgram
 
@@ -326,7 +403,10 @@ let ``Float32 plus operation works`` () =
 let ``Float32 minus operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("-")), Expr.Primitive(PrimitiveValue.Float32 0.0f)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("-")),
+        Expr.Primitive(PrimitiveValue.Float32 0.0f)
+      ),
       Expr.Primitive(PrimitiveValue.Float32 5.0f)
     )
 
@@ -335,7 +415,11 @@ let ``Float32 minus operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32())
+    )
 
     let evalResult = eval typedProgram
 
@@ -351,7 +435,10 @@ let ``Float32 minus operation works`` () =
 let ``Float32 divide operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("/")), Expr.Primitive(PrimitiveValue.Float32 5.0f)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("/")),
+        Expr.Primitive(PrimitiveValue.Float32 5.0f)
+      ),
       Expr.Primitive(PrimitiveValue.Float32 3.0f)
     )
 
@@ -360,14 +447,19 @@ let ``Float32 divide operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32())
+    )
 
     let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
       match result with
-      | Value.Primitive(PrimitiveValue.Float32 1.6666666666666667f) -> Assert.Pass()
+      | Value.Primitive(PrimitiveValue.Float32 1.6666666666666667f) ->
+        Assert.Pass()
       | _ -> Assert.Fail $"Expected Float32 1.6666666666666667 but got {result}"
     | Right err -> Assert.Fail $"Evaluation failed: {err}"
   | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
@@ -376,7 +468,10 @@ let ``Float32 divide operation works`` () =
 let ``Float32 power operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("**")), Expr.Primitive(PrimitiveValue.Float32 5.0f)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("**")),
+        Expr.Primitive(PrimitiveValue.Float32 5.0f)
+      ),
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
@@ -385,7 +480,11 @@ let ``Float32 power operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32())
+    )
 
     let evalResult = eval typedProgram
 
@@ -401,7 +500,10 @@ let ``Float32 power operation works`` () =
 let ``Float32 mod operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("%")), Expr.Primitive(PrimitiveValue.Float32 5.0f)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("%")),
+        Expr.Primitive(PrimitiveValue.Float32 5.0f)
+      ),
       Expr.Primitive(PrimitiveValue.Float32 3.0f)
     )
 
@@ -410,7 +512,11 @@ let ``Float32 mod operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateFloat32())
+    )
 
     let evalResult = eval typedProgram
 
@@ -426,7 +532,10 @@ let ``Float32 mod operation works`` () =
 let ``Float32 equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("==")), Expr.Primitive(PrimitiveValue.Float32 5.0f)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("==")),
+        Expr.Primitive(PrimitiveValue.Float32 5.0f)
+      ),
       Expr.Primitive(PrimitiveValue.Float32 5.0f)
     )
 
@@ -435,7 +544,11 @@ let ``Float32 equal operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -451,7 +564,10 @@ let ``Float32 equal operation works`` () =
 let ``Float32 not equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("!=")), Expr.Primitive(PrimitiveValue.Float32 5.0f)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("!=")),
+        Expr.Primitive(PrimitiveValue.Float32 5.0f)
+      ),
       Expr.Primitive(PrimitiveValue.Float32 5.0f)
     )
 
@@ -460,7 +576,11 @@ let ``Float32 not equal operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -476,7 +596,10 @@ let ``Float32 not equal operation works`` () =
 let ``Float32 greater than operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope(">")), Expr.Primitive(PrimitiveValue.Float32 5.0f)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope(">")),
+        Expr.Primitive(PrimitiveValue.Float32 5.0f)
+      ),
       Expr.Primitive(PrimitiveValue.Float32 3.0f)
     )
 
@@ -485,7 +608,11 @@ let ``Float32 greater than operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -501,7 +628,10 @@ let ``Float32 greater than operation works`` () =
 let ``Float32 greater than or equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope(">=")), Expr.Primitive(PrimitiveValue.Float32 5.0f)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope(">=")),
+        Expr.Primitive(PrimitiveValue.Float32 5.0f)
+      ),
       Expr.Primitive(PrimitiveValue.Float32 5.0f)
     )
 
@@ -510,7 +640,11 @@ let ``Float32 greater than or equal operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -525,7 +659,10 @@ let ``Float32 greater than or equal operation works`` () =
 let ``Decimal equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("==")), Expr.Primitive(PrimitiveValue.Decimal 12.0M)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("==")),
+        Expr.Primitive(PrimitiveValue.Decimal 12.0M)
+      ),
       Expr.Primitive(PrimitiveValue.Decimal 12.0M)
     )
 
@@ -534,7 +671,11 @@ let ``Decimal equal operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -550,7 +691,10 @@ let ``Decimal equal operation works`` () =
 let ``Decimal not equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("!=")), Expr.Primitive(PrimitiveValue.Decimal 12.0M)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("!=")),
+        Expr.Primitive(PrimitiveValue.Decimal 12.0M)
+      ),
       Expr.Primitive(PrimitiveValue.Decimal 12.0M)
     )
 
@@ -559,7 +703,11 @@ let ``Decimal not equal operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -575,7 +723,10 @@ let ``Decimal not equal operation works`` () =
 let ``Decimal greater than operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope(">")), Expr.Primitive(PrimitiveValue.Decimal 12.0M)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope(">")),
+        Expr.Primitive(PrimitiveValue.Decimal 12.0M)
+      ),
       Expr.Primitive(PrimitiveValue.Decimal 1.0M)
     )
 
@@ -584,7 +735,11 @@ let ``Decimal greater than operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -600,7 +755,10 @@ let ``Decimal greater than operation works`` () =
 let ``Decimal greater than or equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope(">=")), Expr.Primitive(PrimitiveValue.Decimal 12.0M)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope(">=")),
+        Expr.Primitive(PrimitiveValue.Decimal 12.0M)
+      ),
       Expr.Primitive(PrimitiveValue.Decimal 12.0M)
     )
 
@@ -609,7 +767,11 @@ let ``Decimal greater than or equal operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -625,7 +787,10 @@ let ``Decimal greater than or equal operation works`` () =
 let ``Decimal power operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("**")), Expr.Primitive(PrimitiveValue.Decimal 3.5M)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("**")),
+        Expr.Primitive(PrimitiveValue.Decimal 3.5M)
+      ),
       Expr.Primitive(PrimitiveValue.Int32 3)
     )
 
@@ -634,7 +799,11 @@ let ``Decimal power operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateDecimal()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateDecimal())
+    )
 
     let evalResult = eval typedProgram
 
@@ -649,7 +818,10 @@ let ``Decimal power operation works`` () =
 let ``String concatenation operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("+")), Expr.Primitive(PrimitiveValue.String "Hello ")),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("+")),
+        Expr.Primitive(PrimitiveValue.String "Hello ")
+      ),
       Expr.Primitive(PrimitiveValue.String "World")
     )
 
@@ -658,7 +830,11 @@ let ``String concatenation operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateString()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateString())
+    )
 
     let evalResult = eval typedProgram
 
@@ -674,7 +850,10 @@ let ``String concatenation operation works`` () =
 let ``String equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("==")), Expr.Primitive(PrimitiveValue.String "Hello")),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("==")),
+        Expr.Primitive(PrimitiveValue.String "Hello")
+      ),
       Expr.Primitive(PrimitiveValue.String "Hello")
     )
 
@@ -683,7 +862,11 @@ let ``String equal operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -699,7 +882,10 @@ let ``String equal operation works`` () =
 let ``String not equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("!=")), Expr.Primitive(PrimitiveValue.String "Hello")),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("!=")),
+        Expr.Primitive(PrimitiveValue.String "Hello")
+      ),
       Expr.Primitive(PrimitiveValue.String "World")
     )
 
@@ -708,7 +894,11 @@ let ``String not equal operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -724,7 +914,10 @@ let ``String not equal operation works`` () =
 let ``String greater than operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope(">")), Expr.Primitive(PrimitiveValue.String "Hello")),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope(">")),
+        Expr.Primitive(PrimitiveValue.String "Hello")
+      ),
       Expr.Primitive(PrimitiveValue.String "World")
     )
 
@@ -733,7 +926,11 @@ let ``String greater than operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -749,7 +946,10 @@ let ``String greater than operation works`` () =
 let ``String greater than or equal operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope(">=")), Expr.Primitive(PrimitiveValue.String "Hello")),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope(">=")),
+        Expr.Primitive(PrimitiveValue.String "Hello")
+      ),
       Expr.Primitive(PrimitiveValue.String "Hello")
     )
 
@@ -758,7 +958,11 @@ let ``String greater than or equal operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -774,7 +978,10 @@ let ``String greater than or equal operation works`` () =
 let ``Bool and operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("&&")), Expr.Primitive(PrimitiveValue.Bool true)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("&&")),
+        Expr.Primitive(PrimitiveValue.Bool true)
+      ),
       Expr.Primitive(PrimitiveValue.Bool false)
     )
 
@@ -783,7 +990,11 @@ let ``Bool and operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -799,7 +1010,10 @@ let ``Bool and operation works`` () =
 let ``Bool or operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("||")), Expr.Primitive(PrimitiveValue.Bool false)),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("||")),
+        Expr.Primitive(PrimitiveValue.Bool false)
+      ),
       Expr.Primitive(PrimitiveValue.Bool true)
     )
 
@@ -808,7 +1022,11 @@ let ``Bool or operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -823,14 +1041,21 @@ let ``Bool or operation works`` () =
 [<Test>]
 let ``Bool not operation works`` () =
   let program =
-    Expr.Apply(Expr.Lookup(Identifier.FullyQualified([ "bool" ], "!")), Expr.Primitive(PrimitiveValue.Bool true))
+    Expr.Apply(
+      Expr.Lookup(Identifier.FullyQualified([ "bool" ], "!")),
+      Expr.Primitive(PrimitiveValue.Bool true)
+    )
 
   let typeCheckResult = runTypeCheck program
 
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -848,9 +1073,15 @@ let ``Guid equal operation works`` () =
     Expr.Apply(
       Expr.Apply(
         Expr.Lookup(Identifier.LocalScope("==")),
-        Expr.Primitive(PrimitiveValue.Guid(System.Guid("88888888-4444-4444-4444-121212121212")))
+        Expr.Primitive(
+          PrimitiveValue.Guid(
+            System.Guid("88888888-4444-4444-4444-121212121212")
+          )
+        )
       ),
-      Expr.Primitive(PrimitiveValue.Guid(System.Guid("88888888-4444-4444-4444-121212121212")))
+      Expr.Primitive(
+        PrimitiveValue.Guid(System.Guid("88888888-4444-4444-4444-121212121212"))
+      )
     )
 
   let typeCheckResult = runTypeCheck program
@@ -858,7 +1089,11 @@ let ``Guid equal operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -876,9 +1111,15 @@ let ``Guid not equal operation works`` () =
     Expr.Apply(
       Expr.Apply(
         Expr.Lookup(Identifier.LocalScope("!=")),
-        Expr.Primitive(PrimitiveValue.Guid(System.Guid("88888888-4444-4444-4444-121212121212")))
+        Expr.Primitive(
+          PrimitiveValue.Guid(
+            System.Guid("88888888-4444-4444-4444-121212121212")
+          )
+        )
       ),
-      Expr.Primitive(PrimitiveValue.Guid(System.Guid("88888888-4444-4444-4444-121212121212")))
+      Expr.Primitive(
+        PrimitiveValue.Guid(System.Guid("88888888-4444-4444-4444-121212121212"))
+      )
     )
 
   let typeCheckResult = runTypeCheck program
@@ -886,7 +1127,11 @@ let ``Guid not equal operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -902,7 +1147,10 @@ let ``Guid not equal operation works`` () =
 let ``DateOnly diff operation works`` () =
   let program =
     Expr.Apply(
-      Expr.Apply(Expr.Lookup(Identifier.LocalScope("-")), Expr.Primitive(PrimitiveValue.Date(System.DateOnly(1, 1, 2)))),
+      Expr.Apply(
+        Expr.Lookup(Identifier.LocalScope("-")),
+        Expr.Primitive(PrimitiveValue.Date(System.DateOnly(1, 1, 2)))
+      ),
       Expr.Primitive(PrimitiveValue.Date(System.DateOnly(1, 1, 1)))
     )
 
@@ -911,14 +1159,21 @@ let ``DateOnly diff operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateTimeSpan()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateTimeSpan())
+    )
 
     let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
       match result with
-      | Value.Primitive(PrimitiveValue.TimeSpan(ts)) when ts = System.TimeSpan(1, 0, 0, 0) -> Assert.Pass()
+      | Value.Primitive(PrimitiveValue.TimeSpan(ts)) when
+        ts = System.TimeSpan(1, 0, 0, 0)
+        ->
+        Assert.Pass()
       | _ -> Assert.Fail $"Expected TimeSpan but got {result}"
     | Right err -> Assert.Fail $"Evaluation failed: {err}"
   | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
@@ -942,15 +1197,24 @@ let ``DateOnly toDateTime operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateDateTime()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateDateTime())
+    )
 
     let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
       match result with
-      | Value.Primitive(PrimitiveValue.DateTime(dt)) when dt = System.DateTime(2025, 10, 10, 2, 10, 40) -> Assert.Pass()
-      | _ -> Assert.Fail $"Expected DateTime (2025, 10, 10, 2, 10, 40) but got {result}"
+      | Value.Primitive(PrimitiveValue.DateTime(dt)) when
+        dt = System.DateTime(2025, 10, 10, 2, 10, 40)
+        ->
+        Assert.Pass()
+      | _ ->
+        Assert.Fail
+          $"Expected DateTime (2025, 10, 10, 2, 10, 40) but got {result}"
     | Right err -> Assert.Fail $"Evaluation failed: {err}"
   | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
 
@@ -967,7 +1231,11 @@ let ``DateOnly getYear operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32())
+    )
 
     let evalResult = eval typedProgram
 
@@ -992,7 +1260,11 @@ let ``DateOnly getMonth operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32())
+    )
 
     let evalResult = eval typedProgram
 
@@ -1017,7 +1289,11 @@ let ``DateOnly getDay operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32())
+    )
 
     let evalResult = eval typedProgram
 
@@ -1042,7 +1318,11 @@ let ``DateOnly getDayOfWeek operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32())
+    )
 
     let evalResult = eval typedProgram
 
@@ -1067,7 +1347,11 @@ let ``DateOnly getDayOfYear operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateInt32())
+    )
 
     let evalResult = eval typedProgram
 
@@ -1084,7 +1368,9 @@ let ``DateTime toDateOnly operation works`` () =
   let program =
     Expr.Apply(
       Expr.Lookup(Identifier.FullyQualified([ "dateTime" ], "toDateOnly")),
-      Expr.Primitive(PrimitiveValue.DateTime(System.DateTime(2025, 10, 10, 10, 10, 10)))
+      Expr.Primitive(
+        PrimitiveValue.DateTime(System.DateTime(2025, 10, 10, 10, 10, 10))
+      )
     )
 
   let typeCheckResult = runTypeCheck program
@@ -1092,14 +1378,21 @@ let ``DateTime toDateOnly operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateDateOnly()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateDateOnly())
+    )
 
     let evalResult = eval typedProgram
 
     match evalResult with
     | Left result ->
       match result with
-      | Value.Primitive(PrimitiveValue.Date(d)) when d = System.DateOnly(2025, 10, 10) -> Assert.Pass()
+      | Value.Primitive(PrimitiveValue.Date(d)) when
+        d = System.DateOnly(2025, 10, 10)
+        ->
+        Assert.Pass()
       | _ -> Assert.Fail $"Expected DateOnly (2025, 10, 10) but got {result}"
     | Right err -> Assert.Fail $"Evaluation failed: {err}"
   | Right(err, _) -> Assert.Fail $"Type checking failed: {err}"
@@ -1120,7 +1413,11 @@ let ``TimeSpan equal operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -1149,7 +1446,11 @@ let ``TimeSpan not equal operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 
@@ -1177,7 +1478,11 @@ let ``TimeSpan greater than operation works`` () =
   match typeCheckResult with
   | Left((typedProgram, _), _) ->
     let typeValue = typedProgram.Type
-    Assert.That(typeValue, Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool()))
+
+    Assert.That(
+      typeValue,
+      Is.EqualTo<TypeValue<ValueExt>>(TypeValue.CreateBool())
+    )
 
     let evalResult = eval typedProgram
 

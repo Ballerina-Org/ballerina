@@ -19,17 +19,31 @@ module TypeCheck =
       and 'deltaExtDTO: not null
       and 'deltaExtDTO: not struct>
       (
-        { TypeCheckContext = typeCheckContext
-          TypeCheckState = typeCheckState }:
-          LanguageContext<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO>,
-        config: TypeEvalConfig<'valueExt>
+        { TypeCheckContext = _
+          TypeCheckState = _ }:
+          LanguageContext<
+            'runtimeContext,
+            'valueExt,
+            'valueExtDTO,
+            'deltaExt,
+            'deltaExtDTO
+           >,
+        config: TypeCheckingConfig<'valueExt>,
+        cache: ProjectCache<'valueExt>
       )
       (program: string)
-      : Sum<TypeCheckedExpr<'valueExt> * TypeValue<'valueExt> * TypeCheckState<'valueExt>, Errors<Location>> =
-      let cache = memcache (typeCheckContext, typeCheckState)
-
+      : Sum<
+          TypeCheckedExpr<'valueExt> *
+          TypeValue<'valueExt> *
+          TypeCheckState<'valueExt>,
+          Errors<Location>
+         >
+      =
       let files =
-        NonEmptyList.OfList(FileBuildConfiguration.FromFile("input.bl", program), [])
+        NonEmptyList.OfList(
+          FileBuildConfiguration.FromFile("input.bl", program),
+          []
+        )
 
       let project: ProjectBuildConfiguration = { Files = files }
 
@@ -40,5 +54,9 @@ module TypeCheck =
         match typeCheckedExprs with
         | NonEmptyList(expr, []) -> expr, programType, typeCheckState
         | NonEmptyList(_, _) ->
-          return! sum.Throw(Errors.Singleton Location.Unknown (fun () -> "Expected one type checked expression"))
+          return!
+            sum.Throw(
+              Errors.Singleton Location.Unknown (fun () ->
+                "Expected one type checked expression")
+            )
       }

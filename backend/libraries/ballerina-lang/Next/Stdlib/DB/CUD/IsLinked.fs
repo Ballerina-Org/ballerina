@@ -29,7 +29,8 @@ module IsLinked =
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
     =
     let memoryDBIsLinkedId =
-      Identifier.FullyQualified([ "DB" ], "isLinked") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "DB" ], "isLinked")
+      |> TypeCheckScope.Empty.Resolve
 
     let memoryDBIsLinkedType =
       TypeValue.CreateLambda(
@@ -54,18 +55,30 @@ module IsLinked =
                               TypeExpr.Apply(
                                 TypeExpr.Apply(
                                   TypeExpr.Apply(
-                                    TypeExpr.Lookup("SchemaRelation" |> Identifier.LocalScope),
-                                    TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+                                    TypeExpr.Lookup(
+                                      "SchemaRelation" |> Identifier.LocalScope
+                                    ),
+                                    TypeExpr.Lookup(
+                                      "schema" |> Identifier.LocalScope
+                                    )
                                   ),
-                                  TypeExpr.Lookup("from" |> Identifier.LocalScope)
+                                  TypeExpr.Lookup(
+                                    "from" |> Identifier.LocalScope
+                                  )
                                 ),
-                                TypeExpr.Lookup("from_with_props" |> Identifier.LocalScope)
+                                TypeExpr.Lookup(
+                                  "from_with_props" |> Identifier.LocalScope
+                                )
                               ),
-                              TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                              TypeExpr.Lookup(
+                                "from_id" |> Identifier.LocalScope
+                              )
                             ),
                             TypeExpr.Lookup("to" |> Identifier.LocalScope)
                           ),
-                          TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
+                          TypeExpr.Lookup(
+                            "to_with_props" |> Identifier.LocalScope
+                          )
                         ),
                         TypeExpr.Lookup("to_id" |> Identifier.LocalScope)
                       ),
@@ -89,7 +102,9 @@ module IsLinked =
     let IsLinkedOperation: OperationExtension<'runtimeContext, _, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBIsLinkedType, memoryDBIsLinkedKind, DBValues.IsLinked {| RelationRef = None |})
+          <| (memoryDBIsLinkedType,
+              memoryDBIsLinkedKind,
+              DBValues.IsLinked {| RelationRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -109,7 +124,9 @@ module IsLinked =
                 let! v = extractRelationRefFromValue loc0 v valueLens "Relation"
 
                 return
-                  (DBValues.IsLinked({| RelationRef = Some v |}) |> valueLens.Set, Some memoryDBIsLinkedId)
+                  (DBValues.IsLinked({| RelationRef = Some v |})
+                   |> valueLens.Set,
+                   Some memoryDBIsLinkedId)
                   |> Ext
               | Some relation_ref -> // the closure has the first operand - second step in the application
 
@@ -123,14 +140,17 @@ module IsLinked =
                 | [ _fromId; _toId ] ->
 
                   let! is_linked =
-                    db_ops.IsLinked relation_ref { FromId = _fromId; ToId = _toId }
+                    db_ops.IsLinked
+                      relation_ref
+                      { FromId = _fromId; ToId = _toId }
                     |> reader.MapError(Errors.MapContext(replaceWith loc0))
 
                   return Value.Primitive(PrimitiveValue.Bool is_linked)
                 | _ ->
                   return!
                     sum.Throw(
-                      Errors.Singleton loc0 (fun () -> "Expected a tuple with 2 elements when checking if linked")
+                      Errors.Singleton loc0 (fun () ->
+                        "Expected a tuple with 2 elements when checking if linked")
                     )
                     |> reader.OfSum
             } }
@@ -144,7 +164,8 @@ module IsLinked =
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
     =
     let memoryDBLinkId =
-      Identifier.FullyQualified([ "DB" ], "linkMany") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "DB" ], "linkMany")
+      |> TypeCheckScope.Empty.Resolve
 
     let memoryDBLinkType =
       TypeValue.CreateLambda(
@@ -169,19 +190,31 @@ module IsLinked =
                               TypeExpr.Apply(
                                 TypeExpr.Apply(
                                   TypeExpr.Apply(
-                                    TypeExpr.Lookup("SchemaRelation" |> Identifier.LocalScope),
-                                    TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+                                    TypeExpr.Lookup(
+                                      "SchemaRelation" |> Identifier.LocalScope
+                                    ),
+                                    TypeExpr.Lookup(
+                                      "schema" |> Identifier.LocalScope
+                                    )
 
                                   ),
-                                  TypeExpr.Lookup("from" |> Identifier.LocalScope)
+                                  TypeExpr.Lookup(
+                                    "from" |> Identifier.LocalScope
+                                  )
                                 ),
-                                TypeExpr.Lookup("from_with_props" |> Identifier.LocalScope)
+                                TypeExpr.Lookup(
+                                  "from_with_props" |> Identifier.LocalScope
+                                )
                               ),
-                              TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                              TypeExpr.Lookup(
+                                "from_id" |> Identifier.LocalScope
+                              )
                             ),
                             TypeExpr.Lookup("to" |> Identifier.LocalScope)
                           ),
-                          TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
+                          TypeExpr.Lookup(
+                            "to_with_props" |> Identifier.LocalScope
+                          )
                         ),
                         TypeExpr.Lookup("to_id" |> Identifier.LocalScope)
                       ),
@@ -189,10 +222,14 @@ module IsLinked =
                         TypeExpr.Apply(
                           TypeExpr.Lookup("List" |> Identifier.LocalScope),
                           TypeExpr.Tuple
-                            [ TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                            [ TypeExpr.Lookup(
+                                "from_id" |> Identifier.LocalScope
+                              )
                               TypeExpr.Lookup("to_id" |> Identifier.LocalScope) ]
                         ),
-                        TypeExpr.Sum [ TypeExpr.Primitive PrimitiveType.Unit; TypeExpr.Primitive PrimitiveType.Unit ]
+                        TypeExpr.Sum
+                          [ TypeExpr.Primitive PrimitiveType.Unit
+                            TypeExpr.Primitive PrimitiveType.Unit ]
                       )
                     )
                   )
@@ -208,7 +245,9 @@ module IsLinked =
     let LinkOperation: OperationExtension<'runtimeContext, _, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBLinkType, memoryDBLinkKind, DBValues.LinkMany {| RelationRef = None |})
+          <| (memoryDBLinkType,
+              memoryDBLinkKind,
+              DBValues.LinkMany {| RelationRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -228,7 +267,9 @@ module IsLinked =
                 let! v = extractRelationRefFromValue loc0 v valueLens "Relation"
 
                 return
-                  (DBValues.LinkMany({| RelationRef = Some v |}) |> valueLens.Set, Some memoryDBLinkId)
+                  (DBValues.LinkMany({| RelationRef = Some v |})
+                   |> valueLens.Set,
+                   Some memoryDBLinkId)
                   |> Ext
               | Some relation_ref -> // the closure has the first operand - second step in the application
 
@@ -241,7 +282,10 @@ module IsLinked =
                 let! (vs: List<Value<TypeValue<'ext>, 'ext>>) =
                   vs
                   |> listLens.Get
-                  |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
+                  |> sum.OfOption(
+                    Errors.Singleton loc0 (fun () ->
+                      "Cannot get value from extension")
+                  )
                   |> reader.OfSum
 
                 let! (results: List<Value<TypeValue<'ext>, 'ext>>) =
@@ -257,19 +301,29 @@ module IsLinked =
                       match v with
                       | [ _fromId; _toId ] ->
 
-                        do! onLinkingHook db_ops relation_ref loc0 _fromId _toId
+                        do!
+                          onLinkingHook db_ops relation_ref loc0 _fromId _toId
 
                         do!
-                          db_ops.Link relation_ref { FromId = _fromId; ToId = _toId }
-                          |> reader.MapError(Errors.MapContext(replaceWith loc0))
+                          db_ops.Link
+                            relation_ref
+                            { FromId = _fromId; ToId = _toId }
+                          |> reader.MapError(
+                            Errors.MapContext(replaceWith loc0)
+                          )
 
                         do! onLinkedHook db_ops relation_ref loc0 _fromId _toId
 
-                        return Value.Sum({ Case = 2; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                        return
+                          Value.Sum(
+                            { Case = 2; Count = 2 },
+                            Value.Primitive PrimitiveValue.Unit
+                          )
                       | _ ->
                         return!
                           sum.Throw(
-                            Errors.Singleton loc0 (fun () -> "Expected a tuple with 2 elements when linking relation")
+                            Errors.Singleton loc0 (fun () ->
+                              "Expected a tuple with 2 elements when linking relation")
                           )
                           |> reader.OfSum
                     })

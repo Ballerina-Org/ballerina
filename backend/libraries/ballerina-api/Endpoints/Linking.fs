@@ -28,39 +28,61 @@ module Linking =
   let link<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
     when 'customExtension: comparison and 'db: comparison>
     (app: IEndpointRouteBuilder)
-    (context: APIContext<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
+    (context:
+      APIContext<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
     =
 
     app.MapPost(
       "/{tenantId}/{schemaName}/{relationName}/link",
-      Func<HttpContext, 'tenantId, 'schemaName, string, bool, LinkPayload, IResult>
+      Func<
+        HttpContext,
+        'tenantId,
+        'schemaName,
+        string,
+        bool,
+        LinkPayload,
+        IResult
+       >
         (fun httpContext tenantId schemaName relationName draft payload ->
           let fromId, toId = payload.FromId, payload.ToId
 
           let result =
             sum {
-              let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
+              let! dbio,
+                   languageContext,
+                   evalContext,
+                   typeCheckContext,
+                   typeCheckState =
                 getDbDescriptor tenantId schemaName draft context
 
               let! fromIdValue =
                 runDTOConverter languageContext (valueFromDTO fromId)
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let! toIdValue =
                 runDTOConverter languageContext (valueFromDTO toId)
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
 
               let! _tableDescriptor =
                 dbio.Schema.Relations
-                |> OrderedMap.tryFind (relationName |> SchemaRelationName.Create)
+                |> OrderedMap.tryFind (
+                  relationName |> SchemaRelationName.Create
+                )
                 |> Sum.fromOption (fun () ->
                   Errors<Location>.Singleton Location.Unknown (fun () ->
                     $"Relation {relationName} not found in schema {dbio.Schema}."))
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let fromName, toName =
-                _tableDescriptor.From.ToString(), _tableDescriptor.To.ToString()
+                _tableDescriptor.From.ToString(),
+                _tableDescriptor.To.ToString()
 
               let! _fromDescriptor =
                 dbio.Schema.Entities
@@ -68,57 +90,92 @@ module Linking =
                 |> Sum.fromOption (fun () ->
                   Errors.Singleton Location.Unknown (fun () ->
                     $"Entity {fromName} not found in schema {dbio.Schema}."))
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let! _toDescriptor =
                 dbio.Schema.Entities
                 |> OrderedMap.tryFind (toName |> SchemaEntityName.Create)
                 |> Sum.fromOption (fun () ->
-                  Errors.Singleton Location.Unknown (fun () -> $"Entity {toName} not found in schema {dbio.Schema}."))
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                  Errors.Singleton Location.Unknown (fun () ->
+                    $"Entity {toName} not found in schema {dbio.Schema}."))
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let fromIdType, toIdType = _fromDescriptor.Id, _toDescriptor.Id
 
-              do! typeCheckValue fromIdValue fromIdType languageContext typeCheckContext typeCheckState
-              do! typeCheckValue toIdValue toIdType languageContext typeCheckContext typeCheckState
+              do!
+                typeCheckValue
+                  fromIdValue
+                  fromIdType
+                  languageContext
+                  typeCheckContext
+                  typeCheckState
+
+              do!
+                typeCheckValue
+                  toIdValue
+                  toIdType
+                  languageContext
+                  typeCheckContext
+                  typeCheckState
 
               let! schema =
                 dbio.SchemaAsValue
                 |> Value.AsRecord
-                |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError(
+                  Errors.MapContext(replaceWith Location.Unknown)
+                )
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let! relations =
                 schema
                 |> Map.tryFindWithError
-                  ("Relations" |> Identifier.LocalScope |> ResolvedIdentifier.FromIdentifier)
+                  ("Relations"
+                   |> Identifier.LocalScope
+                   |> ResolvedIdentifier.FromIdentifier)
                   "schema"
                   (fun () -> "Relations")
                   Location.Unknown
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let! relations =
                 relations
                 |> Value.AsRecord
                 |> sum.MapError(
                   Errors.MapContext(replaceWith Location.Unknown)
-                  >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                  >> APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
                 )
 
               let! relationDescriptor =
                 relations
                 |> Map.tryFindWithError
-                  (relationName |> Identifier.LocalScope |> ResolvedIdentifier.FromIdentifier)
+                  (relationName
+                   |> Identifier.LocalScope
+                   |> ResolvedIdentifier.FromIdentifier)
                   "schema"
                   (fun () -> relationName)
                   Location.Unknown
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
-              let doLinkExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+              let doLinkExpr
+                : TypeCheckedExpr<
+                    ValueExt<'runtimeContext, 'db, 'customExtension>
+                   > =
                 TypeCheckedExpr.UnsafeApplyForUntypedEval(
                   TypeCheckedExpr.UnsafeApplyForUntypedEval(
                     TypeCheckedExpr.UnsafeLookupForUntypedEval(
-                      Identifier.FullyQualified([ "DB" ], "link") |> ResolvedIdentifier.FromIdentifier
+                      Identifier.FullyQualified([ "DB" ], "link")
+                      |> ResolvedIdentifier.FromIdentifier
                     ),
                     TypeCheckedExpr.FromValue(
                       relationDescriptor,
@@ -127,20 +184,36 @@ module Linking =
                     )
                   ),
                   TypeCheckedExpr.UnsafeTupleConsForUntypedEval
-                    [ TypeCheckedExpr.FromValue(fromIdValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-                      TypeCheckedExpr.FromValue(toIdValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star) ]
+                    [ TypeCheckedExpr.FromValue(
+                        fromIdValue,
+                        TypeValue.CreatePrimitive PrimitiveType.Unit,
+                        Kind.Star
+                      )
+                      TypeCheckedExpr.FromValue(
+                        toIdValue,
+                        TypeValue.CreatePrimitive PrimitiveType.Unit,
+                        Kind.Star
+                      ) ]
                 )
 
               let! evalResult =
                 Expr.Eval(
-                  NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doLinkExpr, []))
+                  NonEmptyList.prependList
+                    languageContext.TypeCheckedPreludes
+                    (NonEmptyList.OfList(doLinkExpr, []))
                 )
-                |> Reader.Run(evalContext |> context.PermissionHookInjector httpContext)
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> Reader.Run(
+                  evalContext |> context.PermissionHookInjector httpContext
+                )
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               return!
                 runDTOConverter languageContext (valueToDTO evalResult)
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
             }
 
           apiResponseFromSum result id)
@@ -149,33 +222,54 @@ module Linking =
 
     app.MapPost(
       "/{tenantId}/{schemaName}/{relationName}/unlink",
-      Func<HttpContext, 'tenantId, 'schemaName, string, bool, LinkPayload, IResult>
+      Func<
+        HttpContext,
+        'tenantId,
+        'schemaName,
+        string,
+        bool,
+        LinkPayload,
+        IResult
+       >
         (fun httpContext tenantId schemaName relationName draft payload ->
           let fromId, toId = payload.FromId, payload.ToId
 
           let result =
             sum {
-              let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
+              let! dbio,
+                   languageContext,
+                   evalContext,
+                   typeCheckContext,
+                   typeCheckState =
                 getDbDescriptor tenantId schemaName draft context
 
               let! fromIdValue =
                 runDTOConverter languageContext (valueFromDTO fromId)
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let! toIdValue =
                 runDTOConverter languageContext (valueFromDTO toId)
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let! _tableDescriptor =
                 dbio.Schema.Relations
-                |> OrderedMap.tryFind (relationName |> SchemaRelationName.Create)
+                |> OrderedMap.tryFind (
+                  relationName |> SchemaRelationName.Create
+                )
                 |> Sum.fromOption (fun () ->
                   Errors<Location>.Singleton Location.Unknown (fun () ->
                     $"Relation {relationName} not found in schema {dbio.Schema}."))
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let fromName, toName =
-                _tableDescriptor.From.ToString(), _tableDescriptor.To.ToString()
+                _tableDescriptor.From.ToString(),
+                _tableDescriptor.To.ToString()
 
               let! _fromDescriptor =
                 dbio.Schema.Entities
@@ -183,53 +277,87 @@ module Linking =
                 |> Sum.fromOption (fun () ->
                   Errors.Singleton Location.Unknown (fun () ->
                     $"Entity {fromName} not found in schema {dbio.Schema}."))
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let! _toDescriptor =
                 dbio.Schema.Entities
                 |> OrderedMap.tryFind (toName |> SchemaEntityName.Create)
                 |> Sum.fromOption (fun () ->
-                  Errors.Singleton Location.Unknown (fun () -> $"Entity {toName} not found in schema {dbio.Schema}."))
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                  Errors.Singleton Location.Unknown (fun () ->
+                    $"Entity {toName} not found in schema {dbio.Schema}."))
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let fromIdType, toIdType = _fromDescriptor.Id, _toDescriptor.Id
 
-              do! typeCheckValue fromIdValue fromIdType languageContext typeCheckContext typeCheckState
-              do! typeCheckValue toIdValue toIdType languageContext typeCheckContext typeCheckState
+              do!
+                typeCheckValue
+                  fromIdValue
+                  fromIdType
+                  languageContext
+                  typeCheckContext
+                  typeCheckState
+
+              do!
+                typeCheckValue
+                  toIdValue
+                  toIdType
+                  languageContext
+                  typeCheckContext
+                  typeCheckState
 
               let! schema =
                 dbio.SchemaAsValue
                 |> Value.AsRecord
-                |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError(
+                  Errors.MapContext(replaceWith Location.Unknown)
+                )
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let! relations =
                 schema
                 |> Map.tryFindWithError
-                  ("Relations" |> Identifier.LocalScope |> ResolvedIdentifier.FromIdentifier)
+                  ("Relations"
+                   |> Identifier.LocalScope
+                   |> ResolvedIdentifier.FromIdentifier)
                   "schema"
                   (fun () -> "Relations")
                   Location.Unknown
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               let! relations =
                 relations
                 |> Value.AsRecord
                 |> sum.MapError(
                   Errors.MapContext(replaceWith Location.Unknown)
-                  >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                  >> APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
                 )
 
               let! relationDescriptor =
                 relations
                 |> Map.tryFindWithError
-                  (relationName |> Identifier.LocalScope |> ResolvedIdentifier.FromIdentifier)
+                  (relationName
+                   |> Identifier.LocalScope
+                   |> ResolvedIdentifier.FromIdentifier)
                   "schema"
                   (fun () -> relationName)
                   Location.Unknown
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
-              let doUnlinkExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+              let doUnlinkExpr
+                : TypeCheckedExpr<
+                    ValueExt<'runtimeContext, 'db, 'customExtension>
+                   > =
                 TypeCheckedExpr.UnsafeApplyForUntypedEval(
                   TypeCheckedExpr.UnsafeApplyForUntypedEval(
                     TypeCheckedExpr.UnsafeLookupForUntypedEval(
@@ -243,20 +371,36 @@ module Linking =
                     )
                   ),
                   TypeCheckedExpr.UnsafeTupleConsForUntypedEval
-                    [ TypeCheckedExpr.FromValue(fromIdValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-                      TypeCheckedExpr.FromValue(toIdValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star) ]
+                    [ TypeCheckedExpr.FromValue(
+                        fromIdValue,
+                        TypeValue.CreatePrimitive PrimitiveType.Unit,
+                        Kind.Star
+                      )
+                      TypeCheckedExpr.FromValue(
+                        toIdValue,
+                        TypeValue.CreatePrimitive PrimitiveType.Unit,
+                        Kind.Star
+                      ) ]
                 )
 
               let! evalResult =
                 Expr.Eval(
-                  NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doUnlinkExpr, []))
+                  NonEmptyList.prependList
+                    languageContext.TypeCheckedPreludes
+                    (NonEmptyList.OfList(doUnlinkExpr, []))
                 )
-                |> Reader.Run(evalContext |> context.PermissionHookInjector httpContext)
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> Reader.Run(
+                  evalContext |> context.PermissionHookInjector httpContext
+                )
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
 
               return!
                 runDTOConverter languageContext (valueToDTO evalResult)
-                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                |> sum.MapError
+                  APIError<'runtimeContext, 'db, 'customExtension, Location>
+                    .Create
             }
 
           apiResponseFromSum result id)

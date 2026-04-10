@@ -28,6 +28,7 @@ module Model =
       | Right b -> Left b
 
     static member mapRight<'a, 'b, 'c>(f: 'b -> 'c) : Sum<'a, 'b> -> Sum<'a, 'c> = Sum.swap >> Sum.map f >> Sum.swap
+
     static member map2<'a, 'b, 'a1, 'b1> (f: 'a -> 'a1) (g: 'b -> 'b1) = Sum.map f >> Sum.mapRight g
 
     static member toOption: Sum<'a, 'b> -> _ =
@@ -70,10 +71,15 @@ module Model =
     //   | Left _ -> p
     //   | Right _ -> Left(h ())
 
-    member _.Catch p =
-      match p with
-      | Left res -> Left(Some res)
-      | Right _ -> Left(None)
+    // member _.Catch p =
+    //   match p with
+    //   | Left res -> Left(Some res)
+    //   | Right _ -> Left(None)
+
+    member _.Catch (handler: 'e -> Sum<'a, 'e>) (s: Sum<'a, 'e>) : Sum<'a, 'e> =
+      match s with
+      | Left _ -> s
+      | Right error -> handler error
 
     member _.Zero() = Sum.Left()
     member _.Throw(e) = Sum.Right e

@@ -42,9 +42,17 @@ module Link =
             TypeCheckedExpr.UnsafeApplyForUntypedEval(
               TypeCheckedExpr.UnsafeApplyForUntypedEval(
                 hookExpr,
-                TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
+                TypeCheckedExpr.FromValue(
+                  _schema_as_value,
+                  TypeValue.CreateUnit(),
+                  Kind.Star
+                )
               ),
-              TypeCheckedExpr.FromValue(_fromId, TypeValue.CreateUnit(), Kind.Star)
+              TypeCheckedExpr.FromValue(
+                _fromId,
+                TypeValue.CreateUnit(),
+                Kind.Star
+              )
             ),
             TypeCheckedExpr.FromValue(_toId, TypeValue.CreateUnit(), Kind.Star)
           )
@@ -61,11 +69,17 @@ module Link =
         | 1 -> return ()
         | 2 ->
           return!
-            sum.Throw(Errors.Singleton loc0 (fun () -> $"Linking hook failed with error {result_value}"))
+            sum.Throw(
+              Errors.Singleton loc0 (fun () ->
+                $"Linking hook failed with error {result_value}")
+            )
             |> reader.OfSum
         | _ ->
           return!
-            sum.Throw(Errors.Singleton loc0 (fun () -> "Linking hook returned invalid result"))
+            sum.Throw(
+              Errors.Singleton loc0 (fun () ->
+                "Linking hook returned invalid result")
+            )
             |> reader.OfSum
     }
 
@@ -88,9 +102,17 @@ module Link =
             TypeCheckedExpr.UnsafeApplyForUntypedEval(
               TypeCheckedExpr.UnsafeApplyForUntypedEval(
                 hookExpr,
-                TypeCheckedExpr.FromValue(_schema_as_value, TypeValue.CreateUnit(), Kind.Star)
+                TypeCheckedExpr.FromValue(
+                  _schema_as_value,
+                  TypeValue.CreateUnit(),
+                  Kind.Star
+                )
               ),
-              TypeCheckedExpr.FromValue(_fromId, TypeValue.CreateUnit(), Kind.Star)
+              TypeCheckedExpr.FromValue(
+                _fromId,
+                TypeValue.CreateUnit(),
+                Kind.Star
+              )
             ),
             TypeCheckedExpr.FromValue(_toId, TypeValue.CreateUnit(), Kind.Star)
           )
@@ -107,11 +129,17 @@ module Link =
         | 1 -> return ()
         | 2 ->
           return!
-            sum.Throw(Errors.Singleton loc0 (fun () -> $"Linked hook failed with error {result_value}"))
+            sum.Throw(
+              Errors.Singleton loc0 (fun () ->
+                $"Linked hook failed with error {result_value}")
+            )
             |> reader.OfSum
         | _ ->
           return!
-            sum.Throw(Errors.Singleton loc0 (fun () -> "Linked hook returned invalid result"))
+            sum.Throw(
+              Errors.Singleton loc0 (fun () ->
+                "Linked hook returned invalid result")
+            )
             |> reader.OfSum
     }
 
@@ -121,7 +149,8 @@ module Link =
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
     =
     let memoryDBLinkId =
-      Identifier.FullyQualified([ "DB" ], "link") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "DB" ], "link")
+      |> TypeCheckScope.Empty.Resolve
 
     let memoryDBLinkType =
       TypeValue.CreateLambda(
@@ -146,19 +175,31 @@ module Link =
                               TypeExpr.Apply(
                                 TypeExpr.Apply(
                                   TypeExpr.Apply(
-                                    TypeExpr.Lookup("SchemaRelation" |> Identifier.LocalScope),
-                                    TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+                                    TypeExpr.Lookup(
+                                      "SchemaRelation" |> Identifier.LocalScope
+                                    ),
+                                    TypeExpr.Lookup(
+                                      "schema" |> Identifier.LocalScope
+                                    )
 
                                   ),
-                                  TypeExpr.Lookup("from" |> Identifier.LocalScope)
+                                  TypeExpr.Lookup(
+                                    "from" |> Identifier.LocalScope
+                                  )
                                 ),
-                                TypeExpr.Lookup("from_with_props" |> Identifier.LocalScope)
+                                TypeExpr.Lookup(
+                                  "from_with_props" |> Identifier.LocalScope
+                                )
                               ),
-                              TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                              TypeExpr.Lookup(
+                                "from_id" |> Identifier.LocalScope
+                              )
                             ),
                             TypeExpr.Lookup("to" |> Identifier.LocalScope)
                           ),
-                          TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
+                          TypeExpr.Lookup(
+                            "to_with_props" |> Identifier.LocalScope
+                          )
                         ),
                         TypeExpr.Lookup("to_id" |> Identifier.LocalScope)
                       ),
@@ -166,7 +207,9 @@ module Link =
                         TypeExpr.Tuple
                           [ TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
                             TypeExpr.Lookup("to_id" |> Identifier.LocalScope) ],
-                        TypeExpr.Sum [ TypeExpr.Primitive PrimitiveType.Unit; TypeExpr.Primitive PrimitiveType.Unit ]
+                        TypeExpr.Sum
+                          [ TypeExpr.Primitive PrimitiveType.Unit
+                            TypeExpr.Primitive PrimitiveType.Unit ]
                       )
                     )
                   )
@@ -182,7 +225,9 @@ module Link =
     let LinkOperation: OperationExtension<'runtimeContext, _, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBLinkType, memoryDBLinkKind, DBValues.Link {| RelationRef = None |})
+          <| (memoryDBLinkType,
+              memoryDBLinkKind,
+              DBValues.Link {| RelationRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -202,7 +247,8 @@ module Link =
                 let! v = extractRelationRefFromValue loc0 v valueLens "Relation"
 
                 return
-                  (DBValues.Link({| RelationRef = Some v |}) |> valueLens.Set, Some memoryDBLinkId)
+                  (DBValues.Link({| RelationRef = Some v |}) |> valueLens.Set,
+                   Some memoryDBLinkId)
                   |> Ext
               | Some relation_ref -> // the closure has the first operand - second step in the application
 
@@ -223,11 +269,16 @@ module Link =
 
                   do! onLinkedHook db_ops relation_ref loc0 _fromId _toId
 
-                  return Value.Sum({ Case = 2; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                  return
+                    Value.Sum(
+                      { Case = 2; Count = 2 },
+                      Value.Primitive PrimitiveValue.Unit
+                    )
                 | _ ->
                   return!
                     sum.Throw(
-                      Errors.Singleton loc0 (fun () -> "Expected a tuple with 2 elements when linking relation")
+                      Errors.Singleton loc0 (fun () ->
+                        "Expected a tuple with 2 elements when linking relation")
                     )
                     |> reader.OfSum
             } }
@@ -241,7 +292,8 @@ module Link =
     (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
     =
     let memoryDBLinkId =
-      Identifier.FullyQualified([ "DB" ], "linkMany") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "DB" ], "linkMany")
+      |> TypeCheckScope.Empty.Resolve
 
     let memoryDBLinkType =
       TypeValue.CreateLambda(
@@ -266,19 +318,31 @@ module Link =
                               TypeExpr.Apply(
                                 TypeExpr.Apply(
                                   TypeExpr.Apply(
-                                    TypeExpr.Lookup("SchemaRelation" |> Identifier.LocalScope),
-                                    TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+                                    TypeExpr.Lookup(
+                                      "SchemaRelation" |> Identifier.LocalScope
+                                    ),
+                                    TypeExpr.Lookup(
+                                      "schema" |> Identifier.LocalScope
+                                    )
 
                                   ),
-                                  TypeExpr.Lookup("from" |> Identifier.LocalScope)
+                                  TypeExpr.Lookup(
+                                    "from" |> Identifier.LocalScope
+                                  )
                                 ),
-                                TypeExpr.Lookup("from_with_props" |> Identifier.LocalScope)
+                                TypeExpr.Lookup(
+                                  "from_with_props" |> Identifier.LocalScope
+                                )
                               ),
-                              TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                              TypeExpr.Lookup(
+                                "from_id" |> Identifier.LocalScope
+                              )
                             ),
                             TypeExpr.Lookup("to" |> Identifier.LocalScope)
                           ),
-                          TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
+                          TypeExpr.Lookup(
+                            "to_with_props" |> Identifier.LocalScope
+                          )
                         ),
                         TypeExpr.Lookup("to_id" |> Identifier.LocalScope)
                       ),
@@ -286,10 +350,14 @@ module Link =
                         TypeExpr.Apply(
                           TypeExpr.Lookup("List" |> Identifier.LocalScope),
                           TypeExpr.Tuple
-                            [ TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                            [ TypeExpr.Lookup(
+                                "from_id" |> Identifier.LocalScope
+                              )
                               TypeExpr.Lookup("to_id" |> Identifier.LocalScope) ]
                         ),
-                        TypeExpr.Sum [ TypeExpr.Primitive PrimitiveType.Unit; TypeExpr.Primitive PrimitiveType.Unit ]
+                        TypeExpr.Sum
+                          [ TypeExpr.Primitive PrimitiveType.Unit
+                            TypeExpr.Primitive PrimitiveType.Unit ]
                       )
                     )
                   )
@@ -305,7 +373,9 @@ module Link =
     let LinkOperation: OperationExtension<'runtimeContext, _, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBLinkType, memoryDBLinkKind, DBValues.LinkMany {| RelationRef = None |})
+          <| (memoryDBLinkType,
+              memoryDBLinkKind,
+              DBValues.LinkMany {| RelationRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -325,7 +395,9 @@ module Link =
                 let! v = extractRelationRefFromValue loc0 v valueLens "Relation"
 
                 return
-                  (DBValues.LinkMany({| RelationRef = Some v |}) |> valueLens.Set, Some memoryDBLinkId)
+                  (DBValues.LinkMany({| RelationRef = Some v |})
+                   |> valueLens.Set,
+                   Some memoryDBLinkId)
                   |> Ext
               | Some relation_ref -> // the closure has the first operand - second step in the application
 
@@ -338,7 +410,10 @@ module Link =
                 let! (vs: List<Value<TypeValue<'ext>, 'ext>>) =
                   vs
                   |> listLens.Get
-                  |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
+                  |> sum.OfOption(
+                    Errors.Singleton loc0 (fun () ->
+                      "Cannot get value from extension")
+                  )
                   |> reader.OfSum
 
                 let! (results: List<Value<TypeValue<'ext>, 'ext>>) =
@@ -354,19 +429,29 @@ module Link =
                       match v with
                       | [ _fromId; _toId ] ->
 
-                        do! onLinkingHook db_ops relation_ref loc0 _fromId _toId
+                        do!
+                          onLinkingHook db_ops relation_ref loc0 _fromId _toId
 
                         do!
-                          db_ops.Link relation_ref { FromId = _fromId; ToId = _toId }
-                          |> reader.MapError(Errors.MapContext(replaceWith loc0))
+                          db_ops.Link
+                            relation_ref
+                            { FromId = _fromId; ToId = _toId }
+                          |> reader.MapError(
+                            Errors.MapContext(replaceWith loc0)
+                          )
 
                         do! onLinkedHook db_ops relation_ref loc0 _fromId _toId
 
-                        return Value.Sum({ Case = 2; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                        return
+                          Value.Sum(
+                            { Case = 2; Count = 2 },
+                            Value.Primitive PrimitiveValue.Unit
+                          )
                       | _ ->
                         return!
                           sum.Throw(
-                            Errors.Singleton loc0 (fun () -> "Expected a tuple with 2 elements when linking relation")
+                            Errors.Singleton loc0 (fun () ->
+                              "Expected a tuple with 2 elements when linking relation")
                           )
                           |> reader.OfSum
                     })

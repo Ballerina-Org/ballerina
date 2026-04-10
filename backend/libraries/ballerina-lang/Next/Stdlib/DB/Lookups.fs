@@ -30,7 +30,8 @@ module Lookups =
     =
 
     let memoryDBLookupOneId =
-      Identifier.FullyQualified([ "DB" ], "lookupOne") |> TypeCheckScope.Empty.Resolve
+      Identifier.FullyQualified([ "DB" ], "lookupOne")
+      |> TypeCheckScope.Empty.Resolve
 
     let memoryDBLookupOneType =
       TypeValue.CreateLambda(
@@ -46,7 +47,9 @@ module Lookups =
                   TypeExpr.Apply(
                     TypeExpr.Apply(
                       TypeExpr.Apply(
-                        TypeExpr.Lookup("SchemaLookupOne" |> Identifier.LocalScope),
+                        TypeExpr.Lookup(
+                          "SchemaLookupOne" |> Identifier.LocalScope
+                        ),
                         TypeExpr.Lookup("schema" |> Identifier.LocalScope)
                       ),
                       TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
@@ -59,8 +62,13 @@ module Lookups =
                   TypeExpr.Lookup("from_id" |> Identifier.LocalScope),
                   TypeExpr.Sum
                     [ TypeExpr.Primitive PrimitiveType.Unit
-                      TypeExpr.Tuple[TypeExpr.Lookup("to_id" |> Identifier.LocalScope)
-                                     TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)] ]
+                      TypeExpr.Tuple[TypeExpr.Lookup(
+                                       "to_id" |> Identifier.LocalScope
+                                     )
+
+                                     TypeExpr.Lookup(
+                                       "to_with_props" |> Identifier.LocalScope
+                                     )] ]
                 )
               )
             )
@@ -69,13 +77,21 @@ module Lookups =
       )
 
     let memoryDBLookupOneKind =
-      Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))))
+      Kind.Arrow(
+        Kind.Schema,
+        Kind.Arrow(
+          Kind.Star,
+          Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+        )
+      )
 
 
     let LookupOneOperation: OperationExtension<'runtimeContext, _, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBLookupOneType, memoryDBLookupOneKind, DBValues.LookupOne {| RelationRef = None |})
+          <| (memoryDBLookupOneType,
+              memoryDBLookupOneKind,
+              DBValues.LookupOne {| RelationRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -101,7 +117,10 @@ module Lookups =
                 let! v =
                   v
                   |> valueLens.Get
-                  |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
+                  |> sum.OfOption(
+                    Errors.Singleton loc0 (fun () ->
+                      "Cannot get value from extension")
+                  )
                   |> reader.OfSum
 
                 let! v =
@@ -111,7 +130,9 @@ module Lookups =
                   |> reader.OfSum
 
                 return
-                  (DBValues.LookupOne {| RelationRef = Some v |} |> valueLens.Set, Some memoryDBLookupOneId)
+                  (DBValues.LookupOne {| RelationRef = Some v |}
+                   |> valueLens.Set,
+                   Some memoryDBLookupOneId)
                   |> Ext
               | Some(relation_ref, direction) -> // the closure has the first operand - second step in the application
                 let! target_values =
@@ -120,7 +141,12 @@ module Lookups =
                   |> reader.Catch
 
                 match target_values with
-                | Right(_e: Errors<_>) -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                | Right(_e: Errors<_>) ->
+                  return
+                    Value.Sum(
+                      { Case = 1; Count = 2 },
+                      Value.Primitive PrimitiveValue.Unit
+                    )
                 | Left v -> return Value.Sum({ Case = 2; Count = 2 }, v)
             } }
 
@@ -142,7 +168,9 @@ module Lookups =
                   TypeExpr.Apply(
                     TypeExpr.Apply(
                       TypeExpr.Apply(
-                        TypeExpr.Lookup("SchemaLookupOption" |> Identifier.LocalScope),
+                        TypeExpr.Lookup(
+                          "SchemaLookupOption" |> Identifier.LocalScope
+                        ),
                         TypeExpr.Lookup("schema" |> Identifier.LocalScope)
                       ),
                       TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
@@ -157,8 +185,14 @@ module Lookups =
                     [ TypeExpr.Primitive PrimitiveType.Unit
                       TypeExpr.Sum
                         [ TypeExpr.Primitive PrimitiveType.Unit
-                          TypeExpr.Tuple[TypeExpr.Lookup("to_id" |> Identifier.LocalScope)
-                                         TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)] ] ]
+                          TypeExpr.Tuple[TypeExpr.Lookup(
+                                           "to_id" |> Identifier.LocalScope
+                                         )
+
+                                         TypeExpr.Lookup(
+                                           "to_with_props"
+                                           |> Identifier.LocalScope
+                                         )] ] ]
                 )
               )
             )
@@ -167,12 +201,20 @@ module Lookups =
       )
 
     let memoryDBLookupOptionKind =
-      Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))))
+      Kind.Arrow(
+        Kind.Schema,
+        Kind.Arrow(
+          Kind.Star,
+          Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+        )
+      )
 
     let LookupOptionOperation: OperationExtension<'runtimeContext, _, _> =
       { PublicIdentifiers =
           Some
-          <| (memoryDBLookupOptionType, memoryDBLookupOptionKind, DBValues.LookupOption {| RelationRef = None |})
+          <| (memoryDBLookupOptionType,
+              memoryDBLookupOptionKind,
+              DBValues.LookupOption {| RelationRef = None |})
         OperationsLens =
           valueLens
           |> PartialLens.BindGet (function
@@ -198,7 +240,10 @@ module Lookups =
                 let! v =
                   v
                   |> valueLens.Get
-                  |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
+                  |> sum.OfOption(
+                    Errors.Singleton loc0 (fun () ->
+                      "Cannot get value from extension")
+                  )
                   |> reader.OfSum
 
                 let! v =
@@ -208,7 +253,9 @@ module Lookups =
                   |> reader.OfSum
 
                 return
-                  (DBValues.LookupOption {| RelationRef = Some v |} |> valueLens.Set, Some memoryDBLookupOptionId)
+                  (DBValues.LookupOption {| RelationRef = Some v |}
+                   |> valueLens.Set,
+                   Some memoryDBLookupOptionId)
                   |> Ext
               | Some(relation_ref, direction) -> // the closure has the first operand - second step in the application
                 let! target_values =
@@ -217,13 +264,26 @@ module Lookups =
                   |> reader.Catch
 
                 match target_values with
-                | Right(_e: Errors<_>) -> return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
-                | Left(Some v) -> return Value.Sum({ Case = 2; Count = 2 }, Value.Sum({ Case = 2; Count = 2 }, v))
+                | Right(_e: Errors<_>) ->
+                  return
+                    Value.Sum(
+                      { Case = 1; Count = 2 },
+                      Value.Primitive PrimitiveValue.Unit
+                    )
+                | Left(Some v) ->
+                  return
+                    Value.Sum(
+                      { Case = 2; Count = 2 },
+                      Value.Sum({ Case = 2; Count = 2 }, v)
+                    )
                 | Left(None) ->
                   return
                     Value.Sum(
                       { Case = 2; Count = 2 },
-                      Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                      Value.Sum(
+                        { Case = 1; Count = 2 },
+                        Value.Primitive PrimitiveValue.Unit
+                      )
                     )
             } }
 
@@ -245,7 +305,9 @@ module Lookups =
                   TypeExpr.Apply(
                     TypeExpr.Apply(
                       TypeExpr.Apply(
-                        TypeExpr.Lookup("SchemaLookupMany" |> Identifier.LocalScope),
+                        TypeExpr.Lookup(
+                          "SchemaLookupMany" |> Identifier.LocalScope
+                        ),
                         TypeExpr.Lookup("schema" |> Identifier.LocalScope)
                       ),
                       TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
@@ -264,8 +326,14 @@ module Lookups =
                       [ TypeExpr.Primitive PrimitiveType.Unit
                         TypeExpr.Apply(
                           TypeExpr.Lookup("List" |> Identifier.LocalScope),
-                          TypeExpr.Tuple[TypeExpr.Lookup("to_id" |> Identifier.LocalScope)
-                                         TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)]
+                          TypeExpr.Tuple[TypeExpr.Lookup(
+                                           "to_id" |> Identifier.LocalScope
+                                         )
+
+                                         TypeExpr.Lookup(
+                                           "to_with_props"
+                                           |> Identifier.LocalScope
+                                         )]
                         ) ]
                   )
                 )
@@ -276,7 +344,13 @@ module Lookups =
       )
 
     let memoryDBLookupManyKind =
-      Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))))
+      Kind.Arrow(
+        Kind.Schema,
+        Kind.Arrow(
+          Kind.Star,
+          Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+        )
+      )
 
     let LookupManyOperation: OperationExtension<'runtimeContext, _, _> =
       { PublicIdentifiers =
@@ -311,7 +385,10 @@ module Lookups =
                 let! v =
                   v
                   |> valueLens.Get
-                  |> sum.OfOption(Errors.Singleton loc0 (fun () -> "Cannot get value from extension"))
+                  |> sum.OfOption(
+                    Errors.Singleton loc0 (fun () ->
+                      "Cannot get value from extension")
+                  )
                   |> reader.OfSum
 
                 let! v =
@@ -345,20 +422,34 @@ module Lookups =
                     |> reader.OfSum
 
                   match v with
-                  | [ Value.Primitive(PrimitiveValue.Int32 _offset); Value.Primitive(PrimitiveValue.Int32 _limit) ] ->
+                  | [ Value.Primitive(PrimitiveValue.Int32 _offset)
+                      Value.Primitive(PrimitiveValue.Int32 _limit) ] ->
                     let! target_values =
-                      db_ops.LookupMany relation_ref entityId direction (_offset, _limit)
+                      db_ops.LookupMany
+                        relation_ref
+                        entityId
+                        direction
+                        (_offset, _limit)
                       |> reader.MapError(Errors.MapContext(replaceWith loc0))
                       |> reader.Catch
 
                     match target_values with
                     | Right(_e: Errors<_>) ->
-                      return Value.Sum({ Case = 1; Count = 2 }, Value.Primitive PrimitiveValue.Unit)
+                      return
+                        Value.Sum(
+                          { Case = 1; Count = 2 },
+                          Value.Primitive PrimitiveValue.Unit
+                        )
                     | Left target_values ->
-                      return Value.Sum({ Case = 2; Count = 2 }, (target_values |> listSet, None) |> Ext)
+                      return
+                        Value.Sum(
+                          { Case = 2; Count = 2 },
+                          (target_values |> listSet, None) |> Ext
+                        )
                   | _ ->
                     return!
-                      Errors.Singleton loc0 (fun () -> "Expected a tuple of two Int32 values for offset and limit")
+                      Errors.Singleton loc0 (fun () ->
+                        "Expected a tuple of two Int32 values for offset and limit")
                       |> reader.Throw
 
             } }
