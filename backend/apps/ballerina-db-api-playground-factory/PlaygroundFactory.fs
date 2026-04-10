@@ -325,9 +325,9 @@ module Factory =
         1)
 
     let parseResult =
-      // if args.Length = 0 then
-      //   rootCommand.Parse("--help")
-      // else
+      if args.Length = 0 then
+        rootCommand.Parse("--help")
+      else
         rootCommand.Parse args
 
     parseResult.Invoke()
