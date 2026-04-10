@@ -2,16 +2,16 @@ namespace Ballerina.DSL.Next
 
 module OpenAPIModel =
   open Ballerina.DSL.Next.Types
+
   type OpenAPISpec =
     { Title: string
       Version: string
       Endpoints: List<OpenAPIEndpoint>
       DataModels: Map<OpenAPIDataModelName, OpenAPIDataModel> }
 
-  and QueryParameter = {
-    Name : ResolvedIdentifier
-    Type : PrimitiveType
-  }
+  and QueryParameter =
+    { Name: ResolvedIdentifier
+      Type: PrimitiveType }
 
   and OpenAPIEndpoint =
     { Path: string
@@ -44,7 +44,8 @@ module OpenAPIModel =
     | PositionalElement of OpenAPIDataModel
     | Object of List<ResolvedIdentifier * OpenAPIDataModel>
 
-  let internal listToOpenApi (arg_t : OpenAPIDataModel) =
-    OpenAPIDataModel.Object [
-      "ext" |> ResolvedIdentifier.Create, OpenAPIDataModel.List arg_t
-    ] 
+  let internal listToOpenApi (arg_t: OpenAPIDataModel) =
+    OpenAPIDataModel.Object [ "ext" |> ResolvedIdentifier.Create, OpenAPIDataModel.List arg_t ]
+
+  let internal primitiveToOpenAPI (arg_t: PrimitiveType) =
+    OpenAPIDataModel.Object [ "Primitive" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive arg_t ]

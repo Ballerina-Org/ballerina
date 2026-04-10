@@ -51,8 +51,7 @@ module DataModelGeneration =
         | TypeExprSourceMapping.NoSourceMapping(_) ->
 
           match type_value with
-          | TypeValue.Primitive { value = p } ->
-            return OpenAPIDataModel.Object [ "Primitive" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive p ]
+          | TypeValue.Primitive { value = p } -> return primitiveToOpenAPI p
           | TypeValue.Record { value = fields } ->
             let! fields =
               fields

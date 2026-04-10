@@ -17,54 +17,50 @@ module OpenAPI =
   let openApi<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
     when 'customExtension: comparison and 'db: comparison>
     (app: IEndpointRouteBuilder)
-    (context:
-      APIContext<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
+    (context: APIContext<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
     =
 
     app.MapGet(
       "/{tenantId}/{schemaName}/openapi",
-      Func<'tenantId, 'schemaName, bool, IResult>
-        (fun tenantId schemaName draft ->
-          let result =
-            sum {
-              let! dbio, _, _, typeCheckContext, typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+      Func<'tenantId, 'schemaName, bool, IResult>(fun tenantId schemaName draft ->
+        let result =
+          sum {
+            let! dbio, _, _, typeCheckContext, typeCheckState = getDbDescriptor tenantId schemaName draft context
 
-            let generationState :  OpenAPIGenerationState = {
-              DataModel = Map.empty
-              Endpoints = []
-            }
+            let generationState: OpenAPIGenerationState =
+              { DataModel = Map.empty
+                Endpoints = [] }
 
-            let generationContext: OpenApiGenerationContext<'runtimeContext, 'db, 'customExtension> = {
-              TypeCheckContext = typeCheckContext
-              TypeCheckState = typeCheckState
-            }
+            let generationContext: OpenApiGenerationContext<'runtimeContext, 'db, 'customExtension> =
+              { TypeCheckContext = typeCheckContext
+                TypeCheckState = typeCheckState }
 
             return!
-              generateOpenAPI dbio.Schema (tenantId.ToString()) (schemaName.ToString()) $"DB API {tenantId}-{schemaName}" "1.0.0"
+              generateOpenAPI
+                dbio.Schema
+                (tenantId.ToString())
+                (schemaName.ToString())
+                $"DB API {tenantId}-{schemaName}"
+                "1.0.0"
               |> State.Run(generationContext, generationState)
               |> sum.MapError(fun (errors, _) -> errors |> Errors.MapContext(replaceWith Location.Unknown))
               |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
               |> sum.Map fst
 
-            }
+          }
 
-          match result with
-          | Left openapi ->
-            let bytes = Encoding.UTF8.GetBytes openapi
+        match result with
+        | Left openapi ->
+          let bytes = Encoding.UTF8.GetBytes openapi
 
-            Results.File(
-              fileContents = bytes,
-              contentType = "application/yaml",
-              fileDownloadName = "openapi.yaml"
-            )
-          | Right { Errors = errors; TypeError = _ } ->
-            let serializedErrors = errorsToSerializable errors
+          Results.File(fileContents = bytes, contentType = "application/yaml", fileDownloadName = "openapi.yaml")
+        | Right { Errors = errors; TypeError = _ } ->
+          let serializedErrors = errorsToSerializable errors
 
-            Results.BadRequest
-              { Errors = serializedErrors
-                Examples = [||] }
+          Results.BadRequest
+            { Errors = serializedErrors
+              Examples = [||] }
 
-        )
+      )
     )
     |> ignore
