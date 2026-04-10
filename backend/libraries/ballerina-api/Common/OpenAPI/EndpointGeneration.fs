@@ -8,9 +8,10 @@ module EndpointGeneration =
   open OpenAPIModel
   open Ballerina.Errors
   open Ballerina.Cat.Collections.OrderedMap
+
   let generate_endpoints
-    (tenantId : string)
-    (schemaName : string)
+    (tenantId: string)
+    (schemaName: string)
     (schema: Schema<ValueExt<'runtimeContext, 'db, 'customExtension>>)
     : State<
         unit,
@@ -22,8 +23,12 @@ module EndpointGeneration =
        >
     =
     state {
-      let draftQueryParam = { Name = "draft" |> ResolvedIdentifier.Create; Type = PrimitiveType.Bool  }
+      let draftQueryParam =
+        { Name = "draft" |> ResolvedIdentifier.Create
+          Type = PrimitiveType.Bool }
+
       let routePrefix = $"/{tenantId}/{schemaName}"
+
       do!
         schema.Entities
         |> OrderedMap.toSeq
@@ -39,6 +44,12 @@ module EndpointGeneration =
               { OpenAPIDataModelName.OpenAPIDataModelName = $"{entity_name.Name}-Id" }
             // let! _, id_primitive = entity_desc.Id |> TypeValue.AsPrimaryKey |> state.OfSum
 
+            let _delta_with_props_name =
+              { OpenAPIDataModelName.OpenAPIDataModelName = $"{entity_name.Name}-Delta-WithProps" }
+
+            let delta_original_name =
+              { OpenAPIDataModelName.OpenAPIDataModelName = $"{entity_name.Name}-Delta-Original" }
+
             let endpoint =
               { Path = $"{routePrefix}/{entity_name.Name}/get-by-id"
                 Method = OpenAPIEndpointModel.Post
@@ -51,68 +62,83 @@ module EndpointGeneration =
             let endpoint =
               { Path = $"{routePrefix}/{entity_name.Name}/many"
                 Method = OpenAPIEndpointModel.Get
-                QueryParameters = [
-                  draftQueryParam
-                  { Name = "offset" |> ResolvedIdentifier.Create; Type = PrimitiveType.Int32  }
-                  { Name = "limit" |> ResolvedIdentifier.Create; Type = PrimitiveType.Int32 }
-                ]
+                QueryParameters =
+                  [ draftQueryParam
+                    { Name = "offset" |> ResolvedIdentifier.Create
+                      Type = PrimitiveType.Int32 }
+                    { Name = "limit" |> ResolvedIdentifier.Create
+                      Type = PrimitiveType.Int32 } ]
                 RequestModel = None
-                ResponseModel = 
-                   OpenAPIDataModel.Tuple [
-                      id_name |> OpenAPIDataModel.Ref
-                      type_with_props_name |> OpenAPIDataModel.Ref
-                   ] |> listToOpenApi |> Some }
+                ResponseModel =
+                  OpenAPIDataModel.Tuple
+                    [ id_name |> OpenAPIDataModel.Ref
+                      type_with_props_name |> OpenAPIDataModel.Ref ]
+                  |> listToOpenApi
+                  |> Some }
 
             do! state.SetState(fun l -> endpoint :: l)
 
             let endpoint =
               { Path = $"{routePrefix}/{entity_name.Name}/create"
                 Method = OpenAPIEndpointModel.Post
-                QueryParameters = [draftQueryParam]
+                QueryParameters = [ draftQueryParam ]
                 RequestModel =
                   Some(
                     OpenAPIDataModel.Object
                       [ ("id" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref id_name)
                         ("value" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref type_original_name) ]
                   )
-                ResponseModel = [
-                  OpenAPIDataModel.Primitive PrimitiveType.Unit
-                  type_with_props_name |> OpenAPIDataModel.Ref
-                ] |> OpenAPIDataModel.Sum |> Some }
+                ResponseModel =
+                  [ OpenAPIDataModel.Primitive PrimitiveType.Unit
+                    type_with_props_name |> OpenAPIDataModel.Ref ]
+                  |> OpenAPIDataModel.Sum
+                  |> Some }
 
             do! state.SetState(fun l -> endpoint :: l)
 
             let endpoint =
               { Path = $"{routePrefix}/{entity_name.Name}/upsert"
                 Method = OpenAPIEndpointModel.Post
-                QueryParameters = [draftQueryParam ]
+                QueryParameters = [ draftQueryParam ]
                 RequestModel =
                   Some(
-                    OpenAPIDataModel.Tuple
-                      [ OpenAPIDataModel.Ref id_name
-                        OpenAPIDataModel.Ref type_original_name
-                        OpenAPIDataModel.AnyObject ]
+                    OpenAPIDataModel.Object
+                      [ "id" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref id_name
+                        "entity" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref type_original_name
+                        "delta" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref delta_original_name ]
                   )
-                ResponseModel = type_with_props_name |> OpenAPIDataModel.Ref |> OpenAPIDataModel.List |> Some }
+                ResponseModel =
+                  [ OpenAPIDataModel.Primitive PrimitiveType.Unit
+                    type_with_props_name |> OpenAPIDataModel.Ref ]
+                  |> OpenAPIDataModel.Sum
+                  |> Some }
 
             do! state.SetState(fun l -> endpoint :: l)
 
             let endpoint =
               { Path = $"{routePrefix}/{entity_name.Name}/update"
                 Method = OpenAPIEndpointModel.Post
-                QueryParameters = []
+                QueryParameters = [ draftQueryParam ]
                 RequestModel =
-                  Some(OpenAPIDataModel.Tuple [ OpenAPIDataModel.Ref id_name; OpenAPIDataModel.AnyObject ])
-                ResponseModel = type_with_props_name |> OpenAPIDataModel.Ref |> OpenAPIDataModel.List |> Some }
+                  Some(
+                    OpenAPIDataModel.Object
+                      [ "id" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref id_name
+                        "delta" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref delta_original_name ]
+                  )
+                ResponseModel =
+                  [ OpenAPIDataModel.Primitive PrimitiveType.Unit
+                    type_with_props_name |> OpenAPIDataModel.Ref ]
+                  |> OpenAPIDataModel.Sum
+                  |> Some }
 
             do! state.SetState(fun l -> endpoint :: l)
 
             let endpoint =
-              { Path = $"{routePrefix}/{entity_name.Name}/delete/{{id}}"
-                QueryParameters = []
-                Method = OpenAPIEndpointModel.Delete
+              { Path = $"{routePrefix}/{entity_name.Name}/delete"
+                QueryParameters = [ draftQueryParam ]
+                Method = OpenAPIEndpointModel.Post
                 RequestModel = Some(OpenAPIDataModel.Ref id_name)
-                ResponseModel = None }
+                ResponseModel = Some(Primitive PrimitiveType.Bool) }
 
             do! state.SetState(fun l -> endpoint :: l)
 
@@ -193,13 +219,13 @@ module EndpointGeneration =
               { OpenAPIDataModelName.OpenAPIDataModelName = sprintf "%s-WithProps" (relation_desc.To.ToString()) }
 
             let link_request_model =
-              OpenAPIDataModel.Record
+              OpenAPIDataModel.Object
                 [ ("FromId" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref from_id_name)
                   ("ToId" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref to_id_name) ]
 
             let endpoint =
               { Path = sprintf "%s/relations/%s/link" routePrefix relation_name.Name
-                QueryParameters = []
+                QueryParameters = [ draftQueryParam ]
                 Method = OpenAPIEndpointModel.Post
                 RequestModel = Some(link_request_model)
                 ResponseModel = None }
@@ -208,7 +234,7 @@ module EndpointGeneration =
 
             let endpoint =
               { Path = sprintf "%s/relations/%s/unlink" routePrefix relation_name.Name
-                QueryParameters = []
+                QueryParameters = [ draftQueryParam ]
                 Method = OpenAPIEndpointModel.Post
                 RequestModel = Some(link_request_model)
                 ResponseModel = None }
@@ -217,7 +243,7 @@ module EndpointGeneration =
 
             let endpoint =
               { Path = sprintf "%s/relations/%s/isLinked" routePrefix relation_name.Name
-                QueryParameters = []
+                QueryParameters = [ draftQueryParam ]
                 Method = OpenAPIEndpointModel.Post
                 RequestModel = Some(link_request_model)
                 ResponseModel = Some(OpenAPIDataModel.Primitive PrimitiveType.Bool) }
@@ -238,8 +264,7 @@ module EndpointGeneration =
                     sprintf "%s/%s/lookupOne/From" routePrefix relation_name.Name,
                     OpenAPIDataModel.Record
                       [ ("FromId" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref from_id_name) ],
-                    OpenAPIDataModel.Tuple
-                      [ OpenAPIDataModel.Ref to_id_name; OpenAPIDataModel.Ref to_with_props_name ]
+                    OpenAPIDataModel.Tuple [ OpenAPIDataModel.Ref to_id_name; OpenAPIDataModel.Ref to_with_props_name ]
                   | Cardinality.Zero ->
                     sprintf "%s/%s/lookupOption/From" routePrefix relation_name.Name,
                     OpenAPIDataModel.Record
@@ -261,8 +286,8 @@ module EndpointGeneration =
 
                 let endpoint =
                   { Path = lookup_path
-                    Method = OpenAPIEndpointModel.Get
-                    QueryParameters = []
+                    Method = OpenAPIEndpointModel.Post
+                    QueryParameters = [ draftQueryParam ]
                     RequestModel = Some request_model
                     ResponseModel = Some response_model }
 
