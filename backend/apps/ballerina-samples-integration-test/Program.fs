@@ -22,7 +22,8 @@ type RuntimeValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
 type ProjectExecutionSuccess =
   { Value: Value<TypeValue<RuntimeValueExt>, RuntimeValueExt>
     TypeValue: TypeValue<RuntimeValueExt>
-    ExpressionCount: int }
+    ExpressionCount: int
+    EmailEvents: string list }
 
 [<CLIMutable>]
 type SampleExpectationDto =
@@ -69,9 +70,13 @@ let private expectations =
 let private buildAndEvalProject
   (project: ProjectBuildConfiguration)
   : Sum<ProjectExecutionSuccess, string> =
+  let emailEvents = ResizeArray<string>()
+
   let _, context, typeCheckingConfig, buildCache =
     hddcacheWithStdExtensions<unit, MutableMemoryDB<unit, unit>>
       (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
+      (Ballerina.DSL.Next.StdLib.Email.Extension.EmailTypeClass<_>.FromRuntimeContext(fun _ toEmail subject body ->
+        emailEvents.Add($"email_send|to={toEmail}|subject={subject}|body={body}")))
       (db_ops ())
       id
       id
@@ -95,7 +100,8 @@ let private buildAndEvalProject
       Left
         { Value = value
           TypeValue = typeValue
-          ExpressionCount = NonEmptyList.ToList exprs |> List.length }
+          ExpressionCount = NonEmptyList.ToList exprs |> List.length
+          EmailEvents = emailEvents |> Seq.toList }
     | Right e -> Right(sprintf "Evaluation failed: %s" (Errors.ToString(e, "\n")))
   | Right e -> Right(sprintf "Build failed: %s" (Errors.ToString(e, "\n")))
 
@@ -117,7 +123,14 @@ let private validateExpectation
   : bool * string =
   match expectation, executionResult with
   | expectation, Left result when expectation.Mode = "run" || expectation.Mode = "success" ->
-    let valueText = result.Value.AsFSharpString
+    let valueText =
+      let events = result.EmailEvents |> String.concat "\n"
+
+      if String.IsNullOrWhiteSpace(events) then
+        result.Value.AsFSharpString
+      else
+        $"{result.Value.AsFSharpString}\n{events}"
+
     let typeText = result.TypeValue.AsFSharpString
     let valueOk, missingValue = matchesAll expectation.ValueRegexes valueText
     let typeOk, missingType = matchesAll expectation.TypeRegexes typeText

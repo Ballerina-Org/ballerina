@@ -1,0 +1,5 @@
+{
+  "name": "email-send-integration",
+  "sources": ["21-email-send-integration.bl"],
+  "inputProjects": []
+}

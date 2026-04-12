@@ -122,6 +122,15 @@
         "Malformed type declaration for 'Broken' at 20-malformed-type-after-many-definitions-integration.bl:31:5",
         "while parsing 20-malformed-type-after-many-definitions-integration.bl"
       ]
+    },
+    "21-email-send-integration": {
+      "mode": "run",
+      "valueRegexes": [
+          "Primitive \\(Bool true\\)",
+        "email_send\\|to=alice@example.com\\|subject=Integration Subject\\|body=Hello from integration sample"
+      ],
+      "typeRegexes": ["Primitive.*Bool"],
+      "errorRegexes": []
     }
   }
 }
