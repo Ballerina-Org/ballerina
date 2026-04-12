@@ -113,6 +113,15 @@
       "valueRegexes": [],
       "typeRegexes": [],
       "errorRegexes": ["cannot resolve identifier", "\\bx\\b"]
+    },
+    "20-malformed-type-after-many-definitions-integration": {
+      "mode": "build-fails",
+      "valueRegexes": [],
+      "typeRegexes": [],
+      "errorRegexes": [
+        "Malformed type declaration for 'Broken' at 20-malformed-type-after-many-definitions-integration.bl:31:5",
+        "while parsing 20-malformed-type-after-many-definitions-integration.bl"
+      ]
     }
   }
 }

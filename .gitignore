@@ -180,4 +180,5 @@ project.assets.json
 *.pyc
 =======
 >>>>>>> 61c7981d (Initial commit)
+*.msgpack
 .build-cache/build-cache.msgpack

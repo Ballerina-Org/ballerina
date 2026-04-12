@@ -292,7 +292,17 @@ module Type =
                     do! semicolonOperator
 
                   let! id = singleIdentifier
-                  do! colonOperator
+                  let! fieldLoc = parser.Location
+
+                  do!
+                    parser.Any
+                      [ colonOperator
+                        (fun () ->
+                          $"Expected ':' after field '{id}' in record type declaration")
+                        |> Errors.Singleton fieldLoc
+                        |> Errors.MapPriority(replaceWith ErrorPriority.High)
+                        |> parser.Throw ]
+                    |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
                   return!
                     parser {
