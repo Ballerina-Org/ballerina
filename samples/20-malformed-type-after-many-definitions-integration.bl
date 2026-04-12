@@ -1,0 +1,35 @@
+// Ballerina Integration Sample 20: Malformed Type After Many Definitions
+//
+// Repro for parser diagnostics when a malformed type appears after a long
+// sequence of valid type declarations.
+
+type T01 = int32;
+type T02 = int32;
+type T03 = int32;
+type T04 = int32;
+type T05 = int32;
+type T06 = int32;
+type T07 = int32;
+type T08 = int32;
+type T09 = int32;
+type T10 = int32;
+type T11 = int32;
+type T12 = int32;
+type T13 = int32;
+type T14 = int32;
+type T15 = int32;
+type T16 = int32;
+type T17 = int32;
+type T18 = int32;
+type T19 = int32;
+type T20 = int32;
+type T21 = int32;
+type T22 = int32;
+type T23 = int32;
+type T24 = int32;
+
+type Broken = {
+  field:
+};
+
+0

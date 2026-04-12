@@ -1,0 +1,5 @@
+{
+  "name": "malformed-type-after-many-definitions-integration",
+  "sources": ["20-malformed-type-after-many-definitions-integration.bl"],
+  "inputProjects": []
+}

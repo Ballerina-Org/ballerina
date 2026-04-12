@@ -74,6 +74,10 @@ module Expr =
 
     let typeDecl v = typeDecl (expr parseAllComplexShapes) v
 
+    let parseBoundBody () =
+      expr parseAllComplexShapes
+      |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+
     // let indent = "--"
 
     let stringLiteral () =
@@ -423,8 +427,7 @@ module Expr =
           |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
         let! body =
-          expr parseAllComplexShapes
-          |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+          parseBoundBody ()
 
         return
           Expr.Let(
@@ -607,7 +610,17 @@ module Expr =
         do! equalsOperator
 
         let! typeDecl =
-          typeDecl parseAllComplexTypeShapes
+          parser.Any
+            [ typeDecl parseAllComplexTypeShapes
+              |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.Low))
+              (fun () ->
+                $"Malformed type declaration for '{id}' at {loc}")
+              |> Errors.Singleton loc
+              |> Errors.MapPriority(replaceWith ErrorPriority.High)
+              |> parser.Throw ]
+          |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+          |> parser.MapError(Errors.MapContext(replaceWith loc))
+          |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
           |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
         let! loc' = parser.Location
@@ -623,8 +636,7 @@ module Expr =
           |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
         let! body =
-          expr parseAllComplexShapes
-          |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+          parseBoundBody ()
 
         let symbols, symbolsKind =
           let rec stripLambdas t =
