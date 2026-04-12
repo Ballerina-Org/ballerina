@@ -1,0 +1,15 @@
+// Ballerina Integration Sample 18: Invalid Branching Program
+//
+// This negative sample keeps one representative branching/type-error case from
+// the old integration suite.
+
+type T =
+| A of int32
+| B of string;
+
+let bad = fun (t:T) ->
+  match t with
+  | A (value -> value |> string::length)
+  | B (_ -> 0);
+
+bad

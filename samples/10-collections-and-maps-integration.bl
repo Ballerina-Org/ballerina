@@ -1,0 +1,35 @@
+// Ballerina Integration Sample 10: Collections And Maps
+//
+// This sample checks that the standard list and map workflows still behave as
+// complete end-to-end programs. Each assertion is phrased in business terms:
+// transform values, keep the valid subset, aggregate them, and reshape a map
+// into a list for downstream processing.
+
+let numbers =
+     List::Cons [int32] (
+          1,
+          List::Cons [int32] (-2, List::Cons [int32] (3, List::Nil [int32] ()))
+     );
+
+let positive_flags = List::map [int32][bool] (fun (value:int32) -> value > 0) numbers;
+let positives = List::filter [int32] (fun (value:int32) -> value > 0) numbers;
+let positive_sum = List::fold [int32] [int32] (fun (acc:int32) -> fun (value:int32) -> acc + value) 0 positives;
+
+let list_pipeline_ok =
+     (List::length [bool] positive_flags == 3)
+     && (List::length [int32] positives == 2)
+     && (positive_sum == 4);
+
+let cons = List::Cons [string];
+let nil = List::Nil [string] ();
+let left_words = cons("hello", cons(" ", cons("world", nil)));
+let right_words = cons("bonjour", cons(" ", cons("monde", nil)));
+let append_ok = List::length [string] (List::append [string] left_words right_words) == 6;
+
+let empty_scores = Map::Empty [string][int32] ();
+let scores = Map::set [string][int32] ("key1", 1) (Map::set [string][int32] ("key2", 2) empty_scores);
+let boosted_scores = Map::map (fun (value:int32) -> value + 100) scores;
+let score_rows = Map::mapToList [string][int32] boosted_scores;
+let map_ok = List::length score_rows == 2;
+
+list_pipeline_ok && append_ok && map_ok

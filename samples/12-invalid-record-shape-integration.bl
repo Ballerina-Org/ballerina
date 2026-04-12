@@ -1,0 +1,15 @@
+// Ballerina Integration Sample 12: Invalid Record Shape
+//
+// Negative coverage belongs in the sample runner too. This project intentionally
+// fails to type-check because the record literal provides `C` instead of the
+// declared `B` field. The corresponding `.blproj` declares that this build must
+// fail, which keeps the negative expectation close to the sample source.
+
+type T = {
+  A: int32;
+  B: bool;
+};
+
+let value: T = { A = 10; C = true; };
+
+value.A > 10 || value.B

@@ -8,10 +8,15 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="sample-expectations.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="../../libraries/ballerina-lang/Next/ballerina-lang.fsproj" />
     <ProjectReference Include="../../libraries/ballerina-stdlib/ballerina-stdlib.fsproj" />
     <ProjectReference Include="../../libraries/ballerina-cat/ballerina-cat.fsproj" />
     <ProjectReference Include="../../libraries/ballerina-memorydb/ballerina-memorydb.fsproj" />
-    <ProjectReference Include="../ballerina-lang-build/ballerina-lang-build.fsproj" />
+    <ProjectReference Include="../../libraries/ballerina-lang-build/ballerina-lang-build.fsproj" />
   </ItemGroup>
 </Project>

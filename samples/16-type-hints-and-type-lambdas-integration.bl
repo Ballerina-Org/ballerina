@@ -1,0 +1,51 @@
+// Ballerina Integration Sample 16: Type Hints And Type Lambdas
+//
+// This sample keeps together the cases where typing and pattern scope are the
+// point of the test: match-driven record construction, record/union field-hint
+// resolution, and explicit and implicit type-parameter application.
+
+type R = {
+  X: bool;
+  Y: string;
+};
+
+type Totals = {
+  A: int32;
+  B: int32;
+  C: int32;
+};
+
+type UnionTotals =
+| UA of int32
+| UB of int32
+| UC of int32;
+
+type Countainer = [a:*] -> {
+  Value: a;
+  Count: int32;
+};
+
+let sum_fields = fun value -> value.A + value.B + value.C;
+let hinted_record_result = sum_fields { A = 10; B = 20; C = 30; };
+
+let fold_union = fun value -> match value with | UA (v -> v) | UB (v -> v) | UC (v -> v);
+let hinted_union_result = (fold_union (UA 10)) + (fold_union (UB 20)) + (fold_union (UC 30));
+
+let singleton = fun [a:*] (value:a) -> List::Cons [a] (value, List::Nil [a] ());
+let pair = fun [a:*] [b:*] (x:a) (y:b) -> (x, y);
+let getCount = fun [a:*] (value:Countainer[a]) -> value.Count;
+let foldInt = fun (value:Countainer[int32]) -> value.Value + value.Count;
+let first:Countainer[int32] = { Value = 100; Count = 10; };
+let second:Countainer[bool] = { Value = false; Count = 11; };
+
+(
+  ("hinted_record_result", hinted_record_result),
+  ("hinted_union_result", hinted_union_result),
+  ("singleton_explicit_length", List::length [int32] (singleton [int32] 10)),
+  ("singleton_implicit_length", List::length [bool] (singleton true)),
+  ("pair_first", (pair [int32] [bool] 10 true).1),
+  ("pair_second_text", string::ofT ((pair [int32] [bool] 10 true).2)),
+  ("countainer_fold", foldInt first),
+  ("countainer_first_count", getCount first),
+  ("countainer_second_count", getCount second)
+)

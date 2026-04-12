@@ -1,0 +1,5 @@
+{
+  "name": "source-scope-typeinfo-integration",
+  "sources": ["17-source-scope-typeinfo-integration.bl"],
+  "inputProjects": []
+}

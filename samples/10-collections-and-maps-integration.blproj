@@ -1,0 +1,5 @@
+{
+  "name": "collections-and-maps-integration",
+  "sources": ["10-collections-and-maps-integration.bl"],
+  "inputProjects": []
+}

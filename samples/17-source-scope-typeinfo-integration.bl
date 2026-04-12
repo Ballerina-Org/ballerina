@@ -1,0 +1,18 @@
+// Ballerina Integration Sample 17: Source Scope Type Info
+//
+// This sample preserves the old end-to-end check that type values retain the
+// source type names for nested record structures.
+
+type Range = {
+  firstCellIndex: int32;
+  lastCellIndex: int32;
+};
+
+type SomethingWithRange = {
+  range: Range;
+  value: int32;
+};
+
+let id = fun [a:*] (x:a) -> x;
+
+id [SomethingWithRange]

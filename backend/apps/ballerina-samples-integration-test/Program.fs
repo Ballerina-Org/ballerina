@@ -2,71 +2,155 @@ module SamplesIntegrationTest
 
 open System
 open System.IO
+open System.Text.Json
+open System.Text.Json.Serialization
+open System.Text.RegularExpressions
 open Ballerina.Collections.NonEmptyList
+open Ballerina.Collections.Sum
 open Ballerina.DSL.Next.StdLib.DB
 open Ballerina.DSL.Next.StdLib.Extensions
 open Ballerina.DSL.Next.StdLib.MutableMemoryDB
-open Ballerina.DSL.Next.Runners
-open Ballerina.DSL.Next.Types.TypeChecker
-open Ballerina.Collections.Sum
 open Ballerina.Errors
-open Ballerina.LocalizedErrors
+open Ballerina.DSL.Next.Runners
+open Ballerina.DSL.Next.Terms
+open Ballerina.DSL.Next.Types.Model
 open Ballerina.Reader.WithError
-open Ballerina.StdLib.String
-open ProjectModel
+open Ballerina.StdLib.Object
 
-type ValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
+type RuntimeValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
 
-let private buildContext, languageContext, typeCheckingConfig, buildCache =
-  hddcacheWithStdExtensions<unit, MutableMemoryDB<unit, unit>>
-    (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
-    (db_ops ())
-    id
-    id
+type ProjectExecutionSuccess =
+  { Value: Value<TypeValue<RuntimeValueExt>, RuntimeValueExt>
+    TypeValue: TypeValue<RuntimeValueExt>
+    ExpressionCount: int }
 
-/// Build a single project and return success/failure
-let buildProject
+[<CLIMutable>]
+type SampleExpectationDto =
+  { [<JsonPropertyName "mode">]
+    Mode: string
+    [<JsonPropertyName "valueRegexes">]
+    ValueRegexes: string array option
+    [<JsonPropertyName "typeRegexes">]
+    TypeRegexes: string array option
+    [<JsonPropertyName "errorRegexes">]
+    ErrorRegexes: string array option }
+
+[<CLIMutable>]
+type SampleExpectationFile =
+  { [<JsonPropertyName "expectations">]
+    Expectations: Map<string, SampleExpectationDto> }
+
+type SampleExpectation =
+  { Mode: string
+    ValueRegexes: string list
+    TypeRegexes: string list
+    ErrorRegexes: string list }
+
+let private expectationConfigPath () =
+  Path.Combine(AppContext.BaseDirectory, "sample-expectations.json")
+
+let private expectations =
+  lazy
+    (let path = expectationConfigPath ()
+
+     if not (File.Exists path) then
+       failwith $"Sample expectation file not found: {path}"
+
+     let options = JsonSerializerOptions(PropertyNameCaseInsensitive = true)
+     let dto = JsonSerializer.Deserialize<SampleExpectationFile>(File.ReadAllText path, options)
+
+     dto.Expectations
+     |> Map.map (fun _ value ->
+       { Mode = value.Mode.Trim().ToLowerInvariant()
+         ValueRegexes = value.ValueRegexes |> Option.defaultValue [||] |> Array.toList
+         TypeRegexes = value.TypeRegexes |> Option.defaultValue [||] |> Array.toList
+         ErrorRegexes = value.ErrorRegexes |> Option.defaultValue [||] |> Array.toList }))
+
+let private buildAndEvalProject
   (project: ProjectBuildConfiguration)
-  : Sum<string, Errors<Location>> =
-  sum {
-    let! buildResult =
-      ProjectBuildConfiguration.BuildCached
-        typeCheckingConfig
-        buildCache
-        project
-      |> sum.MapError(fun errors ->
-        let inputFiles =
-          project.Files
-          |> Seq.map (fun def -> def.FileName.Path, def.Content())
-          |> Map.ofSeq
+  : Sum<ProjectExecutionSuccess, string> =
+  let _, context, typeCheckingConfig, buildCache =
+    hddcacheWithStdExtensions<unit, MutableMemoryDB<unit, unit>>
+      (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
+      (db_ops ())
+      id
+      id
 
-        for e in (Errors<_>.FilterHighestPriorityOnly errors).Errors() do
-          let source =
-            match inputFiles |> Map.tryFind e.Context.File with
-            | Some file -> file
-            | None -> ""
+  let buildResult =
+    ProjectBuildConfiguration.BuildCached typeCheckingConfig buildCache project
 
-          let lines =
-            source.Split '\n'
-            |> Seq.skip (max 0 (e.Context.Line - 1))
-            |> Seq.mapi (fun i line ->
-              let fmt = "000"
-              $"{(e.Context.Line + i).ToString(fmt)} |   {line}")
-            |> Seq.truncate 3
-            |> String.join "\n"
+  match buildResult with
+  | Left(exprs, typeValue, _, finalState) ->
+    let evalContext = ExprEvalContext.Empty() |> context.ExprEvalContext
 
-          Console.ForegroundColor <- ConsoleColor.Red
+    let evalContext =
+      ExprEvalContext.WithTypeCheckingSymbols evalContext finalState.Symbols
 
-          Console.WriteLine
-            $"  Error: {e.Message} at line {e.Context.Line}:\n{lines}"
+    let evalResult =
+      Expr.Eval(NonEmptyList.prependList context.TypeCheckedPreludes exprs)
+      |> Reader.Run evalContext
 
-          Console.ResetColor()
+    match evalResult with
+    | Left value ->
+      Left
+        { Value = value
+          TypeValue = typeValue
+          ExpressionCount = NonEmptyList.ToList exprs |> List.length }
+    | Right e -> Right(sprintf "Evaluation failed: %s" (Errors.ToString(e, "\n")))
+  | Right e -> Right(sprintf "Build failed: %s" (Errors.ToString(e, "\n")))
 
-        errors)
+let private matchesAll
+  (patterns: string list)
+  (text: string)
+  : bool * string list =
+  let missing =
+    patterns
+    |> List.filter (fun pattern ->
+      not (Regex.IsMatch(text, pattern, RegexOptions.Singleline ||| RegexOptions.IgnoreCase)))
 
-    let _exprs, _typeValue, _typeCheckCtx, _typeCheckState = buildResult
-    return "success"
-  }
+  (List.isEmpty missing, missing)
+
+let private validateExpectation
+  (projectName: string)
+  (expectation: SampleExpectation)
+  (executionResult: Sum<ProjectExecutionSuccess, string>)
+  : bool * string =
+  match expectation, executionResult with
+  | expectation, Left result when expectation.Mode = "run" || expectation.Mode = "success" ->
+    let valueText = result.Value.AsFSharpString
+    let typeText = result.TypeValue.AsFSharpString
+    let valueOk, missingValue = matchesAll expectation.ValueRegexes valueText
+    let typeOk, missingType = matchesAll expectation.TypeRegexes typeText
+
+    match valueOk, typeOk with
+    | true, true ->
+      (true, $"matched expected output patterns for {projectName}")
+    | _ ->
+      let missingValueText = String.concat "; " missingValue
+      let missingTypeText = String.concat "; " missingType
+
+      let parts =
+        [ if not valueOk then
+            yield $"missing value patterns [{missingValueText}] in {valueText}"
+          if not typeOk then
+            yield $"missing type patterns [{missingTypeText}] in {typeText}" ]
+
+      (false, String.concat " | " parts)
+  | expectation, Right errorMessage when expectation.Mode = "build-fails" || expectation.Mode = "failure" ->
+    let errorOk, missing = matchesAll expectation.ErrorRegexes errorMessage
+
+    if errorOk then
+      (true, "failed as expected")
+    else
+      let missingErrorText = String.concat "; " missing
+      (false,
+       $"missing error patterns [{missingErrorText}] in {errorMessage}")
+  | expectation, Left result when expectation.Mode = "build-fails" || expectation.Mode = "failure" ->
+    (false,
+     $"expected build failure, but project executed successfully with final value {result.Value.AsFSharpString}")
+  | expectation, Left _ ->
+    (false, $"Unsupported expectation mode '{expectation.Mode}'")
+  | _, Right errorMessage -> (false, errorMessage)
 
 /// Find samples directory from the running executable or environment
 let getSamplesDirectory () : string =
@@ -103,7 +187,11 @@ let getSamplesDirectory () : string =
 /// Test a single sample project file
 let testSample (samplePath: string) : bool * string =
   try
-    let projectName = Path.GetFileNameWithoutExtension(samplePath)
+    let projectName = Path.GetFileNameWithoutExtension samplePath
+    let expectation =
+      match expectations.Value |> Map.tryFind projectName with
+      | Some expectation -> expectation
+      | None -> failwith $"No sample expectation configured for {projectName}"
 
     match
       ProjectBuildConfiguration.FromProjectFile(
@@ -112,11 +200,13 @@ let testSample (samplePath: string) : bool * string =
       )
     with
     | Sum.Left project ->
-      match buildProject project with
-      | Sum.Left _msg -> (true, $"✓ {projectName}")
-      | Sum.Right errors ->
-        let msg = Errors.ToString(errors, "; ")
-        (false, $"✗ {projectName}: {msg}")
+      let success, detail =
+        validateExpectation projectName expectation (buildAndEvalProject project)
+
+      if success then
+        (true, $"✓ {projectName}: {detail}")
+      else
+        (false, $"✗ {projectName}: {detail}")
     | Sum.Right err ->
       let msg = Errors.ToString(err, "; ")
       (false, $"✗ {projectName}: Parse error: {msg}")

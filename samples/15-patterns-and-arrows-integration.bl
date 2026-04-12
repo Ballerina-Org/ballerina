@@ -1,0 +1,69 @@
+// Ballerina Integration Sample 15: Patterns And Arrows
+//
+// This sample groups the richer pattern-matching and higher-order cases that
+// were previously split into many small integration tests.
+
+type ChoicePayload = int32 + List [int32] + bool;
+type TupleChoicePayload = int32 + List [int32] * int32 + bool;
+type ArrowList = bool -> List [int32];
+
+type AmbiguousUnion =
+| T of int32
+| CaseA of int32
+| CaseB of string
+| CaseC of bool;
+
+type T1 = {
+  A: int32;
+  B: string;
+  C: bool;
+};
+
+type T2 = {
+  A: string;
+  B: int32;
+  C: bool;
+};
+
+let choice_value: ChoicePayload = 2Of3(List::Nil [int32] ());
+let choice_result = match choice_value with
+| 1Of3 (x -> x)
+| 2Of3 (x -> -1)
+| 3Of3 (x -> 0);
+
+let tuple_choice_value: TupleChoicePayload = 2Of3(List::Nil [int32] (), 42);
+let second_item = fun (x: List [int32] * int32) -> x.2;
+let tuple_choice_result = match tuple_choice_value with
+| 1Of3 (x -> x)
+| 2Of3 (x -> second_item x)
+| 3Of3 (x -> 0);
+
+let arrow_value: ArrowList = fun flag -> if flag then List::Cons [int32] (1, List::Nil [int32] ()) else List::Nil [int32] ();
+let arrow_true_length = List::length [int32] (arrow_value true);
+let arrow_false_length = List::length [int32] (arrow_value false);
+
+let ambiguous_value: AmbiguousUnion = CaseC false;
+let ambiguous_result = match ambiguous_value with
+| T (x -> x + 100)
+| CaseC (b -> if b then 1 else 0)
+| (* -> -1000);
+
+let left_record: T1 = { A = 10; B = "hello"; C = true; };
+let right_record: T2 = { A = "world"; B = 20; C = false; };
+let first_projection = fun (value: T1) -> value.A;
+let disambiguated_result = first_projection left_record + string::length (left_record.B + "???") + right_record.B;
+
+let annotated_sum = fun (x: string + int32) -> match x with | 1Of2 (value -> string::length ("!!!" + value)) | 2Of2 (value -> value);
+let annotated_tuple = fun (x: int32 * string) -> x.1;
+
+(
+  ("choice_result", choice_result),
+  ("tuple_choice_result", tuple_choice_result),
+  ("arrow_true_length", arrow_true_length),
+  ("arrow_false_length", arrow_false_length),
+  ("ambiguous_result", ambiguous_result),
+  ("disambiguated_result", disambiguated_result),
+  ("annotated_sum_left", annotated_sum (1Of2 "hello")),
+  ("annotated_sum_right", annotated_sum (2Of2 10)),
+  ("annotated_tuple_result", annotated_tuple (1, "hello"))
+)

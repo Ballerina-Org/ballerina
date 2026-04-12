@@ -1,0 +1,46 @@
+// Ballerina Integration Sample 11: Records, Unions, And Type Parameters
+//
+// This sample focuses on richer data modelling scenarios. It covers record
+// construction and projection, union matching, type-directed field access, and
+// a generic record type that exercises the type-lambda machinery used by more
+// realistic domain models.
+
+type ApprovalSummary = {
+  Score: int32;
+  Notes: string;
+  Accepted: bool;
+}
+in type ReviewOutcome =
+| Approved of int32
+| Rejected of string
+| Pending of bool
+in type Countainer = [a:*] -> {
+  Value: a;
+  Count: int32;
+};
+
+type Totals = {
+  A: int32;
+  B: int32;
+  C: int32;
+};
+
+let summary: ApprovalSummary = { Score = 10; Notes = "hello"; Accepted = true; };
+let record_ok = (summary.Score + string::length summary.Notes == 15) && summary.Accepted;
+
+let outcome: ReviewOutcome = Approved 42;
+let union_ok = match outcome with
+| Approved (score -> score == 42)
+| Rejected (_ -> false)
+| Pending (_ -> false);
+
+let sum_fields = fun value -> value.A + value.B + value.C;
+let totals_ok = sum_fields { A = 10; B = 20; C = 30; } == 60;
+
+let getCount = fun [a:*] (value:Countainer[a]) -> value.Count;
+let foldInt = fun (value:Countainer[int32]) -> value.Value + value.Count;
+let first:Countainer[int32] = { Value = 100; Count = 10; };
+let second:Countainer[bool] = { Value = false; Count = 11; };
+let type_lambda_ok = (foldInt first == 110) && (getCount first == 10) && (getCount second == 11);
+
+record_ok && union_ok && totals_ok && type_lambda_ok

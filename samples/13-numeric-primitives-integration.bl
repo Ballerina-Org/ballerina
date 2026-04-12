@@ -1,0 +1,37 @@
+// Ballerina Integration Sample 13: Numeric Primitives
+//
+// This sample replaces the repetitive literal/operator tests with one end-to-end
+// program that exercises representative values across the numeric primitive
+// family and returns a compact summary.
+
+let int32_difference = 100 - 50;
+let int64_difference = 100l - 50l;
+let float32_div = 10.0f / 2.0f;
+let float64_div = 10.0d / 2.0d;
+let decimal_div = 10.0 / 2.0;
+
+let negative_int64 = -42l;
+let negative_float32 = -94.53f;
+let negative_float64 = -123456789.123d;
+let negative_decimal = -12.123;
+
+let primitive_guid: guid = guid::v4();
+let primitive_date_time: dateTime = dateTime::now();
+let primitive_date_only: dateOnly = dateOnly::now();
+let primitive_time_span_result: () + timeSpan = timeSpan::tryParse("6:12:30:45");
+
+(
+  ("int32_difference", int32_difference),
+  ("int64_difference", int64_difference),
+  ("float32_div", float32_div),
+  ("float64_div", float64_div),
+  ("decimal_div", decimal_div),
+  ("negative_int64", negative_int64),
+  ("negative_float32", negative_float32),
+  ("negative_float64", negative_float64),
+  ("negative_decimal", negative_decimal),
+  ("guid_length", string::length (string::ofT primitive_guid)),
+  ("date_time_text_length", string::length (string::ofT primitive_date_time)),
+  ("date_only_text_length", string::length (string::ofT primitive_date_only)),
+  ("time_span_parse_result", string::ofT primitive_time_span_result)
+)
