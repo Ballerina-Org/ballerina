@@ -10,6 +10,7 @@ module HddCache =
   open Ballerina.DSL.Next.Types.TypeChecker.Expr
   open Ballerina.DSL.Next.StdLib.DB.Model
   open Ballerina.DSL.Next.StdLib.Extensions
+  open Ballerina.DSL.Next.StdLib.Email.Extension
   open Ballerina.DSL.Next.StdLib.String.Extension
   open Ballerina.Serialization.MessagePack
   open System.IO
@@ -217,6 +218,7 @@ module HddCache =
 
   let hddcacheWithStdExtensions<'runtimeContext, 'db when 'db: comparison>
     (stringOps: StringTypeClass<ValueExt<'runtimeContext, 'db, unit>>)
+    (emailOps: EmailTypeClass<'runtimeContext>)
     (dbOps:
       DBTypeClass<'runtimeContext, 'db, ValueExt<'runtimeContext, 'db, unit>>)
     (updateTypeCheckContext:
@@ -235,8 +237,13 @@ module HddCache =
     let extensions, languageContext, effectiveTypeCheckingConfig =
       match deserializedTypeCheckingConfig with
       | Some typeCheckingConfig ->
-        stdExtensions<'runtimeContext, 'db> stringOps dbOps typeCheckingConfig
-      | None -> bootstrapStdExtensions<'runtimeContext, 'db> stringOps dbOps
+        stdExtensions<'runtimeContext, 'db>
+          stringOps
+          emailOps
+          dbOps
+          typeCheckingConfig
+      | None ->
+        bootstrapStdExtensions<'runtimeContext, 'db> stringOps emailOps dbOps
 
     let languageContext =
       { languageContext with

@@ -29,6 +29,9 @@
     <Compile Include="Decimal/Model.fs" />
     <Compile Include="Decimal/Patterns.fs" />
     <Compile Include="Decimal/Extension.fs" />
+    <Compile Include="Email/Model.fs" />
+    <Compile Include="Email/Patterns.fs" />
+    <Compile Include="Email/Extension.fs" />
     <Compile Include="String/Model.fs" />
     <Compile Include="String/Patterns.fs" />
     <Compile Include="String/Extension.fs" />

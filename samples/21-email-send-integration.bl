@@ -1,0 +1,6 @@
+// Ballerina Integration Sample 21: Email extension callback
+//
+// This verifies Email::send is correctly wired in runtime extension dispatch.
+
+let _ = Email::send "alice@example.com" "Integration Subject" "Hello from integration sample";
+true

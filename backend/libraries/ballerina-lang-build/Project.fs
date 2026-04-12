@@ -40,6 +40,10 @@ module Project =
       Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<
         Ballerina.DSL.Next.StdLib.Extensions.ValueExt<'runtimeContext, 'db, unit>
        >)
+    (emailOps:
+      Ballerina.DSL.Next.StdLib.Email.Extension.EmailTypeClass<
+        'runtimeContext
+       >)
     (dbOps:
       Ballerina.DSL.Next.StdLib.DB.Model.DBTypeClass<
         'runtimeContext,
@@ -71,6 +75,7 @@ module Project =
     =
     HddCache.hddcacheWithStdExtensions
       stringOps
+      emailOps
       dbOps
       updateTypeCheckContext
       updateTypeCheckState

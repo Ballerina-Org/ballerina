@@ -23,6 +23,7 @@ type ValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
 let private buildContext, languageContext, typeCheckingConfig, buildCache =
   hddcacheWithStdExtensions<unit, MutableMemoryDB<unit, unit>>
     (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
+    (Ballerina.DSL.Next.StdLib.Email.Extension.EmailTypeClass<_>.Console())
     (db_ops ())
     id
     id

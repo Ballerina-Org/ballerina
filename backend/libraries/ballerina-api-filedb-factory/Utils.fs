@@ -27,6 +27,7 @@ module Utils =
   let contextFactory (dbFileConfig: DbFileConfig) =
     hddcacheWithStdExtensions
       (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
+      (Ballerina.DSL.Next.StdLib.Email.Extension.EmailTypeClass<_>.Console())
       (fileDbOps dbFileConfig)
       id
       id
@@ -51,6 +52,7 @@ module Utils =
         hddcacheWithStdExtensions
           (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>
             .Console())
+          (Ballerina.DSL.Next.StdLib.Email.Extension.EmailTypeClass<_>.Console())
           (fileDbOps dbFileConfig)
           (TypeCheckContext.Updaters.BackgroundHooksExtraScope
             addBackgroundHookScope

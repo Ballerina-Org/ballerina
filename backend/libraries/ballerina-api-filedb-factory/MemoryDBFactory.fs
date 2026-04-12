@@ -33,6 +33,7 @@ module MemoryDBAPIFactory =
   let contextFactory dbFileConfig =
     hddcacheWithStdExtensions
       (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
+      (Ballerina.DSL.Next.StdLib.Email.Extension.EmailTypeClass<_>.Console())
       (fileDbOps dbFileConfig)
       id
       id

@@ -13,6 +13,7 @@ open Ballerina.DSL.Next.StdLib.List.Model
 open Ballerina.DSL.Next.StdLib.Map.Model
 open Ballerina.DSL.Next.StdLib.DB
 open Ballerina.Data.Delta
+open Ballerina.DSL.Next.StdLib.Email
 open Ballerina.DSL.Next.StdLib.String
 open Ballerina.DSL.Next.Types.TypeChecker.Model
 open Ballerina.DSL.Next.StdLib.DB.Extension.DBRun
@@ -237,6 +238,10 @@ and PrimitiveExt<'runtimeContext, 'db, 'customExtension
     Decimal.Model.DecimalOperations<
       ValueExt<'runtimeContext, 'db, 'customExtension>
      >
+  | EmailOperations of
+    Email.Model.EmailOperations<
+      ValueExt<'runtimeContext, 'db, 'customExtension>
+     >
   | StringOperations of
     String.Model.StringOperations<
       ValueExt<'runtimeContext, 'db, 'customExtension>
@@ -250,6 +255,7 @@ and PrimitiveExt<'runtimeContext, 'db, 'customExtension
     | Float32Operations ops -> ops.ToString()
     | Float64Operations ops -> ops.ToString()
     | DecimalOperations ops -> ops.ToString()
+    | EmailOperations ops -> ops.ToString()
     | StringOperations ops -> ops.ToString()
 
 and DeltaExt<'runtimeContext, 'db, 'customExtension
@@ -658,6 +664,7 @@ type StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaEx
 let makeExtensions<'runtimeContext, 'db, 'customExtension
   when 'db: comparison and 'customExtension: comparison>
   (string_ops: StringTypeClass<ValueExt<'runtimeContext, 'db, 'customExtension>>)
+  (email_ops: EmailTypeClass<'runtimeContext>)
   (db_ops:
     DBTypeClass<
       'runtimeContext,
@@ -859,6 +866,18 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
           | _ -> None
         Set = StringOperations >> Choice3Of7 >> ValueExt.ValueExt }
 
+  let emailExtension =
+    Email.Extension.EmailExtension<
+      'runtimeContext,
+      ValueExt<'runtimeContext, 'db, 'customExtension>
+     >
+      email_ops
+      { Get =
+          function
+          | ValueExt(Choice3Of7(EmailOperations x)) -> Some x
+          | _ -> None
+        Set = EmailOperations >> Choice3Of7 >> ValueExt.ValueExt }
+
   let guidExtension =
     Guid.Extension.GuidExtension<
       'runtimeContext,
@@ -943,6 +962,7 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
     |> (float32Extension |> OperationsExtension.RegisterLanguageContext)
     |> (float64Extension |> OperationsExtension.RegisterLanguageContext)
     |> (decimalExtension |> OperationsExtension.RegisterLanguageContext)
+    |> (emailExtension |> OperationsExtension.RegisterLanguageContext)
     |> (stringExtension |> OperationsExtension.RegisterLanguageContext)
     |> (updaterExtension |> OperationsExtension.RegisterLanguageContext)
     |> (mapExtension |> TypeExtension.RegisterLanguageContext)
@@ -972,25 +992,13 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
   extensions, context, typeCheckingConfig
 
 let stdExtensions<'runtimeContext, 'db when 'db: comparison> =
-  fun str_ops db_ops typeCheckingConfig ->
+  fun str_ops email_ops db_ops typeCheckingConfig ->
     makeExtensions<'runtimeContext, 'db, unit>
       str_ops
-      db_ops
-      (Some typeCheckingConfig)
-
-let customStdExtensions<'runtimeContext, 'db, 'customExtension
-  when 'db: comparison and 'customExtension: comparison> =
-  fun str_ops db_ops typeCheckingConfig ->
-    makeExtensions<'runtimeContext, 'db, 'customExtension>
-      str_ops
+      email_ops
       db_ops
       (Some typeCheckingConfig)
 
 let bootstrapStdExtensions<'runtimeContext, 'db when 'db: comparison> =
-  fun str_ops db_ops ->
-    makeExtensions<'runtimeContext, 'db, unit> str_ops db_ops None
-
-let bootstrapCustomStdExtensions<'runtimeContext, 'db, 'customExtension
-  when 'db: comparison and 'customExtension: comparison> =
-  fun str_ops db_ops ->
-    makeExtensions<'runtimeContext, 'db, 'customExtension> str_ops db_ops None
+  fun str_ops email_ops db_ops ->
+    makeExtensions<'runtimeContext, 'db, unit> str_ops email_ops db_ops None
