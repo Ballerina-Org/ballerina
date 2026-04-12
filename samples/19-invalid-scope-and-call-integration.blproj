@@ -1,0 +1,5 @@
+{
+  "name": "invalid-scope-and-call-integration",
+  "sources": ["19-invalid-scope-and-call-integration.bl"],
+  "inputProjects": []
+}

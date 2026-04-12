@@ -1,0 +1,5 @@
+{
+  "name": "invalid-branching-integration",
+  "sources": ["18-invalid-branching-integration.bl"],
+  "inputProjects": []
+}

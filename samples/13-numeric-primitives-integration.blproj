@@ -1,0 +1,5 @@
+{
+  "name": "numeric-primitives-integration",
+  "sources": ["13-numeric-primitives-integration.bl"],
+  "inputProjects": []
+}

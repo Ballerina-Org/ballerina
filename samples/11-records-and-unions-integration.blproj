@@ -1,0 +1,5 @@
+{
+  "name": "records-and-unions-integration",
+  "sources": ["11-records-and-unions-integration.bl"],
+  "inputProjects": []
+}

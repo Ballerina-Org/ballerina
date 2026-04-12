@@ -1,0 +1,118 @@
+{
+  "expectations": {
+    "01-hello-world-basic-types": {
+      "mode": "run",
+      "valueRegexes": ["int32_value", "full_greeting", "grade_rating"],
+      "typeRegexes": ["Tuple"],
+      "errorRegexes": []
+    },
+    "02-list-manipulation": {
+      "mode": "run",
+      "valueRegexes": ["list_length_nums", "product_result", "decompose_empty_check"],
+      "typeRegexes": ["Tuple"],
+      "errorRegexes": []
+    },
+    "03-advanced-data-types": {
+      "mode": "run",
+      "valueRegexes": ["player1_tag", "numeric_id_text", "extracted_misses_count"],
+      "typeRegexes": ["Tuple"],
+      "errorRegexes": []
+    },
+    "04-functions-and-type-inference": {
+      "mode": "run",
+      "valueRegexes": ["total_books", "normalized_rated", "pricing_rule_result"],
+      "typeRegexes": ["Tuple"],
+      "errorRegexes": []
+    },
+    "05-queries": {
+      "mode": "run",
+      "valueRegexes": ["SchemaAsValue", "Main ="],
+      "typeRegexes": ["Imported", "ItemsSchema"],
+      "errorRegexes": []
+    },
+    "06-schemas-and-relations": {
+      "mode": "run",
+      "valueRegexes": ["SchemaAsValue", "Main ="],
+      "typeRegexes": ["Imported", "LibrarySchema"],
+      "errorRegexes": []
+    },
+    "07-advanced-schemas": {
+      "mode": "run",
+      "valueRegexes": ["SchemaAsValue", "Main ="],
+      "typeRegexes": ["Imported", "BlogSchema"],
+      "errorRegexes": []
+    },
+    "08-hooks-and-permissions": {
+      "mode": "run",
+      "valueRegexes": ["SchemaAsValue", "Main ="],
+      "typeRegexes": ["Imported", "WebshopHooksSchema"],
+      "errorRegexes": []
+    },
+    "09-language-fundamentals-integration": {
+      "mode": "run",
+      "valueRegexes": ["Primitive \\(Bool true\\)"],
+      "typeRegexes": ["Primitive.*Bool"],
+      "errorRegexes": []
+    },
+    "10-collections-and-maps-integration": {
+      "mode": "run",
+      "valueRegexes": ["Primitive \\(Bool true\\)"],
+      "typeRegexes": ["Primitive.*Bool"],
+      "errorRegexes": []
+    },
+    "11-records-and-unions-integration": {
+      "mode": "run",
+      "valueRegexes": ["Primitive \\(Bool true\\)"],
+      "typeRegexes": ["Primitive.*Bool"],
+      "errorRegexes": []
+    },
+    "12-invalid-record-shape-integration": {
+      "mode": "build-fails",
+      "valueRegexes": [],
+      "typeRegexes": [],
+      "errorRegexes": ["typechecking", "\\bC\\b"]
+    },
+    "13-numeric-primitives-integration": {
+      "mode": "run",
+      "valueRegexes": ["int32_difference", "int64_difference", "time_span_parse_result"],
+      "typeRegexes": ["Tuple"],
+      "errorRegexes": []
+    },
+    "14-temporal-and-identifiers-integration": {
+      "mode": "run",
+      "valueRegexes": ["parsed_date_ok", "parsed_guid_invalid", "zero_time_span_text"],
+      "typeRegexes": ["Tuple"],
+      "errorRegexes": []
+    },
+    "15-patterns-and-arrows-integration": {
+      "mode": "run",
+      "valueRegexes": ["choice_result", "tuple_choice_result", "annotated_sum_left"],
+      "typeRegexes": ["Tuple"],
+      "errorRegexes": []
+    },
+    "16-type-hints-and-type-lambdas-integration": {
+      "mode": "run",
+      "valueRegexes": ["hinted_record_result", "singleton_explicit_length", "countainer_fold"],
+      "typeRegexes": ["Tuple"],
+      "errorRegexes": []
+    },
+    "17-source-scope-typeinfo-integration": {
+      "mode": "run",
+      "valueRegexes": ["Lambda"],
+      "typeRegexes": ["SomethingWithRange", "Range", "Arrow"],
+      "errorRegexes": []
+    },
+    "18-invalid-branching-integration": {
+      "mode": "build-fails",
+      "valueRegexes": [],
+      "typeRegexes": [],
+      "errorRegexes": ["Cannot unify types", "string and int32"]
+    },
+    "19-invalid-scope-and-call-integration": {
+      "mode": "build-fails",
+      "valueRegexes": [],
+      "typeRegexes": [],
+      "errorRegexes": ["cannot resolve identifier", "\\bx\\b"]
+    }
+  }
+}

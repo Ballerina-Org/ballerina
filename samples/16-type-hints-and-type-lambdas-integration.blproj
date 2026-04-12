@@ -1,0 +1,5 @@
+{
+  "name": "type-hints-and-type-lambdas-integration",
+  "sources": ["16-type-hints-and-type-lambdas-integration.bl"],
+  "inputProjects": []
+}

@@ -1,0 +1,5 @@
+{
+  "name": "invalid-record-shape-integration",
+  "sources": ["12-invalid-record-shape-integration.bl"],
+  "inputProjects": []
+}

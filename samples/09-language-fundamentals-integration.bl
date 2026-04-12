@@ -1,0 +1,18 @@
+// Ballerina Integration Sample 09: Language Fundamentals
+//
+// This sample groups together the basic language behaviors that used to be
+// scattered across many tiny integration tests. The goal is not to prove each
+// operator in isolation, but to exercise a coherent slice of real language use:
+// local bindings, arithmetic, boolean logic, tuples, and closures.
+
+let boolean_ok = !(false || !true && false);
+let conditional_ok = if 1 < 2 then true else false;
+
+let tuple_value = (1, "hello", true);
+let tuple_ok = (tuple_value.1 > 0) && (string::length tuple_value.2 > 0) && tuple_value.3;
+
+let arithmetic_ok = (20 - 5 > 10) && (20 - 5 < 16);
+let keep_second = fun (left:bool) -> fun (right:bool) -> if left then right else false;
+let closure_ok = (keep_second true true) && !(keep_second false true);
+
+arithmetic_ok && boolean_ok && conditional_ok && tuple_ok && closure_ok
