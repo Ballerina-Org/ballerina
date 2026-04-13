@@ -25,20 +25,20 @@ type T2 = {
   C: bool;
 };
 
-let choice_value: ChoicePayload = 2Of3(List::Nil [int32] ());
+let choice_value: ChoicePayload = 2Of3({});
 let choice_result = match choice_value with
 | 1Of3 (x -> x)
 | 2Of3 (x -> -1)
 | 3Of3 (x -> 0);
 
-let tuple_choice_value: TupleChoicePayload = 2Of3(List::Nil [int32] (), 42);
+let tuple_choice_value: TupleChoicePayload = 2Of3({}, 42);
 let second_item = fun (x: List [int32] * int32) -> x.2;
 let tuple_choice_result = match tuple_choice_value with
 | 1Of3 (x -> x)
 | 2Of3 (x -> second_item x)
 | 3Of3 (x -> 0);
 
-let arrow_value: ArrowList = fun flag -> if flag then List::Cons [int32] (1, List::Nil [int32] ()) else List::Nil [int32] ();
+let arrow_value: ArrowList = fun flag -> if flag then {1} else {};
 let arrow_true_length = List::length [int32] (arrow_value true);
 let arrow_false_length = List::length [int32] (arrow_value false);
 

@@ -101,7 +101,7 @@ let t2_second = t2.2;
 let t3_second = t3.2;
 
 // List of records: store many structured items and process them as a collection.
-let players = List::Cons [PlayerProfile] (player1, List::Cons [PlayerProfile] (player2, List::Nil [PlayerProfile] ()));
+let players = {player1; player2};
 let players_count = List::length [PlayerProfile] players;
 
 // Map over records to project one field from each item.
@@ -110,16 +110,7 @@ let tags_count = List::length [string] tags;
 
 // Fold + match together: extract all miss messages from a list of feedback values.
 let round_events =
-  List::Cons [ActionFeedback] (
-    Hit "target dummy",
-    List::Cons [ActionFeedback] (
-      Miss "shield blocked",
-      List::Cons [ActionFeedback] (
-        Hit "headshot",
-        List::Cons [ActionFeedback] (Miss "roll evasion", List::Nil [ActionFeedback] ())
-      )
-    )
-  );
+  {Hit "target dummy"; Miss "shield blocked"; Hit "headshot"; Miss "roll evasion"};
 
 let extracted_misses =
   List::fold [ActionFeedback][List[string]]
@@ -128,8 +119,8 @@ let extracted_misses =
       | Hit (_ -> acc)
       | Miss (msg ->
         // Append keeps original order from the source list.
-        List::append [string] acc (List::Cons [string] (msg, List::Nil [string] ()))))
-    (List::Nil [string] ())
+        List::append [string] acc {msg}))
+    {}
     round_events;
 
 let extracted_misses_count = List::length [string] extracted_misses;

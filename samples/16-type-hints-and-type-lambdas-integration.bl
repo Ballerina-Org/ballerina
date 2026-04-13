@@ -31,7 +31,7 @@ let hinted_record_result = sum_fields { A = 10; B = 20; C = 30; };
 let fold_union = fun value -> match value with | UA (v -> v) | UB (v -> v) | UC (v -> v);
 let hinted_union_result = (fold_union (UA 10)) + (fold_union (UB 20)) + (fold_union (UC 30));
 
-let singleton = fun [a:*] (value:a) -> List::Cons [a] (value, List::Nil [a] ());
+let singleton = fun [a:*] (value:a) -> {value};
 let pair = fun [a:*] [b:*] (x:a) (y:b) -> (x, y);
 let getCount = fun [a:*] (value:Countainer[a]) -> value.Count;
 let foldInt = fun (value:Countainer[int32]) -> value.Value + value.Count;

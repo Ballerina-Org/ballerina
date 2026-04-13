@@ -9,11 +9,9 @@
 // This sample shows the core list operations you will use most often:
 // create, count, transform (map), select (filter), aggregate (fold), and merge (append).
 
-// Create lists.
-// Use List::Cons to add an item at the front, and List::Nil for an empty list.
-// Think of this as building a list one element at a time.
-let nums = List::Cons [int32] (1, List::Cons [int32] (2, List::Cons [int32] (3, List::Nil [int32] ())));
-let strs = List::Cons [string] ("a", List::Cons [string] ("b", List::Nil [string] ()));
+// Create lists with literal syntax.
+let nums = {1; 2; 3};
+let strs = {"a"; "b"};
 
 // Count items.
 // Useful when validating "do we have any data?" or checking batch sizes.
@@ -28,7 +26,7 @@ let doubled = List::map [int32][int32] (fun (x: int32) -> x * 2) nums;
 // Example use case: keep only eligible orders or active users.
 let gt_1 = List::filter [int32] (fun (x: int32) -> x > 1) nums;
 let evens = List::filter [int32] (fun (x: int32) -> (x % 2) == 0) 
-  (List::Cons [int32] (1, List::Cons [int32] (2, List::Cons [int32] (3, List::Cons [int32] (4, List::Nil [int32] ())))));
+  ({1; 2; 3; 4});
 
 // Aggregate a list into one value with fold.
 // Example use case: total revenue, total quantity, or cumulative score.
@@ -37,7 +35,7 @@ let product_res = List::fold [int32][int32] (fun (acc: int32) -> fun (x: int32) 
 
 // Merge two lists with append.
 // Example use case: combine records from two sources before processing.
-let nums2 = List::Cons [int32] (4, List::Cons [int32] (5, List::Nil [int32] ()));
+let nums2 = {4; 5};
 let combined = List::append [int32] nums nums2;
 
 // Decompose a list into head + tail.
@@ -55,7 +53,7 @@ let tail_len =
   | 2Of2 (parts -> List::length [int32] parts.2)
   | 1Of2 (_ -> 0);
 
-let empty_nums = List::Nil [int32] ();
+let empty_nums = {};
 
 let empty_check =
   match List::decompose [int32] empty_nums with
