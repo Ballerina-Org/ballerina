@@ -1,0 +1,5 @@
+{
+  "name": "list-and-map-literals-integration",
+  "sources": ["22-list-and-map-literals-integration.bl"],
+  "inputProjects": []
+}

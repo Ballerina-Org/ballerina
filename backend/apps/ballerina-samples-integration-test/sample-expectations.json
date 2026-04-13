@@ -132,6 +132,12 @@
       "typeRegexes": ["Primitive.*Bool"],
       "errorRegexes": []
     },
+    "22-list-and-map-literals-integration": {
+      "mode": "run",
+      "valueRegexes": ["list_length", "map_rows", "record_sum"],
+      "typeRegexes": ["Tuple"],
+      "errorRegexes": []
+    },
     "99-error-recovery-integration": {
       "mode": "build-fails",
       "valueRegexes": [],

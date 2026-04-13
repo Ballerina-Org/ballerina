@@ -495,56 +495,202 @@ module Expr =
         do! openCurlyBracketOperator
         let! loc = parser.Location
 
+        let mkListNil () =
+          Expr.Apply(
+            Expr.Lookup(
+              Identifier.FullyQualified([ "List" ], "Nil"),
+              loc,
+              TypeCheckScope.Empty
+            ),
+            Expr.Primitive(PrimitiveValue.Unit, loc, TypeCheckScope.Empty),
+            loc,
+            TypeCheckScope.Empty
+          )
+
+        let mkListCons
+          (head: Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
+          (tail: Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
+          =
+          Expr.Apply(
+            Expr.Lookup(
+              Identifier.FullyQualified([ "List" ], "Cons"),
+              loc,
+              TypeCheckScope.Empty
+            ),
+            Expr.TupleCons([ head; tail ], loc, TypeCheckScope.Empty),
+            loc,
+            TypeCheckScope.Empty
+          )
+
+        let mkListLiteral
+          (items: List<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>)
+          =
+          let rec build remaining =
+            match remaining with
+            | [] -> mkListNil ()
+            | head :: tail -> mkListCons head (build tail)
+
+          build items
+
+        let mkMapEmpty () =
+          Expr.Apply(
+            Expr.Lookup(
+              Identifier.FullyQualified([ "Map" ], "Empty"),
+              loc,
+              TypeCheckScope.Empty
+            ),
+            Expr.Primitive(PrimitiveValue.Unit, loc, TypeCheckScope.Empty),
+            loc,
+            TypeCheckScope.Empty
+          )
+
+        let mkMapSet
+          (key: Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
+          (value: Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
+          (acc: Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
+          =
+          Expr.Apply(
+            Expr.Apply(
+              Expr.Lookup(
+                Identifier.FullyQualified([ "Map" ], "set"),
+                loc,
+                TypeCheckScope.Empty
+              ),
+              Expr.TupleCons([ key; value ], loc, TypeCheckScope.Empty),
+              loc,
+              TypeCheckScope.Empty
+            ),
+            acc,
+            loc,
+            TypeCheckScope.Empty
+          )
+
+        let mkMapLiteral
+          (entries:
+            List<
+              Identifier * Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>
+             >)
+          =
+          entries
+          |> List.fold
+            (fun acc (key, value) ->
+              let keyExpr = Expr.Lookup(key, loc, TypeCheckScope.Empty)
+              mkMapSet keyExpr value acc)
+            (mkMapEmpty ())
+
         return!
           parser {
-            let! firstFieldOrWithExpr =
-              parser {
-                let! e = expr parseAllComplexShapes
+            let! isEmpty = closeCurlyBracketOperator |> parser.Try
 
+            match isEmpty with
+            | Left _ ->
+              return mkListLiteral []
+            | Right _ ->
+              let! firstExpr = expr parseAllComplexShapes
+
+              let firstLookupId =
+                match firstExpr.Expr with
+                | ExprRec.Lookup({ Id = id }) -> Some id
+                | _ -> None
+
+              let parseListLiteralFromFirst () =
+                parser {
+                  let! tailItems =
+                    parser.ManyIndex(fun _ ->
+                      parser {
+                        do! semicolonOperator
+                        let! value = expr parseAllComplexShapes
+                        return value
+                      })
+
+                  do! semicolonOperator |> parser.Try |> parser.Ignore
+                  do! closeCurlyBracketOperator
+                  return mkListLiteral (firstExpr :: tailItems)
+                }
+
+              let parseRecordWithFromFirst () =
+                parser {
+                  do! withKeyword
+
+                  let! fields =
+                    parser.ManyIndex(fun i ->
+                      parser {
+                        if i > 0 then
+                          do! semicolonOperator
+
+                        let! id = identifierLocalOrFullyQualified ()
+                        do! equalsOperator
+                        let! value = expr parseAllComplexShapes
+                        return (id, value)
+                      })
+
+                  do! semicolonOperator |> parser.Try |> parser.Ignore
+                  do! closeCurlyBracketOperator
+                  return Expr.RecordWith(firstExpr, fields, loc, TypeCheckScope.Empty)
+                }
+
+              let parseRecordFromFirst
+                (firstField: Identifier)
+                : Parser<_, _, _, _> =
+                parser {
+                  do! equalsOperator
+                  let! firstValue = expr parseAllComplexShapes
+
+                  let! fields =
+                    parser.ManyIndex(fun _ ->
+                      parser {
+                        do! semicolonOperator
+                        let! id = identifierLocalOrFullyQualified ()
+                        do! equalsOperator
+                        let! value = expr parseAllComplexShapes
+                        return (id, value)
+                      })
+
+                  do! semicolonOperator |> parser.Try |> parser.Ignore
+                  do! closeCurlyBracketOperator
+
+                  return
+                    Expr.RecordCons(
+                      (firstField, firstValue) :: fields,
+                      loc,
+                      TypeCheckScope.Empty
+                    )
+                }
+
+              let parseMapFromFirst
+                (firstKey: Identifier)
+                : Parser<_, _, _, _> =
+                parser {
+                  do! singleArrowOperator
+                  let! firstValue = expr parseAllComplexShapes
+
+                  let! entries =
+                    parser.ManyIndex(fun _ ->
+                      parser {
+                        do! semicolonOperator
+                        let! key = identifierLocalOrFullyQualified ()
+                        do! singleArrowOperator
+                        let! value = expr parseAllComplexShapes
+                        return (key, value)
+                      })
+
+                  do! semicolonOperator |> parser.Try |> parser.Ignore
+                  do! closeCurlyBracketOperator
+
+                  return mkMapLiteral ((firstKey, firstValue) :: entries)
+                }
+
+              match firstLookupId with
+              | Some firstId ->
                 return!
                   parser.Any
-                    [ parser {
-                        do! withKeyword |> parser.Ignore
-                        return Sum.Right e
-                      }
-
-                      parser {
-                        let! e =
-                          e
-                          |> Expr.AsLookup
-                          |> sum.MapError(
-                            Errors.MapContext(replaceWith e.Location)
-                          )
-                          |> parser.OfSum
-
-                        do! equalsOperator |> parser.Ignore
-                        let! value = expr parseAllComplexShapes
-                        return Sum.Left(e, value)
-                      } ]
-              }
-
-            let! fields =
-              parser.ManyIndex(fun i ->
-                parser {
-                  if firstFieldOrWithExpr.IsLeft || i > 0 then
-                    do! semicolonOperator
-
-                  let! id = identifierLocalOrFullyQualified ()
-                  do! equalsOperator
-                  let! value = expr parseAllComplexShapes
-                  return (id, value)
-                })
-
-            do! semicolonOperator |> parser.Try |> parser.Ignore
-
-            do! closeCurlyBracketOperator
-
-            match firstFieldOrWithExpr with
-            | Sum.Left({ Id = f }, v) ->
-              return
-                Expr.RecordCons((f, v) :: fields, loc, TypeCheckScope.Empty)
-            | Sum.Right e ->
-              return Expr.RecordWith(e, fields, loc, TypeCheckScope.Empty)
+                    [ parseRecordWithFromFirst ()
+                      parseRecordFromFirst firstId
+                      parseMapFromFirst firstId
+                      parseListLiteralFromFirst () ]
+                  |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+              | None ->
+                return! parseListLiteralFromFirst ()
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }

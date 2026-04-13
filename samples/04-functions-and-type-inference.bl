@@ -54,7 +54,7 @@ let modernCpp: Book = { Title = "Il nome della rosa"; Author = "Umberto Eco"; Ye
 
 // Build a list of books for batch operations.
 // Square-bracket type blocks are shown for readability; inference can often derive them.
-let books = List::Cons [Book] (dune, List::Cons [Book] (hobbit, List::Cons [Book] (modernCpp, List::Nil [Book] ())));
+let books = {dune; hobbit; modernCpp};
 
 // Count records in the collection.
 let totalBooks = List::length [Book] books;

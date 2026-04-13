@@ -1,0 +1,33 @@
+// Ballerina Integration Sample 22: List And Map Literals
+//
+// Verifies early disambiguation of curly literals:
+// - {a = b; c = d} => record constructor
+// - {a -> b; c -> d} => map literal
+// - {a; b; c} and {complex; ...} => list literal
+
+type Totals = {
+  A: int32;
+  B: int32;
+};
+
+let first = 10;
+let second = 20;
+let values = {first; second; first + second};
+let singleton = {first};
+let with_complex_head = {(first + 1); second};
+
+let key_a = "a";
+let key_b = "b";
+let score_map = {key_a -> 1; key_b -> 2};
+let score_rows = Map::mapToList [string][int32] score_map;
+
+let record_value: Totals = { A = first; B = second };
+let record_updated = {record_value with B = 30};
+
+(
+  ("list_length", List::length [int32] values),
+  ("singleton_length", List::length [int32] singleton),
+  ("complex_head_length", List::length [int32] with_complex_head),
+  ("map_rows", List::length score_rows),
+  ("record_sum", record_updated.A + record_updated.B)
+)

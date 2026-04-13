@@ -5,11 +5,7 @@
 // transform values, keep the valid subset, aggregate them, and reshape a map
 // into a list for downstream processing.
 
-let numbers =
-     List::Cons [int32] (
-          1,
-          List::Cons [int32] (-2, List::Cons [int32] (3, List::Nil [int32] ()))
-     );
+let numbers = {1; -2; 3};
 
 let positive_flags = List::map [int32][bool] (fun (value:int32) -> value > 0) numbers;
 let positives = List::filter [int32] (fun (value:int32) -> value > 0) numbers;
@@ -20,14 +16,13 @@ let list_pipeline_ok =
      && (List::length [int32] positives == 2)
      && (positive_sum == 4);
 
-let cons = List::Cons [string];
-let nil = List::Nil [string] ();
-let left_words = cons("hello", cons(" ", cons("world", nil)));
-let right_words = cons("bonjour", cons(" ", cons("monde", nil)));
+let left_words = {"hello"; " "; "world"};
+let right_words = {"bonjour"; " "; "monde"};
 let append_ok = List::length [string] (List::append [string] left_words right_words) == 6;
 
-let empty_scores = Map::Empty [string][int32] ();
-let scores = Map::set [string][int32] ("key1", 1) (Map::set [string][int32] ("key2", 2) empty_scores);
+let key1 = "key1";
+let key2 = "key2";
+let scores = {key1 -> 1; key2 -> 2};
 let boosted_scores = Map::map (fun (value:int32) -> value + 100) scores;
 let score_rows = Map::mapToList [string][int32] boosted_scores;
 let map_ok = List::length score_rows == 2;
