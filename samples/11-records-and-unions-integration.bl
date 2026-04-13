@@ -9,12 +9,12 @@ type ApprovalSummary = {
   Score: int32;
   Notes: string;
   Accepted: bool;
-}
-in type ReviewOutcome =
+};
+type ReviewOutcome =
 | Approved of int32
 | Rejected of string
-| Pending of bool
-in type Countainer = [a:*] -> {
+| Pending of bool;
+type Countainer = [a:*] -> {
   Value: a;
   Count: int32;
 };

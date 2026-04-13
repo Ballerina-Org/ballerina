@@ -453,10 +453,9 @@ module Expr =
 
         do!
           parser.Any
-            [ inKeyword
-              semicolonOperator
+            [ semicolonOperator
               (fun () ->
-                "Expected 'in', ';' or expression after 'do' expression")
+                "Expected ';' after 'do' expression")
               |> Errors.Singleton loc
               |> Errors.MapPriority(replaceWith ErrorPriority.High)
               |> parser.Throw ]
@@ -791,11 +790,15 @@ module Expr =
 
         let! loc' = parser.Location
 
-        let! hasSeparator =
+        do!
           parser.Any
-            [ inKeyword |> parser.Map(fun _ -> true)
-              semicolonOperator |> parser.Map(fun _ -> true)
-              parser { return false } ]
+            [ semicolonOperator
+              (fun () ->
+                "Expected ';' before expression after type let declaration")
+              |> Errors.Singleton loc'
+              |> Errors.MapPriority(replaceWith ErrorPriority.High)
+              |> parser.Throw ]
+          |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
         let! body =
           parseBoundBody ()
@@ -824,20 +827,6 @@ module Expr =
           | _ -> [], SymbolsKind.RecordFields
 
         let typeDecl = TypeExpr.LetSymbols(symbols, symbolsKind, typeDecl)
-
-        let body =
-          if hasSeparator then
-            body
-          else
-            Expr.Do(
-              createRecoveredError
-                "Expected 'in' or ';' after type let declaration"
-                loc'
-                "missing_separator_after_type_let",
-              body,
-              loc',
-              TypeCheckScope.Empty
-            )
 
         return Expr.TypeLet(id, typeDecl, body, loc, TypeCheckScope.Empty)
       }
