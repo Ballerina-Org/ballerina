@@ -131,6 +131,21 @@
       ],
       "typeRegexes": ["Primitive.*Bool"],
       "errorRegexes": []
+    },
+    "99-error-recovery-integration": {
+      "mode": "build-fails",
+      "valueRegexes": [],
+      "typeRegexes": [],
+      "errorRegexes": ["Expected 'in' or ';' after type let declaration", "while typechecking"]
+    },
+    "100-error-recovery-dangling-record-des": {
+      "mode": "build-fails",
+      "valueRegexes": [],
+      "typeRegexes": [],
+      "errorRegexes": [
+        "Expected field name or tuple index after '.'",
+        "while typechecking"
+      ]
     }
   }
 }
