@@ -142,7 +142,7 @@
       "mode": "build-fails",
       "valueRegexes": [],
       "typeRegexes": [],
-      "errorRegexes": ["Expected 'in' or ';' after type let declaration", "while typechecking"]
+      "errorRegexes": ["Expected ';' before expression after type let declaration", "while parsing"]
     },
     "100-error-recovery-dangling-record-des": {
       "mode": "build-fails",
