@@ -1496,6 +1496,14 @@ module Model =
       | Some t -> $"{self.Var}: {t} in {self.Source}"
       | None -> $"{self.Var} in {self.Source}"
 
+  and ExprRecoveredSyntaxError<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { ErrorMessage: string
+      ErrorLocation: Location
+      RecoveryContext: string }
+
+    override self.ToString() =
+      $"<SyntaxError: {self.ErrorMessage}>"
+
   and ExprRec<'T, 'Id, 'valueExt when 'Id: comparison> =
     | Primitive of PrimitiveValue
     | Lookup of ExprLookup<'T, 'Id, 'valueExt>
@@ -1522,6 +1530,7 @@ module Model =
     | TupleDes of ExprTupleDes<'T, 'Id, 'valueExt>
     | SumDes of ExprSumDes<'T, 'Id, 'valueExt>
     | Query of ExprQuery<'T, 'Id, 'valueExt>
+    | RecoveredSyntaxError of ExprRecoveredSyntaxError<'T, 'Id, 'valueExt>
 
     override self.ToString() : string =
       match self with
@@ -1630,6 +1639,7 @@ module Model =
         $"(if {cond.ToString()} then {thenExpr.ToString()} else {elseExpr.ToString()})"
 
       | Query q -> q.ToString()
+      | RecoveredSyntaxError err -> err.ToString()
 
 
   and Expr<'T, 'Id, 'valueExt when 'Id: comparison> =

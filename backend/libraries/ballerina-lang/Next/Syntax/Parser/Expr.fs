@@ -34,6 +34,7 @@ module Expr =
   type ComplexExpression<'valueExt> =
     | ScopedIdentifier of NonEmptyList<string>
     | RecordOrTupleDesChain of NonEmptyList<Sum<string, int>>
+    | DanglingRecordDes of Location
     | TupleCons of
       NonEmptyList<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
     | ApplicationArguments of
@@ -580,19 +581,38 @@ module Expr =
 
         return!
           parser {
-            let! fields =
-              parser.AtLeastOne(
-                parser {
-                  do! dotOperator
+            do! dotOperator
+            let! dotLoc = parser.Location
 
-                  return!
-                    parser.Any
-                      [ singleIdentifier |> parser.Map Left
-                        intLiteralToken () |> parser.Map Right ]
-                }
-              )
+            let! firstFieldOrRecover =
+              parser.Any
+                [ singleIdentifier |> parser.Map(Left >> Some)
+                  intLiteralToken () |> parser.Map(Right >> Some)
+                  parser { return None } ]
 
-            return fields |> ComplexExpression.RecordOrTupleDesChain
+            match firstFieldOrRecover with
+            | Some firstField ->
+              let! tailFields =
+                parser.AtLeastOne(
+                  parser {
+                    do! dotOperator
+
+                    return!
+                      parser.Any
+                        [ singleIdentifier |> parser.Map Left
+                          intLiteralToken () |> parser.Map Right ]
+                  }
+                )
+                |> parser.Try
+
+              let fields =
+                match tailFields with
+                | Left tail -> NonEmptyList.OfList(firstField, tail |> NonEmptyList.ToList)
+                | Right _ -> NonEmptyList.OfList(firstField, [])
+
+              return fields |> ComplexExpression.RecordOrTupleDesChain
+            | None ->
+              return dotLoc |> ComplexExpression.DanglingRecordDes
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
@@ -625,15 +645,11 @@ module Expr =
 
         let! loc' = parser.Location
 
-        do!
+        let! hasSeparator =
           parser.Any
-            [ inKeyword
-              semicolonOperator
-              (fun () -> "Expected 'in' or ';' after type let declaration")
-              |> Errors.Singleton loc'
-              |> Errors.MapPriority(replaceWith ErrorPriority.High)
-              |> parser.Throw ]
-          |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+            [ inKeyword |> parser.Map(fun _ -> true)
+              semicolonOperator |> parser.Map(fun _ -> true)
+              parser { return false } ]
 
         let! body =
           parseBoundBody ()
@@ -662,6 +678,20 @@ module Expr =
           | _ -> [], SymbolsKind.RecordFields
 
         let typeDecl = TypeExpr.LetSymbols(symbols, symbolsKind, typeDecl)
+
+        let body =
+          if hasSeparator then
+            body
+          else
+            Expr.Do(
+              createRecoveredError
+                "Expected 'in' or ';' after type let declaration"
+                loc'
+                "missing_separator_after_type_let",
+              body,
+              loc',
+              TypeCheckScope.Empty
+            )
 
         return Expr.TypeLet(id, typeDecl, body, loc, TypeCheckScope.Empty)
       }
@@ -1109,6 +1139,17 @@ module Expr =
                             TypeCheckScope.Empty
                           ))
                       acc
+                | DanglingRecordDes errorLoc ->
+                  return
+                    Expr.Do(
+                      createRecoveredError
+                        "Expected field name or tuple index after '.'"
+                        errorLoc
+                        "dangling_record_destructure",
+                      acc,
+                      errorLoc,
+                      TypeCheckScope.Empty
+                    )
                 | TupleCons fields ->
                   return
                     Expr.TupleCons(

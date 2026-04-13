@@ -1,0 +1,13 @@
+// Error recovery integration test
+// This sample demonstrates the parser's ability to recover from syntax errors
+// and provide partial ASTs for better Intellisense and error messages
+
+// Test 1: Missing semicolon in let binding (should recover)
+type Person = {
+  name: string;
+  age: int32
+}
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      do string::print "Missing semicolon in let binding test";
+
+()

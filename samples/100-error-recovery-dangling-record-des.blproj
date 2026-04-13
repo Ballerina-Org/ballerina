@@ -1,0 +1,5 @@
+{
+  "name": "error-recovery-dangling-record-des",
+  "sources": ["100-error-recovery-dangling-record-des.bl"],
+  "inputProjects": []
+}

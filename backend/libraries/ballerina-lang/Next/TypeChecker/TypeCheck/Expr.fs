@@ -231,6 +231,11 @@ module Expr =
                     q
 
                 return TypeCheckedExpr.Query(q, t, k), ctx
+
+              | ExprRec.RecoveredSyntaxError err ->
+                return!
+                  Errors.Singleton err.ErrorLocation (fun () -> err.ErrorMessage)
+                  |> state.Throw
             }
 
           let! expr =

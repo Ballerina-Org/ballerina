@@ -1,0 +1,9 @@
+// Error recovery: dangling record destructure
+type Person = { Name: string };
+let person: Person = { Name = "Alice" };
+
+person.
+
+do string::print "This should not affect the dangling record decomposition.";
+
+()

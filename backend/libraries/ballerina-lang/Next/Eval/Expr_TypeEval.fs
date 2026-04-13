@@ -240,4 +240,9 @@ module TypeEval =
               Errors.Singleton expr.Location (fun () ->
                 $"Error (typecheck): not yet implemented expression pattern query")
               |> state.Throw
+
+          | ExprRec.RecoveredSyntaxError err ->
+            return!
+              Errors.Singleton err.ErrorLocation (fun () -> err.ErrorMessage)
+              |> state.Throw
         }
