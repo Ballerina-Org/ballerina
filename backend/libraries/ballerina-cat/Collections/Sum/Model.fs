@@ -182,6 +182,23 @@ module Model =
       | Right e, _
       | _, Right e -> Right e
 
+    member inline sum.All3<'a1, 'a2, 'a3, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
+      (p1: Sum<'a1, 'b>)
+      (p2: Sum<'a2, 'b>)
+      (p3: Sum<'a3, 'b>)
+      =
+      sum.All2 (sum.All2 p1 p2) p3
+      |> Sum.map (fun ((v1, v2), v3) -> v1, v2, v3)
+
+    member inline sum.All4<'a1, 'a2, 'a3, 'a4, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
+      (p1: Sum<'a1, 'b>)
+      (p2: Sum<'a2, 'b>)
+      (p3: Sum<'a3, 'b>)
+      (p4: Sum<'a4, 'b>)
+      =
+      sum.All2 (sum.All3 p1 p2 p3) p4
+      |> Sum.map (fun ((v1, v2, v3), v4) -> v1, v2, v3, v4)
+
     member sum.Delay p = sum.Bind(sum.Return(), p)
 
     member sum.Lift2 (f: 'a -> 'b -> 'c) (p1: Sum<_, 's>) (p2: Sum<_, 's>) =

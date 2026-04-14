@@ -299,7 +299,7 @@ module SchemaTypeEval =
                                     None
                                     (it.Mapper |> Expr.Lookup)
 
-                                let mapper = Conversion.convertExpression mapper
+                                let! mapper = Conversion.convertExpression mapper |> state.OfSum
 
                                 let next_t = t_arg
 
@@ -356,7 +356,7 @@ module SchemaTypeEval =
                         TypeValue.Unify(loc0, body_t, p_decl_t)
                         |> Expr.liftUnification
 
-                      let body_runnable = Conversion.convertExpression body_e
+                      let! body_runnable = Conversion.convertExpression body_e |> state.OfSum
 
                       return
                         { SchemaEntityProperty.Path = resolved_scope
@@ -412,7 +412,7 @@ module SchemaTypeEval =
                         )
                         |> Expr.liftUnification
 
-                      let body_runnable = Conversion.convertExpression body_e
+                      let! body_runnable = Conversion.convertExpression body_e |> state.OfSum
 
                       return
                         { SchemaEntityVector.VectorName = p.Name
@@ -848,17 +848,17 @@ module SchemaTypeEval =
                   e_typechecked
                   parsed_hooks.CanDelete
 
-              let onCreating = Conversion.convertExpressionOption onCreating
-              let onCreated = Conversion.convertExpressionOption onCreated
-              let onUpdating = Conversion.convertExpressionOption onUpdating
-              let onUpdated = Conversion.convertExpressionOption onUpdated
-              let onDeleting = Conversion.convertExpressionOption onDeleting
-              let onDeleted = Conversion.convertExpressionOption onDeleted
-              let onBackground = Conversion.convertExpressionOption onBackground
-              let canCreate = Conversion.convertExpressionOption canCreate
-              let canRead = Conversion.convertExpressionOption canRead
-              let canUpdate = Conversion.convertExpressionOption canUpdate
-              let canDelete = Conversion.convertExpressionOption canDelete
+              let! onCreating = Conversion.convertExpressionOption onCreating |> state.OfSum
+              let! onCreated = Conversion.convertExpressionOption onCreated |> state.OfSum
+              let! onUpdating = Conversion.convertExpressionOption onUpdating |> state.OfSum
+              let! onUpdated = Conversion.convertExpressionOption onUpdated |> state.OfSum
+              let! onDeleting = Conversion.convertExpressionOption onDeleting |> state.OfSum
+              let! onDeleted = Conversion.convertExpressionOption onDeleted |> state.OfSum
+              let! onBackground = Conversion.convertExpressionOption onBackground |> state.OfSum
+              let! canCreate = Conversion.convertExpressionOption canCreate |> state.OfSum
+              let! canRead = Conversion.convertExpressionOption canRead |> state.OfSum
+              let! canUpdate = Conversion.convertExpressionOption canUpdate |> state.OfSum
+              let! canDelete = Conversion.convertExpressionOption canDelete |> state.OfSum
 
               return
                 { OnCreating = onCreating
@@ -927,7 +927,7 @@ module SchemaTypeEval =
                         )
                       )
 
-                    let on_linking_runnable = Conversion.convertExpression on_linking_expr
+                    let! on_linking_runnable = Conversion.convertExpression on_linking_expr |> state.OfSum
 
                     return
                       { r_typechecked with
@@ -968,7 +968,7 @@ module SchemaTypeEval =
                         )
                       )
 
-                    let on_linked_runnable = Conversion.convertExpression on_linked_expr
+                    let! on_linked_runnable = Conversion.convertExpression on_linked_expr |> state.OfSum
 
                     return
                       { r_typechecked with
@@ -1012,7 +1012,7 @@ module SchemaTypeEval =
                         )
                       )
 
-                    let on_unlinking_runnable = Conversion.convertExpression on_unlinking_expr
+                    let! on_unlinking_runnable = Conversion.convertExpression on_unlinking_expr |> state.OfSum
 
                     return
                       { r_typechecked with
@@ -1053,7 +1053,7 @@ module SchemaTypeEval =
                         )
                       )
 
-                    let on_unlinked_runnable = Conversion.convertExpression on_unlinked_expr
+                    let! on_unlinked_runnable = Conversion.convertExpression on_unlinked_expr |> state.OfSum
 
                     return
                       { r_typechecked with

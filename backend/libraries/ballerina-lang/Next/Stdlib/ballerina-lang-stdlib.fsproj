@@ -43,7 +43,6 @@
     <Compile Include="Guid/Extension.fs" />
     <Compile Include="DB/Model.fs" />
     <Compile Include="DB/Patterns.fs" />
-    <Compile Include="TypeCheckedExprLegacyConstructors.fs" />
     <Compile Include="RunnableExprLegacyConstructors.fs" />
     <Compile Include="DB/runQuery.fs" />
     <Compile Include="DB/DBRun.fs" />

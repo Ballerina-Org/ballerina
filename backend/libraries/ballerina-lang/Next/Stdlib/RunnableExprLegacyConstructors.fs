@@ -6,9 +6,6 @@ module RunnableExprLegacyConstructors =
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Terms.Patterns
 
-  let private defaultLocation: Location =
-    { File = ""; Line = 1; Column = 1 }
-
   let private defaultScope: TypeCheckScope = TypeCheckScope.Empty
 
   type RunnableExpr<'valueExt> with
@@ -16,7 +13,7 @@ module RunnableExprLegacyConstructors =
     // They intentionally inject placeholder Type/Kind values.
     static member UnsafeLookupForUntypedEval(id: ResolvedIdentifier) : RunnableExpr<'valueExt> =
       { Expr = RunnableExprRec.Lookup { RunnableExprLookup.Id = id }
-        Location = defaultLocation
+        Location = Location.Unknown
         Type = TypeValue.CreateUnit()
         Kind = Kind.Star
         Scope = defaultScope }
@@ -25,7 +22,7 @@ module RunnableExprLegacyConstructors =
       (f: RunnableExpr<'valueExt>, a: RunnableExpr<'valueExt>)
       : RunnableExpr<'valueExt> =
       { Expr = RunnableExprRec.Apply { F = f; Arg = a }
-        Location = defaultLocation
+        Location = Location.Unknown
         Type = TypeValue.CreateUnit()
         Kind = Kind.Star
         Scope = defaultScope }
@@ -38,7 +35,7 @@ module RunnableExprLegacyConstructors =
         r: TypeValue<'valueExt>
       ) : RunnableExpr<'valueExt> =
       { Expr = RunnableExprRec.Lambda { Param = v; ParamType = t; Body = e; BodyType = r }
-        Location = defaultLocation
+        Location = Location.Unknown
         Type = TypeValue.CreateArrow(t, r)
         Kind = Kind.Star
         Scope = defaultScope }
@@ -47,14 +44,14 @@ module RunnableExprLegacyConstructors =
       (q: RunnableExprQuery<'valueExt>)
       : RunnableExpr<'valueExt> =
       { Expr = RunnableExprRec.Query q
-        Location = defaultLocation
+        Location = Location.Unknown
         Type = TypeValue.CreateUnit()
         Kind = Kind.Star
         Scope = defaultScope }
 
     static member UnsafeSumConsForUntypedEval(selector: SumConsSelector) : RunnableExpr<'valueExt> =
       { Expr = RunnableExprRec.SumCons { Selector = selector }
-        Location = defaultLocation
+        Location = Location.Unknown
         Type = TypeValue.CreateUnit()
         Kind = Kind.Star
         Scope = defaultScope }
@@ -63,7 +60,7 @@ module RunnableExprLegacyConstructors =
       (items: List<RunnableExpr<'valueExt>>)
       : RunnableExpr<'valueExt> =
       { Expr = RunnableExprRec.TupleCons { Items = items }
-        Location = defaultLocation
+        Location = Location.Unknown
         Type = TypeValue.CreateUnit()
         Kind = Kind.Star
         Scope = defaultScope }
@@ -72,14 +69,14 @@ module RunnableExprLegacyConstructors =
       (fields: List<ResolvedIdentifier * RunnableExpr<'valueExt>>)
       : RunnableExpr<'valueExt> =
       { Expr = RunnableExprRec.RecordCons { Fields = fields }
-        Location = defaultLocation
+        Location = Location.Unknown
         Type = TypeValue.CreateUnit()
         Kind = Kind.Star
         Scope = defaultScope }
 
     static member UnsafePrimitiveForUntypedEval(p: PrimitiveValue) : RunnableExpr<'valueExt> =
       { Expr = RunnableExprRec.Primitive p
-        Location = defaultLocation
+        Location = Location.Unknown
         Type = TypeValue.CreateUnit()
         Kind = Kind.Star
         Scope = defaultScope }
@@ -90,7 +87,7 @@ module RunnableExprLegacyConstructors =
        valueKind: Kind)
       : RunnableExpr<'valueExt> =
       { Expr = RunnableExprRec.FromValue { Value = value; ValueType = valueType; ValueKind = valueKind }
-        Location = defaultLocation
+        Location = Location.Unknown
         Type = valueType
         Kind = valueKind
         Scope = defaultScope }

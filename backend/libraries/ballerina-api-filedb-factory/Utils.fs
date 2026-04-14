@@ -109,8 +109,8 @@ module Utils =
           build_cache
           project
 
-      let expr = Conversion.convertExpression expr
-      let exprs = exprs |> List.map Conversion.convertExpression
+      let! expr = Conversion.convertExpression expr
+      let! exprs = exprs |> List.map Conversion.convertExpression |> sum.All
 
       let runtimeContext: FileDBRuntimeContext =
         { TenantId = tenantId
