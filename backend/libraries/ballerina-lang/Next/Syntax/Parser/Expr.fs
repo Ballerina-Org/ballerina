@@ -33,6 +33,7 @@ module Expr =
 
   type ComplexExpression<'valueExt> =
     | ScopedIdentifier of NonEmptyList<string>
+    | DanglingScopedIdentifier of Location
     | RecordOrTupleDesChain of NonEmptyList<Sum<string, int>>
     | DanglingRecordDes of Location
     | TupleCons of
@@ -870,15 +871,33 @@ module Expr =
 
         return!
           parser {
-            let! ids =
-              parser.AtLeastOne(
-                parser {
-                  do! doubleColonOperator
-                  return! singleIdentifier
-                }
-              )
+            do! doubleColonOperator
+            let! colonLoc = parser.Location
 
-            return ids |> ScopedIdentifier
+            let! firstIdOrNone =
+              parser.Any
+                [ singleIdentifier |> parser.Map Some
+                  parser { return None } ]
+
+            match firstIdOrNone with
+            | None ->
+              return colonLoc |> DanglingScopedIdentifier
+            | Some firstId ->
+              let! tailIds =
+                parser.AtLeastOne(
+                  parser {
+                    do! doubleColonOperator
+                    return! singleIdentifier
+                  }
+                )
+                |> parser.Try
+
+              let ids =
+                match tailIds with
+                | Left tail -> NonEmptyList.OfList(firstId, tail |> NonEmptyList.ToList)
+                | Right _ -> NonEmptyList.OfList(firstId, [])
+
+              return ids |> ScopedIdentifier
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
       }
@@ -1252,6 +1271,19 @@ module Expr =
                         $"Error: cannot collapse scoped identifier chain on non-identifier")
                       |> Errors.Singleton loc
                       |> sum.Throw
+                | DanglingScopedIdentifier errorLoc ->
+                  match acc.Expr with
+                  | ExprRec.Lookup({ Id = Identifier.LocalScope id }) ->
+                    return
+                      { Expr = ExprRec.ErrorDanglingScopedIdentifier({ PrefixParts = [ id ] })
+                        Location = errorLoc
+                        Scope = TypeCheckScope.Empty }
+                  | _ ->
+                    return!
+                      (fun () ->
+                        $"Error: cannot collapse dangling scoped identifier on non-identifier")
+                      |> Errors.Singleton loc
+                      |> sum.Throw
                 | RecordOrTupleDesChain ids ->
                   return
                     ids
@@ -1276,15 +1308,9 @@ module Expr =
                       acc
                 | DanglingRecordDes errorLoc ->
                   return
-                    Expr.Do(
-                      createRecoveredError
-                        "Expected field name or tuple index after '.'"
-                        errorLoc
-                        "dangling_record_destructure",
-                      acc,
-                      errorLoc,
-                      TypeCheckScope.Empty
-                    )
+                    { Expr = ExprRec.ErrorDanglingRecordDes({ Expr = acc; Field = None })
+                      Location = errorLoc
+                      Scope = TypeCheckScope.Empty }
                 | TupleCons fields ->
                   return
                     Expr.TupleCons(

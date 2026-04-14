@@ -236,6 +236,20 @@ module Expr =
                 return!
                   Errors.Singleton err.ErrorLocation (fun () -> err.ErrorMessage)
                   |> state.Throw
+
+              | ExprRec.ErrorDanglingRecordDes({ Expr = record_expr; Field = _field }) ->
+                return!
+                  Expr.TypeCheckErrorDanglingRecordDes
+                    typeCheckExpr
+                    context_t
+                    record_expr
+                    loc0
+
+              | ExprRec.ErrorDanglingScopedIdentifier({ PrefixParts = prefixParts }) ->
+                return!
+                  Expr.TypeCheckErrorDanglingScopedIdentifier
+                    prefixParts
+                    loc0
             }
 
           let! expr =

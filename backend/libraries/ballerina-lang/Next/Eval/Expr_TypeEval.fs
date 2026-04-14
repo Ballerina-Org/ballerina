@@ -245,4 +245,12 @@ module TypeEval =
             return!
               Errors.Singleton err.ErrorLocation (fun () -> err.ErrorMessage)
               |> state.Throw
+          | ExprRec.ErrorDanglingRecordDes _ ->
+            return!
+              Errors.Singleton expr.Location (fun () -> "Dangling record destructure")
+              |> state.Throw
+          | ExprRec.ErrorDanglingScopedIdentifier _ ->
+            return!
+              Errors.Singleton expr.Location (fun () -> "Dangling scoped identifier")
+              |> state.Throw
         }

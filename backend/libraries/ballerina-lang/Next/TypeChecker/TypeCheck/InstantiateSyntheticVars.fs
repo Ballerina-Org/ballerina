@@ -313,5 +313,26 @@ module InstantiateSyntheticVars =
               Type = expr.Type
               Kind = expr.Kind
               Scope = expr.Scope }
+        | TypeCheckedExprRec.ErrorDanglingRecordDes err ->
+          return
+            { Expr = TypeCheckedExprRec.ErrorDanglingRecordDes err
+              Location = loc0
+              Type = expr.Type
+              Kind = expr.Kind
+              Scope = expr.Scope }
+        | TypeCheckedExprRec.ErrorDanglingScopedIdentifier err ->
+          return
+            { Expr = TypeCheckedExprRec.ErrorDanglingScopedIdentifier err
+              Location = loc0
+              Type = expr.Type
+              Kind = expr.Kind
+              Scope = expr.Scope }
+        | TypeCheckedExprRec.ErrorRecordDesButInvalidField err ->
+          return
+            { Expr = TypeCheckedExprRec.ErrorRecordDesButInvalidField err
+              Location = loc0
+              Type = expr.Type
+              Kind = expr.Kind
+              Scope = expr.Scope }
 
       }

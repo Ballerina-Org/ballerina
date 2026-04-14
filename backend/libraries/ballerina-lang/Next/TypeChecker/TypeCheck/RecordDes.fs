@@ -61,47 +61,64 @@ module RecordDes =
             (fields_t: OrderedMap<TypeSymbol, (TypeValue<'valueExt> * Kind)>)
             =
             state {
-              let availableFields =
+              let availableFieldsMap =
                 fields_t
                 |> OrderedMap.toSeq
-                |> Seq.map (fun (fieldSym, _fieldType) ->
-                  fieldSym.Name.LocalName)
-                |> formatAvailableFieldNames
+                |> Seq.map (fun (fieldSym, (fieldType, _)) ->
+                  fieldSym.Name.LocalName, fieldType)
+                |> Map.ofSeq
 
-              let! field_n, (field_t, field_k) =
+              do!
+                TypeCheckState.bindDotAccessHint(
+                  loc0,
+                  record_t,
+                  availableFieldsMap
+                )
+
+              let fieldFound =
                 fields_t
                 |> OrderedMap.toSeq
                 |> Seq.map (fun (k, v) -> (k, v))
                 |> Seq.tryFind (fun (k, _v) ->
                   k.Name.LocalName = fieldName.LocalName)
-                |> sum.OfOption(
-                  (fun () ->
-                    $"Type checking error: record lookup failed, field %s{fieldName.LocalName} not found. Available fields: %s{availableFields}")
-                  |> Errors<Unit>.Singleton()
-                )
-                |> ofSum
 
-              let! fieldName =
-                state.Either3
-                  (TypeCheckState.TryResolveIdentifier(field_n, loc0))
-                  (state { return fieldName |> ctx.Scope.Resolve })
-                  (state.Throw(
-                    Errors.Singleton loc0 (fun () ->
-                      $"Error: cannot resolve field name {fieldName}")
-                    |> Errors<_>.MapPriority(replaceWith ErrorPriority.High)
-                  ))
-                |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
+              match fieldFound with
+              | Some(field_n, (field_t, field_k)) ->
+                let! fieldName =
+                  state.Either3
+                    (TypeCheckState.TryResolveIdentifier(field_n, loc0))
+                    (state { return fieldName |> ctx.Scope.Resolve })
+                    (state.Throw(
+                      Errors.Singleton loc0 (fun () ->
+                        $"Error: cannot resolve field name {fieldName}")
+                      |> Errors<_>.MapPriority(replaceWith ErrorPriority.High)
+                    ))
+                  |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
 
-              return
-                TypeCheckedExpr.RecordDes(
-                  record_v,
-                  fieldName,
-                  field_t,
-                  field_k,
-                  loc0,
-                  ctx.Scope
-                ),
-                ctx
+                return
+                  TypeCheckedExpr.RecordDes(
+                    record_v,
+                    fieldName,
+                    field_t,
+                    field_k,
+                    loc0,
+                    ctx.Scope
+                  ),
+                  ctx
+              | None ->
+                let resolvedFieldName = fieldName |> ctx.Scope.Resolve
+
+                return
+                  { TypeCheckedExpr.Expr =
+                      TypeCheckedExprRec.ErrorRecordDesButInvalidField(
+                        { TypeCheckedExprErrorRecordDesButInvalidField.Expr = record_v
+                          Field = resolvedFieldName }
+                      )
+                    Location = loc0
+                    Type = TypeValue.CreateUnit()
+                    Kind = Kind.Star
+                    Scope = ctx.Scope },
+                  ctx
             }
             |> state.MapError(
               Errors.MapPriority(replaceWith ErrorPriority.High)
@@ -403,4 +420,105 @@ module RecordDes =
                 $"Type checking error: record lookup is not supported for kind {record_k} and type {record_t}")
               |> state.Throw
 
+        }
+
+    static member internal TypeCheckErrorDanglingRecordDes<'valueExt
+      when 'valueExt: comparison>
+      (typeCheckExpr: ExprTypeChecker<'valueExt>)
+      (context_t: Option<TypeValue<'valueExt>>)
+      (record_expr: Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>)
+      (loc0: Location)
+      : TypeCheckerResult<
+          TypeCheckedExpr<'valueExt> * TypeCheckContext<'valueExt>,
+          'valueExt
+         >
+      =
+        let (!) = typeCheckExpr context_t
+
+        state {
+          let! ctx = state.GetContext()
+          let! record_v, _ = !record_expr
+          let record_t = record_v.Type
+          let record_k = record_v.Kind
+
+          match record_k, record_t with
+          | Kind.Star, TypeValue.Record { value = fields_t } ->
+            let availableFieldsMap =
+              fields_t
+              |> OrderedMap.toSeq
+              |> Seq.map (fun (fieldSym, (fieldType, _)) ->
+                fieldSym.Name.LocalName, fieldType)
+              |> Map.ofSeq
+
+            do!
+              TypeCheckState.bindDotAccessHint(
+                loc0,
+                record_t,
+                availableFieldsMap
+              )
+          | Kind.Schema, TypeValue.Schema schema_t ->
+            let availableFieldsMap =
+              [ "Entities", TypeValue.CreateEntities(schema_t)
+                "Relations", TypeValue.CreateRelations(schema_t) ]
+              |> Map.ofList
+
+            do!
+              TypeCheckState.bindDotAccessHint(
+                loc0,
+                record_t,
+                availableFieldsMap
+              )
+          | Kind.Star, TypeValue.Entities schema_t ->
+            let availableFieldsMap =
+              schema_t.Entities
+              |> OrderedMap.toSeq
+              |> Seq.map (fun (name, _) ->
+                name.Name, TypeValue.CreateUnit())
+              |> Map.ofSeq
+
+            do!
+              TypeCheckState.bindDotAccessHint(
+                loc0,
+                record_t,
+                availableFieldsMap
+              )
+          | Kind.Star, TypeValue.Relations schema_t ->
+            let availableFieldsMap =
+              schema_t.Relations
+              |> OrderedMap.toSeq
+              |> Seq.map (fun (name, _) ->
+                name.Name, TypeValue.CreateUnit())
+              |> Map.ofSeq
+
+            do!
+              TypeCheckState.bindDotAccessHint(
+                loc0,
+                record_t,
+                availableFieldsMap
+              )
+          | Kind.Star, TypeValue.Relation(_, _, _, _, _, _, _, _, _) ->
+            let availableFieldsMap =
+              [ "From", TypeValue.CreateUnit()
+                "To", TypeValue.CreateUnit() ]
+              |> Map.ofList
+
+            do!
+              TypeCheckState.bindDotAccessHint(
+                loc0,
+                record_t,
+                availableFieldsMap
+              )
+          | _ -> ()
+
+          return
+            { TypeCheckedExpr.Expr =
+                TypeCheckedExprRec.ErrorDanglingRecordDes(
+                  { TypeCheckedExprErrorDanglingRecordDes.Expr = record_v
+                    Field = None }
+                )
+              Location = loc0
+              Type = TypeValue.CreateUnit()
+              Kind = Kind.Star
+              Scope = ctx.Scope },
+            ctx
         }

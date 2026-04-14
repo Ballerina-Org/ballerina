@@ -67,6 +67,25 @@ module ProjectModel =
             TypeCheckContext<'valueExt> *
             TypeCheckState<'valueExt>,
             Errors<Location>
+           >
+      FoldStreaming:
+        NonEmptyList<FileBuildConfiguration>
+          -> (FileBuildConfiguration * int
+            -> State<
+              TypeCheckedExpr<'valueExt> * TypeValue<'valueExt>,
+              Unit,
+              TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
+              Errors<Location>
+             >)
+          -> (FileBuildConfiguration
+            -> TypeCheckContext<'valueExt>
+            -> TypeCheckState<'valueExt>
+            -> unit)
+          -> Sum<
+            NonEmptyList<TypeCheckedExpr<'valueExt> * TypeValue<'valueExt>> *
+            TypeCheckContext<'valueExt> *
+            TypeCheckState<'valueExt>,
+            Errors<Location>
            > }
 
   type InlayHint<'valueExt when 'valueExt: comparison> with
@@ -190,6 +209,95 @@ module ProjectModel =
 
               typeCheckedExpr, typeValue
             })
+
+        let expressionsWithTypesInOrder =
+          expressionsWithTypes |> NonEmptyList.rev |> NonEmptyList.ToList
+
+        let! finalState =
+          TypeCheckState.InstantiateInlayHints config
+          |> State.Run(finalContext, finalState)
+          |> sum.MapError fst
+          |> sum.Map fst
+
+        let filesInOrder = project.Files |> NonEmptyList.ToList
+
+        let fileOutputs =
+          List.zip filesInOrder expressionsWithTypesInOrder
+          |> List.map (fun (file, (expr, typeValue)) ->
+            { File = file
+              Expr = expr
+              TypeValue = typeValue })
+
+        match fileOutputs with
+        | outputHead :: outputTail ->
+          return
+            NonEmptyList.OfList(outputHead, outputTail),
+            finalContext,
+            finalState
+        | [] ->
+          return!
+            sum.Throw(
+              Errors.Singleton Location.Unknown (fun () ->
+                "Expected at least one file output")
+            )
+      }
+
+    static member BuildCachedWithFileOutputsStreaming<'valueExt
+      when 'valueExt: comparison>
+      (config: TypeCheckingConfig<'valueExt>)
+      (cache: ProjectCache<'valueExt>)
+      (project: ProjectBuildConfiguration)
+      (onFileBuilt:
+        FileBuildConfiguration
+          -> TypeCheckContext<'valueExt>
+          -> TypeCheckState<'valueExt>
+          -> unit)
+      : Sum<
+          NonEmptyList<FileTypeCheckedOutput<'valueExt>> *
+          TypeCheckContext<'valueExt> *
+          TypeCheckState<'valueExt>,
+          Errors<Location>
+         >
+      =
+      sum {
+        let! expressionsWithTypes, finalContext, finalState =
+          cache.FoldStreaming project.Files (fun (file, index) ->
+            state {
+              let! ParserResult(program, _) =
+                file
+                |> ProjectBuildConfiguration.ParseFile
+                |> sum.WithErrorContext(fun () ->
+                  $"...while parsing {file.FileName.Path}")
+                |> state.OfSum
+
+              let! ctx, st = state.GetState()
+
+              let! (typeCheckedExpr, ctx'), st' =
+                Expr.TypeCheck config None program
+                |> State.Run(ctx, st)
+                |> sum.MapError fst
+                |> sum.WithErrorContext(fun () ->
+                  $"...while typechecking {file.FileName.Path}")
+                |> state.OfSum
+
+              let typeValue = typeCheckedExpr.Type
+
+              if index < project.Files.Tail.Length then
+                match typeValue with
+                | TypeValue.Primitive({ value = PrimitiveType.Unit }) ->
+                  return ()
+                | _ ->
+                  return!
+                    state.Throw(
+                      Errors.Singleton Location.Unknown (fun () ->
+                        $"Expected returned unit type for {file.FileName.Path} but got {typeValue}. Intermediate files in the project should always return `()`, otherwise we discard possibly useful information by accident!")
+                    )
+
+              let st' = st' |> Option.defaultValue st
+              do! state.SetState(replaceWith (ctx', st'))
+
+              typeCheckedExpr, typeValue
+            }) onFileBuilt
 
         let expressionsWithTypesInOrder =
           expressionsWithTypes |> NonEmptyList.rev |> NonEmptyList.ToList

@@ -59,6 +59,30 @@ module Model =
 
   type KindEvalContext = Map<string, Kind>
 
+  type InlayHint<'valueExt when 'valueExt: comparison> =
+    { Identifier: string
+      Type: TypeValue<'valueExt> }
+
+  type DotAccessHint<'valueExt when 'valueExt: comparison> =
+    { ObjectType: TypeValue<'valueExt>
+      AvailableFields: Map<string, TypeValue<'valueExt>> }
+
+  type ScopeAccessHint =
+    { Prefix: string
+      AvailableSymbols: Map<string, string> }
+
+  /// Mutable accumulator for hints that survives state monad rollback.
+  /// Placed in TypeCheckContext ('c parameter) which is not saved/restored by catch handlers.
+  type HintsAccumulator<'valueExt when 'valueExt: comparison>() =
+    let dotAccessHints = System.Collections.Generic.Dictionary<Location, DotAccessHint<'valueExt>>()
+    let scopeAccessHints = System.Collections.Generic.Dictionary<Location, ScopeAccessHint>()
+    member _.AddDotAccessHint(location: Location, hint: DotAccessHint<'valueExt>) =
+      dotAccessHints.[location] <- hint
+    member _.AddScopeAccessHint(location: Location, hint: ScopeAccessHint) =
+      scopeAccessHints.[location] <- hint
+    member _.DotAccessHints = dotAccessHints |> Seq.map (fun kv -> kv.Key, kv.Value) |> Map.ofSeq
+    member _.ScopeAccessHints = scopeAccessHints |> Seq.map (fun kv -> kv.Key, kv.Value) |> Map.ofSeq
+
   type TypeCheckContext<'valueExt> =
     { Scope: TypeCheckScope
       IsTypeCheckingLetValue: bool
@@ -68,14 +92,11 @@ module Model =
       BackgroundHooksExtraScope:
         Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)>
       PermissionHooksExtraScope:
-        Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)> }
+        Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)>
+      HintsAccumulator: obj option }
 
   type UnificationState<'valueExt when 'valueExt: comparison> =
     { Classes: EquivalenceClasses<TypeVar, TypeValue<'valueExt>> }
-
-  type InlayHint<'valueExt when 'valueExt: comparison> =
-    { Identifier: string
-      Type: TypeValue<'valueExt> }
 
   type TypeCheckState<'valueExt when 'valueExt: comparison> =
     { Bindings: TypeBindings<'valueExt>
@@ -83,7 +104,9 @@ module Model =
       RecordFields: RecordFieldBindings<'valueExt>
       Symbols: TypeExprEvalSymbols
       Vars: UnificationState<'valueExt>
-      InlayHints: Map<Location, InlayHint<'valueExt>> }
+      InlayHints: Map<Location, InlayHint<'valueExt>>
+      DotAccessHints: Map<Location, DotAccessHint<'valueExt>>
+      ScopeAccessHints: Map<Location, ScopeAccessHint> }
 
   type TypeValueKindEval<'valueExt when 'valueExt: comparison> =
     Option<ExprTypeLetBindingName>

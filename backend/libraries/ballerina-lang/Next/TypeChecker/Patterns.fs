@@ -50,7 +50,8 @@ module Patterns =
         TypeParameters = Map.empty
         Values = Map.empty
         BackgroundHooksExtraScope = Map.empty
-        PermissionHooksExtraScope = Map.empty }
+        PermissionHooksExtraScope = Map.empty
+        HintsAccumulator = None }
 
     static member Updaters =
       {| Scope =
@@ -89,7 +90,8 @@ module Patterns =
         TypeParameters = ctx.TypeParameters
         Values = ctx.Values
         BackgroundHooksExtraScope = ctx.BackgroundHooksExtraScope
-        PermissionHooksExtraScope = ctx.PermissionHooksExtraScope }
+        PermissionHooksExtraScope = ctx.PermissionHooksExtraScope
+        HintsAccumulator = None }
 
     static member tryFindTypeVariable
       (v: string, loc: Location)
@@ -158,7 +160,9 @@ module Patterns =
         RecordFields = Map.empty
         Symbols = TypeExprEvalSymbols.Empty
         Vars = UnificationState.Empty
-        InlayHints = Map.empty }
+        InlayHints = Map.empty
+        DotAccessHints = Map.empty
+        ScopeAccessHints = Map.empty }
 
     static member Create
       (bindings: TypeBindings<'valueExt>, symbols: TypeExprEvalSymbols)
@@ -325,6 +329,14 @@ module Patterns =
           fun u (c: TypeCheckState<'valueExt>) ->
             { c with
                 InlayHints = c.InlayHints |> u }
+         DotAccessHints =
+          fun u (c: TypeCheckState<'valueExt>) ->
+            { c with
+                DotAccessHints = c.DotAccessHints |> u }
+         ScopeAccessHints =
+          fun u (c: TypeCheckState<'valueExt>) ->
+            { c with
+                ScopeAccessHints = c.ScopeAccessHints |> u }
          UnionCases =
           fun u (c: TypeCheckState<'valueExt>) ->
             { c with
@@ -455,6 +467,48 @@ module Patterns =
         do!
           state.SetState(
             TypeCheckState.Updaters.InlayHints(Map.remove location)
+          )
+      }
+
+    static member bindDotAccessHint
+      (location: Location,
+       objectType: TypeValue<'valueExt>,
+       availableFields: Map<string, TypeValue<'valueExt>>)
+      : TypeCheckerResult<unit, 'valueExt>
+      =
+      let hint = { ObjectType = objectType; AvailableFields = availableFields }
+      state {
+        let! (ctx: TypeCheckContext<'valueExt>) = state.GetContext()
+        match ctx.HintsAccumulator with
+        | Some acc ->
+          (acc :?> HintsAccumulator<'valueExt>).AddDotAccessHint(location, hint)
+        | None -> ()
+        do!
+          state.SetState(
+            TypeCheckState.Updaters.DotAccessHints(
+              Map.add location hint
+            )
+          )
+      }
+
+    static member bindScopeAccessHint
+      (location: Location,
+       prefix: string,
+       availableSymbols: Map<string, string>)
+      : TypeCheckerResult<unit, 'valueExt>
+      =
+      let hint = { Prefix = prefix; AvailableSymbols = availableSymbols }
+      state {
+        let! (ctx: TypeCheckContext<'valueExt>) = state.GetContext()
+        match ctx.HintsAccumulator with
+        | Some acc ->
+          (acc :?> HintsAccumulator<'valueExt>).AddScopeAccessHint(location, hint)
+        | None -> ()
+        do!
+          state.SetState(
+            TypeCheckState.Updaters.ScopeAccessHints(
+              Map.add location hint
+            )
           )
       }
 

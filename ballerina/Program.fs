@@ -50,6 +50,59 @@ let buildResultForPath (path: string) : BuildResultDTO =
 let runServerLoop () =
   BuildServer.runServerLoop buildResultForPath
 
+let buildProjectStreamingForPath
+  (path: string)
+  (emitFileEvent: FileBuiltEventDTO -> unit)
+  : Sum<InlayHintDTO[] * ScopeSymbolDTO[] * int * int, Errors<Location>> =
+  match BuildServer.projectFromPath path with
+  | Left project ->
+    let totalFiles = 1 + project.Files.Tail.Length
+    let mutable errorCount = 0
+
+    let onFileBuilt
+      (file: FileBuildConfiguration)
+      (ctx: TypeCheckContext<Build.ValueExt>)
+      (st: TypeCheckState<Build.ValueExt>)
+      =
+      let inlayHints =
+        BuildServer.inlayHintDtosForFile st file.FileName.Path
+
+      let identifierHints =
+        BuildServer.identifierHintDtosFromContext ctx
+
+      let dotAccessHints =
+        BuildServer.dotAccessHintDtosForFile st file.FileName.Path
+
+      let scopeAccessHints =
+        BuildServer.scopeAccessHintDtosForFile st file.FileName.Path
+
+      let event: FileBuiltEventDTO =
+        { EventType = "file-built"
+          File = file.FileName.Path
+          Success = true
+          Errors = [||]
+          InlayHints = inlayHints
+          IdentifierHints = identifierHints
+          DotAccessHints = dotAccessHints
+          ScopeAccessHints = scopeAccessHints }
+
+      emitFileEvent event
+
+    match buildProjectStreaming project onFileBuilt with
+    | Left(_, (_fileOutputs, _finalContext, finalState)) ->
+      let inlayHints =
+        BuildServer.inlayHintDtosFromTypeCheckState finalState
+
+      let scopeSymbols =
+        BuildServer.scopeSymbolDtosFromState finalState
+
+      Left(inlayHints, scopeSymbols, totalFiles, errorCount)
+    | Right errors -> Right errors
+  | Right errors -> Right errors
+
+let runServerLoopStreaming () =
+  BuildServer.runServerLoopStreaming buildProjectStreamingForPath
+
 [<EntryPoint>]
 let main (args: string array) =
   let fileOption = Cli.createFileOption ()
@@ -67,6 +120,7 @@ let main (args: string array) =
   rootCommand.Add debugInlaysOption
 
   Cli.addServerCommand rootCommand runServerLoop
+  Cli.addServerStreamingCommand rootCommand runServerLoopStreaming
 
   rootCommand.SetAction(fun parseResult ->
     let filename = parseResult.GetValue fileOption
