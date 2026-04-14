@@ -123,22 +123,22 @@ module Delete =
                   typeCheckState
 
               let doDeleteExpr
-                : TypeCheckedExpr<
+                : RunnableExpr<
                     ValueExt<'runtimeContext, 'db, 'customExtension>
                    > =
-                TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
+                RunnableExpr.UnsafeApplyForUntypedEval(
+                  RunnableExpr.UnsafeApplyForUntypedEval(
+                    RunnableExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], "delete")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    TypeCheckedExpr.FromValue(
+                    RunnableExpr.FromValue(
                       entityDescriptor,
                       TypeValue.CreatePrimitive PrimitiveType.Unit,
                       Kind.Star
                     )
                   ),
-                  TypeCheckedExpr.FromValue(
+                  RunnableExpr.FromValue(
                     idValue,
                     TypeValue.CreatePrimitive PrimitiveType.Unit,
                     Kind.Star
@@ -294,22 +294,22 @@ module Delete =
                 Ext(deleters, None)
 
               let doUpdateExpr
-                : TypeCheckedExpr<
+                : RunnableExpr<
                     ValueExt<'runtimeContext, 'db, 'customExtension>
                    > =
-                TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
+                RunnableExpr.UnsafeApplyForUntypedEval(
+                  RunnableExpr.UnsafeApplyForUntypedEval(
+                    RunnableExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], "deleteMany")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    TypeCheckedExpr.FromValue(
+                    RunnableExpr.FromValue(
                       entityDescriptor,
                       TypeValue.CreatePrimitive PrimitiveType.Unit,
                       Kind.Star
                     )
                   ),
-                  TypeCheckedExpr.FromValue(
+                  RunnableExpr.FromValue(
                     deleters,
                     TypeValue.CreatePrimitive PrimitiveType.Unit,
                     Kind.Star

@@ -185,7 +185,7 @@ module Model =
   type DBEvalProperty<'ext> =
     { PropertyName: LocalIdentifier
       Path: SchemaPath<'ext>
-      Body: TypeCheckedExpr<'ext> }
+      Body: RunnableExpr<'ext> }
 
   [<CustomEquality; CustomComparison>]
   type DBIO<'runtimeContext, 'db, 'ext when 'ext: comparison> =

@@ -236,9 +236,9 @@ module UpsertMany =
                               with
                               | true, Some canCreateHook ->
                                 match!
-                                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                                  RunnableExpr.UnsafeApplyForUntypedEval(
                                     canCreateHook,
-                                    TypeCheckedExpr.FromValue(
+                                    RunnableExpr.FromValue(
                                       schema_value.Value.Value,
                                       TypeValue.CreateUnit(),
                                       Kind.Star
@@ -267,22 +267,22 @@ module UpsertMany =
                                 stripProps db_ops existingValue entity_ref
 
                               let! updatedValue =
-                                TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                                    TypeCheckedExpr.FromValue(
+                                RunnableExpr.UnsafeApplyForUntypedEval(
+                                  RunnableExpr.UnsafeApplyForUntypedEval(
+                                    RunnableExpr.FromValue(
                                       updateFunc,
                                       TypeValue.CreatePrimitive
                                         PrimitiveType.Unit,
                                       Kind.Star
                                     ),
-                                    TypeCheckedExpr.FromValue(
+                                    RunnableExpr.FromValue(
                                       existingValue,
                                       TypeValue.CreatePrimitive
                                         PrimitiveType.Unit,
                                       Kind.Star
                                     )
                                   ),
-                                  TypeCheckedExpr.FromValue(
+                                  RunnableExpr.FromValue(
                                     existingValueWithoutProps,
                                     TypeValue.CreatePrimitive
                                       PrimitiveType.Unit,
@@ -347,23 +347,23 @@ module UpsertMany =
                               with
                               | true, Some canUpdateHook ->
                                 match!
-                                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                                    TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                                      TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                                  RunnableExpr.UnsafeApplyForUntypedEval(
+                                    RunnableExpr.UnsafeApplyForUntypedEval(
+                                      RunnableExpr.UnsafeApplyForUntypedEval(
                                         canUpdateHook,
-                                        TypeCheckedExpr.FromValue(
+                                        RunnableExpr.FromValue(
                                           schema_value.Value.Value,
                                           TypeValue.CreateUnit(),
                                           Kind.Star
                                         )
                                       ),
-                                      TypeCheckedExpr.FromValue(
+                                      RunnableExpr.FromValue(
                                         _entityId,
                                         TypeValue.CreateUnit(),
                                         Kind.Star
                                       )
                                     ),
-                                    TypeCheckedExpr.FromValue(
+                                    RunnableExpr.FromValue(
                                       existingValue,
                                       TypeValue.CreateUnit(),
                                       Kind.Star

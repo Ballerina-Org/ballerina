@@ -218,7 +218,7 @@ module APIUtils =
         DeltaExt<'runtimeContext, 'db, 'customExtension>
        >)
     : Sum<
-        TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>>,
+        RunnableExpr<ValueExt<'runtimeContext, 'db, 'customExtension>>,
         Errors<unit>
        >
     =
@@ -236,7 +236,7 @@ module APIUtils =
         )
 
       return
-        TypeCheckedExpr.FromValue(
+        RunnableExpr.FromValue(
           Value.Ext(
             updaterExtension,
             Identifier.FullyQualified([ "@updater" ], "apply")

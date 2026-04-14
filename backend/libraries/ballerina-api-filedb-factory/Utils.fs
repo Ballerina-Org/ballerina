@@ -13,6 +13,7 @@ module Utils =
   open System
   open Ballerina.Reader.WithError
   open Ballerina.DSL.Next.Extensions
+  open Ballerina.DSL.Next.Types.TypeChecker
   open Model
   open Ballerina.Errors
   open Ballerina.LocalizedErrors
@@ -107,6 +108,9 @@ module Utils =
           typeCheckingConfig
           build_cache
           project
+
+      let expr = Conversion.convertExpression expr
+      let exprs = exprs |> List.map Conversion.convertExpression
 
       let runtimeContext: FileDBRuntimeContext =
         { TenantId = tenantId

@@ -82,8 +82,8 @@ module StripProps =
                     |> reader.OfSum
 
                   let! valueWithProps =
-                    TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                      TypeCheckedExpr.FromValue(
+                    RunnableExpr.UnsafeApplyForUntypedEval(
+                      RunnableExpr.FromValue(
                         (DBValues.StripProperty { op with Path = ps }
                          |> valueLens.Set,
                          Some memoryDBStripPropertyId)
@@ -91,7 +91,7 @@ module StripProps =
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star
                       ),
-                      TypeCheckedExpr.FromValue(
+                      RunnableExpr.FromValue(
                         vField,
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star
@@ -133,8 +133,8 @@ module StripProps =
                     |> reader.OfSum
 
                   let! valueWithProps =
-                    TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                      TypeCheckedExpr.FromValue(
+                    RunnableExpr.UnsafeApplyForUntypedEval(
+                      RunnableExpr.FromValue(
                         (DBValues.StripProperty { op with Path = ps }
                          |> valueLens.Set,
                          Some memoryDBStripPropertyId)
@@ -142,7 +142,7 @@ module StripProps =
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star
                       ),
-                      TypeCheckedExpr.FromValue(
+                      RunnableExpr.FromValue(
                         vField,
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star
@@ -183,8 +183,8 @@ module StripProps =
                     return v
                   else
                     let! vCaseContentWithProps =
-                      TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                        TypeCheckedExpr.FromValue(
+                      RunnableExpr.UnsafeApplyForUntypedEval(
+                        RunnableExpr.FromValue(
                           (DBValues.StripProperty { op with Path = ps }
                            |> valueLens.Set,
                            Some memoryDBStripPropertyId)
@@ -192,7 +192,7 @@ module StripProps =
                           TypeValue.CreatePrimitive PrimitiveType.Unit,
                           Kind.Star
                         ),
-                        TypeCheckedExpr.FromValue(
+                        RunnableExpr.FromValue(
                           vCaseContent,
                           TypeValue.CreatePrimitive PrimitiveType.Unit,
                           Kind.Star
@@ -228,8 +228,8 @@ module StripProps =
                     return v
                   else
                     let! vCaseContentWithProps =
-                      TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                        TypeCheckedExpr.FromValue(
+                      RunnableExpr.UnsafeApplyForUntypedEval(
+                        RunnableExpr.FromValue(
                           (DBValues.StripProperty { op with Path = ps }
                            |> valueLens.Set,
                            Some memoryDBStripPropertyId)
@@ -237,7 +237,7 @@ module StripProps =
                           TypeValue.CreatePrimitive PrimitiveType.Unit,
                           Kind.Star
                         ),
-                        TypeCheckedExpr.FromValue(
+                        RunnableExpr.FromValue(
                           vCaseContent,
                           TypeValue.CreatePrimitive PrimitiveType.Unit,
                           Kind.Star
@@ -271,14 +271,14 @@ module StripProps =
                     | None -> "item"
 
                   let! res =
-                    TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                      TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                    RunnableExpr.UnsafeApplyForUntypedEval(
+                      RunnableExpr.UnsafeApplyForUntypedEval(
                         iterator.Mapper,
-                        TypeCheckedExpr.UnsafeLambdaForUntypedEval(
+                        RunnableExpr.UnsafeLambdaForUntypedEval(
                           Var.Create lambda_var_name,
                           TypeValue.CreatePrimitive PrimitiveType.Unit,
-                          TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                            TypeCheckedExpr.FromValue(
+                          RunnableExpr.UnsafeApplyForUntypedEval(
+                            RunnableExpr.FromValue(
                               (DBValues.StripProperty { op with Path = ps }
                                |> valueLens.Set,
                                Some memoryDBStripPropertyId)
@@ -286,7 +286,7 @@ module StripProps =
                               TypeValue.CreatePrimitive PrimitiveType.Unit,
                               Kind.Star
                             ),
-                            TypeCheckedExpr.UnsafeLookupForUntypedEval(
+                            RunnableExpr.UnsafeLookupForUntypedEval(
                               lambda_var_name
                               |> Identifier.LocalScope
                               |> TypeCheckScope.Empty.Resolve
@@ -295,7 +295,7 @@ module StripProps =
                           TypeValue.CreatePrimitive PrimitiveType.Unit
                         )
                       ),
-                      TypeCheckedExpr.FromValue(
+                      RunnableExpr.FromValue(
                         v,
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star
@@ -335,8 +335,8 @@ module StripProps =
             let! valueSoFar = acc
 
             return!
-              TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                TypeCheckedExpr.FromValue(
+              RunnableExpr.UnsafeApplyForUntypedEval(
+                RunnableExpr.FromValue(
                   (DBValues.StripProperty
                     { PropertyName = prop.PropertyName
                       Path = prop.Path
@@ -347,7 +347,7 @@ module StripProps =
                   TypeValue.CreatePrimitive PrimitiveType.Unit,
                   Kind.Star
                 ),
-                TypeCheckedExpr.FromValue(
+                RunnableExpr.FromValue(
                   valueSoFar,
                   TypeValue.CreatePrimitive PrimitiveType.Unit,
                   Kind.Star

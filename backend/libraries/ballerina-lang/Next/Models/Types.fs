@@ -620,7 +620,7 @@ module Model =
     | UnionCase of ResolvedIdentifier
     | SumCase of SumConsSelector
     | Iterator of
-      {| Mapper: TypeCheckedExpr<'valueExt>
+      {| Mapper: RunnableExpr<'valueExt>
          Container: TypeValue<'valueExt>
          TypeDef: TypeValue<'valueExt> |}
 
@@ -643,30 +643,30 @@ module Model =
       Path: SchemaPath<'valueExt>
       ReturnType: TypeValue<'valueExt>
       ReturnKind: Kind
-      Body: TypeCheckedExpr<'valueExt> }
+      Body: RunnableExpr<'valueExt> }
 
     override self.ToString() =
       $"property {self.PropertyName}: {self.ReturnType} = {self.Body}"
 
   and SchemaEntityVector<'valueExt> =
     { VectorName: LocalIdentifier
-      Body: TypeCheckedExpr<'valueExt> }
+      Body: RunnableExpr<'valueExt> }
 
     override self.ToString() =
       $"vector {self.VectorName} = {self.Body}"
 
   and SchemaEntityHooks<'valueExt> =
-    { OnCreating: Option<TypeCheckedExpr<'valueExt>>
-      OnCreated: Option<TypeCheckedExpr<'valueExt>>
-      OnUpdating: Option<TypeCheckedExpr<'valueExt>>
-      OnUpdated: Option<TypeCheckedExpr<'valueExt>>
-      OnDeleting: Option<TypeCheckedExpr<'valueExt>>
-      OnDeleted: Option<TypeCheckedExpr<'valueExt>>
-      OnBackground: Option<TypeCheckedExpr<'valueExt>>
-      CanCreate: Option<TypeCheckedExpr<'valueExt>>
-      CanRead: Option<TypeCheckedExpr<'valueExt>>
-      CanUpdate: Option<TypeCheckedExpr<'valueExt>>
-      CanDelete: Option<TypeCheckedExpr<'valueExt>> }
+    { OnCreating: Option<RunnableExpr<'valueExt>>
+      OnCreated: Option<RunnableExpr<'valueExt>>
+      OnUpdating: Option<RunnableExpr<'valueExt>>
+      OnUpdated: Option<RunnableExpr<'valueExt>>
+      OnDeleting: Option<RunnableExpr<'valueExt>>
+      OnDeleted: Option<RunnableExpr<'valueExt>>
+      OnBackground: Option<RunnableExpr<'valueExt>>
+      CanCreate: Option<RunnableExpr<'valueExt>>
+      CanRead: Option<RunnableExpr<'valueExt>>
+      CanUpdate: Option<RunnableExpr<'valueExt>>
+      CanDelete: Option<RunnableExpr<'valueExt>> }
 
     override self.ToString() =
       let enabledHooks =
@@ -700,10 +700,10 @@ module Model =
       $"{entity.Name.Name} (Id: {entity.Id}): {entity.TypeOriginal} -> {entity.TypeWithProps}"
 
   and SchemaRelationHooks<'valueExt> =
-    { OnLinking: Option<TypeCheckedExpr<'valueExt>>
-      OnUnlinking: Option<TypeCheckedExpr<'valueExt>>
-      OnLinked: Option<TypeCheckedExpr<'valueExt>>
-      OnUnlinked: Option<TypeCheckedExpr<'valueExt>> }
+    { OnLinking: Option<RunnableExpr<'valueExt>>
+      OnUnlinking: Option<RunnableExpr<'valueExt>>
+      OnLinked: Option<RunnableExpr<'valueExt>>
+      OnUnlinked: Option<RunnableExpr<'valueExt>> }
 
     override self.ToString() =
       let enabledHooks =
@@ -1890,6 +1890,7 @@ module Model =
     | QueryCountEvaluated of ValueQuery<TypeValue<'valueExt>, 'valueExt>
     | QueryExistsEvaluated of ValueQuery<TypeValue<'valueExt>, 'valueExt>
     | QueryArrayEvaluated of ValueQuery<TypeValue<'valueExt>, 'valueExt>
+    | QueryRecoveredSyntaxError of TypeCheckedExprRecoveredSyntaxError
 
     override self.ToString() =
       match self with
@@ -1938,6 +1939,7 @@ module Model =
       | QueryCountEvaluated v -> $"count({v})"
       | QueryExistsEvaluated v -> $"any({v})"
       | QueryArrayEvaluated v -> $"array({v})"
+      | QueryRecoveredSyntaxError err -> err.ToString()
 
 
   and [<RequireQualifiedAccess>] TypeCheckedSimpleQuery<'valueExt> =
@@ -2023,6 +2025,14 @@ module Model =
 
     override self.ToString() = $"{self.Param} -> {self.Body}"
 
+  and [<RequireQualifiedAccess>] TypeCheckedExprRecoveredSyntaxError =
+    { ErrorMessage: string
+      ErrorLocation: Location
+      RecoveryContext: string }
+
+    override self.ToString() =
+      $"<SyntaxError: {self.ErrorMessage}>"
+
   and [<RequireQualifiedAccess>] TypeCheckedExprRec<'valueExt> =
     | Primitive of PrimitiveValue
     | Lookup of TypeCheckedExprLookup<'valueExt>
@@ -2049,6 +2059,7 @@ module Model =
     | TupleDes of TypeCheckedExprTupleDes<'valueExt>
     | SumDes of TypeCheckedExprSumDes<'valueExt>
     | Query of TypeCheckedExprQuery<'valueExt>
+    | RecoveredSyntaxError of TypeCheckedExprRecoveredSyntaxError
 
     override self.ToString() =
       match self with
@@ -2132,6 +2143,7 @@ module Model =
              Else = elseExpr }) ->
         $"(if {cond} then {thenExpr} else {elseExpr})"
       | Query q -> q.ToString()
+      | RecoveredSyntaxError err -> err.ToString()
 
 
   and [<RequireQualifiedAccess>] TypeCheckedExpr<'valueExt> =
@@ -2145,6 +2157,396 @@ module Model =
 
   and [<RequireQualifiedAccess>] TypeCheckedCaseHandler<'valueExt> =
     Option<Var> * TypeCheckedExpr<'valueExt>
+
+  // ── RunnableExpr: validated (non-partial) expression tree ──────────────
+  // Identical to TypeCheckedExpr but without RecoveredSyntaxError.
+  // Produced by converting TypeCheckedExpr after type checking succeeds.
+
+  and [<RequireQualifiedAccess>] RunnableExprLookup<'valueExt> =
+    { Id: ResolvedIdentifier }
+
+    override self.ToString() = self.Id.ToString()
+
+  and [<RequireQualifiedAccess>] RunnableExprLambda<'valueExt> =
+    { Param: Var
+      ParamType: TypeValue<'valueExt>
+      Body: RunnableExpr<'valueExt>
+      BodyType: TypeValue<'valueExt> }
+
+    override self.ToString() =
+      $"fun ({self.Param}: {self.ParamType}) -> {self.Body}"
+
+  and [<RequireQualifiedAccess>] RunnableExprApply<'valueExt> =
+    { F: RunnableExpr<'valueExt>
+      Arg: RunnableExpr<'valueExt> }
+
+    override self.ToString() = $"({self.F})({self.Arg})"
+
+  and [<RequireQualifiedAccess>] RunnableExprLet<'valueExt> =
+    { Var: Var
+      Type: TypeValue<'valueExt>
+      Val: RunnableExpr<'valueExt>
+      Rest: RunnableExpr<'valueExt> }
+
+    override self.ToString() =
+      $"let {self.Var}: {self.Type} = {self.Val} in {self.Rest}"
+
+  and [<RequireQualifiedAccess>] RunnableExprDo<'valueExt> =
+    { Val: RunnableExpr<'valueExt>
+      Rest: RunnableExpr<'valueExt> }
+
+    override self.ToString() = $"do {self.Val}; {self.Rest}"
+
+  and [<RequireQualifiedAccess>] RunnableExprIf<'valueExt> =
+    { Cond: RunnableExpr<'valueExt>
+      Then: RunnableExpr<'valueExt>
+      Else: RunnableExpr<'valueExt> }
+
+    override self.ToString() =
+      $"if {self.Cond} then {self.Then} else {self.Else}"
+
+  and [<RequireQualifiedAccess>] RunnableExprTypeLambda<'valueExt> =
+    { Param: TypeParameter
+      Body: RunnableExpr<'valueExt> }
+
+    override self.ToString() = $"Λ{self.Param} => {self.Body}"
+
+  and [<RequireQualifiedAccess>] RunnableExprTypeApply<'valueExt> =
+    { Func: RunnableExpr<'valueExt>
+      TypeArg: TypeValue<'valueExt> }
+
+    override self.ToString() = $"{self.Func}[{self.TypeArg}]"
+
+  and [<RequireQualifiedAccess>] RunnableExprTypeLet<'valueExt> =
+    { Name: string
+      TypeDef: TypeValue<'valueExt>
+      Body: RunnableExpr<'valueExt> }
+
+    override self.ToString() =
+      $"type {self.Name} = {self.TypeDef}; {self.Body}"
+
+  and [<RequireQualifiedAccess>] RunnableExprRecordCons<'valueExt> =
+    { Fields: List<ResolvedIdentifier * RunnableExpr<'valueExt>> }
+
+    override self.ToString() =
+      let fields =
+        self.Fields |> List.map (fun (k, v) -> $"{k}: {v}") |> String.join "; "
+
+      $"{{ {fields} }}"
+
+  and [<RequireQualifiedAccess>] RunnableExprRecordWith<'valueExt> =
+    { Record: RunnableExpr<'valueExt>
+      Fields: List<ResolvedIdentifier * RunnableExpr<'valueExt>> }
+
+    override self.ToString() =
+      let fields =
+        self.Fields |> List.map (fun (k, v) -> $"{k}: {v}") |> String.join "; "
+
+      $"{{ {self.Record} with {fields} }}"
+
+  and [<RequireQualifiedAccess>] RunnableExprTupleCons<'valueExt> =
+    { Items: List<RunnableExpr<'valueExt>> }
+
+    override self.ToString() =
+      let items = self.Items |> List.map string |> String.join ", "
+      $"({items})"
+
+  and [<RequireQualifiedAccess>] RunnableExprTupleDes<'valueExt> =
+    { Tuple: RunnableExpr<'valueExt>
+      Item: TupleDesSelector }
+
+    override self.ToString() = $"{self.Tuple}.{self.Item.Index}"
+
+  and [<RequireQualifiedAccess>] RunnableExprSumCons<'valueExt> =
+    { Selector: SumConsSelector }
+
+    override self.ToString() = self.Selector.ToString()
+
+  and [<RequireQualifiedAccess>] RunnableExprRecordDes<'valueExt> =
+    { Expr: RunnableExpr<'valueExt>
+      Field: ResolvedIdentifier }
+
+    override self.ToString() = $"{self.Expr}.{self.Field}"
+
+  and [<RequireQualifiedAccess>] RunnableExprEntitiesDes<'valueExt> =
+    { Expr: RunnableExpr<'valueExt> }
+
+    override self.ToString() = $"{self.Expr}.Entities"
+
+  and [<RequireQualifiedAccess>] RunnableExprRelationsDes<'valueExt> =
+    { Expr: RunnableExpr<'valueExt> }
+
+    override self.ToString() = $"{self.Expr}.Relations"
+
+  and [<RequireQualifiedAccess>] RunnableExprEntityDes<'valueExt> =
+    { Expr: RunnableExpr<'valueExt>
+      EntityName: SchemaEntityName }
+
+    override self.ToString() = $"{self.Expr}.{self.EntityName}"
+
+  and [<RequireQualifiedAccess>] RunnableExprRelationDes<'valueExt> =
+    { Expr: RunnableExpr<'valueExt>
+      RelationName: SchemaRelationName }
+
+    override self.ToString() = $"{self.Expr}.{self.RelationName}"
+
+  and [<RequireQualifiedAccess>] RunnableExprRelationLookupDes<'valueExt> =
+    { Expr: RunnableExpr<'valueExt>
+      RelationName: SchemaRelationName
+      Direction: RelationLookupDirection }
+
+    override self.ToString() =
+      $"{self.Expr}.{self.RelationName}.{self.Direction}"
+
+  and [<RequireQualifiedAccess>] RunnableExprUnionDes<'valueExt> =
+    { Handlers: Map<ResolvedIdentifier, RunnableCaseHandler<'valueExt>>
+      Fallback: Option<RunnableExpr<'valueExt>> }
+
+    override self.ToString() =
+      let handlers =
+        self.Handlers
+        |> Map.toList
+        |> List.map (fun (k, (v, body)) ->
+          let p = v |> Option.map string |> Option.defaultValue "_"
+          $"{k}({p}) => {body}")
+        |> String.join " | "
+
+      match self.Fallback with
+      | Some fallback -> $"match {handlers} | _ => {fallback}"
+      | None -> $"match {handlers}"
+
+  and [<RequireQualifiedAccess>] RunnableExprSumDes<'valueExt> =
+    { Handlers: Map<SumConsSelector, RunnableCaseHandler<'valueExt>> }
+
+    override self.ToString() =
+      self.Handlers
+      |> Map.toList
+      |> List.map (fun (k, (v, body)) ->
+        let p = v |> Option.map string |> Option.defaultValue "_"
+        $"{k}({p}) => {body}")
+      |> String.join " | "
+      |> sprintf "match %s"
+
+  and [<RequireQualifiedAccess>] RunnableExprFromValue<'valueExt> =
+    { Value: Value<TypeValue<'valueExt>, 'valueExt>
+      ValueType: TypeValue<'valueExt>
+      ValueKind: Kind }
+
+    override self.ToString() =
+      $"{self.Value} : {self.ValueType} :: {self.ValueKind}"
+
+  // ── Runnable query types: mirror of TypeCheckedExprQuery* with RunnableExpr ──
+
+  and [<RequireQualifiedAccess>] RunnableExprQueryIterators<'valueExt> =
+    NonEmptyList<RunnableExprQueryIterator<'valueExt>>
+
+  and [<RequireQualifiedAccess>] RunnableExprQueryIterator<'valueExt> =
+    { Location: Location
+      Var: Var
+      VarType: TypeQueryRow<'valueExt>
+      Source: RunnableExpr<'valueExt> }
+
+    override self.ToString() =
+      $"{self.Var}: {self.VarType} in {self.Source}"
+
+  and [<RequireQualifiedAccess>] RunnableExprQueryJoin<'valueExt> =
+    { Location: Location
+      Left: RunnableExprQueryExpr<'valueExt>
+      Right: RunnableExprQueryExpr<'valueExt> }
+
+    override self.ToString() = $"({self.Left}) = ({self.Right})"
+
+  and [<RequireQualifiedAccess>] RunnableExprQueryExpr<'valueExt> =
+    { Location: Location
+      Expr: RunnableExprQueryExprRec<'valueExt> }
+
+    override self.ToString() = self.Expr.ToString()
+
+  and [<RequireQualifiedAccess>] RunnableExprQueryExprRec<'valueExt> =
+    | QueryTupleCons of List<RunnableExprQueryExpr<'valueExt>>
+    | QueryRecordDes of
+      Expr: RunnableExprQueryExpr<'valueExt> *
+      Field: ResolvedIdentifier *
+      IsJsonField: bool
+    | QueryTupleDes of
+      Expr: RunnableExprQueryExpr<'valueExt> *
+      Item: TupleDesSelector *
+      IsJsonItem: bool
+    | QueryConditional of
+      Cond: RunnableExprQueryExpr<'valueExt> *
+      Then: RunnableExprQueryExpr<'valueExt> *
+      Else: RunnableExprQueryExpr<'valueExt>
+    | QueryUnionDes of
+      Expr: RunnableExprQueryExpr<'valueExt> *
+      Handlers: Map<ResolvedIdentifier, RunnableQueryCaseHandler<'valueExt>>
+    | QuerySumDes of
+      Expr: RunnableExprQueryExpr<'valueExt> *
+      Handlers: Map<SumConsSelector, RunnableQueryCaseHandler<'valueExt>>
+    | QueryApply of
+      Func: RunnableExprQueryExpr<'valueExt> *
+      Arg: RunnableExprQueryExpr<'valueExt>
+    | QueryLookup of ResolvedIdentifier
+    | QueryIntrinsic of QueryIntrinsic * ExpectedType: TypeQueryRow<'valueExt>
+    | QueryConstant of PrimitiveValue
+    | QueryClosureValue of
+      Value<TypeValue<'valueExt>, 'valueExt> *
+      TypeQueryRow<'valueExt>
+    | QueryCastTo of
+      RunnableExprQueryExpr<'valueExt> *
+      TypeQueryRow<'valueExt>
+    | QueryCount of RunnableExprQuery<'valueExt>
+    | QueryExists of RunnableExprQuery<'valueExt>
+    | QueryArray of RunnableExprQuery<'valueExt>
+    | QueryCountEvaluated of ValueQuery<TypeValue<'valueExt>, 'valueExt>
+    | QueryExistsEvaluated of ValueQuery<TypeValue<'valueExt>, 'valueExt>
+    | QueryArrayEvaluated of ValueQuery<TypeValue<'valueExt>, 'valueExt>
+
+  and [<RequireQualifiedAccess>] RunnableSimpleQuery<'valueExt> =
+    { Iterators: RunnableExprQueryIterators<'valueExt>
+      Joins: Option<NonEmptyList<RunnableExprQueryJoin<'valueExt>>>
+      Where: Option<RunnableExprQueryExpr<'valueExt>>
+      Select: RunnableExprQueryExpr<'valueExt>
+      OrderBy: Option<RunnableExprQueryExpr<'valueExt> * OrderByDirection>
+      Closure: Map<ResolvedIdentifier, TypeQueryRow<'valueExt>>
+      DeserializeFrom: TypeQueryRow<'valueExt>
+      Distinct: Option<RunnableExprQueryExpr<'valueExt>> }
+
+  and [<RequireQualifiedAccess>] RunnableExprQuery<'valueExt> =
+    | SimpleQuery of RunnableSimpleQuery<'valueExt>
+    | UnionQueries of
+      RunnableExprQuery<'valueExt> *
+      RunnableExprQuery<'valueExt>
+
+    member self.Closure =
+      match self with
+      | SimpleQuery q -> q.Closure
+      | UnionQueries(q1, q2) -> Map.merge (fun _ -> id) q1.Closure q2.Closure
+
+  and [<RequireQualifiedAccess>] RunnableQueryCaseHandler<'valueExt> =
+    { Param: Var
+      Body: RunnableExprQueryExpr<'valueExt> }
+
+  and [<RequireQualifiedAccess>] RunnableExprRec<'valueExt> =
+    | Primitive of PrimitiveValue
+    | Lookup of RunnableExprLookup<'valueExt>
+    | TypeLambda of RunnableExprTypeLambda<'valueExt>
+    | TypeApply of RunnableExprTypeApply<'valueExt>
+    | TypeLet of RunnableExprTypeLet<'valueExt>
+    | Lambda of RunnableExprLambda<'valueExt>
+    | FromValue of RunnableExprFromValue<'valueExt>
+    | Apply of RunnableExprApply<'valueExt>
+    | Let of RunnableExprLet<'valueExt>
+    | Do of RunnableExprDo<'valueExt>
+    | If of RunnableExprIf<'valueExt>
+    | RecordCons of RunnableExprRecordCons<'valueExt>
+    | RecordWith of RunnableExprRecordWith<'valueExt>
+    | TupleCons of RunnableExprTupleCons<'valueExt>
+    | SumCons of RunnableExprSumCons<'valueExt>
+    | RecordDes of RunnableExprRecordDes<'valueExt>
+    | EntitiesDes of RunnableExprEntitiesDes<'valueExt>
+    | RelationsDes of RunnableExprRelationsDes<'valueExt>
+    | EntityDes of RunnableExprEntityDes<'valueExt>
+    | RelationDes of RunnableExprRelationDes<'valueExt>
+    | RelationLookupDes of RunnableExprRelationLookupDes<'valueExt>
+    | UnionDes of RunnableExprUnionDes<'valueExt>
+    | TupleDes of RunnableExprTupleDes<'valueExt>
+    | SumDes of RunnableExprSumDes<'valueExt>
+    | Query of RunnableExprQuery<'valueExt>
+
+    override self.ToString() =
+      match self with
+      | RunnableExprRec.TypeLambda({ RunnableExprTypeLambda.Param = tp
+                                     Body = body }) -> $"(Λ{tp} => {body})"
+      | TypeApply({ Func = e; TypeArg = t }) -> $"{e} [{t}]"
+      | Lambda({ Param = v
+                 ParamType = t
+                 Body = body }) -> $"(fun ({v.Name}: {t}) -> {body})"
+      | Apply({ F = e1; Arg = e2 }) -> $"({e1} {e2})"
+      | FromValue({ Value = v
+                    ValueType = t
+                    ValueKind = k }) -> $"({v} : {t} :: {k})"
+      | Let({ Var = v
+              Type = t
+              Val = e1
+              Rest = e2 }) -> $"(let {v.Name}: {t} = {e1} in {e2})"
+      | Do({ Val = e1; Rest = e2 }) -> $"(do {e1}; {e2})"
+      | TypeLet({ Name = name
+                  TypeDef = t
+                  Body = body }) -> $"(type {name} = {t}; {body})"
+      | RecordCons { Fields = fields } ->
+        let fieldStr =
+          fields |> List.map (fun (k, v) -> $"{k} = {v}") |> String.concat "; "
+
+        $"{{ {fieldStr} }}"
+      | RecordWith({ Record = record; Fields = fields }) ->
+        let fieldStr =
+          fields |> List.map (fun (k, v) -> $"{k} = {v}") |> String.concat "; "
+
+        $"{{ {record} with {fieldStr} }}"
+      | TupleCons { Items = items } ->
+        let itemStr = items |> List.map string |> String.concat ", "
+        $"({itemStr})"
+      | SumCons({ Selector = selector }) -> selector.ToString()
+      | RecordDes({ Expr = record; Field = field }) -> $"{record}.{field}"
+      | EntitiesDes({ Expr = entities }) -> $"{entities}.Entities"
+      | RelationsDes({ Expr = relations }) -> $"{relations}.Relations"
+      | EntityDes({ Expr = entity
+                    EntityName = entityName }) -> $"{entity}.{entityName}"
+      | RelationDes({ Expr = relation
+                      RelationName = relationName }) ->
+        $"{relation}.{relationName}"
+      | RelationLookupDes({ Expr = relation
+                            RelationName = relationName
+                            Direction = direction }) ->
+        $"{relation}.{relationName}.{direction}"
+      | UnionDes({ Handlers = handlers
+                   Fallback = defaultOpt }) ->
+        let handlerStr =
+          handlers
+          |> Map.toList
+          |> List.map (fun (k, (v, body)) ->
+            let p =
+              v |> Option.map (fun var -> var.Name) |> Option.defaultValue "_"
+
+            $"{k}({p}) => {body}")
+          |> String.concat " | "
+
+        match defaultOpt with
+        | Some defaultExpr -> $"(match {handlerStr} | _ => {defaultExpr})"
+        | None -> $"(match {handlerStr})"
+      | TupleDes({ RunnableExprTupleDes.Tuple = tuple
+                   Item = selector }) -> $"{tuple}.{selector.Index}"
+      | SumDes { Handlers = handlers } ->
+        let handlerStr =
+          handlers
+          |> Map.toList
+          |> List.map (fun (k, (v, body)) ->
+            let p =
+              v |> Option.map (fun var -> var.Name) |> Option.defaultValue "_"
+
+            $"{k}({p}) => {body}")
+          |> String.concat " | "
+
+        $"(match {handlerStr})"
+      | Primitive p -> p.ToString()
+      | Lookup id -> id.ToString()
+      | If({ Cond = cond
+             Then = thenExpr
+             Else = elseExpr }) ->
+        $"(if {cond} then {thenExpr} else {elseExpr})"
+      | Query q -> q.ToString()
+
+  and [<RequireQualifiedAccess>] RunnableExpr<'valueExt> =
+    { Expr: RunnableExprRec<'valueExt>
+      Location: Location
+      Type: TypeValue<'valueExt>
+      Kind: Kind
+      Scope: TypeCheckScope }
+
+    override self.ToString() : string = self.Expr.ToString()
+
+  and [<RequireQualifiedAccess>] RunnableCaseHandler<'valueExt> =
+    Option<Var> * RunnableExpr<'valueExt>
 
   and CaseHandler<'T, 'Id, 'valueExt when 'Id: comparison> =
     Option<Var> * Expr<'T, 'Id, 'valueExt>
@@ -2207,18 +2609,18 @@ module Model =
 
   and ValueQuerySimple<'T, 'valueExt> =
     { Iterators: ValueQueryIterators<'T, 'valueExt>
-      Joins: Option<NonEmptyList<TypeCheckedExprQueryJoin<'valueExt>>>
-      Where: Option<TypeCheckedExprQueryExpr<'valueExt>>
-      Select: TypeCheckedExprQueryExpr<'valueExt>
-      OrderBy: Option<TypeCheckedExprQueryExpr<'valueExt> * OrderByDirection>
-      Distinct: Option<TypeCheckedExprQueryExpr<'valueExt>>
+      Joins: Option<NonEmptyList<RunnableExprQueryJoin<'valueExt>>>
+      Where: Option<RunnableExprQueryExpr<'valueExt>>
+      Select: RunnableExprQueryExpr<'valueExt>
+      OrderBy: Option<RunnableExprQueryExpr<'valueExt> * OrderByDirection>
+      Distinct: Option<RunnableExprQueryExpr<'valueExt>>
       DeserializeFrom: TypeQueryRow<'valueExt> }
 
     override q.ToString() =
       let joins =
         match q.Joins with
         | Some joins ->
-          let joinToStr (j: TypeCheckedExprQueryJoin<'valueExt>) =
+          let joinToStr (j: RunnableExprQueryJoin<'valueExt>) =
             $"({j.Left}) = ({j.Right})"
 
           let joined =
@@ -2287,10 +2689,10 @@ module Model =
         $"(\n{unionStrs}\n)"
 
   and Value<'T, 'valueExt> =
-    | TypeLambda of TypeParameter * TypeCheckedExpr<'valueExt>
+    | TypeLambda of TypeParameter * RunnableExpr<'valueExt>
     | Lambda of
       Var *
-      TypeCheckedExpr<'valueExt> *
+      RunnableExpr<'valueExt> *
       Map<ResolvedIdentifier, Value<'T, 'valueExt>> *
       TypeCheckScope
     | Record of Map<ResolvedIdentifier, Value<'T, 'valueExt>>

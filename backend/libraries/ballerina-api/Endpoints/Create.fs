@@ -146,28 +146,28 @@ module Create =
                   typeCheckState
 
               let doUpdateExpr
-                : TypeCheckedExpr<
+                : RunnableExpr<
                     ValueExt<'runtimeContext, 'db, 'customExtension>
                    > =
-                TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
+                RunnableExpr.UnsafeApplyForUntypedEval(
+                  RunnableExpr.UnsafeApplyForUntypedEval(
+                    RunnableExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], "create")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    TypeCheckedExpr.FromValue(
+                    RunnableExpr.FromValue(
                       entityDescriptor,
                       TypeValue.CreatePrimitive PrimitiveType.Unit,
                       Kind.Star
                     )
                   ),
-                  TypeCheckedExpr.UnsafeTupleConsForUntypedEval
-                    [ TypeCheckedExpr.FromValue(
+                  RunnableExpr.UnsafeTupleConsForUntypedEval
+                    [ RunnableExpr.FromValue(
                         idValue,
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star
                       )
-                      TypeCheckedExpr.FromValue(
+                      RunnableExpr.FromValue(
                         entityValue,
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star

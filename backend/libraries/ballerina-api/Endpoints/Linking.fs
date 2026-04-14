@@ -168,28 +168,28 @@ module Linking =
                     .Create
 
               let doLinkExpr
-                : TypeCheckedExpr<
+                : RunnableExpr<
                     ValueExt<'runtimeContext, 'db, 'customExtension>
                    > =
-                TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
+                RunnableExpr.UnsafeApplyForUntypedEval(
+                  RunnableExpr.UnsafeApplyForUntypedEval(
+                    RunnableExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], "link")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    TypeCheckedExpr.FromValue(
+                    RunnableExpr.FromValue(
                       relationDescriptor,
                       TypeValue.CreatePrimitive PrimitiveType.Unit,
                       Kind.Star
                     )
                   ),
-                  TypeCheckedExpr.UnsafeTupleConsForUntypedEval
-                    [ TypeCheckedExpr.FromValue(
+                  RunnableExpr.UnsafeTupleConsForUntypedEval
+                    [ RunnableExpr.FromValue(
                         fromIdValue,
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star
                       )
-                      TypeCheckedExpr.FromValue(
+                      RunnableExpr.FromValue(
                         toIdValue,
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star
@@ -355,28 +355,28 @@ module Linking =
                     .Create
 
               let doUnlinkExpr
-                : TypeCheckedExpr<
+                : RunnableExpr<
                     ValueExt<'runtimeContext, 'db, 'customExtension>
                    > =
-                TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
+                RunnableExpr.UnsafeApplyForUntypedEval(
+                  RunnableExpr.UnsafeApplyForUntypedEval(
+                    RunnableExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], "unlink")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    TypeCheckedExpr.FromValue(
+                    RunnableExpr.FromValue(
                       relationDescriptor,
                       TypeValue.CreatePrimitive PrimitiveType.Unit,
                       Kind.Star
                     )
                   ),
-                  TypeCheckedExpr.UnsafeTupleConsForUntypedEval
-                    [ TypeCheckedExpr.FromValue(
+                  RunnableExpr.UnsafeTupleConsForUntypedEval
+                    [ RunnableExpr.FromValue(
                         fromIdValue,
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star
                       )
-                      TypeCheckedExpr.FromValue(
+                      RunnableExpr.FromValue(
                         toIdValue,
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star

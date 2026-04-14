@@ -38,23 +38,23 @@ module Delete =
       match _entity.Hooks.OnDeleting with
       | Some hookExpr ->
         let _doRunHookExpr =
-          TypeCheckedExpr.UnsafeApplyForUntypedEval(
-            TypeCheckedExpr.UnsafeApplyForUntypedEval(
-              TypeCheckedExpr.UnsafeApplyForUntypedEval(
+          RunnableExpr.UnsafeApplyForUntypedEval(
+            RunnableExpr.UnsafeApplyForUntypedEval(
+              RunnableExpr.UnsafeApplyForUntypedEval(
                 hookExpr,
-                TypeCheckedExpr.FromValue(
+                RunnableExpr.FromValue(
                   _schema_as_value,
                   TypeValue.CreateUnit(),
                   Kind.Star
                 )
               ),
-              TypeCheckedExpr.FromValue(
+              RunnableExpr.FromValue(
                 _entityId,
                 TypeValue.CreateUnit(),
                 Kind.Star
               )
             ),
-            TypeCheckedExpr.FromValue(
+            RunnableExpr.FromValue(
               currentValueWithProps,
               TypeValue.CreateUnit(),
               Kind.Star
@@ -103,23 +103,23 @@ module Delete =
       match _entity.Hooks.OnDeleted with
       | Some hookExpr ->
         let _doRunHookExpr =
-          TypeCheckedExpr.UnsafeApplyForUntypedEval(
-            TypeCheckedExpr.UnsafeApplyForUntypedEval(
-              TypeCheckedExpr.UnsafeApplyForUntypedEval(
+          RunnableExpr.UnsafeApplyForUntypedEval(
+            RunnableExpr.UnsafeApplyForUntypedEval(
+              RunnableExpr.UnsafeApplyForUntypedEval(
                 hookExpr,
-                TypeCheckedExpr.FromValue(
+                RunnableExpr.FromValue(
                   _schema_as_value,
                   TypeValue.CreateUnit(),
                   Kind.Star
                 )
               ),
-              TypeCheckedExpr.FromValue(
+              RunnableExpr.FromValue(
                 _entityId,
                 TypeValue.CreateUnit(),
                 Kind.Star
               )
             ),
-            TypeCheckedExpr.FromValue(
+            RunnableExpr.FromValue(
               currentValueWithProps,
               TypeValue.CreateUnit(),
               Kind.Star
@@ -273,23 +273,23 @@ module Delete =
                       | _, None -> return! actual_delete
                       | _, Some canDeleteHook ->
                         match!
-                          TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                            TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                              TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                          RunnableExpr.UnsafeApplyForUntypedEval(
+                            RunnableExpr.UnsafeApplyForUntypedEval(
+                              RunnableExpr.UnsafeApplyForUntypedEval(
                                 canDeleteHook,
-                                TypeCheckedExpr.FromValue(
+                                RunnableExpr.FromValue(
                                   schema_value.Value.Value,
                                   TypeValue.CreateUnit(),
                                   Kind.Star
                                 )
                               ),
-                              TypeCheckedExpr.FromValue(
+                              RunnableExpr.FromValue(
                                 entityId,
                                 TypeValue.CreateUnit(),
                                 Kind.Star
                               )
                             ),
-                            TypeCheckedExpr.FromValue(
+                            RunnableExpr.FromValue(
                               currentValueWithProps,
                               TypeValue.CreateUnit(),
                               Kind.Star

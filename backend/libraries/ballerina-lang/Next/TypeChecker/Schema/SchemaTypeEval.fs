@@ -299,6 +299,8 @@ module SchemaTypeEval =
                                     None
                                     (it.Mapper |> Expr.Lookup)
 
+                                let mapper = Conversion.convertExpression mapper
+
                                 let next_t = t_arg
 
                                 let next_segments =
@@ -354,12 +356,14 @@ module SchemaTypeEval =
                         TypeValue.Unify(loc0, body_t, p_decl_t)
                         |> Expr.liftUnification
 
+                      let body_runnable = Conversion.convertExpression body_e
+
                       return
                         { SchemaEntityProperty.Path = resolved_scope
                           PropertyName = p.Name
                           ReturnType = p_decl_t
                           ReturnKind = p_decl_k
-                          Body = body_e }
+                          Body = body_runnable }
                   })
                 |> state.All
                 |> state.Map(List.ofSeq)
@@ -408,9 +412,11 @@ module SchemaTypeEval =
                         )
                         |> Expr.liftUnification
 
+                      let body_runnable = Conversion.convertExpression body_e
+
                       return
                         { SchemaEntityVector.VectorName = p.Name
-                          Body = body_e }
+                          Body = body_runnable }
                   })
                 |> state.All
                 |> state.Map(List.ofSeq)
@@ -842,6 +848,18 @@ module SchemaTypeEval =
                   e_typechecked
                   parsed_hooks.CanDelete
 
+              let onCreating = Conversion.convertExpressionOption onCreating
+              let onCreated = Conversion.convertExpressionOption onCreated
+              let onUpdating = Conversion.convertExpressionOption onUpdating
+              let onUpdated = Conversion.convertExpressionOption onUpdated
+              let onDeleting = Conversion.convertExpressionOption onDeleting
+              let onDeleted = Conversion.convertExpressionOption onDeleted
+              let onBackground = Conversion.convertExpressionOption onBackground
+              let canCreate = Conversion.convertExpressionOption canCreate
+              let canRead = Conversion.convertExpressionOption canRead
+              let canUpdate = Conversion.convertExpressionOption canUpdate
+              let canDelete = Conversion.convertExpressionOption canDelete
+
               return
                 { OnCreating = onCreating
                   OnCreated = onCreated
@@ -909,9 +927,11 @@ module SchemaTypeEval =
                         )
                       )
 
+                    let on_linking_runnable = Conversion.convertExpression on_linking_expr
+
                     return
                       { r_typechecked with
-                          OnLinking = Some on_linking_expr }
+                          OnLinking = Some on_linking_runnable }
                 }
 
               let! r_typechecked =
@@ -948,9 +968,11 @@ module SchemaTypeEval =
                         )
                       )
 
+                    let on_linked_runnable = Conversion.convertExpression on_linked_expr
+
                     return
                       { r_typechecked with
-                          OnLinked = Some on_linked_expr }
+                          OnLinked = Some on_linked_runnable }
                 }
 
               let! r_typechecked =
@@ -990,9 +1012,11 @@ module SchemaTypeEval =
                         )
                       )
 
+                    let on_unlinking_runnable = Conversion.convertExpression on_unlinking_expr
+
                     return
                       { r_typechecked with
-                          OnUnlinking = Some on_unlinking_expr }
+                          OnUnlinking = Some on_unlinking_runnable }
                 }
 
               let! r_typechecked =
@@ -1029,9 +1053,11 @@ module SchemaTypeEval =
                         )
                       )
 
+                    let on_unlinked_runnable = Conversion.convertExpression on_unlinked_expr
+
                     return
                       { r_typechecked with
-                          OnUnlinked = Some on_unlinked_expr }
+                          OnUnlinked = Some on_unlinked_runnable }
                 }
 
               return r_typechecked
