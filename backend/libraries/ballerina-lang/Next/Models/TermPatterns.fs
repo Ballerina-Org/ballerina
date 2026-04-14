@@ -257,7 +257,7 @@ module Patterns =
       (v: Value<'T, 'valueExt>)
       : Sum<
           Var *
-          TypeCheckedExpr<'valueExt> *
+          RunnableExpr<'valueExt> *
           Map<ResolvedIdentifier, Value<'T, 'valueExt>> *
           TypeCheckScope,
           Errors<Unit>
@@ -272,7 +272,7 @@ module Patterns =
 
     static member AsTypeLamba
       (v: Value<'T, 'valueExt>)
-      : Sum<TypeParameter * TypeCheckedExpr<'valueExt>, Errors<Unit>> =
+      : Sum<TypeParameter * RunnableExpr<'valueExt>, Errors<Unit>> =
       match v with
       | Value.TypeLambda(v, t) -> sum.Return(v, t)
       | other ->
@@ -1633,4 +1633,716 @@ module Patterns =
         rk: Kind
       ) =
       TypeCheckedExpr<'valueExt>
+        .If(c, t, f, rt, rk, Location.Unknown, TypeCheckScope.Empty)
+
+  // ── RunnableExpr constructors (mirror of TypeCheckedExpr above) ─────
+
+  type RunnableExpr<'valueExt> with
+
+    static member TypeLambda
+      (
+        p: TypeParameter,
+        e: RunnableExpr<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.TypeLambda(
+            { RunnableExprTypeLambda.Param = p
+              Body = e }
+          )
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member TypeLambda
+      (
+        p: TypeParameter,
+        e: RunnableExpr<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind
+      ) =
+      RunnableExpr<'valueExt>
+        .TypeLambda(p, e, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member TypeApply
+      (
+        e1: RunnableExpr<'valueExt>,
+        typeArg: TypeValue<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.TypeApply(
+            { RunnableExprTypeApply.Func = e1
+              TypeArg = typeArg }
+          )
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member TypeApply
+      (
+        e1: RunnableExpr<'valueExt>,
+        typeArg: TypeValue<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind
+      ) =
+      RunnableExpr<'valueExt>
+        .TypeApply(e1, typeArg, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member Lambda
+      (
+        v: Var,
+        paramType: TypeValue<'valueExt>,
+        e: RunnableExpr<'valueExt>,
+        returnType: TypeValue<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.Lambda(
+            { RunnableExprLambda.Param = v
+              ParamType = paramType
+              Body = e
+              BodyType = returnType }
+          )
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member Lambda
+      (
+        v: Var,
+        paramType: TypeValue<'valueExt>,
+        e: RunnableExpr<'valueExt>,
+        returnType: TypeValue<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind
+      ) =
+      RunnableExpr<'valueExt>
+        .Lambda(
+          v,
+          paramType,
+          e,
+          returnType,
+          t,
+          k,
+          Location.Unknown,
+          TypeCheckScope.Empty
+        )
+
+    static member Apply
+      (
+        f: RunnableExpr<'valueExt>,
+        a: RunnableExpr<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.Apply({ RunnableExprApply.F = f; Arg = a })
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member Apply
+      (
+        f: RunnableExpr<'valueExt>,
+        a: RunnableExpr<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind
+      ) =
+      RunnableExpr<'valueExt>
+        .Apply(f, a, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member Query
+      (
+        q: RunnableExprQuery<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr = RunnableExprRec.Query(q)
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member Query
+      (q: RunnableExprQuery<'valueExt>, t: TypeValue<'valueExt>, k: Kind)
+      =
+      RunnableExpr<'valueExt>
+        .Query(q, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member FromValue
+      (
+        v: Value<TypeValue<'valueExt>, 'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.FromValue(
+            { RunnableExprFromValue.Value = v
+              ValueType = t
+              ValueKind = k }
+          )
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member FromValue
+      (
+        v: Value<TypeValue<'valueExt>, 'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind
+      ) =
+      RunnableExpr<'valueExt>
+        .FromValue(v, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member Let
+      (
+        v: Var,
+        varType: TypeValue<'valueExt>,
+        a: RunnableExpr<'valueExt>,
+        e: RunnableExpr<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.Let(
+            { RunnableExprLet.Var = v
+              Type = varType
+              Val = a
+              Rest = e }
+          )
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member Let
+      (
+        v: Var,
+        varType: TypeValue<'valueExt>,
+        a: RunnableExpr<'valueExt>,
+        e: RunnableExpr<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind
+      ) =
+      RunnableExpr<'valueExt>
+        .Let(v, varType, a, e, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member Do
+      (
+        a: RunnableExpr<'valueExt>,
+        e: RunnableExpr<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.Do({ RunnableExprDo.Val = a; Rest = e })
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member Do
+      (
+        a: RunnableExpr<'valueExt>,
+        e: RunnableExpr<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind
+      ) =
+      RunnableExpr<'valueExt>
+        .Do(a, e, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member TypeLet
+      (
+        name: string,
+        typeDef: TypeValue<'valueExt>,
+        e: RunnableExpr<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.TypeLet(
+            { RunnableExprTypeLet.Name = name
+              TypeDef = typeDef
+              Body = e }
+          )
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member TypeLet
+      (
+        name: string,
+        typeDef: TypeValue<'valueExt>,
+        e: RunnableExpr<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind
+      ) =
+      RunnableExpr<'valueExt>
+        .TypeLet(name, typeDef, e, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member RecordCons
+      (
+        fields: List<ResolvedIdentifier * RunnableExpr<'valueExt>>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.RecordCons(
+            { RunnableExprRecordCons.Fields = fields }
+          )
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member RecordCons
+      (
+        fields: List<ResolvedIdentifier * RunnableExpr<'valueExt>>,
+        t: TypeValue<'valueExt>,
+        k: Kind
+      ) =
+      RunnableExpr<'valueExt>
+        .RecordCons(fields, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member RecordWith
+      (
+        record: RunnableExpr<'valueExt>,
+        fields: List<ResolvedIdentifier * RunnableExpr<'valueExt>>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.RecordWith(
+            { RunnableExprRecordWith.Record = record
+              Fields = fields }
+          )
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member RecordWith
+      (
+        record: RunnableExpr<'valueExt>,
+        fields: List<ResolvedIdentifier * RunnableExpr<'valueExt>>,
+        t: TypeValue<'valueExt>,
+        k: Kind
+      ) =
+      RunnableExpr<'valueExt>
+        .RecordWith(
+          record,
+          fields,
+          t,
+          k,
+          Location.Unknown,
+          TypeCheckScope.Empty
+        )
+
+    static member TupleCons
+      (
+        elements: List<RunnableExpr<'valueExt>>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.TupleCons(
+            { RunnableExprTupleCons.Items = elements }
+          )
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member TupleCons
+      (
+        elements: List<RunnableExpr<'valueExt>>,
+        t: TypeValue<'valueExt>,
+        k: Kind
+      ) =
+      RunnableExpr<'valueExt>
+        .TupleCons(elements, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member SumCons
+      (
+        selector: SumConsSelector,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.SumCons(
+            { RunnableExprSumCons.Selector = selector }
+          )
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member SumCons
+      (selector: SumConsSelector, t: TypeValue<'valueExt>, k: Kind)
+      =
+      RunnableExpr<'valueExt>
+        .SumCons(selector, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member RecordDes
+      (
+        e: RunnableExpr<'valueExt>,
+        id: ResolvedIdentifier,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.RecordDes(
+            { RunnableExprRecordDes.Expr = e
+              Field = id }
+          )
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member RecordDes
+      (
+        e: RunnableExpr<'valueExt>,
+        id: ResolvedIdentifier,
+        t: TypeValue<'valueExt>,
+        k: Kind
+      ) =
+      RunnableExpr<'valueExt>
+        .RecordDes(e, id, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member EntitiesDes
+      (
+        e: RunnableExpr<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.EntitiesDes(
+            { RunnableExprEntitiesDes.Expr = e }
+          )
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member EntitiesDes
+      (e: RunnableExpr<'valueExt>, t: TypeValue<'valueExt>, k: Kind)
+      =
+      RunnableExpr<'valueExt>
+        .EntitiesDes(e, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member RelationsDes
+      (
+        e: RunnableExpr<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.RelationsDes(
+            { RunnableExprRelationsDes.Expr = e }
+          )
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member RelationsDes
+      (e: RunnableExpr<'valueExt>, t: TypeValue<'valueExt>, k: Kind)
+      =
+      RunnableExpr<'valueExt>
+        .RelationsDes(e, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member EntityDes
+      (
+        e: RunnableExpr<'valueExt>,
+        n: SchemaEntityName,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.EntityDes(
+            { RunnableExprEntityDes.Expr = e
+              EntityName = n }
+          )
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member EntityDes
+      (
+        e: RunnableExpr<'valueExt>,
+        n: SchemaEntityName,
+        t: TypeValue<'valueExt>,
+        k: Kind
+      ) =
+      RunnableExpr<'valueExt>
+        .EntityDes(e, n, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member RelationDes
+      (
+        e: RunnableExpr<'valueExt>,
+        n: SchemaRelationName,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.RelationDes(
+            { RunnableExprRelationDes.Expr = e
+              RelationName = n }
+          )
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member RelationDes
+      (
+        e: RunnableExpr<'valueExt>,
+        n: SchemaRelationName,
+        t: TypeValue<'valueExt>,
+        k: Kind
+      ) =
+      RunnableExpr<'valueExt>
+        .RelationDes(e, n, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member RelationLookupDes
+      (
+        e: RunnableExpr<'valueExt>,
+        n: SchemaRelationName,
+        d: RelationLookupDirection,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.RelationLookupDes(
+            { RunnableExprRelationLookupDes.Expr = e
+              RelationName = n
+              Direction = d }
+          )
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member RelationLookupDes
+      (
+        e: RunnableExpr<'valueExt>,
+        n: SchemaRelationName,
+        d: RelationLookupDirection,
+        t: TypeValue<'valueExt>,
+        k: Kind
+      ) =
+      RunnableExpr<'valueExt>
+        .RelationLookupDes(
+          e,
+          n,
+          d,
+          t,
+          k,
+          Location.Unknown,
+          TypeCheckScope.Empty
+        )
+
+    static member UnionDes
+      (
+        cases: Map<ResolvedIdentifier, RunnableCaseHandler<'valueExt>>,
+        fallback: Option<RunnableExpr<'valueExt>>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.UnionDes(
+            { RunnableExprUnionDes.Handlers = cases
+              Fallback = fallback }
+          )
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member UnionDes
+      (
+        cases: Map<ResolvedIdentifier, RunnableCaseHandler<'valueExt>>,
+        fallback: Option<RunnableExpr<'valueExt>>,
+        t: TypeValue<'valueExt>,
+        k: Kind
+      ) =
+      RunnableExpr<'valueExt>
+        .UnionDes(cases, fallback, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member TupleDes
+      (
+        e: RunnableExpr<'valueExt>,
+        selector: TupleDesSelector,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.TupleDes(
+            { RunnableExprTupleDes.Tuple = e
+              Item = selector }
+          )
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member TupleDes
+      (
+        e: RunnableExpr<'valueExt>,
+        selector: TupleDesSelector,
+        t: TypeValue<'valueExt>,
+        k: Kind
+      ) =
+      RunnableExpr<'valueExt>
+        .TupleDes(e, selector, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member SumDes
+      (
+        cases: Map<SumConsSelector, RunnableCaseHandler<'valueExt>>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.SumDes({ RunnableExprSumDes.Handlers = cases })
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member SumDes
+      (
+        cases: Map<SumConsSelector, RunnableCaseHandler<'valueExt>>,
+        t: TypeValue<'valueExt>,
+        k: Kind
+      ) =
+      RunnableExpr<'valueExt>
+        .SumDes(cases, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member Primitive
+      (
+        p: PrimitiveValue,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr = RunnableExprRec.Primitive(p)
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member Primitive
+      (p: PrimitiveValue, t: TypeValue<'valueExt>, k: Kind)
+      =
+      RunnableExpr<'valueExt>
+        .Primitive(p, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member Lookup
+      (
+        id: ResolvedIdentifier,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.Lookup({ RunnableExprLookup.Id = id })
+        Type = t
+        Kind = k
+        Location = loc
+        Scope = scope }
+
+    static member Lookup
+      (id: ResolvedIdentifier, t: TypeValue<'valueExt>, k: Kind)
+      =
+      RunnableExpr<'valueExt>
+        .Lookup(id, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member If
+      (
+        c: RunnableExpr<'valueExt>,
+        t: RunnableExpr<'valueExt>,
+        f: RunnableExpr<'valueExt>,
+        rt: TypeValue<'valueExt>,
+        rk: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) : RunnableExpr<'valueExt> =
+      { Expr =
+          RunnableExprRec.If(
+            { RunnableExprIf.Cond = c
+              Then = t
+              Else = f }
+          )
+        Type = rt
+        Kind = rk
+        Location = loc
+        Scope = scope }
+
+    static member If
+      (
+        c: RunnableExpr<'valueExt>,
+        t: RunnableExpr<'valueExt>,
+        f: RunnableExpr<'valueExt>,
+        rt: TypeValue<'valueExt>,
+        rk: Kind
+      ) =
+      RunnableExpr<'valueExt>
         .If(c, t, f, rt, rk, Location.Unknown, TypeCheckScope.Empty)

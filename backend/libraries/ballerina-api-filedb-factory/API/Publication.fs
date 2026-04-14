@@ -53,13 +53,13 @@ module API =
     =
     sum {
       let mainExpr =
-        TypeCheckedExpr.Apply(
-          TypeCheckedExpr.FromValue(
+        RunnableExpr.Apply(
+          RunnableExpr.FromValue(
             dbio.Main,
             TypeValue.CreatePrimitive PrimitiveType.Unit,
             Kind.Star
           ),
-          TypeCheckedExpr.FromValue(
+          RunnableExpr.FromValue(
             dbio.SchemaAsValue,
             TypeValue.CreatePrimitive PrimitiveType.Unit,
             Kind.Star

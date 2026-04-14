@@ -54,37 +54,37 @@ module Update =
       match _entity.Hooks.OnUpdating with
       | Some hookExpr ->
         let _doRunHookExpr =
-          TypeCheckedExpr.UnsafeApplyForUntypedEval(
-            TypeCheckedExpr.UnsafeApplyForUntypedEval(
-              TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
+          RunnableExpr.UnsafeApplyForUntypedEval(
+            RunnableExpr.UnsafeApplyForUntypedEval(
+              RunnableExpr.UnsafeApplyForUntypedEval(
+                RunnableExpr.UnsafeApplyForUntypedEval(
+                  RunnableExpr.UnsafeApplyForUntypedEval(
                     hookExpr,
-                    TypeCheckedExpr.FromValue(
+                    RunnableExpr.FromValue(
                       _schema_as_value,
                       TypeValue.CreateUnit(),
                       Kind.Star
                     )
                   ),
-                  TypeCheckedExpr.FromValue(
+                  RunnableExpr.FromValue(
                     _entityId,
                     TypeValue.CreateUnit(),
                     Kind.Star
                   )
                 ),
-                TypeCheckedExpr.FromValue(
+                RunnableExpr.FromValue(
                   previousValueWithProps,
                   TypeValue.CreateUnit(),
                   Kind.Star
                 )
               ),
-              TypeCheckedExpr.FromValue(
+              RunnableExpr.FromValue(
                 current_value,
                 TypeValue.CreateUnit(),
                 Kind.Star
               )
             ),
-            TypeCheckedExpr.FromValue(
+            RunnableExpr.FromValue(
               currentValueWithProps,
               TypeValue.CreateUnit(),
               Kind.Star
@@ -138,30 +138,30 @@ module Update =
       match _entity.Hooks.OnUpdated with
       | Some hookExpr ->
         let _doRunHookExpr =
-          TypeCheckedExpr.UnsafeApplyForUntypedEval(
-            TypeCheckedExpr.UnsafeApplyForUntypedEval(
-              TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                TypeCheckedExpr.UnsafeApplyForUntypedEval(
+          RunnableExpr.UnsafeApplyForUntypedEval(
+            RunnableExpr.UnsafeApplyForUntypedEval(
+              RunnableExpr.UnsafeApplyForUntypedEval(
+                RunnableExpr.UnsafeApplyForUntypedEval(
                   hookExpr,
-                  TypeCheckedExpr.FromValue(
+                  RunnableExpr.FromValue(
                     _schema_as_value,
                     TypeValue.CreateUnit(),
                     Kind.Star
                   )
                 ),
-                TypeCheckedExpr.FromValue(
+                RunnableExpr.FromValue(
                   _entityId,
                   TypeValue.CreateUnit(),
                   Kind.Star
                 )
               ),
-              TypeCheckedExpr.FromValue(
+              RunnableExpr.FromValue(
                 previousValueWithProps,
                 TypeValue.CreateUnit(),
                 Kind.Star
               )
             ),
-            TypeCheckedExpr.FromValue(
+            RunnableExpr.FromValue(
               currentValueWithProps,
               TypeValue.CreateUnit(),
               Kind.Star
@@ -326,20 +326,20 @@ module Update =
                           stripProps db_ops existingValue entity_ref
 
                         let! updatedValue =
-                          TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                            TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                              TypeCheckedExpr.FromValue(
+                          RunnableExpr.UnsafeApplyForUntypedEval(
+                            RunnableExpr.UnsafeApplyForUntypedEval(
+                              RunnableExpr.FromValue(
                                 updateFunc,
                                 TypeValue.CreatePrimitive PrimitiveType.Unit,
                                 Kind.Star
                               ),
-                              TypeCheckedExpr.FromValue(
+                              RunnableExpr.FromValue(
                                 existingValue,
                                 TypeValue.CreatePrimitive PrimitiveType.Unit,
                                 Kind.Star
                               )
                             ),
-                            TypeCheckedExpr.FromValue(
+                            RunnableExpr.FromValue(
                               existingValueWithoutProps,
                               TypeValue.CreatePrimitive PrimitiveType.Unit,
                               Kind.Star
@@ -402,23 +402,23 @@ module Update =
                           // do Console.WriteLine $"Existing value: {existingValue}"
                           // do Console.ReadLine() |> ignore
                           match!
-                            TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                              TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                                TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                            RunnableExpr.UnsafeApplyForUntypedEval(
+                              RunnableExpr.UnsafeApplyForUntypedEval(
+                                RunnableExpr.UnsafeApplyForUntypedEval(
                                   canUpdateHook,
-                                  TypeCheckedExpr.FromValue(
+                                  RunnableExpr.FromValue(
                                     schema_value.Value.Value,
                                     TypeValue.CreateUnit(),
                                     Kind.Star
                                   )
                                 ),
-                                TypeCheckedExpr.FromValue(
+                                RunnableExpr.FromValue(
                                   _entityId,
                                   TypeValue.CreateUnit(),
                                   Kind.Star
                                 )
                               ),
-                              TypeCheckedExpr.FromValue(
+                              RunnableExpr.FromValue(
                                 existingValue,
                                 TypeValue.CreateUnit(),
                                 Kind.Star

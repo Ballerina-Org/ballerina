@@ -36,25 +36,25 @@ module Unlink =
 
       match relation.Hooks.OnUnlinking with
       | None -> return ()
-      | Some(hookExpr: TypeCheckedExpr<'ext>) ->
+      | Some(hookExpr: RunnableExpr<'ext>) ->
         let! run_hook_result =
-          TypeCheckedExpr.UnsafeApplyForUntypedEval(
-            TypeCheckedExpr.UnsafeApplyForUntypedEval(
-              TypeCheckedExpr.UnsafeApplyForUntypedEval(
+          RunnableExpr.UnsafeApplyForUntypedEval(
+            RunnableExpr.UnsafeApplyForUntypedEval(
+              RunnableExpr.UnsafeApplyForUntypedEval(
                 hookExpr,
-                TypeCheckedExpr.FromValue(
+                RunnableExpr.FromValue(
                   _schema_as_value,
                   TypeValue.CreateUnit(),
                   Kind.Star
                 )
               ),
-              TypeCheckedExpr.FromValue(
+              RunnableExpr.FromValue(
                 _fromId,
                 TypeValue.CreateUnit(),
                 Kind.Star
               )
             ),
-            TypeCheckedExpr.FromValue(_toId, TypeValue.CreateUnit(), Kind.Star)
+            RunnableExpr.FromValue(_toId, TypeValue.CreateUnit(), Kind.Star)
           )
           |> NonEmptyList.One
           |> Expr.Eval
@@ -96,25 +96,25 @@ module Unlink =
 
       match relation.Hooks.OnUnlinked with
       | None -> return ()
-      | Some(hookExpr: TypeCheckedExpr<'ext>) ->
+      | Some(hookExpr: RunnableExpr<'ext>) ->
         let! run_hook_result =
-          TypeCheckedExpr.UnsafeApplyForUntypedEval(
-            TypeCheckedExpr.UnsafeApplyForUntypedEval(
-              TypeCheckedExpr.UnsafeApplyForUntypedEval(
+          RunnableExpr.UnsafeApplyForUntypedEval(
+            RunnableExpr.UnsafeApplyForUntypedEval(
+              RunnableExpr.UnsafeApplyForUntypedEval(
                 hookExpr,
-                TypeCheckedExpr.FromValue(
+                RunnableExpr.FromValue(
                   _schema_as_value,
                   TypeValue.CreateUnit(),
                   Kind.Star
                 )
               ),
-              TypeCheckedExpr.FromValue(
+              RunnableExpr.FromValue(
                 _fromId,
                 TypeValue.CreateUnit(),
                 Kind.Star
               )
             ),
-            TypeCheckedExpr.FromValue(_toId, TypeValue.CreateUnit(), Kind.Star)
+            RunnableExpr.FromValue(_toId, TypeValue.CreateUnit(), Kind.Star)
           )
           |> NonEmptyList.One
           |> Expr.Eval

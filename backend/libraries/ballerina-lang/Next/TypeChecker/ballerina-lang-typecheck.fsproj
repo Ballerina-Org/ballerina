@@ -24,6 +24,7 @@
     <Compile Include="Schema/Hooks/EntityHookCanRead.fs" />
     <Compile Include="Schema/Hooks/EntityHookCanUpdate.fs" />
     <Compile Include="Schema/Hooks/EntityHookCanDelete.fs" />
+    <Compile Include="Conversion/TypeCheckedExprToRunnable.fs" />
     <Compile Include="Schema/SchemaTypeEval.fs" />
     <Compile Include="TypeEval.fs" />
     <Compile Include="TypeCheck/AdHocPolymorphicOperators.fs" />

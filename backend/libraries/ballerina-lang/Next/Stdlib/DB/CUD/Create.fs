@@ -54,26 +54,26 @@ module Create =
       match _entity.Hooks.OnCreating with
       | Some hookExpr ->
         let _doRunHookExpr =
-          TypeCheckedExpr.UnsafeApplyForUntypedEval(
-            TypeCheckedExpr.UnsafeApplyForUntypedEval(
-              TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                TypeCheckedExpr.UnsafeApplyForUntypedEval(
+          RunnableExpr.UnsafeApplyForUntypedEval(
+            RunnableExpr.UnsafeApplyForUntypedEval(
+              RunnableExpr.UnsafeApplyForUntypedEval(
+                RunnableExpr.UnsafeApplyForUntypedEval(
                   hookExpr,
-                  TypeCheckedExpr.FromValue(
+                  RunnableExpr.FromValue(
                     _schema_as_value,
                     TypeValue.CreateUnit(),
                     Kind.Star
                   )
                 ),
-                TypeCheckedExpr.FromValue(
+                RunnableExpr.FromValue(
                   _entityId,
                   TypeValue.CreateUnit(),
                   Kind.Star
                 )
               ),
-              TypeCheckedExpr.FromValue(v, TypeValue.CreateUnit(), Kind.Star)
+              RunnableExpr.FromValue(v, TypeValue.CreateUnit(), Kind.Star)
             ),
-            TypeCheckedExpr.FromValue(
+            RunnableExpr.FromValue(
               valueWithProps,
               TypeValue.CreateUnit(),
               Kind.Star
@@ -134,23 +134,23 @@ module Create =
       match _entity.Hooks.OnCreated with
       | Some hookExpr ->
         let _doRunHookExpr =
-          TypeCheckedExpr.UnsafeApplyForUntypedEval(
-            TypeCheckedExpr.UnsafeApplyForUntypedEval(
-              TypeCheckedExpr.UnsafeApplyForUntypedEval(
+          RunnableExpr.UnsafeApplyForUntypedEval(
+            RunnableExpr.UnsafeApplyForUntypedEval(
+              RunnableExpr.UnsafeApplyForUntypedEval(
                 hookExpr,
-                TypeCheckedExpr.FromValue(
+                RunnableExpr.FromValue(
                   _schema_as_value,
                   TypeValue.CreateUnit(),
                   Kind.Star
                 )
               ),
-              TypeCheckedExpr.FromValue(
+              RunnableExpr.FromValue(
                 _entityId,
                 TypeValue.CreateUnit(),
                 Kind.Star
               )
             ),
-            TypeCheckedExpr.FromValue(
+            RunnableExpr.FromValue(
               valueWithProps,
               TypeValue.CreateUnit(),
               Kind.Star
@@ -319,9 +319,9 @@ module Create =
                       | false, _ -> return! actual_creation
                       | _, Some canCreateHook ->
                         match!
-                          TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                          RunnableExpr.UnsafeApplyForUntypedEval(
                             canCreateHook,
-                            TypeCheckedExpr.FromValue(
+                            RunnableExpr.FromValue(
                               schema_value.Value.Value,
                               TypeValue.CreateUnit(),
                               Kind.Star

@@ -180,22 +180,22 @@ module UpdateMany =
                               stripProps db_ops existingValue entity_ref
 
                             let! updatedValue =
-                              TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                                TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                                  TypeCheckedExpr.FromValue(
+                              RunnableExpr.UnsafeApplyForUntypedEval(
+                                RunnableExpr.UnsafeApplyForUntypedEval(
+                                  RunnableExpr.FromValue(
                                     updateFunc,
                                     TypeValue.CreatePrimitive
                                       PrimitiveType.Unit,
                                     Kind.Star
                                   ),
-                                  TypeCheckedExpr.FromValue(
+                                  RunnableExpr.FromValue(
                                     existingValue,
                                     TypeValue.CreatePrimitive
                                       PrimitiveType.Unit,
                                     Kind.Star
                                   )
                                 ),
-                                TypeCheckedExpr.FromValue(
+                                RunnableExpr.FromValue(
                                   existingValueWithoutProps,
                                   TypeValue.CreatePrimitive PrimitiveType.Unit,
                                   Kind.Star
@@ -259,9 +259,9 @@ module UpdateMany =
                             with
                             | true, Some canUpdateHook ->
                               match!
-                                TypeCheckedExpr.UnsafeApplyForUntypedEval(
+                                RunnableExpr.UnsafeApplyForUntypedEval(
                                   canUpdateHook,
-                                  TypeCheckedExpr.FromValue(
+                                  RunnableExpr.FromValue(
                                     schema_value.Value.Value,
                                     TypeValue.CreateUnit(),
                                     Kind.Star

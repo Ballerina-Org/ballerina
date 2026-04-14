@@ -17,6 +17,8 @@ open Ballerina.DSL.Next.Types.Model
 open Ballerina.Reader.WithError
 open Ballerina.StdLib.Object
 
+open Ballerina.DSL.Next.Types.TypeChecker
+
 type RuntimeValueExt = ValueExt<unit, MutableMemoryDB<unit, unit>, unit>
 
 type ProjectExecutionSuccess =
@@ -86,6 +88,16 @@ let private buildAndEvalProject
 
   match buildResult with
   | Left(exprs, typeValue, _, finalState) ->
+    let runnableExprs =
+      exprs
+      |> NonEmptyList.map Conversion.convertExpression
+      |> sum.AllNonEmpty
+
+    match runnableExprs with
+    | Right convErrors ->
+      Right(sprintf "Conversion failed: %s" (Errors.ToString(convErrors, "\n")))
+    | Left exprs ->
+
     let evalContext = ExprEvalContext.Empty() |> context.ExprEvalContext
 
     let evalContext =

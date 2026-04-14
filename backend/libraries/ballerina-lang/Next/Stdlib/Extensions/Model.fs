@@ -27,7 +27,7 @@ module Model =
     { TypeCheckContext: TypeCheckContext<'ext>
       TypeCheckState: TypeCheckState<'ext>
       ExprEvalContext: Updater<ExprEvalContext<'runtimeContext, 'ext>>
-      TypeCheckedPreludes: List<TypeCheckedExpr<'ext>>
+      TypeCheckedPreludes: List<RunnableExpr<'ext>>
       SerializationContext:
         DeltaSerializationContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>
       ExtTypeChecker: Option<IsExtInstanceOf<'ext>> }
@@ -46,7 +46,7 @@ module Model =
       OperationsLens: PartialLens<'ext, 'extOperations> // lens to access the value inside the extension value
       Apply:
         Location
-          -> List<TypeCheckedExpr<'ext>>
+          -> List<RunnableExpr<'ext>>
           -> 'extOperations * Value<TypeValue<'ext>, 'ext>
           -> ExprEvaluator<'runtimeContext, 'ext, Value<TypeValue<'ext>, 'ext>> }
 
@@ -107,7 +107,7 @@ module Model =
       OperationsLens: PartialLens<'ext, 'extOperations> // lens to access the value inside the extension value
       Apply:
         Location
-          -> List<TypeCheckedExpr<'ext>>
+          -> List<RunnableExpr<'ext>>
           -> 'extOperations * Value<TypeValue<'ext>, 'ext>
           -> ExprEvaluator<'runtimeContext, 'ext, Value<TypeValue<'ext>, 'ext>> }
 
@@ -119,7 +119,7 @@ module Model =
       ConsLens: PartialLens<'ext, 'extConstructors> // lens to access the constructor inside the extension value
       Apply:
         Location
-          -> List<TypeCheckedExpr<'ext>>
+          -> List<RunnableExpr<'ext>>
           -> 'extConstructors * Value<TypeValue<'ext>, 'ext>
           -> ExprEvaluator<'runtimeContext, 'ext, Value<TypeValue<'ext>, 'ext>> }
 

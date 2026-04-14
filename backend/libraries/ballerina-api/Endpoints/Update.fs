@@ -152,29 +152,29 @@ module Update =
                     .Create
 
               let doUpdateExpr
-                : TypeCheckedExpr<
+                : RunnableExpr<
                     ValueExt<'runtimeContext, 'db, 'customExtension>
                    > =
 
-                TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
+                RunnableExpr.UnsafeApplyForUntypedEval(
+                  RunnableExpr.UnsafeApplyForUntypedEval(
+                    RunnableExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], "update")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    TypeCheckedExpr.FromValue(
+                    RunnableExpr.FromValue(
                       entityDescriptor,
                       TypeValue.CreatePrimitive PrimitiveType.Unit,
                       Kind.Star
                     )
                   ),
-                  TypeCheckedExpr.UnsafeTupleConsForUntypedEval
-                    [ TypeCheckedExpr.FromValue(
+                  RunnableExpr.UnsafeTupleConsForUntypedEval
+                    [ RunnableExpr.FromValue(
                         idValue,
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star
                       )
-                      TypeCheckedExpr.UnsafeLambdaForUntypedEval(
+                      RunnableExpr.UnsafeLambdaForUntypedEval(
                         Var.Create "_",
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         updaterLambda,
@@ -340,22 +340,22 @@ module Update =
               let updaters = Value.Ext(updaters, None)
 
               let doUpdateExpr
-                : TypeCheckedExpr<
+                : RunnableExpr<
                     ValueExt<'runtimeContext, 'db, 'customExtension>
                    > =
-                TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
+                RunnableExpr.UnsafeApplyForUntypedEval(
+                  RunnableExpr.UnsafeApplyForUntypedEval(
+                    RunnableExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], "updateMany")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    TypeCheckedExpr.FromValue(
+                    RunnableExpr.FromValue(
                       entityDescriptor,
                       TypeValue.CreatePrimitive PrimitiveType.Unit,
                       Kind.Star
                     )
                   ),
-                  TypeCheckedExpr.FromValue(
+                  RunnableExpr.FromValue(
                     updaters,
                     TypeValue.CreatePrimitive PrimitiveType.Unit,
                     Kind.Star

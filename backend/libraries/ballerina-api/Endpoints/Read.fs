@@ -126,20 +126,20 @@ module Read =
 
 
 
-              let doLookupExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
-                TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
+              let doLookupExpr: RunnableExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                RunnableExpr.UnsafeApplyForUntypedEval(
+                  RunnableExpr.UnsafeApplyForUntypedEval(
+                    RunnableExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], $"getById")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    TypeCheckedExpr.FromValue(
+                    RunnableExpr.FromValue(
                       entityDescriptor,
                       TypeValue.CreatePrimitive PrimitiveType.Unit,
                       Kind.Star
                     )
                   ),
-                  TypeCheckedExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                  RunnableExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                 )
 
               let! evalResult =
@@ -175,22 +175,22 @@ module Read =
                   >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
                 )
 
-              let doLookupExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
-                TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
+              let doLookupExpr: RunnableExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                RunnableExpr.UnsafeApplyForUntypedEval(
+                  RunnableExpr.UnsafeApplyForUntypedEval(
+                    RunnableExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], $"getMany")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    TypeCheckedExpr.FromValue(
+                    RunnableExpr.FromValue(
                       entityDescriptor,
                       TypeValue.CreatePrimitive PrimitiveType.Unit,
                       Kind.Star
                     )
                   ),
-                  TypeCheckedExpr.UnsafeTupleConsForUntypedEval
-                    [ TypeCheckedExpr.UnsafePrimitiveForUntypedEval(PrimitiveValue.Int32 offset)
-                      TypeCheckedExpr.UnsafePrimitiveForUntypedEval(PrimitiveValue.Int32 limit) ]
+                  RunnableExpr.UnsafeTupleConsForUntypedEval
+                    [ RunnableExpr.UnsafePrimitiveForUntypedEval(PrimitiveValue.Int32 offset)
+                      RunnableExpr.UnsafePrimitiveForUntypedEval(PrimitiveValue.Int32 limit) ]
                 )
 
               let! evalResult =
@@ -248,20 +248,20 @@ module Read =
                   >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
                 )
 
-              let doLookupExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
-                TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
+              let doLookupExpr: RunnableExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                RunnableExpr.UnsafeApplyForUntypedEval(
+                  RunnableExpr.UnsafeApplyForUntypedEval(
+                    RunnableExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], $"lookupOne")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    TypeCheckedExpr.FromValue(
+                    RunnableExpr.FromValue(
                       lookupDescriptor,
                       TypeValue.CreatePrimitive PrimitiveType.Unit,
                       Kind.Star
                     )
                   ),
-                  TypeCheckedExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                  RunnableExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                 )
 
               let! evalResult =
@@ -314,25 +314,25 @@ module Read =
                   >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
                 )
 
-              let doLookupExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
-                TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                    TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                      TypeCheckedExpr.UnsafeLookupForUntypedEval(
+              let doLookupExpr: RunnableExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                RunnableExpr.UnsafeApplyForUntypedEval(
+                  RunnableExpr.UnsafeApplyForUntypedEval(
+                    RunnableExpr.UnsafeApplyForUntypedEval(
+                      RunnableExpr.UnsafeLookupForUntypedEval(
                         Identifier.FullyQualified([ "DB" ], $"lookupMany")
                         |> ResolvedIdentifier.FromIdentifier
                       ),
-                      TypeCheckedExpr.FromValue(
+                      RunnableExpr.FromValue(
                         lookupDescriptor,
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star
                       )
                     ),
-                    TypeCheckedExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                    RunnableExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                   ),
-                  TypeCheckedExpr.UnsafeTupleConsForUntypedEval
-                    [ TypeCheckedExpr.UnsafePrimitiveForUntypedEval(PrimitiveValue.Int32(offset))
-                      TypeCheckedExpr.UnsafePrimitiveForUntypedEval(PrimitiveValue.Int32(limit)) ]
+                  RunnableExpr.UnsafeTupleConsForUntypedEval
+                    [ RunnableExpr.UnsafePrimitiveForUntypedEval(PrimitiveValue.Int32(offset))
+                      RunnableExpr.UnsafePrimitiveForUntypedEval(PrimitiveValue.Int32(limit)) ]
                 )
 
               let! evalResult =
@@ -384,20 +384,20 @@ module Read =
                   >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
                 )
 
-              let doLookupExpr: TypeCheckedExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
-                TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                  TypeCheckedExpr.UnsafeApplyForUntypedEval(
-                    TypeCheckedExpr.UnsafeLookupForUntypedEval(
+              let doLookupExpr: RunnableExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                RunnableExpr.UnsafeApplyForUntypedEval(
+                  RunnableExpr.UnsafeApplyForUntypedEval(
+                    RunnableExpr.UnsafeLookupForUntypedEval(
                       Identifier.FullyQualified([ "DB" ], $"lookupOption")
                       |> ResolvedIdentifier.FromIdentifier
                     ),
-                    TypeCheckedExpr.FromValue(
+                    RunnableExpr.FromValue(
                       lookupDescriptor,
                       TypeValue.CreatePrimitive PrimitiveType.Unit,
                       Kind.Star
                     )
                   ),
-                  TypeCheckedExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                  RunnableExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
                 )
 
               let! evalResult =

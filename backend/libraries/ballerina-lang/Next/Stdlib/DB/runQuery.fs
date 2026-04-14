@@ -159,7 +159,7 @@ module DBRunQuery =
 
     let evalToTypeApplicable
       (loc0: Location)
-      (_rest: List<TypeCheckedExpr<'ext>>)
+      (_rest: List<RunnableExpr<'ext>>)
       (v: 'ext)
       : ExprEvaluator<
           'runtimeContext,
@@ -188,7 +188,7 @@ module DBRunQuery =
 
     let evalToApplicable
       (loc0: Location)
-      (_rest: List<TypeCheckedExpr<'ext>>)
+      (_rest: List<RunnableExpr<'ext>>)
       (v: 'ext)
       : ExprEvaluator<
           'runtimeContext,
