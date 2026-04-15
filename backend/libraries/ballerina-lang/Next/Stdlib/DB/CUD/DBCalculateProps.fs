@@ -321,7 +321,7 @@ module CalculateProps =
          >
       =
 
-      let _, _, _entity, _ = _entity
+      let _, _, _entity_desc, _schema_as_value = _entity
 
       List.fold
         (fun acc (prop: SchemaEntityProperty<'ext>) ->
@@ -356,10 +356,15 @@ module CalculateProps =
                      |> Identifier.LocalScope
                      |> TypeCheckScope.Empty.Resolve)
                     v
+                  >> Map.add
+                    ("schema"
+                     |> Identifier.LocalScope
+                     |> TypeCheckScope.Empty.Resolve)
+                    _schema_as_value.Value.Value
                 )
               )
           })
         (reader { return v })
-        _entity.Properties
+        _entity_desc.Properties
 
     memoryDBCalculatePropertyId, CalculatePropertyOperation, calculateProps
