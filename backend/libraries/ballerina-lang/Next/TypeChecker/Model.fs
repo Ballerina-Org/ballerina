@@ -59,6 +59,18 @@ module Model =
 
   type KindEvalContext = Map<string, Kind>
 
+  type InlayHint<'valueExt when 'valueExt: comparison> =
+    { Identifier: string
+      Type: TypeValue<'valueExt> }
+
+  type DotAccessHint<'valueExt when 'valueExt: comparison> =
+    { ObjectType: TypeValue<'valueExt>
+      AvailableFields: Map<string, TypeValue<'valueExt>> }
+
+  type ScopeAccessHint =
+    { Prefix: string
+      AvailableSymbols: Map<string, string> }
+
   type TypeCheckContext<'valueExt> =
     { Scope: TypeCheckScope
       IsTypeCheckingLetValue: bool
@@ -73,17 +85,16 @@ module Model =
   type UnificationState<'valueExt when 'valueExt: comparison> =
     { Classes: EquivalenceClasses<TypeVar, TypeValue<'valueExt>> }
 
-  type InlayHint<'valueExt when 'valueExt: comparison> =
-    { Identifier: string
-      Type: TypeValue<'valueExt> }
-
   type TypeCheckState<'valueExt when 'valueExt: comparison> =
     { Bindings: TypeBindings<'valueExt>
       UnionCases: UnionCaseConstructorBindings<'valueExt>
       RecordFields: RecordFieldBindings<'valueExt>
       Symbols: TypeExprEvalSymbols
       Vars: UnificationState<'valueExt>
-      InlayHints: Map<Location, InlayHint<'valueExt>> }
+      InlayHints: Map<Location, InlayHint<'valueExt>>
+      DotAccessHints: Map<Location, DotAccessHint<'valueExt>>
+      ScopeAccessHints: Map<Location, ScopeAccessHint>
+      ScopePrefixHints: Map<string, Map<string, string>> }
 
   type TypeValueKindEval<'valueExt when 'valueExt: comparison> =
     Option<ExprTypeLetBindingName>

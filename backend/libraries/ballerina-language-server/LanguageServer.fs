@@ -25,6 +25,47 @@ type InlayHintDTO =
     Line: int
     Column: int }
 
+type IdentifierHintDTO =
+  { Name: string
+    Type: string }
+
+type DotAccessHintDTO =
+  { File: string
+    Line: int
+    Column: int
+    ObjectType: string
+    AvailableFields: Map<string, string> }
+
+type ScopeAccessHintDTO =
+  { File: string
+    Line: int
+    Column: int
+    Prefix: string
+    AvailableSymbols: Map<string, string> }
+
+type ScopeSymbolDTO =
+  { Prefix: string
+    Name: string
+    FullName: string }
+
+type FileBuiltEventDTO =
+  { EventType: string
+    File: string
+    Success: bool
+    Errors: BuildErrorDTO[]
+    InlayHints: InlayHintDTO[]
+    IdentifierHints: IdentifierHintDTO[]
+    DotAccessHints: DotAccessHintDTO[]
+    ScopeAccessHints: ScopeAccessHintDTO[] }
+
+type ProjectCompleteEventDTO =
+  { EventType: string
+    Project: string
+    TotalFiles: int
+    TotalErrors: int
+    InlayHints: InlayHintDTO[]
+    ScopeSymbols: ScopeSymbolDTO[] }
+
 type BuildResultDTO =
   { Success: bool
     Errors: BuildErrorDTO[]
@@ -64,6 +105,19 @@ module Cli =
       )
 
     serverCommand.SetAction(fun _ -> runServerLoop ())
+    rootCommand.Add(serverCommand)
+
+  let addServerStreamingCommand
+    (rootCommand: RootCommand)
+    (runServerLoopStreaming: unit -> int)
+    =
+    let serverCommand =
+      Command(
+        "server-streaming",
+        "Run as a persistent streaming build server, emitting per-file JSON events to stdout."
+      )
+
+    serverCommand.SetAction(fun _ -> runServerLoopStreaming ())
     rootCommand.Add(serverCommand)
 
 module BuildServer =
@@ -139,6 +193,110 @@ module BuildServer =
         Column = loc.Column })
     |> List.toArray
 
+  let inlayHintDtosForFile
+    (state: TypeCheckState<'valueExt>)
+    (fileName: string)
+    : InlayHintDTO[] =
+    state.InlayHints
+    |> Map.toList
+    |> List.filter (fun (loc, _) -> loc.File = fileName)
+    |> List.sortBy (fun (loc, _) -> loc.Line, loc.Column)
+    |> List.map (fun (loc, hint) ->
+      { Type = hint.Type.ToInlayString()
+        File = loc.File
+        Line = loc.Line
+        Column = loc.Column })
+    |> List.toArray
+
+  let identifierHintDtosFromContext
+    (ctx: TypeCheckContext<'valueExt>)
+    : IdentifierHintDTO[] =
+    ctx.Values
+    |> Map.toList
+    |> List.map (fun (rid, (tv, _kind)) ->
+      { Name = rid.ToString()
+        Type = tv.ToInlayString() })
+    |> List.toArray
+
+  let scopeSymbolDtosFromState
+    (state: TypeCheckState<'valueExt>)
+    : ScopeSymbolDTO[] =
+    state.Symbols.Types
+    |> Map.toList
+    |> List.choose (fun (rid, _sym) ->
+      match rid.Type with
+      | Some prefix ->
+        Some
+          { Prefix = prefix
+            Name = rid.Name
+            FullName = rid.ToString() }
+      | None -> None)
+    |> List.toArray
+
+  let dotAccessHintDtosForFile
+    (state: TypeCheckState<'valueExt>)
+    (fileName: string)
+    : DotAccessHintDTO[] =
+    state.DotAccessHints
+    |> Map.toList
+    |> List.filter (fun (loc, _) -> loc.File = fileName)
+    |> List.sortBy (fun (loc, _) -> loc.Line, loc.Column)
+    |> List.map (fun (loc, hint) ->
+      { File = loc.File
+        Line = loc.Line
+        Column = loc.Column
+        ObjectType = hint.ObjectType.ToInlayString()
+        AvailableFields =
+          hint.AvailableFields
+          |> Map.map (fun _ tv -> tv.ToInlayString()) })
+    |> List.toArray
+
+  let dotAccessHintDtosFromState
+    (state: TypeCheckState<'valueExt>)
+    : DotAccessHintDTO[] =
+    state.DotAccessHints
+    |> Map.toList
+    |> List.sortBy (fun (loc, _) -> loc.File, loc.Line, loc.Column)
+    |> List.map (fun (loc, hint) ->
+      { File = loc.File
+        Line = loc.Line
+        Column = loc.Column
+        ObjectType = hint.ObjectType.ToInlayString()
+        AvailableFields =
+          hint.AvailableFields
+          |> Map.map (fun _ tv -> tv.ToInlayString()) })
+    |> List.toArray
+
+  let scopeAccessHintDtosForFile
+    (state: TypeCheckState<'valueExt>)
+    (fileName: string)
+    : ScopeAccessHintDTO[] =
+    state.ScopeAccessHints
+    |> Map.toList
+    |> List.filter (fun (loc, _) -> loc.File = fileName)
+    |> List.sortBy (fun (loc, _) -> loc.Line, loc.Column)
+    |> List.map (fun (loc, hint) ->
+      { File = loc.File
+        Line = loc.Line
+        Column = loc.Column
+        Prefix = hint.Prefix
+        AvailableSymbols = hint.AvailableSymbols })
+    |> List.toArray
+
+  let scopeAccessHintDtosFromState
+    (state: TypeCheckState<'valueExt>)
+    : ScopeAccessHintDTO[] =
+    state.ScopeAccessHints
+    |> Map.toList
+    |> List.sortBy (fun (loc, _) -> loc.File, loc.Line, loc.Column)
+    |> List.map (fun (loc, hint) ->
+      { File = loc.File
+        Line = loc.Line
+        Column = loc.Column
+        Prefix = hint.Prefix
+        AvailableSymbols = hint.AvailableSymbols })
+    |> List.toArray
+
   let runServerLoop (buildResultForPath: string -> BuildResultDTO) : int =
     let jsonOptions =
       JsonSerializerOptions(PropertyNamingPolicy = JsonNamingPolicy.CamelCase)
@@ -161,6 +319,80 @@ module BuildServer =
         let json = JsonSerializer.Serialize(result, jsonOptions)
         Console.WriteLine(json)
         Console.Out.Flush()
+
+      line <- Console.ReadLine()
+
+    0
+
+  let runServerLoopStreaming
+    (buildProjectStreaming:
+      string
+        -> (FileBuiltEventDTO -> unit)
+        -> Sum<InlayHintDTO[] * ScopeSymbolDTO[] * int * int, Errors<Location>>)
+    : int =
+    let jsonOptions =
+      JsonSerializerOptions(PropertyNamingPolicy = JsonNamingPolicy.CamelCase)
+
+    let savedOut = Console.Out
+    let mutable line = Console.ReadLine()
+
+    while not (isNull line) do
+      let projectPath = line.Trim()
+
+      if projectPath.Length > 0 then
+        Console.SetOut(Console.Error)
+
+        try
+          let emitFileEvent (event: FileBuiltEventDTO) =
+            Console.SetOut(savedOut)
+            let json = JsonSerializer.Serialize(event, jsonOptions)
+            Console.WriteLine(json)
+            Console.Out.Flush()
+            Console.SetOut(Console.Error)
+
+          let buildResult =
+            buildProjectStreaming projectPath emitFileEvent
+
+          Console.SetOut(savedOut)
+
+          match buildResult with
+          | Left(inlayHints, scopeSymbols, totalFiles, totalErrors) ->
+            let completeEvent: ProjectCompleteEventDTO =
+              { EventType = "project-complete"
+                Project = projectPath
+                TotalFiles = totalFiles
+                TotalErrors = totalErrors
+                InlayHints = inlayHints
+                ScopeSymbols = scopeSymbols }
+
+            let json =
+              JsonSerializer.Serialize(completeEvent, jsonOptions)
+
+            Console.WriteLine(json)
+            Console.Out.Flush()
+          | Right errors ->
+            let errorDtos =
+              (Errors<_>.FilterHighestPriorityOnly errors).Errors()
+              |> NonEmptyList.ToList
+              |> List.map (fun e ->
+                { Message = e.Message
+                  File = e.Context.File
+                  Line = e.Context.Line
+                  Column = e.Context.Column })
+              |> List.toArray
+
+            let errorResult: BuildResultDTO =
+              { Success = false
+                Errors = errorDtos
+                InlayHints = [||] }
+
+            let json =
+              JsonSerializer.Serialize(errorResult, jsonOptions)
+
+            Console.WriteLine(json)
+            Console.Out.Flush()
+        finally
+          Console.SetOut(savedOut)
 
       line <- Console.ReadLine()
 

@@ -158,7 +158,10 @@ module Patterns =
         RecordFields = Map.empty
         Symbols = TypeExprEvalSymbols.Empty
         Vars = UnificationState.Empty
-        InlayHints = Map.empty }
+        InlayHints = Map.empty
+        DotAccessHints = Map.empty
+        ScopeAccessHints = Map.empty
+        ScopePrefixHints = Map.empty }
 
     static member Create
       (bindings: TypeBindings<'valueExt>, symbols: TypeExprEvalSymbols)
@@ -325,6 +328,18 @@ module Patterns =
           fun u (c: TypeCheckState<'valueExt>) ->
             { c with
                 InlayHints = c.InlayHints |> u }
+         DotAccessHints =
+          fun u (c: TypeCheckState<'valueExt>) ->
+            { c with
+                DotAccessHints = c.DotAccessHints |> u }
+         ScopeAccessHints =
+          fun u (c: TypeCheckState<'valueExt>) ->
+            { c with
+                ScopeAccessHints = c.ScopeAccessHints |> u }
+         ScopePrefixHints =
+          fun u (c: TypeCheckState<'valueExt>) ->
+            { c with
+                ScopePrefixHints = c.ScopePrefixHints |> u }
          UnionCases =
           fun u (c: TypeCheckState<'valueExt>) ->
             { c with
@@ -457,6 +472,69 @@ module Patterns =
             TypeCheckState.Updaters.InlayHints(Map.remove location)
           )
       }
+
+    static member bindDotAccessHint
+      (location: Location,
+       objectType: TypeValue<'valueExt>,
+       availableFields: Map<string, TypeValue<'valueExt>>)
+      =
+      state {
+        do!
+          state.SetState(
+            TypeCheckState.Updaters.DotAccessHints(
+              Map.add
+                location
+                { ObjectType = objectType
+                  AvailableFields = availableFields }
+            )
+          )
+      }
+
+    static member bindScopeAccessHint
+      (location: Location,
+       prefix: string,
+       availableSymbols: Map<string, string>)
+      =
+      state {
+        do!
+          state.SetState(
+            TypeCheckState.Updaters.ScopeAccessHints(
+              Map.add
+                location
+                { Prefix = prefix
+                  AvailableSymbols = availableSymbols }
+            )
+          )
+      }
+
+    static member ComputeScopePrefixHints
+      (ctx: TypeCheckContext<'valueExt>)
+      (st: TypeCheckState<'valueExt>)
+      : Map<string, Map<string, string>> =
+      let fromValues =
+        ctx.Values
+        |> Map.toSeq
+        |> Seq.choose (fun (rid, (tv, _)) ->
+          match rid.Type with
+          | Some prefix -> Some(prefix, rid.Name, tv.ToInlayString())
+          | None -> None)
+
+      let fromBindings =
+        st.Bindings
+        |> Map.toSeq
+        |> Seq.choose (fun (rid, (tv, _)) ->
+          match rid.Type with
+          | Some prefix -> Some(prefix, rid.Name, tv.ToInlayString())
+          | None -> None)
+
+      Seq.append fromValues fromBindings
+      |> Seq.groupBy (fun (prefix, _, _) -> prefix)
+      |> Seq.map (fun (prefix, entries) ->
+        prefix,
+        entries
+        |> Seq.map (fun (_, name, typeStr) -> name, typeStr)
+        |> Map.ofSeq)
+      |> Map.ofSeq
 
   type UnificationContext<'valueExt when 'valueExt: comparison> with
 

@@ -62,6 +62,51 @@ let buildProject (project: ProjectBuildConfiguration) =
     return languageContext, buildResult
   }
 
+let buildProjectStreaming
+  (project: ProjectBuildConfiguration)
+  (onFileBuilt:
+    FileBuildConfiguration
+      -> TypeCheckContext<ValueExt>
+      -> TypeCheckState<ValueExt>
+      -> unit)
+  =
+  sum {
+    let! buildResult =
+      ProjectBuildConfiguration.BuildCachedWithFileOutputsStreaming
+        typeCheckingConfig
+        buildCache
+        project
+        onFileBuilt
+      |> sum.MapError (fun errors ->
+        let inputFiles =
+          project.Files
+          |> Seq.map (fun def -> def.FileName.Path, def.Content())
+          |> Map.ofSeq
+
+        for e in (Errors<_>.FilterHighestPriorityOnly errors).Errors() do
+          let source =
+            match inputFiles |> Map.tryFind e.Context.File with
+            | Some file -> file
+            | None -> ""
+
+          let lines =
+            source.Split '\n'
+            |> Seq.skip (e.Context.Line - 1)
+            |> Seq.mapi (fun i line ->
+              let fmt = "000"
+              $"{(e.Context.Line + i).ToString(fmt)} |   {line}")
+            |> Seq.truncate 3
+            |> String.join "\n"
+
+          Console.ForegroundColor <- ConsoleColor.Red
+          Console.WriteLine $"  Error: {e.Message} at line {e.Context.Line}:\n{lines}"
+          Console.ResetColor ()
+
+        errors)
+
+    return languageContext, buildResult
+  }
+
 let build (files: NonEmptyList<string>) =
   sum {
     let! project: ProjectBuildConfiguration =
@@ -81,9 +126,21 @@ let build (files: NonEmptyList<string>) =
 let buildAndRun (files: NonEmptyList<string>) =
   sum {
     let! langCtx, (exprs, _typeValue, _typeCheckCtx, typeCheckState: TypeCheckState<ValueExt>) = build files
+
+    let! runnableExprs =
+      exprs
+      |> NonEmptyList.toList
+      |> List.map Conversion.convertExpression
+      |> sum.All
+
+    let runnableExprs =
+      match runnableExprs with
+      | head :: tail -> NonEmptyList.OfList(head, tail)
+      | [] -> failwith "Expected at least one expression"
+
     let evalContext: ExprEvalContext<unit, ValueExt> = ExprEvalContext.Empty ()
     let evalContext = ExprEvalContext.WithTypeCheckingSymbols (evalContext |> langCtx.ExprEvalContext) typeCheckState.Symbols
     return!
-      Expr.Eval (NonEmptyList.prependList langCtx.TypeCheckedPreludes exprs)
+      Expr.Eval (NonEmptyList.prependList langCtx.TypeCheckedPreludes runnableExprs)
       |> Reader.Run evalContext
   }

@@ -36,15 +36,33 @@ module Lookup =
       fun _context_t ({ Id = id }) ->
         state {
           let! ctx = state.GetContext()
+          let! st = state.GetState()
 
           let id_original = TypeCheckScope.Empty.Resolve id
           let id_resolved = ctx.Scope.Resolve id
 
           let error e = Errors.Singleton loc0 e
 
-          // do Console.WriteLine($"TypeCheckLookup: resolving identifier '{id}'")
-          // do Console.WriteLine($"Current Scope: {ctx.Scope}")
-          // do Console.ReadLine() |> ignore
+          match id with
+          | Identifier.FullyQualified(prefixParts, _name) ->
+            let prefix =
+              match prefixParts with
+              | [ p ] -> p
+              | ps -> String.Join("::", ps)
+
+            let availableSymbols =
+              st.ScopePrefixHints
+              |> Map.tryFind prefix
+              |> Option.defaultValue Map.empty
+
+            if not (Map.isEmpty availableSymbols) then
+              do!
+                TypeCheckState.bindScopeAccessHint(
+                  loc0,
+                  prefix,
+                  availableSymbols
+                )
+          | _ -> ()
 
           return!
             state.Either3
