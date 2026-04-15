@@ -85,7 +85,7 @@ module SchemaTypeEval =
           |> error
           |> state.Throw
       else
-        let! entities =
+        let! entities_base =
           parsed_schema.Entities
           |> List.map (fun e ->
             e.Name,
@@ -94,279 +94,6 @@ module SchemaTypeEval =
               do! id_k |> Kind.AsStar |> ofSum |> state.Ignore
               let! t, t_k = !e.Type
               do! t_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-              let! properties =
-                e.Properties
-                |> Seq.map (fun p ->
-                  state {
-                    let! p_decl_t, p_decl_k = !p.Type
-                    do! p_decl_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-                    let path_segments = p.Path |> Option.defaultValue []
-
-                    if
-                      path_segments |> List.isEmpty
-                      && (p.Name.Name = "Id" || p.Name.Name = "Value")
-                    then
-                      return!
-                        (fun () ->
-                          $"Error: property {p.Name} cannot have an empty path as it would conflict with the entity's Id or Value property")
-                        |> error
-                        |> state.Throw
-                    else
-
-                      let! _, path_scope, resolved_scope =
-                        path_segments
-                        |> List.fold
-                          (fun acc segment ->
-                            state {
-                              let! t, segments_acc, resolved_scope = acc
-
-                              match segment with
-                              | (maybe_var_name,
-                                 SchemaPathTypeDecompositionExpr.Field f) ->
-                                let! t_record =
-                                  t
-                                  |> TypeValue.AsRecordWithSourceMapping
-                                  |> ofSum
-
-                                let t_record_scope =
-                                  t_record.typeCheckScopeSource
-
-                                let t_record = t_record.value
-
-                                let! (f_i, (f_t, f_k)) =
-                                  t_record
-                                  |> OrderedMap.toSeq
-                                  |> Seq.tryFind (fun (k, _) ->
-                                    k.Name.LocalName = f.LocalName)
-                                  |> Sum.fromOption (fun () ->
-                                    (fun () ->
-                                      $"Error: cannot find field {f} in record type {t}")
-                                    |> Errors.Singleton loc0)
-                                  |> state.OfSum
-
-                                do!
-                                  f_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-                                let next_t = f_t
-
-                                let next_segments =
-                                  match maybe_var_name with
-                                  | Some var_name ->
-                                    (Identifier.LocalScope var_name.Name
-                                     |> TypeCheckScope.Empty.Resolve,
-                                     (next_t, f_k))
-                                    :: segments_acc
-                                  | None -> segments_acc
-
-                                return
-                                  next_t,
-                                  next_segments,
-                                  (maybe_var_name,
-                                   f_i.Name
-                                   |> t_record_scope.Resolve
-                                   |> SchemaPathTypeDecomposition.Field)
-                                  :: resolved_scope
-                              | (maybe_var_name,
-                                 SchemaPathTypeDecompositionExpr.UnionCase f) ->
-                                let! _, t_union_scope, t_union =
-                                  t
-                                  |> TypeValue.AsUnionWithSourceMapping
-                                  |> ofSum
-
-                                let! (case_i, case_t) =
-                                  t_union
-                                  |> OrderedMap.toSeq
-                                  |> Seq.tryFind (fun (k, _) ->
-                                    k.Name.LocalName = f.LocalName)
-                                  |> Sum.fromOption (fun () ->
-                                    (fun () ->
-                                      $"Error: cannot find case {f} in union type {t}")
-                                    |> Errors.Singleton loc0)
-                                  |> state.OfSum
-
-                                let next_t = case_t
-
-                                let next_segments =
-                                  match maybe_var_name with
-                                  | Some var_name ->
-                                    (Identifier.LocalScope var_name.Name
-                                     |> TypeCheckScope.Empty.Resolve,
-                                     (next_t, Kind.Star))
-                                    :: segments_acc
-                                  | None -> segments_acc
-
-                                return
-                                  next_t,
-                                  next_segments,
-                                  (maybe_var_name,
-                                   case_i.Name
-                                   |> t_union_scope.Resolve
-                                   |> SchemaPathTypeDecomposition.UnionCase)
-                                  :: resolved_scope
-                              | (maybe_var_name,
-                                 SchemaPathTypeDecompositionExpr.SumCase f) ->
-                                let! t_sum = t |> TypeValue.AsSum |> ofSum
-
-                                if
-                                  f.Case < 1
-                                  || f.Case > t_sum.Length
-                                  || f.Count <> t_sum.Length
-                                then
-                                  return!
-                                    (fun () ->
-                                      $"Error: sum case {f} is out of bounds for sum type {t}")
-                                    |> Errors.Singleton loc0
-                                    |> state.Throw
-                                else
-                                  let! case_t =
-                                    t_sum
-                                    |> Seq.tryItem (f.Case - 1)
-                                    |> Sum.fromOption (fun () ->
-                                      (fun () ->
-                                        $"Error: cannot find sum case {f} in sum type {t}")
-                                      |> Errors.Singleton loc0)
-                                    |> state.OfSum
-
-                                  let next_t = case_t
-
-                                  let next_segments =
-                                    match maybe_var_name with
-                                    | Some var_name ->
-                                      (Identifier.LocalScope var_name.Name
-                                       |> TypeCheckScope.Empty.Resolve,
-                                       (next_t, Kind.Star))
-                                      :: segments_acc
-                                    | None -> segments_acc
-
-                                  return
-                                    next_t,
-                                    next_segments,
-                                    (maybe_var_name,
-                                     SchemaPathTypeDecomposition.SumCase f)
-                                    :: resolved_scope
-                              | (maybe_var_name,
-                                 SchemaPathTypeDecompositionExpr.Item f) ->
-                                let! t_tuple =
-                                  t |> TypeValue.AsTuple |> ofSum
-
-                                if
-                                  f.Index < 1 || f.Index > t_tuple.Length
-                                then
-                                  return!
-                                    (fun () ->
-                                      $"Error: tuple index {f} is out of bounds for tuple type {t}")
-                                    |> Errors.Singleton loc0
-                                    |> state.Throw
-                                else
-                                  let! item_t =
-                                    t_tuple
-                                    |> Seq.tryItem (f.Index - 1)
-                                    |> Sum.fromOption (fun () ->
-                                      (fun () ->
-                                        $"Error: cannot find tuple index {f} in tuple type {t}")
-                                      |> Errors.Singleton loc0)
-                                    |> state.OfSum
-
-                                  let next_t = item_t
-
-                                  let next_segments =
-                                    match maybe_var_name with
-                                    | Some var_name ->
-                                      (Identifier.LocalScope var_name.Name
-                                       |> TypeCheckScope.Empty.Resolve,
-                                       (next_t, Kind.Star))
-                                      :: segments_acc
-                                    | None -> segments_acc
-
-                                  return
-                                    next_t,
-                                    next_segments,
-                                    (maybe_var_name,
-                                     SchemaPathTypeDecomposition.Item f)
-                                    :: resolved_scope
-                              | (maybe_var_name,
-                                 SchemaPathTypeDecompositionExpr.Iterator it) ->
-                                let! container, _ =
-                                  it.Container |> TypeExpr.Lookup |> (!)
-
-                                let! t_arg, _ =
-                                  it.TypeDef |> TypeExpr.Lookup |> (!)
-
-                                let! mapper, _ =
-                                  typeCheckExpr
-                                    None
-                                    (it.Mapper |> Expr.Lookup)
-
-                                let! mapper = Conversion.convertExpression mapper |> state.OfSum
-
-                                let next_t = t_arg
-
-                                let next_segments =
-                                  match maybe_var_name with
-                                  | Some var_name ->
-                                    (Identifier.LocalScope var_name.Name
-                                     |> TypeCheckScope.Empty.Resolve,
-                                     (next_t, Kind.Star))
-                                    :: segments_acc
-                                  | None -> segments_acc
-
-                                return
-                                  next_t,
-                                  next_segments,
-                                  (maybe_var_name,
-                                   SchemaPathTypeDecomposition.Iterator
-                                     {| Container = container
-                                        TypeDef = t_arg
-                                        Mapper = mapper |})
-                                  :: resolved_scope
-                            })
-                          (state { return t, [], [] })
-
-                      let resolved_scope = resolved_scope |> List.rev
-
-                      let path_scope =
-                        path_scope
-                        |> List.map (fun (id, (t, k)) -> Map.add id (t, k))
-                        |> List.fold (>>) (fun x -> x)
-
-                      let! body_e, _ =
-                        typeCheckExpr (Some p_decl_t) p.Body
-                        |> state.MapContext(
-                          TypeCheckContext.Updaters.Values(
-                            Map.add
-                              (Identifier.LocalScope "self"
-                               |> TypeCheckScope.Empty.Resolve)
-                              (t, t_k)
-                            >> path_scope
-                          )
-                          >> TypeCheckContext.Updaters.Scope(
-                            TypeCheckScope.Empty |> replaceWith
-                          )
-                        )
-
-                      let body_t = body_e.Type
-
-                      let body_k = body_e.Kind
-
-                      do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
-
-                      do!
-                        TypeValue.Unify(loc0, body_t, p_decl_t)
-                        |> Expr.liftUnification
-
-                      let! body_runnable = Conversion.convertExpression body_e |> state.OfSum
-
-                      return
-                        { SchemaEntityProperty.Path = resolved_scope
-                          PropertyName = p.Name
-                          ReturnType = p_decl_t
-                          ReturnKind = p_decl_k
-                          Body = body_runnable }
-                  })
-                |> state.All
-                |> state.Map(List.ofSeq)
 
               let! vectors =
                 e.Vectors
@@ -421,180 +148,12 @@ module SchemaTypeEval =
                 |> state.All
                 |> state.Map(List.ofSeq)
 
-              let rec (+)
-                (t: TypeValue<'ve>)
-                (
-                  path: List<SchemaPathSegment<'ve>>,
-                  name: LocalIdentifier,
-                  result_t: TypeValue<'ve>
-                ) =
-                state {
-                  match path with
-                  | [] ->
-                    let! fields = t |> TypeValue.AsRecord |> ofSum
-
-                    if
-                      fields
-                      |> OrderedMap.toSeq
-                      |> Seq.filter (fun (k, _) ->
-                        k.Name.LocalName = name.Name)
-                      |> Seq.isEmpty
-                      |> not
-                    then
-                      return!
-                        (fun () ->
-                          $"Error: a field with the same name as property {name.Name} already exists in record type {t}")
-                        |> Errors.Singleton loc0
-                        |> state.Throw
-                    else
-                      let fields =
-                        fields
-                        |> OrderedMap.add
-                          (name.Name
-                           |> Identifier.LocalScope
-                           |> TypeSymbol.Create)
-                          (result_t, Kind.Star)
-
-                      return TypeValue.CreateRecord fields
-                  | (_, SchemaPathTypeDecomposition.Field f) :: path ->
-                    let! fields = t |> TypeValue.AsRecord |> ofSum
-
-                    let! f_s, (f_t, f_k) =
-                      fields
-                      |> OrderedMap.toSeq
-                      |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.Name)
-                      |> Sum.fromOption (fun () ->
-                        (fun () ->
-                          $"Error: cannot find field {f} in record type {t}")
-                        |> Errors.Singleton loc0)
-                      |> state.OfSum
-
-                    let! f_t = f_t + (path, name, result_t)
-
-                    let fields = fields |> OrderedMap.add f_s (f_t, f_k)
-
-                    return TypeValue.CreateRecord fields
-                  | (_, SchemaPathTypeDecomposition.UnionCase f) :: path ->
-                    let! _, fields = t |> TypeValue.AsUnion |> ofSum
-
-                    let! f_s, f_t =
-                      fields
-                      |> OrderedMap.toSeq
-                      |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.Name)
-                      |> Sum.fromOption (fun () ->
-                        (fun () ->
-                          $"Error: cannot find field {f} in record type {t}")
-                        |> Errors.Singleton loc0)
-                      |> state.OfSum
-
-                    let! f_t = f_t + (path, name, result_t)
-
-                    let fields = fields |> OrderedMap.add f_s f_t
-
-                    return TypeValue.CreateUnion fields
-                  | (_, SchemaPathTypeDecomposition.SumCase f) :: path ->
-                    let! fields = t |> TypeValue.AsSum |> ofSum
-
-                    let! f_t =
-                      fields
-                      |> Seq.tryItem (f.Case - 1)
-                      |> Sum.fromOption (fun () ->
-                        (fun () ->
-                          $"Error: cannot find field {f} in record type {t}")
-                        |> Errors.Singleton loc0)
-                      |> state.OfSum
-
-                    let! f_t = f_t + (path, name, result_t)
-
-                    let fields =
-                      fields
-                      |> List.mapi (fun i ft ->
-                        if i = f.Case - 1 then f_t else ft)
-
-                    return TypeValue.CreateSum fields
-                  | (_, SchemaPathTypeDecomposition.Item f) :: path ->
-                    let! fields = t |> TypeValue.AsTuple |> ofSum
-
-                    let! f_t =
-                      fields
-                      |> Seq.tryItem (f.Index - 1)
-                      |> Sum.fromOption (fun () ->
-                        (fun () ->
-                          $"Error: cannot find field {f} in record type {t}")
-                        |> Errors.Singleton loc0)
-                      |> state.OfSum
-
-                    let! f_t = f_t + (path, name, result_t)
-
-                    let fields =
-                      fields
-                      |> List.mapi (fun i ft ->
-                        if i = f.Index - 1 then f_t else ft)
-
-                    return TypeValue.CreateTuple fields
-                  | (_, SchemaPathTypeDecomposition.Iterator f) :: path ->
-                    let f_t = f.TypeDef
-                    let! f_t = f_t + (path, name, result_t)
-
-                    let! t_res, _ =
-                      !TypeExpr.Apply(TypeExpr.FromTypeValue f.Container,
-                                      TypeExpr.FromTypeValue f_t)
-
-                    return t_res
-                }
-
-              let! t_with_props =
-                properties
-                |> Seq.fold
-                  (fun acc (p: SchemaEntityProperty<'ve>) ->
-                    state {
-                      let! t = acc
-                      return! t + (p.Path, p.PropertyName, p.ReturnType)
-                    })
-                  (state { return t })
-
-              // let rec (+) (t: TypeValue<'ve>) (name: LocalIdentifier) =
-              //   state {
-              //     let! fields = t |> TypeValue.AsRecord |> ofSum
-
-              //     let vector_name_already_exists =
-              //       fields
-              //       |> OrderedMap.toSeq
-              //       |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = name.Name)
-
-              //     if vector_name_already_exists.IsSome then
-              //       return!
-              //         (fun () ->
-              //           $"Error: a field with the same name as vector {name.Name} already exists in record type {t}")
-              //         |> Errors.Singleton loc0
-              //         |> state.Throw
-
-              //     else
-              //       let fields =
-              //         fields
-              //         |> OrderedMap.add
-              //           (name.Name |> Identifier.LocalScope |> TypeSymbol.Create)
-              //           (TypeValue.CreatePrimitive PrimitiveType.Vector, Kind.Star)
-
-              //       return TypeValue.CreateRecord fields
-              //   }
-
-              // let! t_with_props =
-              //   vectors
-              //   |> Seq.fold
-              //     (fun acc (p: SchemaEntityVector<'ve>) ->
-              //       state {
-              //         let! t = acc
-              //         return! t + p.VectorName
-              //       })
-              //     (state { return t_with_props })
-
               return
                 { SchemaEntity.Name = e.Name
                   Id = id
                   TypeOriginal = t
-                  TypeWithProps = t_with_props
-                  Properties = properties
+                  TypeWithProps = t
+                  Properties = []
                   Vectors = vectors
                   Hooks =
                     { SchemaEntityHooks.OnCreating = None
@@ -613,7 +172,7 @@ module SchemaTypeEval =
           |> state.AllMapOrdered
 
         let! all_id_name_and_types =
-          entities
+          entities_base
           |> OrderedMap.values
           |> Seq.map (fun e ->
             state {
@@ -653,8 +212,8 @@ module SchemaTypeEval =
           let all_entities =
             match included_schema_entityhooks_relation_hooks with
             | Some(s, _, _) ->
-              entities |> OrderedMap.mergeSecondAfterFirst s.Entities
-            | None -> entities
+              entities_base |> OrderedMap.mergeSecondAfterFirst s.Entities
+            | None -> entities_base
 
           let! relations =
             parsed_schema.Relations
@@ -745,6 +304,453 @@ module SchemaTypeEval =
             |> Option.map (fun (_, e, _) -> e)
             |> Option.defaultValue []
             |> Map.ofList
+
+          // Build a preliminary schema (without properties) for use in property body type-checking
+          let schema_for_properties =
+            { DeclaredAtForNominalEquality = loc0
+              Source = source
+              Entities =
+                entities_base |> OrderedMap.mergeSecondAfterFirst included_entities
+              Relations =
+                relations |> OrderedMap.mergeSecondAfterFirst included_relations
+              Included = included_schema }
+
+          // Second pass: type-check properties with both `self` and `schema` in scope
+          let! entities =
+            parsed_schema.Entities
+            |> List.map (fun e ->
+              e.Name,
+              state {
+                let! base_entity =
+                  entities_base
+                  |> OrderedMap.tryFind (
+                    e.Name.Name |> SchemaEntityName.Create
+                  )
+                  |> Sum.fromOption (fun () ->
+                    (fun () ->
+                      $"Error: cannot find base entity for {e.Name}")
+                    |> Errors.Singleton loc0)
+                  |> state.OfSum
+
+                let t = base_entity.TypeOriginal
+                let t_k = Kind.Star
+
+                let! properties =
+                  e.Properties
+                  |> Seq.map (fun p ->
+                    state {
+                      let! p_decl_t, p_decl_k = !p.Type
+                      do! p_decl_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                      let path_segments = p.Path |> Option.defaultValue []
+
+                      if
+                        path_segments |> List.isEmpty
+                        && (p.Name.Name = "Id" || p.Name.Name = "Value")
+                      then
+                        return!
+                          (fun () ->
+                            $"Error: property {p.Name} cannot have an empty path as it would conflict with the entity's Id or Value property")
+                          |> error
+                          |> state.Throw
+                      else
+
+                        let! _, path_scope, resolved_scope =
+                          path_segments
+                          |> List.fold
+                            (fun acc segment ->
+                              state {
+                                let! t, segments_acc, resolved_scope = acc
+
+                                match segment with
+                                | (maybe_var_name,
+                                   SchemaPathTypeDecompositionExpr.Field f) ->
+                                  let! t_record =
+                                    t
+                                    |> TypeValue.AsRecordWithSourceMapping
+                                    |> ofSum
+
+                                  let t_record_scope =
+                                    t_record.typeCheckScopeSource
+
+                                  let t_record = t_record.value
+
+                                  let! (f_i, (f_t, f_k)) =
+                                    t_record
+                                    |> OrderedMap.toSeq
+                                    |> Seq.tryFind (fun (k, _) ->
+                                      k.Name.LocalName = f.LocalName)
+                                    |> Sum.fromOption (fun () ->
+                                      (fun () ->
+                                        $"Error: cannot find field {f} in record type {t}")
+                                      |> Errors.Singleton loc0)
+                                    |> state.OfSum
+
+                                  do!
+                                    f_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                                  let next_t = f_t
+
+                                  let next_segments =
+                                    match maybe_var_name with
+                                    | Some var_name ->
+                                      (Identifier.LocalScope var_name.Name
+                                       |> TypeCheckScope.Empty.Resolve,
+                                       (next_t, f_k))
+                                      :: segments_acc
+                                    | None -> segments_acc
+
+                                  return
+                                    next_t,
+                                    next_segments,
+                                    (maybe_var_name,
+                                     f_i.Name
+                                     |> t_record_scope.Resolve
+                                     |> SchemaPathTypeDecomposition.Field)
+                                    :: resolved_scope
+                                | (maybe_var_name,
+                                   SchemaPathTypeDecompositionExpr.UnionCase f) ->
+                                  let! _, t_union_scope, t_union =
+                                    t
+                                    |> TypeValue.AsUnionWithSourceMapping
+                                    |> ofSum
+
+                                  let! (case_i, case_t) =
+                                    t_union
+                                    |> OrderedMap.toSeq
+                                    |> Seq.tryFind (fun (k, _) ->
+                                      k.Name.LocalName = f.LocalName)
+                                    |> Sum.fromOption (fun () ->
+                                      (fun () ->
+                                        $"Error: cannot find case {f} in union type {t}")
+                                      |> Errors.Singleton loc0)
+                                    |> state.OfSum
+
+                                  let next_t = case_t
+
+                                  let next_segments =
+                                    match maybe_var_name with
+                                    | Some var_name ->
+                                      (Identifier.LocalScope var_name.Name
+                                       |> TypeCheckScope.Empty.Resolve,
+                                       (next_t, Kind.Star))
+                                      :: segments_acc
+                                    | None -> segments_acc
+
+                                  return
+                                    next_t,
+                                    next_segments,
+                                    (maybe_var_name,
+                                     case_i.Name
+                                     |> t_union_scope.Resolve
+                                     |> SchemaPathTypeDecomposition.UnionCase)
+                                    :: resolved_scope
+                                | (maybe_var_name,
+                                   SchemaPathTypeDecompositionExpr.SumCase f) ->
+                                  let! t_sum = t |> TypeValue.AsSum |> ofSum
+
+                                  if
+                                    f.Case < 1
+                                    || f.Case > t_sum.Length
+                                    || f.Count <> t_sum.Length
+                                  then
+                                    return!
+                                      (fun () ->
+                                        $"Error: sum case {f} is out of bounds for sum type {t}")
+                                      |> Errors.Singleton loc0
+                                      |> state.Throw
+                                  else
+                                    let! case_t =
+                                      t_sum
+                                      |> Seq.tryItem (f.Case - 1)
+                                      |> Sum.fromOption (fun () ->
+                                        (fun () ->
+                                          $"Error: cannot find sum case {f} in sum type {t}")
+                                        |> Errors.Singleton loc0)
+                                      |> state.OfSum
+
+                                    let next_t = case_t
+
+                                    let next_segments =
+                                      match maybe_var_name with
+                                      | Some var_name ->
+                                        (Identifier.LocalScope var_name.Name
+                                         |> TypeCheckScope.Empty.Resolve,
+                                         (next_t, Kind.Star))
+                                        :: segments_acc
+                                      | None -> segments_acc
+
+                                    return
+                                      next_t,
+                                      next_segments,
+                                      (maybe_var_name,
+                                       SchemaPathTypeDecomposition.SumCase f)
+                                      :: resolved_scope
+                                | (maybe_var_name,
+                                   SchemaPathTypeDecompositionExpr.Item f) ->
+                                  let! t_tuple =
+                                    t |> TypeValue.AsTuple |> ofSum
+
+                                  if
+                                    f.Index < 1 || f.Index > t_tuple.Length
+                                  then
+                                    return!
+                                      (fun () ->
+                                        $"Error: tuple index {f} is out of bounds for tuple type {t}")
+                                      |> Errors.Singleton loc0
+                                      |> state.Throw
+                                  else
+                                    let! item_t =
+                                      t_tuple
+                                      |> Seq.tryItem (f.Index - 1)
+                                      |> Sum.fromOption (fun () ->
+                                        (fun () ->
+                                          $"Error: cannot find tuple index {f} in tuple type {t}")
+                                        |> Errors.Singleton loc0)
+                                      |> state.OfSum
+
+                                    let next_t = item_t
+
+                                    let next_segments =
+                                      match maybe_var_name with
+                                      | Some var_name ->
+                                        (Identifier.LocalScope var_name.Name
+                                         |> TypeCheckScope.Empty.Resolve,
+                                         (next_t, Kind.Star))
+                                        :: segments_acc
+                                      | None -> segments_acc
+
+                                    return
+                                      next_t,
+                                      next_segments,
+                                      (maybe_var_name,
+                                       SchemaPathTypeDecomposition.Item f)
+                                      :: resolved_scope
+                                | (maybe_var_name,
+                                   SchemaPathTypeDecompositionExpr.Iterator it) ->
+                                  let! container, _ =
+                                    it.Container |> TypeExpr.Lookup |> (!)
+
+                                  let! t_arg, _ =
+                                    it.TypeDef |> TypeExpr.Lookup |> (!)
+
+                                  let! mapper, _ =
+                                    typeCheckExpr
+                                      None
+                                      (it.Mapper |> Expr.Lookup)
+
+                                  let! mapper = Conversion.convertExpression mapper |> state.OfSum
+
+                                  let next_t = t_arg
+
+                                  let next_segments =
+                                    match maybe_var_name with
+                                    | Some var_name ->
+                                      (Identifier.LocalScope var_name.Name
+                                       |> TypeCheckScope.Empty.Resolve,
+                                       (next_t, Kind.Star))
+                                      :: segments_acc
+                                    | None -> segments_acc
+
+                                  return
+                                    next_t,
+                                    next_segments,
+                                    (maybe_var_name,
+                                     SchemaPathTypeDecomposition.Iterator
+                                       {| Container = container
+                                          TypeDef = t_arg
+                                          Mapper = mapper |})
+                                    :: resolved_scope
+                              })
+                            (state { return t, [], [] })
+
+                        let resolved_scope = resolved_scope |> List.rev
+
+                        let path_scope =
+                          path_scope
+                          |> List.map (fun (id, (t, k)) -> Map.add id (t, k))
+                          |> List.fold (>>) (fun x -> x)
+
+                        let! body_e, _ =
+                          typeCheckExpr (Some p_decl_t) p.Body
+                          |> state.MapContext(
+                            TypeCheckContext.Updaters.Values(
+                              Map.add
+                                (Identifier.LocalScope "self"
+                                 |> TypeCheckScope.Empty.Resolve)
+                                (t, t_k)
+                              >> Map.add
+                                (Identifier.LocalScope "schema"
+                                 |> TypeCheckScope.Empty.Resolve)
+                                (TypeValue.Schema schema_for_properties, Kind.Schema)
+                              >> path_scope
+                            )
+                            >> TypeCheckContext.Updaters.Scope(
+                              TypeCheckScope.Empty |> replaceWith
+                            )
+                          )
+
+                        let body_t = body_e.Type
+
+                        let body_k = body_e.Kind
+
+                        do! body_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                        do!
+                          TypeValue.Unify(loc0, body_t, p_decl_t)
+                          |> Expr.liftUnification
+
+                        let! body_runnable = Conversion.convertExpression body_e |> state.OfSum
+
+                        return
+                          { SchemaEntityProperty.Path = resolved_scope
+                            PropertyName = p.Name
+                            ReturnType = p_decl_t
+                            ReturnKind = p_decl_k
+                            Body = body_runnable }
+                    })
+                  |> state.All
+                  |> state.Map(List.ofSeq)
+
+                let rec (+)
+                  (t: TypeValue<'ve>)
+                  (
+                    path: List<SchemaPathSegment<'ve>>,
+                    name: LocalIdentifier,
+                    result_t: TypeValue<'ve>
+                  ) =
+                  state {
+                    match path with
+                    | [] ->
+                      let! fields = t |> TypeValue.AsRecord |> ofSum
+
+                      if
+                        fields
+                        |> OrderedMap.toSeq
+                        |> Seq.filter (fun (k, _) ->
+                          k.Name.LocalName = name.Name)
+                        |> Seq.isEmpty
+                        |> not
+                      then
+                        return!
+                          (fun () ->
+                            $"Error: a field with the same name as property {name.Name} already exists in record type {t}")
+                          |> Errors.Singleton loc0
+                          |> state.Throw
+                      else
+                        let fields =
+                          fields
+                          |> OrderedMap.add
+                            (name.Name
+                             |> Identifier.LocalScope
+                             |> TypeSymbol.Create)
+                            (result_t, Kind.Star)
+
+                        return TypeValue.CreateRecord fields
+                    | (_, SchemaPathTypeDecomposition.Field f) :: path ->
+                      let! fields = t |> TypeValue.AsRecord |> ofSum
+
+                      let! f_s, (f_t, f_k) =
+                        fields
+                        |> OrderedMap.toSeq
+                        |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.Name)
+                        |> Sum.fromOption (fun () ->
+                          (fun () ->
+                            $"Error: cannot find field {f} in record type {t}")
+                          |> Errors.Singleton loc0)
+                        |> state.OfSum
+
+                      let! f_t = f_t + (path, name, result_t)
+
+                      let fields = fields |> OrderedMap.add f_s (f_t, f_k)
+
+                      return TypeValue.CreateRecord fields
+                    | (_, SchemaPathTypeDecomposition.UnionCase f) :: path ->
+                      let! _, fields = t |> TypeValue.AsUnion |> ofSum
+
+                      let! f_s, f_t =
+                        fields
+                        |> OrderedMap.toSeq
+                        |> Seq.tryFind (fun (k, _) -> k.Name.LocalName = f.Name)
+                        |> Sum.fromOption (fun () ->
+                          (fun () ->
+                            $"Error: cannot find field {f} in record type {t}")
+                          |> Errors.Singleton loc0)
+                        |> state.OfSum
+
+                      let! f_t = f_t + (path, name, result_t)
+
+                      let fields = fields |> OrderedMap.add f_s f_t
+
+                      return TypeValue.CreateUnion fields
+                    | (_, SchemaPathTypeDecomposition.SumCase f) :: path ->
+                      let! fields = t |> TypeValue.AsSum |> ofSum
+
+                      let! f_t =
+                        fields
+                        |> Seq.tryItem (f.Case - 1)
+                        |> Sum.fromOption (fun () ->
+                          (fun () ->
+                            $"Error: cannot find field {f} in record type {t}")
+                          |> Errors.Singleton loc0)
+                        |> state.OfSum
+
+                      let! f_t = f_t + (path, name, result_t)
+
+                      let fields =
+                        fields
+                        |> List.mapi (fun i ft ->
+                          if i = f.Case - 1 then f_t else ft)
+
+                      return TypeValue.CreateSum fields
+                    | (_, SchemaPathTypeDecomposition.Item f) :: path ->
+                      let! fields = t |> TypeValue.AsTuple |> ofSum
+
+                      let! f_t =
+                        fields
+                        |> Seq.tryItem (f.Index - 1)
+                        |> Sum.fromOption (fun () ->
+                          (fun () ->
+                            $"Error: cannot find field {f} in record type {t}")
+                          |> Errors.Singleton loc0)
+                        |> state.OfSum
+
+                      let! f_t = f_t + (path, name, result_t)
+
+                      let fields =
+                        fields
+                        |> List.mapi (fun i ft ->
+                          if i = f.Index - 1 then f_t else ft)
+
+                      return TypeValue.CreateTuple fields
+                    | (_, SchemaPathTypeDecomposition.Iterator f) :: path ->
+                      let f_t = f.TypeDef
+                      let! f_t = f_t + (path, name, result_t)
+
+                      let! t_res, _ =
+                        !TypeExpr.Apply(TypeExpr.FromTypeValue f.Container,
+                                        TypeExpr.FromTypeValue f_t)
+
+                      return t_res
+                  }
+
+                let! t_with_props =
+                  properties
+                  |> Seq.fold
+                    (fun acc (p: SchemaEntityProperty<'ve>) ->
+                      state {
+                        let! t = acc
+                        return! t + (p.Path, p.PropertyName, p.ReturnType)
+                      })
+                    (state { return t })
+
+                return
+                  { base_entity with
+                      TypeWithProps = t_with_props
+                      Properties = properties }
+              })
+            |> OrderedMap.ofList
+            |> state.AllMapOrdered
 
           let resulting_schema_without_hooks =
             { DeclaredAtForNominalEquality = loc0
