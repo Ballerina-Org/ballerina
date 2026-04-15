@@ -245,6 +245,8 @@ module Model =
     | Delete of {| EntityRef: Option<EntityRef<'db, 'ext>> |}
     | GetById of {| EntityRef: Option<EntityRef<'db, 'ext>> |}
     | GetMany of {| EntityRef: Option<EntityRef<'db, 'ext>> |}
+    | CalculateProps of {| EntityRef: Option<EntityRef<'db, 'ext>> |}
+    | StripProps of {| EntityRef: Option<EntityRef<'db, 'ext>> |}
     | Run
     | DBIO of DBIO<'runtimeContext, 'db, 'ext>
     | TypeAppliedRun of Schema<'ext> * 'db
@@ -332,6 +334,8 @@ module Model =
       | Delete _ -> "Delete"
       | GetById _ -> "GetById"
       | GetMany _ -> "GetMany"
+      | CalculateProps _ -> "CalculateProps"
+      | StripProps _ -> "StripProps"
       | Run -> "Run"
       | DBIO dbio -> $"DBIO({dbio})"
       | TypeAppliedRun(_schema, _) -> $"TypeAppliedRun"

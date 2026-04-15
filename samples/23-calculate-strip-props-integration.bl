@@ -1,0 +1,72 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// Ballerina Example 23: DB::calculateProps and DB::stripProps
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// This sample demonstrates the public DB::calculateProps and DB::stripProps
+// builtins. These allow users to manually add or remove computed properties
+// from entity values without going through create/update.
+
+type ItemId = { ItemId: guid };
+type Item = {
+  Name: string;
+  Price: int32;
+  Quantity: int32
+};
+
+type Shop = 
+  schema{
+    entity Items {
+      type Item ItemId
+      let property [] TotalValue : int32 = self.Price * self.Quantity
+      let property [] Label : string = self.Name
+    }
+  };
+
+DB::run [Shop] (fun (schema: Shop) ->
+  let item_id:ItemId = { ItemId = guid::v4() };
+  let item = {
+    Name = "Widget";
+    Price = 10;
+    Quantity = 5
+  };
+
+  // First, calculate properties on a raw item (never stored in DB)
+  let with_props = DB::calculateProps[Shop] (schema.Entities.Items) item;
+  do string::print ("calculateProps on raw item:", with_props);
+
+  // Strip the properties back off
+  let stripped = DB::stripProps[Shop] (schema.Entities.Items) with_props;
+  do string::print ("stripProps result:", stripped);
+
+  // Round-trip: calculate again on stripped value
+  let with_props_again = DB::calculateProps[Shop] (schema.Entities.Items) stripped;
+  do string::print ("calculateProps again:", with_props_again);
+
+  // Create the entity (this internally calculates props too)
+  let _ = DB::create[Shop] (schema.Entities.Items) (item_id, item);
+
+  // Fetch it back - should have properties from the DB
+  let fetched = DB::getById[Shop] (schema.Entities.Items) item_id;
+  do string::print ("After create, getById:", fetched);
+
+  // Strip the fetched entity's properties
+  let fetched_stripped = match fetched with
+    | 2Of2 v -> DB::stripProps[Shop] (schema.Entities.Items) v
+    | 1Of2 -> item
+  ;
+  do string::print ("Fetched then stripped:", fetched_stripped);
+
+  // Verify with a second item
+  let gadget = {
+    Name = "Gadget";
+    Price = 20;
+    Quantity = 3
+  };
+  let gadget_with_props = DB::calculateProps[Shop] (schema.Entities.Items) gadget;
+  do string::print ("Gadget with props:", gadget_with_props);
+
+  let gadget_stripped = DB::stripProps[Shop] (schema.Entities.Items) gadget_with_props;
+  do string::print ("Gadget stripped:", gadget_stripped);
+
+  string::print "Done!"
+)

@@ -368,3 +368,86 @@ module CalculateProps =
         _entity_desc.Properties
 
     memoryDBCalculatePropertyId, CalculatePropertyOperation, calculateProps
+
+
+  let DBCalculatePropsPublicExtension<'runtimeContext, 'db, 'ext
+    when 'ext: comparison>
+    (db_ops: DBTypeClass<'runtimeContext, 'db, 'ext>)
+    (calculateProps:
+      DBTypeClass<'runtimeContext, 'db, 'ext>
+        -> Value<TypeValue<'ext>, 'ext>
+        -> EntityRef<'db, 'ext>
+        -> Reader<
+          Value<TypeValue<'ext>, 'ext>,
+          ExprEvalContext<'runtimeContext, 'ext>,
+          Errors<Location>
+         >)
+    (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
+    =
+    let memoryDBCalculatePropsId =
+      Identifier.FullyQualified([ "DB" ], "calculateProps")
+      |> TypeCheckScope.Empty.Resolve
+
+    let memoryDBCalculatePropsType =
+      TypeValue.CreateLambda(
+        TypeParameter.Create("schema", Kind.Schema),
+        TypeExpr.Lambda(
+          TypeParameter.Create("entity", Kind.Star),
+          TypeExpr.Lambda(
+            TypeParameter.Create("entity_with_props", Kind.Star),
+            TypeExpr.Lambda(
+              TypeParameter.Create("entityId", Kind.Star),
+              TypeExpr.Arrow(
+                createSchemaEntityTypeApplication
+                  "schema"
+                  "entity"
+                  "entity_with_props"
+                  "entityId",
+                TypeExpr.Arrow(
+                  TypeExpr.Lookup("entity" |> Identifier.LocalScope),
+                  TypeExpr.Lookup(
+                    "entity_with_props" |> Identifier.LocalScope
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+
+    let memoryDBCalculatePropsKind = standardSchemaOperationKind
+
+    let calculatePropsOperation: OperationExtension<'runtimeContext, _, _> =
+      { PublicIdentifiers =
+          Some
+          <| (memoryDBCalculatePropsType,
+              memoryDBCalculatePropsKind,
+              DBValues.CalculateProps {| EntityRef = None |})
+        OperationsLens =
+          valueLens
+          |> PartialLens.BindGet (function
+            | DBValues.CalculateProps v -> Some(DBValues.CalculateProps v)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              let! op =
+                op
+                |> DBValues.AsCalculateProps
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              match op with
+              | None ->
+                let! v = extractEntityRefFromValue loc0 v valueLens
+
+                return
+                  (DBValues.CalculateProps({| EntityRef = Some v |})
+                   |> valueLens.Set,
+                   Some memoryDBCalculatePropsId)
+                  |> Ext
+              | Some entity_ref ->
+                return! calculateProps db_ops v entity_ref
+            } }
+
+    memoryDBCalculatePropsId, calculatePropsOperation
