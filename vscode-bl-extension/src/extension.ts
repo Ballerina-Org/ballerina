@@ -37,12 +37,60 @@ type BuildResultDto = {
   inlayHints?: BuildInlayHintDto[];
 };
 
+type IdentifierHintDto = {
+  name?: string;
+  type?: string;
+};
+
+type DotAccessHintDto = {
+  file?: string;
+  line?: number;
+  column?: number;
+  objectType?: string;
+  availableFields?: Record<string, string>;
+};
+
+type ScopeAccessHintDto = {
+  file?: string;
+  line?: number;
+  column?: number;
+  prefix?: string;
+  availableSymbols?: Record<string, string>;
+};
+
+type FileBuiltEventDto = {
+  eventType?: string;
+  file?: string;
+  success?: boolean;
+  errors?: BuildErrorDto[];
+  inlayHints?: BuildInlayHintDto[];
+  identifierHints?: IdentifierHintDto[];
+  dotAccessHints?: DotAccessHintDto[];
+  scopeAccessHints?: ScopeAccessHintDto[];
+};
+
+type ProjectCompleteEventDto = {
+  eventType?: string;
+  project?: string;
+  totalFiles?: number;
+  totalErrors?: number;
+  inlayHints?: BuildInlayHintDto[];
+};
+
+type StreamingBuildResult = {
+  projectComplete?: ProjectCompleteEventDto;
+  errors?: BuildErrorDto[];
+  fileEvents: FileBuiltEventDto[];
+  success: boolean;
+};
+
 const LANGUAGE_ID = "bl";
 const DIAGNOSTIC_SOURCE = "ballerina-language-tools";
 const BUILD_DEBOUNCE_MS = 50;
 let buildRunSequence = 0;
 let buildServerClient: BuildServerClient | undefined;
 let buildServerClientKey: string | undefined;
+let completionHintStore: CompletionHintStore | undefined;
 
 export function activate(context: vscode.ExtensionContext): void {
   const output = getOutputChannel();
@@ -50,13 +98,22 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const diagnostics = vscode.languages.createDiagnosticCollection(LANGUAGE_ID);
   const inlayHints = new InlayHintStore();
+  completionHintStore = new CompletionHintStore();
   context.subscriptions.push(diagnostics);
   context.subscriptions.push(inlayHints);
+  context.subscriptions.push(completionHintStore);
   const inlayHintsDisposable = vscode.languages.registerInlayHintsProvider(
     { language: LANGUAGE_ID, scheme: "file" },
     new BlInlayHintsProvider(inlayHints)
   );
   context.subscriptions.push(inlayHintsDisposable);
+
+  const completionDisposable = vscode.languages.registerCompletionItemProvider(
+    { language: LANGUAGE_ID, scheme: "file" },
+    new BlCompletionProvider(completionHintStore),
+    ".", ":"
+  );
+  context.subscriptions.push(completionDisposable);
 
   const debouncedBuilder = createDebouncedBuildScheduler(diagnostics, inlayHints);
   context.subscriptions.push({ dispose: () => debouncedBuilder.dispose() });
@@ -143,6 +200,8 @@ export function activate(context: vscode.ExtensionContext): void {
 
 export function deactivate(): void {
   disposeBuildServerClient();
+  completionHintStore?.dispose();
+  completionHintStore = undefined;
   getOutputChannel().dispose();
 }
 
@@ -488,11 +547,22 @@ async function runBallerinaSqlBuild(
   const serverClient = getBuildServerClient(cwd, output);
 
   try {
-    const serverResult = await serverClient.build(projectFilePath);
+    const streamingResult = await serverClient.build(projectFilePath, (event) => {
+      const fileName = event.file ?? "";
+      completionHintStore?.updateForFile(
+        projectFilePath,
+        fileName,
+        event.dotAccessHints ?? [],
+        event.scopeAccessHints ?? [],
+        event.identifierHints ?? []
+      );
+    });
+
+    const serverResult = streamingResultToBuildResult(streamingResult);
     const errors = Array.isArray(serverResult.errors) ? serverResult.errors.length : 0;
     const summary = serverResult.success
-      ? `[Run #${runId}] Server response: success.`
-      : `[Run #${runId}] Server response: failed with ${errors} error(s).`;
+      ? `[Run #${runId}] Server response: success (streaming).`
+      : `[Run #${runId}] Server response: failed with ${errors} error(s) (streaming).`;
 
     return {
       stdout: summary,
@@ -504,6 +574,34 @@ async function runBallerinaSqlBuild(
     output.appendLine(`[Run #${runId}] Server mode failed; falling back to one-shot build: ${toMessage(serverError)}`);
     throw serverError;
   }
+}
+
+function streamingResultToBuildResult(result: StreamingBuildResult): BuildResultDto {
+  if (result.success && result.projectComplete) {
+    return {
+      success: true,
+      errors: [],
+      inlayHints: result.projectComplete.inlayHints ?? []
+    };
+  }
+
+  const errors: BuildErrorDto[] = [];
+
+  for (const event of result.fileEvents) {
+    if (Array.isArray(event.errors)) {
+      errors.push(...event.errors);
+    }
+  }
+
+  if (Array.isArray(result.errors)) {
+    errors.push(...result.errors);
+  }
+
+  return {
+    success: false,
+    errors,
+    inlayHints: result.projectComplete?.inlayHints ?? []
+  };
 }
 
 function parseIssuesFromServerResult(serverResult: BuildResultDto, projectPath: string): BuildIssue[] {
@@ -724,6 +822,151 @@ class BlInlayHintsProvider implements vscode.InlayHintsProvider {
   }
 }
 
+class CompletionHintStore implements vscode.Disposable {
+  private dotHintsByFile = new Map<string, DotAccessHintDto[]>();
+  private scopeHintsByFile = new Map<string, ScopeAccessHintDto[]>();
+  private identifierHints: IdentifierHintDto[] = [];
+  private readonly onDidChangeEmitter = new vscode.EventEmitter<void>();
+
+  public readonly onDidChange: vscode.Event<void> = this.onDidChangeEmitter.event;
+
+  updateForFile(
+    projectPath: string,
+    fileName: string,
+    dotHints: DotAccessHintDto[],
+    scopeHints: ScopeAccessHintDto[],
+    identHints: IdentifierHintDto[]
+  ): void {
+    const absFile = toAbsoluteFile(projectPath, fileName);
+    const key = normalizePathKey(absFile);
+    this.dotHintsByFile.set(key, dotHints);
+    this.scopeHintsByFile.set(key, scopeHints);
+
+    if (identHints.length > 0) {
+      this.identifierHints = identHints;
+    }
+
+    this.onDidChangeEmitter.fire();
+  }
+
+  getDotHints(filePath: string): DotAccessHintDto[] {
+    return this.dotHintsByFile.get(normalizePathKey(filePath)) ?? [];
+  }
+
+  getScopeHints(filePath: string): ScopeAccessHintDto[] {
+    return this.scopeHintsByFile.get(normalizePathKey(filePath)) ?? [];
+  }
+
+  getIdentifierHints(): IdentifierHintDto[] {
+    return this.identifierHints;
+  }
+
+  clearProject(): void {
+    this.dotHintsByFile.clear();
+    this.scopeHintsByFile.clear();
+    this.onDidChangeEmitter.fire();
+  }
+
+  dispose(): void {
+    this.dotHintsByFile.clear();
+    this.scopeHintsByFile.clear();
+    this.identifierHints = [];
+    this.onDidChangeEmitter.dispose();
+  }
+}
+
+class BlCompletionProvider implements vscode.CompletionItemProvider {
+  constructor(private readonly store: CompletionHintStore) {}
+
+  provideCompletionItems(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    _token: vscode.CancellationToken,
+    _context: vscode.CompletionContext
+  ): vscode.CompletionItem[] {
+    if (!isBlDocument(document)) {
+      return [];
+    }
+
+    const lineText = document.lineAt(position.line).text;
+    const textBefore = lineText.substring(0, position.character);
+
+    const scopeMatch = textBefore.match(/(\w+)::$/);
+
+    if (scopeMatch) {
+      return this.provideScopeCompletions(document, position, scopeMatch[1]);
+    }
+
+    if (textBefore.endsWith(".")) {
+      return this.provideDotCompletions(document, position);
+    }
+
+    return [];
+  }
+
+  private provideDotCompletions(
+    document: vscode.TextDocument,
+    position: vscode.Position
+  ): vscode.CompletionItem[] {
+    const dotHints = this.store.getDotHints(document.uri.fsPath);
+    const cursorLine1 = position.line + 1;
+    const cursorCol1 = position.character;
+
+    const hint = dotHints.find((h) => {
+      const hLine = h.line ?? 0;
+      const hCol = h.column ?? 0;
+      return hLine === cursorLine1 && Math.abs(hCol - cursorCol1) <= 2;
+    });
+
+    if (!hint?.availableFields) {
+      return [];
+    }
+
+    return Object.entries(hint.availableFields).map(([name, type]) => {
+      const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Field);
+      item.detail = type;
+      return item;
+    });
+  }
+
+  private provideScopeCompletions(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    prefix: string
+  ): vscode.CompletionItem[] {
+    const scopeHints = this.store.getScopeHints(document.uri.fsPath);
+    const cursorLine1 = position.line + 1;
+
+    const hint = scopeHints.find((h) => {
+      const hLine = h.line ?? 0;
+      return hLine === cursorLine1 && h.prefix === prefix;
+    });
+
+    if (hint?.availableSymbols) {
+      return Object.entries(hint.availableSymbols).map(([name, type]) => {
+        const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Function);
+        item.detail = type;
+        return item;
+      });
+    }
+
+    const identHints = this.store.getIdentifierHints();
+    const scopePrefix = prefix + "::";
+    const items: vscode.CompletionItem[] = [];
+
+    for (const h of identHints) {
+      if (h.name && h.name.startsWith(scopePrefix)) {
+        const name = h.name.substring(scopePrefix.length);
+        const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Function);
+        item.detail = h.type ?? "";
+        items.push(item);
+      }
+    }
+
+    return items;
+  }
+}
+
 function getBuildServerClient(
   cwd: string,
   output: vscode.OutputChannel
@@ -760,10 +1003,13 @@ class BuildServerClient {
     private readonly output: vscode.OutputChannel
   ) {}
 
-  build(projectFilePath: string): Promise<BuildResultDto> {
-    const work = async (): Promise<BuildResultDto> => {
+  build(
+    projectFilePath: string,
+    onFileBuilt?: (event: FileBuiltEventDto) => void
+  ): Promise<StreamingBuildResult> {
+    const work = async (): Promise<StreamingBuildResult> => {
       await this.ensureStarted();
-      return this.sendRequest(projectFilePath);
+      return this.sendRequest(projectFilePath, onFileBuilt);
     };
 
     const promise = this.requestChain.then(work, work);
@@ -788,7 +1034,7 @@ class BuildServerClient {
       return;
     }
 
-    const args = ["server"];
+    const args = ["server-streaming"];
     const env = (
       (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env
     ) ?? undefined;
@@ -824,7 +1070,10 @@ class BuildServerClient {
     });
   }
 
-  private async sendRequest(projectFilePath: string): Promise<BuildResultDto> {
+  private async sendRequest(
+    projectFilePath: string,
+    onFileBuilt?: (event: FileBuiltEventDto) => void
+  ): Promise<StreamingBuildResult> {
     const child = this.child;
     const stdoutReader = this.stdoutReader;
 
@@ -832,7 +1081,9 @@ class BuildServerClient {
       throw new Error("Build server is not running.");
     }
 
-    return new Promise<BuildResultDto>((resolve, reject) => {
+    return new Promise<StreamingBuildResult>((resolve, reject) => {
+      const fileEvents: FileBuiltEventDto[] = [];
+
       const onLine = (line: string): void => {
         const trimmed = line.trim();
 
@@ -840,13 +1091,41 @@ class BuildServerClient {
           return;
         }
 
-        cleanup();
+        let parsed: Record<string, unknown>;
 
         try {
-          const parsed = JSON.parse(trimmed) as BuildResultDto;
-          resolve(parsed);
+          parsed = JSON.parse(trimmed) as Record<string, unknown>;
         } catch {
-          reject(new Error(`Unexpected server response: ${trimmed}`));
+          return;
+        }
+
+        const eventType = parsed.eventType as string | undefined;
+
+        if (eventType === "file-built") {
+          const event = parsed as unknown as FileBuiltEventDto;
+          fileEvents.push(event);
+
+          try {
+            onFileBuilt?.(event);
+          } catch {
+            // Ignore callback errors.
+          }
+        } else if (eventType === "project-complete") {
+          cleanup();
+          const event = parsed as unknown as ProjectCompleteEventDto;
+          resolve({
+            projectComplete: event,
+            fileEvents,
+            success: true
+          });
+        } else {
+          cleanup();
+          const result = parsed as unknown as BuildResultDto;
+          resolve({
+            errors: result.errors,
+            fileEvents,
+            success: result.success ?? false
+          });
         }
       };
 
