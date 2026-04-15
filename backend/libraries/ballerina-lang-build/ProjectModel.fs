@@ -183,6 +183,12 @@ module ProjectModel =
 
               let! ctx, st = state.GetState()
 
+              let scopePrefixHints =
+                TypeCheckState.ComputeScopePrefixHints ctx st
+
+              let st =
+                { st with ScopePrefixHints = scopePrefixHints }
+
               let! (typeCheckedExpr, ctx'), st' =
                 Expr.TypeCheck config None program
                 |> State.Run(ctx, st)
@@ -271,6 +277,12 @@ module ProjectModel =
                 |> state.OfSum
 
               let! ctx, st = state.GetState()
+
+              let scopePrefixHints =
+                TypeCheckState.ComputeScopePrefixHints ctx st
+
+              let st =
+                { st with ScopePrefixHints = scopePrefixHints }
 
               let! (typeCheckedExpr, ctx'), st' =
                 Expr.TypeCheck config None program

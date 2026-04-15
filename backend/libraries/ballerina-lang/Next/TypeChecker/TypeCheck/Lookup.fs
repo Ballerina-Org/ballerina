@@ -50,27 +50,10 @@ module Lookup =
               | [ p ] -> p
               | ps -> String.Join("::", ps)
 
-            let availableFromValues =
-              ctx.Values
-              |> Map.toSeq
-              |> Seq.choose (fun (rid, (tv, _)) ->
-                match rid.Type with
-                | Some t when t = prefix ->
-                  Some(rid.Name, tv.ToInlayString())
-                | _ -> None)
-
-            let availableFromBindings =
-              st.Bindings
-              |> Map.toSeq
-              |> Seq.choose (fun (rid, (tv, _)) ->
-                match rid.Type with
-                | Some t when t = prefix ->
-                  Some(rid.Name, tv.ToInlayString())
-                | _ -> None)
-
             let availableSymbols =
-              Seq.append availableFromValues availableFromBindings
-              |> Map.ofSeq
+              st.ScopePrefixHints
+              |> Map.tryFind prefix
+              |> Option.defaultValue Map.empty
 
             if not (Map.isEmpty availableSymbols) then
               do!
@@ -123,64 +106,4 @@ module Lookup =
               ))
             |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
 
-        }
-
-    static member internal TypeCheckErrorDanglingScopedIdentifier<'valueExt
-      when 'valueExt: comparison>
-      (prefixParts: List<string>)
-      (loc0: Location)
-      : TypeCheckerResult<
-          TypeCheckedExpr<'valueExt> * TypeCheckContext<'valueExt>,
-          'valueExt
-         >
-      =
-        state {
-          let! ctx = state.GetContext()
-          let! st = state.GetState()
-
-          let prefix =
-            match prefixParts with
-            | [ p ] -> p
-            | ps -> String.Join("::", ps)
-
-          let availableFromValues =
-            ctx.Values
-            |> Map.toSeq
-            |> Seq.choose (fun (rid, (tv, _)) ->
-              match rid.Type with
-              | Some t when t = prefix ->
-                Some(rid.Name, tv.ToInlayString())
-              | _ -> None)
-
-          let availableFromBindings =
-            st.Bindings
-            |> Map.toSeq
-            |> Seq.choose (fun (rid, (tv, _)) ->
-              match rid.Type with
-              | Some t when t = prefix ->
-                Some(rid.Name, tv.ToInlayString())
-              | _ -> None)
-
-          let availableSymbols =
-            Seq.append availableFromValues availableFromBindings
-            |> Map.ofSeq
-
-          if not (Map.isEmpty availableSymbols) then
-            do!
-              TypeCheckState.bindScopeAccessHint(
-                loc0,
-                prefix,
-                availableSymbols
-              )
-
-          return
-            { TypeCheckedExpr.Expr =
-                TypeCheckedExprRec.ErrorDanglingScopedIdentifier(
-                  { TypeCheckedExprErrorDanglingScopedIdentifier.PrefixParts = prefixParts }
-                )
-              Location = loc0
-              Type = TypeValue.CreateUnit()
-              Kind = Kind.Star
-              Scope = ctx.Scope },
-            ctx
         }

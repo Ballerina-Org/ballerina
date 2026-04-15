@@ -50,8 +50,7 @@ module Patterns =
         TypeParameters = Map.empty
         Values = Map.empty
         BackgroundHooksExtraScope = Map.empty
-        PermissionHooksExtraScope = Map.empty
-        HintsAccumulator = None }
+        PermissionHooksExtraScope = Map.empty }
 
     static member Updaters =
       {| Scope =
@@ -90,8 +89,7 @@ module Patterns =
         TypeParameters = ctx.TypeParameters
         Values = ctx.Values
         BackgroundHooksExtraScope = ctx.BackgroundHooksExtraScope
-        PermissionHooksExtraScope = ctx.PermissionHooksExtraScope
-        HintsAccumulator = None }
+        PermissionHooksExtraScope = ctx.PermissionHooksExtraScope }
 
     static member tryFindTypeVariable
       (v: string, loc: Location)
@@ -162,7 +160,8 @@ module Patterns =
         Vars = UnificationState.Empty
         InlayHints = Map.empty
         DotAccessHints = Map.empty
-        ScopeAccessHints = Map.empty }
+        ScopeAccessHints = Map.empty
+        ScopePrefixHints = Map.empty }
 
     static member Create
       (bindings: TypeBindings<'valueExt>, symbols: TypeExprEvalSymbols)
@@ -337,6 +336,10 @@ module Patterns =
           fun u (c: TypeCheckState<'valueExt>) ->
             { c with
                 ScopeAccessHints = c.ScopeAccessHints |> u }
+         ScopePrefixHints =
+          fun u (c: TypeCheckState<'valueExt>) ->
+            { c with
+                ScopePrefixHints = c.ScopePrefixHints |> u }
          UnionCases =
           fun u (c: TypeCheckState<'valueExt>) ->
             { c with
@@ -474,19 +477,15 @@ module Patterns =
       (location: Location,
        objectType: TypeValue<'valueExt>,
        availableFields: Map<string, TypeValue<'valueExt>>)
-      : TypeCheckerResult<unit, 'valueExt>
       =
-      let hint = { ObjectType = objectType; AvailableFields = availableFields }
       state {
-        let! (ctx: TypeCheckContext<'valueExt>) = state.GetContext()
-        match ctx.HintsAccumulator with
-        | Some acc ->
-          (acc :?> HintsAccumulator<'valueExt>).AddDotAccessHint(location, hint)
-        | None -> ()
         do!
           state.SetState(
             TypeCheckState.Updaters.DotAccessHints(
-              Map.add location hint
+              Map.add
+                location
+                { ObjectType = objectType
+                  AvailableFields = availableFields }
             )
           )
       }
@@ -495,22 +494,47 @@ module Patterns =
       (location: Location,
        prefix: string,
        availableSymbols: Map<string, string>)
-      : TypeCheckerResult<unit, 'valueExt>
       =
-      let hint = { Prefix = prefix; AvailableSymbols = availableSymbols }
       state {
-        let! (ctx: TypeCheckContext<'valueExt>) = state.GetContext()
-        match ctx.HintsAccumulator with
-        | Some acc ->
-          (acc :?> HintsAccumulator<'valueExt>).AddScopeAccessHint(location, hint)
-        | None -> ()
         do!
           state.SetState(
             TypeCheckState.Updaters.ScopeAccessHints(
-              Map.add location hint
+              Map.add
+                location
+                { Prefix = prefix
+                  AvailableSymbols = availableSymbols }
             )
           )
       }
+
+    static member ComputeScopePrefixHints
+      (ctx: TypeCheckContext<'valueExt>)
+      (st: TypeCheckState<'valueExt>)
+      : Map<string, Map<string, string>> =
+      let fromValues =
+        ctx.Values
+        |> Map.toSeq
+        |> Seq.choose (fun (rid, (tv, _)) ->
+          match rid.Type with
+          | Some prefix -> Some(prefix, rid.Name, tv.ToInlayString())
+          | None -> None)
+
+      let fromBindings =
+        st.Bindings
+        |> Map.toSeq
+        |> Seq.choose (fun (rid, (tv, _)) ->
+          match rid.Type with
+          | Some prefix -> Some(prefix, rid.Name, tv.ToInlayString())
+          | None -> None)
+
+      Seq.append fromValues fromBindings
+      |> Seq.groupBy (fun (prefix, _, _) -> prefix)
+      |> Seq.map (fun (prefix, entries) ->
+        prefix,
+        entries
+        |> Seq.map (fun (_, name, typeStr) -> name, typeStr)
+        |> Map.ofSeq)
+      |> Map.ofSeq
 
   type UnificationContext<'valueExt when 'valueExt: comparison> with
 

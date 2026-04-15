@@ -245,12 +245,16 @@ module TypeEval =
             return!
               Errors.Singleton err.ErrorLocation (fun () -> err.ErrorMessage)
               |> state.Throw
-          | ExprRec.ErrorDanglingRecordDes _ ->
-            return!
-              Errors.Singleton expr.Location (fun () -> "Dangling record destructure")
-              |> state.Throw
-          | ExprRec.ErrorDanglingScopedIdentifier _ ->
-            return!
-              Errors.Singleton expr.Location (fun () -> "Dangling scoped identifier")
-              |> state.Throw
+          | ExprRec.ErrorDanglingRecordDes({ Expr = inner; Field = field }) ->
+            let! innerType = !inner
+            let resolvedField = field |> Option.map (fun f -> ctx.Scope.Resolve f)
+            return
+              { Expr = ExprRec.ErrorDanglingRecordDes({ Expr = innerType; Field = resolvedField })
+                Location = expr.Location
+                Scope = ctx.Scope }
+          | ExprRec.ErrorDanglingScopedIdentifier({ PrefixParts = prefixParts }) ->
+            return
+              { Expr = ExprRec.ErrorDanglingScopedIdentifier({ PrefixParts = prefixParts })
+                Location = expr.Location
+                Scope = ctx.Scope }
         }

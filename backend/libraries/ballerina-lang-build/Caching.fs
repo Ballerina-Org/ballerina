@@ -187,16 +187,9 @@ module Caching =
               onFileProcessed file ctx' st'
               Sum.Left((expr, typeValue), ctx', st')
             | _ ->
-              // Create a mutable hints accumulator that survives state monad rollback.
-              // The accumulator is placed in TypeCheckContext ('c parameter of the inner
-              // type-checker state monad), which is NOT saved/restored by catch handlers.
-              let hintsAccumulator = HintsAccumulator<'valueExt>()
-              let ctxWithAccumulator =
-                { ctx with HintsAccumulator = Some (hintsAccumulator :> obj) }
-
               let runResult =
                 typeCheck (file, index)
-                |> State.Run((), (ctxWithAccumulator, st))
+                |> State.Run((), (ctx, st))
 
               match runResult with
               | Sum.Left((expr, typeValue), stateOpt) ->
@@ -214,20 +207,14 @@ module Caching =
 
                 onFileProcessed file ctx' st'
                 Sum.Left((expr, typeValue), ctx', st')
-              | Sum.Right(errors, _stateOpt) ->
-                // On error, recover partial hints from the accumulator.
-                // The state monad's catch handlers roll back TypeCheckState,
-                // but the accumulator (in the read-only context) survives.
-                let st' =
-                  { st with
-                      DotAccessHints = hintsAccumulator.DotAccessHints
-                      ScopeAccessHints = hintsAccumulator.ScopeAccessHints }
+              | Sum.Right(errors, stateOpt) ->
+                let ctx', st' = stateOpt |> Option.defaultValue (ctx, st)
                 sw.Stop()
 
                 Console.WriteLine
                   $"Cache miss for {file.FileName.Path} in {sw.ElapsedMilliseconds} ms (error)"
 
-                onFileProcessed file ctx st'
+                onFileProcessed file ctx' st'
                 Sum.Right(errors)
 
           let filesWithOrder =

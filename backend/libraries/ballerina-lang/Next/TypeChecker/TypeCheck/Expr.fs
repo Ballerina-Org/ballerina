@@ -40,6 +40,8 @@ module Expr =
   open Ballerina.DSL.Next.Types.TypeChecker.TypeLet
   open Ballerina.DSL.Next.Types.TypeChecker.TypeApply
   open Ballerina.DSL.Next.Types.TypeChecker.Query
+  open Ballerina.DSL.Next.Types.TypeChecker.ErrorDanglingScopedIdentifier
+  open Ballerina.DSL.Next.Types.TypeChecker.ErrorDanglingRecordDes
   open Ballerina.Fun
   open Ballerina.StdLib.OrderPreservingMap
   open Ballerina.Cat.Collections.OrderedMap
