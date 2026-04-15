@@ -151,6 +151,12 @@
       "errorRegexes": [
         "while typechecking"
       ]
+    },
+    "23-calculate-strip-props-integration": {
+      "mode": "run",
+      "valueRegexes": ["SchemaAsValue"],
+      "typeRegexes": ["Shop"],
+      "errorRegexes": []
     }
   }
 }

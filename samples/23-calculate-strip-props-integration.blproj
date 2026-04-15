@@ -1,0 +1,5 @@
+{
+  "name": "calculate-strip-props-integration",
+  "sources": ["23-calculate-strip-props-integration.bl"],
+  "inputProjects": []
+}
