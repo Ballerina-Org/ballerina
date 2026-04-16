@@ -64,19 +64,55 @@ module FilterDataModelGeneration =
 
               do! state.SetState(Map.add predicateModelName predicateModel)
 
+              let filterableRelations = collectFilterableRelations entity_name schema
+
+              let relationExistsCases =
+                filterableRelations
+                |> List.map (fun (relationName, targetEntityName, _direction) ->
+                  let targetFilterTreeRef =
+                    { OpenAPIDataModelName.OpenAPIDataModelName = $"{targetEntityName}-FilterTree" }
+
+                  let existsModel =
+                    OpenAPIDataModel.Record
+                      [ ("RelationName" |> ResolvedIdentifier.Create,
+                         OpenAPIDataModel.Primitive PrimitiveType.String)
+                        ("TargetEntity" |> ResolvedIdentifier.Create,
+                         OpenAPIDataModel.Primitive PrimitiveType.String)
+                        ("SubFilter" |> ResolvedIdentifier.Create,
+                         OpenAPIDataModel.Ref targetFilterTreeRef) ]
+
+                  ($"{relationName}->{targetEntityName}" |> ResolvedIdentifier.Create,
+                   existsModel))
+
+              let relationPredicateModelName =
+                { OpenAPIDataModelName.OpenAPIDataModelName = $"{entity_name.Name}-RelationPredicate" }
+
+              if not (List.isEmpty relationExistsCases) then
+                let relationPredicateModel = OpenAPIDataModel.OneOf relationExistsCases
+                do! state.SetState(Map.add relationPredicateModelName relationPredicateModel)
+
               let filterTreeModelName =
                 { OpenAPIDataModelName.OpenAPIDataModelName = $"{entity_name.Name}-FilterTree" }
 
+              let baseCases =
+                [ ("And" |> ResolvedIdentifier.Create,
+                   OpenAPIDataModel.Array(OpenAPIDataModel.Ref filterTreeModelName))
+                  ("Or" |> ResolvedIdentifier.Create,
+                   OpenAPIDataModel.Array(OpenAPIDataModel.Ref filterTreeModelName))
+                  ("Not" |> ResolvedIdentifier.Create,
+                   OpenAPIDataModel.Ref filterTreeModelName)
+                  ("Predicate" |> ResolvedIdentifier.Create,
+                   OpenAPIDataModel.Ref predicateModelName) ]
+
+              let existsCase =
+                if not (List.isEmpty relationExistsCases) then
+                  [ ("Exists" |> ResolvedIdentifier.Create,
+                     OpenAPIDataModel.Ref relationPredicateModelName) ]
+                else
+                  []
+
               let filterTreeModel =
-                OpenAPIDataModel.OneOf
-                  [ ("And" |> ResolvedIdentifier.Create,
-                     OpenAPIDataModel.Array(OpenAPIDataModel.Ref filterTreeModelName))
-                    ("Or" |> ResolvedIdentifier.Create,
-                     OpenAPIDataModel.Array(OpenAPIDataModel.Ref filterTreeModelName))
-                    ("Not" |> ResolvedIdentifier.Create,
-                     OpenAPIDataModel.Ref filterTreeModelName)
-                    ("Predicate" |> ResolvedIdentifier.Create,
-                     OpenAPIDataModel.Ref predicateModelName) ]
+                OpenAPIDataModel.OneOf (baseCases @ existsCase)
 
               do! state.SetState(Map.add filterTreeModelName filterTreeModel)
 
