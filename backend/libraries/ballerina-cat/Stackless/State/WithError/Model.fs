@@ -143,7 +143,7 @@ module StacklessStateWithError =
             | None -> ()
 
             match catchStack with
-            | [] -> Right(e, s')
+            | [] -> Right(e, Some s)
             | (err_k, savedBinds, savedS, savedLatestState, savedScope) :: rest ->
               catchStack <- rest // pop off current err handler
               bindStack <- savedBinds // restore the program to where it was before the current subroutine was started

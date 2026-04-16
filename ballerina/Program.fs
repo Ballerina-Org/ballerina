@@ -139,7 +139,7 @@ let typecheckSingleFileForPath
           ScopeAccessHints = scopeAccessHints }
 
       Left event
-    | Right errors ->
+    | Right(errors, partialStOpt) ->
       let errorDtos =
         (Errors<_>.FilterHighestPriorityOnly errors).Errors()
         |> NonEmptyList.ToList
@@ -150,15 +150,30 @@ let typecheckSingleFileForPath
             Column = e.Context.Column })
         |> List.toArray
 
+      let dotAccessHints =
+        partialStOpt
+        |> Option.map (fun st -> BuildServer.dotAccessHintDtosForFile st filePath)
+        |> Option.defaultValue [||]
+
+      let scopeAccessHints =
+        partialStOpt
+        |> Option.map (fun st -> BuildServer.scopeAccessHintDtosForFile st filePath)
+        |> Option.defaultValue [||]
+
+      let inlayHints =
+        partialStOpt
+        |> Option.map (fun st -> BuildServer.inlayHintDtosForFile st filePath)
+        |> Option.defaultValue [||]
+
       let event: FileBuiltEventDTO =
         { EventType = "file-built"
           File = filePath
           Success = false
           Errors = errorDtos
-          InlayHints = [||]
+          InlayHints = inlayHints
           IdentifierHints = [||]
-          DotAccessHints = [||]
-          ScopeAccessHints = [||] }
+          DotAccessHints = dotAccessHints
+          ScopeAccessHints = scopeAccessHints }
 
       Left event
   | Right errors -> Right errors
