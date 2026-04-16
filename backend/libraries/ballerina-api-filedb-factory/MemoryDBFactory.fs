@@ -115,13 +115,16 @@ module MemoryDBAPIFactory =
 
       match evalResult with
       | Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.DBIO dbio))), _) ->
+        let languageContext, _ = contextFactory dbFileConfig
+
         return
           { DbExtension = dbio
             EvalContext =
               { evalContext with
                   Scope = dbio.EvalContext }
             TypeCheckContext = typeCheckContext
-            TypeCheckState = typeCheckState }
+            TypeCheckState = typeCheckState
+            LanguageContext = languageContext }
       | _ ->
         return!
           sum.Throw(
