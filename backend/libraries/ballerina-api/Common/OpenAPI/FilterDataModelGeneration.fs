@@ -68,21 +68,32 @@ module FilterDataModelGeneration =
 
               let relationExistsCases =
                 filterableRelations
-                |> List.map (fun (relationName, targetEntityName, _direction) ->
-                  let targetFilterTreeRef =
-                    { OpenAPIDataModelName.OpenAPIDataModelName = $"{targetEntityName}-FilterTree" }
+                |> List.choose (fun (relationName, targetEntityName, _direction) ->
+                  let targetEntityOpt =
+                    schema.Entities
+                    |> OrderedMap.toSeq
+                    |> Seq.tryFind (fun (en, _) -> en.Name = targetEntityName)
+                    |> Option.map snd
 
-                  let existsModel =
-                    OpenAPIDataModel.Record
-                      [ ("RelationName" |> ResolvedIdentifier.Create,
-                         OpenAPIDataModel.Primitive PrimitiveType.String)
-                        ("TargetEntity" |> ResolvedIdentifier.Create,
-                         OpenAPIDataModel.Primitive PrimitiveType.String)
-                        ("SubFilter" |> ResolvedIdentifier.Create,
-                         OpenAPIDataModel.Ref targetFilterTreeRef) ]
+                  match targetEntityOpt with
+                  | None -> None
+                  | Some targetEntityDesc ->
+                    if collectFilterableProperties targetEntityDesc |> List.isEmpty then
+                      None
+                    else
+                      let targetFilterTreeRef =
+                        { OpenAPIDataModelName.OpenAPIDataModelName = $"{targetEntityName}-FilterTree" }
 
-                  ($"{relationName}->{targetEntityName}" |> ResolvedIdentifier.Create,
-                   existsModel))
+                      let existsModel =
+                        OpenAPIDataModel.Record
+                          [ ("RelationName" |> ResolvedIdentifier.Create,
+                             OpenAPIDataModel.Primitive PrimitiveType.String)
+                            ("TargetEntity" |> ResolvedIdentifier.Create,
+                             OpenAPIDataModel.Primitive PrimitiveType.String)
+                            ("SubFilter" |> ResolvedIdentifier.Create,
+                             OpenAPIDataModel.Ref targetFilterTreeRef) ]
+
+                      Some ($"{relationName}->{targetEntityName}" |> ResolvedIdentifier.Create, existsModel))
 
               let relationPredicateModelName =
                 { OpenAPIDataModelName.OpenAPIDataModelName = $"{entity_name.Name}-RelationPredicate" }
