@@ -94,7 +94,9 @@ module Model =
       InlayHints: Map<Location, InlayHint<'valueExt>>
       DotAccessHints: Map<Location, DotAccessHint<'valueExt>>
       ScopeAccessHints: Map<Location, ScopeAccessHint>
-      ScopePrefixHints: Map<string, Map<string, string>> }
+      ScopePrefixHints: Map<string, Map<string, string>>
+      VarsVersion: int
+      MemoInstantiateVar: Map<struct(TypeVar * int), TypeValue<'valueExt>> }
 
   type TypeValueKindEval<'valueExt when 'valueExt: comparison> =
     Option<ExprTypeLetBindingName>

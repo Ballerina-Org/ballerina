@@ -595,10 +595,17 @@ module Unification =
       let unifySchemas e1 e2 =
         state {
           if
+            e1.DeclaredAtForNominalEquality = e2.DeclaredAtForNominalEquality
+            && TypeValue.IsConcrete(TypeValue.Schema e1)
+            && TypeValue.IsConcrete(TypeValue.Schema e2)
+          then
+            // Same schema declaration and both fully concrete — entity types
+            // are identical so structural unification would be a no-op.
+            return ()
+          elif
             not (
               e1.Entities.Count = e2.Entities.Count
               && e1.Relations.Count = e2.Relations.Count
-            // && e1.DeclaredAtForNominalEquality = e2.DeclaredAtForNominalEquality
             )
           then
             return!
@@ -1084,6 +1091,10 @@ module Unification =
       =
       fun typeEval loc0 t ->
         state {
+          if TypeValue.IsConcrete t then
+            return t
+          else
+
           let error e = Errors.Singleton loc0 e
 
           let instantiateSchema schema =
@@ -1281,6 +1292,11 @@ module Unification =
               // return! Errors.Singleton $"Infinite type instantiation for variable {v}" |> state.Throw
               return t
             else
+              let memoKey = struct(v, s.VarsVersion)
+              match s.MemoInstantiateVar |> Map.tryFind memoKey with
+              | Some cached -> return cached
+              | None ->
+
               let localCtx =
                 { EvalState = s
                   Scope = ctx.Scope
@@ -1315,11 +1331,15 @@ module Unification =
 
               match vClass.Representative with
               | Some rep ->
-                return!
+                let! result =
                   TypeValue.Instantiate () typeEval loc0 rep
                   |> state.MapContext(
                     TypeInstantiateContext.Updaters.VisitedVars(Set.add v)
                   )
+                do! state.SetState(
+                      TypeCheckState.Updaters.MemoInstantiateVar(
+                        Map.add memoKey result))
+                return result
               | None ->
                 match
                   vClass.Variables
@@ -1339,7 +1359,12 @@ module Unification =
                       $"Variable {v} has no representative in the equivalence class")
                     |> error
                     |> state.Throw
-                | x :: xs -> return! NonEmptyList.OfList(x, xs) |> state.Any
+                | x :: xs ->
+                  let! result = NonEmptyList.OfList(x, xs) |> state.Any
+                  do! state.SetState(
+                        TypeCheckState.Updaters.MemoInstantiateVar(
+                          Map.add memoKey result))
+                  return result
           | TypeValue.Lookup l ->
             let! ctx = state.GetContext()
             let! s = state.GetState()
