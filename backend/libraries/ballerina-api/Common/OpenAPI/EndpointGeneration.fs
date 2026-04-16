@@ -9,6 +9,87 @@ module EndpointGeneration =
   open Ballerina.Errors
   open Ballerina.Cat.Collections.OrderedMap
 
+  let primitiveTypeFilterName (primitiveType: PrimitiveType) =
+    match primitiveType with
+    | PrimitiveType.Int32 -> "Int32Filter"
+    | PrimitiveType.Int64 -> "Int64Filter"
+    | PrimitiveType.Float32 -> "Float32Filter"
+    | PrimitiveType.Float64 -> "Float64Filter"
+    | PrimitiveType.Decimal -> "DecimalFilter"
+    | PrimitiveType.Bool -> "BoolFilter"
+    | PrimitiveType.String -> "StringFilter"
+    | PrimitiveType.Guid -> "GuidFilter"
+    | PrimitiveType.DateOnly -> "DateOnlyFilter"
+    | PrimitiveType.DateTime -> "DateTimeFilter"
+    | PrimitiveType.TimeSpan -> "TimeSpanFilter"
+    | PrimitiveType.Unit -> "UnitFilter"
+    | PrimitiveType.Vector -> "VectorFilter"
+
+  let private isComparablePrimitive primitiveType =
+    match primitiveType with
+    | PrimitiveType.Int32
+    | PrimitiveType.Int64
+    | PrimitiveType.Float32
+    | PrimitiveType.Float64
+    | PrimitiveType.Decimal
+    | PrimitiveType.DateOnly
+    | PrimitiveType.DateTime
+    | PrimitiveType.TimeSpan
+    | PrimitiveType.String -> true
+    | _ -> false
+
+  let private isStringType primitiveType =
+    primitiveType = PrimitiveType.String
+
+  let buildPrimitiveFilterModel (primitiveType: PrimitiveType) : OpenAPIDataModel =
+    let valueModel = OpenAPIDataModel.Scalar primitiveType
+
+    let eqCases =
+      [ ("Eq" |> ResolvedIdentifier.Create, valueModel)
+        ("NotEq" |> ResolvedIdentifier.Create, valueModel) ]
+
+    let comparableCases =
+      if isComparablePrimitive primitiveType then
+        [ ("Gt" |> ResolvedIdentifier.Create, valueModel)
+          ("Gte" |> ResolvedIdentifier.Create, valueModel)
+          ("Lt" |> ResolvedIdentifier.Create, valueModel)
+          ("Lte" |> ResolvedIdentifier.Create, valueModel) ]
+      else
+        []
+
+    let stringCases =
+      if isStringType primitiveType then
+        [ ("Contains" |> ResolvedIdentifier.Create, valueModel)
+          ("StartsWith" |> ResolvedIdentifier.Create, valueModel)
+          ("EndsWith" |> ResolvedIdentifier.Create, valueModel) ]
+      else
+        []
+
+    let nullCases =
+      [ ("IsNull" |> ResolvedIdentifier.Create, OpenAPIDataModel.Scalar PrimitiveType.Bool)
+        ("IsNotNull" |> ResolvedIdentifier.Create, OpenAPIDataModel.Scalar PrimitiveType.Bool) ]
+
+    OpenAPIDataModel.OneOf(eqCases @ comparableCases @ stringCases @ nullCases)
+
+  let collectFilterableProperties
+    (entity_desc: SchemaEntity<ValueExt<'runtimeContext, 'db, 'customExtension>>)
+    =
+    entity_desc.Properties
+    |> List.choose (fun p ->
+      if p.Path |> List.isEmpty then
+        match p.ReturnType with
+        | TypeValue.Primitive { value = primitive_type } ->
+          Some(p.PropertyName, primitive_type, false)
+        | TypeValue.Sum { value = sum_values } ->
+          match sum_values with
+          | [ TypeValue.Primitive { value = PrimitiveType.Unit }
+              TypeValue.Primitive { value = primitive_type } ] ->
+            Some(p.PropertyName, primitive_type, true)
+          | _ -> None
+        | _ -> None
+      else
+        None)
+
   let generate_endpoints
     (tenantId: string)
     (schemaName: string)
@@ -195,6 +276,32 @@ module EndpointGeneration =
                 })
               |> state.All
               |> state.Ignore
+
+            let filterableProperties = collectFilterableProperties entity_desc
+
+            if not (List.isEmpty filterableProperties) then
+              let filterEndpoint =
+                { Path = $"{routePrefix}/{entity_name.Name}/filter"
+                  Method = OpenAPIEndpointModel.Post
+                  QueryParameters =
+                    [ draftQueryParam
+                      { Name = "offset" |> ResolvedIdentifier.Create
+                        Type = PrimitiveType.Int32 }
+                      { Name = "limit" |> ResolvedIdentifier.Create
+                        Type = PrimitiveType.Int32 } ]
+                  RequestModel =
+                    Some(
+                      OpenAPIDataModel.Ref
+                        { OpenAPIDataModelName.OpenAPIDataModelName = $"{entity_name.Name}-FilterTree" }
+                    )
+                  ResponseModel =
+                    OpenAPIDataModel.Tuple
+                      [ id_name |> OpenAPIDataModel.Ref
+                        type_with_props_name |> OpenAPIDataModel.Ref ]
+                    |> listToOpenApi
+                    |> Some }
+
+              do! state.SetState(fun l -> filterEndpoint :: l)
 
             return ()
           })

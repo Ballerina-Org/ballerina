@@ -11,6 +11,7 @@
     <Compile Include="Common/OpenAPI/DataModelGeneration.fs" />
     <Compile Include="Common/OpenAPI/DeltaGeneration.fs" />
     <Compile Include="Common/OpenAPI/EndpointGeneration.fs" />
+    <Compile Include="Common/OpenAPI/FilterDataModelGeneration.fs" />
     <Compile Include="Common/OpenAPI/YamlGeneration.fs" />
     <Compile Include="Common/OpenAPI/OpenAPIGeneration.fs" />
     <Compile Include="Endpoints/Create.fs" />
@@ -20,6 +21,7 @@
     <Compile Include="Endpoints/Upsert.fs" />
     <Compile Include="Endpoints/Update.fs" />
     <Compile Include="Endpoints/OpenAPI.fs" />
+    <Compile Include="Endpoints/Filter.fs" />
     <Compile Include="APIRegistration.fs" />
   </ItemGroup>
   <ItemGroup>
