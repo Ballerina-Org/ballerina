@@ -90,6 +90,35 @@ module EndpointGeneration =
       else
         None)
 
+  type RelationDirection = FromTo | ToFrom
+
+  let collectFilterableRelations
+    (entityName: SchemaEntityName)
+    (schema: Schema<ValueExt<'runtimeContext, 'db, 'customExtension>>)
+    =
+    let entityNameStr = entityName.Name
+
+    schema.Relations
+    |> OrderedMap.toSeq
+    |> Seq.choose (fun (relationName, relation) ->
+      let fromName =
+        match relation.From with
+        | Identifier.LocalScope name -> name
+        | Identifier.FullyQualified(_, name) -> name
+
+      let toName =
+        match relation.To with
+        | Identifier.LocalScope name -> name
+        | Identifier.FullyQualified(_, name) -> name
+
+      if fromName = entityNameStr then
+        Some(relationName.Name, toName, FromTo)
+      elif toName = entityNameStr then
+        Some(relationName.Name, fromName, ToFrom)
+      else
+        None)
+    |> Seq.toList
+
   let generate_endpoints
     (tenantId: string)
     (schemaName: string)

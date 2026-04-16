@@ -329,6 +329,11 @@ module BuildServer =
       string
         -> (FileBuiltEventDTO -> unit)
         -> Sum<InlayHintDTO[] * ScopeSymbolDTO[] * int * int, Errors<Location>>)
+    (typecheckSingleFile:
+      string
+        -> string
+        -> string
+        -> Sum<FileBuiltEventDTO, Errors<Location>>)
     : int =
     let jsonOptions =
       JsonSerializerOptions(PropertyNamingPolicy = JsonNamingPolicy.CamelCase)
@@ -337,62 +342,120 @@ module BuildServer =
     let mutable line = Console.ReadLine()
 
     while not (isNull line) do
-      let projectPath = line.Trim()
+      let trimmed = line.Trim()
 
-      if projectPath.Length > 0 then
-        Console.SetOut(Console.Error)
+      if trimmed.Length > 0 then
+        if trimmed.StartsWith("TYPECHECK\t") then
+          let parts = trimmed.Split('\t')
 
-        try
-          let emitFileEvent (event: FileBuiltEventDTO) =
-            Console.SetOut(savedOut)
-            let json = JsonSerializer.Serialize(event, jsonOptions)
-            Console.WriteLine(json)
-            Console.Out.Flush()
+          if parts.Length >= 4 then
+            let projectPath = parts.[1]
+            let filePath = parts.[2]
+            let fileContent = parts.[3] |> Convert.FromBase64String |> Text.Encoding.UTF8.GetString
+
             Console.SetOut(Console.Error)
 
-          let buildResult =
-            buildProjectStreaming projectPath emitFileEvent
+            try
+              let result = typecheckSingleFile projectPath filePath fileContent
 
-          Console.SetOut(savedOut)
+              Console.SetOut(savedOut)
 
-          match buildResult with
-          | Left(inlayHints, scopeSymbols, totalFiles, totalErrors) ->
-            let completeEvent: ProjectCompleteEventDTO =
-              { EventType = "project-complete"
-                Project = projectPath
-                TotalFiles = totalFiles
-                TotalErrors = totalErrors
-                InlayHints = inlayHints
-                ScopeSymbols = scopeSymbols }
+              match result with
+              | Left event ->
+                let json = JsonSerializer.Serialize(event, jsonOptions)
+                Console.WriteLine(json)
+                Console.Out.Flush()
+              | Right errors ->
+                let errorDtos =
+                  (Errors<_>.FilterHighestPriorityOnly errors).Errors()
+                  |> NonEmptyList.ToList
+                  |> List.map (fun e ->
+                    { Message = e.Message
+                      File = e.Context.File
+                      Line = e.Context.Line
+                      Column = e.Context.Column })
+                  |> List.toArray
 
-            let json =
-              JsonSerializer.Serialize(completeEvent, jsonOptions)
+                let errorResult: BuildResultDTO =
+                  { Success = false
+                    Errors = errorDtos
+                    InlayHints = [||] }
 
-            Console.WriteLine(json)
-            Console.Out.Flush()
-          | Right errors ->
-            let errorDtos =
-              (Errors<_>.FilterHighestPriorityOnly errors).Errors()
-              |> NonEmptyList.ToList
-              |> List.map (fun e ->
-                { Message = e.Message
-                  File = e.Context.File
-                  Line = e.Context.Line
-                  Column = e.Context.Column })
-              |> List.toArray
+                let json = JsonSerializer.Serialize(errorResult, jsonOptions)
+                Console.WriteLine(json)
+                Console.Out.Flush()
+            finally
+              Console.SetOut(savedOut)
+          else
+            Console.SetOut(savedOut)
 
             let errorResult: BuildResultDTO =
               { Success = false
-                Errors = errorDtos
+                Errors =
+                  [| { Message = "TYPECHECK command requires: TYPECHECK\\tprojectPath\\tfilePath\\tbase64content"
+                       File = "unknown"
+                       Line = 1
+                       Column = 1 } |]
                 InlayHints = [||] }
 
-            let json =
-              JsonSerializer.Serialize(errorResult, jsonOptions)
-
+            let json = JsonSerializer.Serialize(errorResult, jsonOptions)
             Console.WriteLine(json)
             Console.Out.Flush()
-        finally
-          Console.SetOut(savedOut)
+        else
+          let projectPath = trimmed
+          Console.SetOut(Console.Error)
+
+          try
+            let emitFileEvent (event: FileBuiltEventDTO) =
+              Console.SetOut(savedOut)
+              let json = JsonSerializer.Serialize(event, jsonOptions)
+              Console.WriteLine(json)
+              Console.Out.Flush()
+              Console.SetOut(Console.Error)
+
+            let buildResult =
+              buildProjectStreaming projectPath emitFileEvent
+
+            Console.SetOut(savedOut)
+
+            match buildResult with
+            | Left(inlayHints, scopeSymbols, totalFiles, totalErrors) ->
+              let completeEvent: ProjectCompleteEventDTO =
+                { EventType = "project-complete"
+                  Project = projectPath
+                  TotalFiles = totalFiles
+                  TotalErrors = totalErrors
+                  InlayHints = inlayHints
+                  ScopeSymbols = scopeSymbols }
+
+              let json =
+                JsonSerializer.Serialize(completeEvent, jsonOptions)
+
+              Console.WriteLine(json)
+              Console.Out.Flush()
+            | Right errors ->
+              let errorDtos =
+                (Errors<_>.FilterHighestPriorityOnly errors).Errors()
+                |> NonEmptyList.ToList
+                |> List.map (fun e ->
+                  { Message = e.Message
+                    File = e.Context.File
+                    Line = e.Context.Line
+                    Column = e.Context.Column })
+                |> List.toArray
+
+              let errorResult: BuildResultDTO =
+                { Success = false
+                  Errors = errorDtos
+                  InlayHints = [||] }
+
+              let json =
+                JsonSerializer.Serialize(errorResult, jsonOptions)
+
+              Console.WriteLine(json)
+              Console.Out.Flush()
+          finally
+            Console.SetOut(savedOut)
 
       line <- Console.ReadLine()
 

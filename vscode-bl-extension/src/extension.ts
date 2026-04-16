@@ -87,10 +87,12 @@ type StreamingBuildResult = {
 const LANGUAGE_ID = "bl";
 const DIAGNOSTIC_SOURCE = "ballerina-language-tools";
 const BUILD_DEBOUNCE_MS = 50;
+const TYPECHECK_DEBOUNCE_MS = 150;
 let buildRunSequence = 0;
 let buildServerClient: BuildServerClient | undefined;
 let buildServerClientKey: string | undefined;
 let completionHintStore: CompletionHintStore | undefined;
+let hasCompletedInitialBuild = false;
 
 export function activate(context: vscode.ExtensionContext): void {
   const output = getOutputChannel();
@@ -117,6 +119,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const debouncedBuilder = createDebouncedBuildScheduler(diagnostics, inlayHints);
   context.subscriptions.push({ dispose: () => debouncedBuilder.dispose() });
+
+  const debouncedTypecheck = createDebouncedTypecheckScheduler();
+  context.subscriptions.push({ dispose: () => debouncedTypecheck.dispose() });
 
   const buildActiveDisposable = vscode.commands.registerCommand("bl.buildActiveProject", async () => {
     const doc = vscode.window.activeTextEditor?.document;
@@ -178,7 +183,7 @@ export function activate(context: vscode.ExtensionContext): void {
   });
 
   const changeDisposable = vscode.workspace.onDidChangeTextDocument(async (event: vscode.TextDocumentChangeEvent) => {
-    if (!isBlOrBlprojDocument(event.document)) {
+    if (!isBlDocument(event.document)) {
       return;
     }
 
@@ -186,7 +191,11 @@ export function activate(context: vscode.ExtensionContext): void {
       return;
     }
 
-    await debouncedBuilder.schedule(event.document, false);
+    if (!hasCompletedInitialBuild) {
+      return;
+    }
+
+    await debouncedTypecheck.schedule(event.document);
   });
 
   context.subscriptions.push(buildActiveDisposable, showOrderDisposable, saveDisposable, changeDisposable);
@@ -304,6 +313,7 @@ async function runBuildFromProjectPath(
   applyDiagnostics(issues, diagnostics, workspaceFolder.uri.fsPath);
 
   if (buildOutput.exitCode === 0) {
+    hasCompletedInitialBuild = true;
     if (notifyOnSuccess) {
       void vscode.window.showInformationMessage("BL build succeeded.");
     }
@@ -429,6 +439,99 @@ async function saveDirtyDocumentsForProject(projectPath: string, suppressedSaveU
     if (!saved) {
       suppressedSaveUris.delete(uri);
     }
+  }
+}
+
+function createDebouncedTypecheckScheduler(): {
+  schedule: (doc: vscode.TextDocument) => void;
+  dispose: () => void;
+} {
+  const timers = new Map<string, number>();
+  const generations = new Map<string, number>();
+  const timerApi = globalThis as unknown as {
+    setTimeout: (handler: () => void, timeoutMs: number) => number;
+    clearTimeout: (timerId: number) => void;
+  };
+
+  return {
+    schedule: (doc: vscode.TextDocument): void => {
+      const filePath = doc.uri.fsPath;
+      const key = normalizePathKey(filePath);
+      const gen = (generations.get(key) ?? 0) + 1;
+      generations.set(key, gen);
+
+      const existing = timers.get(key);
+      if (existing !== undefined) {
+        timerApi.clearTimeout(existing);
+      }
+
+      const timer = timerApi.setTimeout(() => {
+        timers.delete(key);
+        if (generations.get(key) !== gen) {
+          return;
+        }
+        void runIncrementalTypecheck(doc, gen, generations);
+      }, TYPECHECK_DEBOUNCE_MS);
+
+      timers.set(key, timer);
+    },
+    dispose: (): void => {
+      for (const timer of timers.values()) {
+        timerApi.clearTimeout(timer);
+      }
+      timers.clear();
+      generations.clear();
+    }
+  };
+}
+
+async function runIncrementalTypecheck(
+  doc: vscode.TextDocument,
+  generation: number,
+  generations: Map<string, number>
+): Promise<void> {
+  const filePath = doc.uri.fsPath;
+  const key = normalizePathKey(filePath);
+
+  const projectPath = await resolveProjectForDocument(filePath);
+  if (!projectPath) {
+    return;
+  }
+
+  if (generations.get(key) !== generation) {
+    return;
+  }
+
+  const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(projectPath));
+  if (!workspaceFolder) {
+    return;
+  }
+
+  const output = getOutputChannel();
+  const serverClient = getBuildServerClient(workspaceFolder.uri.fsPath, output);
+
+  try {
+    const event = await serverClient.typecheckSingleFile(
+      projectPath,
+      filePath,
+      doc.getText()
+    );
+
+    if (generations.get(key) !== generation) {
+      return;
+    }
+
+    if (event) {
+      completionHintStore?.updateForFile(
+        projectPath,
+        event.file ?? "",
+        event.dotAccessHints ?? [],
+        event.scopeAccessHints ?? [],
+        event.identifierHints ?? []
+      );
+    }
+  } catch {
+    // Silently ignore incremental typecheck failures; the full build will catch errors.
   }
 }
 
@@ -1017,6 +1120,21 @@ class BuildServerClient {
     return promise;
   }
 
+  typecheckSingleFile(
+    projectFilePath: string,
+    filePath: string,
+    fileContent: string
+  ): Promise<FileBuiltEventDto | undefined> {
+    const work = async (): Promise<FileBuiltEventDto | undefined> => {
+      await this.ensureStarted();
+      return this.sendTypecheckRequest(projectFilePath, filePath, fileContent);
+    };
+
+    const promise = this.requestChain.then(work, work);
+    this.requestChain = promise.then(() => undefined, () => undefined);
+    return promise;
+  }
+
   dispose(): void {
     this.stdoutReader?.close();
     this.stdoutReader = undefined;
@@ -1151,6 +1269,72 @@ class BuildServerClient {
       child.once("error", onError);
 
       child.stdin.write(`${projectFilePath}\n`, (err?: Error | null) => {
+        if (err) {
+          cleanup();
+          reject(err);
+        }
+      });
+    });
+  }
+
+  private async sendTypecheckRequest(
+    projectFilePath: string,
+    filePath: string,
+    fileContent: string
+  ): Promise<FileBuiltEventDto | undefined> {
+    const child = this.child;
+    const stdoutReader = this.stdoutReader;
+
+    if (!child || !stdoutReader || child.killed) {
+      throw new Error("Build server is not running.");
+    }
+
+    const base64Content = Buffer.from(fileContent, "utf-8").toString("base64");
+
+    return new Promise<FileBuiltEventDto | undefined>((resolve, reject) => {
+      const onLine = (line: string): void => {
+        const trimmed = line.trim();
+        if (trimmed.length === 0) {
+          return;
+        }
+
+        cleanup();
+
+        try {
+          const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+          const eventType = parsed.eventType as string | undefined;
+          if (eventType === "file-built") {
+            resolve(parsed as unknown as FileBuiltEventDto);
+          } else {
+            resolve(undefined);
+          }
+        } catch {
+          resolve(undefined);
+        }
+      };
+
+      const onClose = (): void => {
+        cleanup();
+        const stderrTail = this.stderrLines.join("").trim();
+        reject(new Error(stderrTail.length > 0 ? stderrTail : "Build server exited before responding."));
+      };
+
+      const onError = (err: unknown): void => {
+        cleanup();
+        reject(err instanceof Error ? err : new Error(String(err)));
+      };
+
+      const cleanup = (): void => {
+        stdoutReader.off("line", onLine);
+        child.off("close", onClose);
+        child.off("error", onError);
+      };
+
+      stdoutReader.on("line", onLine);
+      child.once("close", onClose);
+      child.once("error", onError);
+
+      child.stdin.write(`TYPECHECK\t${projectFilePath}\t${filePath}\t${base64Content}\n`, (err?: Error | null) => {
         if (err) {
           cleanup();
           reject(err);

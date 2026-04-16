@@ -255,4 +255,8 @@ module Caching =
 
                 NonEmptyList.One exprWithType, [ file.Checksum ], ctx', st'
               })
-          |> sum.Map(fun (exprs, _, ctx, st) -> exprs, ctx, st) }
+          |> sum.Map(fun (exprs, _, ctx, st) -> exprs, ctx, st)
+      TryGetCachedState =
+        fun fileName ->
+          cache.TryGet fileName
+          |> Option.map (fun (_, _, _, _, ctx, st) -> ctx, st) }
