@@ -10,6 +10,10 @@ module APIRegistration =
   open Ballerina.Collections.Sum
   open Update
   open OpenAPI
+  open Filter
+  open Ballerina.Errors
+  open Ballerina.LocalizedErrors
+  open Ballerina.DSL.Next.Types
 
   type RouteGroupBuilder with
     member builder.RegisterAPIEndpoints<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
@@ -22,6 +26,7 @@ module APIRegistration =
           'tenantId,
           'schemaName
          >)
+      (getFilterFunction: 'tenantId -> 'schemaName -> bool -> Sum<EntityFilterFunction, Errors<Location>>)
       =
       sum {
         let! apiContext =
@@ -69,4 +74,10 @@ module APIRegistration =
           openApi<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>
             builder
             apiContext
+
+        do
+          filter<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>
+            builder
+            apiContext
+            getFilterFunction
       }

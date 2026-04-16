@@ -23,6 +23,12 @@ module CUD =
     let DBStripPropertyId, StripPropertyOperation, stripProps =
       DBStripPropertiesExtension listLens.Set valueLens
 
+    let DBCalculatePropsId, CalculatePropsOperation =
+      DBCalculatePropsPublicExtension db_ops calculateProps valueLens
+
+    let DBStripPropsId, StripPropsOperation =
+      DBStripPropsPublicExtension db_ops stripProps valueLens
+
     let DBCreateId, CreateOperation =
       DBCreateExtension db_ops calculateProps listLens.Set valueLens
 
@@ -67,6 +73,8 @@ module CUD =
           (DBGetManyId, GetManyOperation)
           (DBStripPropertyId, StripPropertyOperation)
           (DBCalculatePropertyId, CalculatePropertyOperation)
+          (DBCalculatePropsId, CalculatePropsOperation)
+          (DBStripPropsId, StripPropsOperation)
           (DBCreateId, CreateOperation)
           (DBUpdateId, UpdateOperation)
           (DBUpsertId, UpsertOperation)

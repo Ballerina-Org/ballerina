@@ -1504,6 +1504,22 @@ module Model =
     override self.ToString() =
       $"<SyntaxError: {self.ErrorMessage}>"
 
+  and ExprErrorDanglingRecordDes<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Expr: Expr<'T, 'Id, 'valueExt>
+      Field: Option<'Id> }
+
+    override self.ToString() =
+      match self.Field with
+      | Some f -> $"{self.Expr}.{f}"
+      | None -> $"{self.Expr}.<incomplete>"
+
+  and ExprErrorDanglingScopedIdentifier<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { PrefixParts: List<string> }
+
+    override self.ToString() =
+      let joined = System.String.Join("::", self.PrefixParts)
+      $"{joined}::<incomplete>"
+
   and ExprRec<'T, 'Id, 'valueExt when 'Id: comparison> =
     | Primitive of PrimitiveValue
     | Lookup of ExprLookup<'T, 'Id, 'valueExt>
@@ -1531,6 +1547,8 @@ module Model =
     | SumDes of ExprSumDes<'T, 'Id, 'valueExt>
     | Query of ExprQuery<'T, 'Id, 'valueExt>
     | RecoveredSyntaxError of ExprRecoveredSyntaxError<'T, 'Id, 'valueExt>
+    | ErrorDanglingRecordDes of ExprErrorDanglingRecordDes<'T, 'Id, 'valueExt>
+    | ErrorDanglingScopedIdentifier of ExprErrorDanglingScopedIdentifier<'T, 'Id, 'valueExt>
 
     override self.ToString() : string =
       match self with
@@ -1640,6 +1658,8 @@ module Model =
 
       | Query q -> q.ToString()
       | RecoveredSyntaxError err -> err.ToString()
+      | ErrorDanglingRecordDes err -> err.ToString()
+      | ErrorDanglingScopedIdentifier err -> err.ToString()
 
 
   and Expr<'T, 'Id, 'valueExt when 'Id: comparison> =
@@ -2033,6 +2053,28 @@ module Model =
     override self.ToString() =
       $"<SyntaxError: {self.ErrorMessage}>"
 
+  and [<RequireQualifiedAccess>] TypeCheckedExprErrorDanglingRecordDes<'valueExt> =
+    { Expr: TypeCheckedExpr<'valueExt>
+      Field: Option<ResolvedIdentifier> }
+
+    override self.ToString() =
+      match self.Field with
+      | Some f -> $"{self.Expr}.{f}"
+      | None -> $"{self.Expr}.<incomplete>"
+
+  and [<RequireQualifiedAccess>] TypeCheckedExprErrorDanglingScopedIdentifier =
+    { PrefixParts: List<string> }
+
+    override self.ToString() =
+      let joined = System.String.Join("::", self.PrefixParts)
+      $"{joined}::<incomplete>"
+
+  and [<RequireQualifiedAccess>] TypeCheckedExprErrorRecordDesButInvalidField<'valueExt> =
+    { Expr: TypeCheckedExpr<'valueExt>
+      Field: ResolvedIdentifier }
+
+    override self.ToString() = $"{self.Expr}.{self.Field}"
+
   and [<RequireQualifiedAccess>] TypeCheckedExprRec<'valueExt> =
     | Primitive of PrimitiveValue
     | Lookup of TypeCheckedExprLookup<'valueExt>
@@ -2060,6 +2102,9 @@ module Model =
     | SumDes of TypeCheckedExprSumDes<'valueExt>
     | Query of TypeCheckedExprQuery<'valueExt>
     | RecoveredSyntaxError of TypeCheckedExprRecoveredSyntaxError
+    | ErrorDanglingRecordDes of TypeCheckedExprErrorDanglingRecordDes<'valueExt>
+    | ErrorDanglingScopedIdentifier of TypeCheckedExprErrorDanglingScopedIdentifier
+    | ErrorRecordDesButInvalidField of TypeCheckedExprErrorRecordDesButInvalidField<'valueExt>
 
     override self.ToString() =
       match self with
@@ -2144,6 +2189,9 @@ module Model =
         $"(if {cond} then {thenExpr} else {elseExpr})"
       | Query q -> q.ToString()
       | RecoveredSyntaxError err -> err.ToString()
+      | ErrorDanglingRecordDes err -> err.ToString()
+      | ErrorDanglingScopedIdentifier err -> err.ToString()
+      | ErrorRecordDesButInvalidField err -> err.ToString()
 
 
   and [<RequireQualifiedAccess>] TypeCheckedExpr<'valueExt> =

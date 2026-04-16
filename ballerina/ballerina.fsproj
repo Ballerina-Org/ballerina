@@ -16,7 +16,11 @@
     <ProjectReference Include="../backend/libraries/ballerina-language-server/ballerina-language-server.fsproj" />
     <ProjectReference Include="../backend/libraries/ballerina-lang/Next/ballerina-lang.fsproj" />
     <ProjectReference Include="../backend/libraries/ballerina-lang/Next/Models/ballerina-lang-models.fsproj" />
+    <ProjectReference Include="../backend/libraries/ballerina-lang/Next/Syntax/ballerina-lang-parser.fsproj" />
+    <ProjectReference Include="../backend/libraries/ballerina-lang/Next/TypeChecker/ballerina-lang-typecheck.fsproj" />
     <ProjectReference Include="../backend/libraries/ballerina-lang/Next/Stdlib/ballerina-lang-stdlib.fsproj" />
+    <ProjectReference Include="../backend/libraries/ballerina-lang/Next/Eval/ballerina-lang-eval.fsproj" />
+    <ProjectReference Include="../backend/libraries/ballerina-lang-build/ballerina-lang-build.fsproj" />
     <ProjectReference Include="../backend/libraries/ballerina-stdlib/ballerina-stdlib.fsproj" />
     <ProjectReference Include="../backend/libraries/ballerina-cat/ballerina-cat.fsproj" />
     <ProjectReference Include="../backend/libraries/ballerina-memorydb/ballerina-memorydb.fsproj" />

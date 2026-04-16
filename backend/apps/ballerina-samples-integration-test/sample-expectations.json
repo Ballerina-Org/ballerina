@@ -149,9 +149,14 @@
       "valueRegexes": [],
       "typeRegexes": [],
       "errorRegexes": [
-        "Expected field name or tuple index after '.'",
         "while typechecking"
       ]
+    },
+    "23-calculate-strip-props-integration": {
+      "mode": "run",
+      "valueRegexes": ["SchemaAsValue"],
+      "typeRegexes": ["Shop"],
+      "errorRegexes": []
     }
   }
 }

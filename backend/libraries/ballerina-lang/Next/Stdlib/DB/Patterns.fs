@@ -122,6 +122,24 @@ module Patterns =
         Errors.Singleton () (fun () -> "Expected GetMany operation")
         |> sum.Throw
 
+    static member AsCalculateProps
+      (op: DBValues<'runtimeContext, 'db, 'ext>)
+      : Sum<Option<EntityRef<'db, 'ext>>, Errors<Unit>> =
+      match op with
+      | DBValues.CalculateProps v -> v.EntityRef |> sum.Return
+      | _ ->
+        Errors.Singleton () (fun () -> "Expected CalculateProps operation")
+        |> sum.Throw
+
+    static member AsStripProps
+      (op: DBValues<'runtimeContext, 'db, 'ext>)
+      : Sum<Option<EntityRef<'db, 'ext>>, Errors<Unit>> =
+      match op with
+      | DBValues.StripProps v -> v.EntityRef |> sum.Return
+      | _ ->
+        Errors.Singleton () (fun () -> "Expected StripProps operation")
+        |> sum.Throw
+
     static member AsEntityRef
       (op: DBValues<'runtimeContext, 'db, 'ext>)
       : Sum<EntityRef<'db, 'ext>, Errors<Unit>> =

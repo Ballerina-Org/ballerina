@@ -40,6 +40,8 @@ module Expr =
   open Ballerina.DSL.Next.Types.TypeChecker.TypeLet
   open Ballerina.DSL.Next.Types.TypeChecker.TypeApply
   open Ballerina.DSL.Next.Types.TypeChecker.Query
+  open Ballerina.DSL.Next.Types.TypeChecker.ErrorDanglingScopedIdentifier
+  open Ballerina.DSL.Next.Types.TypeChecker.ErrorDanglingRecordDes
   open Ballerina.Fun
   open Ballerina.StdLib.OrderPreservingMap
   open Ballerina.Cat.Collections.OrderedMap
@@ -236,6 +238,20 @@ module Expr =
                 return!
                   Errors.Singleton err.ErrorLocation (fun () -> err.ErrorMessage)
                   |> state.Throw
+
+              | ExprRec.ErrorDanglingRecordDes({ Expr = record_expr; Field = _field }) ->
+                return!
+                  Expr.TypeCheckErrorDanglingRecordDes
+                    typeCheckExpr
+                    context_t
+                    record_expr
+                    loc0
+
+              | ExprRec.ErrorDanglingScopedIdentifier({ PrefixParts = prefixParts }) ->
+                return!
+                  Expr.TypeCheckErrorDanglingScopedIdentifier
+                    prefixParts
+                    loc0
             }
 
           let! expr =

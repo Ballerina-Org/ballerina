@@ -144,6 +144,12 @@ module Conversion =
       }
     | TypeCheckedExprRec.RecoveredSyntaxError err ->
       Right(conversionError err.ErrorLocation $"Cannot convert RecoveredSyntaxError to RunnableExpr: {err.ErrorMessage} (context: {err.RecoveryContext})")
+    | TypeCheckedExprRec.ErrorDanglingRecordDes _ ->
+      Right(conversionError _loc $"Cannot convert ErrorDanglingRecordDes to RunnableExpr")
+    | TypeCheckedExprRec.ErrorDanglingScopedIdentifier _ ->
+      Right(conversionError _loc $"Cannot convert ErrorDanglingScopedIdentifier to RunnableExpr")
+    | TypeCheckedExprRec.ErrorRecordDesButInvalidField _ ->
+      Right(conversionError _loc $"Cannot convert ErrorRecordDesButInvalidField to RunnableExpr")
 
   and private convertQueryCaseHandler<'valueExt when 'valueExt: comparison>
     (h: TypeCheckedQueryCaseHandler<'valueExt>)

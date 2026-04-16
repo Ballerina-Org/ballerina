@@ -369,3 +369,86 @@ module StripProps =
         _entity.Properties
 
     memoryDBStripPropertyId, StripPropertyOperation, stripProps
+
+
+  let DBStripPropsPublicExtension<'runtimeContext, 'db, 'ext
+    when 'ext: comparison>
+    (db_ops: DBTypeClass<'runtimeContext, 'db, 'ext>)
+    (stripProps:
+      DBTypeClass<'runtimeContext, 'db, 'ext>
+        -> Value<TypeValue<'ext>, 'ext>
+        -> EntityRef<'db, 'ext>
+        -> Reader<
+          Value<TypeValue<'ext>, 'ext>,
+          ExprEvalContext<'runtimeContext, 'ext>,
+          Errors<Location>
+         >)
+    (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
+    =
+    let memoryDBStripPropsId =
+      Identifier.FullyQualified([ "DB" ], "stripProps")
+      |> TypeCheckScope.Empty.Resolve
+
+    let memoryDBStripPropsType =
+      TypeValue.CreateLambda(
+        TypeParameter.Create("schema", Kind.Schema),
+        TypeExpr.Lambda(
+          TypeParameter.Create("entity", Kind.Star),
+          TypeExpr.Lambda(
+            TypeParameter.Create("entity_with_props", Kind.Star),
+            TypeExpr.Lambda(
+              TypeParameter.Create("entityId", Kind.Star),
+              TypeExpr.Arrow(
+                createSchemaEntityTypeApplication
+                  "schema"
+                  "entity"
+                  "entity_with_props"
+                  "entityId",
+                TypeExpr.Arrow(
+                  TypeExpr.Lookup(
+                    "entity_with_props" |> Identifier.LocalScope
+                  ),
+                  TypeExpr.Lookup("entity" |> Identifier.LocalScope)
+                )
+              )
+            )
+          )
+        )
+      )
+
+    let memoryDBStripPropsKind = standardSchemaOperationKind
+
+    let stripPropsOperation: OperationExtension<'runtimeContext, _, _> =
+      { PublicIdentifiers =
+          Some
+          <| (memoryDBStripPropsType,
+              memoryDBStripPropsKind,
+              DBValues.StripProps {| EntityRef = None |})
+        OperationsLens =
+          valueLens
+          |> PartialLens.BindGet (function
+            | DBValues.StripProps v -> Some(DBValues.StripProps v)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              let! op =
+                op
+                |> DBValues.AsStripProps
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              match op with
+              | None ->
+                let! v = extractEntityRefFromValue loc0 v valueLens
+
+                return
+                  (DBValues.StripProps({| EntityRef = Some v |})
+                   |> valueLens.Set,
+                   Some memoryDBStripPropsId)
+                  |> Ext
+              | Some entity_ref ->
+                return! stripProps db_ops v entity_ref
+            } }
+
+    memoryDBStripPropsId, stripPropsOperation
