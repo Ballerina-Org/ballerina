@@ -64,22 +64,19 @@ type TenantDescriptor<'tenantId, 'schemaName> =
   { TenantId: 'tenantId
     SchemaName: 'schemaName }
 
-type APILanguageContext<'runtimeContext, 'db, 'customExtension
-  when 'customExtension: comparison and 'db: comparison> =
-  LanguageContext<
-    'runtimeContext,
-    ValueExt<'runtimeContext, 'db, 'customExtension>,
-    ValueExtDTO,
-    DeltaExt<'runtimeContext, 'db, 'customExtension>,
-    DeltaExtDTO
-   >
-
-type APIRegistractionFactory<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
+type APIRegistrationFactory<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
   when 'customExtension: comparison and 'db: comparison> =
   { LanguageContextFactory:
-      unit
+      'tenantId
+        -> 'schemaName
         -> Sum<
-          APILanguageContext<'runtimeContext, 'db, 'customExtension>,
+          LanguageContext<
+            'runtimeContext,
+            ValueExt<'runtimeContext, 'db, 'customExtension>,
+            ValueExtDTO,
+            DeltaExt<'runtimeContext, 'db, 'customExtension>,
+            DeltaExtDTO
+           >,
           Errors<Location>
          >
     DbDescriptorFetcher:
@@ -98,56 +95,3 @@ type APIRegistractionFactory<'runtimeContext, 'db, 'customExtension, 'tenantId, 
             ValueExt<'runtimeContext, 'db, 'customExtension>
            >
          > }
-
-type APIContext<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
-  when 'customExtension: comparison and 'db: comparison> =
-  { LanguageContext: APILanguageContext<'runtimeContext, 'db, 'customExtension>
-    DbDescriptorFetcher:
-      'tenantId
-        -> 'schemaName
-        -> bool
-        -> Sum<
-          DbDescriptor<'runtimeContext, 'db, 'customExtension>,
-          Errors<Location>
-         >
-    PermissionHookInjector:
-      HttpContext
-        -> Updater<
-          ExprEvalContext<
-            'runtimeContext,
-            ValueExt<'runtimeContext, 'db, 'customExtension>
-           >
-         > }
-
-  static member Create
-    (languageContextFactory:
-      unit
-        -> Sum<
-          APILanguageContext<'runtimeContext, 'db, 'customExtension>,
-          Errors<Location>
-         >)
-    (dbDescriptorFectcher:
-      'tenantId
-        -> 'schemaName
-        -> bool
-        -> Sum<
-          DbDescriptor<'runtimeContext, 'db, 'customExtension>,
-          Errors<Location>
-         >)
-    (permissionHookInjector:
-      HttpContext
-        -> Updater<
-          ExprEvalContext<
-            'runtimeContext,
-            ValueExt<'runtimeContext, 'db, 'customExtension>
-           >
-         >)
-    =
-    sum {
-      let! languageContext = languageContextFactory ()
-
-      return
-        { LanguageContext = languageContext
-          DbDescriptorFetcher = dbDescriptorFectcher
-          PermissionHookInjector = permissionHookInjector }
-    }

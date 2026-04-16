@@ -24,7 +24,7 @@ module Filter =
   let filter<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
     when 'customExtension: comparison and 'db: comparison>
     (app: IEndpointRouteBuilder)
-    (_context: APIContext<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
+    (_context: APIRegistrationFactory<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
     (getFilterFunction: 'tenantId -> 'schemaName -> bool -> Sum<EntityFilterFunction, Errors<Location>>)
     =
 

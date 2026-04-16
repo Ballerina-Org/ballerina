@@ -36,7 +36,7 @@ module Update =
     when 'customExtension: comparison and 'db: comparison>
     (app: IEndpointRouteBuilder)
     (context:
-      APIContext<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
+      APIRegistrationFactory<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
     =
     app.MapPost(
       "/{tenantId}/{schemaName}/{entityName}/update",
@@ -134,7 +134,7 @@ module Update =
 
               let! delta =
                 deltaFromDTO delta
-                |> Reader.Run context.LanguageContext.SerializationContext
+                |> Reader.Run languageContext.SerializationContext
                 |> sum.MapError(
                   Errors.MapContext(replaceWith Location.Unknown)
                 )

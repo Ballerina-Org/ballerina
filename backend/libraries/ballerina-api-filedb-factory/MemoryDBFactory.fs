@@ -146,23 +146,21 @@ module MemoryDBAPIFactory =
            >,
         factory,
         schemaStream
-      ) : Sum<unit, Errors<Location>> =
-      sum {
-        this
-          .MapPublish(
-            schemaFileConfig,
-            dbFileConfig,
-            addPermissionHookScope,
-            addBackgroundHookScope,
-            schemaStream
-          )
-          .MapGetSchemaVersions(schemaFileConfig)
-        |> ignore
-
-        do! routeGroupBuilder.RegisterAPIEndpoints factory (fun _ _ _ ->
-          sum.Throw(
-            Errors.Singleton Location.Unknown (fun _ ->
-              "Filtering is not supported for in-memory database backends.")
-          )
+      ) =
+      this
+        .MapPublish(
+          schemaFileConfig,
+          dbFileConfig,
+          addPermissionHookScope,
+          addBackgroundHookScope,
+          schemaStream
         )
-      }
+        .MapGetSchemaVersions(schemaFileConfig)
+      |> ignore
+
+      routeGroupBuilder.RegisterAPIEndpoints factory (fun _ _ _ ->
+        sum.Throw(
+          Errors.Singleton Location.Unknown (fun _ ->
+            "Filtering is not supported for in-memory database backends.")
+        )
+      )

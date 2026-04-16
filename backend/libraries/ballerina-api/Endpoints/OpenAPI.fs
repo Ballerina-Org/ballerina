@@ -17,7 +17,7 @@ module OpenAPI =
   let openApi<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
     when 'customExtension: comparison and 'db: comparison>
     (app: IEndpointRouteBuilder)
-    (context: APIContext<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
+    (context: APIRegistrationFactory<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
     =
 
     app.MapGet(

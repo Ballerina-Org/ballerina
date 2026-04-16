@@ -84,7 +84,7 @@ module Factory =
 
     { DbDescriptorFetcher = descriptorFetcher
       LanguageContextFactory =
-        fun () ->
+        fun _ _ ->
           contextFactory dbFileConfig
           |> (fun (languageContext, _) -> languageContext)
           |> sum.Return
@@ -299,7 +299,7 @@ module Factory =
 
           app.UseHttpsRedirection() |> ignore
 
-          do!
+          do
             app.AddFileDbCRUDApi(
               schemaFileConfig,
               dbFileConfig,
