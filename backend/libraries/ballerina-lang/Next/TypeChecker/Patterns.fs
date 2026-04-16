@@ -161,7 +161,9 @@ module Patterns =
         InlayHints = Map.empty
         DotAccessHints = Map.empty
         ScopeAccessHints = Map.empty
-        ScopePrefixHints = Map.empty }
+        ScopePrefixHints = Map.empty
+        VarsVersion = 0
+        MemoInstantiateVar = Map.empty }
 
     static member Create
       (bindings: TypeBindings<'valueExt>, symbols: TypeExprEvalSymbols)
@@ -320,7 +322,10 @@ module Patterns =
       {| Vars =
           fun
               (u: Updater<UnificationState<'valueExt>>)
-              (c: TypeCheckState<'valueExt>) -> { c with Vars = c.Vars |> u }
+              (c: TypeCheckState<'valueExt>) ->
+            { c with
+                Vars = c.Vars |> u
+                VarsVersion = c.VarsVersion + 1 }
          Bindings =
           fun u (c: TypeCheckState<'valueExt>) ->
             { c with Bindings = c.Bindings |> u }
@@ -380,7 +385,11 @@ module Patterns =
                 { c with
                     Symbols =
                       { c.Symbols with
-                          UnionCases = c.Symbols.UnionCases |> u } } |} |}
+                          UnionCases = c.Symbols.UnionCases |> u } } |}
+         MemoInstantiateVar =
+          fun u (c: TypeCheckState<'valueExt>) ->
+            { c with
+                MemoInstantiateVar = c.MemoInstantiateVar |> u } |}
 
     static member unbindType x =
       state {
@@ -624,6 +633,72 @@ module Patterns =
           fun f (ctx: TypeInstantiateContext<'valueExt>) ->
             { ctx with
                 PermissionHooksExtraScope = f ctx.PermissionHooksExtraScope } |}
+
+  type TypeValue<'valueExt> with
+    /// Returns true when a TypeValue has no free type variables, lookups, or
+    /// unevaluated applications — i.e. instantiation is guaranteed to be the
+    /// identity function. Schemas are checked entity-by-entity.
+    static member IsConcrete<'ve when 've: comparison>
+      (tv: TypeValue<'ve>)
+      : bool =
+      match tv with
+      | TypeValue.Var _ | TypeValue.Lookup _ | TypeValue.Application _ -> false
+      | TypeValue.Primitive _ | TypeValue.QueryTypeFunction -> true
+      | TypeValue.Arrow { value = l, r } ->
+        TypeValue.IsConcrete l && TypeValue.IsConcrete r
+      | TypeValue.Record { value = fields } ->
+        fields |> OrderedMap.toSeq |> Seq.forall (fun (_, (v, _)) -> TypeValue.IsConcrete v)
+      | TypeValue.Tuple { value = es } ->
+        es |> List.forall TypeValue.IsConcrete
+      | TypeValue.Union { value = es } ->
+        es |> OrderedMap.toSeq |> Seq.forall (fun (_, v) -> TypeValue.IsConcrete v)
+      | TypeValue.Sum { value = es } ->
+        es |> List.forall TypeValue.IsConcrete
+      | TypeValue.Set { value = v } -> TypeValue.IsConcrete v
+      | TypeValue.Imported { Arguments = args } ->
+        args |> List.forall TypeValue.IsConcrete
+      | TypeValue.Lambda _ -> false
+      | TypeValue.Schema s ->
+        s.Entities |> OrderedMap.toSeq |> Seq.forall (fun (_, e) ->
+          TypeValue.IsConcrete e.TypeOriginal
+          && TypeValue.IsConcrete e.TypeWithProps
+          && TypeValue.IsConcrete e.Id)
+      | TypeValue.Entities s | TypeValue.Relations s ->
+        s.Entities |> OrderedMap.toSeq |> Seq.forall (fun (_, e) ->
+          TypeValue.IsConcrete e.TypeOriginal
+          && TypeValue.IsConcrete e.TypeWithProps
+          && TypeValue.IsConcrete e.Id)
+      | TypeValue.Entity(s, e, e', eid) ->
+        TypeValue.IsConcrete(TypeValue.Schema s)
+        && TypeValue.IsConcrete e
+        && TypeValue.IsConcrete e'
+        && TypeValue.IsConcrete eid
+      | TypeValue.Relation(s, _, _, f, f', fid, t, t', tid) ->
+        TypeValue.IsConcrete(TypeValue.Schema s)
+        && TypeValue.IsConcrete f && TypeValue.IsConcrete f'
+        && TypeValue.IsConcrete fid
+        && TypeValue.IsConcrete t && TypeValue.IsConcrete t'
+        && TypeValue.IsConcrete tid
+      | TypeValue.ForeignKeyRelation(s, _, f, f', fid, t, t', tid) ->
+        TypeValue.IsConcrete(TypeValue.Schema s)
+        && TypeValue.IsConcrete f && TypeValue.IsConcrete f'
+        && TypeValue.IsConcrete fid
+        && TypeValue.IsConcrete t && TypeValue.IsConcrete t'
+        && TypeValue.IsConcrete tid
+      | TypeValue.RelationLookupOption(s, sid, t', tid)
+      | TypeValue.RelationLookupOne(s, sid, t', tid)
+      | TypeValue.RelationLookupMany(s, sid, t', tid) ->
+        TypeValue.IsConcrete(TypeValue.Schema s)
+        && TypeValue.IsConcrete sid
+        && TypeValue.IsConcrete t'
+        && TypeValue.IsConcrete tid
+      | TypeValue.QueryRow row ->
+        match row with
+        | TypeQueryRow.PrimaryKey t | TypeQueryRow.Json t -> TypeValue.IsConcrete t
+        | TypeQueryRow.PrimitiveType _ -> true
+        | TypeQueryRow.Tuple _ -> true
+        | TypeQueryRow.Record _ -> true
+        | TypeQueryRow.Array _ -> true
 
   type TypeCheckState<'valueExt when 'valueExt: comparison> with
     // static member ToInstantiationContext
