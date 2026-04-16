@@ -254,14 +254,20 @@ module APIUtils =
     (schemaName: 'schemaName)
     (draft: bool)
     (context:
-      APIContext<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
+      APIRegistrationFactory<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
     : Sum<
         DBIO<
           'runtimeContext,
           'db,
           ValueExt<'runtimeContext, 'db, 'customExtension>
          > *
-        APILanguageContext<'runtimeContext, 'db, 'customExtension> *
+        LanguageContext<
+          'runtimeContext,
+          ValueExt<'runtimeContext, 'db, 'customExtension>,
+          ValueExtDTO,
+          DeltaExt<'runtimeContext, 'db, 'customExtension>,
+          DeltaExtDTO
+         > *
         ExprEvalContext<
           'runtimeContext,
           ValueExt<'runtimeContext, 'db, 'customExtension>
@@ -271,13 +277,17 @@ module APIUtils =
         APIError<'runtimeContext, 'db, 'customExtension, Location>
        >
     =
-    context.DbDescriptorFetcher tenantId schemaName draft
-    |> sum.Map(fun dbDescriptor ->
-      dbDescriptor.DbExtension,
-      context.LanguageContext,
-      dbDescriptor.EvalContext,
-      dbDescriptor.TypeCheckContext,
-      dbDescriptor.TypeCheckState)
+    sum {
+      let! dbDescriptor = context.DbDescriptorFetcher tenantId schemaName draft
+      let! languageContext = context.LanguageContextFactory tenantId schemaName
+
+      return
+        dbDescriptor.DbExtension,
+        languageContext,
+        dbDescriptor.EvalContext,
+        dbDescriptor.TypeCheckContext,
+        dbDescriptor.TypeCheckState
+    }
     |> sum.MapError
       APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 

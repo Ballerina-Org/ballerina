@@ -25,7 +25,7 @@ module Delete =
     when 'customExtension: comparison and 'db: comparison>
     (app: IEndpointRouteBuilder)
     (context:
-      APIContext<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
+      APIRegistrationFactory<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
     =
 
     app.MapPost(
