@@ -100,8 +100,73 @@ let buildProjectStreamingForPath
     | Right errors -> Right errors
   | Right errors -> Right errors
 
+let typecheckSingleFileForPath
+  (projectPath: string)
+  (filePath: string)
+  (fileContent: string)
+  : Sum<FileBuiltEventDTO, Errors<Location>> =
+  match BuildServer.projectFromPath projectPath with
+  | Left project ->
+    match
+      ProjectBuildConfiguration.TypeCheckSingleFile
+        typeCheckingConfig
+        buildCache
+        project
+        filePath
+        fileContent
+    with
+    | Left(ctx, st) ->
+      let inlayHints =
+        BuildServer.inlayHintDtosForFile st filePath
+
+      let identifierHints =
+        BuildServer.identifierHintDtosFromContext ctx
+
+      let dotAccessHints =
+        BuildServer.dotAccessHintDtosForFile st filePath
+
+      let scopeAccessHints =
+        BuildServer.scopeAccessHintDtosForFile st filePath
+
+      let event: FileBuiltEventDTO =
+        { EventType = "file-built"
+          File = filePath
+          Success = true
+          Errors = [||]
+          InlayHints = inlayHints
+          IdentifierHints = identifierHints
+          DotAccessHints = dotAccessHints
+          ScopeAccessHints = scopeAccessHints }
+
+      Left event
+    | Right errors ->
+      let errorDtos =
+        (Errors<_>.FilterHighestPriorityOnly errors).Errors()
+        |> NonEmptyList.ToList
+        |> List.map (fun e ->
+          { Message = e.Message
+            File = e.Context.File
+            Line = e.Context.Line
+            Column = e.Context.Column })
+        |> List.toArray
+
+      let event: FileBuiltEventDTO =
+        { EventType = "file-built"
+          File = filePath
+          Success = false
+          Errors = errorDtos
+          InlayHints = [||]
+          IdentifierHints = [||]
+          DotAccessHints = [||]
+          ScopeAccessHints = [||] }
+
+      Left event
+  | Right errors -> Right errors
+
 let runServerLoopStreaming () =
-  BuildServer.runServerLoopStreaming buildProjectStreamingForPath
+  BuildServer.runServerLoopStreaming
+    buildProjectStreamingForPath
+    typecheckSingleFileForPath
 
 [<EntryPoint>]
 let main (args: string array) =

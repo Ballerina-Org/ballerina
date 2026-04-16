@@ -86,6 +86,12 @@ module ProjectModel =
             TypeCheckContext<'valueExt> *
             TypeCheckState<'valueExt>,
             Errors<Location>
+           >
+      TryGetCachedState:
+        FileName
+          -> Option<
+            TypeCheckContext<'valueExt> *
+            TypeCheckState<'valueExt>
            > }
 
   type InlayHint<'valueExt when 'valueExt: comparison> with
@@ -376,6 +382,89 @@ module ProjectModel =
 
         parserResult
       }
+
+    static member TypeCheckSingleFile<'valueExt when 'valueExt: comparison>
+      (config: TypeCheckingConfig<'valueExt>)
+      (cache: ProjectCache<'valueExt>)
+      (project: ProjectBuildConfiguration)
+      (targetFilePath: string)
+      (targetFileContent: string)
+      : Sum<
+          TypeCheckContext<'valueExt> *
+          TypeCheckState<'valueExt>,
+          Errors<Location>
+         >
+      =
+      let filesInOrder = project.Files |> NonEmptyList.ToList
+
+      let targetIndex =
+        filesInOrder
+        |> List.tryFindIndex (fun f -> f.FileName.Path = targetFilePath)
+
+      match targetIndex with
+      | None ->
+        Errors.Singleton Location.Unknown (fun () ->
+          $"File '{targetFilePath}' is not part of the project.")
+        |> Sum.Right
+      | Some idx ->
+        sum {
+          let! predecessorCtx, predecessorSt =
+            if idx = 0 then
+              match cache.TryGetCachedState { Path = targetFilePath } with
+              | Some(_ctx, _st) ->
+                // For the first file, we don't have a predecessor.
+                // We need the initial context. Try getting cached state of a
+                // "virtual" predecessor - but there is none for the first file.
+                // We must return an error indicating a full build is needed.
+                sum.Throw(
+                  Errors.Singleton Location.Unknown (fun () ->
+                    "Cannot incrementally typecheck the first file in a project. A full build is needed.")
+                )
+              | None ->
+                sum.Throw(
+                  Errors.Singleton Location.Unknown (fun () ->
+                    "No cached state available. A full build is needed first.")
+                )
+            else
+              let predecessorFile = filesInOrder.[idx - 1]
+
+              match cache.TryGetCachedState predecessorFile.FileName with
+              | Some(ctx, st) -> sum.Return(ctx, st)
+              | None ->
+                sum.Throw(
+                  Errors.Singleton Location.Unknown (fun () ->
+                    $"No cached state for predecessor file '{predecessorFile.FileName.Path}'. A full build is needed first.")
+                )
+
+          let targetFile =
+            FileBuildConfiguration.FromFile(targetFilePath, targetFileContent)
+
+          let! ParserResult(program, _) =
+            targetFile
+            |> ProjectBuildConfiguration.ParseFile
+            |> sum.WithErrorContext(fun () ->
+              $"...while parsing {targetFilePath}")
+
+          let scopePrefixHints =
+            TypeCheckState.ComputeScopePrefixHints predecessorCtx predecessorSt
+
+          let st =
+            { predecessorSt with
+                ScopePrefixHints = scopePrefixHints
+                DotAccessHints = Map.empty
+                ScopeAccessHints = Map.empty
+                InlayHints = Map.empty }
+
+          let! (_typeCheckedExpr, ctx'), st' =
+            Expr.TypeCheck config None program
+            |> State.Run(predecessorCtx, st)
+            |> sum.MapError fst
+            |> sum.WithErrorContext(fun () ->
+              $"...while typechecking {targetFilePath}")
+
+          let st' = st' |> Option.defaultValue st
+          return ctx', st'
+        }
 
     static member BuildCached<'valueExt when 'valueExt: comparison>
       (config: TypeCheckingConfig<'valueExt>)
