@@ -64,21 +64,25 @@ type TenantDescriptor<'tenantId, 'schemaName> =
   { TenantId: 'tenantId
     SchemaName: 'schemaName }
 
+type LanguageContextConstructor<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
+  when 'customExtension: comparison and 'db: comparison> =
+  'tenantId
+    -> 'schemaName
+    -> Sum<
+      LanguageContext<
+        'runtimeContext,
+        ValueExt<'runtimeContext, 'db, 'customExtension>,
+        ValueExtDTO,
+        DeltaExt<'runtimeContext, 'db, 'customExtension>,
+        DeltaExtDTO
+       >,
+      Errors<Location>
+     >
+
 type APIRegistrationFactory<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
   when 'customExtension: comparison and 'db: comparison> =
   { LanguageContextFactory:
-      'tenantId
-        -> 'schemaName
-        -> Sum<
-          LanguageContext<
-            'runtimeContext,
-            ValueExt<'runtimeContext, 'db, 'customExtension>,
-            ValueExtDTO,
-            DeltaExt<'runtimeContext, 'db, 'customExtension>,
-            DeltaExtDTO
-           >,
-          Errors<Location>
-         >
+      LanguageContextConstructor<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>
     DbDescriptorFetcher:
       'tenantId
         -> 'schemaName
