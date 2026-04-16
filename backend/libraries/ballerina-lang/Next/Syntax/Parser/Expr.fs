@@ -974,48 +974,34 @@ module Expr =
       | Token.Operator Operator.Bang -> true
       | _ -> false
 
-    let simpleShapes =
-      [ stringLiteral ()
-        // |> parser.MapError(Errors.Map((+) "bubububububu1"))
-        intLiteral ()
-        // |> parser.MapError(Errors.Map((+) "bubububububu2"))
-        int64Literal ()
-        // |> parser.MapError(Errors.Map((+) "bubububububu3"))
-        caseLiteral () |> parser.Map Expr.SumCons
-        // |> parser.MapError(Errors.Map((+) "bubububububu4"))
-        decimalLiteral ()
-        // |> parser.MapError(Errors.Map((+) "bubububububu5"))
-        float32Literal ()
-        // |> parser.MapError(Errors.Map((+) "bubububububu6"))
-        float64Literal ()
-        // |> parser.MapError(Errors.Map((+) "bubububububu7"))
-        boolLiteral ()
-        // |> parser.MapError(Errors.Map((+) "bubububububu8"))
-        unitLiteral ()
-        // |> parser.MapError(Errors.Map((+) "bubububububu9"))
-        exprLambda ()
-        // |> parser.MapError(Errors.Map((+) "bubububububu10"))
-        exprConditional ()
-        // |> parser.MapError(Errors.Map((+) "bubububububu11"))
-        recordCons ()
-        // |> parser.MapError(Errors.Map((+) "bubububububu12"))
-        betweenBrackets (fun () -> expr parseAllComplexShapes)
-        // |> parser.MapError(Errors.Map((+) "bubububububu13"))
-        typeLet ()
-        // |> parser.MapError(Errors.Map((+) "bubububububu14"))
-        matchWith ()
-        // |> parser.MapError(Errors.Map((+) "bubububububu15"))
-        query (fun () -> expr parseAllComplexShapes) ()
-        // |> parser.MapError(Errors.Map((+) "bubububububu16"))
-        identifierLookup ()
-        // |> parser.MapError(Errors.Map(replaceWith "bubububububu17"))
-        unaryOperatorIdentifier ()
-        // |> parser.MapError(Errors.Map((+) "bubububububu18"))
-        exprLet ()
-        // |> parser.MapError(Errors.Map((+) "bubububububu19"))
-        exprDo ()
-        // |> parser.MapError(Errors.Map((+) "bubububububu20"))
-        ]
+    let simpleShapesByToken (t: LocalizedToken) =
+      match t.Token with
+      | Token.StringLiteral _ -> [ stringLiteral () ]
+      | Token.IntLiteral _ -> [ intLiteral () ]
+      | Token.Int64Literal _ -> [ int64Literal () ]
+      | Token.CaseLiteral _ -> [ caseLiteral () |> parser.Map Expr.SumCons ]
+      | Token.DecimalLiteral _ -> [ decimalLiteral () ]
+      | Token.Float32Literal _ -> [ float32Literal () ]
+      | Token.Float64Literal _ -> [ float64Literal () ]
+      | Token.BoolLiteral _ -> [ boolLiteral () ]
+      | Token.Operator(Operator.RoundBracket Bracket.Open) ->
+        [ unitLiteral ()
+          betweenBrackets (fun () -> expr parseAllComplexShapes) ]
+      | Token.Keyword Keyword.Fun -> [ exprLambda () ]
+      | Token.Keyword Keyword.If -> [ exprConditional () ]
+      | Token.Operator(Operator.CurlyBracket Bracket.Open) -> [ recordCons () ]
+      | Token.Keyword Keyword.Type -> [ typeLet () ]
+      | Token.Keyword Keyword.Match -> [ matchWith () ]
+      | Token.Keyword Keyword.Query ->
+        [ query (fun () -> expr parseAllComplexShapes) () ]
+      | Token.Identifier _
+      | Token.Keyword Keyword.Schema
+      | Token.Keyword Keyword.Entity
+      | Token.Keyword Keyword.Relation -> [ identifierLookup () ]
+      | Token.Operator Operator.Bang -> [ unaryOperatorIdentifier () ]
+      | Token.Keyword Keyword.Let -> [ exprLet () ]
+      | Token.Keyword Keyword.Do -> [ exprDo () ]
+      | _ -> []
 
     parser {
       // let! s = parser.Stream
@@ -1028,10 +1014,28 @@ module Expr =
       // do Console.ReadLine() |> ignore
 
       if parseComplexShapes |> Set.isEmpty then
-        return!
-          simpleShapes
-          |> parser.Any
-          |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+        let! stream = parser.Stream
+        match stream with
+        | t :: _ ->
+          match simpleShapesByToken t with
+          | [ single ] -> return! single
+          | multiple when multiple.Length > 0 ->
+            return!
+              multiple
+              |> parser.Any
+              |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+          | _ ->
+            let! loc = parser.Location
+            return!
+              (fun () -> $"Unexpected symbol: `{t.Token}`")
+              |> Errors.Singleton loc
+              |> parser.Throw
+        | [] ->
+          let! loc = parser.Location
+          return!
+            (fun () -> "Unexpected end of input")
+            |> Errors.Singleton loc
+            |> parser.Throw
       else
         // let! s = parser.Stream
 
