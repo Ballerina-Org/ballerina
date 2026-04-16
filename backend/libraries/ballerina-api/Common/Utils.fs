@@ -279,11 +279,10 @@ module APIUtils =
     =
     sum {
       let! dbDescriptor = context.DbDescriptorFetcher tenantId schemaName draft
-      let! languageContext = context.LanguageContextFactory tenantId schemaName
 
       return
         dbDescriptor.DbExtension,
-        languageContext,
+        dbDescriptor.LanguageContext,
         dbDescriptor.EvalContext,
         dbDescriptor.TypeCheckContext,
         dbDescriptor.TypeCheckState

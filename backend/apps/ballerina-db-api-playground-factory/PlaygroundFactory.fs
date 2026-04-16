@@ -83,11 +83,6 @@ module Factory =
         addBackgroundHookScope
 
     { DbDescriptorFetcher = descriptorFetcher
-      LanguageContextFactory =
-        fun _ _ ->
-          contextFactory dbFileConfig
-          |> (fun (languageContext, _) -> languageContext)
-          |> sum.Return
       PermissionHookInjector = hookInjector }
 
   let createAndRunAPI
