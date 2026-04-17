@@ -1,7 +1,7 @@
 namespace Ballerina.Data.Delta.Serialization
 
 module DeltaSerializer =
-  open Ballerina.Data.Delta
+  open Ballerina.DSL.Next.Types.Model
   open Ballerina.Reader.WithError
   open Ballerina.DSL.Next.Serialization
   open DeltaDTO
@@ -10,6 +10,7 @@ module DeltaSerializer =
   open Ballerina.DSL.Next.Serialization.PocoObjects
   open System.Text.Json
   open Ballerina.DSL.Next.Serialization.SerializerConfig
+  open Ballerina.Data.Delta
 
   let rec multipleToDTO
     (deltas: List<Delta<'valueExtension, 'deltaExtension>>)
@@ -46,7 +47,7 @@ module DeltaSerializer =
       new DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>(replace))
 
   and recordToDTO
-    (field: string)
+    (field: ResolvedIdentifier)
     (delta: Delta<'valueExtension, 'deltaExtension>)
     =
     reader {
@@ -58,12 +59,12 @@ module DeltaSerializer =
           DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>
          >()
 
-      record.Add(field, deltaDTO)
+      record.Add(field.ToDTO, deltaDTO)
       return new DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>(record, true)
     }
 
   and unionToDTO
-    (case: string)
+    (case: ResolvedIdentifier)
     (delta: Delta<'valueExtension, 'deltaExtension>)
     =
     reader {
@@ -75,7 +76,7 @@ module DeltaSerializer =
           DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>
          >()
 
-      union.Add(case, deltaDTO)
+      union.Add(case.ToDTO, deltaDTO)
       return new DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>(union, false)
     }
 
