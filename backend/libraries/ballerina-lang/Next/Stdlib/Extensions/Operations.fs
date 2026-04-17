@@ -15,6 +15,7 @@ module Operations =
   open Ballerina.DSL.Next.Extensions
   open Ballerina.DSL.Next.Types
   open Ballerina.DSL.Next.Terms
+  open Ballerina.DSL.Next.Terms.FastEval
   open Ballerina.DSL.Next.Serialization
 
   type OperationsExtension<'rtc, 'e, 'extOperations> with
@@ -133,13 +134,46 @@ module Operations =
             evalContext.ExtensionOps.Applicables
             applicables
 
+        let fastApplicables
+          : Map<
+              ResolvedIdentifier,
+              FastApplicable<'runtimeContext, 'ext>
+             > =
+          opsExt.Operations
+          |> Map.map
+            (fun
+                 (_k: ResolvedIdentifier)
+                 (op: OperationExtension<'runtimeContext, 'ext, 'extOperations>) ->
+              fun loc0 rest ctx f v ->
+                match op.OperationsLens.Get f with
+                | Some opVal ->
+                  match Reader.Run ctx (op.Apply loc0 rest (opVal, v)) with
+                  | Left result -> result
+                  | Right errors -> raise (EvalException(errors))
+                | None ->
+                  raise (
+                    EvalException(
+                      Errors.Singleton
+                        loc0
+                        (fun () ->
+                          $"Error: cannot extract operation from extension")
+                    )
+                  ))
+
+        let fastApplicables =
+          Map.merge
+            (fun _ -> id)
+            evalContext.ExtensionOps.FastApplicables
+            fastApplicables
+
         { evalContext with
             Scope =
               { evalContext.Scope with
                   Values = values }
             ExtensionOps =
               { Eval = ops
-                Applicables = applicables } }
+                Applicables = applicables
+                FastApplicables = fastApplicables } }
 
     static member RegisterLanguageContext
       (opsExt: OperationsExtension<'runtimeContext, 'ext, 'extOperations>)

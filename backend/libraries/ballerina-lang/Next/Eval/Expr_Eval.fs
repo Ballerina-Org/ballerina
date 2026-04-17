@@ -36,7 +36,8 @@ module Eval =
                   (fun () -> $"Error: cannot evaluate empty extension")
                   |> Errors.Singleton loc0
                   |> reader.Throw
-              Applicables = Map.empty } }
+              Applicables = Map.empty
+              FastApplicables = Map.empty } }
 
     static member WithTypeCheckingSymbols<'valueExtension>
       (ctx: ExprEvalContext<'runtimeContext, 'valueExtension>)
@@ -85,44 +86,19 @@ module Eval =
 
   type Expr<'T, 'Id, 'valueExt when 'Id: comparison> with
     static member EvalApply (loc0: Location) (rest: List<_>) (fV, argV) =
-      reader {
-        let! fVVar, fvBody, closure, _scope =
-          fV
-          |> Value.AsLambda
-          |> sum.MapError(Errors.MapContext(replaceWith loc0))
-          |> reader.OfSum
-
-        return!
-          reader {
-            let closure =
-              closure
-              |> Map.add
-                (fVVar.Name
-                 |> Identifier.LocalScope
-                 |> TypeCheckScope.Empty.Resolve)
-                argV
-
-            let! res =
-              NonEmptyList.OfList(fvBody, rest)
-              |> Expr.Eval
-              |> reader.MapContext(
-                ExprEvalContext.Updaters.Values(Map.merge (fun _ -> id) closure)
-              )
-              |> reader.Catch
-
-            match res with
-            | Left res -> return res
-            | Right err ->
-              // do Console.WriteLine($"Warning: error during function application {fV} {argV} ({fvBody})")
-              // do Console.ReadLine() |> ignore
-              // do closure |> Map.iter (fun k v -> Console.WriteLine($"  {k} = {v}"))
-              // do Console.ReadLine() |> ignore
-              return! err |> reader.Throw
-          }
-          |> reader.MapError(
-            Errors<Location>.MapPriority(replaceWith ErrorPriority.High)
+      Reader(fun (ctx: ExprEvalContext<'runtimeContext, 'valueExtension>) ->
+        try
+          Left(
+            fastApply<'runtimeContext, 'valueExtension>
+              loc0
+              TypeCheckScope.Empty
+              rest
+              ctx
+              fV
+              argV
           )
-      }
+        with :? EvalException as ex ->
+          Right ex.Errors)
 
     // NOTE: expressions are concatenated in the order of the input (the returned value is of the type of the last expression)
     static member Eval<'runtimeContext, 'valueExtension>

@@ -118,12 +118,25 @@ module FastEval =
         ExtEvalResult<'runtimeContext, 'valueExtension>
        >
 
+  and FastApplicable<'runtimeContext, 'valueExtension> =
+    Location
+      -> List<RunnableExpr<'valueExtension>>
+      -> ExprEvalContext<'runtimeContext, 'valueExtension>
+      -> 'valueExtension
+      -> Value<TypeValue<'valueExtension>, 'valueExtension>
+      -> Value<TypeValue<'valueExtension>, 'valueExtension>
+
   and ValueExtensionOps<'runtimeContext, 'valueExtension> =
     { Eval: ExtensionEvaluator<'runtimeContext, 'valueExtension>
       Applicables:
         Map<
           ResolvedIdentifier,
           ApplicableExtEvalResult<'runtimeContext, 'valueExtension>
+         >
+      FastApplicables:
+        Map<
+          ResolvedIdentifier,
+          FastApplicable<'runtimeContext, 'valueExtension>
          > }
 
   and ExprEvaluator<'runtimeContext, 'valueExtension, 'res> =
@@ -308,6 +321,31 @@ module FastEval =
 
   let private compilationCache =
     ConditionalWeakTable<obj, obj>()
+
+  // Cache for closure-context merges in Lambda application.
+  // When the same Lambda is applied to many values (e.g. List.map),
+  // the expensive closure-into-context fold is computed once and reused.
+  // Key: closure Map reference. Value: obj[2] = [| ctxRef; mergedMap |].
+  let private closureMergeCache =
+    ConditionalWeakTable<obj, obj[]>()
+
+  let inline private getCachedMerge
+    (closure: Map<ResolvedIdentifier, Value<TypeValue<'ext>, 'ext>>)
+    (ctxValues: Map<ResolvedIdentifier, Value<TypeValue<'ext>, 'ext>>)
+    : Map<ResolvedIdentifier, Value<TypeValue<'ext>, 'ext>> =
+    let closureObj = closure :> obj
+    match closureMergeCache.TryGetValue(closureObj) with
+    | true, entry ->
+      if System.Object.ReferenceEquals(entry[0], ctxValues :> obj) then
+        entry[1] :?> Map<ResolvedIdentifier, Value<TypeValue<'ext>, 'ext>>
+      else
+        let merged = closure |> Map.fold (fun acc k v -> Map.add k v acc) ctxValues
+        closureMergeCache.AddOrUpdate(closureObj, [| ctxValues :> obj; merged :> obj |])
+        merged
+    | false, _ ->
+      let merged = closure |> Map.fold (fun acc k v -> Map.add k v acc) ctxValues
+      closureMergeCache.AddOrUpdate(closureObj, [| ctxValues :> obj; merged :> obj |])
+      merged
 
   // Helper to extend context with additional values (avoids record disambiguation issues)
   let inline extendValues
@@ -906,12 +944,12 @@ module FastEval =
         |> Identifier.LocalScope
         |> TypeCheckScope.Empty.Resolve
 
-      let closure = closure |> Map.add resolvedParam argV
-
       let compiledBody = compileSequence<'rc, 'ext> (NonEmptyList.OfList(body, rest))
 
-      let mergedValues =
-        Map.merge (fun _ -> id) closure ctx.Scope.Values
+      // Cache the closure-context merge: when the same Lambda is applied to many values
+      // (List.map pattern), the expensive fold is computed once and reused.
+      let mergedBase = getCachedMerge closure ctx.Scope.Values
+      let mergedValues = mergedBase |> Map.add resolvedParam argV
 
       compiledBody (ctx |> extendValues (fun _ -> mergedValues))
 
@@ -949,6 +987,11 @@ module FastEval =
     | Value.Ext(fExt, appId) ->
       match appId with
       | Some appId ->
+        // Fast path: pre-compiled applicable (no Reader overhead)
+        match ctx.ExtensionOps.FastApplicables |> Map.tryFind appId with
+        | Some f -> f loc0 rest ctx fExt argV
+        | None ->
+        // Fallback: Reader-based applicable
         match ctx.ExtensionOps.Applicables |> Map.tryFind appId with
         | Some f -> runReader loc0 (f loc0 rest fExt argV) ctx
         | None ->
