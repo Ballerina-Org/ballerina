@@ -174,35 +174,36 @@ module StacklessStateWithError =
 
     static member any
       (concat: 'e * 'e -> 'e)
-      (ps: List<FreeNode<'a, 'c, 's, 'e>>)
+      (ps: seq<FreeNode<'a, 'c, 's, 'e>>)
       : FreeNode<'a, 'c, 's, 'e> =
-      let mutable acc: FreeNode<Sum<'a, 'e> option * 'e option, 'c, 's, 'e> =
-        FreeNode.Return(None, None)
+      // Wrap in a bind so the enumerator is created at run time (safe for multiple runs)
+      FreeNode.bind (FreeNode.Return()) (fun () ->
+        let e = ps.GetEnumerator()
 
-      for p in ps do
-        acc <-
-          FreeNode.bind acc (fun (current, errors) ->
-            match current with
-            | Some(Left v) -> FreeNode.Return(Some(Left v), errors) // Already have success, short-circuit
-            | _ ->
-              FreeNode.bind (FreeNode.catch p) (fun res ->
-                match res with
-                | Left v -> FreeNode.Return(Some(Left v), errors)
-                | Right err ->
-                  let newErrors =
-                    match errors with
-                    | Some errs -> Some(concat (errs, err))
-                    | None -> Some err
+        let rec tryNext (errors: 'e option) : FreeNode<'a, 'c, 's, 'e> =
+          if e.MoveNext() then
+            let p = e.Current
 
-                  FreeNode.Return(None, newErrors)))
+            FreeNode.bind (FreeNode.catch p) (fun res ->
+              match res with
+              | Left v ->
+                e.Dispose()
+                FreeNode.Return v
+              | Right err ->
+                let newErrors =
+                  match errors with
+                  | Some errs -> Some(concat (errs, err))
+                  | None -> Some err
 
-      FreeNode.bind acc (fun (result, errors) ->
-        match result with
-        | Some(Left v) -> FreeNode.Return v
-        | _ ->
-          match errors with
-          | Some err -> FreeNode.throw err
-          | None -> failwith "Unreachable: Any requires at least one element")
+                tryNext newErrors)
+          else
+            e.Dispose()
+
+            match errors with
+            | Some err -> FreeNode.throw err
+            | None -> failwith "Unreachable: Any requires at least one element"
+
+        tryNext None)
 
     static member all
       (ps: List<FreeNode<'a, 'c, 's, 'e>>)

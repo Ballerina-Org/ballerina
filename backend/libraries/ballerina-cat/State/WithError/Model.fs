@@ -140,14 +140,13 @@ module WithError =
       }
 
     member state.Any<'a, 'c, 's, 'e>
-      (e: {| concat: 'e * 'e -> 'e |}, ps: NonEmptyList<State<'a, 'c, 's, 'e>>)
+      (e: {| concat: 'e * 'e -> 'e |}, ps: seq<State<'a, 'c, 's, 'e>>)
       : State<'a, 'c, 's, 'e> =
-      let ps = ps |> NonEmptyList.ToList |> List.map (fun (State p) -> p)
-      State(FreeNode.any e.concat ps)
+      State(FreeNode.any e.concat (ps |> Seq.map (fun (State p) -> p)))
 
     member inline state.Any<'a, 'c, 's, 'b
       when 'b: (static member Concat: 'b * 'b -> 'b)>
-      (ps: NonEmptyList<State<'a, 'c, 's, 'b>>)
+      (ps: seq<State<'a, 'c, 's, 'b>>)
       =
       state.Any({| concat = 'b.Concat |}, ps)
 
@@ -155,7 +154,11 @@ module WithError =
       when 'b: (static member Concat: 'b * 'b -> 'b)>
       (p: State<'a, 'c, 's, 'b>, ps: List<State<'a, 'c, 's, 'b>>)
       =
-      NonEmptyList.OfList(p, ps) |> state.Any
+      seq {
+        yield p
+        yield! ps
+      }
+      |> state.Any
 
     member state.All<'a, 'c, 's, 'e>
       (_e: {| concat: 'e * 'e -> 'e |}, ps: List<State<'a, 'c, 's, 'e>>)
@@ -249,7 +252,7 @@ module WithError =
       (p1: State<'a, 'c, 's, 'e>)
       (p2: State<'a, 'c, 's, 'e>)
       =
-      state.Any({| concat = 'e.Concat |}, NonEmptyList.OfList(p1, [ p2 ]))
+      state.Any({| concat = 'e.Concat |}, [| p1; p2 |] :> seq<_>)
 
     member inline state.Either3
       (p1: State<'a, 'c, 's, 'e>)
