@@ -117,6 +117,169 @@ let private buildAndEvalProject
     | Right e -> Right(sprintf "Evaluation failed: %s" (Errors.ToString(e, "\n")))
   | Right e -> Right(sprintf "Build failed: %s" (Errors.ToString(e, "\n")))
 
+/// Find samples directory from the running executable or environment
+let getSamplesDirectory () : string =
+  // Try environment variable first
+  match Environment.GetEnvironmentVariable("BALLERINA_SAMPLES_DIR") with
+  | path when not (String.IsNullOrEmpty path) && Directory.Exists path -> path
+  | _ ->
+    // Try to find from current directory or parent directories
+    let rec findDir marker dir =
+      if String.IsNullOrEmpty(dir) || dir = Path.GetPathRoot(dir) then
+        None
+      else if Directory.Exists(Path.Combine(dir, marker)) then
+        Some(Path.Combine(dir, marker))
+      else
+        findDir marker (Path.GetDirectoryName(dir))
+
+    match findDir "samples" (Environment.CurrentDirectory) with
+    | Some dir -> Path.GetFullPath(dir)
+    | None ->
+      // Try from repo root
+      match findDir "ballerina" (Environment.CurrentDirectory) with
+      | Some ballerinaDir ->
+        let samplesDir = Path.Combine(ballerinaDir, "samples")
+
+        if Directory.Exists samplesDir then
+          samplesDir
+        else
+          failwith
+            $"Samples directory not found from current dir {Environment.CurrentDirectory}"
+      | None ->
+        failwith
+          $"Samples directory not found from current dir {Environment.CurrentDirectory}"
+
+/// Benchmark a single project's eval phase: build once, then eval N+1 times (discard first cold run)
+let private benchmarkEvalProject
+  (project: ProjectBuildConfiguration)
+  (warmIterations: int)
+  : Result<{| ColdMs: float; WarmMs: float array; AvgWarmMs: float; MinWarmMs: float; MaxWarmMs: float |}, string> =
+  let emailEvents = ResizeArray<string>()
+
+  let _, context, typeCheckingConfig, buildCache =
+    hddcacheWithStdExtensions<unit, MutableMemoryDB<unit, unit>>
+      (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
+      (Ballerina.DSL.Next.StdLib.Email.Extension.EmailTypeClass<_>.FromRuntimeContext(fun _ toEmail subject body ->
+        emailEvents.Add($"email_send|to={toEmail}|subject={subject}|body={body}")))
+      (db_ops ())
+      id
+      id
+
+  let buildResult =
+    ProjectBuildConfiguration.BuildCached typeCheckingConfig buildCache project
+
+  match buildResult with
+  | Left(exprs, _typeValue, _, finalState) ->
+    let runnableExprs =
+      exprs
+      |> NonEmptyList.map Conversion.convertExpression
+      |> sum.AllNonEmpty
+
+    match runnableExprs with
+    | Right convErrors ->
+      Error(sprintf "Conversion failed: %s" (Errors.ToString(convErrors, "\n")))
+    | Left exprs ->
+
+    let evalContext = ExprEvalContext.Empty() |> context.ExprEvalContext
+    let evalContext =
+      ExprEvalContext.WithTypeCheckingSymbols evalContext finalState.Symbols
+
+    let evalExpr () =
+      Expr.Eval(NonEmptyList.prependList context.TypeCheckedPreludes exprs)
+      |> Reader.Run evalContext
+
+    let sw = System.Diagnostics.Stopwatch()
+
+    // Cold run (JIT compilation + cache population)
+    sw.Restart()
+    let coldResult = evalExpr ()
+    sw.Stop()
+    let coldMs = sw.Elapsed.TotalMilliseconds
+
+    match coldResult with
+    | Right e ->
+      Error(sprintf "Cold eval failed: %s" (Errors.ToString(e, "\n")))
+    | Left _ ->
+
+    // Warm runs (cache hits only)
+    let warmTimings = Array.zeroCreate warmIterations
+    for i in 0 .. warmIterations - 1 do
+      sw.Restart()
+      evalExpr () |> ignore
+      sw.Stop()
+      warmTimings.[i] <- sw.Elapsed.TotalMilliseconds
+
+    let avgWarm = warmTimings |> Array.average
+    let minWarm = warmTimings |> Array.min
+    let maxWarm = warmTimings |> Array.max
+
+    Ok {| ColdMs = coldMs; WarmMs = warmTimings; AvgWarmMs = avgWarm; MinWarmMs = minWarm; MaxWarmMs = maxWarm |}
+  | Right e -> Error(sprintf "Build failed: %s" (Errors.ToString(e, "\n")))
+
+/// Run benchmarks on all samples: N warm iterations per sample, discarding cold run
+let runBenchmarks (warmIterations: int) : int =
+  try
+    let samplesDir = getSamplesDirectory ()
+    printfn "📂 Samples directory: %s" samplesDir
+    printfn "🔥 Warm iterations per sample: %d\n" warmIterations
+
+    let projectFiles =
+      Directory.GetFiles(samplesDir, "*.blproj") |> Array.toList |> List.sort
+
+    if List.isEmpty projectFiles then
+      printfn "❌ No sample projects found"
+      1
+    else
+      printfn "🔍 Found %d sample projects\n" projectFiles.Length
+      printfn "%-50s %10s %10s %10s %10s" "Sample" "Cold(ms)" "Warm avg" "Warm min" "Warm max"
+      printfn "%s" (String.replicate 90 "─")
+
+      let mutable totalCold = 0.0
+      let mutable totalWarmAvg = 0.0
+      let mutable sampleCount = 0
+      let mutable failCount = 0
+
+      for projectFile in projectFiles do
+        let projectName = Path.GetFileNameWithoutExtension projectFile
+        try
+          match
+            ProjectBuildConfiguration.FromProjectFile(
+              projectFile,
+              Path.GetDirectoryName(projectFile)
+            )
+          with
+          | Sum.Left project ->
+            match benchmarkEvalProject project warmIterations with
+            | Ok stats ->
+              printfn "%-50s %10.2f %10.2f %10.2f %10.2f" projectName stats.ColdMs stats.AvgWarmMs stats.MinWarmMs stats.MaxWarmMs
+              totalCold <- totalCold + stats.ColdMs
+              totalWarmAvg <- totalWarmAvg + stats.AvgWarmMs
+              sampleCount <- sampleCount + 1
+            | Error msg ->
+              let truncMsg = if msg.Length > 60 then msg.[..60] else msg
+              printfn "%-50s %s" projectName (sprintf "FAILED: %s" truncMsg)
+              failCount <- failCount + 1
+          | Sum.Right err ->
+              let errStr = Errors.ToString(err, "; ")
+              let truncErr = if errStr.Length > 60 then errStr.[..60] else errStr
+              printfn "%-50s %s" projectName (sprintf "PARSE ERROR: %s" truncErr)
+              failCount <- failCount + 1
+        with ex ->
+          let truncEx = if ex.Message.Length > 60 then ex.Message.[..60] else ex.Message
+          printfn "%-50s %s" projectName (sprintf "EXCEPTION: %s" truncEx)
+          failCount <- failCount + 1
+
+      printfn "%s" (String.replicate 90 "─")
+      printfn "%-50s %10.2f %10.2f" "TOTAL" totalCold totalWarmAvg
+      if sampleCount > 0 then
+        printfn "%-50s %10.2f %10.2f" "AVERAGE" (totalCold / float sampleCount) (totalWarmAvg / float sampleCount)
+      printfn "\n📊 Benchmarked: %d samples, %d failed" sampleCount failCount
+      printfn "🔥 Speedup (cold → warm avg): %.1fx" (totalCold / (max totalWarmAvg 0.001))
+      0
+  with ex ->
+    printfn "❌ Benchmark execution failed: %s" ex.Message
+    1
+
 let private matchesAll
   (patterns: string list)
   (text: string)
@@ -176,38 +339,6 @@ let private validateExpectation
   | expectation, Left _ ->
     (false, $"Unsupported expectation mode '{expectation.Mode}'")
   | _, Right errorMessage -> (false, errorMessage)
-
-/// Find samples directory from the running executable or environment
-let getSamplesDirectory () : string =
-  // Try environment variable first
-  match Environment.GetEnvironmentVariable("BALLERINA_SAMPLES_DIR") with
-  | path when not (String.IsNullOrEmpty path) && Directory.Exists path -> path
-  | _ ->
-    // Try to find from current directory or parent directories
-    let rec findDir marker dir =
-      if String.IsNullOrEmpty(dir) || dir = Path.GetPathRoot(dir) then
-        None
-      else if Directory.Exists(Path.Combine(dir, marker)) then
-        Some(Path.Combine(dir, marker))
-      else
-        findDir marker (Path.GetDirectoryName(dir))
-
-    match findDir "samples" (Environment.CurrentDirectory) with
-    | Some dir -> Path.GetFullPath(dir)
-    | None ->
-      // Try from repo root
-      match findDir "ballerina" (Environment.CurrentDirectory) with
-      | Some ballerinaDir ->
-        let samplesDir = Path.Combine(ballerinaDir, "samples")
-
-        if Directory.Exists samplesDir then
-          samplesDir
-        else
-          failwith
-            $"Samples directory not found from current dir {Environment.CurrentDirectory}"
-      | None ->
-        failwith
-          $"Samples directory not found from current dir {Environment.CurrentDirectory}"
 
 /// Test a single sample project file
 let testSample (samplePath: string) : bool * string =
@@ -293,4 +424,17 @@ let main args =
   let verbose =
     args |> Array.contains "--verbose" || args |> Array.contains "-v"
 
-  runAllTests verbose
+  let bench =
+    args |> Array.contains "--bench" || args |> Array.contains "-b"
+
+  if bench then
+    let warmIterations =
+      args
+      |> Array.tryFindIndex (fun a -> a = "--iterations" || a = "-n")
+      |> Option.bind (fun i -> args |> Array.tryItem (i + 1))
+      |> Option.bind (fun s -> match System.Int32.TryParse s with true, n -> Some n | _ -> None)
+      |> Option.defaultValue 50
+
+    runBenchmarks warmIterations
+  else
+    runAllTests verbose

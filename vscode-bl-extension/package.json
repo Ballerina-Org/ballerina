@@ -2,7 +2,7 @@
   "name": "bl-language-tools",
   "displayName": "Ballerina Language Tools",
   "description": "Syntax highlighting and diagnostics for .bl projects using bise-sql server mode",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "publisher": "GiuseppeMaggiore",
   "repository": {
     "type": "git",
