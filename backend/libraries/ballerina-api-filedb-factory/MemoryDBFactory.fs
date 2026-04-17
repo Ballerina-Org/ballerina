@@ -16,6 +16,7 @@ module MemoryDBAPIFactory =
   open Ballerina.DSL.Next.StdLib.FileDB
   open Ballerina.DSL.Next.Extensions
   open Ballerina.Collections.NonEmptyList
+  open Ballerina.DSL.Next.Terms.FastEval
   open Ballerina.DSL.Next.Terms.Eval
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.Reader.WithError

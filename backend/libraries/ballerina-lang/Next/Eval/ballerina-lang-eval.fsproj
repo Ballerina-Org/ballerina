@@ -4,6 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Expr_TypeEval.fs" />
+    <Compile Include="Expr_FastEval.fs" />
     <Compile Include="Expr_Eval.fs" />
   </ItemGroup>
   <ItemGroup>

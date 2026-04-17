@@ -8,6 +8,7 @@ open Ballerina.Errors
 open Ballerina.LocalizedErrors
 open Ballerina.DSL.Next.Types
 open Ballerina.Collections.Sum
+open Ballerina.DSL.Next.Terms.FastEval
 open Ballerina.DSL.Next.Terms.Eval
 open Ballerina.DSL.Next.StdLib.DB
 open Ballerina.Fun

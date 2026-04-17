@@ -15,6 +15,7 @@ module Read =
   open APIUtils
   open Ballerina.DSL.Next.Serialization.ValueDeserializer
   open Ballerina.Reader.WithError
+  open Ballerina.DSL.Next.Terms.FastEval
   open Ballerina.DSL.Next.Terms.Eval
   open Ballerina.Collections.NonEmptyList
   open Ballerina.DSL.Next.Extensions

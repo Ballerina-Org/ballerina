@@ -21,6 +21,7 @@ module API =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.Patterns
+  open Ballerina.DSL.Next.Terms.FastEval
   open Ballerina.DSL.Next.Terms.Eval
   open Ballerina.Collections.NonEmptyList
   open Ballerina.Reader.WithError

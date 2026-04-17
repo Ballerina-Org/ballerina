@@ -16,6 +16,7 @@ module APIUtils =
   open Ballerina.DSL.Next.Serialization.ValueSerializer
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.StdLib.DB
+  open Ballerina.DSL.Next.Terms.FastEval
   open Ballerina.DSL.Next.Terms.Eval
   open Ballerina.Data.Delta
   open Ballerina.DSL.Next.StdLib.Updater.Model

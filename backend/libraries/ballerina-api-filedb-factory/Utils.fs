@@ -8,6 +8,7 @@ module Utils =
   open Ballerina.Collections.Map
   open Ballerina.DSL.Next.Runners
   open Ballerina.Collections.NonEmptyList
+  open Ballerina.DSL.Next.Terms.FastEval
   open Ballerina.DSL.Next.Terms.Eval
   open Ballerina.DSL.Next.Types.Model
   open System

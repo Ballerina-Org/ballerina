@@ -10,6 +10,7 @@ open Ballerina.DSL.Next.Types.TypeChecker
 open Ballerina.DSL.Next.Types.Patterns
 open Ballerina.DSL.Next.Types.TypeChecker.Eval
 open Ballerina.DSL.Next.Extensions
+open Ballerina.DSL.Next.Terms.FastEval
 open Ballerina.DSL.Next.Terms.Eval
 open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.State.WithError

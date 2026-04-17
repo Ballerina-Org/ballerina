@@ -6,6 +6,7 @@ open Ballerina.DSL.Next.StdLib.DB
 open Ballerina.Reader.WithError
 open Ballerina.DSL.Next.Types.Model
 open Ballerina.DSL.Next.Types.Patterns
+open Ballerina.DSL.Next.Terms.FastEval
 open Ballerina.DSL.Next.Terms.Eval
 open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.Errors
