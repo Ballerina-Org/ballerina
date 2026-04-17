@@ -58,6 +58,7 @@ let executeBackgroundJob
       |> Reader.mapContext injectBackgroundContext
       |> Reader.Run
         { Scope = dbio.EvalContext
+          ValueOverlays = []
           ExtensionOps = evalContext
           RuntimeContext = runtimeContext
           RootLevelEval = true }

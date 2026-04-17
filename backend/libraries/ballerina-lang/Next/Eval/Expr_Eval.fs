@@ -27,6 +27,7 @@ module Eval =
       fun runtimeContext ->
         { RootLevelEval = true
           RuntimeContext = runtimeContext
+          ValueOverlays = []
           Scope =
             { Values = Map.empty
               Symbols = ExprEvalContextSymbols.Empty }
