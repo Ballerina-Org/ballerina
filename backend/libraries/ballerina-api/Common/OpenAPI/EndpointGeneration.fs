@@ -165,7 +165,14 @@ module EndpointGeneration =
                 Method = OpenAPIEndpointModel.Post
                 QueryParameters = [ draftQueryParam ]
                 RequestModel = Some(OpenAPIDataModel.Ref id_name)
-                ResponseModel = Some(OpenAPIDataModel.Ref type_with_props_name) }
+                ResponseModel =
+                  Some(
+                    OpenAPIDataModel.Tuple
+                      [ id_name |> OpenAPIDataModel.Ref
+                        [ OpenAPIDataModel.Primitive PrimitiveType.Unit
+                          type_with_props_name |> OpenAPIDataModel.Ref ]
+                        |> OpenAPIDataModel.Sum ]
+                  ) }
 
             do! state.SetState(fun l -> endpoint :: l)
 
@@ -195,8 +202,8 @@ module EndpointGeneration =
                 RequestModel =
                   Some(
                     OpenAPIDataModel.Object
-                      [ ("id" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref id_name)
-                        ("value" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref type_original_name) ]
+                      [ ("Id" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref id_name)
+                        ("Entity" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref type_original_name) ]
                   )
                 ResponseModel =
                   [ OpenAPIDataModel.Primitive PrimitiveType.Unit
@@ -213,9 +220,9 @@ module EndpointGeneration =
                 RequestModel =
                   Some(
                     OpenAPIDataModel.Object
-                      [ "id" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref id_name
-                        "entity" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref type_original_name
-                        "delta" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref delta_original_name ]
+                      [ "Id" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref id_name
+                        "Entity" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref type_original_name
+                        "Delta" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref delta_original_name ]
                   )
                 ResponseModel =
                   [ OpenAPIDataModel.Primitive PrimitiveType.Unit
@@ -232,8 +239,8 @@ module EndpointGeneration =
                 RequestModel =
                   Some(
                     OpenAPIDataModel.Object
-                      [ "id" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref id_name
-                        "delta" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref delta_original_name ]
+                      [ "Id" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref id_name
+                        "Delta" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref delta_original_name ]
                   )
                 ResponseModel =
                   [ OpenAPIDataModel.Primitive PrimitiveType.Unit
