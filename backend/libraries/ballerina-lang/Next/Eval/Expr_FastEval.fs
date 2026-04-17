@@ -61,6 +61,14 @@ module FastEval =
 
   type ExprEvalContext<'runtimeContext, 'valueExtension> =
     { Scope: ExprEvalContextScope<'valueExtension>
+      /// Stack of scope frames pushed during evaluation.
+      /// Lookup traverses frames top-to-bottom, then falls back to Scope.Values.
+      /// Empty outside the JIT fast path; flushed before bridging to Reader-based code.
+      ValueOverlays:
+        Map<
+          ResolvedIdentifier,
+          Value<TypeValue<'valueExtension>, 'valueExtension>
+         > list
       ExtensionOps: ValueExtensionOps<'runtimeContext, 'valueExtension>
       RuntimeContext: 'runtimeContext
       RootLevelEval: bool }
@@ -118,12 +126,25 @@ module FastEval =
         ExtEvalResult<'runtimeContext, 'valueExtension>
        >
 
+  and FastApplicable<'runtimeContext, 'valueExtension> =
+    Location
+      -> List<RunnableExpr<'valueExtension>>
+      -> ExprEvalContext<'runtimeContext, 'valueExtension>
+      -> 'valueExtension
+      -> Value<TypeValue<'valueExtension>, 'valueExtension>
+      -> Value<TypeValue<'valueExtension>, 'valueExtension>
+
   and ValueExtensionOps<'runtimeContext, 'valueExtension> =
     { Eval: ExtensionEvaluator<'runtimeContext, 'valueExtension>
       Applicables:
         Map<
           ResolvedIdentifier,
           ApplicableExtEvalResult<'runtimeContext, 'valueExtension>
+         >
+      FastApplicables:
+        Map<
+          ResolvedIdentifier,
+          FastApplicable<'runtimeContext, 'valueExtension>
          > }
 
   and ExprEvaluator<'runtimeContext, 'valueExtension, 'res> =
@@ -288,17 +309,109 @@ module FastEval =
       )
 
   // ── Bridge: run Reader-based extension code from fast eval ─────────────
+  // Flushes overlays into Scope.Values so Reader-based code sees a flat scope.
+
+  // Cache for flattenScope: avoids re-merging when the same overlay list + base are flattened
+  // repeatedly (e.g., multiple Lambda creations inside the same let-binding body).
+  let private flattenCache =
+    ConditionalWeakTable<obj, obj[]>()
+
+  let flattenScope
+    (ctx: ExprEvalContext<'rc, 'ext>)
+    : Map<ResolvedIdentifier, Value<TypeValue<'ext>, 'ext>> =
+    match ctx.ValueOverlays with
+    | [] -> ctx.Scope.Values
+    | overlays ->
+      // Cache: if the same overlay list (by reference) is flattened with the same base,
+      // return the cached result. Common in Lambda creation inside let-heavy bodies.
+      let key = overlays :> obj
+      match flattenCache.TryGetValue(key) with
+      | true, entry ->
+        if System.Object.ReferenceEquals(entry[0], ctx.Scope.Values :> obj) then
+          entry[1] :?> Map<ResolvedIdentifier, Value<TypeValue<'ext>, 'ext>>
+        else
+          let result =
+            overlays
+            |> List.foldBack
+              (fun frame acc -> frame |> Map.fold (fun a k v -> Map.add k v a) acc)
+              <| ctx.Scope.Values
+          flattenCache.AddOrUpdate(key, [| ctx.Scope.Values :> obj; result :> obj |])
+          result
+      | false, _ ->
+        let result =
+          overlays
+          |> List.foldBack
+            (fun frame acc -> frame |> Map.fold (fun a k v -> Map.add k v a) acc)
+            <| ctx.Scope.Values
+        flattenCache.AddOrUpdate(key, [| ctx.Scope.Values :> obj; result :> obj |])
+        result
+
+  let inline flushOverlays
+    (ctx: ExprEvalContext<'rc, 'ext>)
+    : ExprEvalContext<'rc, 'ext> =
+    match ctx.ValueOverlays with
+    | [] -> ctx
+    | _ ->
+      { ctx with
+          Scope = { ctx.Scope with Values = flattenScope ctx }
+          ValueOverlays = [] }
 
   let inline runReader
     (_loc: Location)
     (r: Reader<'a, ExprEvalContext<'rc, 'ext>, Errors<Location>>)
     (ctx: ExprEvalContext<'rc, 'ext>)
     : 'a =
+    let ctx = flushOverlays ctx
     match Reader.Run ctx r with
     | Left v -> v
     | Right errors -> raise (EvalException(errors))
 
-  // ── Memoization cache ──────────────────────────────────────────────────
+  // ── Scope chain helpers ────────────────────────────────────────────────
+  // Instead of merging closures/bindings into Scope.Values (expensive Map merge),
+  // we push lightweight frames onto ValueOverlays and traverse top-to-bottom on lookup.
+  // Lambda application becomes O(1) push instead of O(|closure| * log |ctx|) merge.
+
+  let inline lookupValue
+    (id: ResolvedIdentifier)
+    (ctx: ExprEvalContext<'rc, 'ext>)
+    : Value<TypeValue<'ext>, 'ext> voption =
+    let rec search frames =
+      match frames with
+      | [] -> Map.tryFind id ctx.Scope.Values |> ValueOption.ofOption
+      | frame :: rest ->
+        match Map.tryFind id frame with
+        | Some v -> ValueSome v
+        | None -> search rest
+    search ctx.ValueOverlays
+
+  let inline pushBinding
+    (id: ResolvedIdentifier)
+    (value: Value<TypeValue<'ext>, 'ext>)
+    (ctx: ExprEvalContext<'rc, 'ext>)
+    : ExprEvalContext<'rc, 'ext> =
+    match ctx.ValueOverlays with
+    | top :: rest ->
+      { ctx with ValueOverlays = (Map.add id value top) :: rest }
+    | [] ->
+      { ctx with ValueOverlays = [ Map.ofList [ id, value ] ] }
+
+  let inline pushFrame
+    (frame: Map<ResolvedIdentifier, Value<TypeValue<'ext>, 'ext>>)
+    (ctx: ExprEvalContext<'rc, 'ext>)
+    : ExprEvalContext<'rc, 'ext> =
+    { ctx with ValueOverlays = frame :: ctx.ValueOverlays }
+
+  // Legacy helper — still used by some external callers through Updaters.Values
+  let inline extendValues
+    (updater: Map<ResolvedIdentifier, Value<TypeValue<'ext>, 'ext>> -> Map<ResolvedIdentifier, Value<TypeValue<'ext>, 'ext>>)
+    (ctx: ExprEvalContext<'rc, 'ext>)
+    : ExprEvalContext<'rc, 'ext> =
+    { ctx with
+        Scope =
+          { ctx.Scope with
+              Values = updater ctx.Scope.Values } }
+
+  // ── Memoization caches ──────────────────────────────────────────────────
   // ConditionalWeakTable: keys are held weakly. When a RunnableExpr is GC'd
   // (e.g. schema reload), the compiled lambda is collected automatically.
   // Thread-safe by default.
@@ -308,16 +421,6 @@ module FastEval =
 
   let private compilationCache =
     ConditionalWeakTable<obj, obj>()
-
-  // Helper to extend context with additional values (avoids record disambiguation issues)
-  let inline extendValues
-    (updater: Map<ResolvedIdentifier, Value<TypeValue<'ext>, 'ext>> -> Map<ResolvedIdentifier, Value<TypeValue<'ext>, 'ext>>)
-    (ctx: ExprEvalContext<'rc, 'ext>)
-    : ExprEvalContext<'rc, 'ext> =
-    { ctx with
-        Scope =
-          { ctx.Scope with
-              Values = updater ctx.Scope.Values } }
 
   // ── Core JIT compiler ──────────────────────────────────────────────────
 
@@ -388,7 +491,7 @@ module FastEval =
 
       fun ctx ->
         let value = compiledVal ctx
-        let ctx' = ctx |> extendValues (Map.add resolvedId value)
+        let ctx' = pushBinding resolvedId value ctx
         compiledBody ctx'
 
     // ── Do (sequence, discard first) ──────────────────────────────
@@ -403,12 +506,16 @@ module FastEval =
     // ── Lookup ────────────────────────────────────────────────────
     | RunnableExprRec.Lookup({ Id = id }) ->
       fun ctx ->
-        fastMapFind
-          loc0
-          "variables"
-          (fun () -> id.AsFSharpString)
-          id
-          ctx.Scope.Values
+        match lookupValue id ctx with
+        | ValueSome v -> v
+        | ValueNone ->
+          raise (
+            EvalException(
+              Errors.Singleton
+                loc0
+                (fun () -> $"Cannot find variables '{id.AsFSharpString}'")
+            )
+          )
 
     // ── Record construction ───────────────────────────────────────
     | RunnableExprRec.RecordCons { Fields = fields } ->
@@ -538,7 +645,7 @@ module FastEval =
                 let resolvedId =
                   caseVar.Name |> Identifier.LocalScope |> e.Scope.Resolve
 
-                ctx |> extendValues (Map.add resolvedId innerV)
+                pushBinding resolvedId innerV ctx
 
             compiledBody ctx'
           | None ->
@@ -612,7 +719,7 @@ module FastEval =
             let resolvedId =
               caseVar.Name |> Identifier.LocalScope |> e.Scope.Resolve
 
-            ctx |> extendValues (Map.add resolvedId innerV)
+            pushBinding resolvedId innerV ctx
 
         compiledBody ctx'
 
@@ -634,7 +741,7 @@ module FastEval =
     // ── Lambda ────────────────────────────────────────────────────
     | RunnableExprRec.Lambda { RunnableExprLambda.Param = var
                                RunnableExprLambda.Body = body } ->
-      fun ctx -> Value.Lambda(var, body, ctx.Scope.Values, e.Scope)
+      fun ctx -> Value.Lambda(var, body, flattenScope ctx, e.Scope)
 
     // ── TypeLambda (type params erased at runtime) ────────────────
     | RunnableExprRec.TypeLambda({ Param = _; Body = body }) ->
@@ -700,14 +807,11 @@ module FastEval =
         | Right _ -> []
 
       let allBindings = unionBindings @ recordBindings
+      let bindingsFrame = allBindings |> Map.ofList
       let compiledBody = compileWithRest<'rc, 'ext> body rest
 
       fun ctx ->
-        let values =
-          allBindings
-          |> List.fold (fun acc (k, v) -> Map.add k v acc) ctx.Scope.Values
-
-        compiledBody (ctx |> extendValues (fun _ -> values))
+        compiledBody (pushFrame bindingsFrame ctx)
 
     // ── EntitiesDes ───────────────────────────────────────────────
     | RunnableExprRec.EntitiesDes({ Expr = s }) ->
@@ -831,9 +935,10 @@ module FastEval =
               VarType = it.VarType
               Source = compiledSource ctx })
 
-        // Build closure map
+        // Build closure map (flatten overlays to get full scope)
+        let allValues = flattenScope ctx
         let closure =
-          ctx.Scope.Values
+          allValues
           |> Map.filter (fun k _ -> q.Closure |> Map.containsKey k)
           |> Map.map (fun k v -> v, q.Closure.[k])
 
@@ -906,14 +1011,12 @@ module FastEval =
         |> Identifier.LocalScope
         |> TypeCheckScope.Empty.Resolve
 
-      let closure = closure |> Map.add resolvedParam argV
-
       let compiledBody = compileSequence<'rc, 'ext> (NonEmptyList.OfList(body, rest))
 
-      let mergedValues =
-        Map.merge (fun _ -> id) closure ctx.Scope.Values
-
-      compiledBody (ctx |> extendValues (fun _ -> mergedValues))
+      // O(1) push: closure + param as a single frame on the overlay stack.
+      // No Map merge — lookups traverse frames top-to-bottom.
+      let frame = closure |> Map.add resolvedParam argV
+      compiledBody (pushFrame frame ctx)
 
     // ── UnionCons application ─────────────────────────────────────
     | Value.UnionCons id -> Value.UnionCase(id, argV)
@@ -949,6 +1052,11 @@ module FastEval =
     | Value.Ext(fExt, appId) ->
       match appId with
       | Some appId ->
+        // Fast path: pre-compiled applicable (no Reader overhead)
+        match ctx.ExtensionOps.FastApplicables |> Map.tryFind appId with
+        | Some f -> f loc0 rest ctx fExt argV
+        | None ->
+        // Fallback: Reader-based applicable
         match ctx.ExtensionOps.Applicables |> Map.tryFind appId with
         | Some f -> runReader loc0 (f loc0 rest fExt argV) ctx
         | None ->

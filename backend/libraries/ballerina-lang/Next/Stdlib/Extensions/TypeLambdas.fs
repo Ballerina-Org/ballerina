@@ -68,7 +68,8 @@ module TypeLambdas =
                       evalContext.Scope.Values }
             ExtensionOps =
               { Eval = ops
-                Applicables = evalContext.ExtensionOps.Applicables } }
+                Applicables = evalContext.ExtensionOps.Applicables
+                FastApplicables = evalContext.ExtensionOps.FastApplicables } }
 
     static member RegisterLanguageContext<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO
       when 'ext: comparison
