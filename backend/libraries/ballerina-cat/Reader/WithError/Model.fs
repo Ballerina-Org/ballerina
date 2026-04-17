@@ -84,7 +84,14 @@ module WithError =
       when 'e: (static member Concat: 'e * 'e -> 'e)>
       (Reader r1: Reader<'a, 'c, 'e>)
       : Reader<'a, 'c, 'e> -> Reader<'a, 'c, 'e> =
-      fun (Reader r2) -> Reader(fun (c: 'c) -> sum.Any2 (r1 c) (r2 c))
+      fun (Reader r2) ->
+        Reader(fun (c: 'c) ->
+          match r1 c with
+          | Left a -> Left a
+          | Right e1 ->
+            match r2 c with
+            | Left a -> Left a
+            | Right e2 -> Right('e.Concat(e1, e2)))
 
     member inline _.All<'c, 'a, 'e
       when 'e: (static member Concat: 'e * 'e -> 'e)>
@@ -99,12 +106,33 @@ module WithError =
       Reader(fun (c: 'c) ->
         sum.AllNonEmpty(readers |> NonEmptyList.map (fun (Reader r) -> r c)))
 
+    // Core: seq with explicit empty error, lazy evaluation via Seq.map + sum.Any short-circuit
+    member inline _.Any<'c, 'a, 'e
+      when 'e: (static member Concat: 'e * 'e -> 'e)>
+      (emptyError: 'e, readers: seq<Reader<'a, 'c, 'e>>)
+      : Reader<'a, 'c, 'e> =
+      Reader(fun (c: 'c) ->
+        sum.Any(emptyError, readers |> Seq.map (fun (Reader r) -> r c)))
+
+    // seq with SRTP Default constraint for empty case
+    member inline reader.Any<'c, 'a, 'e
+      when 'e: (static member Concat: 'e * 'e -> 'e)
+      and 'e: (static member Default: 'e)>
+      (readers: seq<Reader<'a, 'c, 'e>>)
+      : Reader<'a, 'c, 'e> =
+      reader.Any('e.Default, readers)
+
+    // NonEmptyList: evaluate first eagerly, rest lazily
     member inline _.Any<'c, 'a, 'e
       when 'e: (static member Concat: 'e * 'e -> 'e)>
       (readers: NonEmptyList<Reader<'a, 'c, 'e>>)
       : Reader<'a, 'c, 'e> =
+      let (NonEmptyList(Reader first, rest)) = readers
+
       Reader(fun (c: 'c) ->
-        sum.Any(readers |> NonEmptyList.map (fun (Reader r) -> r c)))
+        match first c with
+        | Left a -> Left a
+        | Right e -> sum.Any(e, rest |> Seq.map (fun (Reader r) -> r c)))
 
     member inline reader.Any<'c, 'a, 'e
       when 'e: (static member Concat: 'e * 'e -> 'e)>
