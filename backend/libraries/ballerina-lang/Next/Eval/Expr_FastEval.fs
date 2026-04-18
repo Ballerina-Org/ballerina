@@ -942,29 +942,35 @@ module FastEval =
           |> Map.filter (fun k _ -> q.Closure |> Map.containsKey k)
           |> Map.map (fun k v -> v, q.Closure.[k])
 
+        // Source evaluator: compiles and evaluates sub-query iterator sources
+        // using the current evaluation context, so EntityRef/RelationRef values
+        // are resolved instead of leaving Value.Var placeholders.
+        let evaluateSource (src: RunnableExpr<'ext>) : Value<TypeValue<'ext>, 'ext> =
+          (compileSingle<'rc, 'ext> src) ctx
+
         // Replace closure lookups (pure structural traversal)
         let joins =
           q.Joins
           |> Option.map (
             NonEmptyList.map (fun join ->
               { join with
-                  Left = replaceClosureLookups closure join.Left
-                  Right = replaceClosureLookups closure join.Right })
+                  Left = replaceClosureLookups evaluateSource closure join.Left
+                  Right = replaceClosureLookups evaluateSource closure join.Right })
           )
 
         let where =
           q.Where
-          |> Option.map (replaceClosureLookups closure)
+          |> Option.map (replaceClosureLookups evaluateSource closure)
 
-        let select = replaceClosureLookups closure q.Select
+        let select = replaceClosureLookups evaluateSource closure q.Select
 
         let orderBy =
           q.OrderBy
-          |> Option.map (fun (v, dir) -> replaceClosureLookups closure v, dir)
+          |> Option.map (fun (v, dir) -> replaceClosureLookups evaluateSource closure v, dir)
 
         let distinct =
           q.Distinct
-          |> Option.map (replaceClosureLookups closure)
+          |> Option.map (replaceClosureLookups evaluateSource closure)
 
         Value.Query(
           ValueQuery.ValueQuerySimple
@@ -1092,9 +1098,12 @@ module FastEval =
         )
       )
 
-  // ── Query closure replacement (pure, no Reader) ────────────────────────
+  // ── Query closure replacement ──────────────────────────────────────────
+  // evaluateSource compiles+evaluates sub-query iterator source expressions
+  // so EntityRef/RelationRef values are produced for the SQL generator.
 
   and replaceClosureLookups<'ext>
+    (evaluateSource: RunnableExpr<'ext> -> Value<TypeValue<'ext>, 'ext>)
     (closure:
       Map<
         ResolvedIdentifier,
@@ -1102,7 +1111,7 @@ module FastEval =
        >)
     (e: RunnableExprQueryExpr<'ext>)
     : RunnableExprQueryExpr<'ext> =
-    let (!) = replaceClosureLookups closure
+    let (!) = replaceClosureLookups evaluateSource closure
 
     match e.Expr with
     | RunnableExprQueryExprRec.QueryConstant _
@@ -1175,24 +1184,25 @@ module FastEval =
       { e with
           Expr =
             RunnableExprQueryExprRec.QueryCountEvaluated(
-              replaceClosureLookupsQuery closure q
+              replaceClosureLookupsQuery evaluateSource closure q
             ) }
 
     | RunnableExprQueryExprRec.QueryExists q ->
       { e with
           Expr =
             RunnableExprQueryExprRec.QueryExistsEvaluated(
-              replaceClosureLookupsQuery closure q
+              replaceClosureLookupsQuery evaluateSource closure q
             ) }
 
     | RunnableExprQueryExprRec.QueryArray q ->
       { e with
           Expr =
             RunnableExprQueryExprRec.QueryArrayEvaluated(
-              replaceClosureLookupsQuery closure q
+              replaceClosureLookupsQuery evaluateSource closure q
             ) }
 
   and replaceClosureLookupsQuery<'ext>
+    (evaluateSource: RunnableExpr<'ext> -> Value<TypeValue<'ext>, 'ext>)
     (closure:
       Map<
         ResolvedIdentifier,
@@ -1202,56 +1212,42 @@ module FastEval =
     : ValueQuery<TypeValue<'ext>, 'ext> =
     match q with
     | RunnableExprQuery.UnionQueries(q1, q2) ->
-      let v1 = replaceClosureLookupsQuery closure q1
-      let v2 = replaceClosureLookupsQuery closure q2
+      let v1 = replaceClosureLookupsQuery evaluateSource closure q1
+      let v2 = replaceClosureLookupsQuery evaluateSource closure q2
       ValueQuery.ValueUnionQueries(v1, v2, v1.DeserializeFrom)
     | RunnableExprQuery.SimpleQuery q ->
-      // NOTE: iterator sources were already evaluated above (in the
-      // Query SimpleQuery case of compileWithRest). Here we only deal
-      // with the sub-query closure replacements for Count/Exists/Array.
-      // These sub-queries' iterator sources still need Reader-based eval.
-      // We fall back to the Reader-based replace_closure_lookups_query
-      // for nested sub-queries. This is safe because sub-queries are
-      // lazily evaluated in the DB layer, not in the expression evaluator.
-      //
-      // For the main query, the iterator sources are already compiled above.
-      // For nested sub-queries (Count/Exists/Array), we produce ValueQuerySimple
-      // with unevaluated iterator sources — this won't happen at this point
-      // because those are handled via QueryCountEvaluated etc. above.
-      //
-      // The sub-query in Count/Exists/Array uses the parent closure
-      // and gets fully resolved here.
+      // Evaluate sub-query iterator sources using the parent evaluation
+      // context (threaded via evaluateSource). This resolves expressions
+      // like schema.Relations.BundleVideos to actual EntityRef/RelationRef
+      // values that the SQL generator can translate.
       let iterators =
         q.Iterators
         |> NonEmptyList.map (fun it ->
-          // For sub-queries, we can't compile the source — it's evaluated lazily
-          // But this path is only reached from QueryCount/QueryExists/QueryArray
-          // where the closure already contains the needed values
           { ValueQueryIterator.Location = it.Location
             Var = it.Var
             VarType = it.VarType
-            Source = Value.Var(Var.Create $"__subquery_source_{it.Var.Name}") })
+            Source = evaluateSource it.Source })
 
       let joins =
         q.Joins
         |> Option.map (
           NonEmptyList.map (fun join ->
             { join with
-                Left = replaceClosureLookups closure join.Left
-                Right = replaceClosureLookups closure join.Right })
+                Left = replaceClosureLookups evaluateSource closure join.Left
+                Right = replaceClosureLookups evaluateSource closure join.Right })
         )
 
       let where =
-        q.Where |> Option.map (replaceClosureLookups closure)
+        q.Where |> Option.map (replaceClosureLookups evaluateSource closure)
 
-      let select = replaceClosureLookups closure q.Select
+      let select = replaceClosureLookups evaluateSource closure q.Select
 
       let orderBy =
         q.OrderBy
-        |> Option.map (fun (v, dir) -> replaceClosureLookups closure v, dir)
+        |> Option.map (fun (v, dir) -> replaceClosureLookups evaluateSource closure v, dir)
 
       let distinct =
-        q.Distinct |> Option.map (replaceClosureLookups closure)
+        q.Distinct |> Option.map (replaceClosureLookups evaluateSource closure)
 
       ValueQuery.ValueQuerySimple
         { Iterators = iterators
