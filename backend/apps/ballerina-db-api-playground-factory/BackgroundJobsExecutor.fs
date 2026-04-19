@@ -25,7 +25,6 @@ type MemoryDBBackgroundJobExecutor
     descriptorFetcher:
       Guid
         -> string
-        -> bool
         -> Sum<
           DbDescriptor<
             FileDBRuntimeContext,
@@ -68,7 +67,6 @@ type MemoryDBBackgroundJobExecutor
                     descriptorFetcher
                       schema.TenantId
                       schema.SchemaName
-                      schema.IsDraft
 
                   descriptor.DbExtension.DB
                   |> updateFromFileSystem dbFileConfig

@@ -41,7 +41,7 @@ module MemoryDBAPIFactory =
     |> fun (_, languageContext, typeCheckingConfig, _) ->
       languageContext, typeCheckingConfig
 
-  let getSchemaVersion tenantId schemaName draft schemaFileConfig =
+  let getSchemaVersion tenantId schemaName schemaFileConfig =
     sum {
       let schemaDirectory, schemaExtension =
         schemaFileConfig.SchemaDirectory, schemaFileConfig.SchemaExtension
@@ -54,22 +54,14 @@ module MemoryDBAPIFactory =
         fileManager.GetContent()
         |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
 
-      if draft then
-        return!
-          schema.Draft
-          |> sum.OfOption(
-            Errors.Singleton Location.Unknown (fun _ ->
-              $"Draft not found for schema {schemaName} in tenant {tenantId}.")
-          )
-      else
-        return!
-          schema.Publications
-          |> List.sortByDescending (fun publication -> publication.PublishedAt)
-          |> List.tryHead
-          |> sum.OfOption(
-            Errors.Singleton Location.Unknown (fun _ ->
-              $"Publication not found for schema {schemaName} in tenant {tenantId}.")
-          )
+      return!
+        schema.Publications
+        |> List.sortByDescending (fun publication -> publication.PublishedAt)
+        |> List.tryHead
+        |> sum.OfOption(
+          Errors.Singleton Location.Unknown (fun _ ->
+            $"Publication not found for schema {schemaName} in tenant {tenantId}.")
+        )
     }
 
   let descriptorFetcherFactory
@@ -81,7 +73,6 @@ module MemoryDBAPIFactory =
       Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>)
     (tenantId: Guid)
     (schemaName: string)
-    (draft: bool)
     : Sum<
         DbDescriptor<
           FileDBRuntimeContext,
@@ -93,10 +84,10 @@ module MemoryDBAPIFactory =
     =
     sum {
       let! schemaVersion =
-        getSchemaVersion tenantId schemaName draft schemaFileConfig
+        getSchemaVersion tenantId schemaName schemaFileConfig
 
       let! evalResult, typeCheckContext, typeCheckState, evalContext =
-        match compilationCache.TryFind(tenantId, schemaName, draft) with
+        match compilationCache.TryFind(tenantId, schemaName, false) with
         | None ->
           buildSchemaDefinition
             dbFileConfig
@@ -104,7 +95,7 @@ module MemoryDBAPIFactory =
             addBackgroundHookScope
             tenantId
             schemaName
-            draft
+            false
             schemaVersion.Definition
         | Some cachedCompilationContext ->
           sum.Return(
