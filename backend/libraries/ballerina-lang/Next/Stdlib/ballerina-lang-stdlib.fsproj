@@ -62,6 +62,7 @@
     <Compile Include="DB/CUD/Link.fs" />
     <Compile Include="DB/CUD/Unlink.fs" />
     <Compile Include="DB/CUD/IsLinked.fs" />
+    <Compile Include="DB/CUD/Move.fs" />
     <Compile Include="DB/Lookups.fs" />
     <Compile Include="DB/Extension.fs" />
     <Compile Include="DateTime/Model.fs" />

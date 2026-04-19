@@ -1040,6 +1040,11 @@ module MutableMemoryDB =
             return rel.All |> Set.contains (fromId, toId)
           } //: RelationRef<'db, 'ext> -> IsLinkedArgs<'runtimeContext, 'db, 'ext> -> Sum<bool, Errors<Unit>>
 
+      MoveBefore = fun _ _ -> reader.Return()
+      MoveAfter = fun _ _ -> reader.Return()
+      MoveBeforeReverse = fun _ _ -> reader.Return()
+      MoveAfterReverse = fun _ _ -> reader.Return()
+
       GetById =
         fun entity_ref entityId ->
           reader {

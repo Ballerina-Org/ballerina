@@ -802,9 +802,9 @@ module Unification =
         | Arrow { value = l1, r1 }, Arrow { value = l2, r2 } ->
           do! l1 == l2
           do! r1 == r2
-        // | TypeValue.Apply { value = v1, a1 }, TypeValue.Apply { value = v2, a2 } ->
-        //   do! (v1 |> TypeValue.Var) == (v2 |> TypeValue.Var)
-        //   do! a1 == a2
+        | TypeValue.Application { value = app1 },
+          TypeValue.Application { value = app2 } ->
+          do! SymbolicTypeApplication.Unify(loc0, app1, app2)
         | Set { value = e1 }, Set { value = e2 } -> do! e1 == e2
         | TypeValue.Tuple { value = e1 }, TypeValue.Tuple { value = e2 }
         | TypeValue.Sum { value = e1 }, TypeValue.Sum { value = e2 } when
@@ -906,6 +906,46 @@ module Unification =
         | _ ->
           return!
             (fun () -> $"Cannot unify types: {left} and {right}")
+            |> error
+            |> state.Throw
+      }
+
+
+  and SymbolicTypeApplication<'ve> with
+    static member Unify<'valueExt when 'valueExt: comparison>
+      (
+        loc0: Location,
+        left: SymbolicTypeApplication<'valueExt>,
+        right: SymbolicTypeApplication<'valueExt>
+      ) : State<
+            Unit,
+            UnificationContext<'valueExt>,
+            UnificationState<'valueExt>,
+            Errors<Location>
+           >
+      =
+
+      let error e = Errors.Singleton loc0 e
+
+      let (==) a b = TypeValue.Unify(loc0, a, b)
+
+      state {
+        match left, right with
+        | SymbolicTypeApplication.FromQueryRow id1,
+          SymbolicTypeApplication.FromQueryRow id2 when id1 = id2 ->
+          return ()
+        | SymbolicTypeApplication.Lookup(id1, a1),
+          SymbolicTypeApplication.Lookup(id2, a2) ->
+          do! (TypeValue.Lookup id1) == (TypeValue.Lookup id2)
+          do! a1 == a2
+        | SymbolicTypeApplication.Application(f1, a1),
+          SymbolicTypeApplication.Application(f2, a2) ->
+          do! SymbolicTypeApplication.Unify(loc0, f1, f2)
+          do! a1 == a2
+        | _ ->
+          return!
+            (fun () ->
+              $"Cannot unify type applications: {left} and {right}")
             |> error
             |> state.Throw
       }

@@ -126,6 +126,20 @@ let extracted_misses =
 let extracted_misses_count = List::length [string] extracted_misses;
 let extracted_misses_text = string::ofT extracted_misses;
 
+type Functor = [F:* ->*] -> {
+  map: [a:*] -> [b:*] -> (a -> b) -> F[a] -> F[b];
+};
+
+let list_functor: Functor[List] = {
+  map = fun [a:*] [b:*] (f: a -> b) (xs: List[a]) -> List::map [a] [b] f xs
+};
+
+let composed_functor = fun [F:* ->*] [G:* ->*] (F_map: Functor[F]) (G_map: Functor[G]) ->
+  {
+    map = fun [a:*] [b:*] (f: a -> b) (x: F[G[a]]) ->
+      F_map.map (G_map.map f) x
+  };
+
 // Return summary values so behavior is easy to verify.
 (
   ("player1_tag", p1_tag),
