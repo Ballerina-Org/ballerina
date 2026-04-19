@@ -78,7 +78,6 @@ type APIRegistrationFactory<'runtimeContext, 'db, 'customExtension, 'tenantId, '
   { DbDescriptorFetcher:
       'tenantId
         -> 'schemaName
-        -> bool
         -> Sum<
           DbDescriptor<'runtimeContext, 'db, 'customExtension>,
           Errors<Location>

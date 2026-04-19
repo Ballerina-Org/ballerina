@@ -43,11 +43,10 @@ module Create =
         'tenantId,
         'schemaName,
         string,
-        bool,
         CreatePayload,
         IResult
        >
-        (fun httpContext tenantId schemaName entityName draft payload ->
+        (fun httpContext tenantId schemaName entityName payload ->
           let entityId = payload.Id
           let entity = payload.Entity
 
@@ -59,7 +58,7 @@ module Create =
                    evalContext,
                    typeCheckContext,
                    typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+                getDbDescriptor tenantId schemaName context
 
               let! _tableDescriptor =
                 dbio.Schema.Entities

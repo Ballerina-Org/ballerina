@@ -162,7 +162,7 @@ module MemoryDBAPIFactory =
         .MapGetSchemaVersions(schemaFileConfig)
       |> ignore
 
-      routeGroupBuilder.RegisterAPIEndpoints factory (fun _ _ _ ->
+      routeGroupBuilder.RegisterAPIEndpoints factory (fun _ _ ->
         sum.Throw(
           Errors.Singleton Location.Unknown (fun _ ->
             "Filtering is not supported for in-memory database backends.")

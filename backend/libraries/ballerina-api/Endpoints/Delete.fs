@@ -36,11 +36,10 @@ module Delete =
         'tenantId,
         'schemaName,
         string,
-        bool,
         ValueDTO<ValueExtDTO>,
         IResult
        >
-        (fun httpContext tenantId schemaName entityName draft payload ->
+        (fun httpContext tenantId schemaName entityName payload ->
           let entityId = payload
 
           let result =
@@ -50,7 +49,7 @@ module Delete =
                    evalContext,
                    typeCheckContext,
                    typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+                getDbDescriptor tenantId schemaName context
 
               let! _tableDescriptor =
                 dbio.Schema.Entities
@@ -177,11 +176,10 @@ module Delete =
         'tenantId,
         'schemaName,
         string,
-        bool,
         ValueDTO<ValueExtDTO>[],
         IResult
        >
-        (fun httpContext tenantId schemaName entityName draft payload ->
+        (fun httpContext tenantId schemaName entityName payload ->
           let result =
             sum {
               let ids = payload
@@ -191,7 +189,7 @@ module Delete =
                    evalContext,
                    typeCheckContext,
                    typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+                getDbDescriptor tenantId schemaName context
 
               let! _tableDescriptor =
                 dbio.Schema.Entities

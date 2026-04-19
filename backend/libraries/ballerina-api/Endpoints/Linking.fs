@@ -45,11 +45,10 @@ module Linking =
         'tenantId,
         'schemaName,
         string,
-        bool,
         LinkPayload,
         IResult
        >
-        (fun httpContext tenantId schemaName relationName draft payload ->
+        (fun httpContext tenantId schemaName relationName payload ->
           let fromId, toId = payload.FromId, payload.ToId
 
           let result =
@@ -59,7 +58,7 @@ module Linking =
                    evalContext,
                    typeCheckContext,
                    typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+                getDbDescriptor tenantId schemaName context
 
               let! fromIdValue =
                 runDTOConverter languageContext (valueFromDTO fromId)
@@ -233,11 +232,10 @@ module Linking =
         'tenantId,
         'schemaName,
         string,
-        bool,
         LinkPayload,
         IResult
        >
-        (fun httpContext tenantId schemaName relationName draft payload ->
+        (fun httpContext tenantId schemaName relationName payload ->
           let fromId, toId = payload.FromId, payload.ToId
 
           let result =
@@ -247,7 +245,7 @@ module Linking =
                    evalContext,
                    typeCheckContext,
                    typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+                getDbDescriptor tenantId schemaName context
 
               let! fromIdValue =
                 runDTOConverter languageContext (valueFromDTO fromId)
@@ -429,11 +427,10 @@ module Linking =
         'tenantId,
         'schemaName,
         string,
-        bool,
         MovePayload,
         IResult
        >
-        (fun httpContext tenantId schemaName relationName draft payload ->
+        (fun httpContext tenantId schemaName relationName payload ->
           let fromId, sourceId, targetId =
             payload.FromId, payload.SourceId, payload.TargetId
 
@@ -444,7 +441,7 @@ module Linking =
                    evalContext,
                    typeCheckContext,
                    typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+                getDbDescriptor tenantId schemaName context
 
               let! fromIdValue =
                 runDTOConverter languageContext (valueFromDTO fromId)
@@ -645,11 +642,10 @@ module Linking =
         'tenantId,
         'schemaName,
         string,
-        bool,
         MovePayload,
         IResult
        >
-        (fun httpContext tenantId schemaName relationName draft payload ->
+        (fun httpContext tenantId schemaName relationName payload ->
           let fromId, sourceId, targetId =
             payload.FromId, payload.SourceId, payload.TargetId
 
@@ -660,7 +656,7 @@ module Linking =
                    evalContext,
                    typeCheckContext,
                    typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+                getDbDescriptor tenantId schemaName context
 
               let! fromIdValue =
                 runDTOConverter languageContext (valueFromDTO fromId)

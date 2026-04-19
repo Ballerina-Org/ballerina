@@ -253,7 +253,6 @@ module APIUtils =
     when 'customExtension: comparison and 'db: comparison>
     (tenantId: 'tenantId)
     (schemaName: 'schemaName)
-    (draft: bool)
     (context:
       APIRegistrationFactory<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
     : Sum<
@@ -279,7 +278,7 @@ module APIUtils =
        >
     =
     sum {
-      let! dbDescriptor = context.DbDescriptorFetcher tenantId schemaName draft
+      let! dbDescriptor = context.DbDescriptorFetcher tenantId schemaName
 
       return
         dbDescriptor.DbExtension,
