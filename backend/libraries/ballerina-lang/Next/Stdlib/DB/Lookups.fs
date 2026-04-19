@@ -454,6 +454,174 @@ module Lookups =
 
             } }
 
+    let memoryDBLookupNotConnectedManyId =
+      Identifier.FullyQualified([ "DB" ], "lookupNotConnectedMany")
+      |> TypeCheckScope.Empty.Resolve
+
+    let memoryDBLookupNotConnectedManyType =
+      TypeValue.CreateLambda(
+        TypeParameter.Create("schema", Kind.Schema),
+        TypeExpr.Lambda(
+          TypeParameter.Create("from_id", Kind.Star),
+          TypeExpr.Lambda(
+            TypeParameter.Create("to_id", Kind.Star),
+            TypeExpr.Lambda(
+              TypeParameter.Create("to_with_props", Kind.Star),
+              TypeExpr.Arrow(
+                TypeExpr.Apply(
+                  TypeExpr.Apply(
+                    TypeExpr.Apply(
+                      TypeExpr.Apply(
+                        TypeExpr.Lookup(
+                          "SchemaLookupMany" |> Identifier.LocalScope
+                        ),
+                        TypeExpr.Lookup("schema" |> Identifier.LocalScope)
+                      ),
+                      TypeExpr.Lookup("from_id" |> Identifier.LocalScope)
+                    ),
+                    TypeExpr.Lookup("to_id" |> Identifier.LocalScope)
+                  ),
+                  TypeExpr.Lookup("to_with_props" |> Identifier.LocalScope)
+                ),
+                TypeExpr.Arrow(
+                  TypeExpr.Lookup("from_id" |> Identifier.LocalScope),
+                  TypeExpr.Arrow(
+                    TypeExpr.Tuple
+                      [ TypeExpr.Primitive PrimitiveType.Int32
+                        TypeExpr.Primitive PrimitiveType.Int32 ],
+                    TypeExpr.Sum
+                      [ TypeExpr.Primitive PrimitiveType.Unit
+                        TypeExpr.Apply(
+                          TypeExpr.Lookup("List" |> Identifier.LocalScope),
+                          TypeExpr.Tuple[TypeExpr.Lookup(
+                                           "to_id" |> Identifier.LocalScope
+                                         )
+
+                                         TypeExpr.Lookup(
+                                           "to_with_props"
+                                           |> Identifier.LocalScope
+                                         )]
+                        ) ]
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+
+    let memoryDBLookupNotConnectedManyKind =
+      Kind.Arrow(
+        Kind.Schema,
+        Kind.Arrow(
+          Kind.Star,
+          Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+        )
+      )
+
+    let LookupNotConnectedManyOperation: OperationExtension<'runtimeContext, _, _> =
+      { PublicIdentifiers =
+          Some
+          <| (memoryDBLookupNotConnectedManyType,
+              memoryDBLookupNotConnectedManyKind,
+              DBValues.LookupNotConnectedMany
+                {| RelationRef = None
+                   EntityId = None |})
+        OperationsLens =
+          valueLens
+          |> PartialLens.BindGet (function
+            | DBValues.LookupNotConnectedMany v -> Some(DBValues.LookupNotConnectedMany v)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              let! op =
+                op
+                |> DBValues.AsLookupNotConnectedMany
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              match op.RelationRef with
+              | None ->
+                let! v, _ =
+                  v
+                  |> Value.AsExt
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
+
+                let! v =
+                  v
+                  |> valueLens.Get
+                  |> sum.OfOption(
+                    Errors.Singleton loc0 (fun () ->
+                      "Cannot get value from extension")
+                  )
+                  |> reader.OfSum
+
+                let! v =
+                  v
+                  |> DBValues.AsRelationLookupRef
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
+
+                return
+                  (DBValues.LookupNotConnectedMany
+                    {| RelationRef = Some v
+                       EntityId = None |}
+                   |> valueLens.Set,
+                   Some memoryDBLookupNotConnectedManyId)
+                  |> Ext
+              | Some(relation_ref, direction) ->
+                match op.EntityId with
+                | None ->
+                  return
+                    (DBValues.LookupNotConnectedMany
+                      {| RelationRef = Some(relation_ref, direction)
+                         EntityId = Some v |}
+                     |> valueLens.Set,
+                     Some memoryDBLookupNotConnectedManyId)
+                    |> Ext
+                | Some entityId ->
+                  let! v =
+                    v
+                    |> Value.AsTuple
+                    |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                    |> reader.OfSum
+
+                  match v with
+                  | [ Value.Primitive(PrimitiveValue.Int32 _offset)
+                      Value.Primitive(PrimitiveValue.Int32 _limit) ] ->
+                    let! target_values =
+                      db_ops.LookupNotConnectedMany
+                        relation_ref
+                        entityId
+                        direction
+                        (_offset, _limit)
+                      |> reader.MapError(Errors.MapContext(replaceWith loc0))
+                      |> reader.Catch
+
+                    match target_values with
+                    | Right(_e: Errors<_>) ->
+                      return
+                        Value.Sum(
+                          { Case = 1; Count = 2 },
+                          Value.Primitive PrimitiveValue.Unit
+                        )
+                    | Left target_values ->
+                      return
+                        Value.Sum(
+                          { Case = 2; Count = 2 },
+                          (target_values |> listSet, None) |> Ext
+                        )
+                  | _ ->
+                    return!
+                      Errors.Singleton loc0 (fun () ->
+                        "Expected a tuple of two Int32 values for offset and limit")
+                      |> reader.Throw
+
+            } }
+
     [ (memoryDBLookupOptionId, LookupOptionOperation)
       (memoryDBLookupOneId, LookupOneOperation)
-      (memoryDBLookupManyId, LookupManyOperation) ]
+      (memoryDBLookupManyId, LookupManyOperation)
+      (memoryDBLookupNotConnectedManyId, LookupNotConnectedManyOperation) ]

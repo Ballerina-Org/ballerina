@@ -291,6 +291,21 @@ module Patterns =
         Errors.Singleton () (fun () -> "Expected LookupMany operation")
         |> sum.Throw
 
+    static member AsLookupNotConnectedMany
+      (op: DBValues<'runtimeContext, 'db, 'ext>)
+      : Sum<
+          {| RelationRef:
+               Option<RelationRef<'db, 'ext> * RelationLookupDirection>
+             EntityId: Option<_> |},
+          Errors<Unit>
+         >
+      =
+      match op with
+      | DBValues.LookupNotConnectedMany v -> v |> sum.Return
+      | _ ->
+        Errors.Singleton () (fun () -> "Expected LookupNotConnectedMany operation")
+        |> sum.Throw
+
     static member AsDBIO
       (op: DBValues<'runtimeContext, 'db, 'ext>)
       : Sum<DBIO<'runtimeContext, 'db, 'ext>, Errors<Unit>> =

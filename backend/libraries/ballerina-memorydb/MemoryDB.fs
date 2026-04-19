@@ -1126,4 +1126,40 @@ module MutableMemoryDB =
 
             return
               results |> Seq.skip skip |> Seq.truncate truncate |> Seq.toList
+          }
+      LookupNotConnectedMany =
+        fun relation_ref source dir (skip, truncate) ->
+          reader {
+            let schema, db, relation, from, to_, schema_value = relation_ref
+
+            let! relation_data =
+              db.relations
+              |> Map.tryFind relation.Name
+              |> reader.OfOption(
+                Errors.Singleton () (fun () -> "Relation not found")
+              )
+
+            let _source_entity_ref, target_entity_ref, source_to_targets =
+              match dir with
+              | FromTo -> from, to_, relation_data.FromTo
+              | ToFrom -> to_, from, relation_data.ToFrom
+
+            let! targets =
+              entity_values_restricted_by_can_read
+                (schema, db, target_entity_ref, schema_value)
+                queryRunAdapter
+
+            let connected_ids =
+              source_to_targets
+              |> Map.tryFind source
+              |> Option.defaultValue Set.empty
+
+            return
+              targets
+              |> Map.toSeq
+              |> Seq.filter (fun (id, _) -> not (Set.contains id connected_ids))
+              |> Seq.skip skip
+              |> Seq.truncate truncate
+              |> Seq.map (fun (id, value) -> Value.Tuple [ id; value ])
+              |> Seq.toList
           } }

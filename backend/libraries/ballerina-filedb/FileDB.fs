@@ -485,6 +485,36 @@ module FileDB =
         fun relation_ref (source, dir, skip, truncate) ->
           dbTypeClass.LookupMany relation_ref source dir (skip, truncate))
 
+  let private lookupNotConnectedMany<'customExt when 'customExt: comparison>
+    directory
+    extension
+    (memoryDbOps:
+      DBTypeClass<
+        FileDBRuntimeContext,
+        MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
+        ValueExt<
+          FileDBRuntimeContext,
+          MutableMemoryDB<FileDBRuntimeContext, 'customExt>,
+          'customExt
+         >
+       >)
+    relation_ref
+    source
+    dir
+    (skip, truncate)
+    =
+    runDbOpWithFileManager
+      relation_ref
+      (source, dir, skip, truncate)
+      directory
+      extension
+      memoryDbOps
+      false
+      relationRefUpdater
+      (fun dbTypeClass ->
+        fun relation_ref (source, dir, skip, truncate) ->
+          dbTypeClass.LookupNotConnectedMany relation_ref source dir (skip, truncate))
+
   let updateFromFileSystem
     { DbDirectory = directory
       DbExtension = extension }
@@ -545,6 +575,8 @@ module FileDB =
       LookupMaybe = lookupMaybe directory extension memoryDbOps
       LookupOne = lookupOne directory extension memoryDbOps
       LookupMany = lookupMany directory extension memoryDbOps
+      LookupNotConnectedMany =
+        lookupNotConnectedMany directory extension memoryDbOps
       RunQuery =
         fun query range ->
           reader {
