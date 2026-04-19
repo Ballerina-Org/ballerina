@@ -46,11 +46,10 @@ module Update =
         'tenantId,
         'schemaName,
         string,
-        bool,
         UpdateDeltaWithId,
         IResult
        >
-        (fun httpContext tenantId schemaName entityName draft payload ->
+        (fun httpContext tenantId schemaName entityName payload ->
           let entityId = payload.Id
           let delta = payload.Delta
 
@@ -61,7 +60,7 @@ module Update =
                    evalContext,
                    typeCheckContext,
                    typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+                getDbDescriptor tenantId schemaName context
 
               let! _tableDescriptor =
                 dbio.Schema.Entities
@@ -216,11 +215,10 @@ module Update =
         'tenantId,
         'schemaName,
         string,
-        bool,
         UpdateDeltaWithId[],
         IResult
        >
-        (fun httpContext tenantId schemaName entityName draft payload ->
+        (fun httpContext tenantId schemaName entityName payload ->
           let result =
             sum {
               let! dbio,
@@ -228,7 +226,7 @@ module Update =
                    evalContext,
                    typeCheckContext,
                    typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+                getDbDescriptor tenantId schemaName context
 
               let! _tableDescriptor =
                 dbio.Schema.Entities

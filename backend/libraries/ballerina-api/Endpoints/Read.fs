@@ -94,13 +94,13 @@ module Read =
 
     app.MapPost(
       "/{tenantId}/{schemaName}/{entityName}/get-by-id",
-      Func<HttpContext, 'tenantId, 'schemaName, string, bool, ValueDTO<ValueExtDTO>, IResult>
-        (fun httpContext tenantId schemaName entityName draft idDTO ->
+      Func<HttpContext, 'tenantId, 'schemaName, string, ValueDTO<ValueExtDTO>, IResult>
+        (fun httpContext tenantId schemaName entityName idDTO ->
 
           let result =
             sum {
               let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+                getDbDescriptor tenantId schemaName context
 
               let! idValue =
                 valueFromDTO >> runDTOConverter languageContext <| idDTO
@@ -163,11 +163,11 @@ module Read =
 
     app.MapGet(
       "/{tenantId}/{schemaName}/{entityName}/many",
-      Func<HttpContext, 'tenantId, 'schemaName, string, bool, int, int, IResult>
-        (fun httpContext tenantId schemaName entityName draft (offset: int) (limit: int) ->
+      Func<HttpContext, 'tenantId, 'schemaName, string, int, int, IResult>
+        (fun httpContext tenantId schemaName entityName (offset: int) (limit: int) ->
           let result =
             sum {
-              let! dbio, languageContext, evalContext, _, _ = getDbDescriptor tenantId schemaName draft context
+              let! dbio, languageContext, evalContext, _, _ = getDbDescriptor tenantId schemaName context
 
               let! entityDescriptor =
                 entityDescriptorFromDb dbio entityName
@@ -220,13 +220,13 @@ module Read =
 
     app.MapPost(
       "/{tenantId}/{schemaName}/{relationName}/lookup-one/{direction}",
-      Func<HttpContext, 'tenantId, 'schemaName, string, string, bool, ValueDTO<ValueExtDTO>, IResult>
-        (fun httpContext tenantId schemaName relationName direction draft payloadId ->
+      Func<HttpContext, 'tenantId, 'schemaName, string, string, ValueDTO<ValueExtDTO>, IResult>
+        (fun httpContext tenantId schemaName relationName direction payloadId ->
 
           let result =
             sum {
               let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+                getDbDescriptor tenantId schemaName context
 
               let! idValue =
                 valueFromDTO >> runDTOConverter languageContext <| payloadId
@@ -285,14 +285,14 @@ module Read =
 
     app.MapPost(
       "/{tenantId}/{schemaName}/{relationName}/lookup-many/{direction}",
-      Func<HttpContext, 'tenantId, 'schemaName, string, string, bool, int, int, ValueDTO<ValueExtDTO>, IResult>
-        (fun httpContext tenantId schemaName relationName direction draft offset limit fromId ->
+      Func<HttpContext, 'tenantId, 'schemaName, string, string, int, int, ValueDTO<ValueExtDTO>, IResult>
+        (fun httpContext tenantId schemaName relationName direction offset limit fromId ->
 
           let result =
             sum {
 
               let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+                getDbDescriptor tenantId schemaName context
 
               let! idValue =
                 valueFromDTO >> runDTOConverter languageContext <| fromId
@@ -356,14 +356,14 @@ module Read =
 
     app.MapPost(
       "/{tenantId}/{schemaName}/{relationName}/lookup-not-connected-many/{direction}",
-      Func<HttpContext, 'tenantId, 'schemaName, string, string, bool, int, int, ValueDTO<ValueExtDTO>, IResult>
-        (fun httpContext tenantId schemaName relationName direction draft offset limit fromId ->
+      Func<HttpContext, 'tenantId, 'schemaName, string, string, int, int, ValueDTO<ValueExtDTO>, IResult>
+        (fun httpContext tenantId schemaName relationName direction offset limit fromId ->
 
           let result =
             sum {
 
               let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+                getDbDescriptor tenantId schemaName context
 
               let! idValue =
                 valueFromDTO >> runDTOConverter languageContext <| fromId
@@ -427,13 +427,13 @@ module Read =
 
     app.MapPost(
       "/{tenantId}/{schemaName}/{relationName}/lookup-option/{direction}",
-      Func<HttpContext, 'tenantId, 'schemaName, string, string, bool, ValueDTO<ValueExtDTO>, IResult>
-        (fun httpContext tenantId schemaName relationName direction draft fromId ->
+      Func<HttpContext, 'tenantId, 'schemaName, string, string, ValueDTO<ValueExtDTO>, IResult>
+        (fun httpContext tenantId schemaName relationName direction fromId ->
 
           let result =
             sum {
               let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+                getDbDescriptor tenantId schemaName context
 
               let! idValue =
                 valueFromDTO >> runDTOConverter languageContext <| fromId

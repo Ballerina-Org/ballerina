@@ -439,8 +439,26 @@ module Lexer =
     tokenizer {
       do! tokenizer.Exactly '\"' |> tokenizer.Ignore
 
-      let! literal =
-        tokenizer.Many(tokenizer.Exactly(fun c -> c <> '\"' && c <> '\n'))
+      let stringChar =
+        tokenizer.Any
+          [ tokenizer {
+              do! tokenizer.Exactly '\\' |> tokenizer.Ignore
+
+              let! escaped = tokenizer.Exactly(fun _ -> true)
+
+              return
+                match escaped with
+                | 'n' -> '\n'
+                | 't' -> '\t'
+                | 'r' -> '\r'
+                | '\\' -> '\\'
+                | '"' -> '"'
+                | '0' -> '\000'
+                | c -> c
+            }
+            tokenizer.Exactly(fun c -> c <> '\"' && c <> '\n' && c <> '\\') ]
+
+      let! literal = stringChar |> tokenizer.Many
 
       do! tokenizer.Exactly '\"' |> tokenizer.Ignore
 

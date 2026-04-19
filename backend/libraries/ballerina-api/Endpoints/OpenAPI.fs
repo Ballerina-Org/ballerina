@@ -22,10 +22,10 @@ module OpenAPI =
 
     app.MapGet(
       "/{tenantId}/{schemaName}/openapi",
-      Func<'tenantId, 'schemaName, bool, IResult>(fun tenantId schemaName draft ->
+      Func<'tenantId, 'schemaName, IResult>(fun tenantId schemaName ->
         let result =
           sum {
-            let! dbio, _, _, typeCheckContext, typeCheckState = getDbDescriptor tenantId schemaName draft context
+            let! dbio, _, _, typeCheckContext, typeCheckState = getDbDescriptor tenantId schemaName context
 
             let generationState: OpenAPIGenerationState =
               { DataModel = Map.empty

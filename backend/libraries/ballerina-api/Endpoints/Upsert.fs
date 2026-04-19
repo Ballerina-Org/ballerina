@@ -44,11 +44,10 @@ module Upsert =
         'tenantId,
         'schemaName,
         string,
-        bool,
         EntityWithId,
         IResult
        >
-        (fun httpContext tenantId schemaName entityName draft payload ->
+        (fun httpContext tenantId schemaName entityName payload ->
           let result =
             sum {
               let id, entity, delta = payload.Id, payload.Entity, payload.Delta
@@ -58,7 +57,7 @@ module Upsert =
                    evalContext,
                    typeCheckContext,
                    typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+                getDbDescriptor tenantId schemaName context
 
               let! _tableDescriptor =
                 dbio.Schema.Entities
@@ -230,11 +229,10 @@ module Upsert =
         'tenantId,
         'schemaName,
         string,
-        bool,
         EntityWithId[],
         IResult
        >
-        (fun httpContext tenantId schemaName entityName draft payload ->
+        (fun httpContext tenantId schemaName entityName payload ->
           let result =
             sum {
 
@@ -243,7 +241,7 @@ module Upsert =
                    evalContext,
                    typeCheckContext,
                    typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+                getDbDescriptor tenantId schemaName context
 
               let! _tableDescriptor =
                 dbio.Schema.Entities
