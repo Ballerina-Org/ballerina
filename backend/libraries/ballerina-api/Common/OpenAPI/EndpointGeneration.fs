@@ -558,6 +558,65 @@ module EndpointGeneration =
 
             do! add_lookup_endpoint_from cardinality.To
             do! add_lookup_endpoint_to cardinality.From
+
+            if cardinality.To = Cardinality.Many then
+              do!
+                state {
+                  let lookup_path =
+                    sprintf "%s/%s/lookup-not-connected-many/From" routePrefix relation_name.Name
+
+                  let request_model = OpenAPIDataModel.Ref from_id_name
+
+                  let response_model =
+                    (OpenAPIDataModel.Tuple
+                      [ OpenAPIDataModel.Ref to_id_name; OpenAPIDataModel.Ref to_with_props_name ])
+                    |> listToOpenApi
+
+                  let query_params =
+                    [ { Name = "offset" |> ResolvedIdentifier.Create
+                        Type = PrimitiveType.Int32 }
+                      { Name = "limit" |> ResolvedIdentifier.Create
+                        Type = PrimitiveType.Int32 } ]
+
+                  let endpoint =
+                    { Path = lookup_path
+                      Method = OpenAPIEndpointModel.Post
+                      QueryParameters = draftQueryParam :: query_params
+                      RequestModel = Some request_model
+                      ResponseModel = Some response_model }
+
+                  do! state.SetState(fun l -> endpoint :: l)
+                }
+
+            if cardinality.From = Cardinality.Many then
+              do!
+                state {
+                  let lookup_path =
+                    sprintf "%s/%s/lookup-not-connected-many/To" routePrefix relation_name.Name
+
+                  let request_model = OpenAPIDataModel.Ref to_id_name
+
+                  let response_model =
+                    (OpenAPIDataModel.Tuple
+                      [ OpenAPIDataModel.Ref from_id_name; OpenAPIDataModel.Ref from_with_props_name ])
+                    |> listToOpenApi
+
+                  let query_params =
+                    [ { Name = "offset" |> ResolvedIdentifier.Create
+                        Type = PrimitiveType.Int32 }
+                      { Name = "limit" |> ResolvedIdentifier.Create
+                        Type = PrimitiveType.Int32 } ]
+
+                  let endpoint =
+                    { Path = lookup_path
+                      Method = OpenAPIEndpointModel.Post
+                      QueryParameters = draftQueryParam :: query_params
+                      RequestModel = Some request_model
+                      ResponseModel = Some response_model }
+
+                  do! state.SetState(fun l -> endpoint :: l)
+                }
+
             return ()
           })
         |> state.All

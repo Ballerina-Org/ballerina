@@ -176,6 +176,16 @@ module Model =
             List<Value<TypeValue<'ext>, 'ext>>,
             ExprEvalContext<'runtimeContext, 'ext>,
             Errors<Unit>
+           >
+      LookupNotConnectedMany:
+        RelationRef<'db, 'ext>
+          -> Value<TypeValue<'ext>, 'ext>
+          -> RelationLookupDirection
+          -> int * int
+          -> Reader<
+            List<Value<TypeValue<'ext>, 'ext>>,
+            ExprEvalContext<'runtimeContext, 'ext>,
+            Errors<Unit>
            > }
 
   let db_nonsense () =
@@ -205,7 +215,8 @@ module Model =
       LookupOne =
         fun _ _ _ ->
           reader.Throw <| Errors.Singleton () (fun () -> "No such relation")
-      LookupMany = fun _ _ _ _ -> reader.Return [] }
+      LookupMany = fun _ _ _ _ -> reader.Return []
+      LookupNotConnectedMany = fun _ _ _ _ -> reader.Return [] }
 
   type DBEvalProperty<'ext> =
     { PropertyName: LocalIdentifier
@@ -260,6 +271,9 @@ module Model =
     | LookupOption of
       {| RelationRef: Option<RelationRef<'db, 'ext> * RelationLookupDirection> |}
     | LookupMany of
+      {| RelationRef: Option<RelationRef<'db, 'ext> * RelationLookupDirection>
+         EntityId: Option<Value<TypeValue<'ext>, 'ext>> |}
+    | LookupNotConnectedMany of
       {| RelationRef: Option<RelationRef<'db, 'ext> * RelationLookupDirection>
          EntityId: Option<Value<TypeValue<'ext>, 'ext>> |}
     | RelationLookupRef of RelationRef<'db, 'ext> * RelationLookupDirection
@@ -382,6 +396,14 @@ module Model =
           | None -> "None"
 
         $"LookupMany(Relation: {relationStr})"
+      | LookupNotConnectedMany lookupNotConnectedMany ->
+        let relationStr =
+          match lookupNotConnectedMany.RelationRef with
+          | Some((_, _, relation, fromEntity, toEntity, _), _) ->
+            $"RelationRef({relation.Name}, from: {fromEntity.Name}, to: {toEntity.Name})"
+          | None -> "None"
+
+        $"LookupNotConnectedMany(Relation: {relationStr})"
       | RelationLookupRef((_, _, relation, _fromEntity, _toEntity, _), direction) ->
         $"{relation.Name}[{direction}]"
       | EvalProperty prop -> $"EvalProperty({prop.PropertyName})"
