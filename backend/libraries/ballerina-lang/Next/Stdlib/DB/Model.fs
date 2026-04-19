@@ -63,6 +63,11 @@ module Model =
     { FromId: Value<TypeValue<'ext>, 'ext>
       ToId: Value<TypeValue<'ext>, 'ext> }
 
+  type MoveArgs<'runtimeContext, 'db, 'ext when 'ext: comparison> =
+    { FromId: Value<TypeValue<'ext>, 'ext>
+      SourceId: Value<TypeValue<'ext>, 'ext>
+      TargetId: Value<TypeValue<'ext>, 'ext> }
+
   type DBTypeClass<'runtimeContext, 'db, 'ext when 'ext: comparison> =
     { DB: 'db
       BeginTransaction: 'db -> Sum<Guid, Errors<Unit>>
@@ -112,6 +117,22 @@ module Model =
         RelationRef<'db, 'ext>
           -> IsLinkedArgs<'runtimeContext, 'db, 'ext>
           -> Reader<bool, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
+      MoveBefore:
+        RelationRef<'db, 'ext>
+          -> MoveArgs<'runtimeContext, 'db, 'ext>
+          -> Reader<unit, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
+      MoveAfter:
+        RelationRef<'db, 'ext>
+          -> MoveArgs<'runtimeContext, 'db, 'ext>
+          -> Reader<unit, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
+      MoveBeforeReverse:
+        RelationRef<'db, 'ext>
+          -> MoveArgs<'runtimeContext, 'db, 'ext>
+          -> Reader<unit, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
+      MoveAfterReverse:
+        RelationRef<'db, 'ext>
+          -> MoveArgs<'runtimeContext, 'db, 'ext>
+          -> Reader<unit, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
       GetById:
         EntityRef<'db, 'ext>
           -> Value<TypeValue<'ext>, 'ext>
@@ -172,6 +193,10 @@ module Model =
       Link = fun _ _ -> reader.Return()
       Unlink = fun _ _ -> reader.Return()
       IsLinked = fun _ _ -> reader.Return false
+      MoveBefore = fun _ _ -> reader.Return()
+      MoveAfter = fun _ _ -> reader.Return()
+      MoveBeforeReverse = fun _ _ -> reader.Return()
+      MoveAfterReverse = fun _ _ -> reader.Return()
       GetById =
         fun _ _ ->
           reader.Throw <| Errors.Singleton () (fun () -> "No such entity")
@@ -224,6 +249,10 @@ module Model =
     | Link of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
     | Unlink of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
     | IsLinked of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
+    | MoveBefore of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
+    | MoveAfter of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
+    | MoveBeforeReverse of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
+    | MoveAfterReverse of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
     | LinkMany of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
     | UnlinkMany of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
     | LookupOne of
@@ -281,6 +310,38 @@ module Model =
           | None -> "None"
 
         $"IsLinked(Relation: {relationStr})"
+      | MoveBefore moveBefore ->
+        let relationStr =
+          match moveBefore.RelationRef with
+          | Some(_, _, relation, fromEntity, toEntity, _) ->
+            $"RelationRef({relation.Name}, from: {fromEntity.Name}, to: {toEntity.Name})"
+          | None -> "None"
+
+        $"MoveBefore(Relation: {relationStr})"
+      | MoveAfter moveAfter ->
+        let relationStr =
+          match moveAfter.RelationRef with
+          | Some(_, _, relation, fromEntity, toEntity, _) ->
+            $"RelationRef({relation.Name}, from: {fromEntity.Name}, to: {toEntity.Name})"
+          | None -> "None"
+
+        $"MoveAfter(Relation: {relationStr})"
+      | MoveBeforeReverse moveBeforeReverse ->
+        let relationStr =
+          match moveBeforeReverse.RelationRef with
+          | Some(_, _, relation, fromEntity, toEntity, _) ->
+            $"RelationRef({relation.Name}, from: {fromEntity.Name}, to: {toEntity.Name})"
+          | None -> "None"
+
+        $"MoveBeforeReverse(Relation: {relationStr})"
+      | MoveAfterReverse moveAfterReverse ->
+        let relationStr =
+          match moveAfterReverse.RelationRef with
+          | Some(_, _, relation, fromEntity, toEntity, _) ->
+            $"RelationRef({relation.Name}, from: {fromEntity.Name}, to: {toEntity.Name})"
+          | None -> "None"
+
+        $"MoveAfterReverse(Relation: {relationStr})"
       | LinkMany linkMany ->
         let relationStr =
           match linkMany.RelationRef with

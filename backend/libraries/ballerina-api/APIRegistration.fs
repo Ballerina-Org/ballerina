@@ -44,6 +44,11 @@ module APIRegistration =
           apiContext
 
       do
+        moveRelation<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>
+          builder
+          apiContext
+
+      do
         get<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>
           builder
           apiContext

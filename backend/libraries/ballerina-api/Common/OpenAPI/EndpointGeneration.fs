@@ -401,6 +401,70 @@ module EndpointGeneration =
 
             do! state.SetState(fun l -> endpoint :: l)
 
+            let move_request_model =
+              OpenAPIDataModel.Object
+                [ ("FromId" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref from_id_name)
+                  ("SourceId" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref to_id_name)
+                  ("TargetId" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref to_id_name) ]
+
+            let endpoint =
+              { Path = sprintf "%s/%s/move-before" routePrefix relation_name.Name
+                QueryParameters = [ draftQueryParam ]
+                Method = OpenAPIEndpointModel.Post
+                RequestModel = Some(move_request_model)
+                ResponseModel =
+                  Some(
+                    OpenAPIDataModel.Sum[OpenAPIDataModel.Primitive PrimitiveType.Unit
+                                         OpenAPIDataModel.Primitive PrimitiveType.Unit]
+                  ) }
+
+            do! state.SetState(fun l -> endpoint :: l)
+
+            let endpoint =
+              { Path = sprintf "%s/%s/move-after" routePrefix relation_name.Name
+                QueryParameters = [ draftQueryParam ]
+                Method = OpenAPIEndpointModel.Post
+                RequestModel = Some(move_request_model)
+                ResponseModel =
+                  Some(
+                    OpenAPIDataModel.Sum[OpenAPIDataModel.Primitive PrimitiveType.Unit
+                                         OpenAPIDataModel.Primitive PrimitiveType.Unit]
+                  ) }
+
+            do! state.SetState(fun l -> endpoint :: l)
+
+            let move_reverse_request_model =
+              OpenAPIDataModel.Object
+                [ ("FromId" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref to_id_name)
+                  ("SourceId" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref from_id_name)
+                  ("TargetId" |> ResolvedIdentifier.Create, OpenAPIDataModel.Ref from_id_name) ]
+
+            let endpoint =
+              { Path = sprintf "%s/%s/move-before-reverse" routePrefix relation_name.Name
+                QueryParameters = [ draftQueryParam ]
+                Method = OpenAPIEndpointModel.Post
+                RequestModel = Some(move_reverse_request_model)
+                ResponseModel =
+                  Some(
+                    OpenAPIDataModel.Sum[OpenAPIDataModel.Primitive PrimitiveType.Unit
+                                         OpenAPIDataModel.Primitive PrimitiveType.Unit]
+                  ) }
+
+            do! state.SetState(fun l -> endpoint :: l)
+
+            let endpoint =
+              { Path = sprintf "%s/%s/move-after-reverse" routePrefix relation_name.Name
+                QueryParameters = [ draftQueryParam ]
+                Method = OpenAPIEndpointModel.Post
+                RequestModel = Some(move_reverse_request_model)
+                ResponseModel =
+                  Some(
+                    OpenAPIDataModel.Sum[OpenAPIDataModel.Primitive PrimitiveType.Unit
+                                         OpenAPIDataModel.Primitive PrimitiveType.Unit]
+                  ) }
+
+            do! state.SetState(fun l -> endpoint :: l)
+
             let cardinality =
               relation_desc.Cardinality
               |> Option.defaultValue
