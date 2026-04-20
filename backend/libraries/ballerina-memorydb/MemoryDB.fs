@@ -962,6 +962,68 @@ module MutableMemoryDB =
             let fromId, toId = unlink_arg.FromId, unlink_arg.ToId
             let _, db, relation, _, _, _ = relation_ref
 
+            let remove_conflicts
+              (rel: MemoryDBRelation<'runtimeContext, 'customExt>)
+              : MemoryDBRelation<'runtimeContext, 'customExt> =
+              match relation.Cardinality with
+              | Some { From = One; To = One } ->
+                // Remove any link from this fromId OR to this toId (but not the exact pair we're about to add)
+                let conflicting =
+                  rel.All
+                  |> Set.filter (fun (f, t) ->
+                    (f = fromId || t = toId) && not (f = fromId && t = toId))
+
+                conflicting
+                |> Set.fold
+                  (fun acc (f, t) ->
+                    { acc with
+                        All = acc.All |> Set.remove (f, t)
+                        FromTo =
+                          acc.FromTo
+                          |> Map.change f (Option.map (Set.remove t))
+                        ToFrom =
+                          acc.ToFrom
+                          |> Map.change t (Option.map (Set.remove f)) })
+                  rel
+              | Some { From = One; To = Many } ->
+                // Remove any other link to this toId
+                let conflicting =
+                  rel.All
+                  |> Set.filter (fun (f, t) -> t = toId && f <> fromId)
+
+                conflicting
+                |> Set.fold
+                  (fun acc (f, t) ->
+                    { acc with
+                        All = acc.All |> Set.remove (f, t)
+                        FromTo =
+                          acc.FromTo
+                          |> Map.change f (Option.map (Set.remove t))
+                        ToFrom =
+                          acc.ToFrom
+                          |> Map.change t (Option.map (Set.remove f)) })
+                  rel
+              | Some { From = Many; To = One }
+              | Some { From = Zero; To = One } ->
+                // Remove any other link from this fromId
+                let conflicting =
+                  rel.All
+                  |> Set.filter (fun (f, t) -> f = fromId && t <> toId)
+
+                conflicting
+                |> Set.fold
+                  (fun acc (f, t) ->
+                    { acc with
+                        All = acc.All |> Set.remove (f, t)
+                        FromTo =
+                          acc.FromTo
+                          |> Map.change f (Option.map (Set.remove t))
+                        ToFrom =
+                          acc.ToFrom
+                          |> Map.change t (Option.map (Set.remove f)) })
+                  rel
+              | _ -> rel
+
             let add_link
               (rel: MemoryDBRelation<'runtimeContext, 'customExt>)
               : MemoryDBRelation<'runtimeContext, 'customExt> =
@@ -981,7 +1043,7 @@ module MutableMemoryDB =
             db.relations <-
               db.relations
               |> Map.change relation.Name (function
-                | Some rel -> Some(add_link rel)
+                | Some rel -> Some(rel |> remove_conflicts |> add_link)
                 | None -> Some(MemoryDBRelation.Empty |> add_link))
 
             do
