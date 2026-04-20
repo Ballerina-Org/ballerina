@@ -1,0 +1,219 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// Ballerina Example 24: Frontend Views (JSX-like Syntax)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// This sample demonstrates the JSX-like view syntax for defining typed
+// React components directly in Ballerina. Views compile to TSX files that
+// are served by the backend and consumed by the Next.js frontend.
+//
+// Key concepts:
+//   - `view` keyword introduces a component with a single props parameter
+//   - JSX-like body with HTML tags, attributes, and expression containers
+//   - Custom components referenced by name (lowercase identifiers)
+//   - `Frontend::View[Schema][I][S]` built-in type
+//   - `WebApp::run` builder collects views into routes and components
+//
+// Every view takes one parameter of the built-in generic type
+// `View::Props[Schema][I][S]`, which is a record with four fields:
+//
+//   { schema: Schema;  context: I;  state: S;  setState: (S -> S) -> () }
+//
+// Syntax:
+//
+//   let myView = view (props:View::Props[MySchema][I][S]) ->
+//     <tag attr="value" handler={expr}>
+//       {expr}
+//       <child />
+//     </tag>
+//
+// The resulting type is Frontend::View[MySchema][I][S].
+//
+// ── Props transformation ─────────────────────────────────────────────────
+//
+// When composing child views, the parent passes its `props` and adapts
+// context/state with two built-in combinators:
+//
+//   View::Props::mapContext : (I -> I') -> View::Props[S][I][St] -> View::Props[S][I'][St]
+//     Transforms the readonly context. The state and setState pass through.
+//
+//   View::Props::mapState : (St -> St') -> ((St' -> St') -> (St -> St)) -> View::Props[S][I][St] -> View::Props[S][I][St']
+//     Focuses the state. First arg extracts child state from parent state.
+//     Second arg lifts a child updater back into a parent updater.
+//
+// Children receive the whole `props` object, already adapted:
+//
+//   <child props={props |> View::Props::mapContext(...) |> View::Props::mapState(...)} />
+
+// ── Domain schema ────────────────────────────────────────────────────────
+// A minimal todo-list schema. We keep it simple to focus on view syntax.
+
+type Todo = {
+  Title: string;
+  Done: bool;
+};
+type TodoId = { TodoId: string };
+
+type TodoSchema =
+  schema {
+    entity Todos {
+      type Todo TodoId
+    }
+  };
+
+// ═════════════════════════════════════════════════════════════════════════
+// VIEW DEFINITIONS
+// ═════════════════════════════════════════════════════════════════════════
+
+// ── 1. Simple counter ────────────────────────────────────────────────────
+// Demonstrates: basic view, string attrs, expression attrs, event handlers.
+// context = label (readonly from parent), state = count (local mutable int).
+// Type: Frontend::View[TodoSchema][string][int32]
+
+let counter = view (props:View::Props[TodoSchema][string][int32]) ->
+  <div class="counter">
+    <h2>{props.context}</h2>
+    <span class="count">{props.state}</span>
+    <button onClick={props.setState(fun n -> n + 1)}>+</button>
+    <button onClick={props.setState(fun n -> n - 1)}>-</button>
+  </div>;
+
+// ── 2. Todo item ─────────────────────────────────────────────────────────
+// Demonstrates: conditional expression in attribute, record-with update,
+// boolean negation, checkbox binding.
+// context = unit, state = the todo itself.
+// Type: Frontend::View[TodoSchema][unit][Todo]
+
+let todoItem = view (props:View::Props[TodoSchema][unit][Todo]) ->
+  <li class={if props.state.Done then "done" else "pending"}>
+    <input type="checkbox"
+           checked={props.state.Done}
+           onChange={props.setState(fun t -> { t with Todo::Done = !(t.Done) })} />
+    <span>{props.state.Title}</span>
+  </li>;
+
+// ── 3. Todo list (composes todoItem) ─────────────────────────────────────
+// Demonstrates: composition via mapState. Each todo item gets a focused
+// slice of the list state, with an updater that maps changes back.
+// context = unit, state = list of todos.
+// Type: Frontend::View[TodoSchema][unit][List[Todo]]
+
+let todoList = view (props:View::Props[TodoSchema][unit][List[Todo]]) ->
+  <div class="todo-list">
+    <h1>My Todos</h1>
+    <ul>
+      {List::map (fun todo ->
+        <todoItem props={
+          props |> View::Props::mapState
+            (fun _ -> todo)
+            (fun f items -> List::map (fun t ->
+              if t.Title == todo.Title then f t else t
+            ) items)
+        } />
+      ) props.state}
+    </ul>
+    <p>
+      {List::length (List::filter (fun t -> t.Done) props.state)}
+      of
+      {List::length props.state}
+      completed
+    </p>
+  </div>;
+
+// ── 4. Fragment ──────────────────────────────────────────────────────────
+// Demonstrates: fragment syntax <>...</> for returning multiple root nodes
+// without a wrapper element.
+// context = header info record, state = unit (stateless display).
+// Type: Frontend::View[TodoSchema][HeaderInput][unit]
+
+type HeaderInput = {
+  Title: string;
+  Subtitle: string;
+};
+
+let pageHeader = view (props:View::Props[TodoSchema][HeaderInput][unit]) ->
+  <>
+    <h1>{props.context.Title}</h1>
+    <p class="subtitle">{props.context.Subtitle}</p>
+  </>;
+
+// ── 5. Self-closing tags ─────────────────────────────────────────────────
+// Demonstrates: void HTML elements with self-closing syntax.
+// Both are stateless display-only views.
+// Type: Frontend::View[TodoSchema][unit][unit]
+
+let divider = view (props:View::Props[TodoSchema][unit][unit]) ->
+  <hr />;
+
+// Type: Frontend::View[TodoSchema][AvatarInput][unit]
+
+type AvatarInput = {
+  Url: string;
+  Alt: string;
+};
+
+let avatar = view (props:View::Props[TodoSchema][AvatarInput][unit]) ->
+  <img src={props.context.Url} alt={props.context.Alt} class="avatar" />;
+
+// ── 6. Nested composition ────────────────────────────────────────────────
+// Demonstrates: combining multiple custom components and HTML in one view.
+// Uses mapContext and mapState to wire parent state into child props.
+// context = unit (root page), state = composite record.
+// Type: Frontend::View[TodoSchema][unit][PageState]
+
+type PageState = {
+  Todos: List[Todo];
+  Count: int32;
+};
+
+let homePage = view (props:View::Props[TodoSchema][unit][PageState]) ->
+  <div class="home">
+    <pageHeader props={
+      props
+      |> View::Props::mapContext(fun _ -> { Title = "Todo App"; Subtitle = "Built with Ballerina views" })
+      |> View::Props::mapState (fun _ -> ()) (fun _ s -> s)
+    } />
+    <divider props={
+      props
+      |> View::Props::mapState (fun _ -> ()) (fun _ s -> s)
+    } />
+    <counter props={
+      props
+      |> View::Props::mapContext(fun _ -> "Visits")
+      |> View::Props::mapState
+        (fun s -> s.Count)
+        (fun f s -> { s with PageState::Count = f s.Count })
+    } />
+    <divider props={
+      props
+      |> View::Props::mapState (fun _ -> ()) (fun _ s -> s)
+    } />
+    <todoList props={
+      props
+      |> View::Props::mapState
+        (fun s -> s.Todos)
+        (fun f s -> { s with PageState::Todos = f s.Todos })
+    } />
+  </div>;
+
+// ═════════════════════════════════════════════════════════════════════════
+// WEBAPP BUILDER
+// ═════════════════════════════════════════════════════════════════════════
+// WebApp::run wraps a DB::run and attaches routes and components.
+// Routes map URL paths to top-level views.
+// Components register reusable views by name.
+
+let main = fun (schema: TodoSchema) ->
+  let seed_todos = [
+    { Title = "Learn Ballerina"; Done = true },
+    { Title = "Build views"; Done = false },
+    { Title = "Ship it"; Done = false }
+  ];
+  (seed_todos, "seeded");
+
+WebApp::run [TodoSchema] (DB::run [TodoSchema] main)
+  |> WebApp::withRoute("/", homePage)
+  |> WebApp::withRoute("/header", pageHeader)
+  |> WebApp::withComponent("counter", counter)
+  |> WebApp::withComponent("todoItem", todoItem)
+  |> WebApp::withComponent("divider", divider)
+  |> WebApp::withComponent("avatar", avatar)
