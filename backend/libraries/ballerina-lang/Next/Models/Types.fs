@@ -1496,6 +1496,99 @@ module Model =
       | Some t -> $"{self.Var}: {t} in {self.Source}"
       | None -> $"{self.Var} in {self.Source}"
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // View AST types (JSX-like syntax)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  and ExprView<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Param: Var
+      ParamType: Option<'T>
+      Body: ExprViewNode<'T, 'Id, 'valueExt>
+      Location: Location }
+
+    override self.ToString() =
+      match self.ParamType with
+      | Some t -> $"view ({self.Param}: {t}) -> {self.Body}"
+      | None -> $"view {self.Param} -> {self.Body}"
+
+  and ExprViewNode<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Location: Location
+      Node: ExprViewNodeRec<'T, 'Id, 'valueExt> }
+
+    override self.ToString() = self.Node.ToString()
+
+  and ExprViewNodeRec<'T, 'Id, 'valueExt when 'Id: comparison> =
+    | ViewElement of ExprViewElement<'T, 'Id, 'valueExt>
+    | ViewFragment of List<ExprViewNode<'T, 'Id, 'valueExt>>
+    | ViewExprContainer of Expr<'T, 'Id, 'valueExt>
+    | ViewText of string
+
+    override self.ToString() =
+      match self with
+      | ViewElement el -> el.ToString()
+      | ViewFragment children ->
+        let childStrs = children |> List.map (fun c -> c.ToString()) |> String.concat " "
+        $"<>{childStrs}</>"
+      | ViewExprContainer e -> $"{{{e}}}"
+      | ViewText t -> t
+
+  and ExprViewElement<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Tag: string
+      Attributes: List<ExprViewAttribute<'T, 'Id, 'valueExt>>
+      Children: List<ExprViewNode<'T, 'Id, 'valueExt>>
+      SelfClosing: bool }
+
+    override self.ToString() =
+      let attrStr =
+        self.Attributes
+        |> List.map (fun a -> a.ToString())
+        |> String.concat " "
+      if self.SelfClosing then
+        $"<{self.Tag} {attrStr} />"
+      else
+        let childStr = self.Children |> List.map (fun c -> c.ToString()) |> String.concat ""
+        $"<{self.Tag} {attrStr}>{childStr}</{self.Tag}>"
+
+  and ExprViewAttribute<'T, 'Id, 'valueExt when 'Id: comparison> =
+    | ViewAttrStringValue of Name: string * Value: string
+    | ViewAttrExprValue of Name: string * Value: Expr<'T, 'Id, 'valueExt>
+
+    override self.ToString() =
+      match self with
+      | ViewAttrStringValue(name, value) -> $"{name}=\"{value}\""
+      | ViewAttrExprValue(name, _) -> $"{name}={{...}}"
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Coroutine AST types (co { } computation expressions)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  and ExprCo<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Body: ExprCoStep<'T, 'Id, 'valueExt>
+      Location: Location }
+
+    override self.ToString() = $"co {{ {self.Body} }}"
+
+  and ExprCoStep<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Location: Location
+      Step: ExprCoStepRec<'T, 'Id, 'valueExt> }
+
+    override self.ToString() = self.Step.ToString()
+
+  and ExprCoStepRec<'T, 'Id, 'valueExt when 'Id: comparison> =
+    | CoLetBang of Var: Var * Value: Expr<'T, 'Id, 'valueExt> * Rest: ExprCoStep<'T, 'Id, 'valueExt>
+    | CoDoBang of Value: Expr<'T, 'Id, 'valueExt> * Rest: ExprCoStep<'T, 'Id, 'valueExt>
+    | CoReturn of Expr<'T, 'Id, 'valueExt>
+    | CoReturnBang of Expr<'T, 'Id, 'valueExt>
+
+    override self.ToString() =
+      match self with
+      | CoLetBang(var, value, rest) -> $"let! {var} = {value}; {rest}"
+      | CoDoBang(value, rest) -> $"do! {value}; {rest}"
+      | CoReturn e -> $"return {e}"
+      | CoReturnBang e -> $"return! {e}"
+
+  // ═══════════════════════════════════════════════════════════════════════════
+
   and ExprRecoveredSyntaxError<'T, 'Id, 'valueExt when 'Id: comparison> =
     { ErrorMessage: string
       ErrorLocation: Location
@@ -1546,6 +1639,8 @@ module Model =
     | TupleDes of ExprTupleDes<'T, 'Id, 'valueExt>
     | SumDes of ExprSumDes<'T, 'Id, 'valueExt>
     | Query of ExprQuery<'T, 'Id, 'valueExt>
+    | View of ExprView<'T, 'Id, 'valueExt>
+    | Co of ExprCo<'T, 'Id, 'valueExt>
     | RecoveredSyntaxError of ExprRecoveredSyntaxError<'T, 'Id, 'valueExt>
     | ErrorDanglingRecordDes of ExprErrorDanglingRecordDes<'T, 'Id, 'valueExt>
     | ErrorDanglingScopedIdentifier of ExprErrorDanglingScopedIdentifier<'T, 'Id, 'valueExt>
@@ -1657,6 +1752,8 @@ module Model =
         $"(if {cond.ToString()} then {thenExpr.ToString()} else {elseExpr.ToString()})"
 
       | Query q -> q.ToString()
+      | View v -> v.ToString()
+      | Co c -> c.ToString()
       | RecoveredSyntaxError err -> err.ToString()
       | ErrorDanglingRecordDes err -> err.ToString()
       | ErrorDanglingScopedIdentifier err -> err.ToString()
@@ -2101,6 +2198,8 @@ module Model =
     | TupleDes of TypeCheckedExprTupleDes<'valueExt>
     | SumDes of TypeCheckedExprSumDes<'valueExt>
     | Query of TypeCheckedExprQuery<'valueExt>
+    | View of ExprView<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>
+    | Co of ExprCo<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>
     | RecoveredSyntaxError of TypeCheckedExprRecoveredSyntaxError
     | ErrorDanglingRecordDes of TypeCheckedExprErrorDanglingRecordDes<'valueExt>
     | ErrorDanglingScopedIdentifier of TypeCheckedExprErrorDanglingScopedIdentifier
@@ -2188,6 +2287,8 @@ module Model =
              Else = elseExpr }) ->
         $"(if {cond} then {thenExpr} else {elseExpr})"
       | Query q -> q.ToString()
+      | View v -> v.ToString()
+      | Co c -> c.ToString()
       | RecoveredSyntaxError err -> err.ToString()
       | ErrorDanglingRecordDes err -> err.ToString()
       | ErrorDanglingScopedIdentifier err -> err.ToString()

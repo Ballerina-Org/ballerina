@@ -51,6 +51,8 @@ module Lexer =
     | Array
     | Ascending
     | Descending
+    | View
+    | Co
 
     override this.ToString() =
       match this with
@@ -86,6 +88,8 @@ module Lexer =
       | Array -> "array"
       | Ascending -> "asc"
       | Descending -> "desc"
+      | View -> "view"
+      | Co -> "co"
 
   type Operator =
     | Equals
@@ -118,6 +122,8 @@ module Lexer =
     | Div
     | Percentage
     | Bang
+    | TagSelfClose
+    | TagClose
 
     override this.ToString() =
       match this with
@@ -154,6 +160,8 @@ module Lexer =
       | GreaterEqual -> ">="
       | LessThanOrEqual -> "<="
       | Percentage -> "%"
+      | TagSelfClose -> "/>"
+      | TagClose -> "</"
 
   let floatSuffixString = 'f'
   let doubleSuffixString = 'd'
@@ -320,6 +328,8 @@ module Lexer =
       Keyword.Ascending.ToString(), LocalizedToken.FromKeyword Keyword.Ascending
       Keyword.Descending.ToString(),
       LocalizedToken.FromKeyword Keyword.Descending
+      Keyword.View.ToString(), LocalizedToken.FromKeyword Keyword.View
+      Keyword.Co.ToString(), LocalizedToken.FromKeyword Keyword.Co
       "true", LocalizedToken.FromBoolLiteral true
       "false", LocalizedToken.FromBoolLiteral false ]
     |> List.sortByDescending (fun (w, _) -> w.Length)
@@ -363,6 +373,7 @@ module Lexer =
         |> tokenizer.Map(LocalizedToken.FromOperator Operator.GreaterEqual)
         word "<="
         |> tokenizer.Map(LocalizedToken.FromOperator Operator.LessThanOrEqual)
+        word "</" |> tokenizer.Map(LocalizedToken.FromOperator Operator.TagClose)
         word ">"
         |> tokenizer.Map(LocalizedToken.FromOperator Operator.GreaterThan)
         word "<" |> tokenizer.Map(LocalizedToken.FromOperator Operator.LessThan)
@@ -403,6 +414,7 @@ module Lexer =
         word "|" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Pipe)
         word "*" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Times)
         word "+" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Plus)
+        word "/>" |> tokenizer.Map(LocalizedToken.FromOperator Operator.TagSelfClose)
         word "/" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Div)
         word "!" |> tokenizer.Map(LocalizedToken.FromOperator Operator.Bang)
         word "%"

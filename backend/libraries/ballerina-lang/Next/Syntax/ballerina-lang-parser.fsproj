@@ -13,6 +13,7 @@
     <Compile Include="Parser/Type/Schema.fs" />
     <Compile Include="Parser/Type.fs" />
     <Compile Include="Parser/Query.fs" />
+    <Compile Include="Parser/View.fs" />
     <Compile Include="Parser/Expr.fs" />
   </ItemGroup>
   <ItemGroup>

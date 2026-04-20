@@ -967,6 +967,8 @@ module Expr =
       | Token.Keyword Keyword.If
       | Token.Keyword Keyword.Match
       | Token.Keyword Keyword.Query
+      | Token.Keyword Keyword.View
+      | Token.Keyword Keyword.Co
       | Token.Operator(Operator.RoundBracket Bracket.Open)
       | Token.Operator(Operator.SquareBracket Bracket.Open)
       | Token.Operator(Operator.CurlyBracket Bracket.Open)
@@ -994,6 +996,12 @@ module Expr =
       | Token.Keyword Keyword.Match -> [ matchWith () ]
       | Token.Keyword Keyword.Query ->
         [ query (fun () -> expr parseAllComplexShapes) () ]
+      | Token.Keyword Keyword.View ->
+        [ viewExpr (fun () -> expr parseAllComplexShapes) () ]
+      | Token.Keyword Keyword.Co ->
+        [ coExpr (fun () -> expr parseAllComplexShapes) () ]
+      | Token.Operator Operator.LessThan ->
+        [ viewNodeExpr (fun () -> expr parseAllComplexShapes) () ]
       | Token.Identifier _
       | Token.Keyword Keyword.Schema
       | Token.Keyword Keyword.Entity

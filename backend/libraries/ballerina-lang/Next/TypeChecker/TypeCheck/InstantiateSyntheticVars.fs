@@ -306,6 +306,20 @@ module InstantiateSyntheticVars =
         | TypeCheckedExprRec.Query q ->
           return
             TypeCheckedExpr.Query(q, expr.Type, expr.Kind, loc0, expr.Scope)
+        | TypeCheckedExprRec.View v ->
+          return
+            { Expr = TypeCheckedExprRec.View v
+              Location = loc0
+              Type = expr.Type
+              Kind = expr.Kind
+              Scope = expr.Scope }
+        | TypeCheckedExprRec.Co c ->
+          return
+            { Expr = TypeCheckedExprRec.Co c
+              Location = loc0
+              Type = expr.Type
+              Kind = expr.Kind
+              Scope = expr.Scope }
         | TypeCheckedExprRec.RecoveredSyntaxError err ->
           return
             { Expr = TypeCheckedExprRec.RecoveredSyntaxError err
