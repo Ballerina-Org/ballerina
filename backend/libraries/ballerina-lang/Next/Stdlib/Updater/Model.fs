@@ -7,11 +7,12 @@ module Model =
   open Ballerina.Errors
   open PolyType
 
+  [<NoComparison; NoEquality>]
   type UpdaterType<'ext> =
     Value<TypeValue<'ext>, 'ext>
       -> Sum<Value<TypeValue<'ext>, 'ext>, Errors<unit>>
 
-  [<TypeShape(Kind = TypeShapeKind.None)>]
+  [<TypeShape(Kind = TypeShapeKind.None); NoComparison; NoEquality>]
   type UpdaterFunction<'ext> = { Updater: UpdaterType<'ext> }
 
   [<CustomEquality; CustomComparison>]

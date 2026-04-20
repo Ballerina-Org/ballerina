@@ -25,6 +25,7 @@ module Upsert =
   open Ballerina.Data.Delta.Serialization.DeltaDTO
   open Ballerina.Data.Delta.Serialization.DeltaDeserializer
 
+  [<NoComparison; NoEquality>]
   type EntityWithId =
     { Id: ValueDTO<ValueExtDTO>
       Entity: ValueDTO<ValueExtDTO>

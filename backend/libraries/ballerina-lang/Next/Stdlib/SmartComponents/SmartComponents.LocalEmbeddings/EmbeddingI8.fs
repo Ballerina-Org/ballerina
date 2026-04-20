@@ -6,7 +6,7 @@ open System.Runtime.InteropServices
 open System.Text.Json
 open System.Text.Json.Serialization
 
-[<Struct; JsonConverter(typeof<ByteEmbeddingJsonConverter>)>]
+[<Struct; NoComparison; NoEquality; JsonConverter(typeof<ByteEmbeddingJsonConverter>)>]
 type EmbeddingI8 =
   val private buffer: ReadOnlyMemory<byte>
   val private values: ReadOnlyMemory<sbyte>

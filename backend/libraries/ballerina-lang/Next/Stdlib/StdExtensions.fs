@@ -46,7 +46,7 @@ type ValueExt<'runtimeContext, 'db, 'customExtension
 
   static member Updaters = {| ValueExt = fun u (ValueExt e) -> ValueExt(u e) |}
 
-and ValueExtDTO =
+and [<NoComparison; NoEquality>] ValueExtDTO =
   { List: List.Model.ListValueDTO<ValueExtDTO>
     Map: Map.Model.MapValueDTO<ValueExtDTO> }
 
@@ -553,12 +553,13 @@ and TupleDeltaExt<'runtimeContext, 'db, 'customExtension
 
 and OptionDeltaExt = OptionDeltaExt
 
-and DeltaExtDTO =
+and [<NoComparison; NoEquality>] DeltaExtDTO =
   { ListDelta: ListDeltaExtDTO<ValueExtDTO, DeltaExtDTO> | null
     MapDelta: Map.Model.MapDeltaExtDTO<ValueExtDTO, DeltaExtDTO> | null }
 
   static member Empty = { ListDelta = null; MapDelta = null }
 
+[<NoComparison; NoEquality>]
 type StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO
   when 'valueExt: comparison
   and 'deltaExt: comparison

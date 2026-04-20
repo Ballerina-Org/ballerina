@@ -4,6 +4,7 @@ namespace Ballerina.Lenses
 module Partial =
   open Ballerina.Collections.Option
 
+  [<NoComparison; NoEquality>]
   type PartialLens<'a, 'b> =
     { Get: 'a -> Option<'b>; Set: 'b -> 'a }
 

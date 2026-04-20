@@ -18,6 +18,7 @@ module Model =
   open Ballerina.Fun
 
 
+  [<NoComparison; NoEquality>]
   type LanguageContext<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO
     when 'ext: comparison
     and 'extDTO: not null
@@ -32,6 +33,7 @@ module Model =
         DeltaSerializationContext<'ext, 'extDTO, 'deltaExt, 'deltaExtDTO>
       ExtTypeChecker: Option<IsExtInstanceOf<'ext>> }
 
+  [<NoComparison; NoEquality>]
   type OperationsExtension<'runtimeContext, 'ext, 'extOperations> =
     { TypeVars: List<TypeVar * Kind> // example: [ ("a", Star) ]
       // WrapTypeVars: TypeExpr -> TypeValue
@@ -41,7 +43,7 @@ module Model =
           OperationExtension<'runtimeContext, 'ext, 'extOperations>
          > }
 
-  and OperationExtension<'runtimeContext, 'ext, 'extOperations> =
+  and [<NoComparison; NoEquality>] OperationExtension<'runtimeContext, 'ext, 'extOperations> =
     { PublicIdentifiers: Option<TypeValue<'ext> * Kind * 'extOperations>
       OperationsLens: PartialLens<'ext, 'extOperations> // lens to access the value inside the extension value
       Apply:
@@ -50,7 +52,7 @@ module Model =
           -> 'extOperations * Value<TypeValue<'ext>, 'ext>
           -> ExprEvaluator<'runtimeContext, 'ext, Value<TypeValue<'ext>, 'ext>> }
 
-  and TypeExtension<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO, 'extConstructors, 'extValues, 'extOperations
+  and [<NoComparison; NoEquality>] TypeExtension<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO, 'extConstructors, 'extValues, 'extOperations
     when 'ext: comparison
     and 'extDTO: not struct
     and 'extDTO: not null
@@ -99,7 +101,7 @@ module Model =
           |> List.map (fun (tv, k) -> TypeParameter.Create(tv.Name, k))
         Arguments = [] }
 
-  and TypeOperationExtension<'runtimeContext, 'ext, 'extConstructors, 'extValues, 'extOperations>
+  and [<NoComparison; NoEquality>] TypeOperationExtension<'runtimeContext, 'ext, 'extConstructors, 'extValues, 'extOperations>
     =
     { Type: TypeValue<'ext> // "a => b => (a -> b) -> Option a -> Option b"
       Kind: Kind // * => * => *
@@ -111,7 +113,7 @@ module Model =
           -> 'extOperations * Value<TypeValue<'ext>, 'ext>
           -> ExprEvaluator<'runtimeContext, 'ext, Value<TypeValue<'ext>, 'ext>> }
 
-  and TypeCaseExtension<'runtimeContext, 'ext, 'extConstructors, 'extValues> =
+  and [<NoComparison; NoEquality>] TypeCaseExtension<'runtimeContext, 'ext, 'extConstructors, 'extValues> =
     { CaseType: TypeExpr<'ext> // "a"
       ConstructorType: TypeValue<'ext> // "a => Option a"
       Constructor: 'extConstructors
@@ -123,7 +125,7 @@ module Model =
           -> 'extConstructors * Value<TypeValue<'ext>, 'ext>
           -> ExprEvaluator<'runtimeContext, 'ext, Value<TypeValue<'ext>, 'ext>> }
 
-  and TypeLambdaExtension<'runtimeContext, 'ext, 'extDTO, 'extTypeLambda
+  and [<NoComparison; NoEquality>] TypeLambdaExtension<'runtimeContext, 'ext, 'extDTO, 'extTypeLambda
     when 'extDTO: not null and 'extDTO: not struct> =
     { ExtensionType: ResolvedIdentifier * TypeValue<'ext> * Kind
       ExtraBindings: Map<ResolvedIdentifier, TypeValue<'ext> * Kind>

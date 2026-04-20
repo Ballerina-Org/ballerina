@@ -128,6 +128,7 @@ module MutableMemoryDB =
   // type EvalQueryContext<'ext when 'ext: comparison> =
   //   { Bindings: Map<ResolvedIdentifier, Value<TypeValue<'ext>, 'ext>> }
 
+  [<NoComparison; NoEquality>]
   type MemoryDBQueryRunAdapter<'db, 'ext when 'ext: comparison> =
     { GetDbFromEntityRef: EntityRef<'db, 'ext> -> 'db
       GetDbFromRelationRef: RelationRef<'db, 'ext> -> 'db }

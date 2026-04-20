@@ -8,6 +8,7 @@ module StacklessStateWithError =
   // models a state monad: type State<'a, 'c, 's, 'e> = State of ('c * 's -> Sum<'a * Option<'s>, 'e * Option<'s>>)
   type private MonadResult<'a, 's, 'e> = Sum<'a * Option<'s>, 'e * Option<'s>>
 
+  [<NoComparison; NoEquality>]
   type Node<'c, 's, 'e> =
     | Ret of ('c * 's -> MonadResult<Existential, 's, 'e>)
     | Bind of Node<'c, 's, 'e> * SuccessContinuation<'c, 's, 'e>
@@ -21,6 +22,7 @@ module StacklessStateWithError =
   type BindScope = int
 
   // needed for typing (Node cannot have the value type info because it's existential)
+  [<NoComparison; NoEquality>]
   type FreeNode<'a, 'c, 's, 'e> =
     | FreeNodeCons of Node<'c, 's, 'e>
 

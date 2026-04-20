@@ -56,7 +56,7 @@ module EquivalenceClasses =
         { Representative = rep
           Variables = vars }
 
-  and EquivalenceClassValueOperations<'var, 'value, 'context
+  and [<NoComparison; NoEquality>] EquivalenceClassValueOperations<'var, 'value, 'context
     when 'var: comparison and 'value: comparison and 'context: comparison> =
     { equalize:
         'value * 'value

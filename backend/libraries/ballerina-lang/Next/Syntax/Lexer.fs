@@ -183,9 +183,9 @@ module Lexer =
       | CaseLiteral(i, n) -> $"{i}Of{n}"
       | BoolLiteral b -> if b then "true" else "false"
       | IntLiteral i -> i.ToString()
-      | Int64Literal i -> $"{i.ToString()}" + longSuffixString.ToString()
-      | Float32Literal f -> $"{f.ToString()}" + floatSuffixString.ToString()
-      | Float64Literal f -> $"{f.ToString()}" + doubleSuffixString.ToString()
+      | Int64Literal i -> $"{i.ToString()}" + (string longSuffixString)
+      | Float32Literal f -> $"{f.ToString()}" + (string floatSuffixString)
+      | Float64Literal f -> $"{f.ToString()}" + (string doubleSuffixString)
       | DecimalLiteral d -> d.ToString()
 
   type LocalizedToken =

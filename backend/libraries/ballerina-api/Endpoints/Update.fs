@@ -29,6 +29,7 @@ module Update =
   open Ballerina.Data.Delta
   open Ballerina.DSL.Next.StdLib.Updater.Model
 
+  [<NoComparison; NoEquality>]
   type UpdateDeltaWithId =
     { Id: ValueDTO<ValueExtDTO>
       Delta: DeltaDTO<ValueExtDTO, DeltaExtDTO> }

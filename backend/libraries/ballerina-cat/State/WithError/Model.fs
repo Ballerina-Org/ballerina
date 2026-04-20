@@ -10,6 +10,7 @@ module WithError =
 
   open Ballerina.Stackless.State.WithError.StacklessStateWithError
 
+  [<NoComparison; NoEquality>]
   type State<'a, 'c, 's, 'e> =
     | State of FreeNode<'a, 'c, 's, 'e>
 

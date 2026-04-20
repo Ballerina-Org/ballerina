@@ -23,7 +23,7 @@ type internal Utils private () =
       MemoryMarshal.Cast<byte, sbyte>(fromMemory.Span).ToArray()
     )
 
-[<Struct; JsonConverter(typeof<FloatEmbeddingJsonConverter>)>]
+[<Struct; NoComparison; NoEquality; JsonConverter(typeof<FloatEmbeddingJsonConverter>)>]
 type EmbeddingF32 =
   val private buffer: ReadOnlyMemory<byte>
   val private values: ReadOnlyMemory<single>

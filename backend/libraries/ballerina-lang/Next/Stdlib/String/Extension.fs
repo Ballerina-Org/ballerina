@@ -15,6 +15,7 @@ module Extension =
   open Ballerina.DSL.Next.Extensions
   open Ballerina
 
+  [<NoComparison; NoEquality>]
   type StringTypeClass<'ext> =
     { print: Value<TypeValue<'ext>, 'ext> -> unit }
 
