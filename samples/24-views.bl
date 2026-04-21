@@ -76,6 +76,12 @@
 //   Co::mapState   : (St2 -> St) -> ((St -> St) -> (St2 -> St2))
 //                    -> Co[S][Ctx][St][O] -> Co[S][Ctx][St2][O]
 //
+// Coroutines can also access their ambient context and state directly:
+//
+//   Co::getContext : Co[Schema][Ctx][St][Ctx]
+//   Co::getState  : Co[Schema][Ctx][St][St]
+//   Co::setState  : (St -> St) -> Co[Schema][Ctx][St][()]
+//
 // This turns interactive UI into sequential code: show a form, wait for
 // submission, show a confirmation, call an API, show the result — all
 // as straight-line statements in a `co { }` block.
@@ -271,7 +277,26 @@ let doneMessageFlow = co {
   return ()
 };
 
-// ── 10. Composite state for the home flow ────────────────────────────────
+// ── 10. Coroutine state access ───────────────────────────────────────────
+// Demonstrates Co::getContext, Co::getState, Co::setState.
+// These operations access the coroutine's ambient context and state
+// without needing to show a view.
+// Type: Co[TodoSchema][string][int32][string]
+
+let stateAccessDemo = co {
+  // Read the ambient context (a string label)
+  let! label = Co::getContext;
+
+  // Read the current state (an int32 counter)
+  let! current = Co::getState;
+
+  // Update the state with an updater function
+  do! Co::setState (fun n -> n + 1);
+
+  return label
+};
+
+// ── 11. Composite state for the home flow ────────────────────────────────
 // The home flow sequences two phases with different ctx/st types.
 // Its state is a superset that contains both phases' state.
 
@@ -279,7 +304,7 @@ type HomeFlowState = {
   CounterCount: int32;
 };
 
-// ── 11. Full page coroutine ──────────────────────────────────────────────
+// ── 12. Full page coroutine ──────────────────────────────────────────────
 // Sequences two phases: first the counter, then a "done" message.
 // Uses Co::mapContext and Co::mapState to adapt child coroutines to the
 // parent's composite state.

@@ -16,6 +16,9 @@ module Extension =
     | Co_Ignore
     | Co_MapContext
     | Co_MapState
+    | Co_GetContext
+    | Co_GetState
+    | Co_SetState
 
   let CoroutineExtension<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO
     when 'ext: comparison
@@ -494,6 +497,171 @@ module Extension =
                 |> reader.Throw
             } }
 
+    // --- Co::getContext ---
+    // getContext : Λschema::Schema. Λctx::*. Λst::*.
+    //   Co[schema][ctx][st][ctx]
+    let getContextId =
+      Identifier.FullyQualified([ "Co" ], "getContext")
+      |> TypeCheckScope.Empty.Resolve
+
+    let getContextOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations> =
+      getContextId,
+      { Type =
+          TypeValue.CreateLambda(
+            TypeParameter.Create("schema", schemaKind),
+            TypeExpr.Lambda(
+              TypeParameter.Create("ctx", ctxKind),
+              TypeExpr.Lambda(
+                TypeParameter.Create("st", stKind),
+                TypeExpr.Apply(
+                  TypeExpr.Apply(
+                    TypeExpr.Apply(
+                      TypeExpr.Apply(
+                        TypeExpr.Lookup(Identifier.LocalScope "Co"),
+                        TypeExpr.Lookup(Identifier.LocalScope "schema")
+                      ),
+                      TypeExpr.Lookup(Identifier.LocalScope "ctx")
+                    ),
+                    TypeExpr.Lookup(Identifier.LocalScope "st")
+                  ),
+                  TypeExpr.Lookup(Identifier.LocalScope "ctx")
+                )
+              )
+            )
+          )
+        Kind =
+          Kind.Arrow(
+            Kind.Schema,
+            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+          )
+        Operation = Co_GetContext
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | Co_GetContext -> Some Co_GetContext
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (_op, _v) ->
+            reader {
+              return!
+                Errors.Singleton loc0 (fun () -> "Co::getContext is not yet implemented")
+                |> reader.Throw
+            } }
+
+    // --- Co::getState ---
+    // getState : Λschema::Schema. Λctx::*. Λst::*.
+    //   Co[schema][ctx][st][st]
+    let getStateId =
+      Identifier.FullyQualified([ "Co" ], "getState")
+      |> TypeCheckScope.Empty.Resolve
+
+    let getStateOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations> =
+      getStateId,
+      { Type =
+          TypeValue.CreateLambda(
+            TypeParameter.Create("schema", schemaKind),
+            TypeExpr.Lambda(
+              TypeParameter.Create("ctx", ctxKind),
+              TypeExpr.Lambda(
+                TypeParameter.Create("st", stKind),
+                TypeExpr.Apply(
+                  TypeExpr.Apply(
+                    TypeExpr.Apply(
+                      TypeExpr.Apply(
+                        TypeExpr.Lookup(Identifier.LocalScope "Co"),
+                        TypeExpr.Lookup(Identifier.LocalScope "schema")
+                      ),
+                      TypeExpr.Lookup(Identifier.LocalScope "ctx")
+                    ),
+                    TypeExpr.Lookup(Identifier.LocalScope "st")
+                  ),
+                  TypeExpr.Lookup(Identifier.LocalScope "st")
+                )
+              )
+            )
+          )
+        Kind =
+          Kind.Arrow(
+            Kind.Schema,
+            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+          )
+        Operation = Co_GetState
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | Co_GetState -> Some Co_GetState
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (_op, _v) ->
+            reader {
+              return!
+                Errors.Singleton loc0 (fun () -> "Co::getState is not yet implemented")
+                |> reader.Throw
+            } }
+
+    // --- Co::setState ---
+    // setState : Λschema::Schema. Λctx::*. Λst::*.
+    //   (st -> st) -> Co[schema][ctx][st][()]
+    let setStateId =
+      Identifier.FullyQualified([ "Co" ], "setState")
+      |> TypeCheckScope.Empty.Resolve
+
+    let setStateOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations> =
+      setStateId,
+      { Type =
+          TypeValue.CreateLambda(
+            TypeParameter.Create("schema", schemaKind),
+            TypeExpr.Lambda(
+              TypeParameter.Create("ctx", ctxKind),
+              TypeExpr.Lambda(
+                TypeParameter.Create("st", stKind),
+                TypeExpr.Arrow(
+                  TypeExpr.Arrow(
+                    TypeExpr.Lookup(Identifier.LocalScope "st"),
+                    TypeExpr.Lookup(Identifier.LocalScope "st")
+                  ),
+                  TypeExpr.Apply(
+                    TypeExpr.Apply(
+                      TypeExpr.Apply(
+                        TypeExpr.Apply(
+                          TypeExpr.Lookup(Identifier.LocalScope "Co"),
+                          TypeExpr.Lookup(Identifier.LocalScope "schema")
+                        ),
+                        TypeExpr.Lookup(Identifier.LocalScope "ctx")
+                      ),
+                      TypeExpr.Lookup(Identifier.LocalScope "st")
+                    ),
+                    TypeExpr.Primitive PrimitiveType.Unit
+                  )
+                )
+              )
+            )
+          )
+        Kind =
+          Kind.Arrow(
+            Kind.Schema,
+            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+          )
+        Operation = Co_SetState
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | Co_SetState -> Some Co_SetState
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (_op, _v) ->
+            reader {
+              return!
+                Errors.Singleton loc0 (fun () -> "Co::setState is not yet implemented")
+                |> reader.Throw
+            } }
+
     let coExtension =
       { TypeName = coResolvedId, coSymbolId
         TypeVars =
@@ -503,7 +671,9 @@ module Extension =
             (resVar, resKind) ]
         Cases = Map.empty
         Operations =
-          [ showOperation; untilOperation; ignoreOperation; mapContextOperation; mapStateOperation ] |> Map.ofList
+          [ showOperation; untilOperation; ignoreOperation
+            mapContextOperation; mapStateOperation
+            getContextOperation; getStateOperation; setStateOperation ] |> Map.ofList
         Serialization = None
         ExtTypeChecker = None }
 
