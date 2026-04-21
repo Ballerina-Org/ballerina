@@ -1,6 +1,7 @@
 namespace Ballerina.DSL.Next.StdLib.DB.Extension
 
 #nowarn "0040"
+#nowarn "21"
 
 [<AutoOpen>]
 module DBRun =

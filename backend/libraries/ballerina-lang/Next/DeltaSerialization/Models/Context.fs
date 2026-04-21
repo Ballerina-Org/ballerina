@@ -6,6 +6,7 @@ open Ballerina.Data.Delta
 open Ballerina.Errors
 open DeltaDTO
 
+[<NoComparison; NoEquality>]
 type DeltaSerializationContext<'valueExtension, 'valueExtensionDTO, 'deltaExtension, 'deltaExtensionDTO
   when 'valueExtensionDTO: not null
   and 'valueExtensionDTO: not struct

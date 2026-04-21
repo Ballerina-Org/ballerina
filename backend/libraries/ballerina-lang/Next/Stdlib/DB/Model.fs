@@ -68,6 +68,7 @@ module Model =
       SourceId: Value<TypeValue<'ext>, 'ext>
       TargetId: Value<TypeValue<'ext>, 'ext> }
 
+  [<NoComparison; NoEquality>]
   type DBTypeClass<'runtimeContext, 'db, 'ext when 'ext: comparison> =
     { DB: 'db
       BeginTransaction: 'db -> Sum<Guid, Errors<Unit>>

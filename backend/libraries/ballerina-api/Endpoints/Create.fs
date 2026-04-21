@@ -24,6 +24,7 @@ module Create =
   open Ballerina.DSL.Next.Types.TypeChecker.Value
   open Ballerina.DSL.Next.StdLib.DB
 
+  [<NoComparison; NoEquality>]
   type CreatePayload =
     { Id: ValueDTO<ValueExtDTO>
       Entity: ValueDTO<ValueExtDTO> }

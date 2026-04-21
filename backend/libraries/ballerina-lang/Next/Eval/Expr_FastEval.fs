@@ -59,6 +59,7 @@ module FastEval =
          >
       Symbols: ExprEvalContextSymbols }
 
+  [<NoComparison; NoEquality>]
   type ExprEvalContext<'runtimeContext, 'valueExtension> =
     { Scope: ExprEvalContextScope<'valueExtension>
       /// Stack of scope frames pushed during evaluation.
@@ -84,7 +85,7 @@ module FastEval =
         Value<TypeValue<'valueExtension>, 'valueExtension>
        >)
 
-  and ExtEvalResult<'runtimeContext, 'valueExtension> =
+  and [<NoComparison; NoEquality>] ExtEvalResult<'runtimeContext, 'valueExtension> =
     | Result of Value<TypeValue<'valueExtension>, 'valueExtension>
     | Async of
       Coroutine<
@@ -134,7 +135,7 @@ module FastEval =
       -> Value<TypeValue<'valueExtension>, 'valueExtension>
       -> Value<TypeValue<'valueExtension>, 'valueExtension>
 
-  and ValueExtensionOps<'runtimeContext, 'valueExtension> =
+  and [<NoComparison; NoEquality>] ValueExtensionOps<'runtimeContext, 'valueExtension> =
     { Eval: ExtensionEvaluator<'runtimeContext, 'valueExtension>
       Applicables:
         Map<

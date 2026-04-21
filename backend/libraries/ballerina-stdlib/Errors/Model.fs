@@ -37,6 +37,7 @@ module Errors =
 
     static member MapPriority f e = { e with Priority = f e.Priority }
 
+  [<NoComparison; NoEquality>]
   type Errors<'context when 'context: comparison> =
     { Errors: unit -> NonEmptyList<Error<'context>> }
 

@@ -5,6 +5,7 @@ module WithError =
   open Ballerina.Collections.Sum
   open Ballerina.Collections.NonEmptyList
 
+  [<NoComparison; NoEquality>]
   type Reader<'a, 'c, 'e> =
     | Reader of ('c -> Sum<'a, 'e>)
 

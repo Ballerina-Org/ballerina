@@ -4,6 +4,7 @@ open Ballerina.Reader.WithError
 open PocoObjects
 open Ballerina.DSL.Next.Types
 
+[<NoComparison; NoEquality>]
 type SerializationContext<'ext, 'extDTO
   when 'extDTO: not null and 'extDTO: not struct> =
   { ToDTO:

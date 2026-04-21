@@ -23,6 +23,7 @@ module Read =
   open Ballerina.DSL.Next.Serialization.ValueSerializer
   open Ballerina.DSL.Next.StdLib.DB
 
+  [<NoComparison; NoEquality>]
   type GetManyResponseItem =
     { Key: ValueDTO<ValueExtDTO>
       Value: ValueDTO<ValueExtDTO> }
