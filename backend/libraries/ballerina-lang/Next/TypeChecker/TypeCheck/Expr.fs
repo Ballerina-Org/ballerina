@@ -234,6 +234,18 @@ module Expr =
 
                 return TypeCheckedExpr.Query(q, t, k), ctx
 
+              | ExprRec.View _v ->
+                return!
+                  Errors.Singleton loc0 (fun () ->
+                    $"Error: view expressions are not yet supported by the typechecker")
+                  |> state.Throw
+
+              | ExprRec.Co _c ->
+                return!
+                  Errors.Singleton loc0 (fun () ->
+                    $"Error: co expressions are not yet supported by the typechecker")
+                  |> state.Throw
+
               | ExprRec.RecoveredSyntaxError err ->
                 return!
                   Errors.Singleton err.ErrorLocation (fun () -> err.ErrorMessage)

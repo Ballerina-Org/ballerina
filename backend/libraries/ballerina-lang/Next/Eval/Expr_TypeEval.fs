@@ -241,6 +241,18 @@ module TypeEval =
                 $"Error (typecheck): not yet implemented expression pattern query")
               |> state.Throw
 
+          | ExprRec.View _ ->
+            return!
+              Errors.Singleton expr.Location (fun () ->
+                $"Error (typecheck): not yet implemented expression pattern view")
+              |> state.Throw
+
+          | ExprRec.Co _ ->
+            return!
+              Errors.Singleton expr.Location (fun () ->
+                $"Error (typecheck): not yet implemented expression pattern co")
+              |> state.Throw
+
           | ExprRec.RecoveredSyntaxError err ->
             return!
               Errors.Singleton err.ErrorLocation (fun () -> err.ErrorMessage)

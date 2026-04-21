@@ -11,6 +11,8 @@
 //   - JSX-like body with HTML tags, attributes, and expression containers
 //   - Custom components referenced by name (lowercase identifiers)
 //   - `Frontend::View[Schema][I][S]` built-in type
+//   - `Co[Schema][Ctx][St][Res]` coroutine type for long-running UI flows
+//   - `co { ... }` computation expressions with `let!`, `do!`, `return`
 //   - `WebApp::run` builder collects views into routes and components
 //
 // Every view takes one parameter of the built-in generic type
@@ -33,16 +35,44 @@
 // When composing child views, the parent passes its `props` and adapts
 // context/state with two built-in combinators:
 //
-//   View::Props::mapContext : (I -> I') -> View::Props[S][I][St] -> View::Props[S][I'][St]
+//   View::mapContext : (I -> I') -> View::Props[S][I][St] -> View::Props[S][I'][St]
 //     Transforms the readonly context. The state and setState pass through.
 //
-//   View::Props::mapState : (St -> St') -> ((St' -> St') -> (St -> St)) -> View::Props[S][I][St] -> View::Props[S][I][St']
+//   View::mapState : (St -> St') -> ((St' -> St') -> (St -> St)) -> View::Props[S][I][St] -> View::Props[S][I][St']
 //     Focuses the state. First arg extracts child state from parent state.
 //     Second arg lifts a child updater back into a parent updater.
 //
 // Children receive the whole `props` object, already adapted:
 //
-//   <child props={props |> View::Props::mapContext(...) |> View::Props::mapState(...)} />
+//   <child props={props |> View::mapContext(...) |> View::mapState(...)} />
+//
+// ── Coroutines ───────────────────────────────────────────────────────────
+//
+// `Co[Schema][Ctx][St][Res]` is a coroutine that lives inside the
+// frontend. It can show views, wait for results, sequence steps, and
+// eventually produce a value of type `Res`.
+//
+// Syntax (computation expression):
+//
+//   co {
+//     let! result = someCoroutine        // bind: suspend until result
+//     do! someVoidCoroutine              // bind + discard result
+//     return value                       // finish with a value
+//     return! anotherCoroutine           // tail-call another coroutine
+//   }
+//
+// The bridge between views and coroutines is `Co::show`:
+//
+//   Co::show : I -> S -> (S -> () + O) -> View[Schema][I][S] -> Co[Schema][Ctx][St][O]
+//
+// It instantiates a view with initial context `I` and state `S`, renders
+// it, and on every state change calls the predicate `(S -> () + O)`:
+//   - `1Of2()` means "keep running" (the view stays on screen)
+//   - `2Of2(result)` means "done" (the coroutine yields `result`)
+//
+// This turns interactive UI into sequential code: show a form, wait for
+// submission, show a confirmation, call an API, show the result — all
+// as straight-line statements in a `co { }` block.
 
 // ── Domain schema ────────────────────────────────────────────────────────
 // A minimal todo-list schema. We keep it simple to focus on view syntax.
@@ -103,8 +133,8 @@ let todoList = view (props:View::Props[TodoSchema][unit][List[Todo]]) ->
     <ul>
       {List::map (fun todo ->
         <todoItem props={
-          props |> View::Props::mapState
-            (fun _ -> todo)
+          props |> View::mapState
+            (replaceWith todo)
             (fun f items -> List::map (fun t ->
               if t.Title == todo.Title then f t else t
             ) items)
@@ -169,50 +199,116 @@ let homePage = view (props:View::Props[TodoSchema][unit][PageState]) ->
   <div class="home">
     <pageHeader props={
       props
-      |> View::Props::mapContext(fun _ -> { Title = "Todo App"; Subtitle = "Built with Ballerina views" })
-      |> View::Props::mapState (fun _ -> ()) (fun _ s -> s)
+      |> View::mapContext(replaceWith { Title = "Todo App"; Subtitle = "Built with Ballerina views" })
+      |> View::mapState (replaceWith ()) (replaceWith id)
     } />
     <divider props={
       props
-      |> View::Props::mapState (fun _ -> ()) (fun _ s -> s)
+      |> View::mapState (replaceWith ()) (replaceWith id)
     } />
     <counter props={
       props
-      |> View::Props::mapContext(fun _ -> "Visits")
-      |> View::Props::mapState
+      |> View::mapContext(replaceWith "Visits")
+      |> View::mapState
         (fun s -> s.Count)
         (fun f s -> { s with PageState::Count = f s.Count })
     } />
     <divider props={
       props
-      |> View::Props::mapState (fun _ -> ()) (fun _ s -> s)
+      |> View::mapState (replaceWith ()) (replaceWith id)
     } />
     <todoList props={
       props
-      |> View::Props::mapState
+      |> View::mapState
         (fun s -> s.Todos)
         (fun f s -> { s with PageState::Todos = f s.Todos })
     } />
   </div>;
 
 // ═════════════════════════════════════════════════════════════════════════
+// COROUTINES
+// ═════════════════════════════════════════════════════════════════════════
+
+// ── 7. A "done" message view ─────────────────────────────────────────────
+// Shown after the counter coroutine completes.
+// Type: Frontend::View[TodoSchema][int32][unit]
+
+let doneMessage = view (props:View::Props[TodoSchema][int32][unit]) ->
+  <div class="done">
+    <h1>Done!</h1>
+    <p>You counted to {props.context}.</p>
+  </div>;
+
+// ── 8. Counter coroutine ─────────────────────────────────────────────────
+// Shows the counter view. When the count exceeds 10, the coroutine
+// finishes and yields the final count.
+// Type: Co[TodoSchema][unit][unit][int32]
+
+let counterFlow = co {
+  let! finalCount =
+    Co::show
+      "Click counter"    // initial context (I = string)
+      0                   // initial state   (S = int32)
+      (fun n ->           // predicate: S -> () + int32
+        if n > 10 then 2Of2(n)
+        else 1Of2())
+      counter;            // the view to render
+  return finalCount
+};
+
+// ── 9. Full page coroutine ───────────────────────────────────────────────
+// Sequences two phases: first the counter, then a "done" message.
+// Demonstrates how coroutines turn multi-step UI into straight-line code.
+// Type: Co[TodoSchema][unit][unit][unit]
+
+let homeFlow = co {
+  // Phase 1: show the counter until count > 10
+  let! finalCount = counterFlow;
+
+  // Phase 2: show the done message forever (never completes)
+  do! Co::show
+    finalCount            // pass the final count as context
+    ()                    // no local state
+    (replaceWith (1Of2()))   // never done — stays on screen
+    doneMessage;
+
+  return ()
+};
+
+// ═════════════════════════════════════════════════════════════════════════
 // WEBAPP BUILDER
 // ═════════════════════════════════════════════════════════════════════════
 // WebApp::run wraps a DB::run and attaches routes and components.
-// Routes map URL paths to top-level views.
+// Routes map URL paths to coroutines (which manage page-level state).
 // Components register reusable views by name.
+// Routes are always coroutines — views are lifted via Co::show.
 
 let main = fun (schema: TodoSchema) ->
-  let seed_todos = [
-    { Title = "Learn Ballerina"; Done = true },
-    { Title = "Build views"; Done = false },
+  let seed_todos = {
+    { Title = "Learn Ballerina"; Done = true };
+    { Title = "Build views"; Done = false };
     { Title = "Ship it"; Done = false }
-  ];
+  };
   (seed_todos, "seeded");
 
 WebApp::run [TodoSchema] (DB::run [TodoSchema] main)
-  |> WebApp::withRoute("/", homePage)
-  |> WebApp::withRoute("/header", pageHeader)
+  |> WebApp::withRoute("/", co {
+    do! Co::show
+      ()
+      { Todos = seed_todos; Count = 0 }
+      (replaceWith (1Of2()))
+      homePage;
+    return ()
+  })
+  |> WebApp::withRoute("/flow", homeFlow)
+  |> WebApp::withRoute("/header", co {
+    do! Co::show
+      { Title = "Header"; Subtitle = "Standalone page" }
+      ()
+      (replaceWith (1Of2()))
+      pageHeader;
+    return ()
+  })
   |> WebApp::withComponent("counter", counter)
   |> WebApp::withComponent("todoItem", todoItem)
   |> WebApp::withComponent("divider", divider)

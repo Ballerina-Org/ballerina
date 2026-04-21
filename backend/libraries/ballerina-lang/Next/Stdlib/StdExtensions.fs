@@ -735,6 +735,27 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
       DeltaExt<_, _, _>.ListDeltaDTOLens
       (typeCheckingConfig |> Option.map (fun cfg -> cfg.ListTypeSymbol))
 
+  let viewExtension, viewPropsExtension, view_sym, view_props_sym, mk_view_type, mk_view_props_type =
+    View.Extension.ViewExtension<
+      'runtimeContext,
+      ValueExt<'runtimeContext, 'db, 'customExtension>,
+      ValueExtDTO,
+      DeltaExt<'runtimeContext, 'db, 'customExtension>,
+      DeltaExtDTO
+     >
+      (typeCheckingConfig |> Option.map (fun cfg -> cfg.ViewTypeSymbol))
+      (typeCheckingConfig |> Option.map (fun cfg -> cfg.ViewPropsTypeSymbol))
+
+  let coroutineExtension, co_sym, mk_co_type =
+    Coroutine.Extension.CoroutineExtension<
+      'runtimeContext,
+      ValueExt<'runtimeContext, 'db, 'customExtension>,
+      ValueExtDTO,
+      DeltaExt<'runtimeContext, 'db, 'customExtension>,
+      DeltaExtDTO
+     >
+      (typeCheckingConfig |> Option.map (fun cfg -> cfg.CoTypeSymbol))
+
   let dateOnlyExtension =
     DateOnly.Extension.DateOnlyExtension<
       'runtimeContext,
@@ -953,6 +974,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
     context
     |> registerDBExtensions
     |> (listExtension |> TypeExtension.RegisterLanguageContext)
+    |> (viewExtension |> TypeExtension.RegisterLanguageContext)
+    |> (viewPropsExtension |> TypeExtension.RegisterLanguageContext)
+    |> (coroutineExtension |> TypeExtension.RegisterLanguageContext)
     |> (dateOnlyExtension |> OperationsExtension.RegisterLanguageContext)
     |> (dateTimeExtension |> OperationsExtension.RegisterLanguageContext)
     |> (guidExtension |> OperationsExtension.RegisterLanguageContext)
@@ -987,8 +1011,14 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
   let typeCheckingConfig =
     { QueryTypeSymbol = query_sym
       ListTypeSymbol = list_sym
+      ViewTypeSymbol = view_sym
+      ViewPropsTypeSymbol = view_props_sym
+      CoTypeSymbol = co_sym
       MkQueryType = mk_query
-      MkListType = mk_list_type }
+      MkListType = mk_list_type
+      MkViewType = mk_view_type
+      MkViewPropsType = mk_view_props_type
+      MkCoType = mk_co_type }
 
   extensions, context, typeCheckingConfig
 

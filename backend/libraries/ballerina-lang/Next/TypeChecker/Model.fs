@@ -172,9 +172,18 @@ module Model =
   type TypeCheckingConfig<'valueExt when 'valueExt: comparison> =
     { QueryTypeSymbol: TypeSymbol
       ListTypeSymbol: TypeSymbol
+      ViewTypeSymbol: TypeSymbol
+      ViewPropsTypeSymbol: TypeSymbol
+      CoTypeSymbol: TypeSymbol
       MkQueryType:
         Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>
-      MkListType: TypeValue<'valueExt> -> TypeValue<'valueExt> }
+      MkListType: TypeValue<'valueExt> -> TypeValue<'valueExt>
+      MkViewType:
+        TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt>
+      MkViewPropsType:
+        TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt>
+      MkCoType:
+        TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt> }
 
   type TypeExprEvalResult<'valueExt when 'valueExt: comparison> =
     State<

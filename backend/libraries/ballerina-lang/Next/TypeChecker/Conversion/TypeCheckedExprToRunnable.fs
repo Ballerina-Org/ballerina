@@ -142,6 +142,10 @@ module Conversion =
         let! q' = convertQuery q
         return RunnableExprRec.Query q'
       }
+    | TypeCheckedExprRec.View _ ->
+      Right(conversionError _loc $"Cannot convert View to RunnableExpr: views are not yet executable")
+    | TypeCheckedExprRec.Co _ ->
+      Right(conversionError _loc $"Cannot convert Co to RunnableExpr: coroutines are not yet executable")
     | TypeCheckedExprRec.RecoveredSyntaxError err ->
       Right(conversionError err.ErrorLocation $"Cannot convert RecoveredSyntaxError to RunnableExpr: {err.ErrorMessage} (context: {err.RecoveryContext})")
     | TypeCheckedExprRec.ErrorDanglingRecordDes _ ->
