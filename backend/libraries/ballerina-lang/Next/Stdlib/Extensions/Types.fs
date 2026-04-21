@@ -42,9 +42,8 @@ module Types =
       : Updater<TypeCheckContext<'ext>> =
       fun typeCheckContext ->
         let kind =
-          typeExt.TypeVars
-          |> List.map snd
-          |> List.fold (fun acc k -> Kind.Arrow(k, acc)) Kind.Star
+          (typeExt.TypeVars |> List.map snd, Kind.Star)
+          ||> List.foldBack (fun k acc -> Kind.Arrow(k, acc))
 
         let values =
           typeExt.Cases
@@ -81,9 +80,8 @@ module Types =
       : Updater<TypeCheckState<'ext>> =
       fun typeCheckState ->
         let kind =
-          typeExt.TypeVars
-          |> List.map snd
-          |> List.fold (fun acc k -> Kind.Arrow(k, acc)) Kind.Star
+          (typeExt.TypeVars |> List.map snd, Kind.Star)
+          ||> List.foldBack (fun k acc -> Kind.Arrow(k, acc))
 
         let typeExtUnion =
           typeExt |> TypeExtension.ToImportedTypeValue |> TypeValue.Imported
