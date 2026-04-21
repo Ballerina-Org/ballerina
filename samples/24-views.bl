@@ -63,12 +63,18 @@
 //
 // The bridge between views and coroutines is `Co::show`:
 //
-//   Co::show : I -> S -> (S -> () + O) -> View[Schema][I][S] -> Co[Schema][Ctx][St][O]
+//   Co::show : (St -> () + O) -> View[Schema][Ctx][St] -> Co[Schema][Ctx][St][O]
 //
-// It instantiates a view with initial context `I` and state `S`, renders
-// it, and on every state change calls the predicate `(S -> () + O)`:
+// It renders a view whose context and state match the coroutine's own
+// `Ctx` and `St`. On every state change it calls the predicate `(St -> () + O)`:
 //   - `1Of2()` means "keep running" (the view stays on screen)
 //   - `2Of2(result)` means "done" (the coroutine yields `result`)
+//
+// To adapt a coroutine's context or state to a parent's types, use:
+//
+//   Co::mapContext : (Ctx2 -> Ctx) -> Co[S][Ctx][St][O] -> Co[S][Ctx2][St][O]
+//   Co::mapState   : (St2 -> St) -> ((St -> St) -> (St2 -> St2))
+//                    -> Co[S][Ctx][St][O] -> Co[S][Ctx][St2][O]
 //
 // This turns interactive UI into sequential code: show a form, wait for
 // submission, show a confirmation, call an API, show the result — all
@@ -242,35 +248,56 @@ let doneMessage = view (props:View::Props[TodoSchema][int32][unit]) ->
 // ── 8. Counter coroutine ─────────────────────────────────────────────────
 // Shows the counter view. When the count exceeds 10, the coroutine
 // finishes and yields the final count.
-// Type: Co[TodoSchema][unit][unit][int32]
+// Type: Co[TodoSchema][string][int32][int32]
 
 let counterFlow = co {
   let! finalCount =
     Co::show
-      "Click counter"    // initial context (I = string)
-      0                   // initial state   (S = int32)
-      (fun n ->           // predicate: S -> () + int32
+      (fun n ->
         if n > 10 then 2Of2(n)
         else 1Of2())
-      counter;            // the view to render
+      counter;
   return finalCount
 };
 
-// ── 9. Full page coroutine ───────────────────────────────────────────────
+// ── 9. Done message coroutine ────────────────────────────────────────────
+// Shows the done message view forever (never completes).
+// Type: Co[TodoSchema][int32][unit][unit]
+
+let doneMessageFlow = co {
+  do! Co::show
+    (replaceWith (1Of2()))
+    doneMessage;
+  return ()
+};
+
+// ── 10. Composite state for the home flow ────────────────────────────────
+// The home flow sequences two phases with different ctx/st types.
+// Its state is a superset that contains both phases' state.
+
+type HomeFlowState = {
+  CounterCount: int32;
+};
+
+// ── 11. Full page coroutine ──────────────────────────────────────────────
 // Sequences two phases: first the counter, then a "done" message.
-// Demonstrates how coroutines turn multi-step UI into straight-line code.
-// Type: Co[TodoSchema][unit][unit][unit]
+// Uses Co::mapContext and Co::mapState to adapt child coroutines to the
+// parent's composite state.
+// Type: Co[TodoSchema][unit][HomeFlowState][unit]
 
 let homeFlow = co {
   // Phase 1: show the counter until count > 10
-  let! finalCount = counterFlow;
+  let! finalCount =
+    counterFlow
+    |> Co::mapContext (replaceWith "Click counter")
+    |> Co::mapState
+      (fun st -> st.CounterCount)
+      (fun f st -> { st with HomeFlowState::CounterCount = f st.CounterCount });
 
   // Phase 2: show the done message forever (never completes)
-  do! Co::show
-    finalCount            // pass the final count as context
-    ()                    // no local state
-    (replaceWith (1Of2()))   // never done — stays on screen
-    doneMessage;
+  do! doneMessageFlow
+    |> Co::mapContext (replaceWith finalCount)
+    |> Co::mapState (replaceWith ()) (replaceWith id);
 
   return ()
 };
@@ -294,19 +321,24 @@ let main = fun (schema: TodoSchema) ->
 WebApp::run [TodoSchema] (DB::run [TodoSchema] main)
   |> WebApp::withRoute("/", co {
     do! Co::show
-      ()
-      { Todos = seed_todos; Count = 0 }
       (replaceWith (1Of2()))
-      homePage;
+      homePage
+    |> Co::mapState
+      (replaceWith { Todos = seed_todos; Count = 0 })
+      (replaceWith id);
     return ()
   })
-  |> WebApp::withRoute("/flow", homeFlow)
+  |> WebApp::withRoute("/flow", homeFlow
+    |> Co::mapState
+      (replaceWith { CounterCount = 0 })
+      (replaceWith id))
   |> WebApp::withRoute("/header", co {
     do! Co::show
-      { Title = "Header"; Subtitle = "Standalone page" }
-      ()
       (replaceWith (1Of2()))
-      pageHeader;
+      pageHeader
+    |> Co::mapContext
+      (replaceWith { Title = "Header"; Subtitle = "Standalone page" })
+    |> Co::mapState (replaceWith ()) (replaceWith id);
     return ()
   })
   |> WebApp::withComponent("counter", counter)

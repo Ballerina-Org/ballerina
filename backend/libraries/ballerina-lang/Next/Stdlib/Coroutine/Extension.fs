@@ -14,6 +14,8 @@ module Extension =
     | Co_Show
     | Co_Until
     | Co_Ignore
+    | Co_MapContext
+    | Co_MapState
 
   let CoroutineExtension<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO
     when 'ext: comparison
@@ -66,14 +68,12 @@ module Extension =
           Arguments = [ schema; ctx; st; res ] }
 
     // --- Co::show ---
-    // show : Λschema::Schema. Λctx::*. Λst::*. Λi::*. Λs::*. Λo::*.
-    //   i -> s -> (s -> () + o) -> Frontend::View[schema][i][s] -> Co[schema][ctx][st][o]
+    // show : Λschema::Schema. Λctx::*. Λst::*. Λo::*.
+    //   (st -> () + o) -> Frontend::View[schema][ctx][st] -> Co[schema][ctx][st][o]
     let showId =
       Identifier.FullyQualified([ "Co" ], "show")
       |> TypeCheckScope.Empty.Resolve
 
-    let _iVar, iKind = TypeVar.Create("i"), Kind.Star
-    let _sVar, sKind = TypeVar.Create("s"), Kind.Star
     let _oVar, oKind = TypeVar.Create("o"), Kind.Star
 
     let showOperation
@@ -88,49 +88,37 @@ module Extension =
               TypeExpr.Lambda(
                 TypeParameter.Create("st", stKind),
                 TypeExpr.Lambda(
-                  TypeParameter.Create("i", iKind),
-                  TypeExpr.Lambda(
-                    TypeParameter.Create("s", sKind),
-                    TypeExpr.Lambda(
-                      TypeParameter.Create("o", oKind),
-                      TypeExpr.Arrow(
-                        TypeExpr.Lookup(Identifier.LocalScope "i"),
-                        TypeExpr.Arrow(
-                          TypeExpr.Lookup(Identifier.LocalScope "s"),
-                          TypeExpr.Arrow(
-                            TypeExpr.Arrow(
-                              TypeExpr.Lookup(Identifier.LocalScope "s"),
-                            TypeExpr.Sum
-                              [ TypeExpr.Primitive PrimitiveType.Unit
-                                TypeExpr.Lookup(Identifier.LocalScope "o") ]
+                  TypeParameter.Create("o", oKind),
+                  TypeExpr.Arrow(
+                    TypeExpr.Arrow(
+                      TypeExpr.Lookup(Identifier.LocalScope "st"),
+                      TypeExpr.Sum
+                        [ TypeExpr.Primitive PrimitiveType.Unit
+                          TypeExpr.Lookup(Identifier.LocalScope "o") ]
+                    ),
+                    TypeExpr.Arrow(
+                      TypeExpr.Apply(
+                        TypeExpr.Apply(
+                          TypeExpr.Apply(
+                            TypeExpr.Lookup viewTypeId,
+                            TypeExpr.Lookup(Identifier.LocalScope "schema")
+                          ),
+                          TypeExpr.Lookup(Identifier.LocalScope "ctx")
+                        ),
+                        TypeExpr.Lookup(Identifier.LocalScope "st")
+                      ),
+                      TypeExpr.Apply(
+                        TypeExpr.Apply(
+                          TypeExpr.Apply(
+                            TypeExpr.Apply(
+                              TypeExpr.Lookup(Identifier.LocalScope "Co"),
+                              TypeExpr.Lookup(Identifier.LocalScope "schema")
                             ),
-                            TypeExpr.Arrow(
-                              TypeExpr.Apply(
-                                TypeExpr.Apply(
-                                  TypeExpr.Apply(
-                                    TypeExpr.Lookup viewTypeId,
-                                    TypeExpr.Lookup(Identifier.LocalScope "schema")
-                                  ),
-                                  TypeExpr.Lookup(Identifier.LocalScope "i")
-                                ),
-                                TypeExpr.Lookup(Identifier.LocalScope "s")
-                              ),
-                              TypeExpr.Apply(
-                                TypeExpr.Apply(
-                                  TypeExpr.Apply(
-                                    TypeExpr.Apply(
-                                      TypeExpr.Lookup(Identifier.LocalScope "Co"),
-                                      TypeExpr.Lookup(Identifier.LocalScope "schema")
-                                    ),
-                                    TypeExpr.Lookup(Identifier.LocalScope "ctx")
-                                  ),
-                                  TypeExpr.Lookup(Identifier.LocalScope "st")
-                                ),
-                                TypeExpr.Lookup(Identifier.LocalScope "o")
-                              )
-                            )
-                          )
-                        )
+                            TypeExpr.Lookup(Identifier.LocalScope "ctx")
+                          ),
+                          TypeExpr.Lookup(Identifier.LocalScope "st")
+                        ),
+                        TypeExpr.Lookup(Identifier.LocalScope "o")
                       )
                     )
                   )
@@ -143,13 +131,7 @@ module Extension =
             Kind.Schema,
             Kind.Arrow(
               Kind.Star,
-              Kind.Arrow(
-                Kind.Star,
-                Kind.Arrow(
-                  Kind.Star,
-                  Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
-                )
-              )
+              Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
             )
           )
         Operation = Co_Show
@@ -324,6 +306,194 @@ module Extension =
                 |> reader.Throw
             } }
 
+    // --- Co::mapContext ---
+    // mapContext : Λschema::Schema. Λctx::*. Λctx2::*. Λst::*. Λo::*.
+    //   (ctx2 -> ctx) -> Co[schema][ctx][st][o] -> Co[schema][ctx2][st][o]
+    let mapContextId =
+      Identifier.FullyQualified([ "Co" ], "mapContext")
+      |> TypeCheckScope.Empty.Resolve
+
+    let _ctx2Var, ctx2Kind = TypeVar.Create("ctx2"), Kind.Star
+
+    let mapContextOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations> =
+      mapContextId,
+      { Type =
+          TypeValue.CreateLambda(
+            TypeParameter.Create("schema", schemaKind),
+            TypeExpr.Lambda(
+              TypeParameter.Create("ctx", ctxKind),
+              TypeExpr.Lambda(
+                TypeParameter.Create("ctx2", ctx2Kind),
+                TypeExpr.Lambda(
+                  TypeParameter.Create("st", stKind),
+                  TypeExpr.Lambda(
+                    TypeParameter.Create("o", oKind),
+                    TypeExpr.Arrow(
+                      TypeExpr.Arrow(
+                        TypeExpr.Lookup(Identifier.LocalScope "ctx2"),
+                        TypeExpr.Lookup(Identifier.LocalScope "ctx")
+                      ),
+                      TypeExpr.Arrow(
+                        TypeExpr.Apply(
+                          TypeExpr.Apply(
+                            TypeExpr.Apply(
+                              TypeExpr.Apply(
+                                TypeExpr.Lookup(Identifier.LocalScope "Co"),
+                                TypeExpr.Lookup(Identifier.LocalScope "schema")
+                              ),
+                              TypeExpr.Lookup(Identifier.LocalScope "ctx")
+                            ),
+                            TypeExpr.Lookup(Identifier.LocalScope "st")
+                          ),
+                          TypeExpr.Lookup(Identifier.LocalScope "o")
+                        ),
+                        TypeExpr.Apply(
+                          TypeExpr.Apply(
+                            TypeExpr.Apply(
+                              TypeExpr.Apply(
+                                TypeExpr.Lookup(Identifier.LocalScope "Co"),
+                                TypeExpr.Lookup(Identifier.LocalScope "schema")
+                              ),
+                              TypeExpr.Lookup(Identifier.LocalScope "ctx2")
+                            ),
+                            TypeExpr.Lookup(Identifier.LocalScope "st")
+                          ),
+                          TypeExpr.Lookup(Identifier.LocalScope "o")
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        Kind =
+          Kind.Arrow(
+            Kind.Schema,
+            Kind.Arrow(
+              Kind.Star,
+              Kind.Arrow(
+                Kind.Star,
+                Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+              )
+            )
+          )
+        Operation = Co_MapContext
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | Co_MapContext -> Some Co_MapContext
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (_op, _v) ->
+            reader {
+              return!
+                Errors.Singleton loc0 (fun () -> "Co::mapContext is not yet implemented")
+                |> reader.Throw
+            } }
+
+    // --- Co::mapState ---
+    // mapState : Λschema::Schema. Λctx::*. Λst::*. Λst2::*. Λo::*.
+    //   (st2 -> st) -> ((st -> st) -> (st2 -> st2)) -> Co[schema][ctx][st][o] -> Co[schema][ctx][st2][o]
+    let mapStateId =
+      Identifier.FullyQualified([ "Co" ], "mapState")
+      |> TypeCheckScope.Empty.Resolve
+
+    let _st2Var, st2Kind = TypeVar.Create("st2"), Kind.Star
+
+    let mapStateOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations> =
+      mapStateId,
+      { Type =
+          TypeValue.CreateLambda(
+            TypeParameter.Create("schema", schemaKind),
+            TypeExpr.Lambda(
+              TypeParameter.Create("ctx", ctxKind),
+              TypeExpr.Lambda(
+                TypeParameter.Create("st", stKind),
+                TypeExpr.Lambda(
+                  TypeParameter.Create("st2", st2Kind),
+                  TypeExpr.Lambda(
+                    TypeParameter.Create("o", oKind),
+                    TypeExpr.Arrow(
+                      TypeExpr.Arrow(
+                        TypeExpr.Lookup(Identifier.LocalScope "st2"),
+                        TypeExpr.Lookup(Identifier.LocalScope "st")
+                      ),
+                      TypeExpr.Arrow(
+                        TypeExpr.Arrow(
+                          TypeExpr.Arrow(
+                            TypeExpr.Lookup(Identifier.LocalScope "st"),
+                            TypeExpr.Lookup(Identifier.LocalScope "st")
+                          ),
+                          TypeExpr.Arrow(
+                            TypeExpr.Lookup(Identifier.LocalScope "st2"),
+                            TypeExpr.Lookup(Identifier.LocalScope "st2")
+                          )
+                        ),
+                        TypeExpr.Arrow(
+                          TypeExpr.Apply(
+                            TypeExpr.Apply(
+                              TypeExpr.Apply(
+                                TypeExpr.Apply(
+                                  TypeExpr.Lookup(Identifier.LocalScope "Co"),
+                                  TypeExpr.Lookup(Identifier.LocalScope "schema")
+                                ),
+                                TypeExpr.Lookup(Identifier.LocalScope "ctx")
+                              ),
+                              TypeExpr.Lookup(Identifier.LocalScope "st")
+                            ),
+                            TypeExpr.Lookup(Identifier.LocalScope "o")
+                          ),
+                          TypeExpr.Apply(
+                            TypeExpr.Apply(
+                              TypeExpr.Apply(
+                                TypeExpr.Apply(
+                                  TypeExpr.Lookup(Identifier.LocalScope "Co"),
+                                  TypeExpr.Lookup(Identifier.LocalScope "schema")
+                                ),
+                                TypeExpr.Lookup(Identifier.LocalScope "ctx")
+                              ),
+                              TypeExpr.Lookup(Identifier.LocalScope "st2")
+                            ),
+                            TypeExpr.Lookup(Identifier.LocalScope "o")
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        Kind =
+          Kind.Arrow(
+            Kind.Schema,
+            Kind.Arrow(
+              Kind.Star,
+              Kind.Arrow(
+                Kind.Star,
+                Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+              )
+            )
+          )
+        Operation = Co_MapState
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | Co_MapState -> Some Co_MapState
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (_op, _v) ->
+            reader {
+              return!
+                Errors.Singleton loc0 (fun () -> "Co::mapState is not yet implemented")
+                |> reader.Throw
+            } }
+
     let coExtension =
       { TypeName = coResolvedId, coSymbolId
         TypeVars =
@@ -333,7 +503,7 @@ module Extension =
             (resVar, resKind) ]
         Cases = Map.empty
         Operations =
-          [ showOperation; untilOperation; ignoreOperation ] |> Map.ofList
+          [ showOperation; untilOperation; ignoreOperation; mapContextOperation; mapStateOperation ] |> Map.ofList
         Serialization = None
         ExtTypeChecker = None }
 
