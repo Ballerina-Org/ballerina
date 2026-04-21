@@ -2142,6 +2142,96 @@ module Model =
 
     override self.ToString() = $"{self.Param} -> {self.Body}"
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Type-checked View AST types
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  and [<RequireQualifiedAccess>] TypeCheckedExprView<'valueExt> =
+    { Param: Var
+      ParamType: TypeValue<'valueExt>
+      Body: TypeCheckedViewNode<'valueExt>
+      Location: Location }
+
+    override self.ToString() =
+      $"view ({self.Param}: {self.ParamType}) -> {self.Body}"
+
+  and [<RequireQualifiedAccess>] TypeCheckedViewNode<'valueExt> =
+    { Location: Location
+      Node: TypeCheckedViewNodeRec<'valueExt> }
+
+    override self.ToString() = self.Node.ToString()
+
+  and [<RequireQualifiedAccess>] TypeCheckedViewNodeRec<'valueExt> =
+    | ViewElement of TypeCheckedViewElement<'valueExt>
+    | ViewFragment of List<TypeCheckedViewNode<'valueExt>>
+    | ViewExprContainer of TypeCheckedExpr<'valueExt>
+    | ViewText of string
+
+    override self.ToString() =
+      match self with
+      | ViewElement el -> el.ToString()
+      | ViewFragment children ->
+        let childStrs = children |> List.map string |> String.concat " "
+        $"<>{childStrs}</>"
+      | ViewExprContainer e -> $"{{{e}}}"
+      | ViewText t -> t
+
+  and [<RequireQualifiedAccess>] TypeCheckedViewElement<'valueExt> =
+    { Tag: string
+      Attributes: List<TypeCheckedViewAttribute<'valueExt>>
+      Children: List<TypeCheckedViewNode<'valueExt>>
+      SelfClosing: bool }
+
+    override self.ToString() =
+      let attrStr =
+        self.Attributes |> List.map string |> String.concat " "
+
+      if self.SelfClosing then
+        $"<{self.Tag} {attrStr} />"
+      else
+        let childStr =
+          self.Children |> List.map string |> String.concat ""
+
+        $"<{self.Tag} {attrStr}>{childStr}</{self.Tag}>"
+
+  and [<RequireQualifiedAccess>] TypeCheckedViewAttribute<'valueExt> =
+    | ViewAttrStringValue of Name: string * Value: string
+    | ViewAttrExprValue of Name: string * Value: TypeCheckedExpr<'valueExt>
+
+    override self.ToString() =
+      match self with
+      | ViewAttrStringValue(name, value) -> $"{name}=\"{value}\""
+      | ViewAttrExprValue(name, _) -> $"{name}={{...}}"
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Type-checked Coroutine AST types
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  and [<RequireQualifiedAccess>] TypeCheckedExprCo<'valueExt> =
+    { Body: TypeCheckedCoStep<'valueExt>
+      Location: Location }
+
+    override self.ToString() = $"co {{ {self.Body} }}"
+
+  and [<RequireQualifiedAccess>] TypeCheckedCoStep<'valueExt> =
+    { Location: Location
+      Step: TypeCheckedCoStepRec<'valueExt> }
+
+    override self.ToString() = self.Step.ToString()
+
+  and [<RequireQualifiedAccess>] TypeCheckedCoStepRec<'valueExt> =
+    | CoLetBang of Var: Var * Value: TypeCheckedExpr<'valueExt> * Rest: TypeCheckedCoStep<'valueExt>
+    | CoDoBang of Value: TypeCheckedExpr<'valueExt> * Rest: TypeCheckedCoStep<'valueExt>
+    | CoReturn of TypeCheckedExpr<'valueExt>
+    | CoReturnBang of TypeCheckedExpr<'valueExt>
+
+    override self.ToString() =
+      match self with
+      | CoLetBang(var, value, rest) -> $"let! {var} = {value}; {rest}"
+      | CoDoBang(value, rest) -> $"do! {value}; {rest}"
+      | CoReturn e -> $"return {e}"
+      | CoReturnBang e -> $"return! {e}"
+
   and [<RequireQualifiedAccess>] TypeCheckedExprRecoveredSyntaxError =
     { ErrorMessage: string
       ErrorLocation: Location
@@ -2198,8 +2288,8 @@ module Model =
     | TupleDes of TypeCheckedExprTupleDes<'valueExt>
     | SumDes of TypeCheckedExprSumDes<'valueExt>
     | Query of TypeCheckedExprQuery<'valueExt>
-    | View of ExprView<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>
-    | Co of ExprCo<TypeValue<'valueExt>, ResolvedIdentifier, 'valueExt>
+    | View of TypeCheckedExprView<'valueExt>
+    | Co of TypeCheckedExprCo<'valueExt>
     | RecoveredSyntaxError of TypeCheckedExprRecoveredSyntaxError
     | ErrorDanglingRecordDes of TypeCheckedExprErrorDanglingRecordDes<'valueExt>
     | ErrorDanglingScopedIdentifier of TypeCheckedExprErrorDanglingScopedIdentifier

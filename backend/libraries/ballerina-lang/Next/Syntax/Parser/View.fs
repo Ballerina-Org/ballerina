@@ -73,6 +73,7 @@ module View =
           viewFragment ()
           viewExprContainer ()
           viewTextNode () ]
+      |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
     and viewElement () : Parser<ExprViewNode<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
       parser {
@@ -111,6 +112,7 @@ module View =
                           Children = children
                           SelfClosing = false } }
               } ]
+          |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
       }
 
     and viewFragment () : Parser<ExprViewNode<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
@@ -187,6 +189,7 @@ module View =
                 do! closeCurlyBracketOperator
                 return ExprViewAttribute.ViewAttrExprValue(name, e)
               } ]
+          |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
       }
 
     // Main view parser: view (param:Type) -> <body>
@@ -209,6 +212,7 @@ module View =
               let! paramName = singleIdentifier
               return paramName, None
             } ]
+        |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
       do! parseOperator Operator.SingleArrow
       let! body = viewNode ()
@@ -251,6 +255,7 @@ module View =
           viewFragment ()
           viewExprContainer ()
           viewTextNode () ]
+      |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
     and viewElement () : Parser<ExprViewNode<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
       parser {
@@ -287,6 +292,7 @@ module View =
                           Children = children
                           SelfClosing = false } }
               } ]
+          |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
       }
 
     and viewFragment () : Parser<ExprViewNode<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
@@ -358,6 +364,7 @@ module View =
                 do! closeCurlyBracketOperator
                 return ExprViewAttribute.ViewAttrExprValue(name, e)
               } ]
+          |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
       }
 
     parser {
@@ -402,6 +409,7 @@ module View =
           coDoBang ()
           coReturnBang ()
           coReturn () ]
+      |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
     and coLetBang () : Parser<ExprCoStep<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
       parser {

@@ -77,6 +77,8 @@
     <Compile Include="Updater/Model.fs" />
     <Compile Include="Updater/Patterns.fs" />
     <Compile Include="Updater/Extension.fs" />
+    <Compile Include="View/Extension.fs" />
+    <Compile Include="Coroutine/Extension.fs" />
     <Compile Include="StdExtensions.fs" />
   </ItemGroup>
   <ItemGroup>
