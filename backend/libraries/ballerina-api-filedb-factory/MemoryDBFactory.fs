@@ -116,7 +116,8 @@ module MemoryDBAPIFactory =
                   Scope = dbio.EvalContext }
             TypeCheckContext = typeCheckContext
             TypeCheckState = typeCheckState
-            LanguageContext = languageContext }
+            LanguageContext = languageContext
+            DataSource = None }
       | _ ->
         return!
           sum.Throw(
