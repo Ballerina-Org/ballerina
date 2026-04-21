@@ -307,12 +307,52 @@ module InstantiateSyntheticVars =
           return
             TypeCheckedExpr.Query(q, expr.Type, expr.Kind, loc0, expr.Scope)
         | TypeCheckedExprRec.View v ->
+          let rec instantiateNode (node: TypeCheckedViewNode<'valueExt>) =
+            state {
+              match node.Node with
+              | TypeCheckedViewNodeRec.ViewText _ -> return node
+              | TypeCheckedViewNodeRec.ViewExprContainer e ->
+                let! e = !e
+                return
+                  { node with
+                      Node = TypeCheckedViewNodeRec.ViewExprContainer e }
+              | TypeCheckedViewNodeRec.ViewFragment children ->
+                let! children = children |> List.map instantiateNode |> state.All
+                return
+                  { node with
+                      Node = TypeCheckedViewNodeRec.ViewFragment children }
+              | TypeCheckedViewNodeRec.ViewElement el ->
+                let! attrs =
+                  el.Attributes
+                  |> List.map (fun attr ->
+                    state {
+                      match attr with
+                      | TypeCheckedViewAttribute.ViewAttrStringValue _ -> return attr
+                      | TypeCheckedViewAttribute.ViewAttrExprValue(name, e) ->
+                        let! e = !e
+                        return TypeCheckedViewAttribute.ViewAttrExprValue(name, e)
+                    })
+                  |> state.All
+
+                let! children = el.Children |> List.map instantiateNode |> state.All
+                return
+                  { node with
+                      Node =
+                        TypeCheckedViewNodeRec.ViewElement
+                          { el with
+                              Attributes = attrs
+                              Children = children } }
+            }
+
+          let! body = instantiateNode v.Body
           return
-            { Expr = TypeCheckedExprRec.View v
-              Location = loc0
-              Type = expr.Type
-              Kind = expr.Kind
-              Scope = expr.Scope }
+            TypeCheckedExpr.View(
+              { v with Body = body },
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.Co c ->
           return
             { Expr = TypeCheckedExprRec.Co c
