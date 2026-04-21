@@ -19,6 +19,7 @@ open Ballerina.DSL.Next.Types.TypeChecker.Model
 open Ballerina.DSL.Next.StdLib.DB.Extension.DBRun
 open Ballerina.DSL.Next.StdLib.View.Extension
 open Ballerina.DSL.Next.StdLib.Coroutine.Extension
+open Ballerina.DSL.Next.StdLib.WebApp.Extension
 
 type ValueExt<'runtimeContext, 'db, 'customExtension
   when 'db: comparison and 'customExtension: comparison> =
@@ -29,6 +30,7 @@ type ValueExt<'runtimeContext, 'db, 'customExtension
   | VComposite of CompositeTypeExt<'runtimeContext, 'db, 'customExtension>
   | VDB of DBExt<'runtimeContext, 'db, 'customExtension>
   | VMap of MapExt<'runtimeContext, 'db, 'customExtension>
+  | VWebApp of WebAppOperations
   | VCustom of 'customExtension
 
   override self.ToString() =
@@ -40,6 +42,7 @@ type ValueExt<'runtimeContext, 'db, 'customExtension
     | VComposite ext -> ext.ToString()
     | VDB ext -> ext.ToString()
     | VMap ext -> ext.ToString()
+    | VWebApp ext -> ext.ToString()
     | VCustom ext -> ext.ToString()
 
 and [<NoComparison; NoEquality>] ValueExtDTO =
@@ -733,6 +736,21 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
       (typeCheckingConfig |> Option.map (fun cfg -> cfg.CoTypeSymbol))
       (Identifier.FullyQualified([ "Frontend" ], "View"))
 
+  let webAppIOExtension, webAppRunExtension, _webapp_sym, _mk_webapp_io_type =
+    WebApp.Extension.WebAppExtension<
+      'runtimeContext,
+      ValueExt<'runtimeContext, 'db, 'customExtension>,
+      ValueExtDTO,
+      DeltaExt<'runtimeContext, 'db, 'customExtension>,
+      DeltaExtDTO
+     >
+      { Get = function | VWebApp x -> Some x | _ -> None
+        Set = VWebApp }
+      None
+      (Identifier.FullyQualified([ "Frontend" ], "View"))
+      (Identifier.LocalScope "Co")
+      (Identifier.LocalScope "DBIO")
+
   let dateOnlyExtension =
     DateOnly.Extension.DateOnlyExtension<
       'runtimeContext,
@@ -949,6 +967,8 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
     |> (viewExtension |> TypeExtension.RegisterLanguageContext)
     |> (viewPropsExtension |> TypeExtension.RegisterLanguageContext)
     |> (coroutineExtension |> TypeExtension.RegisterLanguageContext)
+    |> (webAppIOExtension |> TypeExtension.RegisterLanguageContext)
+    |> (webAppRunExtension |> TypeLambdaExtension.RegisterLanguageContext)
     |> (dateOnlyExtension |> OperationsExtension.RegisterLanguageContext)
     |> (dateTimeExtension |> OperationsExtension.RegisterLanguageContext)
     |> (guidExtension |> OperationsExtension.RegisterLanguageContext)
