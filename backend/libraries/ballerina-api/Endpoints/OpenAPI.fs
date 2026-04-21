@@ -25,7 +25,7 @@ module OpenAPI =
       Func<'tenantId, 'schemaName, IResult>(fun tenantId schemaName ->
         let result =
           sum {
-            let! dbio, _, _, typeCheckContext, typeCheckState = getDbDescriptor tenantId schemaName context
+            let! dbio, _, _, typeCheckContext, typeCheckState, _ = getDbDescriptor tenantId schemaName context
 
             let generationState: OpenAPIGenerationState =
               { DataModel = Map.empty

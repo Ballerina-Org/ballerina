@@ -20,6 +20,7 @@ module APIUtils =
   open Ballerina.DSL.Next.Terms.Eval
   open Ballerina.Data.Delta
   open Ballerina.DSL.Next.StdLib.Updater.Model
+  open Npgsql
 
   [<Extension>]
   type HttpContextExtensions() =
@@ -273,7 +274,8 @@ module APIUtils =
           ValueExt<'runtimeContext, 'db, 'customExtension>
          > *
         TypeCheckContext<ValueExt<'runtimeContext, 'db, 'customExtension>> *
-        TypeCheckState<ValueExt<'runtimeContext, 'db, 'customExtension>>,
+        TypeCheckState<ValueExt<'runtimeContext, 'db, 'customExtension>> *
+        Option<NpgsqlDataSource>,
         APIError<'runtimeContext, 'db, 'customExtension, Location>
        >
     =
@@ -285,7 +287,8 @@ module APIUtils =
         dbDescriptor.LanguageContext,
         dbDescriptor.EvalContext,
         dbDescriptor.TypeCheckContext,
-        dbDescriptor.TypeCheckState
+        dbDescriptor.TypeCheckState,
+        dbDescriptor.DataSource
     }
     |> sum.MapError
       APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
@@ -296,17 +299,20 @@ module APIUtils =
     and 'db: comparison
     and 'deltaDb: comparison>
     (body: Sum<'a, APIError<'runtimeContext, 'db, 'customExtension, 'context>>)
+    (onFail: APIError<'runtimeContext, 'db, 'customExtension, 'context> -> unit)
     (onSuccess: 'a -> 'b)
     : IResult =
     match body with
     | Left result -> onSuccess >> Results.Ok <| result
-    | Right { Errors = errors; TypeError = Some _ } ->
+    | Right ({ Errors = errors; TypeError = Some _ } as apiError) ->
+      onFail apiError
       let serializedErrors = errorsToSerializable errors
 
       Results.BadRequest
         { Errors = serializedErrors
           Examples = [||] }
-    | Right { Errors = errors; TypeError = None } ->
+    | Right ({ Errors = errors; TypeError = None } as apiError) ->
+      onFail apiError
       Results.BadRequest
         { Errors = errorsToSerializable errors
           Examples = [||] }

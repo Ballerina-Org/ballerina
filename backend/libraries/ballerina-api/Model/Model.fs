@@ -13,6 +13,7 @@ open Ballerina.DSL.Next.Terms.Eval
 open Ballerina.DSL.Next.StdLib.DB
 open Ballerina.Fun
 open Microsoft.AspNetCore.Http
+open Npgsql
 
 [<NoComparison; NoEquality>]
 type APITypeError<'runtimeContext, 'db, 'customExtension
@@ -71,7 +72,8 @@ type DbDescriptor<'runtimeContext, 'db, 'customExtension
         ValueExtDTO,
         DeltaExt<'runtimeContext, 'db, 'customExtension>,
         DeltaExtDTO
-       > }
+       >
+    DataSource: Option<NpgsqlDataSource> }
 
 type TenantDescriptor<'tenantId, 'schemaName> =
   { TenantId: 'tenantId
