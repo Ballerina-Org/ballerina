@@ -22,10 +22,12 @@ module Linking =
   open Microsoft.AspNetCore.Http
   open Ballerina.DSL.Next.Serialization.ValueSerializer
 
+  [<NoComparison; NoEquality>]
   type LinkPayload =
     { FromId: ValueDTO<ValueExtDTO>
       ToId: ValueDTO<ValueExtDTO> }
 
+  [<NoComparison; NoEquality>]
   type MovePayload =
     { FromId: ValueDTO<ValueExtDTO>
       SourceId: ValueDTO<ValueExtDTO>

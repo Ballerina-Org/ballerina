@@ -5,6 +5,7 @@ module StringBuilder =
   open System
   open System.Text.RegularExpressions
 
+  [<NoComparison; NoEquality>]
   type StringBuilder =
     | One of string
     | Many of seq<StringBuilder>

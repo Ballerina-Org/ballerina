@@ -23,6 +23,7 @@ module Precedence =
     | Operand of 'operand * OperandMergeability
     | Operator of 'operator
 
+  [<NoComparison; NoEquality>]
   type BinaryOperatorsOperations<'operand, 'operator, 'expr> =
     { Compose:
         'operand *

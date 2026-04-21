@@ -14,6 +14,7 @@ module Filter =
   open Microsoft.AspNetCore.Http
   open System.Text.Json
 
+  [<NoComparison; NoEquality>]
   type EntityFilterResult =
     { EntityId: string
       JsonValue: ValueDTO<ValueExtDTO> }

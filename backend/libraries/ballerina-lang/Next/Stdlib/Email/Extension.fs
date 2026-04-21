@@ -14,6 +14,7 @@ module Extension =
   open Ballerina.Lenses
   open Ballerina.DSL.Next.Extensions
 
+  [<NoComparison; NoEquality>]
   type EmailTypeClass<'runtimeContext> =
     { send: 'runtimeContext -> string -> string -> string -> unit }
 

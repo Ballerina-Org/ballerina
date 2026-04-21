@@ -4,6 +4,7 @@ module DeltaDTO =
   open Ballerina.DSL.Next.Serialization.PocoObjects
   open System.Collections.Generic
 
+  [<NoComparison; NoEquality>]
   type RecordDeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO
     when 'valueExtensionDTO: not null
     and 'valueExtensionDTO: not struct
@@ -12,7 +13,7 @@ module DeltaDTO =
     { Field: string
       Delta: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO> }
 
-  and UnionDeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO
+  and [<NoComparison; NoEquality>] UnionDeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO
     when 'valueExtensionDTO: not null
     and 'valueExtensionDTO: not struct
     and 'deltaExtensionDTO: not null
@@ -20,7 +21,7 @@ module DeltaDTO =
     { Case: string
       Delta: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO> }
 
-  and TupleDeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO
+  and [<NoComparison; NoEquality>] TupleDeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO
     when 'valueExtensionDTO: not null
     and 'valueExtensionDTO: not struct
     and 'deltaExtensionDTO: not null
@@ -28,7 +29,7 @@ module DeltaDTO =
     { Position: int
       Delta: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO> }
 
-  and SumDeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO
+  and [<NoComparison; NoEquality>] SumDeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO
     when 'valueExtensionDTO: not null
     and 'valueExtensionDTO: not struct
     and 'deltaExtensionDTO: not null

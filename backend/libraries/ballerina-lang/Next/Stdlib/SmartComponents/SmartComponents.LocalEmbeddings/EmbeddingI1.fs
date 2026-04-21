@@ -5,7 +5,7 @@ open System.Numerics
 open System.Text.Json
 open System.Text.Json.Serialization
 
-[<Struct; JsonConverter(typeof<BitEmbeddingJsonConverter>)>]
+[<Struct; NoComparison; NoEquality; JsonConverter(typeof<BitEmbeddingJsonConverter>)>]
 type EmbeddingI1 =
   val private buffer: ReadOnlyMemory<byte>
 

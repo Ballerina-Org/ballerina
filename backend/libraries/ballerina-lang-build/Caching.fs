@@ -14,6 +14,7 @@ module Caching =
 
   type Fun<'a, 'b> = 'a -> 'b
 
+  [<NoComparison; NoEquality>]
   type BuildCache<'valueExt when 'valueExt: comparison> =
     { TryGet:
         ProjectModel.FileName

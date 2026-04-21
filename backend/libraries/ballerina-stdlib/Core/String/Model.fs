@@ -34,7 +34,10 @@ module String =
       if self |> String.IsNullOrEmpty then
         self
       else
-        String.Concat(self[0].ToString().ToUpper(), self.AsSpan(1))
+        let c = Char.ToUpper(self.[0])
+        let first = string c
+        let rest = self.Substring(1)
+        String.Concat(first, rest)
 
     static member ToFirstUpper(self: String) = self.ToFirstUpper
 

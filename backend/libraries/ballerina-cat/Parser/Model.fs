@@ -33,6 +33,7 @@ module Model =
       ParserResult(f a, rest)
 
 
+  [<NoComparison; NoEquality>]
   type Parser<'a, 'sym, 'loc, 'err> =
     | Parser of FreeNode<'a, unit, List<'sym> * 'loc, 'err>
 

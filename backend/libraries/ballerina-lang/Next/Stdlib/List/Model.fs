@@ -65,6 +65,7 @@ module Model =
     | RemoveAllElements
     | MoveElement of fromIndex: int * toIndex: int
 
+  [<NoComparison; NoEquality>]
   type UpdateElementDTO<'extDTO, 'deltaExtDTO
     when 'extDTO: not null
     and 'extDTO: not struct
@@ -73,6 +74,7 @@ module Model =
     { Index: int
       Value: DeltaDTO<'extDTO, 'deltaExtDTO> }
 
+  [<NoComparison; NoEquality>]
   type InsertElementDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct>
     =
     { Index: int; Value: ValueDTO<'extDTO> }
@@ -83,6 +85,7 @@ module Model =
   type MoveElementDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct> =
     { From: int; To: int }
 
+  [<NoComparison; NoEquality>]
   type ListDeltaExtDTO<'extDTO, 'deltaExtDTO
     when 'extDTO: not null
     and 'extDTO: not struct

@@ -168,6 +168,7 @@ module Model =
       PermissionHooksExtraScope:
         Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)> }
 
+  [<NoComparison; NoEquality>]
   type TypeCheckingConfig<'valueExt when 'valueExt: comparison> =
     { QueryTypeSymbol: TypeSymbol
       ListTypeSymbol: TypeSymbol
