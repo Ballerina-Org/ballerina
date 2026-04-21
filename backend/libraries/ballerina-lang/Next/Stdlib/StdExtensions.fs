@@ -559,6 +559,45 @@ and [<NoComparison; NoEquality>] DeltaExtDTO =
 
   static member Empty = { ListDelta = null; MapDelta = null }
 
+/// Named active patterns for the Choice slots inside ValueExt.
+/// Use these instead of raw Choice*Of7 for readability.
+/// Open this module or qualify as ValueExtInner.DB etc.
+module ValueExtInner =
+  let (|ListExt|_|) =
+    function
+    | Choice1Of7 v -> Some v
+    | _ -> None
+
+  let (|UnitExt|_|) =
+    function
+    | Choice2Of7 v -> Some v
+    | _ -> None
+
+  let (|PrimitiveExt|_|) =
+    function
+    | Choice3Of7 v -> Some v
+    | _ -> None
+
+  let (|CompositeTypeExt|_|) =
+    function
+    | Choice4Of7 v -> Some v
+    | _ -> None
+
+  let (|DB|_|) =
+    function
+    | Choice5Of7 v -> Some v
+    | _ -> None
+
+  let (|MapExt|_|) =
+    function
+    | Choice6Of7 v -> Some v
+    | _ -> None
+
+  let (|CustomExt|_|) =
+    function
+    | Choice7Of7 v -> Some v
+    | _ -> None
+
 [<NoComparison; NoEquality>]
 type StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO
   when 'valueExt: comparison
