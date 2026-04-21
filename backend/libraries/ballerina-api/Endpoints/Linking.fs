@@ -59,7 +59,7 @@ module Linking =
                    languageContext,
                    evalContext,
                    typeCheckContext,
-                   typeCheckState =
+                   typeCheckState, _ =
                 getDbDescriptor tenantId schemaName context
 
               let! fromIdValue =
@@ -223,7 +223,7 @@ module Linking =
                     .Create
             }
 
-          apiResponseFromSum result id)
+          apiResponseFromSum result (fun _ -> ()) id)
     )
     |> ignore
 
@@ -246,7 +246,7 @@ module Linking =
                    languageContext,
                    evalContext,
                    typeCheckContext,
-                   typeCheckState =
+                   typeCheckState, _ =
                 getDbDescriptor tenantId schemaName context
 
               let! fromIdValue =
@@ -409,7 +409,7 @@ module Linking =
                     .Create
             }
 
-          apiResponseFromSum result id)
+          apiResponseFromSum result (fun _ -> ()) id)
     )
     |> ignore
 
@@ -442,7 +442,7 @@ module Linking =
                    languageContext,
                    evalContext,
                    typeCheckContext,
-                   typeCheckState =
+                   typeCheckState, _ =
                 getDbDescriptor tenantId schemaName context
 
               let! fromIdValue =
@@ -624,7 +624,7 @@ module Linking =
                     .Create
             }
 
-          apiResponseFromSum result id)
+          apiResponseFromSum result (fun _ -> ()) id)
     )
     |> ignore
 
@@ -657,7 +657,7 @@ module Linking =
                    languageContext,
                    evalContext,
                    typeCheckContext,
-                   typeCheckState =
+                   typeCheckState, _ =
                 getDbDescriptor tenantId schemaName context
 
               let! fromIdValue =
@@ -840,7 +840,7 @@ module Linking =
                     .Create
             }
 
-          apiResponseFromSum result id)
+          apiResponseFromSum result (fun _ -> ()) id)
     )
     |> ignore
 

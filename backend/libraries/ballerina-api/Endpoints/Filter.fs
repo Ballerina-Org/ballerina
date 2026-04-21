@@ -53,6 +53,6 @@ module Filter =
                      Value = r.JsonValue |})
             }
 
-          apiResponseFromSum result id)
+          apiResponseFromSum result (fun _ -> ()) id)
     )
     |> ignore
