@@ -368,8 +368,7 @@ module Update =
                   |> Map.ofList
                   |> Ballerina.DSL.Next.StdLib.Map.Model.MapValues.Map
                   |> MapExt.MapValues
-                  |> Choice6Of7
-                  |> ValueExt
+                  |> VMap
 
                 let updaters = Value.Ext(updaters, None)
 

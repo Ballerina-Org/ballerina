@@ -106,7 +106,7 @@ module MemoryDBAPIFactory =
           )
 
       match evalResult with
-      | Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.DBIO dbio))), _) ->
+      | Ext(ValueExt.VDB(DBExt.DBValues(DBValues.DBIO dbio)), _) ->
         let languageContext, _ = contextFactory dbFileConfig
 
         return

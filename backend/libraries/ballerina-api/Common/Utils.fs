@@ -229,11 +229,9 @@ module APIUtils =
       let! updater = delta |> Delta.ToUpdater DeltaExt.ToUpdater
 
       let updaterExtension =
-        ValueExt(
-          Choice4Of7(
-            CompositeType(
-              Choice5Of5(UpdaterOperations(Apply { Updater = updater }))
-            )
+        VComposite(
+          CompositeType(
+            Choice5Of5(UpdaterOperations(Apply { Updater = updater }))
           )
         )
 
