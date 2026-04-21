@@ -147,7 +147,7 @@ module API =
           schemaDefinition
 
       match evalResult with
-      | Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.DBIO dbio))), _) ->
+      | Ext(ValueExt.ValueExt(ValueExtInner.DB(DBExt.DBValues(DBValues.DBIO dbio))), _) ->
         let! schema =
           fileManager.TryReadContent()
           |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))

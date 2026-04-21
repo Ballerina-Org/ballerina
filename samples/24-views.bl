@@ -90,6 +90,8 @@ type TodoSchema =
     }
   };
 
+let replaceWith = fun [a:*] [b:*] (y:b) -> fun (_:a) -> y;
+
 // ═════════════════════════════════════════════════════════════════════════
 // VIEW DEFINITIONS
 // ═════════════════════════════════════════════════════════════════════════
@@ -103,21 +105,21 @@ let counter = view (props:View::Props[TodoSchema][string][int32]) ->
   <div class="counter">
     <h2>{props.context}</h2>
     <span class="count">{props.state}</span>
-    <button onClick={props.setState(fun n -> n + 1)}>+</button>
-    <button onClick={props.setState(fun n -> n - 1)}>-</button>
+    <button onClick={props.setState(fun (n:int32) -> n + 1)}>+</button>
+    <button onClick={props.setState(fun (n:int32) -> n - 1)}>-</button>
   </div>;
 
 // ── 2. Todo item ─────────────────────────────────────────────────────────
 // Demonstrates: conditional expression in attribute, record-with update,
 // boolean negation, checkbox binding.
 // context = unit, state = the todo itself.
-// Type: Frontend::View[TodoSchema][unit][Todo]
+// Type: Frontend::View[TodoSchema][()][Todo]
 
-let todoItem = view (props:View::Props[TodoSchema][unit][Todo]) ->
+let todoItem = view (props:View::Props[TodoSchema][()][Todo]) ->
   <li class={if props.state.Done then "done" else "pending"}>
     <input type="checkbox"
            checked={props.state.Done}
-           onChange={props.setState(fun t -> { t with Todo::Done = !(t.Done) })} />
+           onChange={props.setState(fun (t:Todo) -> { t with Todo::Done = !(t.Done) })} />
     <span>{props.state.Title}</span>
   </li>;
 
@@ -125,42 +127,28 @@ let todoItem = view (props:View::Props[TodoSchema][unit][Todo]) ->
 // Demonstrates: composition via mapState. Each todo item gets a focused
 // slice of the list state, with an updater that maps changes back.
 // context = unit, state = list of todos.
-// Type: Frontend::View[TodoSchema][unit][List[Todo]]
+// Type: Frontend::View[TodoSchema][()][List[Todo]]
 
-let todoList = view (props:View::Props[TodoSchema][unit][List[Todo]]) ->
+let todoList = view (props:View::Props[TodoSchema][()][List[Todo]]) ->
   <div class="todo-list">
     <h1>My Todos</h1>
     <ul>
-      {List::map (fun todo ->
-        <todoItem props={
-          props |> View::mapState
-            (replaceWith todo)
-            (fun f items -> List::map (fun t ->
-              if t.Title == todo.Title then f t else t
-            ) items)
-        } />
-      ) props.state}
-    </ul>
-    <p>
-      {List::length (List::filter (fun t -> t.Done) props.state)}
-      of
       {List::length props.state}
-      completed
-    </p>
+    </ul>
   </div>;
 
 // ── 4. Fragment ──────────────────────────────────────────────────────────
 // Demonstrates: fragment syntax <>...</> for returning multiple root nodes
 // without a wrapper element.
 // context = header info record, state = unit (stateless display).
-// Type: Frontend::View[TodoSchema][HeaderInput][unit]
+// Type: Frontend::View[TodoSchema][HeaderInput][()]
 
 type HeaderInput = {
   Title: string;
   Subtitle: string;
 };
 
-let pageHeader = view (props:View::Props[TodoSchema][HeaderInput][unit]) ->
+let pageHeader = view (props:View::Props[TodoSchema][HeaderInput][()]) ->
   <>
     <h1>{props.context.Title}</h1>
     <p class="subtitle">{props.context.Subtitle}</p>
@@ -169,59 +157,59 @@ let pageHeader = view (props:View::Props[TodoSchema][HeaderInput][unit]) ->
 // ── 5. Self-closing tags ─────────────────────────────────────────────────
 // Demonstrates: void HTML elements with self-closing syntax.
 // Both are stateless display-only views.
-// Type: Frontend::View[TodoSchema][unit][unit]
+// Type: Frontend::View[TodoSchema][()][()]
 
-let divider = view (props:View::Props[TodoSchema][unit][unit]) ->
+let divider = view (props:View::Props[TodoSchema][()][()]) ->
   <hr />;
 
-// Type: Frontend::View[TodoSchema][AvatarInput][unit]
+// Type: Frontend::View[TodoSchema][AvatarInput][()]
 
 type AvatarInput = {
   Url: string;
   Alt: string;
 };
 
-let avatar = view (props:View::Props[TodoSchema][AvatarInput][unit]) ->
+let avatar = view (props:View::Props[TodoSchema][AvatarInput][()]) ->
   <img src={props.context.Url} alt={props.context.Alt} class="avatar" />;
 
 // ── 6. Nested composition ────────────────────────────────────────────────
 // Demonstrates: combining multiple custom components and HTML in one view.
 // Uses mapContext and mapState to wire parent state into child props.
 // context = unit (root page), state = composite record.
-// Type: Frontend::View[TodoSchema][unit][PageState]
+// Type: Frontend::View[TodoSchema][()][PageState]
 
 type PageState = {
   Todos: List[Todo];
   Count: int32;
 };
 
-let homePage = view (props:View::Props[TodoSchema][unit][PageState]) ->
+let homePage = view (props:View::Props[TodoSchema][()][PageState]) ->
   <div class="home">
     <pageHeader props={
       props
-      |> View::mapContext(replaceWith { Title = "Todo App"; Subtitle = "Built with Ballerina views" })
-      |> View::mapState (replaceWith ()) (replaceWith id)
+      |> View::mapContext(fun _ -> { Title = "Todo App"; Subtitle = "Built with Ballerina views" })
+      |> View::mapState (fun _ -> ()) (fun _ (s:PageState) -> s)
     } />
     <divider props={
       props
-      |> View::mapState (replaceWith ()) (replaceWith id)
+      |> View::mapState (fun _ -> ()) (fun _ (s:PageState) -> s)
     } />
     <counter props={
       props
-      |> View::mapContext(replaceWith "Visits")
+      |> View::mapContext(fun _ -> "Visits")
       |> View::mapState
-        (fun s -> s.Count)
-        (fun f s -> { s with PageState::Count = f s.Count })
+        (fun (s:PageState) -> s.Count)
+        (fun f (s:PageState) -> { s with PageState::Count = f s.Count })
     } />
     <divider props={
       props
-      |> View::mapState (replaceWith ()) (replaceWith id)
+      |> View::mapState (fun _ -> ()) (fun _ (s:PageState) -> s)
     } />
     <todoList props={
       props
       |> View::mapState
-        (fun s -> s.Todos)
-        (fun f s -> { s with PageState::Todos = f s.Todos })
+        (fun (s:PageState) -> s.Todos)
+        (fun f (s:PageState) -> { s with PageState::Todos = f s.Todos })
     } />
   </div>;
 
@@ -231,9 +219,9 @@ let homePage = view (props:View::Props[TodoSchema][unit][PageState]) ->
 
 // ── 7. A "done" message view ─────────────────────────────────────────────
 // Shown after the counter coroutine completes.
-// Type: Frontend::View[TodoSchema][int32][unit]
+// Type: Frontend::View[TodoSchema][int32][()]
 
-let doneMessage = view (props:View::Props[TodoSchema][int32][unit]) ->
+let doneMessage = view (props:View::Props[TodoSchema][int32][()]) ->
   <div class="done">
     <h1>Done!</h1>
     <p>You counted to {props.context}.</p>
@@ -242,14 +230,14 @@ let doneMessage = view (props:View::Props[TodoSchema][int32][unit]) ->
 // ── 8. Counter coroutine ─────────────────────────────────────────────────
 // Shows the counter view. When the count exceeds 10, the coroutine
 // finishes and yields the final count.
-// Type: Co[TodoSchema][unit][unit][int32]
+// Type: Co[TodoSchema][()][()][int32]
 
 let counterFlow = co {
   let! finalCount =
     Co::show
       "Click counter"    // initial context (I = string)
       0                   // initial state   (S = int32)
-      (fun n ->           // predicate: S -> () + int32
+      (fun (n:int32) ->    // predicate: S -> () + int32
         if n > 10 then 2Of2(n)
         else 1Of2())
       counter;            // the view to render
@@ -259,7 +247,7 @@ let counterFlow = co {
 // ── 9. Full page coroutine ───────────────────────────────────────────────
 // Sequences two phases: first the counter, then a "done" message.
 // Demonstrates how coroutines turn multi-step UI into straight-line code.
-// Type: Co[TodoSchema][unit][unit][unit]
+// Type: Co[TodoSchema][()][()][()]
 
 let homeFlow = co {
   // Phase 1: show the counter until count > 10
@@ -275,41 +263,20 @@ let homeFlow = co {
   return ()
 };
 
-// ═════════════════════════════════════════════════════════════════════════
-// WEBAPP BUILDER
-// ═════════════════════════════════════════════════════════════════════════
-// WebApp::run wraps a DB::run and attaches routes and components.
-// Routes map URL paths to coroutines (which manage page-level state).
-// Components register reusable views by name.
-// Routes are always coroutines — views are lifted via Co::show.
+// ── 10. Ignored counter flow ──────────────────────────────────────────────
+// Demonstrates Co::ignore: discards the int32 result of counterFlow.
+// Type: Co[TodoSchema][()][()][()]
 
-let main = fun (schema: TodoSchema) ->
-  let seed_todos = {
-    { Title = "Learn Ballerina"; Done = true };
-    { Title = "Build views"; Done = false };
-    { Title = "Ship it"; Done = false }
-  };
-  (seed_todos, "seeded");
+let ignoredCounterFlow = Co::ignore counterFlow;
 
-WebApp::run [TodoSchema] (DB::run [TodoSchema] main)
-  |> WebApp::withRoute("/", co {
-    do! Co::show
-      ()
-      { Todos = seed_todos; Count = 0 }
-      (replaceWith (1Of2()))
-      homePage;
-    return ()
-  })
-  |> WebApp::withRoute("/flow", homeFlow)
-  |> WebApp::withRoute("/header", co {
-    do! Co::show
-      { Title = "Header"; Subtitle = "Standalone page" }
-      ()
-      (replaceWith (1Of2()))
-      pageHeader;
-    return ()
-  })
-  |> WebApp::withComponent("counter", counter)
-  |> WebApp::withComponent("todoItem", todoItem)
-  |> WebApp::withComponent("divider", divider)
-  |> WebApp::withComponent("avatar", avatar)
+// ── 11. Repeated counter flow ─────────────────────────────────────────────
+// Demonstrates Co::until: repeats a coroutine, checking a predicate
+// on the ambient state after each iteration.
+// Type: Co[TodoSchema][()][()][string]
+
+let repeatedCounterFlow =
+  Co::until
+    (replaceWith (2Of2("done")))
+    ignoredCounterFlow;
+
+repeatedCounterFlow

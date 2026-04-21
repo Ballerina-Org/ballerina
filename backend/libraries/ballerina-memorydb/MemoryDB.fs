@@ -350,7 +350,7 @@ module MutableMemoryDB =
         |> NonEmptyList.map (fun it ->
           reader {
             match it.Source with
-            | Value.Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.EntityRef entity_ref))),
+            | Value.Ext(ValueExt.ValueExt(ValueExtInner.DB(DBExt.DBValues(DBValues.EntityRef entity_ref))),
                         _) ->
               let (db: MutableMemoryDB<_, _>) =
                 queryRunAdapter.GetDbFromEntityRef entity_ref
@@ -392,7 +392,7 @@ module MutableMemoryDB =
                 |> reader.OfSum
 
               match relation with
-              | Value.Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.RelationRef(relation_ref:
+              | Value.Ext(ValueExt.ValueExt(ValueExtInner.DB(DBExt.DBValues(DBValues.RelationRef(relation_ref:
                             RelationRef<
                               MutableMemoryDB<'a, 'b>,
                               ValueExt<'a, MutableMemoryDB<'a, 'b>, 'b>

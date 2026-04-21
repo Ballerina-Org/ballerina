@@ -307,19 +307,109 @@ module InstantiateSyntheticVars =
           return
             TypeCheckedExpr.Query(q, expr.Type, expr.Kind, loc0, expr.Scope)
         | TypeCheckedExprRec.View v ->
+          let rec instantiateViewNode
+            (node: TypeCheckedViewNode<'valueExt>)
+            : TypeCheckerResult<TypeCheckedViewNode<'valueExt>, 'valueExt> =
+            state {
+              match node.Node with
+              | TypeCheckedViewNodeRec.ViewText _ -> return node
+              | TypeCheckedViewNodeRec.ViewFragment children ->
+                let! children' =
+                  children |> List.map instantiateViewNode |> state.All
+
+                return
+                  { TypeCheckedViewNode.Location = node.Location
+                    Node = TypeCheckedViewNodeRec.ViewFragment children' }
+              | TypeCheckedViewNodeRec.ViewExprContainer e ->
+                let! e' = !e
+
+                return
+                  { TypeCheckedViewNode.Location = node.Location
+                    Node = TypeCheckedViewNodeRec.ViewExprContainer e' }
+              | TypeCheckedViewNodeRec.ViewElement el ->
+                let! attrs' =
+                  el.Attributes
+                  |> List.map (fun attr ->
+                    state {
+                      match attr with
+                      | TypeCheckedViewAttribute.ViewAttrStringValue _ ->
+                        return attr
+                      | TypeCheckedViewAttribute.ViewAttrExprValue(name, e) ->
+                        let! e' = !e
+                        return TypeCheckedViewAttribute.ViewAttrExprValue(name, e')
+                    })
+                  |> state.All
+
+                let! children' =
+                  el.Children |> List.map instantiateViewNode |> state.All
+
+                return
+                  { TypeCheckedViewNode.Location = node.Location
+                    Node =
+                      TypeCheckedViewNodeRec.ViewElement
+                        { TypeCheckedViewElement.Tag = el.Tag
+                          Attributes = attrs'
+                          Children = children'
+                          SelfClosing = el.SelfClosing } }
+            }
+
+          let! body' = instantiateViewNode v.Body
+
           return
-            { Expr = TypeCheckedExprRec.View v
-              Location = loc0
-              Type = expr.Type
-              Kind = expr.Kind
-              Scope = expr.Scope }
+            TypeCheckedExpr.View(
+              { v with Body = body' },
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.Co c ->
+          let rec instantiateCoStep
+            (step: TypeCheckedCoStep<'valueExt>)
+            : TypeCheckerResult<TypeCheckedCoStep<'valueExt>, 'valueExt> =
+            state {
+              match step.Step with
+              | TypeCheckedCoStepRec.CoLetBang(x, value, rest) ->
+                let! value = !value
+                let! rest = instantiateCoStep rest
+
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    Step =
+                      TypeCheckedCoStepRec.CoLetBang(x, value, rest) }
+              | TypeCheckedCoStepRec.CoDoBang(value, rest) ->
+                let! value = !value
+                let! rest = instantiateCoStep rest
+
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    Step =
+                      TypeCheckedCoStepRec.CoDoBang(value, rest) }
+              | TypeCheckedCoStepRec.CoReturn e ->
+                let! e = !e
+
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    Step = TypeCheckedCoStepRec.CoReturn(e) }
+              | TypeCheckedCoStepRec.CoReturnBang e ->
+                let! e = !e
+
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    Step = TypeCheckedCoStepRec.CoReturnBang(e) }
+            }
+
+          let! body = instantiateCoStep c.Body
+
           return
-            { Expr = TypeCheckedExprRec.Co c
-              Location = loc0
-              Type = expr.Type
-              Kind = expr.Kind
-              Scope = expr.Scope }
+            TypeCheckedExpr.Co(
+              { TypeCheckedExprCo.Body = body
+                Location = c.Location },
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.RecoveredSyntaxError err ->
           return
             { Expr = TypeCheckedExprRec.RecoveredSyntaxError err

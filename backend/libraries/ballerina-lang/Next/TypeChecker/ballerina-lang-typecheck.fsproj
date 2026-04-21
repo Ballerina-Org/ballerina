@@ -66,6 +66,8 @@
     <Compile Include="TypeCheck/Query.fs" />
     <Compile Include="TypeCheck/ErrorDanglingScopedIdentifier.fs" />
     <Compile Include="TypeCheck/ErrorDanglingRecordDes.fs" />
+    <Compile Include="TypeCheck/Co.fs" />
+    <Compile Include="TypeCheck/View.fs" />
     <Compile Include="TypeCheck/Expr.fs" />
     <Compile Include="TypeCheck/Value.fs" />
   </ItemGroup>

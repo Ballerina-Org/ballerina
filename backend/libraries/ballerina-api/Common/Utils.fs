@@ -229,7 +229,7 @@ module APIUtils =
 
       let updaterExtension =
         ValueExt(
-          Choice4Of7(
+          ValueExtInner.Composite(
             CompositeType(
               Choice5Of5(UpdaterOperations(Apply { Updater = updater }))
             )

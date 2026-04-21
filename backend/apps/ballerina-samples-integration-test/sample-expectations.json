@@ -159,10 +159,10 @@
       "errorRegexes": []
     },
     "24-views": {
-      "mode": "build-fails",
+      "mode": "build-succeeds",
       "valueRegexes": [],
       "typeRegexes": [],
-      "errorRegexes": ["view"]
+      "errorRegexes": []
     }
   }
 }

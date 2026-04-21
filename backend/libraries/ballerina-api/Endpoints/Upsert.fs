@@ -384,7 +384,7 @@ module Upsert =
                 |> Map.ofList
                 |> Ballerina.DSL.Next.StdLib.Map.Model.MapValues.Map
                 |> MapExt.MapValues
-                |> Choice6Of7
+                |> ValueExtInner.Map
                 |> ValueExt
 
               let upserters = Value.Ext(upserters, None)
