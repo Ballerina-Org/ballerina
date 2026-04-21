@@ -354,12 +354,42 @@ module InstantiateSyntheticVars =
               expr.Scope
             )
         | TypeCheckedExprRec.Co c ->
+          let rec instantiateStep (step: TypeCheckedCoStep<'valueExt>) =
+            state {
+              match step.Step with
+              | TypeCheckedCoStepRec.CoLetBang(var, value, rest) ->
+                let! value = !value
+                let! rest = instantiateStep rest
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoLetBang(var, value, rest) }
+              | TypeCheckedCoStepRec.CoDoBang(value, rest) ->
+                let! value = !value
+                let! rest = instantiateStep rest
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoDoBang(value, rest) }
+              | TypeCheckedCoStepRec.CoReturn e ->
+                let! e = !e
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoReturn e }
+              | TypeCheckedCoStepRec.CoReturnBang e ->
+                let! e = !e
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoReturnBang e }
+            }
+
+          let! body = instantiateStep c.Body
           return
-            { Expr = TypeCheckedExprRec.Co c
-              Location = loc0
-              Type = expr.Type
-              Kind = expr.Kind
-              Scope = expr.Scope }
+            TypeCheckedExpr.Co(
+              { c with Body = body },
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
         | TypeCheckedExprRec.RecoveredSyntaxError err ->
           return
             { Expr = TypeCheckedExprRec.RecoveredSyntaxError err

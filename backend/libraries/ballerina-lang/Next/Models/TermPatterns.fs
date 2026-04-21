@@ -1095,6 +1095,26 @@ module Patterns =
       TypeCheckedExpr<'valueExt>
         .View(v, t, k, Location.Unknown, TypeCheckScope.Empty)
 
+    static member Co
+      (
+        c: TypeCheckedExprCo<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) =
+      { TypeCheckedExpr.Expr = TypeCheckedExprRec.Co(c)
+        TypeCheckedExpr.Type = t
+        TypeCheckedExpr.Kind = k
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member Co
+      (c: TypeCheckedExprCo<'valueExt>, t: TypeValue<'valueExt>, k: Kind)
+      =
+      TypeCheckedExpr<'valueExt>
+        .Co(c, t, k, Location.Unknown, TypeCheckScope.Empty)
+
     static member FromValue
       (
         v: Value<TypeValue<'valueExt>, 'valueExt>,

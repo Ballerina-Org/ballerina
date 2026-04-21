@@ -41,6 +41,7 @@ module Expr =
   open Ballerina.DSL.Next.Types.TypeChecker.TypeApply
   open Ballerina.DSL.Next.Types.TypeChecker.Query
   open Ballerina.DSL.Next.Types.TypeChecker.View
+  open Ballerina.DSL.Next.Types.TypeChecker.Co
   open Ballerina.DSL.Next.Types.TypeChecker.ErrorDanglingScopedIdentifier
   open Ballerina.DSL.Next.Types.TypeChecker.ErrorDanglingRecordDes
   open Ballerina.Fun
@@ -245,11 +246,15 @@ module Expr =
 
                 return result, ctx
 
-              | ExprRec.Co _c ->
-                return!
-                  Errors.Singleton loc0 (fun () ->
-                    $"Error: co expressions are not yet supported by the typechecker")
-                  |> state.Throw
+              | ExprRec.Co c ->
+                let! result, ctx =
+                  Expr.TypeCheckCo
+                    config
+                    typeCheckExpr
+                    context_t
+                    (loc0, c)
+
+                return result, ctx
 
               | ExprRec.RecoveredSyntaxError err ->
                 return!
