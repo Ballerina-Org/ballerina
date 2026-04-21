@@ -17,34 +17,30 @@ open Ballerina.DSL.Next.StdLib.Email
 open Ballerina.DSL.Next.StdLib.String
 open Ballerina.DSL.Next.Types.TypeChecker.Model
 open Ballerina.DSL.Next.StdLib.DB.Extension.DBRun
+open Ballerina.DSL.Next.StdLib.View.Extension
+open Ballerina.DSL.Next.StdLib.Coroutine.Extension
 
 type ValueExt<'runtimeContext, 'db, 'customExtension
   when 'db: comparison and 'customExtension: comparison> =
-  | ValueExt of
-    Choice<
-      ListExt<'runtimeContext, 'db, 'customExtension>,
-      Unit,
-      PrimitiveExt<'runtimeContext, 'db, 'customExtension>,
-      CompositeTypeExt<'runtimeContext, 'db, 'customExtension>,
-      DBExt<'runtimeContext, 'db, 'customExtension>,
-      MapExt<'runtimeContext, 'db, 'customExtension>,
-      'customExtension
-     >
+  | VList of ListExt<'runtimeContext, 'db, 'customExtension>
+  | VViewProps of ViewPropsOperations
+  | VCo of CoroutineOperations
+  | VPrimitive of PrimitiveExt<'runtimeContext, 'db, 'customExtension>
+  | VComposite of CompositeTypeExt<'runtimeContext, 'db, 'customExtension>
+  | VDB of DBExt<'runtimeContext, 'db, 'customExtension>
+  | VMap of MapExt<'runtimeContext, 'db, 'customExtension>
+  | VCustom of 'customExtension
 
   override self.ToString() =
     match self with
-    | ValueExt(Choice1Of7 ext) -> ext.ToString()
-    | ValueExt(Choice2Of7 ext) -> ext.ToString()
-    | ValueExt(Choice3Of7 ext) -> ext.ToString()
-    | ValueExt(Choice4Of7 ext) -> ext.ToString()
-    | ValueExt(Choice5Of7 ext) -> ext.ToString()
-    | ValueExt(Choice6Of7 ext) -> ext.ToString()
-    | ValueExt(Choice7Of7 ext) -> ext.ToString()
-
-
-  static member Getters = {| ValueExt = fun (ValueExt e) -> e |}
-
-  static member Updaters = {| ValueExt = fun u (ValueExt e) -> ValueExt(u e) |}
+    | VList ext -> ext.ToString()
+    | VViewProps ext -> ext.ToString()
+    | VCo ext -> ext.ToString()
+    | VPrimitive ext -> ext.ToString()
+    | VComposite ext -> ext.ToString()
+    | VDB ext -> ext.ToString()
+    | VMap ext -> ext.ToString()
+    | VCustom ext -> ext.ToString()
 
 and [<NoComparison; NoEquality>] ValueExtDTO =
   { List: List.Model.ListValueDTO<ValueExtDTO>
@@ -76,9 +72,9 @@ and DBExt<'runtimeContext, 'db, 'customExtension
        > =
     { Get =
         function
-        | ValueExt(Choice5Of7(DBExt.DBValues x)) -> Some x
+        | VDB(DBExt.DBValues x) -> Some x
         | _ -> None
-      Set = DBExt.DBValues >> Choice5Of7 >> ValueExt.ValueExt }
+      Set = DBExt.DBValues >> VDB }
 
 and MapExt<'runtimeContext, 'db, 'customExtension
   when 'db: comparison and 'customExtension: comparison> =
@@ -99,9 +95,9 @@ and MapExt<'runtimeContext, 'db, 'customExtension
        > =
     { Get =
         function
-        | ValueExt(Choice6Of7(MapValues x)) -> Some x
+        | VMap(MapValues x) -> Some x
         | _ -> None
-      Set = MapValues >> Choice6Of7 >> ValueExt.ValueExt }
+      Set = MapValues >> VMap }
 
   static member inline ValueDTOLens =
     { Get =
@@ -153,9 +149,9 @@ and ListExt<'runtimeContext, 'db, 'customExtension
     { Get =
         fun (v: ValueExt<'runtimeContext, 'db, 'customExtension>) ->
           match v with
-          | ValueExt(Choice1Of7(ListValues x)) -> Some x
+          | VList(ListValues x) -> Some x
           | _ -> None
-      Set = ListValues >> Choice1Of7 >> ValueExt.ValueExt }
+      Set = ListValues >> VList }
 
 
   static member inline ValueDTOLens =
@@ -348,7 +344,7 @@ and DeltaExt<'runtimeContext, 'db, 'customExtension
              >) ->
         sum {
           match value with
-          | Value.Ext(ValueExt(Choice1Of7(ListValues(List.Model.ListValues.List l))),
+          | Value.Ext(VList(ListValues(List.Model.ListValues.List l)),
                       _) ->
             match delta with
             | DeltaExt.DeltaExtension(Choice1Of4(UpdateElement(i, delta))) ->
@@ -362,63 +358,49 @@ and DeltaExt<'runtimeContext, 'db, 'customExtension
               let next = List.updateAt i updatedElement l
 
               return
-                (ValueExt(
-                  Choice1Of7(ListValues(List.Model.ListValues.List next))
-                 ),
+                (VList(ListValues(List.Model.ListValues.List next)),
                  None)
                 |> Value.Ext
             | DeltaExt.DeltaExtension(Choice1Of4(ListDeltaExt.AppendElement(v))) ->
               let next = List.append l [ v ]
 
               return
-                (ValueExt(
-                  Choice1Of7(ListValues(List.Model.ListValues.List next))
-                 ),
+                (VList(ListValues(List.Model.ListValues.List next)),
                  None)
                 |> Value.Ext
             | DeltaExt.DeltaExtension(Choice1Of4(ListDeltaExt.RemoveElement(i))) ->
               let next = List.removeAt i l
 
               return
-                (ValueExt(
-                  Choice1Of7(ListValues(List.Model.ListValues.List next))
-                 ),
+                (VList(ListValues(List.Model.ListValues.List next)),
                  None)
                 |> Value.Ext
             | DeltaExt.DeltaExtension(Choice1Of4(ListDeltaExt.InsertElement(i, v))) ->
               let next = List.insertAt (i + 1) v l
 
               return
-                (ValueExt(
-                  Choice1Of7(ListValues(List.Model.ListValues.List next))
-                 ),
+                (VList(ListValues(List.Model.ListValues.List next)),
                  None)
                 |> Value.Ext
             | DeltaExt.DeltaExtension(Choice1Of4(ListDeltaExt.DuplicateElement(i))) ->
               let next = List.insertAt (i + 1) (List.item i l) l
 
               return
-                (ValueExt(
-                  Choice1Of7(ListValues(List.Model.ListValues.List next))
-                 ),
+                (VList(ListValues(List.Model.ListValues.List next)),
                  None)
                 |> Value.Ext
             | DeltaExt.DeltaExtension(Choice1Of4(ListDeltaExt.SetAllElements(v))) ->
               let next = List.map (fun _ -> v) l
 
               return
-                (ValueExt(
-                  Choice1Of7(ListValues(List.Model.ListValues.List next))
-                 ),
+                (VList(ListValues(List.Model.ListValues.List next)),
                  None)
                 |> Value.Ext
             | DeltaExt.DeltaExtension(Choice1Of4(ListDeltaExt.RemoveAllElements)) ->
               let next = List.empty
 
               return
-                (ValueExt(
-                  Choice1Of7(ListValues(List.Model.ListValues.List next))
-                 ),
+                (VList(ListValues(List.Model.ListValues.List next)),
                  None)
                 |> Value.Ext
             | DeltaExt.DeltaExtension(Choice1Of4(ListDeltaExt.MoveElement(fromIndex,
@@ -438,9 +420,7 @@ and DeltaExt<'runtimeContext, 'db, 'customExtension
                   List.insertAt toIndex element withoutElement
 
               return
-                (ValueExt(
-                  Choice1Of7(ListValues(List.Model.ListValues.List next))
-                 ),
+                (VList(ListValues(List.Model.ListValues.List next)),
                  None)
                 |> Value.Ext
             | other ->
@@ -449,7 +429,7 @@ and DeltaExt<'runtimeContext, 'db, 'customExtension
                   Errors.Singleton () (fun () ->
                     $"Unimplemented delta ext toUpdater for {other}")
                 )
-          | Value.Ext(ValueExt(Choice6Of7(MapExt.MapValues(Map.Model.MapValues.Map m))),
+          | Value.Ext(VMap(MapExt.MapValues(Map.Model.MapValues.Map m)),
                       _) ->
             match delta with
             | DeltaExt.DeltaExtension(Choice4Of4(Map.Model.MapDeltaExt.UpdateKey(oldKey,
@@ -459,9 +439,7 @@ and DeltaExt<'runtimeContext, 'db, 'customExtension
                 let next = m |> Map.remove oldKey |> Map.add newKey value
 
                 return
-                  (ValueExt(
-                    Choice6Of7(MapExt.MapValues(Map.Model.MapValues.Map next))
-                   ),
+                  (VMap(MapExt.MapValues(Map.Model.MapValues.Map next)),
                    None)
                   |> Value.Ext
               | None ->
@@ -483,9 +461,7 @@ and DeltaExt<'runtimeContext, 'db, 'customExtension
                 let next = m |> Map.add key updatedValue
 
                 return
-                  (ValueExt(
-                    Choice6Of7(MapExt.MapValues(Map.Model.MapValues.Map next))
-                   ),
+                  (VMap(MapExt.MapValues(Map.Model.MapValues.Map next)),
                    None)
                   |> Value.Ext
               | None ->
@@ -499,18 +475,14 @@ and DeltaExt<'runtimeContext, 'db, 'customExtension
               let next = m |> Map.add key value
 
               return
-                (ValueExt(
-                  Choice6Of7(MapExt.MapValues(Map.Model.MapValues.Map next))
-                 ),
+                (VMap(MapExt.MapValues(Map.Model.MapValues.Map next)),
                  None)
                 |> Value.Ext
             | DeltaExt.DeltaExtension(Choice4Of4(Map.Model.MapDeltaExt.RemoveItem(key))) ->
               let next = m |> Map.remove key
 
               return
-                (ValueExt(
-                  Choice6Of7(MapExt.MapValues(Map.Model.MapValues.Map next))
-                 ),
+                (VMap(MapExt.MapValues(Map.Model.MapValues.Map next)),
                  None)
                 |> Value.Ext
             | other ->
@@ -559,44 +531,7 @@ and [<NoComparison; NoEquality>] DeltaExtDTO =
 
   static member Empty = { ListDelta = null; MapDelta = null }
 
-/// Named active patterns for the Choice slots inside ValueExt.
-/// Use these instead of raw Choice*Of7 for readability.
-/// Open this module or qualify as ValueExtInner.DB etc.
-module ValueExtInner =
-  let (|ListExt|_|) =
-    function
-    | Choice1Of7 v -> Some v
-    | _ -> None
 
-  let (|UnitExt|_|) =
-    function
-    | Choice2Of7 v -> Some v
-    | _ -> None
-
-  let (|PrimitiveExt|_|) =
-    function
-    | Choice3Of7 v -> Some v
-    | _ -> None
-
-  let (|CompositeTypeExt|_|) =
-    function
-    | Choice4Of7 v -> Some v
-    | _ -> None
-
-  let (|DB|_|) =
-    function
-    | Choice5Of7 v -> Some v
-    | _ -> None
-
-  let (|MapExt|_|) =
-    function
-    | Choice6Of7 v -> Some v
-    | _ -> None
-
-  let (|CustomExt|_|) =
-    function
-    | Choice7Of7 v -> Some v
-    | _ -> None
 
 [<NoComparison; NoEquality>]
 type StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO
@@ -735,23 +670,21 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
       db_ops
       { Get =
           function
-          | ValueExt(Choice1Of7(ListExt.ListValues(List.Model.ListValues.List values))) ->
+          | VList(ListExt.ListValues(List.Model.ListValues.List values)) ->
             Some values
           | _ -> None
         Set =
           List.Model.ListValues.List
           >> ListExt.ListValues
-          >> Choice1Of7
-          >> ValueExt.ValueExt }
+          >> VList }
       { Get =
           function
-          | ValueExt(Choice6Of7(MapValues(Map.Model.MapValues.Map x))) -> Some x
+          | VMap(MapValues(Map.Model.MapValues.Map x)) -> Some x
           | _ -> None
         Set =
           Map.Model.MapValues.Map
           >> MapValues
-          >> Choice6Of7
-          >> ValueExt.ValueExt }
+          >> VMap }
       DBExt<_, _, _>.ValueLens
       typeCheckingConfig
 
@@ -766,9 +699,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
       ListExt<_, _, _>.ValueLens
       { Get =
           function
-          | ValueExt(Choice1Of7(ListOperations x)) -> Some x
+          | VList(ListOperations x) -> Some x
           | _ -> None
-        Set = ListOperations >> Choice1Of7 >> ValueExt.ValueExt }
+        Set = ListOperations >> VList }
       ListExt<_, _, _>.ValueDTOLens
       DeltaExt<_, _, _>.ListDeltaLens
       DeltaExt<_, _, _>.ListDeltaDTOLens
@@ -782,6 +715,8 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
       DeltaExt<'runtimeContext, 'db, 'customExtension>,
       DeltaExtDTO
      >
+      { Get = function | VViewProps x -> Some x | _ -> None
+        Set = VViewProps }
       (typeCheckingConfig |> Option.map (fun cfg -> cfg.ViewTypeSymbol))
       (typeCheckingConfig |> Option.map (fun cfg -> cfg.ViewPropsTypeSymbol))
 
@@ -793,7 +728,10 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
       DeltaExt<'runtimeContext, 'db, 'customExtension>,
       DeltaExtDTO
      >
+      { Get = function | VCo x -> Some x | _ -> None
+        Set = VCo }
       (typeCheckingConfig |> Option.map (fun cfg -> cfg.CoTypeSymbol))
+      (Identifier.FullyQualified([ "Frontend" ], "View"))
 
   let dateOnlyExtension =
     DateOnly.Extension.DateOnlyExtension<
@@ -803,15 +741,14 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice4Of7(CompositeType(Choice1Of5(DateOnlyOperations x)))) ->
+          | VComposite(CompositeType(Choice1Of5(DateOnlyOperations x))) ->
             Some x
           | _ -> None
         Set =
           DateOnlyOperations
           >> Choice1Of5
           >> CompositeType
-          >> Choice4Of7
-          >> ValueExt.ValueExt }
+          >> VComposite }
 
   let boolExtension =
     Bool.Extension.BoolExtension<
@@ -820,9 +757,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice3Of7(BoolOperations x)) -> Some x
+          | VPrimitive(BoolOperations x) -> Some x
           | _ -> None
-        Set = BoolOperations >> Choice3Of7 >> ValueExt.ValueExt }
+        Set = BoolOperations >> VPrimitive }
 
   let int32Extension =
     Int32.Extension.Int32Extension<
@@ -831,9 +768,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice3Of7(Int32Operations x)) -> Some x
+          | VPrimitive(Int32Operations x) -> Some x
           | _ -> None
-        Set = Int32Operations >> Choice3Of7 >> ValueExt.ValueExt }
+        Set = Int32Operations >> VPrimitive }
 
   let int64Extension =
     Int64.Extension.Int64Extension<
@@ -842,9 +779,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice3Of7(Int64Operations x)) -> Some x
+          | VPrimitive(Int64Operations x) -> Some x
           | _ -> None
-        Set = Int64Operations >> Choice3Of7 >> ValueExt.ValueExt }
+        Set = Int64Operations >> VPrimitive }
 
   let float32Extension =
     Float32.Extension.Float32Extension<
@@ -853,9 +790,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice3Of7(Float32Operations x)) -> Some x
+          | VPrimitive(Float32Operations x) -> Some x
           | _ -> None
-        Set = Float32Operations >> Choice3Of7 >> ValueExt.ValueExt }
+        Set = Float32Operations >> VPrimitive }
 
   let float64Extension =
     Float64.Extension.Float64Extension<
@@ -864,9 +801,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice3Of7(Float64Operations x)) -> Some x
+          | VPrimitive(Float64Operations x) -> Some x
           | _ -> None
-        Set = Float64Operations >> Choice3Of7 >> ValueExt.ValueExt }
+        Set = Float64Operations >> VPrimitive }
 
   let decimalExtension =
     Decimal.Extension.DecimalExtension<
@@ -875,9 +812,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice3Of7(DecimalOperations x)) -> Some x
+          | VPrimitive(DecimalOperations x) -> Some x
           | _ -> None
-        Set = DecimalOperations >> Choice3Of7 >> ValueExt.ValueExt }
+        Set = DecimalOperations >> VPrimitive }
 
   let dateTimeExtension =
     DateTime.Extension.DateTimeExtension<
@@ -887,15 +824,14 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice4Of7(CompositeType(Choice2Of5(DateTimeOperations x)))) ->
+          | VComposite(CompositeType(Choice2Of5(DateTimeOperations x))) ->
             Some x
           | _ -> None
         Set =
           DateTimeOperations
           >> Choice2Of5
           >> CompositeType
-          >> Choice4Of7
-          >> ValueExt.ValueExt }
+          >> VComposite }
 
   let timeSpanExtension =
     TimeSpanExtension<
@@ -905,15 +841,14 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice4Of7(CompositeType(Choice4Of5(TimeSpanOperations x)))) ->
+          | VComposite(CompositeType(Choice4Of5(TimeSpanOperations x))) ->
             Some x
           | _ -> None
         Set =
           TimeSpanOperations
           >> Choice4Of5
           >> CompositeType
-          >> Choice4Of7
-          >> ValueExt.ValueExt }
+          >> VComposite }
 
   let stringExtension =
     String.Extension.StringExtension<
@@ -923,9 +858,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
       string_ops
       { Get =
           function
-          | ValueExt(Choice3Of7(StringOperations x)) -> Some x
+          | VPrimitive(StringOperations x) -> Some x
           | _ -> None
-        Set = StringOperations >> Choice3Of7 >> ValueExt.ValueExt }
+        Set = StringOperations >> VPrimitive }
 
   let emailExtension =
     Email.Extension.EmailExtension<
@@ -935,9 +870,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
       email_ops
       { Get =
           function
-          | ValueExt(Choice3Of7(EmailOperations x)) -> Some x
+          | VPrimitive(EmailOperations x) -> Some x
           | _ -> None
-        Set = EmailOperations >> Choice3Of7 >> ValueExt.ValueExt }
+        Set = EmailOperations >> VPrimitive }
 
   let guidExtension =
     Guid.Extension.GuidExtension<
@@ -947,15 +882,14 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice4Of7(CompositeType(Choice3Of5(GuidOperations x)))) ->
+          | VComposite(CompositeType(Choice3Of5(GuidOperations x))) ->
             Some x
           | _ -> None
         Set =
           GuidOperations
           >> Choice3Of5
           >> CompositeType
-          >> Choice4Of7
-          >> ValueExt.ValueExt }
+          >> VComposite }
 
   let updaterExtension =
     Updater.Extension.UpdaterExtension<
@@ -964,15 +898,14 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice4Of7(CompositeType(Choice5Of5(UpdaterOperations x)))) ->
+          | VComposite(CompositeType(Choice5Of5(UpdaterOperations x))) ->
             Some x
           | _ -> None
         Set =
           UpdaterOperations
           >> Choice5Of5
           >> CompositeType
-          >> Choice4Of7
-          >> ValueExt.ValueExt }
+          >> VComposite }
 
   let mapExtension =
     Map.Extension.MapExtension<
@@ -985,9 +918,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
       MapExt<_, _, _>.ValueLens
       { Get =
           function
-          | ValueExt(Choice6Of7(MapOperations x)) -> Some x
+          | VMap(MapOperations x) -> Some x
           | _ -> None
-        Set = MapOperations >> Choice6Of7 >> ValueExt.ValueExt }
+        Set = MapOperations >> VMap }
       (Some ListExt<'runtimeContext, 'db, 'customExtension>.ValueLens)
       MapExt<_, _, _>.ValueDTOLens
       DeltaExt<_, _, _>.MapDeltaLens
