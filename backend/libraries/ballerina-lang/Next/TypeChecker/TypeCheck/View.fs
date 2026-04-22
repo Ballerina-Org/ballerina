@@ -86,6 +86,21 @@ module View =
                     Attributes = checkedAttrs
                     Children = checkedChildren
                     SelfClosing = el.SelfClosing } }
+
+        | ExprViewNodeRec.ViewMapContext(mapper, inner) ->
+          let! checkedMapper, _ = None => mapper
+          let! checkedInner, _ = None => inner
+          return
+            { TypeCheckedViewNode.Location = loc0
+              Node = TypeCheckedViewNodeRec.ViewMapContext(checkedMapper, checkedInner) }
+
+        | ExprViewNodeRec.ViewMapState(mapDown, mapUp, inner) ->
+          let! checkedMapDown, _ = None => mapDown
+          let! checkedMapUp, _ = None => mapUp
+          let! checkedInner, _ = None => inner
+          return
+            { TypeCheckedViewNode.Location = loc0
+              Node = TypeCheckedViewNodeRec.ViewMapState(checkedMapDown, checkedMapUp, checkedInner) }
       }
 
     static member internal TypeCheckView<'valueExt when 'valueExt: comparison>

@@ -123,6 +123,57 @@ module Co =
           return
             { TypeCheckedCoStep.Location = loc0
               Step = TypeCheckedCoStepRec.CoReturnBang checkedExpr }
+
+        | ExprCoStepRec.CoShow(pred, view) ->
+          let! checkedPred, _ = None => pred
+          let! checkedView, _ = None => view
+          return
+            { TypeCheckedCoStep.Location = loc0
+              Step = TypeCheckedCoStepRec.CoShow(checkedPred, checkedView) }
+
+        | ExprCoStepRec.CoUntil(pred, inner) ->
+          let! checkedPred, _ = None => pred
+          let! checkedInner, _ = None => inner
+          return
+            { TypeCheckedCoStep.Location = loc0
+              Step = TypeCheckedCoStepRec.CoUntil(checkedPred, checkedInner) }
+
+        | ExprCoStepRec.CoIgnore inner ->
+          let! checkedInner, _ = None => inner
+          return
+            { TypeCheckedCoStep.Location = loc0
+              Step = TypeCheckedCoStepRec.CoIgnore checkedInner }
+
+        | ExprCoStepRec.CoMapContext(mapper, inner) ->
+          let! checkedMapper, _ = None => mapper
+          let! checkedInner, _ = None => inner
+          return
+            { TypeCheckedCoStep.Location = loc0
+              Step = TypeCheckedCoStepRec.CoMapContext(checkedMapper, checkedInner) }
+
+        | ExprCoStepRec.CoMapState(mapDown, mapUp, inner) ->
+          let! checkedMapDown, _ = None => mapDown
+          let! checkedMapUp, _ = None => mapUp
+          let! checkedInner, _ = None => inner
+          return
+            { TypeCheckedCoStep.Location = loc0
+              Step = TypeCheckedCoStepRec.CoMapState(checkedMapDown, checkedMapUp, checkedInner) }
+
+        | ExprCoStepRec.CoGetContext ->
+          return
+            { TypeCheckedCoStep.Location = loc0
+              Step = TypeCheckedCoStepRec.CoGetContext }
+
+        | ExprCoStepRec.CoGetState ->
+          return
+            { TypeCheckedCoStep.Location = loc0
+              Step = TypeCheckedCoStepRec.CoGetState }
+
+        | ExprCoStepRec.CoSetState updater ->
+          let! checkedUpdater, _ = None => updater
+          return
+            { TypeCheckedCoStep.Location = loc0
+              Step = TypeCheckedCoStepRec.CoSetState checkedUpdater }
       }
 
     static member internal TypeCheckCo<'valueExt when 'valueExt: comparison>
