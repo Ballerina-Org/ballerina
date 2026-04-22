@@ -257,22 +257,38 @@ module Expr =
                 return result, ctx
 
               | ExprRec.CoOp op ->
-                // Desugar Co::name to Lookup(FullyQualified(["Co"], "name"))
+                // Resolve Co::name to get the type from extension registration,
+                // but produce a CoOp node instead of a Lookup node
                 let id = Identifier.FullyQualified([ "Co" ], op.Name)
-                return!
+                let! result, ctx =
                   Expr.TypeCheckLookup
                     (typeCheckExpr, t.Location)
                     context_t
                     { Id = id }
+                return
+                  { TypeCheckedExpr.Expr = TypeCheckedExprRec.CoOp op
+                    TypeCheckedExpr.Type = result.Type
+                    TypeCheckedExpr.Kind = result.Kind
+                    TypeCheckedExpr.Location = result.Location
+                    TypeCheckedExpr.Scope = result.Scope },
+                  ctx
 
               | ExprRec.ViewOp op ->
-                // Desugar View::name to Lookup(FullyQualified(["View"], "name"))
+                // Resolve View::name to get the type from extension registration,
+                // but produce a ViewOp node instead of a Lookup node
                 let id = Identifier.FullyQualified([ "View" ], op.Name)
-                return!
+                let! result, ctx =
                   Expr.TypeCheckLookup
                     (typeCheckExpr, t.Location)
                     context_t
                     { Id = id }
+                return
+                  { TypeCheckedExpr.Expr = TypeCheckedExprRec.ViewOp op
+                    TypeCheckedExpr.Type = result.Type
+                    TypeCheckedExpr.Kind = result.Kind
+                    TypeCheckedExpr.Location = result.Location
+                    TypeCheckedExpr.Scope = result.Scope },
+                  ctx
 
               | ExprRec.RecoveredSyntaxError err ->
                 return!

@@ -146,6 +146,8 @@ module Conversion =
       Right(conversionError _loc $"Cannot convert View to RunnableExpr: views are not yet executable")
     | TypeCheckedExprRec.Co _ ->
       Right(conversionError _loc $"Cannot convert Co to RunnableExpr: coroutines are not yet executable")
+    | TypeCheckedExprRec.CoOp op -> Left(RunnableExprRec.CoOp op)
+    | TypeCheckedExprRec.ViewOp op -> Left(RunnableExprRec.ViewOp op)
     | TypeCheckedExprRec.RecoveredSyntaxError err ->
       Right(conversionError err.ErrorLocation $"Cannot convert RecoveredSyntaxError to RunnableExpr: {err.ErrorMessage} (context: {err.RecoveryContext})")
     | TypeCheckedExprRec.ErrorDanglingRecordDes _ ->

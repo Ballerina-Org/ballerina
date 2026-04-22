@@ -442,6 +442,20 @@ module InstantiateSyntheticVars =
               loc0,
               expr.Scope
             )
+        | TypeCheckedExprRec.CoOp op ->
+          return
+            { Expr = TypeCheckedExprRec.CoOp op
+              Location = loc0
+              Type = expr.Type
+              Kind = expr.Kind
+              Scope = expr.Scope }
+        | TypeCheckedExprRec.ViewOp op ->
+          return
+            { Expr = TypeCheckedExprRec.ViewOp op
+              Location = loc0
+              Type = expr.Type
+              Kind = expr.Kind
+              Scope = expr.Scope }
         | TypeCheckedExprRec.RecoveredSyntaxError err ->
           return
             { Expr = TypeCheckedExprRec.RecoveredSyntaxError err

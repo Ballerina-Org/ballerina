@@ -984,6 +984,13 @@ module FastEval =
               DeserializeFrom = q.DeserializeFrom }
         )
 
+    // ── CoOp / ViewOp (leaf: produce value with empty arg list) ─────
+    | RunnableExprRec.CoOp kind ->
+      fun _ctx -> Value.Co(ValueCo.CoOp(kind, []))
+
+    | RunnableExprRec.ViewOp kind ->
+      fun _ctx -> Value.View(ValueView.ViewOp(kind, []))
+
     // ── Fallback (should not happen for well-typed programs) ──────
     | _ ->
       fun _ctx ->
@@ -1090,6 +1097,13 @@ module FastEval =
               Errors.Singleton loc0 (fun () -> $"Cannot apply {extResult}")
             )
           )
+
+    // ── Co/View operation application (progressive arg capture) ──
+    | Value.Co(ValueCo.CoOp(kind, args)) ->
+      Value.Co(ValueCo.CoOp(kind, args @ [ argV ]))
+
+    | Value.View(ValueView.ViewOp(kind, args)) ->
+      Value.View(ValueView.ViewOp(kind, args @ [ argV ]))
 
     // ── Error: cannot apply ───────────────────────────────────────
     | _ ->

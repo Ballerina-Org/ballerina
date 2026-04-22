@@ -2390,6 +2390,8 @@ module Model =
     | Query of TypeCheckedExprQuery<'valueExt>
     | View of TypeCheckedExprView<'valueExt>
     | Co of TypeCheckedExprCo<'valueExt>
+    | CoOp of CoOperationKind
+    | ViewOp of ViewOperationKind
     | RecoveredSyntaxError of TypeCheckedExprRecoveredSyntaxError
     | ErrorDanglingRecordDes of TypeCheckedExprErrorDanglingRecordDes<'valueExt>
     | ErrorDanglingScopedIdentifier of TypeCheckedExprErrorDanglingScopedIdentifier
@@ -2479,6 +2481,8 @@ module Model =
       | Query q -> q.ToString()
       | View v -> v.ToString()
       | Co c -> c.ToString()
+      | CoOp op -> $"Co::{op.Name}"
+      | ViewOp op -> $"View::{op.Name}"
       | RecoveredSyntaxError err -> err.ToString()
       | ErrorDanglingRecordDes err -> err.ToString()
       | ErrorDanglingScopedIdentifier err -> err.ToString()
@@ -2903,6 +2907,8 @@ module Model =
     | Query of RunnableExprQuery<'valueExt>
     | View of RunnableExprView<'valueExt>
     | Co of RunnableExprCo<'valueExt>
+    | CoOp of CoOperationKind
+    | ViewOp of ViewOperationKind
 
     override self.ToString() =
       match self with
@@ -2988,6 +2994,8 @@ module Model =
       | Query q -> q.ToString()
       | View v -> v.ToString()
       | Co c -> c.ToString()
+      | CoOp op -> $"Co::{op.Name}"
+      | ViewOp op -> $"View::{op.Name}"
 
   and [<RequireQualifiedAccess>] RunnableExpr<'valueExt> =
     { Expr: RunnableExprRec<'valueExt>
@@ -3141,6 +3149,24 @@ module Model =
 
         $"(\n{unionStrs}\n)"
 
+  and ValueCo<'T, 'valueExt> =
+    | CoOp of CoOperationKind * args: List<Value<'T, 'valueExt>>
+
+    override self.ToString() =
+      match self with
+      | CoOp(kind, args) ->
+        let argsStr = args |> List.map string |> String.concat ", "
+        $"Co::{kind.Name}({argsStr})"
+
+  and ValueView<'T, 'valueExt> =
+    | ViewOp of ViewOperationKind * args: List<Value<'T, 'valueExt>>
+
+    override self.ToString() =
+      match self with
+      | ViewOp(kind, args) ->
+        let argsStr = args |> List.map string |> String.concat ", "
+        $"View::{kind.Name}({argsStr})"
+
   and Value<'T, 'valueExt> =
     | TypeLambda of TypeParameter * RunnableExpr<'valueExt>
     | Lambda of
@@ -3156,6 +3182,8 @@ module Model =
     | Sum of SumConsSelector * Value<'T, 'valueExt>
     | Primitive of PrimitiveValue
     | Query of ValueQuery<'T, 'valueExt>
+    | Co of ValueCo<'T, 'valueExt>
+    | View of ValueView<'T, 'valueExt>
     | Var of Var
     | Ext of 'valueExt * applicableId: Option<ResolvedIdentifier>
 
@@ -3184,4 +3212,6 @@ module Model =
       | Primitive p -> p.ToString()
       | Var v -> v.Name
       | Query q -> q.ToString()
+      | Co c -> c.ToString()
+      | View v -> v.ToString()
       | Ext(e, _) -> e.ToString()

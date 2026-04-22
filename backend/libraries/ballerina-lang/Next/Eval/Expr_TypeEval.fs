@@ -255,19 +255,15 @@ module TypeEval =
 
           | ExprRec.CoOp op ->
             return
-              Expr.Lookup(
-                Identifier.FullyQualified([ "Co" ], op.Name) |> ctx.Scope.Resolve,
-                expr.Location,
-                ctx.Scope
-              )
+              { Expr = ExprRec.CoOp op
+                Location = expr.Location
+                Scope = ctx.Scope }
 
           | ExprRec.ViewOp op ->
             return
-              Expr.Lookup(
-                Identifier.FullyQualified([ "View" ], op.Name) |> ctx.Scope.Resolve,
-                expr.Location,
-                ctx.Scope
-              )
+              { Expr = ExprRec.ViewOp op
+                Location = expr.Location
+                Scope = ctx.Scope }
 
           | ExprRec.RecoveredSyntaxError err ->
             return!
