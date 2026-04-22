@@ -1635,6 +1635,58 @@ module Model =
       let joined = System.String.Join("::", self.PrefixParts)
       $"{joined}::<incomplete>"
 
+  and [<RequireQualifiedAccess>] CoOperationKind =
+    | Show
+    | Until
+    | Ignore
+    | MapContext
+    | MapState
+    | GetContext
+    | GetState
+    | SetState
+
+    member self.Name =
+      match self with
+      | Show -> "show" | Until -> "until" | Ignore -> "ignore"
+      | MapContext -> "mapContext" | MapState -> "mapState"
+      | GetContext -> "getContext" | GetState -> "getState"
+      | SetState -> "setState"
+
+    member self.Arity =
+      match self with
+      | Show -> 2 | Until -> 2 | Ignore -> 1
+      | MapContext -> 2 | MapState -> 3
+      | GetContext -> 0 | GetState -> 0 | SetState -> 1
+
+    override self.ToString() = $"Co::{self.Name}"
+
+    static member TryParse(name: string) =
+      match name with
+      | "show" -> Some Show | "until" -> Some Until | "ignore" -> Some Ignore
+      | "mapContext" -> Some MapContext | "mapState" -> Some MapState
+      | "getContext" -> Some GetContext | "getState" -> Some GetState
+      | "setState" -> Some SetState
+      | _ -> None
+
+  and [<RequireQualifiedAccess>] ViewOperationKind =
+    | MapContext
+    | MapState
+
+    member self.Name =
+      match self with
+      | MapContext -> "mapContext" | MapState -> "mapState"
+
+    member self.Arity =
+      match self with
+      | MapContext -> 2 | MapState -> 3
+
+    override self.ToString() = $"View::{self.Name}"
+
+    static member TryParse(name: string) =
+      match name with
+      | "mapContext" -> Some MapContext | "mapState" -> Some MapState
+      | _ -> None
+
   and ExprRec<'T, 'Id, 'valueExt when 'Id: comparison> =
     | Primitive of PrimitiveValue
     | Lookup of ExprLookup<'T, 'Id, 'valueExt>
@@ -1663,6 +1715,8 @@ module Model =
     | Query of ExprQuery<'T, 'Id, 'valueExt>
     | View of ExprView<'T, 'Id, 'valueExt>
     | Co of ExprCo<'T, 'Id, 'valueExt>
+    | CoOp of CoOperationKind
+    | ViewOp of ViewOperationKind
     | RecoveredSyntaxError of ExprRecoveredSyntaxError<'T, 'Id, 'valueExt>
     | ErrorDanglingRecordDes of ExprErrorDanglingRecordDes<'T, 'Id, 'valueExt>
     | ErrorDanglingScopedIdentifier of ExprErrorDanglingScopedIdentifier<'T, 'Id, 'valueExt>
@@ -1776,6 +1830,8 @@ module Model =
       | Query q -> q.ToString()
       | View v -> v.ToString()
       | Co c -> c.ToString()
+      | CoOp op -> op.ToString()
+      | ViewOp op -> op.ToString()
       | RecoveredSyntaxError err -> err.ToString()
       | ErrorDanglingRecordDes err -> err.ToString()
       | ErrorDanglingScopedIdentifier err -> err.ToString()

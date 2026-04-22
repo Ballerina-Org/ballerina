@@ -253,6 +253,22 @@ module TypeEval =
                 $"Error (typecheck): not yet implemented expression pattern co")
               |> state.Throw
 
+          | ExprRec.CoOp op ->
+            return
+              Expr.Lookup(
+                Identifier.FullyQualified([ "Co" ], op.Name) |> ctx.Scope.Resolve,
+                expr.Location,
+                ctx.Scope
+              )
+
+          | ExprRec.ViewOp op ->
+            return
+              Expr.Lookup(
+                Identifier.FullyQualified([ "View" ], op.Name) |> ctx.Scope.Resolve,
+                expr.Location,
+                ctx.Scope
+              )
+
           | ExprRec.RecoveredSyntaxError err ->
             return!
               Errors.Singleton err.ErrorLocation (fun () -> err.ErrorMessage)

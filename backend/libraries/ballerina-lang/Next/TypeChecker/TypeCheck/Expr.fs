@@ -256,6 +256,24 @@ module Expr =
 
                 return result, ctx
 
+              | ExprRec.CoOp op ->
+                // Desugar Co::name to Lookup(FullyQualified(["Co"], "name"))
+                let id = Identifier.FullyQualified([ "Co" ], op.Name)
+                return!
+                  Expr.TypeCheckLookup
+                    (typeCheckExpr, t.Location)
+                    context_t
+                    { Id = id }
+
+              | ExprRec.ViewOp op ->
+                // Desugar View::name to Lookup(FullyQualified(["View"], "name"))
+                let id = Identifier.FullyQualified([ "View" ], op.Name)
+                return!
+                  Expr.TypeCheckLookup
+                    (typeCheckExpr, t.Location)
+                    context_t
+                    { Id = id }
+
               | ExprRec.RecoveredSyntaxError err ->
                 return!
                   Errors.Singleton err.ErrorLocation (fun () -> err.ErrorMessage)
