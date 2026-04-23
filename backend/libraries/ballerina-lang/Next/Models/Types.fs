@@ -3151,21 +3151,33 @@ module Model =
 
   and ValueCo<'T, 'valueExt> =
     | CoOp of CoOperationKind * args: List<Value<'T, 'valueExt>>
+    | CoBlock of
+      body: RunnableCoStep<'valueExt> *
+      closure: Map<ResolvedIdentifier, Value<'T, 'valueExt>> *
+      scope: TypeCheckScope
 
     override self.ToString() =
       match self with
       | CoOp(kind, args) ->
         let argsStr = args |> List.map string |> String.concat ", "
         $"Co::{kind.Name}({argsStr})"
+      | CoBlock(body, _, _) -> $"co {{ {body} }}"
 
   and ValueView<'T, 'valueExt> =
     | ViewOp of ViewOperationKind * args: List<Value<'T, 'valueExt>>
+    | ViewDef of
+      param: Var *
+      paramType: TypeValue<'valueExt> *
+      body: RunnableViewNode<'valueExt> *
+      closure: Map<ResolvedIdentifier, Value<'T, 'valueExt>> *
+      scope: TypeCheckScope
 
     override self.ToString() =
       match self with
       | ViewOp(kind, args) ->
         let argsStr = args |> List.map string |> String.concat ", "
         $"View::{kind.Name}({argsStr})"
+      | ViewDef(param, paramType, body, _, _) -> $"view ({param.Name}: {paramType}) -> {body}"
 
   and Value<'T, 'valueExt> =
     | TypeLambda of TypeParameter * RunnableExpr<'valueExt>

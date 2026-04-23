@@ -220,9 +220,23 @@ module View =
             |> OrderedMap.toSeq
             |> Seq.map (fun (k, (field_t, _field_k)) ->
               state {
+                let resolvedId = k.Name |> TypeCheckScope.Empty.Resolve
+
+                do!
+                  TypeCheckState.bindIdentifierToResolvedIdentifier
+                    resolvedId
+                    k.Name
+                  |> Expr.liftTypeEval
+
+                do!
+                  TypeCheckState.bindRecordFieldSymbol
+                    resolvedId
+                    k
+                  |> Expr.liftTypeEval
+
                 do!
                   TypeCheckState.bindRecordField
-                    (k.Name |> TypeCheckScope.Empty.Resolve)
+                    resolvedId
                     (propsFields, field_t)
                   |> Expr.liftTypeEval
               })

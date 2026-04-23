@@ -115,8 +115,8 @@ let counter = view (props:View::Props[TodoSchema][string][int32]) ->
   <div class="counter">
     <h2>{props.context}</h2>
     <span class="count">{props.state}</span>
-    <button onClick={props.setState(fun n -> n + 1)}>+</button>
-    <button onClick={props.setState(fun n -> n - 1)}>-</button>
+    <button onClick={props.setState(fun (n:int32) -> n + 1)}>+</button>
+    <button onClick={props.setState(fun (n:int32) -> n - 1)}>-</button>
   </div>;
 
 // ── 2. Todo item ─────────────────────────────────────────────────────────
@@ -125,7 +125,7 @@ let counter = view (props:View::Props[TodoSchema][string][int32]) ->
 // context = unit, state = the todo itself.
 // Type: Frontend::View[TodoSchema][unit][Todo]
 
-let todoItem = view (props:View::Props[TodoSchema][unit][Todo]) ->
+let todoItem = view (props:View::Props[TodoSchema][()][Todo]) ->
   <li class={if props.state.Done then "done" else "pending"}>
     <input type="checkbox"
            checked={props.state.Done}
@@ -139,7 +139,7 @@ let todoItem = view (props:View::Props[TodoSchema][unit][Todo]) ->
 // context = unit, state = list of todos.
 // Type: Frontend::View[TodoSchema][unit][List[Todo]]
 
-let todoList = view (props:View::Props[TodoSchema][unit][List[Todo]]) ->
+let todoList = view (props:View::Props[TodoSchema][()][List[Todo]]) ->
   <div class="todo-list">
     <h1>My Todos</h1>
     <ul>
@@ -172,7 +172,7 @@ type HeaderInput = {
   Subtitle: string;
 };
 
-let pageHeader = view (props:View::Props[TodoSchema][HeaderInput][unit]) ->
+let pageHeader = view (props:View::Props[TodoSchema][HeaderInput][()]) ->
   <>
     <h1>{props.context.Title}</h1>
     <p class="subtitle">{props.context.Subtitle}</p>
@@ -183,7 +183,7 @@ let pageHeader = view (props:View::Props[TodoSchema][HeaderInput][unit]) ->
 // Both are stateless display-only views.
 // Type: Frontend::View[TodoSchema][unit][unit]
 
-let divider = view (props:View::Props[TodoSchema][unit][unit]) ->
+let divider = view (props:View::Props[TodoSchema][()][()]) ->
   <hr />;
 
 // Type: Frontend::View[TodoSchema][AvatarInput][unit]
@@ -193,7 +193,7 @@ type AvatarInput = {
   Alt: string;
 };
 
-let avatar = view (props:View::Props[TodoSchema][AvatarInput][unit]) ->
+let avatar = view (props:View::Props[TodoSchema][AvatarInput][()]) ->
   <img src={props.context.Url} alt={props.context.Alt} class="avatar" />;
 
 // ── 6. Nested composition ────────────────────────────────────────────────
@@ -207,7 +207,7 @@ type PageState = {
   Count: int32;
 };
 
-let homePage = view (props:View::Props[TodoSchema][unit][PageState]) ->
+let homePage = view (props:View::Props[TodoSchema][()][PageState]) ->
   <div class="home">
     <pageHeader props={
       props
@@ -245,7 +245,7 @@ let homePage = view (props:View::Props[TodoSchema][unit][PageState]) ->
 // Shown after the counter coroutine completes.
 // Type: Frontend::View[TodoSchema][int32][unit]
 
-let doneMessage = view (props:View::Props[TodoSchema][int32][unit]) ->
+let doneMessage = view (props:View::Props[TodoSchema][int32][()]) ->
   <div class="done">
     <h1>Done!</h1>
     <p>You counted to {props.context}.</p>
@@ -291,7 +291,7 @@ let stateAccessDemo = co {
   let! current = Co::getState;
 
   // Update the state with an updater function
-  do! Co::setState (fun n -> n + 1);
+  do! Co::setState (fun (n:int32) -> n + 1);
 
   return label
 };

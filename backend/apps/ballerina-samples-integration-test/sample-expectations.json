@@ -162,7 +162,7 @@
       "mode": "build-fails",
       "valueRegexes": [],
       "typeRegexes": [],
-      "errorRegexes": ["view"]
+      "errorRegexes": ["expected record type|Cannot unify"]
     }
   }
 }

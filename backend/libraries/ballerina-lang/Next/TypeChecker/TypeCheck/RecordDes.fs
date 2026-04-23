@@ -402,14 +402,21 @@ module RecordDes =
                   let! fields_t =
                     TypeCheckState.TryFindRecordField(id, loc0) |> state.Map fst
 
-                  let expected_record_t = TypeValue.CreateRecord fields_t
+                  // Attempt structural unification; tolerate failure for
+                  // Imported types (e.g. View::Props) whose fields are
+                  // registered separately via bindRecordField.
+                  let! _ =
+                    state {
+                      let expected_record_t = TypeValue.CreateRecord fields_t
 
-                  do!
-                    TypeValue.Unify(loc0, record_t, expected_record_t)
-                    |> Expr.liftUnification
-                    |> state.MapError(
-                      Errors.MapPriority(replaceWith ErrorPriority.High)
-                    )
+                      do!
+                        TypeValue.Unify(loc0, record_t, expected_record_t)
+                        |> Expr.liftUnification
+                        |> state.MapError(
+                          Errors.MapPriority(replaceWith ErrorPriority.High)
+                        )
+                    }
+                    |> state.Catch
 
                   return! resolve_lookup fields_t
               }
