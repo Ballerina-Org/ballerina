@@ -168,6 +168,7 @@ module Expr =
               | ExprRec.RecordDes record_des_expr ->
                 return!
                   Expr.TypeCheckRecordDes
+                    config
                     typeCheckExpr
                     context_t
                     record_des_expr

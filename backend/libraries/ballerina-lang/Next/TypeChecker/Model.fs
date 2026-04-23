@@ -183,7 +183,9 @@ module Model =
       MkViewPropsType:
         TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt>
       MkCoType:
-        TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt> }
+        TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt>
+      ImportedTypesWithFields:
+        Map<TypeSymbol, List<TypeValue<'valueExt>> -> OrderedMap<TypeSymbol, (TypeValue<'valueExt> * Kind)>> }
 
   type TypeExprEvalResult<'valueExt when 'valueExt: comparison> =
     State<

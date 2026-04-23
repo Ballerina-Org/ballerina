@@ -16,6 +16,7 @@ open Ballerina.Data.Delta
 open Ballerina.DSL.Next.StdLib.Email
 open Ballerina.DSL.Next.StdLib.String
 open Ballerina.DSL.Next.Types.TypeChecker.Model
+open Ballerina.Cat.Collections.OrderedMap
 open Ballerina.DSL.Next.StdLib.DB.Extension.DBRun
 open Ballerina.DSL.Next.StdLib.View.Extension
 open Ballerina.DSL.Next.StdLib.Coroutine.Extension
@@ -24,13 +25,13 @@ open Ballerina.DSL.Next.StdLib.WebApp.Extension
 type ValueExt<'runtimeContext, 'db, 'customExtension
   when 'db: comparison and 'customExtension: comparison> =
   | VList of ListExt<'runtimeContext, 'db, 'customExtension>
-  | VViewProps of ViewPropsOperations
-  | VCo of CoroutineOperations
+  | VViewProps of ViewPropsOperations<ValueExt<'runtimeContext, 'db, 'customExtension>>
+  | VCo of CoroutineOperations<ValueExt<'runtimeContext, 'db, 'customExtension>>
   | VPrimitive of PrimitiveExt<'runtimeContext, 'db, 'customExtension>
   | VComposite of CompositeTypeExt<'runtimeContext, 'db, 'customExtension>
   | VDB of DBExt<'runtimeContext, 'db, 'customExtension>
   | VMap of MapExt<'runtimeContext, 'db, 'customExtension>
-  | VWebApp of WebAppOperations
+  | VWebApp of WebAppOperations<ValueExt<'runtimeContext, 'db, 'customExtension>>
   | VCustom of 'customExtension
 
   override self.ToString() =
@@ -739,6 +740,7 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
   let webAppIOExtension, webAppRunExtension, _webapp_sym, _mk_webapp_io_type =
     WebApp.Extension.WebAppExtension<
       'runtimeContext,
+      'db,
       ValueExt<'runtimeContext, 'db, 'customExtension>,
       ValueExtDTO,
       DeltaExt<'runtimeContext, 'db, 'customExtension>,
@@ -746,6 +748,7 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get = function | VWebApp x -> Some x | _ -> None
         Set = VWebApp }
+      DBExt<'runtimeContext, 'db, 'customExtension>.ValueLens
       None
       (Identifier.FullyQualified([ "Frontend" ], "View"))
       (Identifier.LocalScope "Co")
@@ -1010,7 +1013,24 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
       MkListType = mk_list_type
       MkViewType = mk_view_type
       MkViewPropsType = mk_view_props_type
-      MkCoType = mk_co_type }
+      MkCoType = mk_co_type
+      ImportedTypesWithFields =
+        Map.ofList
+          [ view_props_sym,
+            fun args ->
+              match args with
+              | [ schema; ctx; st ] ->
+                OrderedMap.ofList
+                  [ TypeSymbol.Create(Identifier.LocalScope "schema"), (schema, Kind.Schema)
+                    TypeSymbol.Create(Identifier.LocalScope "context"), (ctx, Kind.Star)
+                    TypeSymbol.Create(Identifier.LocalScope "state"), (st, Kind.Star)
+                    TypeSymbol.Create(Identifier.LocalScope "setState"),
+                    (TypeValue.CreateArrow(
+                       TypeValue.CreateArrow(st, st),
+                       TypeValue.CreatePrimitive PrimitiveType.Unit
+                     ),
+                     Kind.Star) ]
+              | _ -> OrderedMap.empty ] }
 
   extensions, context, typeCheckingConfig
 

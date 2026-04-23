@@ -336,6 +336,9 @@ let private validateExpectation
   | expectation, Left result when expectation.Mode = "build-fails" || expectation.Mode = "failure" ->
     (false,
      $"expected build failure, but project executed successfully with final value {result.Value.AsFSharpString}")
+  | expectation, _ when expectation.Mode = "build" ->
+    // "build" mode: success if the project compiled (evaluation result irrelevant)
+    (true, "compiled successfully")
   | expectation, Left _ ->
     (false, $"Unsupported expectation mode '{expectation.Mode}'")
   | _, Right errorMessage -> (false, errorMessage)

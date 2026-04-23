@@ -35,6 +35,7 @@ module RecordDes =
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckRecordDes<'valueExt
       when 'valueExt: comparison>
+      (config: TypeCheckingConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<
           ExprRecordDes<TypeExpr<'valueExt>, Identifier, 'valueExt>,
@@ -391,6 +392,16 @@ module RecordDes =
                 Errors<_>.MapPriority(replaceWith ErrorPriority.High)
               )
 
+            | Kind.Star,
+              TypeValue.Imported { Sym = sym; Arguments = args }
+                when config.ImportedTypesWithFields |> Map.containsKey sym ->
+              state {
+                let fieldBuilder = config.ImportedTypesWithFields |> Map.find sym
+                let fields_t = fieldBuilder args
+                return! resolve_lookup fields_t
+              }
+              |> state.MapError Errors<_>.FilterHighestPriorityOnly
+
             | Kind.Star, _ ->
               state {
                 match record_t with
@@ -402,21 +413,14 @@ module RecordDes =
                   let! fields_t =
                     TypeCheckState.TryFindRecordField(id, loc0) |> state.Map fst
 
-                  // Attempt structural unification; tolerate failure for
-                  // Imported types (e.g. View::Props) whose fields are
-                  // registered separately via bindRecordField.
-                  let! _ =
-                    state {
-                      let expected_record_t = TypeValue.CreateRecord fields_t
+                  let expected_record_t = TypeValue.CreateRecord fields_t
 
-                      do!
-                        TypeValue.Unify(loc0, record_t, expected_record_t)
-                        |> Expr.liftUnification
-                        |> state.MapError(
-                          Errors.MapPriority(replaceWith ErrorPriority.High)
-                        )
-                    }
-                    |> state.Catch
+                  do!
+                    TypeValue.Unify(loc0, record_t, expected_record_t)
+                    |> Expr.liftUnification
+                    |> state.MapError(
+                      Errors.MapPriority(replaceWith ErrorPriority.High)
+                    )
 
                   return! resolve_lookup fields_t
               }
