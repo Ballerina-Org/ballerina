@@ -25,6 +25,14 @@ module Patterns =
       | _ ->
         sum.Throw <| Errors.Singleton () (fun () -> "Expected Concat operation")
 
+    static member AsReplace
+      (op: StringOperations<'ext>)
+      : Sum<{| pattern: Option<string>; replacement: Option<string> |}, Errors<Unit>> =
+      match op with
+      | StringOperations.Replace state -> sum.Return state
+      | _ ->
+        sum.Throw <| Errors.Singleton () (fun () -> "Expected Replace operation")
+
     static member AsEqual
       (op: StringOperations<'ext>)
       : Sum<Option<string>, Errors<Unit>> =
