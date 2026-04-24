@@ -3,4 +3,4 @@
 // This negative sample captures the category where the program references a
 // value that is not in scope.
 
-fun (y:int32) -> x + y
+fun (y:int32) -> x + y;

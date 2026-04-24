@@ -154,3 +154,4 @@ let sum = x + y;
   ("grade_rating", rating),
   ("sum", sum)
 )
+;

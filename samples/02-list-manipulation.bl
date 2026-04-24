@@ -74,3 +74,4 @@ let empty_check =
   ("decompose_tail_length", tail_len),
   ("decompose_empty_check", empty_check)
 )
+;

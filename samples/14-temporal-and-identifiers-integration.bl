@@ -66,4 +66,4 @@ let zero_time_span_text = string::ofT (timeSpan::zero());
   ("utc_date_time_length", utc_date_time_length),
   ("random_guid_length", random_guid_length),
   ("zero_time_span_text", zero_time_span_text)
-)
+);

@@ -1398,6 +1398,17 @@ module Expr =
     : Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, _, _, _> =
     parser {
       let! e = expr 0 parseAllComplexShapes
+
+      let! loc = parser.Location
+
+      do!
+        parser.Any
+          [ semicolonOperator
+            (fun () -> "Expected ';' at end of program")
+            |> Errors.Singleton loc
+            |> parser.Throw ]
+        |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+
       do! parser.EndOfStream()
       return e
     }

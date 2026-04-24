@@ -70,3 +70,4 @@ DB::run [Shop] (fun (schema: Shop) ->
 
   string::print "Done!"
 )
+;

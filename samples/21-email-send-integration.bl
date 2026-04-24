@@ -4,3 +4,4 @@
 
 let _ = Email::send "alice@example.com" "Integration Subject" "Hello from integration sample";
 true
+;

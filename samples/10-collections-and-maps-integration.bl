@@ -27,4 +27,4 @@ let boosted_scores = Map::map (fun (value:int32) -> value + 100) scores;
 let score_rows = Map::mapToList [string][int32] boosted_scores;
 let map_ok = List::length score_rows == 2;
 
-list_pipeline_ok && append_ok && map_ok
+list_pipeline_ok && append_ok && map_ok;

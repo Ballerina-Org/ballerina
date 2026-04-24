@@ -34,4 +34,4 @@ let primitive_time_span_result: () + timeSpan = timeSpan::tryParse("6:12:30:45")
   ("date_time_text_length", string::length (string::ofT primitive_date_time)),
   ("date_only_text_length", string::length (string::ofT primitive_date_only)),
   ("time_span_parse_result", string::ofT primitive_time_span_result)
-)
+);

@@ -104,3 +104,4 @@ let pricingRuleResult = pricingRule 15;
   ("old_books_count_pipe", oldBooksCountWithPipe),
   ("pricing_rule_result", pricingRuleResult)
 )
+;

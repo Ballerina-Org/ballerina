@@ -15,4 +15,4 @@ let arithmetic_ok = (20 - 5 > 10) && (20 - 5 < 16);
 let keep_second = fun (left:bool) -> fun (right:bool) -> if left then right else false;
 let closure_ok = (keep_second true true) && !(keep_second false true);
 
-arithmetic_ok && boolean_ok && conditional_ok && tuple_ok && closure_ok
+arithmetic_ok && boolean_ok && conditional_ok && tuple_ok && closure_ok;
