@@ -370,3 +370,4 @@ WebApp::run [TodoSchema] (DB::run [TodoSchema] main)
   |> WebApp::withComponent("todoItem", todoItem)
   |> WebApp::withComponent("divider", divider)
   |> WebApp::withComponent("avatar", avatar)
+;

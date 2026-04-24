@@ -263,3 +263,4 @@ let main = fun (schema: BlogSchema) ->
   );
 
 DB::run [BlogSchema] main
+;

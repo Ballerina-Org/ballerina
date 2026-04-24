@@ -7,3 +7,4 @@ person.
 do string::print "This should not affect the dangling record decomposition.";
 
 ()
+;

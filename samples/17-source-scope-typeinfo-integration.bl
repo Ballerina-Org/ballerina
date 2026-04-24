@@ -15,4 +15,4 @@ type SomethingWithRange = {
 
 let id = fun [a:*] (x:a) -> x;
 
-id [SomethingWithRange]
+id [SomethingWithRange];

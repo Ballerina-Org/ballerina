@@ -66,4 +66,4 @@ let annotated_tuple = fun (x: int32 * string) -> x.1;
   ("annotated_sum_left", annotated_sum (1Of2 "hello")),
   ("annotated_sum_right", annotated_sum (2Of2 10)),
   ("annotated_tuple_result", annotated_tuple (1, "hello"))
-)
+);

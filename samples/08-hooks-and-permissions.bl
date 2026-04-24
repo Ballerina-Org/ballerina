@@ -415,4 +415,4 @@ let main = fun (schema: WebshopHooksSchema) ->
     ("publicMovieReviews", sample_public_movie_reviews)
   );
 
-DB::run [WebshopHooksSchema] main
+DB::run [WebshopHooksSchema] main;

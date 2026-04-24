@@ -12,4 +12,4 @@ let bad = fun (t:T) ->
   | A (value -> value |> string::length)
   | B (_ -> 0);
 
-bad
+bad;

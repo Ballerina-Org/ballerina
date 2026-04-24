@@ -158,3 +158,4 @@ let composed_functor = fun [F:* ->*] [G:* ->*] (F_map: Functor[F]) (G_map: Funct
   ("extracted_misses_count", extracted_misses_count),
   ("extracted_misses", extracted_misses_text)
 )
+;

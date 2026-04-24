@@ -43,4 +43,4 @@ let first:Countainer[int32] = { Value = 100; Count = 10; };
 let second:Countainer[bool] = { Value = false; Count = 11; };
 let type_lambda_ok = (foldInt first == 110) && (getCount first == 10) && (getCount second == 11);
 
-record_ok && union_ok && totals_ok && type_lambda_ok
+record_ok && union_ok && totals_ok && type_lambda_ok;
