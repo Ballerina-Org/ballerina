@@ -5,8 +5,10 @@ module HddCache =
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.TypeChecker.Model
+  open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.DSL.Next.Types.TypeChecker.Expr
   open Ballerina.DSL.Next.StdLib.DB.Model
   open Ballerina.DSL.Next.StdLib.Extensions
@@ -173,7 +175,24 @@ module HddCache =
                 { Id = coId
                   Sym = coTypeSymbol
                   Parameters = []
-                  Arguments = [ schema; ctx; st; res ] } }
+                  Arguments = [ schema; ctx; st; res ] }
+          ImportedTypesWithFields =
+            Map.ofList
+              [ viewPropsTypeSymbol,
+                fun args ->
+                  match args with
+                  | [ schema; ctx; st ] ->
+                    OrderedMap.ofList
+                      [ TypeSymbol.Create(Identifier.LocalScope "schema"), (schema, Kind.Schema)
+                        TypeSymbol.Create(Identifier.LocalScope "context"), (ctx, Kind.Star)
+                        TypeSymbol.Create(Identifier.LocalScope "state"), (st, Kind.Star)
+                        TypeSymbol.Create(Identifier.LocalScope "setState"),
+                        (TypeValue.CreateArrow(
+                           TypeValue.CreateArrow(st, st),
+                           TypeValue.CreatePrimitive PrimitiveType.Unit
+                         ),
+                         Kind.Star) ]
+                  | _ -> OrderedMap.empty ] }
     | _ ->
       // If symbols are missing while cache file exists, assume format mismatch and invalidate.
       tryDeleteCacheFile cacheFilePath

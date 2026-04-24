@@ -142,10 +142,18 @@ module Conversion =
         let! q' = convertQuery q
         return RunnableExprRec.Query q'
       }
-    | TypeCheckedExprRec.View _ ->
-      Right(conversionError _loc $"Cannot convert View to RunnableExpr: views are not yet executable")
-    | TypeCheckedExprRec.Co _ ->
-      Right(conversionError _loc $"Cannot convert Co to RunnableExpr: coroutines are not yet executable")
+    | TypeCheckedExprRec.View v ->
+      sum {
+        let! body = convertViewNode v.Body
+        return RunnableExprRec.View { Param = v.Param; ParamType = v.ParamType; Body = body; Location = v.Location }
+      }
+    | TypeCheckedExprRec.Co co ->
+      sum {
+        let! body = convertCoStep co.Body
+        return RunnableExprRec.Co { Body = body; Location = co.Location }
+      }
+    | TypeCheckedExprRec.CoOp op -> Left(RunnableExprRec.CoOp op)
+    | TypeCheckedExprRec.ViewOp op -> Left(RunnableExprRec.ViewOp op)
     | TypeCheckedExprRec.RecoveredSyntaxError err ->
       Right(conversionError err.ErrorLocation $"Cannot convert RecoveredSyntaxError to RunnableExpr: {err.ErrorMessage} (context: {err.RecoveryContext})")
     | TypeCheckedExprRec.ErrorDanglingRecordDes _ ->
@@ -154,6 +162,145 @@ module Conversion =
       Right(conversionError _loc $"Cannot convert ErrorDanglingScopedIdentifier to RunnableExpr")
     | TypeCheckedExprRec.ErrorRecordDesButInvalidField _ ->
       Right(conversionError _loc $"Cannot convert ErrorRecordDesButInvalidField to RunnableExpr")
+
+  and private convertViewNode<'valueExt when 'valueExt: comparison>
+    (node: TypeCheckedViewNode<'valueExt>)
+    : Sum<RunnableViewNode<'valueExt>, Errors<Location>>
+    =
+    sum {
+      let! nodeRec = convertViewNodeRec node.Node
+      return { Location = node.Location; Node = nodeRec }
+    }
+
+  and private convertViewNodeRec<'valueExt when 'valueExt: comparison>
+    (node: TypeCheckedViewNodeRec<'valueExt>)
+    : Sum<RunnableViewNodeRec<'valueExt>, Errors<Location>>
+    =
+    match node with
+    | TypeCheckedViewNodeRec.ViewElement el ->
+      sum {
+        let! el' = convertViewElement el
+        return RunnableViewNodeRec.ViewElement el'
+      }
+    | TypeCheckedViewNodeRec.ViewFragment children ->
+      sum {
+        let! children' = children |> List.map convertViewNode |> sum.All
+        return RunnableViewNodeRec.ViewFragment children'
+      }
+    | TypeCheckedViewNodeRec.ViewExprContainer e ->
+      sum {
+        let! e' = convertExpression e
+        return RunnableViewNodeRec.ViewExprContainer e'
+      }
+    | TypeCheckedViewNodeRec.ViewText t ->
+      Left(RunnableViewNodeRec.ViewText t)
+    | TypeCheckedViewNodeRec.ViewMapContext(mapper, inner) ->
+      sum {
+        let! mapper', inner' = sum.All2 (convertExpression mapper) (convertExpression inner)
+        return RunnableViewNodeRec.ViewMapContext(mapper', inner')
+      }
+    | TypeCheckedViewNodeRec.ViewMapState(mapDown, mapUp, inner) ->
+      sum {
+        let! mapDown', mapUp', inner' = sum.All3 (convertExpression mapDown) (convertExpression mapUp) (convertExpression inner)
+        return RunnableViewNodeRec.ViewMapState(mapDown', mapUp', inner')
+      }
+
+  and private convertViewElement<'valueExt when 'valueExt: comparison>
+    (el: TypeCheckedViewElement<'valueExt>)
+    : Sum<RunnableViewElement<'valueExt>, Errors<Location>>
+    =
+    sum {
+      let! attrs = el.Attributes |> List.map convertViewAttribute |> sum.All
+      let! children = el.Children |> List.map convertViewNode |> sum.All
+      return { Tag = el.Tag; Attributes = attrs; Children = children; SelfClosing = el.SelfClosing }
+    }
+
+  and private convertViewAttribute<'valueExt when 'valueExt: comparison>
+    (attr: TypeCheckedViewAttribute<'valueExt>)
+    : Sum<RunnableViewAttribute<'valueExt>, Errors<Location>>
+    =
+    match attr with
+    | TypeCheckedViewAttribute.ViewAttrStringValue(name, value) ->
+      Left(RunnableViewAttribute.ViewAttrStringValue(name, value))
+    | TypeCheckedViewAttribute.ViewAttrExprValue(name, value) ->
+      sum {
+        let! value' = convertExpression value
+        return RunnableViewAttribute.ViewAttrExprValue(name, value')
+      }
+
+  and private convertCoStep<'valueExt when 'valueExt: comparison>
+    (step: TypeCheckedCoStep<'valueExt>)
+    : Sum<RunnableCoStep<'valueExt>, Errors<Location>>
+    =
+    sum {
+      let! stepRec = convertCoStepRec step.Step
+      return { Location = step.Location; Step = stepRec }
+    }
+
+  and private convertCoStepRec<'valueExt when 'valueExt: comparison>
+    (step: TypeCheckedCoStepRec<'valueExt>)
+    : Sum<RunnableCoStepRec<'valueExt>, Errors<Location>>
+    =
+    match step with
+    | TypeCheckedCoStepRec.CoLetBang(var, value, rest) ->
+      sum {
+        let! value', rest' = sum.All2 (convertExpression value) (convertCoStep rest)
+        return RunnableCoStepRec.CoLetBang(var, value', rest')
+      }
+    | TypeCheckedCoStepRec.CoLet(var, value, rest) ->
+      sum {
+        let! value', rest' = sum.All2 (convertExpression value) (convertCoStep rest)
+        return RunnableCoStepRec.CoLet(var, value', rest')
+      }
+    | TypeCheckedCoStepRec.CoDoBang(value, rest) ->
+      sum {
+        let! value', rest' = sum.All2 (convertExpression value) (convertCoStep rest)
+        return RunnableCoStepRec.CoDoBang(value', rest')
+      }
+    | TypeCheckedCoStepRec.CoReturn e ->
+      sum {
+        let! e' = convertExpression e
+        return RunnableCoStepRec.CoReturn e'
+      }
+    | TypeCheckedCoStepRec.CoReturnBang e ->
+      sum {
+        let! e' = convertExpression e
+        return RunnableCoStepRec.CoReturnBang e'
+      }
+    | TypeCheckedCoStepRec.CoShow(predicate, view) ->
+      sum {
+        let! predicate', view' = sum.All2 (convertExpression predicate) (convertExpression view)
+        return RunnableCoStepRec.CoShow(predicate', view')
+      }
+    | TypeCheckedCoStepRec.CoUntil(predicate, inner) ->
+      sum {
+        let! predicate', inner' = sum.All2 (convertExpression predicate) (convertExpression inner)
+        return RunnableCoStepRec.CoUntil(predicate', inner')
+      }
+    | TypeCheckedCoStepRec.CoIgnore inner ->
+      sum {
+        let! inner' = convertExpression inner
+        return RunnableCoStepRec.CoIgnore inner'
+      }
+    | TypeCheckedCoStepRec.CoMapContext(mapper, inner) ->
+      sum {
+        let! mapper', inner' = sum.All2 (convertExpression mapper) (convertExpression inner)
+        return RunnableCoStepRec.CoMapContext(mapper', inner')
+      }
+    | TypeCheckedCoStepRec.CoMapState(mapDown, mapUp, inner) ->
+      sum {
+        let! mapDown', mapUp', inner' = sum.All3 (convertExpression mapDown) (convertExpression mapUp) (convertExpression inner)
+        return RunnableCoStepRec.CoMapState(mapDown', mapUp', inner')
+      }
+    | TypeCheckedCoStepRec.CoGetContext ->
+      Left(RunnableCoStepRec.CoGetContext)
+    | TypeCheckedCoStepRec.CoGetState ->
+      Left(RunnableCoStepRec.CoGetState)
+    | TypeCheckedCoStepRec.CoSetState updater ->
+      sum {
+        let! updater' = convertExpression updater
+        return RunnableCoStepRec.CoSetState updater'
+      }
 
   and private convertQueryCaseHandler<'valueExt when 'valueExt: comparison>
     (h: TypeCheckedQueryCaseHandler<'valueExt>)

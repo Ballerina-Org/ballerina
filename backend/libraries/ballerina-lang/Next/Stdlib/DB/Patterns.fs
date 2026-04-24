@@ -311,6 +311,7 @@ module Patterns =
       : Sum<DBIO<'runtimeContext, 'db, 'ext>, Errors<Unit>> =
       match op with
       | DBValues.DBIO dbio -> dbio |> sum.Return
+      | DBValues.WebAppIO data -> data.DBIO |> sum.Return
       | _ ->
         Errors.Singleton () (fun () -> "Expected DBIO operation") |> sum.Throw
 

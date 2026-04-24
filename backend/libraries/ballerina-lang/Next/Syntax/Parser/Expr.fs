@@ -997,9 +997,45 @@ module Expr =
       | Token.Keyword Keyword.Query ->
         [ query (fun () -> expr parseAllComplexShapes) () ]
       | Token.Keyword Keyword.View ->
-        [ viewExpr (fun () -> expr parseAllComplexShapes) () ]
+        [ // Try View::name first, then fall back to view expression
+          parser {
+            do! parseKeyword Keyword.View
+            do! doubleColonOperator
+            let! name = singleIdentifier
+            let! loc = parser.Location
+            match ViewOperationKind.TryParse name with
+            | Some op ->
+              return
+                { Expr = ExprRec.ViewOp op
+                  Location = loc
+                  Scope = TypeCheckScope.Empty }
+            | None ->
+              return!
+                (fun () -> $"Unknown View operation: View::{name}")
+                |> Errors.Singleton loc
+                |> parser.Throw
+          }
+          viewExpr (fun () -> expr parseAllComplexShapes) () ]
       | Token.Keyword Keyword.Co ->
-        [ coExpr (fun () -> expr parseAllComplexShapes) () ]
+        [ // Try Co::name first, then fall back to co expression
+          parser {
+            do! parseKeyword Keyword.Co
+            do! doubleColonOperator
+            let! name = singleIdentifier
+            let! loc = parser.Location
+            match CoOperationKind.TryParse name with
+            | Some op ->
+              return
+                { Expr = ExprRec.CoOp op
+                  Location = loc
+                  Scope = TypeCheckScope.Empty }
+            | None ->
+              return!
+                (fun () -> $"Unknown Co operation: Co::{name}")
+                |> Errors.Singleton loc
+                |> parser.Throw
+          }
+          coExpr (fun () -> expr parseAllComplexShapes) () ]
       | Token.Operator Operator.LessThan ->
         [ viewNodeExpr (fun () -> expr parseAllComplexShapes) () ]
       | Token.Identifier _

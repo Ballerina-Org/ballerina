@@ -106,6 +106,19 @@ module MemoryDBAPIFactory =
           )
 
       match evalResult with
+      | Ext(ValueExt.VDB(DBExt.DBValues(DBValues.WebAppIO webAppData)), _) ->
+        let dbio = webAppData.DBIO
+        let languageContext, _ = contextFactory dbFileConfig
+
+        return
+          { DbExtension = dbio
+            EvalContext =
+              { evalContext with
+                  Scope = dbio.EvalContext }
+            TypeCheckContext = typeCheckContext
+            TypeCheckState = typeCheckState
+            LanguageContext = languageContext
+            DataSource = None }
       | Ext(ValueExt.VDB(DBExt.DBValues(DBValues.DBIO dbio)), _) ->
         let languageContext, _ = contextFactory dbFileConfig
 

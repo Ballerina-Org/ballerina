@@ -102,6 +102,12 @@ type TodoSchema =
     }
   };
 
+// ── Utility ──────────────────────────────────────────────────────────────
+// replaceWith x = fun _ -> x  (like `const` in Haskell)
+
+let replaceWith = fun [a:*] [b:*] (y:b) -> fun (_:a) -> y;
+let id = fun [a:*] (x:a) -> x;
+
 // ═════════════════════════════════════════════════════════════════════════
 // VIEW DEFINITIONS
 // ═════════════════════════════════════════════════════════════════════════
@@ -115,8 +121,8 @@ let counter = view (props:View::Props[TodoSchema][string][int32]) ->
   <div class="counter">
     <h2>{props.context}</h2>
     <span class="count">{props.state}</span>
-    <button onClick={props.setState(fun n -> n + 1)}>+</button>
-    <button onClick={props.setState(fun n -> n - 1)}>-</button>
+    <button onClick={props.setState(fun (n:int32) -> n + 1)}>+</button>
+    <button onClick={props.setState(fun (n:int32) -> n - 1)}>-</button>
   </div>;
 
 // ── 2. Todo item ─────────────────────────────────────────────────────────
@@ -125,11 +131,11 @@ let counter = view (props:View::Props[TodoSchema][string][int32]) ->
 // context = unit, state = the todo itself.
 // Type: Frontend::View[TodoSchema][unit][Todo]
 
-let todoItem = view (props:View::Props[TodoSchema][unit][Todo]) ->
+let todoItem = view (props:View::Props[TodoSchema][()][Todo]) ->
   <li class={if props.state.Done then "done" else "pending"}>
     <input type="checkbox"
            checked={props.state.Done}
-           onChange={props.setState(fun t -> { t with Todo::Done = !(t.Done) })} />
+           onChange={props.setState(fun (t:Todo) -> { t with Todo::Done = !(t.Done) })} />
     <span>{props.state.Title}</span>
   </li>;
 
@@ -139,22 +145,22 @@ let todoItem = view (props:View::Props[TodoSchema][unit][Todo]) ->
 // context = unit, state = list of todos.
 // Type: Frontend::View[TodoSchema][unit][List[Todo]]
 
-let todoList = view (props:View::Props[TodoSchema][unit][List[Todo]]) ->
+let todoList = view (props:View::Props[TodoSchema][()][List[Todo]]) ->
   <div class="todo-list">
     <h1>My Todos</h1>
     <ul>
-      {List::map (fun todo ->
+      {List::map (fun (todo:Todo) ->
         <todoItem props={
           props |> View::mapState
             (replaceWith todo)
-            (fun f items -> List::map (fun t ->
+            (fun (f:(Todo -> Todo)) (items:List[Todo]) -> List::map (fun (t:Todo) ->
               if t.Title == todo.Title then f t else t
             ) items)
         } />
       ) props.state}
     </ul>
     <p>
-      {List::length (List::filter (fun t -> t.Done) props.state)}
+      {List::length (List::filter (fun (t:Todo) -> t.Done) props.state)}
       of
       {List::length props.state}
       completed
@@ -172,7 +178,7 @@ type HeaderInput = {
   Subtitle: string;
 };
 
-let pageHeader = view (props:View::Props[TodoSchema][HeaderInput][unit]) ->
+let pageHeader = view (props:View::Props[TodoSchema][HeaderInput][()]) ->
   <>
     <h1>{props.context.Title}</h1>
     <p class="subtitle">{props.context.Subtitle}</p>
@@ -183,7 +189,7 @@ let pageHeader = view (props:View::Props[TodoSchema][HeaderInput][unit]) ->
 // Both are stateless display-only views.
 // Type: Frontend::View[TodoSchema][unit][unit]
 
-let divider = view (props:View::Props[TodoSchema][unit][unit]) ->
+let divider = view (props:View::Props[TodoSchema][()][()]) ->
   <hr />;
 
 // Type: Frontend::View[TodoSchema][AvatarInput][unit]
@@ -193,7 +199,7 @@ type AvatarInput = {
   Alt: string;
 };
 
-let avatar = view (props:View::Props[TodoSchema][AvatarInput][unit]) ->
+let avatar = view (props:View::Props[TodoSchema][AvatarInput][()]) ->
   <img src={props.context.Url} alt={props.context.Alt} class="avatar" />;
 
 // ── 6. Nested composition ────────────────────────────────────────────────
@@ -207,33 +213,33 @@ type PageState = {
   Count: int32;
 };
 
-let homePage = view (props:View::Props[TodoSchema][unit][PageState]) ->
+let homePage = view (props:View::Props[TodoSchema][()][PageState]) ->
   <div class="home">
     <pageHeader props={
       props
       |> View::mapContext(replaceWith { Title = "Todo App"; Subtitle = "Built with Ballerina views" })
-      |> View::mapState (replaceWith ()) (replaceWith id)
+      |> View::mapState (replaceWith ()) (replaceWith (id [PageState]))
     } />
     <divider props={
       props
-      |> View::mapState (replaceWith ()) (replaceWith id)
+      |> View::mapState (replaceWith ()) (replaceWith (id [PageState]))
     } />
     <counter props={
       props
       |> View::mapContext(replaceWith "Visits")
       |> View::mapState
-        (fun s -> s.Count)
-        (fun f s -> { s with PageState::Count = f s.Count })
+        (fun (s:PageState) -> s.Count)
+        (fun (f:(int32 -> int32)) (s:PageState) -> { s with PageState::Count = f s.Count })
     } />
     <divider props={
       props
-      |> View::mapState (replaceWith ()) (replaceWith id)
+      |> View::mapState (replaceWith ()) (replaceWith (id [PageState]))
     } />
     <todoList props={
       props
       |> View::mapState
-        (fun s -> s.Todos)
-        (fun f s -> { s with PageState::Todos = f s.Todos })
+        (fun (s:PageState) -> s.Todos)
+        (fun (f:(List[Todo] -> List[Todo])) (s:PageState) -> { s with PageState::Todos = f s.Todos })
     } />
   </div>;
 
@@ -245,7 +251,7 @@ let homePage = view (props:View::Props[TodoSchema][unit][PageState]) ->
 // Shown after the counter coroutine completes.
 // Type: Frontend::View[TodoSchema][int32][unit]
 
-let doneMessage = view (props:View::Props[TodoSchema][int32][unit]) ->
+let doneMessage = view (props:View::Props[TodoSchema][int32][()]) ->
   <div class="done">
     <h1>Done!</h1>
     <p>You counted to {props.context}.</p>
@@ -259,7 +265,7 @@ let doneMessage = view (props:View::Props[TodoSchema][int32][unit]) ->
 let counterFlow = co {
   let! finalCount =
     Co::show
-      (fun n ->
+      (fun (n:int32) ->
         if n > 10 then 2Of2(n)
         else 1Of2())
       counter;
@@ -290,8 +296,11 @@ let stateAccessDemo = co {
   // Read the current state (an int32 counter)
   let! current = Co::getState;
 
+  // Plain let binding (evaluated eagerly, not monadic)
+  let message = "hello";
+
   // Update the state with an updater function
-  do! Co::setState (fun n -> n + 1);
+  do! Co::setState (fun (n:int32) -> n + 1);
 
   return label
 };
@@ -316,13 +325,13 @@ let homeFlow = co {
     counterFlow
     |> Co::mapContext (replaceWith "Click counter")
     |> Co::mapState
-      (fun st -> st.CounterCount)
-      (fun f st -> { st with HomeFlowState::CounterCount = f st.CounterCount });
+      (fun (st:HomeFlowState) -> st.CounterCount)
+      (fun (f:(int32 -> int32)) (st:HomeFlowState) -> { st with HomeFlowState::CounterCount = f st.CounterCount });
 
   // Phase 2: show the done message forever (never completes)
   do! doneMessageFlow
     |> Co::mapContext (replaceWith finalCount)
-    |> Co::mapState (replaceWith ()) (replaceWith id);
+    |> Co::mapState (replaceWith ()) (replaceWith (id [HomeFlowState]));
 
   return ()
 };
@@ -336,38 +345,39 @@ let homeFlow = co {
 // Routes are always coroutines — views are lifted via Co::show.
 
 let main = fun (schema: TodoSchema) ->
-  let seed_todos = {
-    { Title = "Learn Ballerina"; Done = true };
-    { Title = "Build views"; Done = false };
-    { Title = "Ship it"; Done = false }
-  };
-  (seed_todos, "seeded");
+  ((), "seeded");
+
+let seed_todos = {
+  { Todo::Title = "Learn Ballerina"; Todo::Done = true };
+  { Todo::Title = "Build views"; Todo::Done = false };
+  { Todo::Title = "Ship it"; Todo::Done = false }
+};
 
 WebApp::run [TodoSchema] (DB::run [TodoSchema] main)
-  |> WebApp::withRoute("/", co {
+  |> WebApp::withRoute "/" (co {
     do! Co::show
       (replaceWith (1Of2()))
       homePage
     |> Co::mapState
       (replaceWith { Todos = seed_todos; Count = 0 })
-      (replaceWith id);
+      (replaceWith (id [()]));
     return ()
   })
-  |> WebApp::withRoute("/flow", homeFlow
+  |> WebApp::withRoute "/flow" (homeFlow
     |> Co::mapState
       (replaceWith { CounterCount = 0 })
-      (replaceWith id))
-  |> WebApp::withRoute("/header", co {
+      (replaceWith (id [()])))
+  |> WebApp::withRoute "/header" (co {
     do! Co::show
       (replaceWith (1Of2()))
       pageHeader
     |> Co::mapContext
       (replaceWith { Title = "Header"; Subtitle = "Standalone page" })
-    |> Co::mapState (replaceWith ()) (replaceWith id);
+    |> Co::mapState (replaceWith ()) (replaceWith (id [()]));
     return ()
   })
-  |> WebApp::withComponent("counter", counter)
-  |> WebApp::withComponent("todoItem", todoItem)
-  |> WebApp::withComponent("divider", divider)
-  |> WebApp::withComponent("avatar", avatar)
+  |> WebApp::withComponent "counter" counter
+  |> WebApp::withComponent "todoItem" todoItem
+  |> WebApp::withComponent "divider" divider
+  |> WebApp::withComponent "avatar" avatar
 ;
