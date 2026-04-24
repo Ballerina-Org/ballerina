@@ -247,6 +247,11 @@ module Conversion =
         let! value', rest' = sum.All2 (convertExpression value) (convertCoStep rest)
         return RunnableCoStepRec.CoLetBang(var, value', rest')
       }
+    | TypeCheckedCoStepRec.CoLet(var, value, rest) ->
+      sum {
+        let! value', rest' = sum.All2 (convertExpression value) (convertCoStep rest)
+        return RunnableCoStepRec.CoLet(var, value', rest')
+      }
     | TypeCheckedCoStepRec.CoDoBang(value, rest) ->
       sum {
         let! value', rest' = sum.All2 (convertExpression value) (convertCoStep rest)

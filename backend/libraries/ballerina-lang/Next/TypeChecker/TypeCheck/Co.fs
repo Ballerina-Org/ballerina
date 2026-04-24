@@ -91,6 +91,35 @@ module Co =
             { TypeCheckedCoStep.Location = loc0
               Step = TypeCheckedCoStepRec.CoLetBang(var, checkedValue, checkedRest) }
 
+        // let x = expr; rest
+        // expr is a regular expression (not Co-typed)
+        // bind x : type-of-expr and typecheck rest
+        | ExprCoStepRec.CoLet(var, valueExpr, rest) ->
+          let! checkedValue, _ = None => valueExpr
+
+          let! value_t =
+            checkedValue.Type
+            |> TypeValue.Instantiate
+              ()
+              (TypeExpr.Eval config typeCheckExpr)
+              loc0
+            |> Expr.liftInstantiation
+
+          // Bind x : value_t in context for the rest
+          let! checkedRest =
+            typeCheckStep rest
+            |> state.MapContext(
+              TypeCheckContext.Updaters.Values(
+                Map.add
+                  (var.Name |> Identifier.LocalScope |> ctx.Scope.Resolve)
+                  (value_t, Kind.Star)
+              )
+            )
+
+          return
+            { TypeCheckedCoStep.Location = loc0
+              Step = TypeCheckedCoStepRec.CoLet(var, checkedValue, checkedRest) }
+
         // do! expr; rest
         // expr must produce Co[schema][ctx][st][()]
         | ExprCoStepRec.CoDoBang(valueExpr, rest) ->
@@ -261,6 +290,13 @@ module Co =
           let! checkedBody =
             Expr<'T, 'Id, 'valueExt>.TypeCheckCoStep
               config typeCheckExpr schema_t ctx_t st_t res_t body
+            |> state.MapContext(
+              TypeCheckContext.Updaters.RejectedIdentifiers(
+                fun rejected ->
+                  ctx.CoRejectedIdentifiers
+                  |> Map.fold (fun acc k v -> Map.add k v acc) rejected
+              )
+            )
 
           // Construct result type
           let result_t = config.MkCoType schema_t ctx_t st_t res_t

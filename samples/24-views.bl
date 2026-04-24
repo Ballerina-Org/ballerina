@@ -296,6 +296,9 @@ let stateAccessDemo = co {
   // Read the current state (an int32 counter)
   let! current = Co::getState;
 
+  // Plain let binding (evaluated eagerly, not monadic)
+  let message = "hello";
+
   // Update the state with an updater function
   do! Co::setState (fun (n:int32) -> n + 1);
 

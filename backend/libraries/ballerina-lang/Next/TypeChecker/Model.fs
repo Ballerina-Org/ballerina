@@ -80,7 +80,10 @@ module Model =
       BackgroundHooksExtraScope:
         Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)>
       PermissionHooksExtraScope:
-        Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)> }
+        Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)>
+      ViewRejectedIdentifiers: Map<ResolvedIdentifier, string>
+      CoRejectedIdentifiers: Map<ResolvedIdentifier, string>
+      RejectedIdentifiers: Map<ResolvedIdentifier, string> }
 
   type UnificationState<'valueExt when 'valueExt: comparison> =
     { Classes: EquivalenceClasses<TypeVar, TypeValue<'valueExt>> }

@@ -376,6 +376,12 @@ module InstantiateSyntheticVars =
                 return
                   { TypeCheckedCoStep.Location = step.Location
                     TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoLetBang(var, value, rest) }
+              | TypeCheckedCoStepRec.CoLet(var, value, rest) ->
+                let! value = !value
+                let! rest = instantiateStep rest
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoLet(var, value, rest) }
               | TypeCheckedCoStepRec.CoDoBang(value, rest) ->
                 let! value = !value
                 let! rest = instantiateStep rest

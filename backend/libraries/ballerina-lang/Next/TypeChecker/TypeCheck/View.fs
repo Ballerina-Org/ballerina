@@ -260,6 +260,11 @@ module View =
                   (param.Name |> Identifier.LocalScope |> ctx.Scope.Resolve)
                   param_t
               )
+              >> TypeCheckContext.Updaters.RejectedIdentifiers(
+                fun rejected ->
+                  ctx.ViewRejectedIdentifiers
+                  |> Map.fold (fun acc k v -> Map.add k v acc) rejected
+              )
             )
 
           // 5. Construct result type: Frontend::View[schema][ctx][st]

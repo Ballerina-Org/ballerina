@@ -1581,6 +1581,7 @@ module Model =
 
   and ExprCoStepRec<'T, 'Id, 'valueExt when 'Id: comparison> =
     | CoLetBang of Var: Var * Value: Expr<'T, 'Id, 'valueExt> * Rest: ExprCoStep<'T, 'Id, 'valueExt>
+    | CoLet of Var: Var * Value: Expr<'T, 'Id, 'valueExt> * Rest: ExprCoStep<'T, 'Id, 'valueExt>
     | CoDoBang of Value: Expr<'T, 'Id, 'valueExt> * Rest: ExprCoStep<'T, 'Id, 'valueExt>
     | CoReturn of Expr<'T, 'Id, 'valueExt>
     | CoReturnBang of Expr<'T, 'Id, 'valueExt>
@@ -1597,6 +1598,7 @@ module Model =
     override self.ToString() =
       match self with
       | CoLetBang(var, value, rest) -> $"let! {var} = {value}; {rest}"
+      | CoLet(var, value, rest) -> $"let {var} = {value}; {rest}"
       | CoDoBang(value, rest) -> $"do! {value}; {rest}"
       | CoReturn e -> $"return {e}"
       | CoReturnBang e -> $"return! {e}"
@@ -2304,6 +2306,7 @@ module Model =
 
   and [<RequireQualifiedAccess>] TypeCheckedCoStepRec<'valueExt> =
     | CoLetBang of Var: Var * Value: TypeCheckedExpr<'valueExt> * Rest: TypeCheckedCoStep<'valueExt>
+    | CoLet of Var: Var * Value: TypeCheckedExpr<'valueExt> * Rest: TypeCheckedCoStep<'valueExt>
     | CoDoBang of Value: TypeCheckedExpr<'valueExt> * Rest: TypeCheckedCoStep<'valueExt>
     | CoReturn of TypeCheckedExpr<'valueExt>
     | CoReturnBang of TypeCheckedExpr<'valueExt>
@@ -2320,6 +2323,7 @@ module Model =
     override self.ToString() =
       match self with
       | CoLetBang(var, value, rest) -> $"let! {var} = {value}; {rest}"
+      | CoLet(var, value, rest) -> $"let {var} = {value}; {rest}"
       | CoDoBang(value, rest) -> $"do! {value}; {rest}"
       | CoReturn e -> $"return {e}"
       | CoReturnBang e -> $"return! {e}"
@@ -2852,6 +2856,7 @@ module Model =
 
   and [<RequireQualifiedAccess>] RunnableCoStepRec<'valueExt> =
     | CoLetBang of Var: Var * Value: RunnableExpr<'valueExt> * Rest: RunnableCoStep<'valueExt>
+    | CoLet of Var: Var * Value: RunnableExpr<'valueExt> * Rest: RunnableCoStep<'valueExt>
     | CoDoBang of Value: RunnableExpr<'valueExt> * Rest: RunnableCoStep<'valueExt>
     | CoReturn of RunnableExpr<'valueExt>
     | CoReturnBang of RunnableExpr<'valueExt>
@@ -2867,6 +2872,7 @@ module Model =
     override self.ToString() =
       match self with
       | CoLetBang(var, value, rest) -> $"let! {var} = {value}; {rest}"
+      | CoLet(var, value, rest) -> $"let {var} = {value}; {rest}"
       | CoDoBang(value, rest) -> $"do! {value}; {rest}"
       | CoReturn e -> $"return {e}"
       | CoReturnBang e -> $"return! {e}"
