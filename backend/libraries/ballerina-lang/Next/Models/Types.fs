@@ -1646,6 +1646,9 @@ module Model =
     | GetContext
     | GetState
     | SetState
+    | Repeat
+    | Any
+    | All
 
     member self.Name =
       match self with
@@ -1653,12 +1656,14 @@ module Model =
       | MapContext -> "mapContext" | MapState -> "mapState"
       | GetContext -> "getContext" | GetState -> "getState"
       | SetState -> "setState"
+      | Repeat -> "repeat" | Any -> "any" | All -> "all"
 
     member self.Arity =
       match self with
       | Show -> 2 | Until -> 2 | Ignore -> 1
       | MapContext -> 2 | MapState -> 3
       | GetContext -> 0 | GetState -> 0 | SetState -> 1
+      | Repeat -> 1 | Any -> 1 | All -> 1
 
     override self.ToString() = $"Co::{self.Name}"
 
@@ -1668,6 +1673,7 @@ module Model =
       | "mapContext" -> Some MapContext | "mapState" -> Some MapState
       | "getContext" -> Some GetContext | "getState" -> Some GetState
       | "setState" -> Some SetState
+      | "repeat" -> Some Repeat | "any" -> Some Any | "all" -> Some All
       | _ -> None
 
   and [<RequireQualifiedAccess>] ViewOperationKind =

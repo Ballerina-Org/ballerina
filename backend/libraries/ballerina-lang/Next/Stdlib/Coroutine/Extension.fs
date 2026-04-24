@@ -21,6 +21,9 @@ module Extension =
     | Co_GetContext
     | Co_GetState
     | Co_SetState
+    | Co_Repeat
+    | Co_Any
+    | Co_All
 
   let CoroutineExtension<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO
     when 'ext: comparison
@@ -704,6 +707,225 @@ module Extension =
               return Value.Co(ValueCo.CoOp(CoOperationKind.SetState, [ v ]))
             } }
 
+    // --- Co::repeat ---
+    // repeat : Λschema::Schema. Λctx::*. Λst::*.
+    //   Co[schema][ctx][st][()] -> Co[schema][ctx][st][()]
+    let repeatId =
+      Identifier.FullyQualified([ "Co" ], "repeat")
+      |> TypeCheckScope.Empty.Resolve
+
+    let repeatOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations<'ext>> =
+      repeatId,
+      { Type =
+          TypeValue.CreateLambda(
+            TypeParameter.Create("schema", schemaKind),
+            TypeExpr.Lambda(
+              TypeParameter.Create("ctx", ctxKind),
+              TypeExpr.Lambda(
+                TypeParameter.Create("st", stKind),
+                TypeExpr.Arrow(
+                  TypeExpr.Apply(
+                    TypeExpr.Apply(
+                      TypeExpr.Apply(
+                        TypeExpr.Apply(
+                          TypeExpr.Lookup(Identifier.LocalScope "Co"),
+                          TypeExpr.Lookup(Identifier.LocalScope "schema")
+                        ),
+                        TypeExpr.Lookup(Identifier.LocalScope "ctx")
+                      ),
+                      TypeExpr.Lookup(Identifier.LocalScope "st")
+                    ),
+                    TypeExpr.Primitive PrimitiveType.Unit
+                  ),
+                  TypeExpr.Apply(
+                    TypeExpr.Apply(
+                      TypeExpr.Apply(
+                        TypeExpr.Apply(
+                          TypeExpr.Lookup(Identifier.LocalScope "Co"),
+                          TypeExpr.Lookup(Identifier.LocalScope "schema")
+                        ),
+                        TypeExpr.Lookup(Identifier.LocalScope "ctx")
+                      ),
+                      TypeExpr.Lookup(Identifier.LocalScope "st")
+                    ),
+                    TypeExpr.Primitive PrimitiveType.Unit
+                  )
+                )
+              )
+            )
+          )
+        Kind =
+          Kind.Arrow(
+            Kind.Schema,
+            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+          )
+        Operation = Co_Repeat
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | Co_Repeat -> Some Co_Repeat
+            | _ -> None)
+        Apply =
+          fun _loc0 _rest (_op, v) ->
+            reader {
+              return Value.Co(ValueCo.CoOp(CoOperationKind.Repeat, [ v ]))
+            } }
+
+    // --- Co::any ---
+    // any : Λschema::Schema. Λctx::*. Λst::*. Λo::*.
+    //   List[Co[schema][ctx][st][o]] -> Co[schema][ctx][st][o]
+    let anyId =
+      Identifier.FullyQualified([ "Co" ], "any")
+      |> TypeCheckScope.Empty.Resolve
+
+    let anyOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations<'ext>> =
+      anyId,
+      { Type =
+          TypeValue.CreateLambda(
+            TypeParameter.Create("schema", schemaKind),
+            TypeExpr.Lambda(
+              TypeParameter.Create("ctx", ctxKind),
+              TypeExpr.Lambda(
+                TypeParameter.Create("st", stKind),
+                TypeExpr.Lambda(
+                  TypeParameter.Create("o", oKind),
+                  TypeExpr.Arrow(
+                    TypeExpr.Apply(
+                      TypeExpr.Lookup(Identifier.LocalScope "List"),
+                      TypeExpr.Apply(
+                        TypeExpr.Apply(
+                          TypeExpr.Apply(
+                            TypeExpr.Apply(
+                              TypeExpr.Lookup(Identifier.LocalScope "Co"),
+                              TypeExpr.Lookup(Identifier.LocalScope "schema")
+                            ),
+                            TypeExpr.Lookup(Identifier.LocalScope "ctx")
+                          ),
+                          TypeExpr.Lookup(Identifier.LocalScope "st")
+                        ),
+                        TypeExpr.Lookup(Identifier.LocalScope "o")
+                      )
+                    ),
+                    TypeExpr.Apply(
+                      TypeExpr.Apply(
+                        TypeExpr.Apply(
+                          TypeExpr.Apply(
+                            TypeExpr.Lookup(Identifier.LocalScope "Co"),
+                            TypeExpr.Lookup(Identifier.LocalScope "schema")
+                          ),
+                          TypeExpr.Lookup(Identifier.LocalScope "ctx")
+                        ),
+                        TypeExpr.Lookup(Identifier.LocalScope "st")
+                      ),
+                      TypeExpr.Lookup(Identifier.LocalScope "o")
+                    )
+                  )
+                )
+              )
+            )
+          )
+        Kind =
+          Kind.Arrow(
+            Kind.Schema,
+            Kind.Arrow(
+              Kind.Star,
+              Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+            )
+          )
+        Operation = Co_Any
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | Co_Any -> Some Co_Any
+            | _ -> None)
+        Apply =
+          fun _loc0 _rest (_op, v) ->
+            reader {
+              return Value.Co(ValueCo.CoOp(CoOperationKind.Any, [ v ]))
+            } }
+
+    // --- Co::all ---
+    // all : Λschema::Schema. Λctx::*. Λst::*. Λo::*.
+    //   List[Co[schema][ctx][st][o]] -> Co[schema][ctx][st][List[o]]
+    let allId =
+      Identifier.FullyQualified([ "Co" ], "all")
+      |> TypeCheckScope.Empty.Resolve
+
+    let allOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations<'ext>> =
+      allId,
+      { Type =
+          TypeValue.CreateLambda(
+            TypeParameter.Create("schema", schemaKind),
+            TypeExpr.Lambda(
+              TypeParameter.Create("ctx", ctxKind),
+              TypeExpr.Lambda(
+                TypeParameter.Create("st", stKind),
+                TypeExpr.Lambda(
+                  TypeParameter.Create("o", oKind),
+                  TypeExpr.Arrow(
+                    TypeExpr.Apply(
+                      TypeExpr.Lookup(Identifier.LocalScope "List"),
+                      TypeExpr.Apply(
+                        TypeExpr.Apply(
+                          TypeExpr.Apply(
+                            TypeExpr.Apply(
+                              TypeExpr.Lookup(Identifier.LocalScope "Co"),
+                              TypeExpr.Lookup(Identifier.LocalScope "schema")
+                            ),
+                            TypeExpr.Lookup(Identifier.LocalScope "ctx")
+                          ),
+                          TypeExpr.Lookup(Identifier.LocalScope "st")
+                        ),
+                        TypeExpr.Lookup(Identifier.LocalScope "o")
+                      )
+                    ),
+                    TypeExpr.Apply(
+                      TypeExpr.Apply(
+                        TypeExpr.Apply(
+                          TypeExpr.Apply(
+                            TypeExpr.Lookup(Identifier.LocalScope "Co"),
+                            TypeExpr.Lookup(Identifier.LocalScope "schema")
+                          ),
+                          TypeExpr.Lookup(Identifier.LocalScope "ctx")
+                        ),
+                        TypeExpr.Lookup(Identifier.LocalScope "st")
+                      ),
+                      TypeExpr.Apply(
+                        TypeExpr.Lookup(Identifier.LocalScope "List"),
+                        TypeExpr.Lookup(Identifier.LocalScope "o")
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        Kind =
+          Kind.Arrow(
+            Kind.Schema,
+            Kind.Arrow(
+              Kind.Star,
+              Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+            )
+          )
+        Operation = Co_All
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | Co_All -> Some Co_All
+            | _ -> None)
+        Apply =
+          fun _loc0 _rest (_op, v) ->
+            reader {
+              return Value.Co(ValueCo.CoOp(CoOperationKind.All, [ v ]))
+            } }
+
     let coExtension =
       { TypeName = coResolvedId, coSymbolId
         TypeVars =
@@ -715,7 +937,8 @@ module Extension =
         Operations =
           [ showOperation; untilOperation; ignoreOperation
             mapContextOperation; mapStateOperation
-            getContextOperation; getStateOperation; setStateOperation ] |> Map.ofList
+            getContextOperation; getStateOperation; setStateOperation
+            repeatOperation; anyOperation; allOperation ] |> Map.ofList
         Serialization = None
         ExtTypeChecker = None }
 
