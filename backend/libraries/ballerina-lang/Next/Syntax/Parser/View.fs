@@ -406,6 +406,7 @@ module View =
     let rec coStep () : Parser<ExprCoStep<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
       parser.Any
         [ coLetBang ()
+          coLet ()
           coDoBang ()
           coReturnBang ()
           coReturn () ]
@@ -424,6 +425,20 @@ module View =
         return
           { Location = loc
             Step = ExprCoStepRec.CoLetBang(Var.Create varName, value, rest) }
+      }
+
+    and coLet () : Parser<ExprCoStep<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
+      parser {
+        let! loc = parser.Location
+        do! parseKeyword Keyword.Let
+        let! varName = singleIdentifier
+        do! equalsOperator
+        let! value = expr ()
+        do! semicolonOperator
+        let! rest = coStep ()
+        return
+          { Location = loc
+            Step = ExprCoStepRec.CoLet(Var.Create varName, value, rest) }
       }
 
     and coDoBang () : Parser<ExprCoStep<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =

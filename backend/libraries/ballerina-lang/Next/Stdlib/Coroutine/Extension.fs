@@ -10,12 +10,14 @@ module Extension =
   open Ballerina.Reader.WithError
   open Ballerina.Lenses
 
-  type CoroutineOperations =
-    | Co_Show
-    | Co_Until
+  type CoroutineOperations<'ext> =
+    | Co_Show of {| Predicate: Option<Value<TypeValue<'ext>, 'ext>> |}
+    | Co_Until of {| Predicate: Option<Value<TypeValue<'ext>, 'ext>> |}
     | Co_Ignore
-    | Co_MapContext
-    | Co_MapState
+    | Co_MapContext of {| Mapper: Option<Value<TypeValue<'ext>, 'ext>> |}
+    | Co_MapState of
+      {| MapDown: Option<Value<TypeValue<'ext>, 'ext>>
+         MapUp: Option<Value<TypeValue<'ext>, 'ext>> |}
     | Co_GetContext
     | Co_GetState
     | Co_SetState
@@ -26,7 +28,7 @@ module Extension =
     and 'extDTO: not struct
     and 'deltaExtDTO: not null
     and 'deltaExtDTO: not struct>
-    (operationLens: PartialLens<'ext, CoroutineOperations>)
+    (operationLens: PartialLens<'ext, CoroutineOperations<'ext>>)
     (typeSymbol: Option<TypeSymbol>)
     (viewTypeId: Identifier)
     : TypeExtension<
@@ -37,7 +39,7 @@ module Extension =
         'deltaExtDTO,
         Unit,
         Unit,
-        CoroutineOperations
+        CoroutineOperations<'ext>
        > *
       TypeSymbol *
       (TypeValue<'ext>
@@ -81,7 +83,7 @@ module Extension =
 
     let showOperation
       : ResolvedIdentifier *
-        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations> =
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations<'ext>> =
       showId,
       { Type =
           TypeValue.CreateLambda(
@@ -137,18 +139,27 @@ module Extension =
               Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
             )
           )
-        Operation = Co_Show
+        Operation = Co_Show {| Predicate = None |}
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | Co_Show -> Some Co_Show
+            | Co_Show v -> Some(Co_Show v)
             | _ -> None)
         Apply =
-          fun loc0 _rest (_op, _v) ->
+          fun loc0 _rest (op, v) ->
             reader {
-              return!
-                Errors.Singleton loc0 (fun () -> "Co::show is not yet implemented")
-                |> reader.Throw
+              match op with
+              | Co_Show s when s.Predicate.IsNone ->
+                return
+                  (Co_Show {| Predicate = Some v |} |> operationLens.Set, Some showId)
+                  |> Value.Ext
+              | Co_Show s ->
+                let predicate = s.Predicate.Value
+                return Value.Co(ValueCo.CoOp(CoOperationKind.Show, [ predicate; v ]))
+              | _ ->
+                return!
+                  Errors.Singleton loc0 (fun () -> "Co::show: unexpected operation state")
+                  |> reader.Throw
             } }
 
     // --- Co::until ---
@@ -162,7 +173,7 @@ module Extension =
 
     let untilOperation
       : ResolvedIdentifier *
-        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations> =
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations<'ext>> =
       untilId,
       { Type =
           TypeValue.CreateLambda(
@@ -221,18 +232,27 @@ module Extension =
               Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
             )
           )
-        Operation = Co_Until
+        Operation = Co_Until {| Predicate = None |}
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | Co_Until -> Some Co_Until
+            | Co_Until v -> Some(Co_Until v)
             | _ -> None)
         Apply =
-          fun loc0 _rest (_op, _v) ->
+          fun loc0 _rest (op, v) ->
             reader {
-              return!
-                Errors.Singleton loc0 (fun () -> "Co::until is not yet implemented")
-                |> reader.Throw
+              match op with
+              | Co_Until s when s.Predicate.IsNone ->
+                return
+                  (Co_Until {| Predicate = Some v |} |> operationLens.Set, Some untilId)
+                  |> Value.Ext
+              | Co_Until s ->
+                let predicate = s.Predicate.Value
+                return Value.Co(ValueCo.CoOp(CoOperationKind.Until, [ predicate; v ]))
+              | _ ->
+                return!
+                  Errors.Singleton loc0 (fun () -> "Co::until: unexpected operation state")
+                  |> reader.Throw
             } }
 
     // --- Co::ignore ---
@@ -244,7 +264,7 @@ module Extension =
 
     let ignoreOperation
       : ResolvedIdentifier *
-        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations> =
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations<'ext>> =
       ignoreId,
       { Type =
           TypeValue.CreateLambda(
@@ -302,11 +322,9 @@ module Extension =
             | Co_Ignore -> Some Co_Ignore
             | _ -> None)
         Apply =
-          fun loc0 _rest (_op, _v) ->
+          fun _loc0 _rest (_op, v) ->
             reader {
-              return!
-                Errors.Singleton loc0 (fun () -> "Co::ignore is not yet implemented")
-                |> reader.Throw
+              return Value.Co(ValueCo.CoOp(CoOperationKind.Ignore, [ v ]))
             } }
 
     // --- Co::mapContext ---
@@ -320,7 +338,7 @@ module Extension =
 
     let mapContextOperation
       : ResolvedIdentifier *
-        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations> =
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations<'ext>> =
       mapContextId,
       { Type =
           TypeValue.CreateLambda(
@@ -383,18 +401,27 @@ module Extension =
               )
             )
           )
-        Operation = Co_MapContext
+        Operation = Co_MapContext {| Mapper = None |}
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | Co_MapContext -> Some Co_MapContext
+            | Co_MapContext v -> Some(Co_MapContext v)
             | _ -> None)
         Apply =
-          fun loc0 _rest (_op, _v) ->
+          fun loc0 _rest (op, v) ->
             reader {
-              return!
-                Errors.Singleton loc0 (fun () -> "Co::mapContext is not yet implemented")
-                |> reader.Throw
+              match op with
+              | Co_MapContext s when s.Mapper.IsNone ->
+                return
+                  (Co_MapContext {| Mapper = Some v |} |> operationLens.Set, Some mapContextId)
+                  |> Value.Ext
+              | Co_MapContext s ->
+                let mapper = s.Mapper.Value
+                return Value.Co(ValueCo.CoOp(CoOperationKind.MapContext, [ mapper; v ]))
+              | _ ->
+                return!
+                  Errors.Singleton loc0 (fun () -> "Co::mapContext: unexpected operation state")
+                  |> reader.Throw
             } }
 
     // --- Co::mapState ---
@@ -408,7 +435,7 @@ module Extension =
 
     let mapStateOperation
       : ResolvedIdentifier *
-        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations> =
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations<'ext>> =
       mapStateId,
       { Type =
           TypeValue.CreateLambda(
@@ -483,18 +510,35 @@ module Extension =
               )
             )
           )
-        Operation = Co_MapState
+        Operation = Co_MapState {| MapDown = None; MapUp = None |}
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | Co_MapState -> Some Co_MapState
+            | Co_MapState v -> Some(Co_MapState v)
             | _ -> None)
         Apply =
-          fun loc0 _rest (_op, _v) ->
+          fun loc0 _rest (op, v) ->
             reader {
-              return!
-                Errors.Singleton loc0 (fun () -> "Co::mapState is not yet implemented")
-                |> reader.Throw
+              match op with
+              | Co_MapState s when s.MapDown.IsNone ->
+                return
+                  (Co_MapState {| MapDown = Some v; MapUp = None |} |> operationLens.Set,
+                   Some mapStateId)
+                  |> Value.Ext
+              | Co_MapState s when s.MapUp.IsNone ->
+                return
+                  (Co_MapState {| MapDown = s.MapDown; MapUp = Some v |}
+                   |> operationLens.Set,
+                   Some mapStateId)
+                  |> Value.Ext
+              | Co_MapState s ->
+                let mapDown = s.MapDown.Value
+                let mapUp = s.MapUp.Value
+                return Value.Co(ValueCo.CoOp(CoOperationKind.MapState, [ mapDown; mapUp; v ]))
+              | _ ->
+                return!
+                  Errors.Singleton loc0 (fun () -> "Co::mapState: unexpected operation state")
+                  |> reader.Throw
             } }
 
     // --- Co::getContext ---
@@ -506,7 +550,7 @@ module Extension =
 
     let getContextOperation
       : ResolvedIdentifier *
-        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations> =
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations<'ext>> =
       getContextId,
       { Type =
           TypeValue.CreateLambda(
@@ -546,7 +590,7 @@ module Extension =
           fun loc0 _rest (_op, _v) ->
             reader {
               return!
-                Errors.Singleton loc0 (fun () -> "Co::getContext is not yet implemented")
+                Errors.Singleton loc0 (fun () -> "Co::getContext: unexpected Apply call on arity-0 operation")
                 |> reader.Throw
             } }
 
@@ -559,7 +603,7 @@ module Extension =
 
     let getStateOperation
       : ResolvedIdentifier *
-        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations> =
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations<'ext>> =
       getStateId,
       { Type =
           TypeValue.CreateLambda(
@@ -599,7 +643,7 @@ module Extension =
           fun loc0 _rest (_op, _v) ->
             reader {
               return!
-                Errors.Singleton loc0 (fun () -> "Co::getState is not yet implemented")
+                Errors.Singleton loc0 (fun () -> "Co::getState: unexpected Apply call on arity-0 operation")
                 |> reader.Throw
             } }
 
@@ -612,7 +656,7 @@ module Extension =
 
     let setStateOperation
       : ResolvedIdentifier *
-        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations> =
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, CoroutineOperations<'ext>> =
       setStateId,
       { Type =
           TypeValue.CreateLambda(
@@ -655,11 +699,9 @@ module Extension =
             | Co_SetState -> Some Co_SetState
             | _ -> None)
         Apply =
-          fun loc0 _rest (_op, _v) ->
+          fun _loc0 _rest (_op, v) ->
             reader {
-              return!
-                Errors.Singleton loc0 (fun () -> "Co::setState is not yet implemented")
-                |> reader.Throw
+              return Value.Co(ValueCo.CoOp(CoOperationKind.SetState, [ v ]))
             } }
 
     let coExtension =

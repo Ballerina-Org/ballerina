@@ -4,15 +4,20 @@ module Extension =
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Types.TypeChecker.Model
+  open Ballerina.DSL.Next.Terms
+  open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Extensions
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.Reader.WithError
   open Ballerina.Lenses
 
-  type ViewPropsOperations =
-    | View_MapContext
-    | View_MapState
+  type ViewPropsOperations<'ext> =
+    | View_MapContext of
+      {| mapper: Option<Value<TypeValue<'ext>, 'ext>> |}
+    | View_MapState of
+      {| mapDown: Option<Value<TypeValue<'ext>, 'ext>>
+         mapUp: Option<Value<TypeValue<'ext>, 'ext>> |}
 
   let ViewExtension<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO
     when 'ext: comparison
@@ -20,7 +25,7 @@ module Extension =
     and 'extDTO: not struct
     and 'deltaExtDTO: not null
     and 'deltaExtDTO: not struct>
-    (operationLens: PartialLens<'ext, ViewPropsOperations>)
+    (operationLens: PartialLens<'ext, ViewPropsOperations<'ext>>)
     (viewTypeSymbol: Option<TypeSymbol>)
     (viewPropsTypeSymbol: Option<TypeSymbol>)
     : TypeExtension<
@@ -41,7 +46,7 @@ module Extension =
         'deltaExtDTO,
         Unit,
         Unit,
-        ViewPropsOperations
+        ViewPropsOperations<'ext>
        > *
       TypeSymbol *
       TypeSymbol *
@@ -100,7 +105,7 @@ module Extension =
 
     let mapContextOperation
       : ResolvedIdentifier *
-        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, ViewPropsOperations> =
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, ViewPropsOperations<'ext>> =
       mapContextId,
       { Type =
           TypeValue.CreateLambda(
@@ -151,18 +156,50 @@ module Extension =
               Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
             )
           )
-        Operation = View_MapContext
+        Operation = View_MapContext {| mapper = None |}
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | View_MapContext -> Some View_MapContext
+            | View_MapContext v -> Some(View_MapContext v)
             | _ -> None)
         Apply =
-          fun loc0 _rest (_op, _v) ->
+          fun loc0 _rest (op, v) ->
             reader {
-              return!
-                Errors.Singleton loc0 (fun () -> "View::mapContext is not yet implemented")
-                |> reader.Throw
+              match op with
+              | View_MapContext s when s.mapper.IsNone ->
+                // 1st arg: capture the mapper function
+                return
+                  (View_MapContext {| mapper = Some v |} |> operationLens.Set, Some mapContextId)
+                  |> Value.Ext
+              | View_MapContext s ->
+                // 2nd arg: v is the props record, apply mapper to context
+                let mapper = s.mapper.Value
+
+                let! fields =
+                  v
+                  |> Value.AsRecord
+                  |> sum.MapError(Errors.MapContext(fun _ -> loc0))
+                  |> reader.OfSum
+
+                let contextKey =
+                  Identifier.LocalScope "context" |> TypeCheckScope.Empty.Resolve
+
+                let! oldContext =
+                  fields
+                  |> Map.tryFind contextKey
+                  |> sum.OfOption(
+                    Errors.Singleton loc0 (fun () -> "View::mapContext: missing 'context' field in props")
+                  )
+                  |> reader.OfSum
+
+                let! newContext = Expr.EvalApply loc0 [] (mapper, oldContext)
+
+                let newFields = fields |> Map.add contextKey newContext
+                return Value.Record newFields
+              | _ ->
+                return!
+                  Errors.Singleton loc0 (fun () -> "View::mapContext: unexpected operation state")
+                  |> reader.Throw
             } }
 
     // --- View::mapState ---
@@ -176,7 +213,7 @@ module Extension =
 
     let mapStateOperation
       : ResolvedIdentifier *
-        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, ViewPropsOperations> =
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, ViewPropsOperations<'ext>> =
       mapStateId,
       { Type =
           TypeValue.CreateLambda(
@@ -195,18 +232,12 @@ module Extension =
                     TypeExpr.Arrow(
                       TypeExpr.Arrow(
                         TypeExpr.Arrow(
-                          TypeExpr.Arrow(
-                            TypeExpr.Lookup(Identifier.LocalScope "st2"),
-                            TypeExpr.Lookup(Identifier.LocalScope "st2")
-                          ),
-                          TypeExpr.Primitive PrimitiveType.Unit
+                          TypeExpr.Lookup(Identifier.LocalScope "st2"),
+                          TypeExpr.Lookup(Identifier.LocalScope "st2")
                         ),
                         TypeExpr.Arrow(
-                          TypeExpr.Arrow(
-                            TypeExpr.Lookup(Identifier.LocalScope "st"),
-                            TypeExpr.Lookup(Identifier.LocalScope "st")
-                          ),
-                          TypeExpr.Primitive PrimitiveType.Unit
+                          TypeExpr.Lookup(Identifier.LocalScope "st"),
+                          TypeExpr.Lookup(Identifier.LocalScope "st")
                         )
                       ),
                       TypeExpr.Arrow(
@@ -245,18 +276,123 @@ module Extension =
               Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
             )
           )
-        Operation = View_MapState
+        Operation = View_MapState {| mapDown = None; mapUp = None |}
         OperationsLens =
           operationLens
           |> PartialLens.BindGet (function
-            | View_MapState -> Some View_MapState
+            | View_MapState v -> Some(View_MapState v)
             | _ -> None)
         Apply =
-          fun loc0 _rest (_op, _v) ->
+          fun loc0 _rest (op, v) ->
             reader {
-              return!
-                Errors.Singleton loc0 (fun () -> "View::mapState is not yet implemented")
-                |> reader.Throw
+              match op with
+              | View_MapState s when s.mapDown.IsNone ->
+                // 1st arg: capture mapDown
+                return
+                  (View_MapState {| mapDown = Some v; mapUp = None |} |> operationLens.Set,
+                   Some mapStateId)
+                  |> Value.Ext
+              | View_MapState s when s.mapUp.IsNone ->
+                // 2nd arg: capture mapUp
+                return
+                  (View_MapState {| mapDown = s.mapDown; mapUp = Some v |}
+                   |> operationLens.Set,
+                   Some mapStateId)
+                  |> Value.Ext
+              | View_MapState s ->
+                // 3rd arg: v is the props record
+                let mapDown = s.mapDown.Value
+                let mapUp = s.mapUp.Value
+                let! fields =
+                  v
+                  |> Value.AsRecord
+                  |> sum.MapError(Errors.MapContext(fun _ -> loc0))
+                  |> reader.OfSum
+
+                let stateKey =
+                  Identifier.LocalScope "state" |> TypeCheckScope.Empty.Resolve
+
+                let setStateKey =
+                  Identifier.LocalScope "setState" |> TypeCheckScope.Empty.Resolve
+
+                let! oldState =
+                  fields
+                  |> Map.tryFind stateKey
+                  |> sum.OfOption(
+                    Errors.Singleton loc0 (fun () -> "View::mapState: missing 'state' field in props")
+                  )
+                  |> reader.OfSum
+
+                let! oldSetState =
+                  fields
+                  |> Map.tryFind setStateKey
+                  |> sum.OfOption(
+                    Errors.Singleton loc0 (fun () -> "View::mapState: missing 'setState' field in props")
+                  )
+                  |> reader.OfSum
+
+                // newState = mapDown(oldState)
+                let! newState = Expr.EvalApply loc0 [] (mapDown, oldState)
+
+                // newSetState = fun f -> oldSetState(mapUp(f))
+                // Construct a Lambda whose body applies mapUp then oldSetState.
+                let updaterVar = Var.Create "__updater__"
+
+                let updaterKey =
+                  Identifier.LocalScope "__updater__" |> TypeCheckScope.Empty.Resolve
+
+                let dummyType = TypeValue.CreatePrimitive PrimitiveType.Unit
+
+                let mkFromValue (v: Value<TypeValue<'ext>, 'ext>) : RunnableExpr<'ext> =
+                  { RunnableExpr.Location = loc0
+                    RunnableExpr.Scope = TypeCheckScope.Empty
+                    RunnableExpr.Type = dummyType
+                    RunnableExpr.Kind = Kind.Star
+                    RunnableExpr.Expr =
+                      RunnableExprRec.FromValue
+                        { RunnableExprFromValue.Value = v
+                          RunnableExprFromValue.ValueType = dummyType
+                          RunnableExprFromValue.ValueKind = Kind.Star } }
+
+                let mkLookup id : RunnableExpr<'ext> =
+                  { RunnableExpr.Location = loc0
+                    RunnableExpr.Scope = TypeCheckScope.Empty
+                    RunnableExpr.Type = dummyType
+                    RunnableExpr.Kind = Kind.Star
+                    RunnableExpr.Expr = RunnableExprRec.Lookup { RunnableExprLookup.Id = id } }
+
+                let mkApply (f: RunnableExpr<'ext>) (arg: RunnableExpr<'ext>) : RunnableExpr<'ext> =
+                  { RunnableExpr.Location = loc0
+                    RunnableExpr.Scope = TypeCheckScope.Empty
+                    RunnableExpr.Type = dummyType
+                    RunnableExpr.Kind = Kind.Star
+                    RunnableExpr.Expr =
+                      RunnableExprRec.Apply
+                        { RunnableExprApply.F = f
+                          RunnableExprApply.Arg = arg } }
+
+                // Body: oldSetState(mapUp(updater))
+                let body =
+                  mkApply (mkFromValue oldSetState) (mkApply (mkFromValue mapUp) (mkLookup updaterKey))
+
+                let newSetState =
+                  Value.Lambda(
+                    updaterVar,
+                    body,
+                    Map.empty,
+                    TypeCheckScope.Empty
+                  )
+
+                let newFields =
+                  fields
+                  |> Map.add stateKey newState
+                  |> Map.add setStateKey newSetState
+
+                return Value.Record newFields
+              | _ ->
+                return!
+                  Errors.Singleton loc0 (fun () -> "View::mapState: unexpected operation state")
+                  |> reader.Throw
             } }
 
     let viewPropsExtension =

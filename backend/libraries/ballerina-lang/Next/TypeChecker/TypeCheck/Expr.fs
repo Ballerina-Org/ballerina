@@ -168,6 +168,7 @@ module Expr =
               | ExprRec.RecordDes record_des_expr ->
                 return!
                   Expr.TypeCheckRecordDes
+                    config
                     typeCheckExpr
                     context_t
                     record_des_expr
@@ -255,6 +256,40 @@ module Expr =
                     (loc0, c)
 
                 return result, ctx
+
+              | ExprRec.CoOp op ->
+                // Resolve Co::name to get the type from extension registration,
+                // but produce a CoOp node instead of a Lookup node
+                let id = Identifier.FullyQualified([ "Co" ], op.Name)
+                let! result, ctx =
+                  Expr.TypeCheckLookup
+                    (typeCheckExpr, t.Location)
+                    context_t
+                    { Id = id }
+                return
+                  { TypeCheckedExpr.Expr = TypeCheckedExprRec.CoOp op
+                    TypeCheckedExpr.Type = result.Type
+                    TypeCheckedExpr.Kind = result.Kind
+                    TypeCheckedExpr.Location = result.Location
+                    TypeCheckedExpr.Scope = result.Scope },
+                  ctx
+
+              | ExprRec.ViewOp op ->
+                // Resolve View::name to get the type from extension registration,
+                // but produce a ViewOp node instead of a Lookup node
+                let id = Identifier.FullyQualified([ "View" ], op.Name)
+                let! result, ctx =
+                  Expr.TypeCheckLookup
+                    (typeCheckExpr, t.Location)
+                    context_t
+                    { Id = id }
+                return
+                  { TypeCheckedExpr.Expr = TypeCheckedExprRec.ViewOp op
+                    TypeCheckedExpr.Type = result.Type
+                    TypeCheckedExpr.Kind = result.Kind
+                    TypeCheckedExpr.Location = result.Location
+                    TypeCheckedExpr.Scope = result.Scope },
+                  ctx
 
               | ExprRec.RecoveredSyntaxError err ->
                 return!

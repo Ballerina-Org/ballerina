@@ -342,6 +342,19 @@ module InstantiateSyntheticVars =
                           { el with
                               Attributes = attrs
                               Children = children } }
+              | TypeCheckedViewNodeRec.ViewMapContext(mapper, inner) ->
+                let! mapper = !mapper
+                let! inner = !inner
+                return
+                  { node with
+                      Node = TypeCheckedViewNodeRec.ViewMapContext(mapper, inner) }
+              | TypeCheckedViewNodeRec.ViewMapState(mapDown, mapUp, inner) ->
+                let! mapDown = !mapDown
+                let! mapUp = !mapUp
+                let! inner = !inner
+                return
+                  { node with
+                      Node = TypeCheckedViewNodeRec.ViewMapState(mapDown, mapUp, inner) }
             }
 
           let! body = instantiateNode v.Body
@@ -363,6 +376,12 @@ module InstantiateSyntheticVars =
                 return
                   { TypeCheckedCoStep.Location = step.Location
                     TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoLetBang(var, value, rest) }
+              | TypeCheckedCoStepRec.CoLet(var, value, rest) ->
+                let! value = !value
+                let! rest = instantiateStep rest
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoLet(var, value, rest) }
               | TypeCheckedCoStepRec.CoDoBang(value, rest) ->
                 let! value = !value
                 let! rest = instantiateStep rest
@@ -379,6 +398,45 @@ module InstantiateSyntheticVars =
                 return
                   { TypeCheckedCoStep.Location = step.Location
                     TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoReturnBang e }
+              | TypeCheckedCoStepRec.CoShow(pred, view) ->
+                let! pred = !pred
+                let! view = !view
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoShow(pred, view) }
+              | TypeCheckedCoStepRec.CoUntil(pred, inner) ->
+                let! pred = !pred
+                let! inner = !inner
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoUntil(pred, inner) }
+              | TypeCheckedCoStepRec.CoIgnore inner ->
+                let! inner = !inner
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoIgnore inner }
+              | TypeCheckedCoStepRec.CoMapContext(mapper, inner) ->
+                let! mapper = !mapper
+                let! inner = !inner
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoMapContext(mapper, inner) }
+              | TypeCheckedCoStepRec.CoMapState(mapDown, mapUp, inner) ->
+                let! mapDown = !mapDown
+                let! mapUp = !mapUp
+                let! inner = !inner
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoMapState(mapDown, mapUp, inner) }
+              | TypeCheckedCoStepRec.CoGetContext ->
+                return step
+              | TypeCheckedCoStepRec.CoGetState ->
+                return step
+              | TypeCheckedCoStepRec.CoSetState updater ->
+                let! updater = !updater
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoSetState updater }
             }
 
           let! body = instantiateStep c.Body
@@ -390,6 +448,20 @@ module InstantiateSyntheticVars =
               loc0,
               expr.Scope
             )
+        | TypeCheckedExprRec.CoOp op ->
+          return
+            { Expr = TypeCheckedExprRec.CoOp op
+              Location = loc0
+              Type = expr.Type
+              Kind = expr.Kind
+              Scope = expr.Scope }
+        | TypeCheckedExprRec.ViewOp op ->
+          return
+            { Expr = TypeCheckedExprRec.ViewOp op
+              Location = loc0
+              Type = expr.Type
+              Kind = expr.Kind
+              Scope = expr.Scope }
         | TypeCheckedExprRec.RecoveredSyntaxError err ->
           return
             { Expr = TypeCheckedExprRec.RecoveredSyntaxError err

@@ -43,6 +43,23 @@ module Lookup =
 
           let error e = Errors.Singleton loc0 e
 
+          // Check reject-list for disallowed identifiers in this scope
+          let rejectedMsg =
+            ctx.RejectedIdentifiers
+            |> Map.tryFind id_resolved
+            |> Option.orElseWith (fun () ->
+              ctx.RejectedIdentifiers |> Map.tryFind id_original)
+
+          match rejectedMsg with
+          | Some msg ->
+            return!
+              state.Throw(
+                (fun () -> msg)
+                |> error
+                |> Errors<_>.MapPriority(replaceWith ErrorPriority.High)
+              )
+          | None -> ()
+
           match id with
           | Identifier.FullyQualified(prefixParts, _name) ->
             let prefix =

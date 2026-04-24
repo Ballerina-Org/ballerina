@@ -984,6 +984,20 @@ module FastEval =
               DeserializeFrom = q.DeserializeFrom }
         )
 
+    // ── CoOp / ViewOp (leaf: produce value with empty arg list) ─────
+    | RunnableExprRec.CoOp kind ->
+      fun _ctx -> Value.Co(ValueCo.CoOp(kind, []))
+
+    | RunnableExprRec.ViewOp kind ->
+      fun _ctx -> Value.View(ValueView.ViewOp(kind, []))
+
+    // ── View / Co blocks (closure capture, like Lambda) ───────────
+    | RunnableExprRec.View v ->
+      fun ctx -> Value.View(ValueView.ViewDef(v.Param, v.ParamType, v.Body, flattenScope ctx, e.Scope))
+
+    | RunnableExprRec.Co co ->
+      fun ctx -> Value.Co(ValueCo.CoBlock(co.Body, flattenScope ctx, e.Scope))
+
     // ── Fallback (should not happen for well-typed programs) ──────
     | _ ->
       fun _ctx ->
@@ -1090,6 +1104,28 @@ module FastEval =
               Errors.Singleton loc0 (fun () -> $"Cannot apply {extResult}")
             )
           )
+
+    // ── Co/View operation application (progressive arg capture) ──
+    | Value.Co(ValueCo.CoOp(kind, args)) ->
+      Value.Co(ValueCo.CoOp(kind, args @ [ argV ]))
+
+    | Value.View(ValueView.ViewOp(kind, args)) ->
+      Value.View(ValueView.ViewOp(kind, args @ [ argV ]))
+
+    // ── Co/View blocks are not callable ───────────────────────────
+    | Value.Co(ValueCo.CoBlock _) ->
+      raise (
+        EvalException(
+          Errors.Singleton loc0 (fun () -> $"Cannot apply coroutine block as function")
+        )
+      )
+
+    | Value.View(ValueView.ViewDef _) ->
+      raise (
+        EvalException(
+          Errors.Singleton loc0 (fun () -> $"Cannot apply view definition as function")
+        )
+      )
 
     // ── Error: cannot apply ───────────────────────────────────────
     | _ ->

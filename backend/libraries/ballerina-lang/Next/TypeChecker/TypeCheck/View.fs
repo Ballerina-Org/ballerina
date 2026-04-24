@@ -86,6 +86,21 @@ module View =
                     Attributes = checkedAttrs
                     Children = checkedChildren
                     SelfClosing = el.SelfClosing } }
+
+        | ExprViewNodeRec.ViewMapContext(mapper, inner) ->
+          let! checkedMapper, _ = None => mapper
+          let! checkedInner, _ = None => inner
+          return
+            { TypeCheckedViewNode.Location = loc0
+              Node = TypeCheckedViewNodeRec.ViewMapContext(checkedMapper, checkedInner) }
+
+        | ExprViewNodeRec.ViewMapState(mapDown, mapUp, inner) ->
+          let! checkedMapDown, _ = None => mapDown
+          let! checkedMapUp, _ = None => mapUp
+          let! checkedInner, _ = None => inner
+          return
+            { TypeCheckedViewNode.Location = loc0
+              Node = TypeCheckedViewNodeRec.ViewMapState(checkedMapDown, checkedMapUp, checkedInner) }
       }
 
     static member internal TypeCheckView<'valueExt when 'valueExt: comparison>
@@ -120,9 +135,58 @@ module View =
               |> TypeExpr.Eval config typeCheckExpr None loc0
               |> Expr<'T, 'Id, 'valueExt>.liftTypeEval
             | None ->
-              Errors.Singleton loc0 (fun () ->
-                "Error: view parameters require an explicit type annotation")
-              |> state.Throw
+              // Synthesized view (JSX-as-expression): infer param type
+              // from fresh type variables. The parser wraps standalone JSX
+              // elements as view _ -> <node>, so no annotation exists.
+              state {
+                let schemaGuid = Guid.CreateVersion7()
+                let ctxGuid = Guid.CreateVersion7()
+                let stGuid = Guid.CreateVersion7()
+
+                let freshSchema =
+                  { TypeVar.Name = "schema_synth_" + schemaGuid.ToString()
+                    Synthetic = true
+                    Guid = Guid.CreateVersion7() }
+
+                let freshCtx =
+                  { TypeVar.Name = "ctx_synth_" + ctxGuid.ToString()
+                    Synthetic = true
+                    Guid = Guid.CreateVersion7() }
+
+                let freshSt =
+                  { TypeVar.Name = "st_synth_" + stGuid.ToString()
+                    Synthetic = true
+                    Guid = Guid.CreateVersion7() }
+
+                do!
+                  state.SetState(
+                    TypeCheckState.Updaters.Vars(
+                      UnificationState.EnsureVariableExists freshSchema
+                    )
+                  )
+
+                do!
+                  state.SetState(
+                    TypeCheckState.Updaters.Vars(
+                      UnificationState.EnsureVariableExists freshCtx
+                    )
+                  )
+
+                do!
+                  state.SetState(
+                    TypeCheckState.Updaters.Vars(
+                      UnificationState.EnsureVariableExists freshSt
+                    )
+                  )
+
+                let paramType =
+                  config.MkViewPropsType
+                    (TypeValue.Var freshSchema)
+                    (TypeValue.Var freshCtx)
+                    (TypeValue.Var freshSt)
+
+                return (paramType, Kind.Star)
+              }
 
           let param_t_val = fst param_t
 
@@ -187,34 +251,7 @@ module View =
                 return schema_v, ctx_v, st_v
               }
 
-          // 3. Register the record fields for Props
-          let propsFields =
-            OrderedMap.ofList
-              [ TypeSymbol.Create(Identifier.LocalScope "schema"), (schema_t, Kind.Schema)
-                TypeSymbol.Create(Identifier.LocalScope "context"), (ctx_t, Kind.Star)
-                TypeSymbol.Create(Identifier.LocalScope "state"), (st_t, Kind.Star)
-                TypeSymbol.Create(Identifier.LocalScope "setState"),
-                (TypeValue.CreateArrow(
-                   TypeValue.CreateArrow(st_t, st_t),
-                   TypeValue.CreatePrimitive PrimitiveType.Unit
-                 ),
-                 Kind.Star) ]
-
-          do!
-            propsFields
-            |> OrderedMap.toSeq
-            |> Seq.map (fun (k, (field_t, _field_k)) ->
-              state {
-                do!
-                  TypeCheckState.bindRecordField
-                    (k.Name |> TypeCheckScope.Empty.Resolve)
-                    (propsFields, field_t)
-                  |> Expr.liftTypeEval
-              })
-            |> state.All
-            |> state.Ignore
-
-          // 4. Bind the parameter in the typing context
+          // 3. Bind the parameter in the typing context
           let! body =
             Expr<'T, 'Id, 'valueExt>.TypeCheckViewNode config typeCheckExpr body
             |> state.MapContext(
@@ -222,6 +259,11 @@ module View =
                 Map.add
                   (param.Name |> Identifier.LocalScope |> ctx.Scope.Resolve)
                   param_t
+              )
+              >> TypeCheckContext.Updaters.RejectedIdentifiers(
+                fun rejected ->
+                  ctx.ViewRejectedIdentifiers
+                  |> Map.fold (fun acc k v -> Map.add k v acc) rejected
               )
             )
 

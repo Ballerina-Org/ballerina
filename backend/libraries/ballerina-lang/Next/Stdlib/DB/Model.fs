@@ -255,6 +255,37 @@ module Model =
             (y.Schema, y.SchemaAsValue, y.Main)
         | _ -> invalidArg "yobj" "cannot compare values of different types"
 
+  [<CustomEquality; CustomComparison>]
+  type WebAppIOData<'runtimeContext, 'db, 'ext when 'ext: comparison> =
+    { DBIO: DBIO<'runtimeContext, 'db, 'ext>
+      Routes: List<string * Value<TypeValue<'ext>, 'ext>>
+      Components: List<string * Value<TypeValue<'ext>, 'ext>> }
+
+    override x.ToString() =
+      let routeCount = x.Routes.Length
+      let compCount = x.Components.Length
+      $"WebAppIO(Routes: {routeCount}, Components: {compCount})"
+
+    override x.Equals(yobj) =
+      match yobj with
+      | :? WebAppIOData<'runtimeContext, 'db, 'ext> as y ->
+        (x.DBIO = y.DBIO
+         && x.Routes = y.Routes
+         && x.Components = y.Components)
+      | _ -> false
+
+    override x.GetHashCode() =
+      hash x.DBIO ^^^ hash x.Routes ^^^ hash x.Components
+
+    interface System.IComparable with
+      member x.CompareTo yobj =
+        match yobj with
+        | :? WebAppIOData<'runtimeContext, 'db, 'ext> as y ->
+          compare
+            (x.DBIO, x.Routes, x.Components)
+            (y.DBIO, y.Routes, y.Components)
+        | _ -> invalidArg "yobj" "cannot compare values of different types"
+
   type DBValues<'runtimeContext, 'db, 'ext when 'ext: comparison> =
     | EntityRef of EntityRef<'db, 'ext>
     | RelationRef of RelationRef<'db, 'ext>
@@ -293,6 +324,7 @@ module Model =
     | StripProps of {| EntityRef: Option<EntityRef<'db, 'ext>> |}
     | Run
     | DBIO of DBIO<'runtimeContext, 'db, 'ext>
+    | WebAppIO of WebAppIOData<'runtimeContext, 'db, 'ext>
     | TypeAppliedRun of Schema<'ext> * 'db
     | QueryRun of {| Query: Option<ValueQuery<TypeValue<'ext>, 'ext>> |}
 
@@ -422,5 +454,6 @@ module Model =
       | StripProps _ -> "StripProps"
       | Run -> "Run"
       | DBIO dbio -> $"DBIO({dbio})"
+      | WebAppIO data -> data.ToString()
       | TypeAppliedRun(_schema, _) -> $"TypeAppliedRun"
       | QueryRun v -> $"runQuery ({v.Query})"
