@@ -17,6 +17,10 @@ module Extension =
     { Path: Option<string>
       Coroutine: Option<Value<TypeValue<'ext>, 'ext>> }
 
+  type WebAppWithDbRouteArgs<'ext when 'ext: comparison> =
+    { Path: Option<string>
+      SchemaFn: Option<Value<TypeValue<'ext>, 'ext>> }
+
   type WebAppWithComponentArgs<'ext when 'ext: comparison> =
     { Name: Option<string>
       View: Option<Value<TypeValue<'ext>, 'ext>> }
@@ -25,6 +29,7 @@ module Extension =
     | WebApp_Run
     | WebApp_TypeAppliedRun
     | WebApp_WithRoute of WebAppWithRouteArgs<'ext>
+    | WebApp_WithDbRoute of WebAppWithDbRouteArgs<'ext>
     | WebApp_WithComponent of WebAppWithComponentArgs<'ext>
 
   let WebAppExtension<'runtimeContext, 'db, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO
@@ -175,6 +180,114 @@ module Extension =
                   |> reader.Throw
             } }
 
+    // --- WebApp::withDbRoute ---
+    // withDbRoute : Λschema::Schema. Λctx::*. Λst::*.
+    //   string -> (schema -> Co[schema][ctx][st][()]) -> WebAppIO[schema] -> WebAppIO[schema]
+    // Like withRoute, but the coroutine is provided as a function of the schema descriptor.
+    // The function is stored unapplied; the host (Program.fs) resolves it before frontend generation.
+    let withDbRouteId =
+      Identifier.FullyQualified([ "WebApp" ], "withDbRoute")
+      |> TypeCheckScope.Empty.Resolve
+
+    let withDbRouteOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, WebAppOperations<'ext>> =
+      withDbRouteId,
+      { Type =
+          TypeValue.CreateLambda(
+            TypeParameter.Create("schema", schemaKind),
+            TypeExpr.Lambda(
+              TypeParameter.Create("ctx", ctxKind),
+              TypeExpr.Lambda(
+                TypeParameter.Create("st", stKind),
+                TypeExpr.Arrow(
+                  TypeExpr.Primitive PrimitiveType.String,
+                  TypeExpr.Arrow(
+                    TypeExpr.Arrow(
+                      TypeExpr.Lookup(Identifier.LocalScope "schema"),
+                      TypeExpr.Apply(
+                        TypeExpr.Apply(
+                          TypeExpr.Apply(
+                            TypeExpr.Apply(
+                              TypeExpr.Lookup coTypeId,
+                              TypeExpr.Lookup(Identifier.LocalScope "schema")
+                            ),
+                            TypeExpr.Lookup(Identifier.LocalScope "ctx")
+                          ),
+                          TypeExpr.Lookup(Identifier.LocalScope "st")
+                        ),
+                        TypeExpr.Primitive PrimitiveType.Unit
+                      )
+                    ),
+                    TypeExpr.Arrow(
+                      TypeExpr.Apply(
+                        TypeExpr.Lookup webAppIOId,
+                        TypeExpr.Lookup(Identifier.LocalScope "schema")
+                      ),
+                      TypeExpr.Apply(
+                        TypeExpr.Lookup webAppIOId,
+                        TypeExpr.Lookup(Identifier.LocalScope "schema")
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        Kind =
+          Kind.Arrow(
+            Kind.Schema,
+            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+          )
+        Operation = WebApp_WithDbRoute { Path = None; SchemaFn = None }
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | WebApp_WithDbRoute args -> Some(WebApp_WithDbRoute args)
+            | _ -> None)
+        Apply =
+          fun _loc0 _rest (op, v) ->
+            reader {
+              match op with
+              | WebApp_WithDbRoute { Path = None; SchemaFn = None } ->
+                // First arg: capture the path string
+                let path =
+                  match v with
+                  | Value.Primitive(PrimitiveValue.String s) -> s
+                  | _ -> failwith "WebApp::withDbRoute expects a string path"
+                return
+                  (WebApp_WithDbRoute { Path = Some path; SchemaFn = None } |> operationLens.Set, Some withDbRouteId)
+                  |> Ext
+              | WebApp_WithDbRoute { Path = Some path; SchemaFn = None } ->
+                // Second arg: capture the schema->Co function value
+                return
+                  (WebApp_WithDbRoute { Path = Some path; SchemaFn = Some v } |> operationLens.Set, Some withDbRouteId)
+                  |> Ext
+              | WebApp_WithDbRoute { Path = Some path; SchemaFn = Some schemaFn } ->
+                // Third arg: extract WebAppIOData, append to DbRoutes
+                let! dbVals =
+                  match v with
+                  | Ext(ext, _) ->
+                    dbValuesLens.Get ext
+                    |> sum.OfOption(Errors.Singleton _loc0 (fun () -> "WebApp::withDbRoute: expected WebAppIO value"))
+                    |> reader.OfSum
+                  | _ ->
+                    Errors.Singleton _loc0 (fun () -> "WebApp::withDbRoute: expected an Ext value")
+                    |> reader.Throw
+                match dbVals with
+                | DBValues.WebAppIO data ->
+                  let updatedData = { data with DbRoutes = data.DbRoutes @ [ (path, schemaFn) ] }
+                  return (DBValues.WebAppIO updatedData |> dbValuesLens.Set, None) |> Ext
+                | _ ->
+                  return!
+                    Errors.Singleton _loc0 (fun () -> "WebApp::withDbRoute: expected WebAppIO data")
+                    |> reader.Throw
+              | _ ->
+                return!
+                  Errors.Singleton _loc0 (fun () -> "WebApp::withDbRoute: unexpected operation state")
+                  |> reader.Throw
+            } }
+
     // --- WebApp::withComponent ---
     // withComponent : Λschema::Schema. Λctx::*. Λst::*.
     //   string -> Frontend::View[schema][ctx][st] -> WebAppIO[schema] -> WebAppIO[schema]
@@ -280,7 +393,7 @@ module Extension =
         TypeVars = [ (schemaVar, schemaKind) ]
         Cases = Map.empty
         Operations =
-          [ withRouteOperation; withComponentOperation ] |> Map.ofList
+          [ withRouteOperation; withDbRouteOperation; withComponentOperation ] |> Map.ofList
         Serialization = None
         ExtTypeChecker = None }
 
@@ -379,6 +492,7 @@ module Extension =
                         let webAppData: WebAppIOData<'runtimeContext, 'db, 'ext> =
                           { DBIO = dbio
                             Routes = []
+                            DbRoutes = []
                             Components = [] }
                         return (DBValues.WebAppIO webAppData |> dbValuesLens.Set, None) |> Ext
                       | _ ->
