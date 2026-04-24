@@ -213,6 +213,79 @@ module Extension =
                     .Primitive(PrimitiveValue.String(vClosure + v))
             } }
 
+    let stringReplaceId =
+      Identifier.FullyQualified([ "string" ], "replace")
+      |> TypeCheckScope.Empty.Resolve
+
+    let replaceOperation
+      : ResolvedIdentifier *
+        OperationExtension<'runtimeContext, 'ext, StringOperations<'ext>> =
+      stringReplaceId,
+      { PublicIdentifiers =
+          Some
+          <| (TypeValue.CreateArrow(
+                stringTypeValue,
+                TypeValue.CreateArrow(
+                  stringTypeValue,
+                  TypeValue.CreateArrow(stringTypeValue, stringTypeValue)
+                )
+              ),
+              Kind.Star,
+              StringOperations.Replace
+                {| pattern = None
+                   replacement = None |})
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | StringOperations.Replace state -> Some(StringOperations.Replace state)
+            | _ -> None)
+
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              let! state =
+                op
+                |> StringOperations.AsReplace
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! v =
+                v
+                |> Value.AsPrimitive
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              let! arg =
+                v
+                |> PrimitiveValue.AsString
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              match state.pattern, state.replacement with
+              | None, _ ->
+                return
+                  (StringOperations.Replace
+                    {| pattern = Some arg
+                       replacement = None |}
+                   |> operationLens.Set,
+                   Some stringReplaceId)
+                  |> Ext
+              | Some pattern, None ->
+                return
+                  (StringOperations.Replace
+                    {| pattern = Some pattern
+                       replacement = Some arg |}
+                   |> operationLens.Set,
+                   Some stringReplaceId)
+                  |> Ext
+              | Some pattern, Some replacement ->
+                return
+                  Value<TypeValue<'ext>, 'ext>
+                    .Primitive(
+                      PrimitiveValue.String(arg.Replace(pattern, replacement))
+                    )
+            } }
+
 
     let stringEqualId =
       Identifier.FullyQualified([ "string" ], "==")
@@ -559,6 +632,7 @@ module Extension =
           ofTOperation
           lengthOperation
           plusOperation
+          replaceOperation
           equalOperation
           notEqualOperation
           greaterThanOperation
