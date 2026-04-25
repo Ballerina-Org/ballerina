@@ -117,9 +117,6 @@ module Apply =
               let! f, _ = f_constraint => f_expr
               let t_f = f.Type
               let f_k = f.Kind
-              // do Console.WriteLine($"t_f: {t_f}")
-              // do Console.WriteLine($"f_k: {f_k}")
-              // do Console.ReadLine() |> ignore
               match f_k with
               | Kind.Arrow(Kind.Star as input_k, _)
               | Kind.Arrow(Kind.Schema as input_k, _)

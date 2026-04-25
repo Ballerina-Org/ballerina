@@ -258,32 +258,37 @@ module Model =
   [<CustomEquality; CustomComparison>]
   type WebAppIOData<'runtimeContext, 'db, 'ext when 'ext: comparison> =
     { DBIO: DBIO<'runtimeContext, 'db, 'ext>
-      Routes: List<string * Value<TypeValue<'ext>, 'ext>>
+      Routes: List<string * Value<TypeValue<'ext>, 'ext> * Value<TypeValue<'ext>, 'ext>>
+      /// Routes whose coroutine is an unapplied function (schema -> Co).
+      /// Resolved by the host (Program.fs) before frontend generation.
+      DbRoutes: List<string * Value<TypeValue<'ext>, 'ext> * Value<TypeValue<'ext>, 'ext>>
       Components: List<string * Value<TypeValue<'ext>, 'ext>> }
 
     override x.ToString() =
       let routeCount = x.Routes.Length
+      let dbRouteCount = x.DbRoutes.Length
       let compCount = x.Components.Length
-      $"WebAppIO(Routes: {routeCount}, Components: {compCount})"
+      $"WebAppIO(Routes: {routeCount}, DbRoutes: {dbRouteCount}, Components: {compCount})"
 
     override x.Equals(yobj) =
       match yobj with
       | :? WebAppIOData<'runtimeContext, 'db, 'ext> as y ->
         (x.DBIO = y.DBIO
          && x.Routes = y.Routes
+         && x.DbRoutes = y.DbRoutes
          && x.Components = y.Components)
       | _ -> false
 
     override x.GetHashCode() =
-      hash x.DBIO ^^^ hash x.Routes ^^^ hash x.Components
+      hash x.DBIO ^^^ hash x.Routes ^^^ hash x.DbRoutes ^^^ hash x.Components
 
     interface System.IComparable with
       member x.CompareTo yobj =
         match yobj with
         | :? WebAppIOData<'runtimeContext, 'db, 'ext> as y ->
           compare
-            (x.DBIO, x.Routes, x.Components)
-            (y.DBIO, y.Routes, y.Components)
+            (x.DBIO, x.Routes, x.DbRoutes, x.Components)
+            (y.DBIO, y.Routes, y.DbRoutes, y.Components)
         | _ -> invalidArg "yobj" "cannot compare values of different types"
 
   type DBValues<'runtimeContext, 'db, 'ext when 'ext: comparison> =
