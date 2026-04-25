@@ -53,7 +53,8 @@ module Patterns =
         PermissionHooksExtraScope = Map.empty
         ViewRejectedIdentifiers = Map.empty
         CoRejectedIdentifiers = Map.empty
-        RejectedIdentifiers = Map.empty }
+        RejectedIdentifiers = Map.empty
+        ViewAttributeSchemas = Map.empty }
 
     static member Updaters =
       {| Scope =
@@ -93,7 +94,11 @@ module Patterns =
          RejectedIdentifiers =
           fun u (c: TypeCheckContext<'valueExt>) ->
             { c with
-                RejectedIdentifiers = c.RejectedIdentifiers |> u } |}
+                RejectedIdentifiers = c.RejectedIdentifiers |> u }
+         ViewAttributeSchemas =
+          fun u (c: TypeCheckContext<'valueExt>) ->
+            { c with
+                ViewAttributeSchemas = c.ViewAttributeSchemas |> u } |}
 
     static member FromInstantiateContext<'ve when 've: comparison>
       (ctx: TypeInstantiateContext<'ve>)
@@ -107,7 +112,8 @@ module Patterns =
         PermissionHooksExtraScope = ctx.PermissionHooksExtraScope
         ViewRejectedIdentifiers = Map.empty
         CoRejectedIdentifiers = Map.empty
-        RejectedIdentifiers = Map.empty }
+        RejectedIdentifiers = Map.empty
+        ViewAttributeSchemas = Map.empty }
 
     static member tryFindTypeVariable
       (v: string, loc: Location)

@@ -60,16 +60,92 @@ module View =
               Node = TypeCheckedViewNodeRec.ViewFragment checkedChildren }
 
         | ExprViewNodeRec.ViewElement el ->
+          let! ctx = state.GetContext()
+          let tagSchemaOpt = ctx.ViewAttributeSchemas |> Map.tryFind el.Tag
+
           let! checkedAttrs =
             el.Attributes
             |> List.map (fun attr ->
               state {
                 match attr with
                 | ExprViewAttribute.ViewAttrStringValue(name, value) ->
-                  return TypeCheckedViewAttribute.ViewAttrStringValue(name, value)
+                  match tagSchemaOpt with
+                  | Some tagSchema ->
+                    match tagSchema |> Map.tryFind name with
+                    | Some acceptableTypes ->
+                      let hasStringType =
+                        acceptableTypes
+                        |> List.exists (fun t ->
+                          match t with
+                          | TypeValue.Primitive p when p.value = PrimitiveType.String -> true
+                          | _ -> false)
+
+                      if not hasStringType then
+                        return!
+                          Errors.Singleton loc0 (fun () ->
+                            $"Attribute '{name}' on <{el.Tag}> does not accept string values")
+                          |> state.Throw
+                      else
+                        return TypeCheckedViewAttribute.ViewAttrStringValue(name, value)
+                    | None ->
+                      return!
+                        Errors.Singleton loc0 (fun () ->
+                          let known =
+                            tagSchema
+                            |> Map.toList
+                            |> List.map fst
+                            |> String.concat ", "
+                          $"Unknown attribute '{name}' on <{el.Tag}>. Known attributes: {known}")
+                        |> state.Throw
+                  | None ->
+                    return TypeCheckedViewAttribute.ViewAttrStringValue(name, value)
                 | ExprViewAttribute.ViewAttrExprValue(name, expr) ->
                   let! checkedExpr, _ = None => expr
-                  return TypeCheckedViewAttribute.ViewAttrExprValue(name, checkedExpr)
+
+                  match tagSchemaOpt with
+                  | Some tagSchema ->
+                    match tagSchema |> Map.tryFind name with
+                    | Some acceptableTypes ->
+                      let exprType = checkedExpr.Type
+
+                      let unifyAttempts =
+                        acceptableTypes
+                        |> List.map (fun expectedType ->
+                          state {
+                            do!
+                              TypeValue.Unify(loc0, exprType, expectedType)
+                              |> Expr<'T, 'Id, 'valueExt>.liftUnification
+
+                            return ()
+                          })
+
+                      match unifyAttempts with
+                      | first :: rest ->
+                        do!
+                          state.Any(first, rest)
+                          |> state.MapError(fun _ ->
+                            let typeNames =
+                              acceptableTypes
+                              |> List.map (fun t -> $"{t}")
+                              |> String.concat " | "
+
+                            Errors.Singleton loc0 (fun () ->
+                              $"Attribute '{name}' on <{el.Tag}> expects type {typeNames}, but got {exprType}"))
+                      | [] -> ()
+
+                      return TypeCheckedViewAttribute.ViewAttrExprValue(name, checkedExpr)
+                    | None ->
+                      return!
+                        Errors.Singleton loc0 (fun () ->
+                          let known =
+                            tagSchema
+                            |> Map.toList
+                            |> List.map fst
+                            |> String.concat ", "
+                          $"Unknown attribute '{name}' on <{el.Tag}>. Known attributes: {known}")
+                        |> state.Throw
+                  | None ->
+                    return TypeCheckedViewAttribute.ViewAttrExprValue(name, checkedExpr)
               })
             |> state.All
 

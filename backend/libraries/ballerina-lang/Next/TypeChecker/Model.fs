@@ -71,6 +71,9 @@ module Model =
     { Prefix: string
       AvailableSymbols: Map<string, string> }
 
+  type ViewAttributeSchemas<'valueExt> =
+    Map<string, Map<string, List<TypeValue<'valueExt>>>>
+
   type TypeCheckContext<'valueExt> =
     { Scope: TypeCheckScope
       IsTypeCheckingLetValue: bool
@@ -83,7 +86,8 @@ module Model =
         Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)>
       ViewRejectedIdentifiers: Map<ResolvedIdentifier, string>
       CoRejectedIdentifiers: Map<ResolvedIdentifier, string>
-      RejectedIdentifiers: Map<ResolvedIdentifier, string> }
+      RejectedIdentifiers: Map<ResolvedIdentifier, string>
+      ViewAttributeSchemas: ViewAttributeSchemas<'valueExt> }
 
   type UnificationState<'valueExt when 'valueExt: comparison> =
     { Classes: EquivalenceClasses<TypeVar, TypeValue<'valueExt>> }
