@@ -258,10 +258,10 @@ module Model =
   [<CustomEquality; CustomComparison>]
   type WebAppIOData<'runtimeContext, 'db, 'ext when 'ext: comparison> =
     { DBIO: DBIO<'runtimeContext, 'db, 'ext>
-      Routes: List<string * Value<TypeValue<'ext>, 'ext>>
+      Routes: List<string * Value<TypeValue<'ext>, 'ext> * Value<TypeValue<'ext>, 'ext>>
       /// Routes whose coroutine is an unapplied function (schema -> Co).
       /// Resolved by the host (Program.fs) before frontend generation.
-      DbRoutes: List<string * Value<TypeValue<'ext>, 'ext>>
+      DbRoutes: List<string * Value<TypeValue<'ext>, 'ext> * Value<TypeValue<'ext>, 'ext>>
       Components: List<string * Value<TypeValue<'ext>, 'ext>> }
 
     override x.ToString() =

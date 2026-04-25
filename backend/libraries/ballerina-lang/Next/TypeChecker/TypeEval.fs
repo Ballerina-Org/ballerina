@@ -306,7 +306,6 @@ module Eval =
                 source
                 parsed_schema
           | TypeExpr.FromTypeValue tv ->
-            // do Console.WriteLine($"Instantiating type value {tv}")
             let! (ctx: TypeCheckContext<'ve>) = state.GetContext()
             let! (s: TypeCheckState<'ve>) = state.GetState()
             let scope = ctx.TypeVariables |> Map.map (fun _ (_, k) -> k)
@@ -326,8 +325,6 @@ module Eval =
               |> sum.Map fst
               |> sum.MapError fst
               |> state.OfSum
-
-            // do Console.WriteLine($"Instantiated type value to {tv}")
 
             return TypeValue.SetSourceMapping(tv, source), k
           | TypeExpr.Imported i ->
@@ -691,10 +688,7 @@ module Eval =
                  ))
 
           | TypeExpr.Apply(f, a) ->
-            // do Console.WriteLine($"Evaluating type application of {f} to {a}")
             let! f, f_k = !f
-            // do Console.WriteLine($"Evaluated function part to {f}\n{f_k}")
-            // do Console.ReadLine() |> ignore
             let! f_k_i, f_k_o = f_k |> Kind.AsArrow |> ofSum
 
             return!
@@ -738,9 +732,6 @@ module Eval =
                               Map.add param.Name a
                             )
                           )
-
-                        // do Console.WriteLine($"Result of type application is {resultValue.AsFSharpString}")
-                        // do Console.ReadLine() |> ignore
 
                         return
                           TypeValue.SetSourceMapping(resultValue, source),
@@ -920,23 +911,9 @@ module Eval =
                 })
               |> state.MapError(Errors<_>.FilterHighestPriorityOnly)
           | TypeExpr.Lambda(param, bodyExpr) ->
-            // let fresh_var_t =
-            //   TypeValue.Var(
-            //     { TypeVar.Name = param.Name
-            //       Guid = Guid.CreateVersion7() }
-            //   )
-
-            // let! ctx = state.GetContext()
-            // let closure = ctx.TypeVariables
-            // let closure = ctx.TypeVariables |> Map.add param.Name (fresh_var_t, param.Kind)
-            // do Console.WriteLine($"Type lambda closure: {closure.ToFSharpString}")
-            // do Console.ReadLine() |> ignore
-
-            // do Console.WriteLine($"Evaluating type lambda with param {param} and body {bodyExpr}")
 
             let! body_t, body_k =
               !bodyExpr
-              // |> TypeExpr.KindEval n loc0
               |> state.MapContext(
                 TypeCheckContext.Updaters.TypeParameters(
                   Map.add param.Name param.Kind
@@ -945,10 +922,6 @@ module Eval =
                   Map.remove param.Name
                 )
               )
-
-            // do Console.WriteLine($"Evaluated type lambda body to {body_t}")
-
-            // |> state.MapContext(TypeExprEvalContext.Updaters.TypeVariables(replaceWith closure))
 
             return
               TypeValue.Lambda
