@@ -1091,51 +1091,160 @@ module SchemaTypeEval =
             |> state.All
             |> state.Map(Map.ofSeq)
 
-          let included_entities =
+          // Compose two action hooks that return () | Error (2-case sum).
+          // Calls the parent hook first; on success calls the override.
+          // On parent error, propagates the error without calling the override.
+          let composeActionHooks
+            (paramCount: int)
+            (parent: RunnableExpr<'ve>)
+            (override_: RunnableExpr<'ve>)
+            : RunnableExpr<'ve> =
+            let synth expr : RunnableExpr<'ve> =
+              { Expr = expr
+                Location = Location.Unknown
+                Type = TypeValue.CreateUnit()
+                Kind = Kind.Star
+                Scope = TypeCheckScope.Empty }
+
+            let vars =
+              [ for i in 0 .. paramCount - 1 ->
+                  Var.Create($"__compose_arg_{i}") ]
+
+            let mkLookup (v: Var) =
+              synth (
+                RunnableExprRec.Lookup
+                  { RunnableExprLookup.Id =
+                      v.Name
+                      |> Identifier.LocalScope
+                      |> TypeCheckScope.Empty.Resolve }
+              )
+
+            let mkApply f a =
+              synth (RunnableExprRec.Apply { F = f; Arg = a })
+
+            let applyToAll (hook: RunnableExpr<'ve>) =
+              vars
+              |> List.fold (fun acc v -> mkApply acc (mkLookup v)) hook
+
+            let parentCall = applyToAll parent
+            let overrideCall = applyToAll override_
+
+            let errVar = Var.Create("__compose_err")
+
+            let rewrapError =
+              mkApply
+                (synth (
+                  RunnableExprRec.SumCons
+                    { Selector = { Case = 2; Count = 2 } }
+                ))
+                (mkLookup errVar)
+
+            // match parentCall with
+            // | 1Of2 _ -> overrideCall
+            // | 2Of2 err -> 2Of2 err
+            let matchExpr =
+              mkApply
+                (synth (
+                  RunnableExprRec.SumDes
+                    { Handlers =
+                        Map.ofList
+                          [ ({ Case = 1; Count = 2 },
+                             (None, overrideCall))
+                            ({ Case = 2; Count = 2 },
+                             (Some errVar, rewrapError)) ] }
+                ))
+                parentCall
+
+            // Wrap in lambdas: fun a0 -> fun a1 -> ... -> matchExpr
+            vars
+            |> List.rev
+            |> List.fold
+              (fun body v ->
+                synth (
+                  RunnableExprRec.Lambda
+                    { Param = v
+                      ParamType = TypeValue.CreateUnit()
+                      Body = body
+                      BodyType = TypeValue.CreateUnit() }
+                ))
+              matchExpr
+
+          let mergeActionHook paramCount parent override_ =
+            match parent, override_ with
+            | None, x | x, None -> x
+            | Some p, Some o -> Some(composeActionHooks paramCount p o)
+
+          // Validate non-composable hook overrides and merge hooks
+          let! included_entities =
             included_entities_hooks
-            |> Map.fold
-              (fun acc entityName hooks ->
-                match acc |> OrderedMap.tryFind entityName with
+            |> Map.toSeq
+            |> Seq.map (fun (entityName, hooks) ->
+              state {
+                match included_entities |> OrderedMap.tryFind entityName with
                 | Some v ->
+                  // Non-composable hooks: error if both parent and override exist
+                  let checkNonComposable hookName parentHook overrideHook =
+                    match parentHook, overrideHook with
+                    | Some _, Some _ ->
+                      state {
+                        return!
+                          (fun () ->
+                            $"Error: cannot override '{hookName}' on entity '{entityName.Name}': "
+                            + "this hook returns a modified value and cannot be automatically composed. "
+                            + "Compose the hooks manually in the .bl file instead.")
+                          |> error
+                          |> state.Throw
+                      }
+                    | _ -> state { return () }
+
+                  do! checkNonComposable "on creating" v.Hooks.OnCreating hooks.OnCreating
+                  do! checkNonComposable "on updating" v.Hooks.OnUpdating hooks.OnUpdating
+                  do! checkNonComposable "on background" v.Hooks.OnBackground hooks.OnBackground
+
                   let v =
                     { v with
                         SchemaEntity.Hooks =
                           { SchemaEntityHooks.OnCreating =
-                              v.Hooks.OnCreating
-                              |> Option.orElse hooks.OnCreating
+                              hooks.OnCreating
+                              |> Option.orElse v.Hooks.OnCreating
                             SchemaEntityHooks.OnCreated =
-                              v.Hooks.OnCreated
-                              |> Option.orElse hooks.OnCreated
+                              mergeActionHook 3 v.Hooks.OnCreated hooks.OnCreated
                             SchemaEntityHooks.OnUpdating =
-                              v.Hooks.OnUpdating
-                              |> Option.orElse hooks.OnUpdating
+                              hooks.OnUpdating
+                              |> Option.orElse v.Hooks.OnUpdating
                             SchemaEntityHooks.OnUpdated =
-                              v.Hooks.OnUpdated
-                              |> Option.orElse hooks.OnUpdated
+                              mergeActionHook 4 v.Hooks.OnUpdated hooks.OnUpdated
                             SchemaEntityHooks.OnDeleting =
-                              v.Hooks.OnDeleting
-                              |> Option.orElse hooks.OnDeleting
+                              mergeActionHook 3 v.Hooks.OnDeleting hooks.OnDeleting
                             SchemaEntityHooks.OnDeleted =
-                              v.Hooks.OnDeleted
-                              |> Option.orElse hooks.OnDeleted
+                              mergeActionHook 3 v.Hooks.OnDeleted hooks.OnDeleted
                             SchemaEntityHooks.OnBackground =
-                              v.Hooks.OnBackground
-                              |> Option.orElse hooks.OnBackground
+                              hooks.OnBackground
+                              |> Option.orElse v.Hooks.OnBackground
                             SchemaEntityHooks.CanCreate =
-                              v.Hooks.CanCreate
-                              |> Option.orElse hooks.CanCreate
+                              hooks.CanCreate
+                              |> Option.orElse v.Hooks.CanCreate
                             SchemaEntityHooks.CanRead =
-                              v.Hooks.CanRead |> Option.orElse hooks.CanRead
+                              hooks.CanRead
+                              |> Option.orElse v.Hooks.CanRead
                             SchemaEntityHooks.CanUpdate =
-                              v.Hooks.CanUpdate
-                              |> Option.orElse hooks.CanUpdate
+                              hooks.CanUpdate
+                              |> Option.orElse v.Hooks.CanUpdate
                             SchemaEntityHooks.CanDelete =
-                              v.Hooks.CanDelete
-                              |> Option.orElse hooks.CanDelete } }
+                              hooks.CanDelete
+                              |> Option.orElse v.Hooks.CanDelete } }
 
-                  acc |> OrderedMap.add entityName v
-                | None -> acc)
-              included_entities
+                  return
+                    Some(entityName, v)
+                | None -> return None
+              })
+            |> state.All
+            |> state.Map(fun results ->
+              results
+              |> List.choose id
+              |> List.fold
+                (fun acc (entityName, v) -> acc |> OrderedMap.add entityName v)
+                included_entities)
 
           let included_entities_hooks_names =
             included_entities_hooks
