@@ -18,6 +18,7 @@ module Type =
   open Ballerina.DSL.Next.Terms
   open Ballerina
   open Ballerina.DSL.Next.Syntax.Parser.TypeSchema
+  open Ballerina.Grammar
 
   type ComplexTypeKind =
     | ScopedIdentifier
@@ -41,15 +42,34 @@ module Type =
 
   let parseNoComplexTypeShapes: Set<ComplexTypeKind> = Set.empty
 
+  let typeParamRule =
+    { Name = "type-param"
+      Rule =
+        Seq [ Terminal "["; NonTerminal "identifier"; Terminal ":"; NonTerminal "kind"; Terminal "]" ] }
+
   let typeParam =
     parser {
       do! openSquareBracketOperator
-      let! paramName = singleIdentifier
+      let! paramName = singleIdentifier.Parser
       do! colonOperator
-      let! kind = kindDecl ()
+      let! kind = (kindDecl ()).Parser
       do! closeSquareBracketOperator
       return paramName, kind
     }
+    |> AnnotatedParser.withNamedRule typeParamRule
+
+  let typeDeclRule =
+    { Name = "type-decl"
+      Rule =
+        Alt
+          [ NonTerminal "type-param"
+            Terminal "bool"; Terminal "int"; Terminal "int64"
+            Terminal "float32"; Terminal "float64"; Terminal "decimal"
+            Terminal "string"; Terminal "guid"; Terminal "dateTime"
+            Terminal "dateOnly"; Terminal "timeSpan"; Terminal "vector"
+            Terminal "FromQueryRow"; Seq [ Terminal "("; Terminal ")" ]
+            NonTerminal "schema-decl"; NonTerminal "record-type"
+            NonTerminal "union-type"; NonTerminal "identifier" ] }
 
   let rec typeDecl
     (parseExpr:
@@ -60,16 +80,16 @@ module Type =
         Errors<Location>
        >)
     (parseComplexShapes: Set<ComplexTypeKind>)
-    : Parser<TypeExpr<'valueExt>, _, _, Errors<Location>> =
+    =
     let lookupTypeDecl () =
       parser {
-        let! id = singleIdentifier
+        let! id = singleIdentifier.Parser
         return TypeExpr.Lookup(Identifier.LocalScope id)
       }
 
     let boolTypeDecl () =
       parser {
-        let! id = singleIdentifier
+        let! id = singleIdentifier.Parser
 
         match id with
         | "boolean" -> return TypeExpr.Primitive PrimitiveType.Bool
@@ -85,7 +105,7 @@ module Type =
 
     let int32TypeDecl () =
       parser {
-        let! id = singleIdentifier
+        let! id = singleIdentifier.Parser
 
         match id with
         | "int" -> return TypeExpr.Primitive PrimitiveType.Int32
@@ -102,7 +122,7 @@ module Type =
 
     let int64TypeDecl () =
       parser {
-        let! id = singleIdentifier
+        let! id = singleIdentifier.Parser
 
         match id with
         | "int64" -> return TypeExpr.Primitive PrimitiveType.Int64
@@ -117,7 +137,7 @@ module Type =
 
     let float32TypeDecl () =
       parser {
-        let! id = singleIdentifier
+        let! id = singleIdentifier.Parser
 
         match id with
         | "float32" -> return TypeExpr.Primitive PrimitiveType.Float32
@@ -132,7 +152,7 @@ module Type =
 
     let float64TypeDecl () =
       parser {
-        let! id = singleIdentifier
+        let! id = singleIdentifier.Parser
 
         match id with
         | "float64" -> return TypeExpr.Primitive PrimitiveType.Float64
@@ -147,7 +167,7 @@ module Type =
 
     let decimalTypeDecl () =
       parser {
-        let! id = singleIdentifier
+        let! id = singleIdentifier.Parser
 
         match id with
         | "decimal" -> return TypeExpr.Primitive PrimitiveType.Decimal
@@ -162,7 +182,7 @@ module Type =
 
     let stringTypeDecl () =
       parser {
-        let! id = singleIdentifier
+        let! id = singleIdentifier.Parser
 
         match id with
         | "string" -> return TypeExpr.Primitive PrimitiveType.String
@@ -177,7 +197,7 @@ module Type =
 
     let guidTypeDecl () =
       parser {
-        let! id = singleIdentifier
+        let! id = singleIdentifier.Parser
 
         match id with
         | "guid" -> return TypeExpr.Primitive PrimitiveType.Guid
@@ -192,7 +212,7 @@ module Type =
 
     let dateTimeTypeDecl () =
       parser {
-        let! id = singleIdentifier
+        let! id = singleIdentifier.Parser
 
         match id with
         | "dateTime" -> return TypeExpr.Primitive PrimitiveType.DateTime
@@ -207,7 +227,7 @@ module Type =
 
     let dateOnlyTypeDecl () =
       parser {
-        let! id = singleIdentifier
+        let! id = singleIdentifier.Parser
 
         match id with
         | "date" -> return TypeExpr.Primitive PrimitiveType.DateOnly
@@ -223,7 +243,7 @@ module Type =
 
     let timeSpanTypeDecl () =
       parser {
-        let! id = singleIdentifier
+        let! id = singleIdentifier.Parser
 
         match id with
         | "timeSpan" -> return TypeExpr.Primitive PrimitiveType.TimeSpan
@@ -238,7 +258,7 @@ module Type =
 
     let vectorTypeDecl () =
       parser {
-        let! id = singleIdentifier
+        let! id = singleIdentifier.Parser
 
         match id with
         | "vector" -> return TypeExpr.Primitive PrimitiveType.Vector
@@ -253,7 +273,7 @@ module Type =
 
     let fromQueryRowTypeDecl () =
       parser {
-        let! id = singleIdentifier
+        let! id = singleIdentifier.Parser
 
         match id with
         | "FromQueryRow" -> return TypeExpr.FromQueryRow
@@ -274,10 +294,10 @@ module Type =
       }
 
     let schema () =
-      TypeSchema.schema
+      (TypeSchema.schema
         parseExpr
-        (fun () -> typeDecl parseExpr parseAllComplexTypeShapes)
-        ()
+        (fun () -> (typeDecl parseExpr parseAllComplexTypeShapes).Parser)
+        ()).Parser
 
     let record () =
       parser {
@@ -291,7 +311,7 @@ module Type =
                   if i > 0 then
                     do! semicolonOperator
 
-                  let! id = singleIdentifier
+                  let! id = singleIdentifier.Parser
                   let! fieldLoc = parser.Location
 
                   do!
@@ -307,7 +327,7 @@ module Type =
                   return!
                     parser {
                       let! typeDecl =
-                        typeDecl parseExpr parseAllComplexTypeShapes
+                        (typeDecl parseExpr parseAllComplexTypeShapes).Parser
 
                       return (id, typeDecl)
                     }
@@ -345,11 +365,11 @@ module Type =
 
                   return!
                     parser {
-                      let! id = singleIdentifier
+                      let! id = singleIdentifier.Parser
                       do! ofKeyword
 
                       let! typeDecl =
-                        typeDecl parseExpr parseAllComplexTypeShapes
+                        (typeDecl parseExpr parseAllComplexTypeShapes).Parser
 
                       return (id, typeDecl)
                     }
@@ -381,7 +401,7 @@ module Type =
               parser.AtLeastOne(
                 parser {
                   do! doubleColonOperator
-                  return! singleIdentifier
+                  return! singleIdentifier.Parser
                 }
               )
 
@@ -400,13 +420,13 @@ module Type =
             let! fields =
               parser.AtLeastOne(
                 parser {
-                  let! op = binaryTypeOperator
+                  let! op = binaryTypeOperator.Parser
 
                   let! value =
-                    typeDecl
+                    (typeDecl
                       parseExpr
                       (parseComplexShapes
-                       |> Set.remove ComplexTypeKind.BinaryExpressionChain)
+                       |> Set.remove ComplexTypeKind.BinaryExpressionChain)).Parser
 
                   return op, value
                 }
@@ -431,8 +451,8 @@ module Type =
 
                   return!
                     parser.Any
-                      [ singleIdentifier |> parser.Map Left
-                        intLiteralToken () |> parser.Map Right ]
+                      [ singleIdentifier.Parser |> parser.Map Left
+                        (intLiteralToken ()).Parser |> parser.Map Right ]
                 }
               )
 
@@ -447,7 +467,7 @@ module Type =
       parser {
         let! args =
           parser.AtLeastOne(
-            (fun () -> typeDecl parseExpr parseAllComplexTypeShapes)
+            (fun () -> (typeDecl parseExpr parseAllComplexTypeShapes).Parser)
             |> betweenSquareBrackets
           )
 
@@ -456,10 +476,10 @@ module Type =
 
     let typeLambda () =
       parser {
-        let! pars = parser.AtLeastOne typeParam
+        let! pars = parser.AtLeastOne typeParam.Parser
         do! parseOperator Operator.SingleArrow
         let pars = pars |> NonEmptyList.ToSeq
-        let! body = typeDecl parseExpr parseAllComplexTypeShapes
+        let! body = (typeDecl parseExpr parseAllComplexTypeShapes).Parser
 
         return
           Seq.foldBack
@@ -470,7 +490,7 @@ module Type =
       }
 
     let simpleShapes =
-      [ (fun () -> typeDecl parseExpr parseAllComplexTypeShapes)
+      [ (fun () -> (typeDecl parseExpr parseAllComplexTypeShapes).Parser)
         |> betweenBrackets
         typeLambda ()
         schema ()
@@ -516,7 +536,7 @@ module Type =
         //   )
 
         // do Console.ReadLine() |> ignore
-        let! e = typeDecl parseExpr parseNoComplexTypeShapes
+        let! e = (typeDecl parseExpr parseNoComplexTypeShapes).Parser
         // do Console.Write $"{e.ToFSharpString}"
         // do Console.WriteLine $"included = {parseComplexShapes.ToFSharpString}"
         // do Console.ReadLine() |> ignore
@@ -711,3 +731,6 @@ module Type =
         | Sum.Right e -> return! e |> parser.Throw
         | Sum.Left(res, _) -> return res
     }
+    |> AnnotatedParser.withNamedRule typeDeclRule
+
+  let grammarRules: NamedRule list = [ typeParamRule; typeDeclRule ]
