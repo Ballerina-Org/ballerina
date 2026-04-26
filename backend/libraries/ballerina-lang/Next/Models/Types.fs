@@ -1679,20 +1679,21 @@ module Model =
   and [<RequireQualifiedAccess>] ViewOperationKind =
     | MapContext
     | MapState
+    | Memo
 
     member self.Name =
       match self with
-      | MapContext -> "mapContext" | MapState -> "mapState"
+      | MapContext -> "mapContext" | MapState -> "mapState" | Memo -> "memo"
 
     member self.Arity =
       match self with
-      | MapContext -> 2 | MapState -> 3
+      | MapContext -> 2 | MapState -> 3 | Memo -> 2
 
     override self.ToString() = $"View::{self.Name}"
 
     static member TryParse(name: string) =
       match name with
-      | "mapContext" -> Some MapContext | "mapState" -> Some MapState
+      | "mapContext" -> Some MapContext | "mapState" -> Some MapState | "memo" -> Some Memo
       | _ -> None
 
   and ExprRec<'T, 'Id, 'valueExt when 'Id: comparison> =
