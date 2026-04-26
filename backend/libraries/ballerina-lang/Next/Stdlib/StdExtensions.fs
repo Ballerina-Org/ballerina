@@ -987,6 +987,323 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
     |> (updaterExtension |> OperationsExtension.RegisterLanguageContext)
     |> (mapExtension |> TypeExtension.RegisterLanguageContext)
 
+  // -- HTML View Attribute Schemas --
+  let stringType = TypeValue.CreatePrimitive PrimitiveType.String
+  let boolType = TypeValue.CreatePrimitive PrimitiveType.Bool
+  let unitType = TypeValue.CreatePrimitive PrimitiveType.Unit
+
+  let globalAttrs: Map<string, List<TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>>> =
+    Map.ofList
+      [ "class", [ stringType ]
+        "id", [ stringType ]
+        "style", [ stringType ]
+        "title", [ stringType ]
+        "hidden", [ boolType ]
+        "tabIndex", [ stringType ]
+        "role", [ stringType ]
+        "key", [ stringType ] ]
+
+  let eventHandlerAttrs: Map<string, List<TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>>> =
+    Map.ofList
+      [ "onClick", [ unitType ]
+        "onChange", [ unitType ]
+        "onSubmit", [ unitType ]
+        "onInput", [ unitType ]
+        "onFocus", [ unitType ]
+        "onBlur", [ unitType ]
+        "onKeyDown", [ unitType ]
+        "onKeyUp", [ unitType ]
+        "onKeyPress", [ unitType ]
+        "onMouseDown", [ unitType ]
+        "onMouseUp", [ unitType ]
+        "onMouseEnter", [ unitType ]
+        "onMouseLeave", [ unitType ]
+        "onMouseOver", [ unitType ]
+        "onMouseOut", [ unitType ]
+        "onDoubleClick", [ unitType ]
+        "onContextMenu", [ unitType ]
+        "onDragStart", [ unitType ]
+        "onDrag", [ unitType ]
+        "onDragEnd", [ unitType ]
+        "onDragOver", [ unitType ]
+        "onDrop", [ unitType ]
+        "onScroll", [ unitType ]
+        "onTouchStart", [ unitType ]
+        "onTouchEnd", [ unitType ]
+        "onTouchMove", [ unitType ] ]
+
+  let mergeAttrs
+    (maps: List<Map<string, List<TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>>>>)
+    : Map<string, List<TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>>> =
+    maps
+    |> List.fold
+      (fun acc m -> m |> Map.fold (fun a k v -> Map.add k v a) acc)
+      Map.empty
+
+  let baseAttrs = mergeAttrs [ globalAttrs; eventHandlerAttrs ]
+
+  let inputAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "type", [ stringType ]
+            "value", [ stringType ]
+            "checked", [ boolType ]
+            "placeholder", [ stringType ]
+            "disabled", [ boolType ]
+            "readOnly", [ boolType ]
+            "required", [ boolType ]
+            "autoFocus", [ boolType ]
+            "autoComplete", [ stringType ]
+            "name", [ stringType ]
+            "min", [ stringType ]
+            "max", [ stringType ]
+            "step", [ stringType ]
+            "pattern", [ stringType ]
+            "maxLength", [ stringType ]
+            "minLength", [ stringType ]
+            "accept", [ stringType ]
+            "multiple", [ boolType ] ] ]
+
+  let anchorAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "href", [ stringType ]
+            "target", [ stringType ]
+            "rel", [ stringType ]
+            "download", [ stringType; boolType ] ] ]
+
+  let imgAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "src", [ stringType ]
+            "alt", [ stringType ]
+            "width", [ stringType ]
+            "height", [ stringType ]
+            "loading", [ stringType ] ] ]
+
+  let formAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "action", [ stringType ]
+            "method", [ stringType ]
+            "encType", [ stringType ]
+            "noValidate", [ boolType ] ] ]
+
+  let buttonAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "type", [ stringType ]
+            "disabled", [ boolType ]
+            "name", [ stringType ]
+            "value", [ stringType ] ] ]
+
+  let selectAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "value", [ stringType ]
+            "disabled", [ boolType ]
+            "name", [ stringType ]
+            "required", [ boolType ]
+            "multiple", [ boolType ] ] ]
+
+  let optionAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "value", [ stringType ]
+            "disabled", [ boolType ]
+            "selected", [ boolType ] ] ]
+
+  let textareaAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "value", [ stringType ]
+            "placeholder", [ stringType ]
+            "disabled", [ boolType ]
+            "readOnly", [ boolType ]
+            "required", [ boolType ]
+            "rows", [ stringType ]
+            "cols", [ stringType ]
+            "name", [ stringType ]
+            "maxLength", [ stringType ]
+            "autoFocus", [ boolType ] ] ]
+
+  let labelAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList [ "for", [ stringType ] ] ]
+
+  let iframeAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "src", [ stringType ]
+            "width", [ stringType ]
+            "height", [ stringType ]
+            "sandbox", [ stringType ]
+            "allow", [ stringType ]
+            "name", [ stringType ] ] ]
+
+  let videoAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "src", [ stringType ]
+            "controls", [ boolType ]
+            "autoPlay", [ boolType ]
+            "loop", [ boolType ]
+            "muted", [ boolType ]
+            "poster", [ stringType ]
+            "width", [ stringType ]
+            "height", [ stringType ] ] ]
+
+  let sourceAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "src", [ stringType ]
+            "type", [ stringType ] ] ]
+
+  let metaAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "name", [ stringType ]
+            "content", [ stringType ]
+            "charset", [ stringType ]
+            "httpEquiv", [ stringType ]
+            "property", [ stringType ] ] ]
+
+  let linkAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "href", [ stringType ]
+            "rel", [ stringType ]
+            "type", [ stringType ]
+            "media", [ stringType ] ] ]
+
+  let scriptAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "src", [ stringType ]
+            "type", [ stringType ]
+            "async", [ boolType ]
+            "defer", [ boolType ] ] ]
+
+  let int32Type = TypeValue.CreatePrimitive PrimitiveType.Int32
+
+  let tableCellAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "colSpan", [ int32Type; stringType ]
+            "rowSpan", [ int32Type; stringType ]
+            "headers", [ stringType ]
+            "scope", [ stringType ] ] ]
+
+  let viewAttributeSchemas
+    : ViewAttributeSchemas<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+    Map.ofList
+      [ // Container & layout
+        "div", baseAttrs
+        "span", baseAttrs
+        "p", baseAttrs
+        "section", baseAttrs
+        "article", baseAttrs
+        "aside", baseAttrs
+        "header", baseAttrs
+        "footer", baseAttrs
+        "main", baseAttrs
+        "nav", baseAttrs
+        // Headings
+        "h1", baseAttrs
+        "h2", baseAttrs
+        "h3", baseAttrs
+        "h4", baseAttrs
+        "h5", baseAttrs
+        "h6", baseAttrs
+        // Text
+        "strong", baseAttrs
+        "em", baseAttrs
+        "small", baseAttrs
+        "b", baseAttrs
+        "i", baseAttrs
+        "u", baseAttrs
+        "code", baseAttrs
+        "pre", baseAttrs
+        "blockquote", baseAttrs
+        "abbr", baseAttrs
+        "cite", baseAttrs
+        "mark", baseAttrs
+        "sub", baseAttrs
+        "sup", baseAttrs
+        // Lists
+        "ul", baseAttrs
+        "ol", baseAttrs
+        "li", baseAttrs
+        "dl", baseAttrs
+        "dt", baseAttrs
+        "dd", baseAttrs
+        // Table
+        "table", baseAttrs
+        "thead", baseAttrs
+        "tbody", baseAttrs
+        "tfoot", baseAttrs
+        "tr", baseAttrs
+        "th", tableCellAttrs
+        "td", tableCellAttrs
+        "caption", baseAttrs
+        "colgroup", baseAttrs
+        "col", baseAttrs
+        // Form
+        "form", formAttrs
+        "input", inputAttrs
+        "textarea", textareaAttrs
+        "select", selectAttrs
+        "option", optionAttrs
+        "button", buttonAttrs
+        "label", labelAttrs
+        "fieldset", baseAttrs
+        "legend", baseAttrs
+        // Media
+        "img", imgAttrs
+        "video", videoAttrs
+        "audio", videoAttrs
+        "source", sourceAttrs
+        // Links
+        "a", anchorAttrs
+        // Embedded
+        "iframe", iframeAttrs
+        // Separators
+        "hr", baseAttrs
+        "br", baseAttrs
+        // Head
+        "meta", metaAttrs
+        "link", linkAttrs
+        "script", scriptAttrs
+        // Other
+        "details", baseAttrs
+        "summary", baseAttrs
+        "dialog", baseAttrs
+        "canvas", baseAttrs
+        "svg", baseAttrs
+        "path", baseAttrs ]
+
+  let context =
+    { context with
+        TypeCheckContext =
+          { context.TypeCheckContext with
+              ViewAttributeSchemas = viewAttributeSchemas } }
+
   let extensions =
     { List = listExtension
       Int32 = int32Extension

@@ -50,7 +50,12 @@ module TupleCons =
          >
       =
       fun context_t ({ Items = fields }) ->
-        let (!) = typeCheckExpr context_t
+        let elementContexts =
+          match context_t with
+          | Some(TypeValue.Tuple { value = types }) when types.Length = fields.Length ->
+            types |> List.map Some
+          | _ ->
+            fields |> List.map (fun _ -> None)
 
         let loc0 =
           fields
@@ -65,10 +70,10 @@ module TupleCons =
           let! ctx = state.GetContext()
 
           let! fields =
-            fields
-            |> List.map (fun (v) ->
+            List.zip fields elementContexts
+            |> List.map (fun (v, elemCtx) ->
               state {
-                let! v, _ = !v
+                let! v, _ = typeCheckExpr elemCtx v
                 let t_v = v.Type
                 let v_k = v.Kind
                 do! v_k |> Kind.AsStar |> ofSum |> state.Ignore
