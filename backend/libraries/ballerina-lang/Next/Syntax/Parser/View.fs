@@ -512,7 +512,53 @@ module View =
     }
     |> AnnotatedParser.withNamedRule coExprRule
 
+  let viewElementRule: NamedRule =
+    { Name = "view-element"
+      Rule = Alt [
+        Seq [ NonTerminal "less-than-op"; NonTerminal "tag-identifier";
+              Repeat (Seq [ NonTerminal "attr-identifier"; Terminal "="; Alt [ NonTerminal "string-attr-value"; Seq [ Terminal "{"; NonTerminal "expr"; Terminal "}" ] ] ]);
+              NonTerminal "tag-self-close-op" ];
+        Seq [ NonTerminal "less-than-op"; NonTerminal "tag-identifier";
+              Repeat (Seq [ NonTerminal "attr-identifier"; Terminal "="; Alt [ NonTerminal "string-attr-value"; Seq [ Terminal "{"; NonTerminal "expr"; Terminal "}" ] ] ]);
+              NonTerminal "greater-than-op"; Repeat (NonTerminal "view-node-expr"); NonTerminal "tag-close-op"; NonTerminal "tag-identifier"; NonTerminal "greater-than-op" ] ] }
+
+  let viewFragmentRule: NamedRule =
+    { Name = "view-fragment"
+      Rule = Seq [ NonTerminal "less-than-op"; NonTerminal "greater-than-op";
+                   Repeat (NonTerminal "view-node-expr");
+                   NonTerminal "tag-close-op"; NonTerminal "greater-than-op" ] }
+
+  let viewExprContainerRule: NamedRule =
+    { Name = "view-expr-container"
+      Rule = Seq [ Terminal "{"; NonTerminal "expr"; Terminal "}" ] }
+
+  let viewTextNodeRule: NamedRule =
+    { Name = "view-text-node"
+      Rule = Terminal "<text>" }
+
+  let coLetBangRule: NamedRule =
+    { Name = "co-let-bang"
+      Rule = Seq [ Terminal "let"; Terminal "!"; NonTerminal "identifier"; Terminal "="; NonTerminal "expr"; Terminal ";" ] }
+
+  let coLetRule: NamedRule =
+    { Name = "co-let"
+      Rule = Seq [ Terminal "let"; NonTerminal "identifier"; Terminal "="; NonTerminal "expr"; Terminal ";" ] }
+
+  let coDoBangRule: NamedRule =
+    { Name = "co-do-bang"
+      Rule = Seq [ Terminal "do"; Terminal "!"; NonTerminal "expr"; Terminal ";" ] }
+
+  let coReturnRule: NamedRule =
+    { Name = "co-return"
+      Rule = Seq [ Terminal "return"; NonTerminal "expr" ] }
+
+  let coReturnBangRule: NamedRule =
+    { Name = "co-return-bang"
+      Rule = Seq [ Terminal "return"; Terminal "!"; NonTerminal "expr" ] }
+
   let grammarRules: NamedRule list =
     [ lessThanOpRule; greaterThanOpRule; tagSelfCloseOpRule; tagCloseOpRule
       tagIdentifierRule; attrIdentifierRule; stringAttrValueRule
-      viewExprRule; viewNodeExprRule; coExprRule ]
+      viewElementRule; viewFragmentRule; viewExprContainerRule; viewTextNodeRule
+      viewExprRule; viewNodeExprRule; coExprRule
+      coLetBangRule; coLetRule; coDoBangRule; coReturnRule; coReturnBangRule ]
