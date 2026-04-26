@@ -14,7 +14,7 @@ module Gbnf =
     | Seq rules ->
       rules
       |> List.map serializeRuleGrouped
-      |> String.concat " "
+      |> String.concat " ows "
     | Alt rules ->
       rules
       |> List.map serializeRule
@@ -29,7 +29,14 @@ module Gbnf =
     | Alt _ -> "(" + serializeRule rule + ")"
     | _ -> serializeRule rule
 
+  let private preamble =
+    [ "# Whitespace rules (auto-generated)"
+      "ows ::= [ \\t\\n\\r]? [ \\t\\n\\r]? [ \\t\\n\\r]? [ \\t\\n\\r]?"
+      "ws ::= [ \\t\\n\\r] [ \\t\\n\\r]? [ \\t\\n\\r]? [ \\t\\n\\r]?" ]
+
   let serialize (rules: NamedRule list) : string =
-    rules
-    |> List.map (fun r -> $"{sanitizeName r.Name} ::= {serializeRule r.Rule}")
-    |> String.concat "\n"
+    let body =
+      rules
+      |> List.map (fun r -> $"{sanitizeName r.Name} ::= {serializeRule r.Rule}")
+
+    (preamble @ body) |> String.concat "\n"
