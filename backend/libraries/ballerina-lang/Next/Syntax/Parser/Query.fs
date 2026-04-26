@@ -23,6 +23,7 @@ module Query =
   open Type
   open Ballerina.DSL.Next.Syntax
   open Ballerina
+  open Ballerina.Grammar
 
   type ComplexExpressionKind =
     | ScopedIdentifier
@@ -54,16 +55,19 @@ module Query =
 
   let private parseNoComplexShapes: Set<ComplexExpressionKind> = Set.empty
 
+  let queryExprRule: NamedRule =
+    { Name = "query-expr"
+      Rule =
+        Alt
+          [ NonTerminal "string-literal"; NonTerminal "int-literal"
+            NonTerminal "decimal-literal"; NonTerminal "bool-literal"
+            NonTerminal "conditional-expr"; NonTerminal "identifier-lookup"
+            NonTerminal "application" ] }
+
   let rec queryexpr<'valueExt>
     (query: unit -> _)
     (depth: int)
     (parseComplexShapes: Set<ComplexExpressionKind>)
-    : Parser<
-        ExprQueryExpr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-        LocalizedToken,
-        Location,
-        Errors<Location>
-       >
     =
 
     let expr = queryexpr query (depth + 1)
@@ -159,11 +163,11 @@ module Query =
 
         return!
           parser {
-            let! cond = expr parseAllComplexShapes
+            let! cond = (expr parseAllComplexShapes).Parser
             do! thenKeyword
-            let! thenBranch = expr parseAllComplexShapes
+            let! thenBranch = (expr parseAllComplexShapes).Parser
             do! elseKeyword
-            let! elseBranch = expr parseAllComplexShapes
+            let! elseBranch = (expr parseAllComplexShapes).Parser
 
             return
               ExprQueryExprRec.QueryConditional(cond, thenBranch, elseBranch)
@@ -179,7 +183,7 @@ module Query =
 
         return!
           parser {
-            let! q = query ()
+            let! q = (query ()).Parser
 
             return ExprQueryExprRec.QueryCount(q) |> ExprQueryExpr.Create loc
           }
@@ -193,7 +197,7 @@ module Query =
 
         return!
           parser {
-            let! q = query ()
+            let! q = (query ()).Parser
 
             return ExprQueryExprRec.QueryExists(q) |> ExprQueryExpr.Create loc
           }
@@ -207,7 +211,7 @@ module Query =
 
         return!
           parser {
-            let! q = query ()
+            let! q = (query ()).Parser
 
             return ExprQueryExprRec.QueryArray(q) |> ExprQueryExpr.Create loc
           }
@@ -226,10 +230,10 @@ module Query =
                   do! commaOperator
 
                   let! value =
-                    expr (
+                    (expr (
                       parseComplexShapes
                       |> Set.remove ComplexExpressionKind.TupleCons
-                    )
+                    )).Parser
 
                   return value
                 }
@@ -254,7 +258,7 @@ module Query =
                   return!
                     parser.Any
                       [ singleIdentifier |> parser.Map Left
-                        intLiteralToken () |> parser.Map Right ]
+                        (intLiteralToken ()).Parser |> parser.Map Right ]
                 }
               )
 
@@ -320,13 +324,13 @@ module Query =
             let! fields =
               parser.AtLeastOne(
                 parser {
-                  let! op = binaryExprOperator
+                  let! op = binaryExprOperator.Parser
 
                   let! value =
-                    expr (
+                    (expr (
                       parseComplexShapes
                       |> Set.remove ComplexExpressionKind.BinaryExpressionChain
-                    )
+                    )).Parser
 
                   return op, value
                 }
@@ -338,7 +342,7 @@ module Query =
       }
 
     let argExpr () =
-      expr parseNoComplexShapes
+      (expr parseNoComplexShapes).Parser
       |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
 
     let application () =
@@ -356,7 +360,7 @@ module Query =
         decimalLiteral ()
         boolLiteral ()
         unitLiteral ()
-        betweenBrackets (fun () -> expr parseAllComplexShapes)
+        betweenBrackets (fun () -> (expr parseAllComplexShapes).Parser)
         exprConditional ()
         exprCount ()
         exprExists ()
@@ -388,7 +392,7 @@ module Query =
         //   )
 
         // do Console.ReadLine() |> ignore
-        let! e = expr parseNoComplexShapes
+        let! e = (expr parseNoComplexShapes).Parser
         // do Console.Write $"{e.ToFSharpString}"
         // do Console.WriteLine $"included = {parseComplexShapes.ToFSharpString}"
         // do Console.ReadLine() |> ignore
@@ -619,7 +623,13 @@ module Query =
         | Sum.Right e -> return! e |> parser.Throw
         | Sum.Left res -> return res
     }
+    |> AnnotatedParser.withNamedRule queryExprRule
 
+
+  let queryIteratorsRule: NamedRule =
+    { Name = "query-iterators"
+      Rule =
+        Repeat1 (Seq [ Terminal "from"; NonTerminal "identifier"; Terminal "in"; NonTerminal "expr" ]) }
 
   let rec private query_iterators_and_datasources<'valueExt>
     (expr:
@@ -639,7 +649,7 @@ module Query =
         parser {
 
           let! loc = parser.Location
-          let! _iterators = queryexpr<'valueExt> query 0 parseAllComplexShapes
+          let! _iterators = (queryexpr<'valueExt> query 0 parseAllComplexShapes).Parser
 
           let! _iterators =
             [ parser {
@@ -744,6 +754,12 @@ module Query =
         }
         |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
+    |> AnnotatedParser.withNamedRule queryIteratorsRule
+
+  let queryJoinsRule: NamedRule =
+    { Name = "query-joins"
+      Rule =
+        Repeat (Seq [ Terminal "join"; NonTerminal "identifier"; Terminal "in"; NonTerminal "expr"; Terminal "on"; NonTerminal "expr"; Terminal "="; NonTerminal "expr" ]) }
 
   let private query_joins<'valueExt> query =
     parser {
@@ -764,7 +780,7 @@ module Query =
                     do! andKeyword
 
                   let! join_terms =
-                    queryexpr<'valueExt> query 0 parseAllComplexShapes
+                    (queryexpr<'valueExt> query 0 parseAllComplexShapes).Parser
 
                   let! join_terms =
                     join_terms
@@ -800,6 +816,12 @@ module Query =
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
+    |> AnnotatedParser.withNamedRule queryJoinsRule
+
+  let queryWhereRule: NamedRule =
+    { Name = "query-where"
+      Rule =
+        Optional (Seq [ Terminal "where"; NonTerminal "expr" ]) }
 
   let private query_where<'valueExt> query =
     parser {
@@ -810,20 +832,32 @@ module Query =
       | Left _ ->
         return!
           parser {
-            let! predicate = queryexpr<'valueExt> query 0 parseAllComplexShapes
+            let! predicate = (queryexpr<'valueExt> query 0 parseAllComplexShapes).Parser
             return Some predicate
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
+    |> AnnotatedParser.withNamedRule queryWhereRule
+
+  let querySelectRule: NamedRule =
+    { Name = "query-select"
+      Rule =
+        Seq [ Terminal "select"; NonTerminal "expr" ] }
 
   let private query_select<'valueExt> query =
     parser {
       do! selectKeyword
 
       return!
-        queryexpr<'valueExt> query 0 parseAllComplexShapes
+        (queryexpr<'valueExt> query 0 parseAllComplexShapes).Parser
         |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
+    |> AnnotatedParser.withNamedRule querySelectRule
+
+  let queryOrderbyRule: NamedRule =
+    { Name = "query-orderby"
+      Rule =
+        Optional (Seq [ Terminal "orderBy"; NonTerminal "expr"; Alt [ Terminal "ascending"; Terminal "descending" ] ]) }
 
   let private query_orderby<'valueExt> query =
     parser {
@@ -834,7 +868,7 @@ module Query =
           match starts_with_orderby with
           | Right _ -> return None
           | Left _ ->
-            let! predicate = queryexpr<'valueExt> query 0 parseAllComplexShapes
+            let! predicate = (queryexpr<'valueExt> query 0 parseAllComplexShapes).Parser
             let! is_ascending = ascendingKeyword |> parser.Try
 
             if is_ascending.IsLeft then
@@ -855,6 +889,12 @@ module Query =
         }
         |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
+    |> AnnotatedParser.withNamedRule queryOrderbyRule
+
+  let queryDistinctRule: NamedRule =
+    { Name = "query-distinct"
+      Rule =
+        Optional (Terminal "distinct") }
 
   let private query_distinct<'valueExt> (query) =
     parser {
@@ -868,7 +908,7 @@ module Query =
             return!
               parser {
                 let! distinction =
-                  queryexpr<'valueExt> query 0 parseAllComplexShapes
+                  (queryexpr<'valueExt> query 0 parseAllComplexShapes).Parser
 
                 return Some distinction
               }
@@ -878,6 +918,12 @@ module Query =
         }
         |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
+    |> AnnotatedParser.withNamedRule queryDistinctRule
+
+  let queryBodyRule: NamedRule =
+    { Name = "query-body"
+      Rule =
+        Seq [ NonTerminal "query-iterators"; NonTerminal "query-joins"; NonTerminal "query-where"; NonTerminal "query-select"; NonTerminal "query-orderby"; NonTerminal "query-distinct" ] }
 
   let rec private query'<'valueExt>
     (expr:
@@ -889,12 +935,6 @@ module Query =
           Errors<Location>
          >)
     ()
-    : Parser<
-        ExprQuery<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-        LocalizedToken,
-        Location,
-        Errors<Location>
-       >
     =
     parser {
       let! hasBracket =
@@ -910,13 +950,13 @@ module Query =
           do! openCurlyBracketOperator
 
           let! iterators_with_datasources =
-            query_iterators_and_datasources expr (query expr)
+            (query_iterators_and_datasources expr (query expr)).Parser
 
-          let! joins = query_joins (query expr)
-          let! where_ = query_where (query expr)
-          let! select_expr = query_select<'valueExt> (query expr)
-          let! orderby_ = query_orderby (query expr)
-          let! distinct_ = query_distinct (query expr)
+          let! joins = (query_joins (query expr)).Parser
+          let! where_ = (query_where (query expr)).Parser
+          let! select_expr = (query_select<'valueExt> (query expr)).Parser
+          let! orderby_ = (query_orderby (query expr)).Parser
+          let! distinct_ = (query_distinct (query expr)).Parser
 
           do! closeCurlyBracketOperator
 
@@ -940,6 +980,12 @@ module Query =
         }
         |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
+    |> AnnotatedParser.withNamedRule queryBodyRule
+
+  let queryRule: NamedRule =
+    { Name = "query"
+      Rule =
+        Seq [ Terminal "query"; Terminal "{"; NonTerminal "query-body"; Terminal "}" ] }
 
   let query<'valueExt>
     (expr:
@@ -951,17 +997,16 @@ module Query =
           Errors<Location>
          >)
     ()
-    : Parser<
-        Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-        LocalizedToken,
-        Location,
-        Errors<Location>
-       >
     =
     parser {
       let! loc = parser.Location
 
-      let! q = query' expr ()
+      let! q = (query' expr ()).Parser
       let res = Expr.Query(q, loc, TypeCheckScope.Empty)
       return res
     }
+    |> AnnotatedParser.withNamedRule queryRule
+
+  let grammarRules: NamedRule list =
+    [ queryExprRule; queryIteratorsRule; queryJoinsRule; queryWhereRule
+      querySelectRule; queryOrderbyRule; queryDistinctRule; queryBodyRule; queryRule ]

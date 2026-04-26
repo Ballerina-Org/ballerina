@@ -17,6 +17,7 @@ module Common =
   open Ballerina.DSL.Next.Syntax
   open Model
   open Ballerina
+  open Ballerina.Grammar
 
   let parseOperator op =
     parser.Exactly(fun t ->
@@ -93,6 +94,17 @@ module Common =
       | PipeGreaterThan -> "|>"
       | DoubleGreaterThan -> ">>"
 
+  let binaryExprOperatorRule =
+    { Name = "binary-expr-operator"
+      Rule =
+        Alt
+          [ Terminal "*"; Terminal "/"; Terminal "%"
+            Terminal "+"; Terminal "-"
+            Terminal "&&"; Terminal "||"
+            Terminal "=="; Terminal "!="
+            Terminal ">"; Terminal "<"; Terminal ">="; Terminal "<="
+            Terminal "|>"; Terminal ">>" ] }
+
   let binaryExprOperator =
     parser.Any
       [ parseOperator Operator.Times
@@ -125,6 +137,7 @@ module Common =
         |> parser.Map(fun () -> BinaryExprOperator.PipeGreaterThan)
         parseOperator Operator.DoubleGreaterThan
         |> parser.Map(fun () -> BinaryExprOperator.DoubleGreaterThan) ]
+    |> AnnotatedParser.withNamedRule binaryExprOperatorRule
 
   type BinaryTypeOperator =
     | Times
@@ -137,6 +150,10 @@ module Common =
       | Plus -> "+"
       | SingleArrow -> "->"
 
+  let binaryTypeOperatorRule =
+    { Name = "binary-type-operator"
+      Rule = Alt [ Terminal "*"; Terminal "+"; Terminal "->" ] }
+
   let binaryTypeOperator =
     parser.Any
       [ parseOperator Operator.Times
@@ -145,6 +162,7 @@ module Common =
         |> parser.Map(fun () -> BinaryTypeOperator.Plus)
         parseOperator Operator.SingleArrow
         |> parser.Map(fun () -> BinaryTypeOperator.SingleArrow) ]
+    |> AnnotatedParser.withNamedRule binaryTypeOperatorRule
 
   let parseKeyword kw =
     parser.Exactly(fun t ->
@@ -162,6 +180,9 @@ module Common =
   let ifKeyword = parseKeyword Keyword.If
   let thenKeyword = parseKeyword Keyword.Then
   let elseKeyword = parseKeyword Keyword.Else
+
+  let singleTermIdentifierRule =
+    { Name = "term-identifier"; Rule = Terminal "<term-identifier>" }
 
   let singleTermIdentifier =
     parser.Exactly(fun t ->
@@ -189,18 +210,27 @@ module Common =
       | Token.Keyword(Keyword.Descending) ->
         Keyword.Descending.ToString() |> Some
       | _ -> None)
+    |> AnnotatedParser.withNamedRule singleTermIdentifierRule
+
+  let singleIdentifierRule =
+    { Name = "identifier"; Rule = Terminal "<identifier>" }
 
   let singleIdentifier =
     parser.Exactly(fun t ->
       match t.Token with
       | Token.Identifier id -> Some id
       | _ -> None)
+    |> AnnotatedParser.withNamedRule singleIdentifierRule
+
+  let caseLiteralRule =
+    { Name = "case-literal"; Rule = Terminal "<case-literal>" }
 
   let caseLiteral () =
     parser.Exactly(fun t ->
       match t.Token with
       | Token.CaseLiteral(i, n) -> { Case = i; Count = n } |> Some
       | _ -> None)
+    |> AnnotatedParser.withNamedRule caseLiteralRule
 
   let softKeyword k =
     parser.Exactly(fun t ->
@@ -255,9 +285,13 @@ module Common =
   let caseKeyword = softKeyword "case"
   let itemKeyword = softKeyword "item"
 
+  let identifiersMatchRule =
+    { Name = "identifiers-match"
+      Rule = Seq [ NonTerminal "identifier"; Optional (Seq [ Terminal "::"; NonTerminal "identifiers-match" ]) ] }
+
   let rec identifiersMatch () =
     parser {
-      let! id = singleIdentifier
+      let! id = singleIdentifier.Parser
 
       return!
         parser.Any
@@ -267,7 +301,7 @@ module Common =
               return!
                 parser {
                   let! ids =
-                    identifiersMatch () |> parser.Map(NonEmptyList.ToList)
+                    (identifiersMatch ()).Parser |> parser.Map(NonEmptyList.ToList)
 
                   return NonEmptyList.OfList(id, ids)
                 }
@@ -277,11 +311,16 @@ module Common =
             }
             parser { return NonEmptyList.OfList(id, []) } ]
     }
+    |> AnnotatedParser.withNamedRule identifiersMatchRule
+
+  let identifierLocalOrFullyQualifiedRule =
+    { Name = "identifier-local-or-fully-qualified"
+      Rule = Alt [ NonTerminal "identifiers-match"; NonTerminal "identifier" ] }
 
   let identifierLocalOrFullyQualified () =
     parser.Any
       [ parser {
-          let! ids = identifiersMatch ()
+          let! ids = (identifiersMatch ()).Parser
           let ids = ids |> NonEmptyList.rev
 
           match ids.Tail with
@@ -289,25 +328,31 @@ module Common =
           | _ -> return Identifier.FullyQualified(ids.Tail, ids.Head)
         }
         parser {
-          let! id = singleIdentifier
+          let! id = singleIdentifier.Parser
           return Identifier.LocalScope id
         } ]
+    |> AnnotatedParser.withNamedRule identifierLocalOrFullyQualifiedRule
+
+  let identifierWithLookupsRule =
+    { Name = "identifier-with-lookups"
+      Rule = Seq [ NonTerminal "identifier-local-or-fully-qualified"; Repeat (Seq [ Terminal "."; NonTerminal "identifier" ]) ] }
 
   let identifierWithLookups () =
     parser {
-      let! id = identifierLocalOrFullyQualified ()
+      let! id = (identifierLocalOrFullyQualified ()).Parser
 
       let! lookups =
         parser.Many(
           parser {
             do! dotOperator
-            let! prop = singleIdentifier
+            let! prop = singleIdentifier.Parser
             return prop
           }
         )
 
       return id, lookups
     }
+    |> AnnotatedParser.withNamedRule identifierWithLookupsRule
 
   let betweenBrackets p =
     parser {
@@ -347,8 +392,23 @@ module Common =
     }
     |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
+  let intLiteralTokenRule =
+    { Name = "int-literal"; Rule = Terminal "<int-literal>" }
+
   let intLiteralToken () =
     parser.Exactly(fun t ->
       match t.Token with
       | Token.IntLiteral s -> s |> Some
       | _ -> None)
+    |> AnnotatedParser.withNamedRule intLiteralTokenRule
+
+  let grammarRules: NamedRule list =
+    [ binaryExprOperatorRule
+      binaryTypeOperatorRule
+      singleTermIdentifierRule
+      singleIdentifierRule
+      caseLiteralRule
+      intLiteralTokenRule
+      identifiersMatchRule
+      identifierLocalOrFullyQualifiedRule
+      identifierWithLookupsRule ]

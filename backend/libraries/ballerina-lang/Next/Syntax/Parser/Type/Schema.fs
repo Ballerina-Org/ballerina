@@ -12,6 +12,7 @@ module TypeSchema =
   open Ballerina.LocalizedErrors
   open Ballerina.Errors
   open Ballerina
+  open Ballerina.Grammar
 
   type TypeExprParser<'valueExt> =
     Parser<
@@ -24,10 +25,14 @@ module TypeSchema =
   type TypeDeclParser<'valueExt> =
     Parser<TypeExpr<'valueExt>, LocalizedToken, Location, Errors<Location>>
 
+  let cardinalityRule =
+    { Name = "cardinality"
+      Rule = Alt [ Terminal "0"; Terminal "1"; Terminal "*" ] }
+
   let cardinality () =
     parser.Any
       [ parser {
-          let! v = intLiteralToken ()
+          let! v = (intLiteralToken ()).Parser
 
           if v = 0 then
             return Cardinality.Zero
@@ -56,6 +61,11 @@ module TypeSchema =
         }
         |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High)) ]
     |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+    |> AnnotatedParser.withNamedRule cardinalityRule
+
+  let schemaPathRule =
+    { Name = "schema-path"
+      Rule = Optional (Seq [ Terminal "["; NonTerminal "schema-path-segments"; Terminal "]" ]) }
 
   let rec schemaPath () =
     parser {
@@ -64,12 +74,17 @@ module TypeSchema =
       | Left _ ->
         return!
           parser {
-            let! segments = schemaPathSegments ()
+            let! segments = (schemaPathSegments ()).Parser
             do! closeSquareBracketOperator
             return Some segments
           }
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
+    |> AnnotatedParser.withNamedRule schemaPathRule
+
+  and schemaPathSegmentsRule =
+    { Name = "schema-path-segments"
+      Rule = Repeat (Seq [ Optional (Seq [ Terminal "let"; NonTerminal "identifier"; Terminal ":" ]); Alt [ Seq [ Terminal "field"; NonTerminal "identifier" ]; Seq [ Terminal "case"; NonTerminal "identifier" ]; Seq [ Terminal "item"; NonTerminal "int-literal" ]; Seq [ Terminal "iterator"; Terminal "("; NonTerminal "identifier"; Terminal ","; NonTerminal "identifier"; Terminal ","; NonTerminal "identifier"; Terminal ")" ] ] ]) }
 
   and schemaPathSegments () =
     parser.ManyIndex(fun i ->
@@ -84,7 +99,7 @@ module TypeSchema =
             match no_binding with
             | Right _ -> return None
             | Left _ ->
-              let! id = singleIdentifier
+              let! id = singleIdentifier.Parser
               do! colonOperator
               let id = id |> LocalIdentifier.Create
               return id |> Some
@@ -95,35 +110,35 @@ module TypeSchema =
             [ afterKeyword
                 fieldKeyword
                 (parser {
-                  let! id = identifierLocalOrFullyQualified ()
+                  let! id = (identifierLocalOrFullyQualified ()).Parser
                   return SchemaPathTypeDecompositionExpr.Field id
                 })
               afterKeyword
                 caseKeyword
                 (parser.Any
                   [ parser {
-                      let! id = identifierLocalOrFullyQualified ()
+                      let! id = (identifierLocalOrFullyQualified ()).Parser
                       return SchemaPathTypeDecompositionExpr.UnionCase id
                     }
                     parser {
-                      let! case = caseLiteral ()
+                      let! case = (caseLiteral ()).Parser
                       return SchemaPathTypeDecompositionExpr.SumCase case
                     } ])
               afterKeyword
                 itemKeyword
                 (parser {
-                  let! item = intLiteralToken ()
+                  let! item = (intLiteralToken ()).Parser
                   return SchemaPathTypeDecompositionExpr.Item { Index = item }
                 })
               afterKeyword
                 iteratorKeyword
                 (parser {
                   do! openRoundBracketOperator
-                  let! mapper = identifierLocalOrFullyQualified ()
+                  let! mapper = (identifierLocalOrFullyQualified ()).Parser
                   do! commaOperator
-                  let! containerType = identifierLocalOrFullyQualified ()
+                  let! containerType = (identifierLocalOrFullyQualified ()).Parser
                   do! commaOperator
-                  let! typeDef = identifierLocalOrFullyQualified ()
+                  let! typeDef = (identifierLocalOrFullyQualified ()).Parser
                   do! closeRoundBracketOperator
 
                   return
@@ -137,24 +152,23 @@ module TypeSchema =
         return var, res
       })
     |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+    |> AnnotatedParser.withNamedRule schemaPathSegmentsRule
+
+  let relationExtensionRule =
+    { Name = "relation-extension"
+      Rule = Seq [ Terminal "relation"; NonTerminal "identifier"; Terminal "{"; NonTerminal "relation-hooks"; Terminal "}" ] }
 
   let relation_extension
     (parseExpr: TypeExprParser<'valueExt>)
     ()
-    : Parser<
-        (SchemaRelationName * SchemaRelationHooksExpr<'valueExt>),
-        LocalizedToken,
-        Location,
-        Errors<Location>
-       >
     =
     afterKeyword
       relationKeyword
       (parser {
-        let! relationName = singleIdentifier
+        let! relationName = singleIdentifier.Parser
         do! openCurlyBracketOperator
 
-        let! hooks = TypeHooksAndProperties.relation_hooks parseExpr ()
+        let! hooks = (TypeHooksAndProperties.relation_hooks parseExpr ()).Parser
 
         let onLinking = hooks |> Map.tryFind SchemaRelationHook.Linking
         let onLinked = hooks |> Map.tryFind SchemaRelationHook.Linked
@@ -171,16 +185,15 @@ module TypeSchema =
 
         return { SchemaRelationName.Name = relationName }, relationHooksExpr
       })
+    |> AnnotatedParser.withNamedRule relationExtensionRule
+
+  let relationRule =
+    { Name = "relation"
+      Rule = Seq [ Terminal "relation"; NonTerminal "identifier"; Terminal "{"; Terminal "from"; NonTerminal "identifier"; Optional (NonTerminal "schema-path"); Terminal "to"; NonTerminal "identifier"; Optional (NonTerminal "schema-path"); Optional (Seq [ Terminal "cardinality"; NonTerminal "cardinality"; Terminal ".."; NonTerminal "cardinality" ]); NonTerminal "relation-hooks"; Terminal "}" ] }
 
   let relation
     (parseExpr: TypeExprParser<'valueExt>)
     ()
-    : Parser<
-        SchemaRelationExpr<'valueExt>,
-        LocalizedToken,
-        Location,
-        Errors<Location>
-       >
     =
     parser {
       let! loc_fallback = parser.Location
@@ -196,15 +209,15 @@ module TypeSchema =
 
       return!
         (parser {
-          let! relationName = singleIdentifier
+          let! relationName = singleIdentifier.Parser
           do! openCurlyBracketOperator
           do! fromKeyword
-          let! fromEntity = identifierLocalOrFullyQualified ()
-          let! fromPath = schemaPath ()
+          let! fromEntity = (identifierLocalOrFullyQualified ()).Parser
+          let! fromPath = (schemaPath ()).Parser
 
           do! toKeyword
-          let! toEntity = identifierLocalOrFullyQualified ()
-          let! toPath = schemaPath ()
+          let! toEntity = (identifierLocalOrFullyQualified ()).Parser
+          let! toPath = (schemaPath ()).Parser
 
           let! hasCardinality = cardinalityKeyword |> parser.Try
 
@@ -213,9 +226,9 @@ module TypeSchema =
             | Right _ -> parser { return None }
             | Left() ->
               parser {
-                let! from = cardinality ()
+                let! from = (cardinality ()).Parser
                 do! doubleDotOperator
-                let! to_ = cardinality ()
+                let! to_ = (cardinality ()).Parser
 
                 return
                   Some(
@@ -225,7 +238,7 @@ module TypeSchema =
               }
 
 
-          let! hooks = TypeHooksAndProperties.relation_hooks parseExpr ()
+          let! hooks = (TypeHooksAndProperties.relation_hooks parseExpr ()).Parser
 
           let onLinking = hooks |> Map.tryFind SchemaRelationHook.Linking
           let onLinked = hooks |> Map.tryFind SchemaRelationHook.Linked
@@ -250,17 +263,16 @@ module TypeSchema =
         |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
     |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+    |> AnnotatedParser.withNamedRule relationRule
+
+  let entityRule =
+    { Name = "entity"
+      Rule = Seq [ Terminal "entity"; NonTerminal "identifier"; Terminal "{"; Terminal "type"; NonTerminal "type-decl"; NonTerminal "type-decl"; NonTerminal "entity-properties"; NonTerminal "entity-vectors"; NonTerminal "entity-hooks"; Terminal "}" ] }
 
   let entity
     (parseExpr: TypeExprParser<'valueExt>)
     (parseTypeDecl: unit -> TypeDeclParser<'valueExt>)
     ()
-    : Parser<
-        SchemaEntityExpr<'valueExt>,
-        LocalizedToken,
-        Location,
-        Errors<Location>
-       >
     =
     parser {
       let! loc_fallback = parser.Location
@@ -276,7 +288,7 @@ module TypeSchema =
 
       return!
         (parser {
-          let! entityName = singleIdentifier
+          let! entityName = singleIdentifier.Parser
           do! openCurlyBracketOperator
 
           do!
@@ -290,15 +302,15 @@ module TypeSchema =
           let! idType = parseTypeDecl ()
 
           let! properties =
-            TypeHooksAndProperties.entity_properties
+            (TypeHooksAndProperties.entity_properties
               parseExpr
-              schemaPath
+              (fun () -> (schemaPath ()).Parser)
               parseTypeDecl
-              ()
+              ()).Parser
 
-          let! vectors = TypeHooksAndProperties.entity_vectors parseExpr ()
+          let! vectors = (TypeHooksAndProperties.entity_vectors parseExpr ()).Parser
 
-          let! hooks = TypeHooksAndProperties.entity_hooks parseExpr ()
+          let! hooks = (TypeHooksAndProperties.entity_hooks parseExpr ()).Parser
           let onCreating = hooks |> Map.tryFind SchemaEntityHook.Creating
           let onCreated = hooks |> Map.tryFind SchemaEntityHook.Created
           let onUpdating = hooks |> Map.tryFind SchemaEntityHook.Updating
@@ -358,24 +370,23 @@ module TypeSchema =
         |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }
     |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+    |> AnnotatedParser.withNamedRule entityRule
+
+  let entityExtensionRule =
+    { Name = "entity-extension"
+      Rule = Seq [ Terminal "entity"; NonTerminal "identifier"; Terminal "{"; NonTerminal "entity-hooks"; Terminal "}" ] }
 
   let entity_extension
     (parseExpr: TypeExprParser<'valueExt>)
     ()
-    : Parser<
-        (SchemaEntityName * SchemaEntityHooksExpr<'valueExt>),
-        LocalizedToken,
-        Location,
-        Errors<Location>
-       >
     =
     afterKeyword
       entityKeyword
       (parser {
-        let! entityName = singleIdentifier
+        let! entityName = singleIdentifier.Parser
         do! openCurlyBracketOperator
 
-        let! hooks = TypeHooksAndProperties.entity_hooks parseExpr ()
+        let! hooks = (TypeHooksAndProperties.entity_hooks parseExpr ()).Parser
         let onCreating = hooks |> Map.tryFind SchemaEntityHook.Creating
         let onCreated = hooks |> Map.tryFind SchemaEntityHook.Created
         let onUpdating = hooks |> Map.tryFind SchemaEntityHook.Updating
@@ -405,12 +416,17 @@ module TypeSchema =
 
         return { SchemaEntityName.Name = entityName }, entityHooksExpr
       })
+    |> AnnotatedParser.withNamedRule entityExtensionRule
+
+  let schemaRule =
+    { Name = "schema-decl"
+      Rule = Seq [ Terminal "schema"; Terminal "{"; Optional (Seq [ Terminal "include"; NonTerminal "identifier"; Optional (Seq [ Terminal "with"; Terminal "{"; Repeat (Alt [ NonTerminal "entity-extension"; NonTerminal "relation-extension" ]); Terminal "}" ]) ]); Repeat (Alt [ NonTerminal "entity"; NonTerminal "relation" ]); Terminal "}" ] }
 
   let schema
     (parseExpr: TypeExprParser<'valueExt>)
     (parseTypeDecl: unit -> TypeDeclParser<'valueExt>)
     ()
-    : Parser<TypeExpr<'valueExt>, LocalizedToken, Location, Errors<Location>> =
+    =
     afterKeyword
       schemaKeyword
       (parser {
@@ -430,7 +446,7 @@ module TypeSchema =
                   match isEntity with
                   | Left _ ->
                     return!
-                      entity_extension parseExpr ()
+                      (entity_extension parseExpr ()).Parser
                       |> parser.Map Sum.Left
                       |> parser.MapError(
                         Errors<Location>.FilterHighestPriorityOnly
@@ -442,7 +458,7 @@ module TypeSchema =
                     match isRelation with
                     | Left _ ->
                       return!
-                        relation_extension parseExpr ()
+                        (relation_extension parseExpr ()).Parser
                         |> parser.Map Sum.Right
                         |> parser.MapError(
                           Errors<Location>.FilterHighestPriorityOnly
@@ -485,7 +501,7 @@ module TypeSchema =
                   match isEntity with
                   | Left _ ->
                     return!
-                      entity parseExpr parseTypeDecl ()
+                      (entity parseExpr parseTypeDecl ()).Parser
                       |> parser.Map Sum.Left
                       |> parser.MapError(
                         Errors<Location>.FilterHighestPriorityOnly
@@ -497,7 +513,7 @@ module TypeSchema =
                     match isRelation with
                     | Left _ ->
                       return!
-                        relation parseExpr ()
+                        (relation parseExpr ()).Parser
                         |> parser.Map Sum.Right
                         |> parser.MapError(
                           Errors<Location>.FilterHighestPriorityOnly
@@ -534,7 +550,7 @@ module TypeSchema =
             match hasInclude with
             | Right _ -> return None
             | Left() ->
-              let! schemaName = singleIdentifier
+              let! schemaName = singleIdentifier.Parser
               let! hasWith = withKeyword |> parser.Try
 
               let! entities, relations =
@@ -592,3 +608,6 @@ module TypeSchema =
               Entities = entities
               Relations = relations }
       })
+    |> AnnotatedParser.withNamedRule schemaRule
+
+  let grammarRules: NamedRule list = [ cardinalityRule; schemaPathRule; schemaPathSegmentsRule; relationExtensionRule; relationRule; entityRule; entityExtensionRule; schemaRule ]
