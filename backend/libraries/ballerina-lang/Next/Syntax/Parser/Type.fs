@@ -733,4 +733,12 @@ module Type =
     }
     |> AnnotatedParser.withNamedRule typeDeclRule
 
-  let grammarRules: NamedRule list = [ typeParamRule; typeDeclRule ]
+  let recordTypeRule: NamedRule =
+    { Name = "record-type"
+      Rule = Seq [ Terminal "{"; Repeat (Seq [ NonTerminal "identifier"; Terminal ":"; NonTerminal "type-decl" ]); Terminal "}" ] }
+
+  let unionTypeRule: NamedRule =
+    { Name = "union-type"
+      Rule = Repeat1 (Seq [ Terminal "|"; NonTerminal "identifier"; Terminal "of"; NonTerminal "type-decl" ]) }
+
+  let grammarRules: NamedRule list = [ typeParamRule; typeDeclRule; recordTypeRule; unionTypeRule ]

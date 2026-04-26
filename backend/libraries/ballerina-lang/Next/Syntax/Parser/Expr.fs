@@ -61,6 +61,70 @@ module Expr =
 
   let private parseNoComplexShapes: Set<ComplexExpressionKind> = Set.empty
 
+  let stringLiteralRule: NamedRule = { Name = "string-literal"; Rule = Terminal "<string-literal>" }
+  let int64LiteralRule: NamedRule = { Name = "int64-literal"; Rule = Terminal "<int64-literal>" }
+  let decimalLiteralRule: NamedRule = { Name = "decimal-literal"; Rule = Terminal "<decimal-literal>" }
+  let float32LiteralRule: NamedRule = { Name = "float32-literal"; Rule = Terminal "<float32-literal>" }
+  let float64LiteralRule: NamedRule = { Name = "float64-literal"; Rule = Terminal "<float64-literal>" }
+  let boolLiteralRule: NamedRule = { Name = "bool-literal"; Rule = Terminal "<bool-literal>" }
+
+  let unitLiteralRule: NamedRule =
+    { Name = "unit-literal"
+      Rule = Seq [ Terminal "("; Terminal ")" ] }
+
+  let matchExprRule: NamedRule =
+    { Name = "match-expr"
+      Rule = Seq [ Terminal "match"; NonTerminal "expr"; Terminal "with";
+                   Repeat1 (Seq [ Terminal "|"; Alt [ NonTerminal "identifier-local-or-fully-qualified"; NonTerminal "case-literal" ];
+                                  Optional (NonTerminal "identifier"); Terminal "->"; NonTerminal "expr" ]);
+                   Optional (Seq [ Terminal "|"; Terminal "("; Terminal "*"; Terminal "->"; NonTerminal "expr"; Terminal ")" ]) ] }
+
+  let lambdaExprRule: NamedRule =
+    { Name = "lambda-expr"
+      Rule = Seq [ Terminal "fun";
+                   Repeat1 (Alt [ NonTerminal "type-param";
+                                  Seq [ Terminal "("; NonTerminal "identifier"; Terminal ":"; NonTerminal "type-decl"; Terminal ")" ];
+                                  NonTerminal "identifier" ]);
+                   Optional (Seq [ Terminal ":"; NonTerminal "type-decl" ]);
+                   Terminal "->"; NonTerminal "expr" ] }
+
+  let letExprRule: NamedRule =
+    { Name = "let-expr"
+      Rule = Seq [ Terminal "let";
+                   Alt [ Seq [ Terminal "("; NonTerminal "identifier"; Terminal ":"; NonTerminal "type-decl"; Terminal ")" ];
+                         Seq [ NonTerminal "identifier"; Optional (Seq [ Terminal ":"; NonTerminal "type-decl" ]) ] ];
+                   Terminal "="; NonTerminal "expr"; Terminal ";"; NonTerminal "expr" ] }
+
+  let doExprRule: NamedRule =
+    { Name = "do-expr"
+      Rule = Seq [ Terminal "do"; NonTerminal "expr"; Terminal ";"; NonTerminal "expr" ] }
+
+  let conditionalExprRule: NamedRule =
+    { Name = "conditional-expr"
+      Rule = Seq [ Terminal "if"; NonTerminal "expr"; Terminal "then"; NonTerminal "expr"; Terminal "else"; NonTerminal "expr" ] }
+
+  let recordConsRule: NamedRule =
+    let fieldAssign = Seq [ NonTerminal "identifier"; Terminal "="; NonTerminal "expr" ]
+    let mapEntry = Seq [ NonTerminal "identifier"; Terminal "->"; NonTerminal "expr" ]
+    let recordWith = Seq [ Terminal "with"; Repeat (fieldAssign); Terminal "}" ]
+    let recordFields = Seq [ Terminal "="; NonTerminal "expr"; Repeat (Seq [ Terminal ";"; fieldAssign ]); Terminal "}" ]
+    let mapLiteral = Seq [ Terminal "->"; NonTerminal "expr"; Repeat (Seq [ Terminal ";"; mapEntry ]); Terminal "}" ]
+    let listTail = Seq [ Repeat (Seq [ Terminal ";"; NonTerminal "expr" ]); Terminal "}" ]
+    { Name = "record-cons"
+      Rule = Seq [ Terminal "{"; Alt [ Terminal "}"; Seq [ NonTerminal "expr"; Alt [ recordWith; recordFields; mapLiteral; listTail ] ] ] ] }
+
+  let typeLetRule: NamedRule =
+    { Name = "type-let"
+      Rule = Seq [ Terminal "type"; NonTerminal "identifier"; Terminal "="; NonTerminal "type-decl"; Terminal ";"; NonTerminal "expr" ] }
+
+  let identifierLookupRule: NamedRule =
+    { Name = "identifier-lookup"
+      Rule = Alt [ NonTerminal "identifier"; Terminal "schema"; Terminal "entity"; Terminal "relation" ] }
+
+  let applicationRule: NamedRule =
+    { Name = "application"
+      Rule = Repeat1 (Alt [ NonTerminal "expr"; Seq [ Terminal "["; NonTerminal "type-decl"; Terminal "]" ] ]) }
+
   let exprRule: NamedRule =
     { Name = "expr"
       Rule =
@@ -1428,4 +1492,10 @@ module Expr =
     }
     |> AnnotatedParser.withNamedRule programRule
 
-  let grammarRules: NamedRule list = [ exprRule; programRule ]
+  let grammarRules: NamedRule list =
+    [ stringLiteralRule; int64LiteralRule; decimalLiteralRule
+      float32LiteralRule; float64LiteralRule; boolLiteralRule; unitLiteralRule
+      matchExprRule; lambdaExprRule; letExprRule; doExprRule
+      conditionalExprRule; recordConsRule; typeLetRule
+      identifierLookupRule; applicationRule
+      exprRule; programRule ]
