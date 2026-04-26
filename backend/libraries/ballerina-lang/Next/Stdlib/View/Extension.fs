@@ -18,6 +18,8 @@ module Extension =
     | View_MapState of
       {| mapDown: Option<Value<TypeValue<'ext>, 'ext>>
          mapUp: Option<Value<TypeValue<'ext>, 'ext>> |}
+    | View_Memo of
+      {| deps: Option<Value<TypeValue<'ext>, 'ext>> |}
 
   let ViewExtension<'runtimeContext, 'ext, 'extDTO, 'deltaExt, 'deltaExtDTO
     when 'ext: comparison
@@ -395,12 +397,66 @@ module Extension =
                   |> reader.Throw
             } }
 
+    // --- View::memo ---
+    // memo : Λdeps. Λresult. deps → result → result
+    // At runtime, ignores deps and returns the computed value.
+    // The TsxGenerator emits useMemo(() => compute, [deps...]) for React.
+    let memoId =
+      Identifier.FullyQualified([ "View" ], "memo")
+      |> TypeCheckScope.Empty.Resolve
+
+    let _depsVar, depsKind = TypeVar.Create("deps"), Kind.Star
+    let _resultVar, resultKind = TypeVar.Create("result"), Kind.Star
+
+    let memoOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<'runtimeContext, 'ext, Unit, Unit, ViewPropsOperations<'ext>> =
+      memoId,
+      { Type =
+          TypeValue.CreateLambda(
+            TypeParameter.Create("deps", depsKind),
+            TypeExpr.Lambda(
+              TypeParameter.Create("result", resultKind),
+              TypeExpr.Arrow(
+                TypeExpr.Lookup(Identifier.LocalScope "deps"),
+                TypeExpr.Arrow(
+                  TypeExpr.Lookup(Identifier.LocalScope "result"),
+                  TypeExpr.Lookup(Identifier.LocalScope "result")
+                )
+              )
+            )
+          )
+        Kind = Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+        Operation = View_Memo {| deps = None |}
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | View_Memo v -> Some(View_Memo v)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              match op with
+              | View_Memo s when s.deps.IsNone ->
+                // 1st arg: capture deps (ignored at runtime)
+                return
+                  (View_Memo {| deps = Some v |} |> operationLens.Set, Some memoId)
+                  |> Value.Ext
+              | View_Memo _ ->
+                // 2nd arg: return compute result directly (no memoization at runtime)
+                return v
+              | _ ->
+                return!
+                  Errors.Singleton loc0 (fun () -> "View::memo: unexpected operation state")
+                  |> reader.Throw
+            } }
+
     let viewPropsExtension =
       { TypeName = viewPropsResolvedId, viewPropsSymbolId
         TypeVars = [ (schemaVar, schemaKind); (ctxVar, ctxKind); (stVar, stKind) ]
         Cases = Map.empty
         Operations =
-          [ mapContextOperation; mapStateOperation ] |> Map.ofList
+          [ mapContextOperation; mapStateOperation; memoOperation ] |> Map.ofList
         Serialization = None
         ExtTypeChecker = None }
 

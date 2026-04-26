@@ -24,6 +24,7 @@ module Model =
     | List_Length
     | List_Decompose
     | List_OrderBy of {| f: Option<Value<TypeValue<'ext>, 'ext>> |}
+    | List_Any of {| f: Option<Value<TypeValue<'ext>, 'ext>> |}
 
     override self.ToString() : string =
       match self with
@@ -36,6 +37,7 @@ module Model =
       | List_Length -> "List::length"
       | List_Decompose -> "List::decompose"
       | List_OrderBy _ -> "List::orderBy"
+      | List_Any _ -> "List::any"
 
   type ListValues<'ext> =
     | List of List<Value<TypeValue<'ext>, 'ext>>

@@ -106,32 +106,36 @@ module View =
                   | Some tagSchema ->
                     match tagSchema |> Map.tryFind name with
                     | Some acceptableTypes ->
-                      let exprType = checkedExpr.Type
+                      // The 'style' attribute accepts any record of strings (CSS properties)
+                      // in addition to plain string values. Skip strict unification for style
+                      // to allow inline style objects like { marginTop = "0.75rem" }.
+                      if name <> "style" then
+                        let exprType = checkedExpr.Type
 
-                      let unifyAttempts =
-                        acceptableTypes
-                        |> List.map (fun expectedType ->
-                          state {
-                            do!
-                              TypeValue.Unify(loc0, exprType, expectedType)
-                              |> Expr<'T, 'Id, 'valueExt>.liftUnification
+                        let unifyAttempts =
+                          acceptableTypes
+                          |> List.map (fun expectedType ->
+                            state {
+                              do!
+                                TypeValue.Unify(loc0, exprType, expectedType)
+                                |> Expr<'T, 'Id, 'valueExt>.liftUnification
 
-                            return ()
-                          })
+                              return ()
+                            })
 
-                      match unifyAttempts with
-                      | first :: rest ->
-                        do!
-                          state.Any(first, rest)
-                          |> state.MapError(fun _ ->
-                            let typeNames =
-                              acceptableTypes
-                              |> List.map (fun t -> $"{t}")
-                              |> String.concat " | "
+                        match unifyAttempts with
+                        | first :: rest ->
+                          do!
+                            state.Any(first, rest)
+                            |> state.MapError(fun _ ->
+                              let typeNames =
+                                acceptableTypes
+                                |> List.map (fun t -> $"{t}")
+                                |> String.concat " | "
 
-                            Errors.Singleton loc0 (fun () ->
-                              $"Attribute '{name}' on <{el.Tag}> expects type {typeNames}, but got {exprType}"))
-                      | [] -> ()
+                              Errors.Singleton loc0 (fun () ->
+                                $"Attribute '{name}' on <{el.Tag}> expects type {typeNames}, but got {exprType}"))
+                        | [] -> ()
 
                       return TypeCheckedViewAttribute.ViewAttrExprValue(name, checkedExpr)
                     | None ->
