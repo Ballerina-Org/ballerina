@@ -18,21 +18,32 @@ module View =
   open Type
   open Ballerina.DSL.Next.Syntax
   open Ballerina
+  open Ballerina.Grammar
 
   // ═══════════════════════════════════════════════════════════════════════════
   // JSX View Parser
   // ═══════════════════════════════════════════════════════════════════════════
 
-  let private lessThanOperator = parseOperator Operator.LessThan
-  let private greaterThanOperator = parseOperator Operator.GreaterThan
-  let private tagSelfCloseOperator = parseOperator Operator.TagSelfClose
-  let private tagCloseOperator = parseOperator Operator.TagClose
+  let lessThanOpRule = { Name = "less-than-op"; Rule = Terminal "<" }
+  let greaterThanOpRule = { Name = "greater-than-op"; Rule = Terminal ">" }
+  let tagSelfCloseOpRule = { Name = "tag-self-close-op"; Rule = Terminal "/>" }
+  let tagCloseOpRule = { Name = "tag-close-op"; Rule = Terminal "</" }
+
+  let private lessThanOperator = parseOperator Operator.LessThan |> AnnotatedParser.withNamedRule lessThanOpRule
+  let private greaterThanOperator = parseOperator Operator.GreaterThan |> AnnotatedParser.withNamedRule greaterThanOpRule
+  let private tagSelfCloseOperator = parseOperator Operator.TagSelfClose |> AnnotatedParser.withNamedRule tagSelfCloseOpRule
+  let private tagCloseOperator = parseOperator Operator.TagClose |> AnnotatedParser.withNamedRule tagCloseOpRule
+
+  let tagIdentifierRule = { Name = "tag-identifier"; Rule = Terminal "<tag-identifier>" }
 
   let private tagIdentifier =
     parser.Exactly(fun t ->
       match t.Token with
       | Token.Identifier id -> Some id
       | _ -> None)
+    |> AnnotatedParser.withNamedRule tagIdentifierRule
+
+  let attrIdentifierRule = { Name = "attr-identifier"; Rule = Terminal "<attr-identifier>" }
 
   /// Attribute name parser: accepts identifiers and keywords (e.g. type, for)
   let private attrIdentifier =
@@ -41,6 +52,9 @@ module View =
       | Token.Identifier id -> Some id
       | Token.Keyword k -> Some (k.ToString().ToLowerInvariant())
       | _ -> None)
+    |> AnnotatedParser.withNamedRule attrIdentifierRule
+
+  let stringAttrValueRule = { Name = "string-attr-value"; Rule = Terminal "<string-literal>" }
 
   /// Parse a string attribute value: attr="value"
   let private stringAttrValue =
@@ -48,6 +62,11 @@ module View =
       match t.Token with
       | Token.StringLiteral s -> Some s
       | _ -> None)
+    |> AnnotatedParser.withNamedRule stringAttrValueRule
+
+  let viewExprRule =
+    { Name = "view-expr"
+      Rule = Alt [ NonTerminal "view-element"; NonTerminal "view-fragment"; NonTerminal "view-expr-container"; NonTerminal "view-text-node" ] }
 
   let viewExpr<'valueExt>
     (expr:
@@ -59,12 +78,6 @@ module View =
           Errors<Location>
          >)
     ()
-    : Parser<
-        Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-        LocalizedToken,
-        Location,
-        Errors<Location>
-       >
     =
 
     let rec viewNode () : Parser<ExprViewNode<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
@@ -78,15 +91,15 @@ module View =
     and viewElement () : Parser<ExprViewNode<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
       parser {
         let! loc = parser.Location
-        do! lessThanOperator
-        let! tag = tagIdentifier
+        do! lessThanOperator.Parser
+        let! tag = tagIdentifier.Parser
         let! attrs = viewAttributes () |> parser.Many
 
         return!
           parser.Any
             [ // Self-closing: <tag attrs />
               parser {
-                do! tagSelfCloseOperator
+                do! tagSelfCloseOperator.Parser
                 return
                   { Location = loc
                     Node =
@@ -98,11 +111,11 @@ module View =
               }
               // Opening tag: <tag attrs>children</tag>
               parser {
-                do! greaterThanOperator
+                do! greaterThanOperator.Parser
                 let! children = viewChildren ()
-                do! tagCloseOperator
-                let! _closeTag = tagIdentifier
-                do! greaterThanOperator
+                do! tagCloseOperator.Parser
+                let! _closeTag = tagIdentifier.Parser
+                do! greaterThanOperator.Parser
                 return
                   { Location = loc
                     Node =
@@ -119,13 +132,13 @@ module View =
       parser {
         let! loc = parser.Location
         // <>
-        do! lessThanOperator
-        do! greaterThanOperator
+        do! lessThanOperator.Parser
+        do! greaterThanOperator.Parser
         // children
         let! children = viewChildren ()
         // </>
-        do! tagCloseOperator
-        do! greaterThanOperator
+        do! tagCloseOperator.Parser
+        do! greaterThanOperator.Parser
         return
           { Location = loc
             Node = ExprViewNodeRec.ViewFragment children }
@@ -173,13 +186,13 @@ module View =
 
     and viewAttributes () : Parser<ExprViewAttribute<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
       parser {
-        let! name = attrIdentifier
+        let! name = attrIdentifier.Parser
         do! equalsOperator
         return!
           parser.Any
             [ // String value: attr="value"
               parser {
-                let! value = stringAttrValue
+                let! value = stringAttrValue.Parser
                 return ExprViewAttribute.ViewAttrStringValue(name, value)
               }
               // Expression value: attr={expr}
@@ -202,14 +215,14 @@ module View =
         parser.Any
           [ parser {
               do! openRoundBracketOperator
-              let! paramName = singleIdentifier
+              let! paramName = singleIdentifier.Parser
               do! colonOperator
-              let! typeDecl = typeDecl (expr ()) parseAllComplexTypeShapes
+              let! typeDecl = (typeDecl (expr ()) parseAllComplexTypeShapes).Parser
               do! closeRoundBracketOperator
               return paramName, Some typeDecl
             }
             parser {
-              let! paramName = singleIdentifier
+              let! paramName = singleIdentifier.Parser
               return paramName, None
             } ]
         |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
@@ -227,6 +240,11 @@ module View =
           Location = loc
           Scope = TypeCheckScope.Empty }
     }
+    |> AnnotatedParser.withNamedRule viewExprRule
+
+  let viewNodeExprRule =
+    { Name = "view-node-expr"
+      Rule = Alt [ NonTerminal "view-element"; NonTerminal "view-fragment"; NonTerminal "view-expr-container"; NonTerminal "view-text-node" ] }
 
   /// Standalone JSX element expression: <tag .../> or <tag ...>children</tag>
   /// Used when JSX elements appear inside expression contexts (e.g. lambda bodies).
@@ -241,12 +259,6 @@ module View =
           Errors<Location>
          >)
     ()
-    : Parser<
-        Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-        LocalizedToken,
-        Location,
-        Errors<Location>
-       >
     =
 
     let rec viewNode () : Parser<ExprViewNode<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
@@ -260,14 +272,14 @@ module View =
     and viewElement () : Parser<ExprViewNode<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
       parser {
         let! loc = parser.Location
-        do! lessThanOperator
-        let! tag = tagIdentifier
+        do! lessThanOperator.Parser
+        let! tag = tagIdentifier.Parser
         let! attrs = viewAttributes () |> parser.Many
 
         return!
           parser.Any
             [ parser {
-                do! tagSelfCloseOperator
+                do! tagSelfCloseOperator.Parser
                 return
                   { Location = loc
                     Node =
@@ -278,11 +290,11 @@ module View =
                           SelfClosing = true } }
               }
               parser {
-                do! greaterThanOperator
+                do! greaterThanOperator.Parser
                 let! children = viewChildren ()
-                do! tagCloseOperator
-                let! _closeTag = tagIdentifier
-                do! greaterThanOperator
+                do! tagCloseOperator.Parser
+                let! _closeTag = tagIdentifier.Parser
+                do! greaterThanOperator.Parser
                 return
                   { Location = loc
                     Node =
@@ -298,11 +310,11 @@ module View =
     and viewFragment () : Parser<ExprViewNode<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
       parser {
         let! loc = parser.Location
-        do! lessThanOperator
-        do! greaterThanOperator
+        do! lessThanOperator.Parser
+        do! greaterThanOperator.Parser
         let! children = viewChildren ()
-        do! tagCloseOperator
-        do! greaterThanOperator
+        do! tagCloseOperator.Parser
+        do! greaterThanOperator.Parser
         return
           { Location = loc
             Node = ExprViewNodeRec.ViewFragment children }
@@ -350,12 +362,12 @@ module View =
 
     and viewAttributes () : Parser<ExprViewAttribute<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
       parser {
-        let! name = attrIdentifier
+        let! name = attrIdentifier.Parser
         do! equalsOperator
         return!
           parser.Any
             [ parser {
-                let! value = stringAttrValue
+                let! value = stringAttrValue.Parser
                 return ExprViewAttribute.ViewAttrStringValue(name, value)
               }
               parser {
@@ -380,6 +392,11 @@ module View =
           Location = loc
           Scope = TypeCheckScope.Empty }
     }
+    |> AnnotatedParser.withNamedRule viewNodeExprRule
+
+  let coExprRule =
+    { Name = "co-expr"
+      Rule = Seq [ Terminal "co"; Terminal "{"; Repeat (Alt [ NonTerminal "co-let-bang"; NonTerminal "co-do-bang"; NonTerminal "co-return"; NonTerminal "co-return-bang"; NonTerminal "co-let" ]); Terminal "}" ] }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Coroutine Parser (co { ... })
@@ -395,12 +412,6 @@ module View =
           Errors<Location>
          >)
     ()
-    : Parser<
-        Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-        LocalizedToken,
-        Location,
-        Errors<Location>
-       >
     =
 
     let rec coStep () : Parser<ExprCoStep<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
@@ -417,7 +428,7 @@ module View =
         let! loc = parser.Location
         do! parseKeyword Keyword.Let
         do! parseOperator Operator.Bang
-        let! varName = singleIdentifier
+        let! varName = singleIdentifier.Parser
         do! equalsOperator
         let! value = expr ()
         do! semicolonOperator
@@ -431,7 +442,7 @@ module View =
       parser {
         let! loc = parser.Location
         do! parseKeyword Keyword.Let
-        let! varName = singleIdentifier
+        let! varName = singleIdentifier.Parser
         do! equalsOperator
         let! value = expr ()
         do! semicolonOperator
@@ -499,3 +510,9 @@ module View =
           Location = loc
           Scope = TypeCheckScope.Empty }
     }
+    |> AnnotatedParser.withNamedRule coExprRule
+
+  let grammarRules: NamedRule list =
+    [ lessThanOpRule; greaterThanOpRule; tagSelfCloseOpRule; tagCloseOpRule
+      tagIdentifierRule; attrIdentifierRule; stringAttrValueRule
+      viewExprRule; viewNodeExprRule; coExprRule ]

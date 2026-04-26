@@ -377,7 +377,7 @@ module ProjectModel =
             Location,
             Errors<Location>
            >) =
-          Parser.Expr.program ()
+          (Parser.Expr.program ()).Parser
           |> Parser.Run(actual, initialLocation)
           |> sum.MapError fst
 
