@@ -181,6 +181,8 @@ module Model =
       ListTypeSymbol: TypeSymbol
       ViewTypeSymbol: TypeSymbol
       ViewPropsTypeSymbol: TypeSymbol
+      ReactNodeTypeSymbol: TypeSymbol
+      ReactComponentTypeSymbol: TypeSymbol
       CoTypeSymbol: TypeSymbol
       MkQueryType:
         Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>

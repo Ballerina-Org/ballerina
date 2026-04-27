@@ -30,6 +30,8 @@ module Extension =
     (operationLens: PartialLens<'ext, ViewPropsOperations<'ext>>)
     (viewTypeSymbol: Option<TypeSymbol>)
     (viewPropsTypeSymbol: Option<TypeSymbol>)
+    (reactNodeTypeSymbol: Option<TypeSymbol>)
+    (reactComponentTypeSymbol: Option<TypeSymbol>)
     : TypeExtension<
         'runtimeContext,
         'ext,
@@ -50,10 +52,34 @@ module Extension =
         Unit,
         ViewPropsOperations<'ext>
        > *
+      TypeExtension<
+        'runtimeContext,
+        'ext,
+        'extDTO,
+        'deltaExt,
+        'deltaExtDTO,
+        Unit,
+        Unit,
+        Unit
+       > *
+      TypeExtension<
+        'runtimeContext,
+        'ext,
+        'extDTO,
+        'deltaExt,
+        'deltaExtDTO,
+        Unit,
+        Unit,
+        Unit
+       > *
+      TypeSymbol *
+      TypeSymbol *
       TypeSymbol *
       TypeSymbol *
       (TypeValue<'ext> -> TypeValue<'ext> -> TypeValue<'ext> -> TypeValue<'ext>) *
-      (TypeValue<'ext> -> TypeValue<'ext> -> TypeValue<'ext> -> TypeValue<'ext>)
+      (TypeValue<'ext> -> TypeValue<'ext> -> TypeValue<'ext> -> TypeValue<'ext>) *
+      TypeValue<'ext> *
+      (TypeValue<'ext> -> TypeValue<'ext>)
     =
     // --- View ---
     let viewId = Identifier.FullyQualified([ "Frontend" ], "View")
@@ -460,4 +486,54 @@ module Extension =
         Serialization = None
         ExtTypeChecker = None }
 
-    viewExtension, viewPropsExtension, viewSymbolId, viewPropsSymbolId, make_viewType, make_viewPropsType
+    // --- View::ReactNode ---
+    let reactNodeId = Identifier.FullyQualified([ "View" ], "ReactNode")
+
+    let reactNodeSymbolId =
+      reactNodeTypeSymbol |> Option.defaultWith (fun () -> reactNodeId |> TypeSymbol.Create)
+
+    let reactNodeResolvedId = reactNodeId |> TypeCheckScope.Empty.Resolve
+
+    let reactNodeType =
+      TypeValue.Imported
+        { Id = reactNodeResolvedId
+          Sym = reactNodeSymbolId
+          Parameters = []
+          Arguments = [] }
+
+    let reactNodeExtension =
+      { TypeName = reactNodeResolvedId, reactNodeSymbolId
+        TypeVars = []
+        Cases = Map.empty
+        Operations = Map.empty
+        Serialization = None
+        ExtTypeChecker = None }
+
+    // --- View::ReactComponent[P] ---
+    let reactComponentId = Identifier.FullyQualified([ "View" ], "ReactComponent")
+
+    let reactComponentSymbolId =
+      reactComponentTypeSymbol |> Option.defaultWith (fun () -> reactComponentId |> TypeSymbol.Create)
+
+    let reactComponentResolvedId = reactComponentId |> TypeCheckScope.Empty.Resolve
+
+    let propsVar, propsKind = TypeVar.Create("props"), Kind.Star
+
+    let make_reactComponentType (propsType: TypeValue<'ext>) =
+      TypeValue.Imported
+        { Id = reactComponentResolvedId
+          Sym = reactComponentSymbolId
+          Parameters = []
+          Arguments = [ propsType ] }
+
+    let reactComponentExtension =
+      { TypeName = reactComponentResolvedId, reactComponentSymbolId
+        TypeVars = [ (propsVar, propsKind) ]
+        Cases = Map.empty
+        Operations = Map.empty
+        Serialization = None
+        ExtTypeChecker = None }
+
+    viewExtension, viewPropsExtension, reactNodeExtension, reactComponentExtension,
+    viewSymbolId, viewPropsSymbolId, reactNodeSymbolId, reactComponentSymbolId,
+    make_viewType, make_viewPropsType, reactNodeType, make_reactComponentType

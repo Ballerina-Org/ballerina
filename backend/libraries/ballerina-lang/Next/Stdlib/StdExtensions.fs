@@ -711,7 +711,7 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
       DeltaExt<_, _, _>.ListDeltaDTOLens
       (typeCheckingConfig |> Option.map (fun cfg -> cfg.ListTypeSymbol))
 
-  let viewExtension, viewPropsExtension, view_sym, view_props_sym, mk_view_type, mk_view_props_type =
+  let viewExtension, viewPropsExtension, reactNodeExtension, reactComponentExtension, view_sym, view_props_sym, react_node_sym, react_component_sym, mk_view_type, mk_view_props_type, _react_node_type, _mk_react_component_type =
     View.Extension.ViewExtension<
       'runtimeContext,
       ValueExt<'runtimeContext, 'db, 'customExtension>,
@@ -723,6 +723,8 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
         Set = VViewProps }
       (typeCheckingConfig |> Option.map (fun cfg -> cfg.ViewTypeSymbol))
       (typeCheckingConfig |> Option.map (fun cfg -> cfg.ViewPropsTypeSymbol))
+      (typeCheckingConfig |> Option.map (fun cfg -> cfg.ReactNodeTypeSymbol))
+      (typeCheckingConfig |> Option.map (fun cfg -> cfg.ReactComponentTypeSymbol))
 
   let coroutineExtension, co_sym, mk_co_type =
     Coroutine.Extension.CoroutineExtension<
@@ -969,6 +971,8 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
     |> (listExtension |> TypeExtension.RegisterLanguageContext)
     |> (viewExtension |> TypeExtension.RegisterLanguageContext)
     |> (viewPropsExtension |> TypeExtension.RegisterLanguageContext)
+    |> (reactNodeExtension |> TypeExtension.RegisterLanguageContext)
+    |> (reactComponentExtension |> TypeExtension.RegisterLanguageContext)
     |> (coroutineExtension |> TypeExtension.RegisterLanguageContext)
     |> (webAppIOExtension |> TypeExtension.RegisterLanguageContext)
     |> (webAppRunExtension |> TypeLambdaExtension.RegisterLanguageContext)
@@ -1325,6 +1329,8 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
       ListTypeSymbol = list_sym
       ViewTypeSymbol = view_sym
       ViewPropsTypeSymbol = view_props_sym
+      ReactNodeTypeSymbol = react_node_sym
+      ReactComponentTypeSymbol = react_component_sym
       CoTypeSymbol = co_sym
       MkQueryType = mk_query
       MkListType = mk_list_type

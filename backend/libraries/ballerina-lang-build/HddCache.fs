@@ -51,6 +51,9 @@ module HddCache =
       ListTypeSymbol: Option<TypeSymbol>
       ViewTypeSymbol: Option<TypeSymbol>
       ViewPropsTypeSymbol: Option<TypeSymbol>
+
+      ReactNodeTypeSymbol: Option<TypeSymbol>
+      ReactComponentTypeSymbol: Option<TypeSymbol>
       CoTypeSymbol: Option<TypeSymbol> }
 
   type PersistedCacheData<'valueExt when 'valueExt: comparison> =
@@ -63,6 +66,8 @@ module HddCache =
       TypeCheckContext<'valueExt> *
       TypeCheckState<'valueExt>
      > *
+    Option<TypeSymbol> *
+    Option<TypeSymbol> *
     Option<TypeSymbol> *
     Option<TypeSymbol> *
     Option<TypeSymbol> *
@@ -100,15 +105,17 @@ module HddCache =
           container.ListTypeSymbol,
           container.ViewTypeSymbol,
           container.ViewPropsTypeSymbol,
+          container.ReactNodeTypeSymbol,
+          container.ReactComponentTypeSymbol,
           container.CoTypeSymbol
         | Right _ ->
           // Legacy cache format has no TypeCheckingConfig and can lead to symbol mismatches.
           // Force a clean rebuild so the next persisted cache includes the config.
-          Map.empty, None, None, None, None, None
+          Map.empty, None, None, None, None, None, None, None
       else
-        Map.empty, None, None, None, None, None
+        Map.empty, None, None, None, None, None, None, None
     with _ ->
-      Map.empty, None, None, None, None, None
+      Map.empty, None, None, None, None, None, None, None
 
   let private tryDeleteCacheFile (cacheFilePath: string) =
     try
@@ -122,7 +129,7 @@ module HddCache =
     : Option<TypeCheckingConfig<'valueExt>> =
     let serializer = MessagePackSerializerAdapter()
 
-    let _, queryTypeSymbol, listTypeSymbol, viewTypeSymbol, viewPropsTypeSymbol, coTypeSymbol =
+    let _, queryTypeSymbol, listTypeSymbol, viewTypeSymbol, viewPropsTypeSymbol, reactNodeTypeSymbol, reactComponentTypeSymbol, coTypeSymbol =
       loadPersistedCacheData<'valueExt> serializer cacheFilePath
 
     let dbQueryId = Identifier.FullyQualified([ "DB" ], "Query")
@@ -130,15 +137,19 @@ module HddCache =
     let listId = Identifier.LocalScope "List" |> TypeCheckScope.Empty.Resolve
     let viewId = Identifier.FullyQualified([ "Frontend" ], "View") |> TypeCheckScope.Empty.Resolve
     let viewPropsId = Identifier.FullyQualified([ "View" ], "Props") |> TypeCheckScope.Empty.Resolve
+    let _reactNodeId = Identifier.FullyQualified([ "View" ], "ReactNode") |> TypeCheckScope.Empty.Resolve
+    let _reactComponentId = Identifier.FullyQualified([ "View" ], "ReactComponent") |> TypeCheckScope.Empty.Resolve
     let coId = Identifier.LocalScope "Co" |> TypeCheckScope.Empty.Resolve
 
-    match queryTypeSymbol, listTypeSymbol, viewTypeSymbol, viewPropsTypeSymbol, coTypeSymbol with
-    | Some queryTypeSymbol, Some listTypeSymbol, Some viewTypeSymbol, Some viewPropsTypeSymbol, Some coTypeSymbol ->
+    match queryTypeSymbol, listTypeSymbol, viewTypeSymbol, viewPropsTypeSymbol, reactNodeTypeSymbol, reactComponentTypeSymbol, coTypeSymbol with
+    | Some queryTypeSymbol, Some listTypeSymbol, Some viewTypeSymbol, Some viewPropsTypeSymbol, Some reactNodeTypeSymbol, Some reactComponentTypeSymbol, Some coTypeSymbol ->
       Some
         { QueryTypeSymbol = queryTypeSymbol
           ListTypeSymbol = listTypeSymbol
           ViewTypeSymbol = viewTypeSymbol
           ViewPropsTypeSymbol = viewPropsTypeSymbol
+          ReactNodeTypeSymbol = reactNodeTypeSymbol
+          ReactComponentTypeSymbol = reactComponentTypeSymbol
           CoTypeSymbol = coTypeSymbol
           // This config is only used to bootstrap stdExtensions with stable symbols.
           MkQueryType =
@@ -208,7 +219,7 @@ module HddCache =
     let cacheFilePath = Path.Combine(cacheFolder, "build-cache.msgpack")
 
     let loadCache () =
-      let cache, _, _, _, _, _ =
+      let cache, _, _, _, _, _, _, _ =
         loadPersistedCacheData<'valueExt> serializer cacheFilePath
 
       cache
@@ -236,6 +247,10 @@ module HddCache =
               typeCheckingConfig |> Option.map (fun cfg -> cfg.ViewTypeSymbol)
             ViewPropsTypeSymbol =
               typeCheckingConfig |> Option.map (fun cfg -> cfg.ViewPropsTypeSymbol)
+            ReactNodeTypeSymbol =
+              typeCheckingConfig |> Option.map (fun cfg -> cfg.ReactNodeTypeSymbol)
+            ReactComponentTypeSymbol =
+              typeCheckingConfig |> Option.map (fun cfg -> cfg.ReactComponentTypeSymbol)
             CoTypeSymbol =
               typeCheckingConfig |> Option.map (fun cfg -> cfg.CoTypeSymbol) }
 
