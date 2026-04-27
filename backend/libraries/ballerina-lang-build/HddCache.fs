@@ -51,6 +51,7 @@ module HddCache =
       ListTypeSymbol: Option<TypeSymbol>
       ViewTypeSymbol: Option<TypeSymbol>
       ViewPropsTypeSymbol: Option<TypeSymbol>
+
       ReactNodeTypeSymbol: Option<TypeSymbol>
       ReactComponentTypeSymbol: Option<TypeSymbol>
       CoTypeSymbol: Option<TypeSymbol> }
