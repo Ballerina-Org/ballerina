@@ -23,6 +23,10 @@ module Update =
   open Ballerina
   open Ballerina.DSL.Next.StdLib.DB
 
+  let private deniedUpdateError loc0 entityName =
+    Errors.Singleton loc0 (fun () ->
+      $"Update failed for {entityName}: you are not allowed to perform this action.")
+
   let onUpdatingHook<'runtimeContext, 'db, 'ext when 'ext: comparison>
     (db_ops: DBTypeClass<'runtimeContext, 'db, 'ext>)
     (calculateProps:
@@ -310,15 +314,8 @@ module Update =
 
 
                   match existingValue with
-                  | Right _errors ->
-                    // let _, _, entity, _ = entity_ref
-                    // do Console.WriteLine $"Error getting {entity.Name.Name} with id {_entityId}: {errors.Errors()}"
-                    // do Console.ReadLine() |> ignore
-                    return
-                      Value.Sum(
-                        { Case = 1; Count = 2 },
-                        Value.Primitive PrimitiveValue.Unit
-                      )
+                  | Right errors ->
+                    return! sum.Throw(errors) |> reader.OfSum
                   | Left existingValue ->
                     let actual_update =
                       reader {
@@ -432,14 +429,11 @@ module Update =
                             ->
                             return! actual_update
                           | _res ->
-                            // do Console.WriteLine $"Unexpected result from canUpdate hook: {res}"
-                            // do Console.ReadLine() |> ignore
-
-                            return
-                              Value.Sum(
-                                { Case = 1; Count = 2 },
-                                Value.Primitive PrimitiveValue.Unit
+                            return!
+                              sum.Throw(
+                                deniedUpdateError loc0 entity.Name.Name
                               )
+                              |> reader.OfSum
                         | _ ->
                           // do Console.WriteLine $"There is no canUpdate hook for entity {entity.Name}, proceeding with update"
                           // do Console.ReadLine() |> ignore

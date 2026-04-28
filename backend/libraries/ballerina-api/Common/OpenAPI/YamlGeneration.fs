@@ -12,6 +12,8 @@ module YamlGeneration =
 
   let private compare_ordinal (a: string) (b: string) = String.CompareOrdinal(a, b)
 
+  let private api_error_response_schema_ref = "#/components/schemas/ApiErrorResponse"
+
 
   let private resolved_identifier_to_string (id: ResolvedIdentifier) =
     match id.Type with
@@ -408,8 +410,31 @@ module YamlGeneration =
     @ response_lines
     @ [ $"{indent (level + 3)}'400':"
         $"{indent (level + 4)}description: Bad Request"
+        $"{indent (level + 4)}content:"
+        $"{indent (level + 5)}application/json:"
+        $"{indent (level + 6)}schema:"
+        $"{indent (level + 7)}$ref: {yaml_string api_error_response_schema_ref}"
         $"{indent (level + 3)}'404':"
         $"{indent (level + 4)}description: Not Found" ]
+
+  let private api_error_component_lines =
+    [ $"{indent 2}'ApiErrorResponse':"
+      $"{indent 3}type: object"
+      $"{indent 3}properties:"
+      $"{indent 4}'Errors':"
+      $"{indent 5}type: array"
+      $"{indent 5}items:"
+      $"{indent 6}type: object"
+      $"{indent 6}additionalProperties: true"
+      $"{indent 4}'Examples':"
+      $"{indent 5}type: array"
+      $"{indent 5}items:"
+      $"{indent 6}type: object"
+      $"{indent 6}additionalProperties: true"
+      $"{indent 3}required:"
+      $"{indent 4}- 'Errors'"
+      $"{indent 4}- 'Examples'"
+      $"{indent 3}additionalProperties: false" ]
 
   let to_yaml (spec: OpenAPISpec) =
     let sorted_endpoints =
@@ -445,6 +470,7 @@ module YamlGeneration =
       "paths:" ]
     @ (if List.isEmpty paths_lines then [ "  {}" ] else paths_lines)
     @ [ "components:"; "  schemas:" ]
+    @ api_error_component_lines
     @ (if List.isEmpty components_lines then
          [ "    {}" ]
        else
