@@ -23,6 +23,14 @@ module Delete =
   open Ballerina
   open Ballerina.DSL.Next.StdLib.DB
 
+  let private missingDeleteTargetError loc0 entityName =
+    Errors.Singleton loc0 (fun () ->
+      $"Delete failed for {entityName}: the item was not found or is no longer accessible.")
+
+  let private deniedDeleteError loc0 entityName =
+    Errors.Singleton loc0 (fun () ->
+      $"Delete failed for {entityName}: you are not allowed to perform this action.")
+
   let onDeletingHook<'runtimeContext, 'db, 'ext when 'ext: comparison>
     (_db_ops: DBTypeClass<'runtimeContext, 'db, 'ext>)
     (entity_ref: EntityRef<'db, 'ext>)
@@ -229,11 +237,16 @@ module Delete =
                   db_ops.GetById entity_ref entityId
                   |> reader.MapError(Errors.MapContext(replaceWith loc0))
                   |> reader.Catch
-                  |> reader.Map Sum.toOption
 
                 match existingValue with
-                | None -> return Value.Primitive(PrimitiveValue.Bool false)
-                | Some currentValueWithProps ->
+                | Right _ ->
+                  let _, _, entity, _ = entity_ref
+                  return!
+                    sum.Throw(
+                      missingDeleteTargetError loc0 entity.Name.Name
+                    )
+                    |> reader.OfSum
+                | Left currentValueWithProps ->
                   let actual_delete =
                     reader {
                       do!
@@ -244,10 +257,9 @@ module Delete =
                           entityId
                           currentValueWithProps
 
-                      let! result =
+                      do!
                         db_ops.Delete entity_ref entityId
                         |> reader.MapError(Errors.MapContext(replaceWith loc0))
-                        |> reader.Catch
 
                       do!
                         onDeletedHook
@@ -257,7 +269,7 @@ module Delete =
                           entityId
                           currentValueWithProps
 
-                      return Value.Primitive(PrimitiveValue.Bool(result.IsLeft))
+                      return Value.Primitive(PrimitiveValue.Bool true)
                     }
                     |> reader.MapContext(
                       ExprEvalContext.Updaters.RootLevelEval(replaceWith false)
@@ -303,7 +315,11 @@ module Delete =
                           ->
                           return! actual_delete
                         | _ ->
-                          return Value.Primitive(PrimitiveValue.Bool(false))
+                          return!
+                            sum.Throw(
+                              deniedDeleteError loc0 entity.Name.Name
+                            )
+                            |> reader.OfSum
                     }
 
             } }

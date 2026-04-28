@@ -12,6 +12,7 @@
     <Compile Include="Core\MemoizeTests.fs" />
     <Compile Include="Formats\Iso8601\DateOnlyTests.fs" />
     <Compile Include="Formats\Iso8601\DateTimeTests.fs" />
+    <Compile Include="OpenApi\YamlGenerationTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
@@ -30,6 +31,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../libraries/ballerina-cat/ballerina-cat.fsproj" />
+    <ProjectReference Include="../../libraries/ballerina-api/ballerina-api.fsproj" />
     <ProjectReference Include="../../libraries/ballerina-stdlib/ballerina-stdlib.fsproj" />
   </ItemGroup>
 </Project>
