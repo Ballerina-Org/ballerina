@@ -40,6 +40,7 @@ module View =
     parser.Exactly(fun t ->
       match t.Token with
       | Token.Identifier id -> Some id
+      | Token.Keyword Keyword.Select -> Some "select"
       | _ -> None)
     |> AnnotatedParser.withNamedRule tagIdentifierRule
 
