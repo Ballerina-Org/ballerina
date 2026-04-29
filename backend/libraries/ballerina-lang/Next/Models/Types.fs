@@ -1518,6 +1518,7 @@ module Model =
     override self.ToString() = self.Node.ToString()
 
   and ExprViewNodeRec<'T, 'Id, 'valueExt when 'Id: comparison> =
+    | ViewLet of Var: Var * Value: Expr<'T, 'Id, 'valueExt> * Rest: ExprViewNode<'T, 'Id, 'valueExt>
     | ViewElement of ExprViewElement<'T, 'Id, 'valueExt>
     | ViewFragment of List<ExprViewNode<'T, 'Id, 'valueExt>>
     | ViewExprContainer of Expr<'T, 'Id, 'valueExt>
@@ -1528,6 +1529,7 @@ module Model =
 
     override self.ToString() =
       match self with
+      | ViewLet(var, value, rest) -> $"let {var} = {value}; {rest}"
       | ViewElement el -> el.ToString()
       | ViewFragment children ->
         let childStrs = children |> List.map (fun c -> c.ToString()) |> String.concat " "
@@ -2249,6 +2251,7 @@ module Model =
     override self.ToString() = self.Node.ToString()
 
   and [<RequireQualifiedAccess>] TypeCheckedViewNodeRec<'valueExt> =
+    | ViewLet of Var: Var * Value: TypeCheckedExpr<'valueExt> * Rest: TypeCheckedViewNode<'valueExt>
     | ViewElement of TypeCheckedViewElement<'valueExt>
     | ViewFragment of List<TypeCheckedViewNode<'valueExt>>
     | ViewExprContainer of TypeCheckedExpr<'valueExt>
@@ -2259,6 +2262,7 @@ module Model =
 
     override self.ToString() =
       match self with
+      | ViewLet(var, value, rest) -> $"let {var} = {value}; {rest}"
       | ViewElement el -> el.ToString()
       | ViewFragment children ->
         let childStrs = children |> List.map string |> String.concat " "
@@ -2800,6 +2804,7 @@ module Model =
     override self.ToString() = self.Node.ToString()
 
   and [<RequireQualifiedAccess>] RunnableViewNodeRec<'valueExt> =
+    | ViewLet of Var: Var * Value: RunnableExpr<'valueExt> * Rest: RunnableViewNode<'valueExt>
     | ViewElement of RunnableViewElement<'valueExt>
     | ViewFragment of List<RunnableViewNode<'valueExt>>
     | ViewExprContainer of RunnableExpr<'valueExt>
@@ -2809,6 +2814,7 @@ module Model =
 
     override self.ToString() =
       match self with
+      | ViewLet(var, value, rest) -> $"let {var} = {value}; {rest}"
       | ViewElement el -> el.ToString()
       | ViewFragment children ->
         let childStrs = children |> List.map string |> String.concat " "

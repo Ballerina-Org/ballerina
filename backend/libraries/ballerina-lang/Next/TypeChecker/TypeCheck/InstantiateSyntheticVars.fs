@@ -311,6 +311,12 @@ module InstantiateSyntheticVars =
             state {
               match node.Node with
               | TypeCheckedViewNodeRec.ViewText _ -> return node
+              | TypeCheckedViewNodeRec.ViewLet(var, value, rest) ->
+                let! value = !value
+                let! rest = instantiateNode rest
+                return
+                  { node with
+                      Node = TypeCheckedViewNodeRec.ViewLet(var, value, rest) }
               | TypeCheckedViewNodeRec.ViewExprContainer e ->
                 let! e = !e
                 return
