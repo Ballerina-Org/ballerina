@@ -38,7 +38,34 @@ module View =
       let (=>) c e = typeCheckExpr c e
 
       state {
+        let! ctx = state.GetContext()
+
         match node.Node with
+        | ExprViewNodeRec.ViewLet(var, valueExpr, rest) ->
+          let! checkedValue, _ = None => valueExpr
+
+          let! value_t =
+            checkedValue.Type
+            |> TypeValue.Instantiate
+              ()
+              (TypeExpr.Eval config typeCheckExpr)
+              loc0
+            |> Expr.liftInstantiation
+
+          let! checkedRest =
+            typeCheckNode rest
+            |> state.MapContext(
+              TypeCheckContext.Updaters.Values(
+                Map.add
+                  (var.Name |> Identifier.LocalScope |> ctx.Scope.Resolve)
+                  (value_t, checkedValue.Kind)
+              )
+            )
+
+          return
+            { TypeCheckedViewNode.Location = loc0
+              Node = TypeCheckedViewNodeRec.ViewLet(var, checkedValue, checkedRest) }
+
         | ExprViewNodeRec.ViewText text ->
           return
             { TypeCheckedViewNode.Location = loc0
@@ -60,7 +87,6 @@ module View =
               Node = TypeCheckedViewNodeRec.ViewFragment checkedChildren }
 
         | ExprViewNodeRec.ViewElement el ->
-          let! ctx = state.GetContext()
           let tagSchemaOpt = ctx.ViewAttributeSchemas |> Map.tryFind el.Tag
 
           let! checkedAttrs =

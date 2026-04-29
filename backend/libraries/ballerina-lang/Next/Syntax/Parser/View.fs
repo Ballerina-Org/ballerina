@@ -83,11 +83,26 @@ module View =
 
     let rec viewNode () : Parser<ExprViewNode<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
       parser.Any
-        [ viewElement ()
+        [ viewLet ()
+          viewElement ()
           viewFragment ()
           viewExprContainer ()
           viewTextNode () ]
       |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+
+    and viewLet () : Parser<ExprViewNode<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
+      parser {
+        let! loc = parser.Location
+        do! parseKeyword Keyword.Let
+        let! varName = singleIdentifier.Parser
+        do! equalsOperator
+        let! value = expr ()
+        do! semicolonOperator
+        let! rest = viewNode ()
+        return
+          { Location = loc
+            Node = ExprViewNodeRec.ViewLet(Var.Create varName, value, rest) }
+      }
 
     and viewElement () : Parser<ExprViewNode<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
       parser {
@@ -245,7 +260,11 @@ module View =
 
   let viewNodeExprRule =
     { Name = "view-node-expr"
-      Rule = Alt [ NonTerminal "view-element"; NonTerminal "view-fragment"; NonTerminal "view-expr-container"; NonTerminal "view-text-node" ] }
+      Rule = Alt [ NonTerminal "view-let"; NonTerminal "view-element"; NonTerminal "view-fragment"; NonTerminal "view-expr-container"; NonTerminal "view-text-node" ] }
+
+  let viewLetRule: NamedRule =
+    { Name = "view-let"
+      Rule = Seq [ Terminal "let"; NonTerminal "identifier"; Terminal "="; NonTerminal "expr"; Terminal ";"; NonTerminal "view-node-expr" ] }
 
   /// Standalone JSX element expression: <tag .../> or <tag ...>children</tag>
   /// Used when JSX elements appear inside expression contexts (e.g. lambda bodies).
@@ -264,11 +283,26 @@ module View =
 
     let rec viewNode () : Parser<ExprViewNode<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
       parser.Any
-        [ viewElement ()
+        [ viewLet ()
+          viewElement ()
           viewFragment ()
           viewExprContainer ()
           viewTextNode () ]
       |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+
+    and viewLet () : Parser<ExprViewNode<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
+      parser {
+        let! loc = parser.Location
+        do! parseKeyword Keyword.Let
+        let! varName = singleIdentifier.Parser
+        do! equalsOperator
+        let! value = expr ()
+        do! semicolonOperator
+        let! rest = viewNode ()
+        return
+          { Location = loc
+            Node = ExprViewNodeRec.ViewLet(Var.Create varName, value, rest) }
+      }
 
     and viewElement () : Parser<ExprViewNode<TypeExpr<'valueExt>, Identifier, 'valueExt>, LocalizedToken, Location, Errors<Location>> =
       parser {
@@ -560,6 +594,7 @@ module View =
   let grammarRules: NamedRule list =
     [ lessThanOpRule; greaterThanOpRule; tagSelfCloseOpRule; tagCloseOpRule
       tagIdentifierRule; attrIdentifierRule; stringAttrValueRule
+      viewLetRule
       viewElementRule; viewFragmentRule; viewExprContainerRule; viewTextNodeRule
       viewExprRule; viewNodeExprRule; coExprRule
       coLetBangRule; coLetRule; coDoBangRule; coReturnRule; coReturnBangRule ]

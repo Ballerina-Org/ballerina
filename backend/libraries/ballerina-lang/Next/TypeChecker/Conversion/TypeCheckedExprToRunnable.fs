@@ -177,6 +177,11 @@ module Conversion =
     : Sum<RunnableViewNodeRec<'valueExt>, Errors<Location>>
     =
     match node with
+    | TypeCheckedViewNodeRec.ViewLet(var, value, rest) ->
+      sum {
+        let! value', rest' = sum.All2 (convertExpression value) (convertViewNode rest)
+        return RunnableViewNodeRec.ViewLet(var, value', rest')
+      }
     | TypeCheckedViewNodeRec.ViewElement el ->
       sum {
         let! el' = convertViewElement el
