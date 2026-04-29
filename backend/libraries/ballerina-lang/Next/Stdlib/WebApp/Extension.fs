@@ -59,7 +59,7 @@ module Extension =
        > *
       TypeLambdaExtension<'runtimeContext, 'ext, 'extDTO, WebAppOperations<'ext>> *
       TypeSymbol *
-      (TypeValue<'ext> -> TypeValue<'ext>)
+      (TypeValue<'ext> -> TypeValue<'ext> -> TypeValue<'ext>)
     =
     // --- WebAppIO[schema] type ---
     let webAppIOId = Identifier.FullyQualified([ "WebApp" ], "IO")
@@ -69,19 +69,19 @@ module Extension =
       webAppIOTypeSymbol |> Option.defaultWith (fun () -> webAppIOId |> TypeSymbol.Create)
 
     let schemaVar, schemaKind = TypeVar.Create("schema"), Kind.Schema
-    let _ctxVar, ctxKind = TypeVar.Create("ctx"), Kind.Star
+    let _appCtxVar, appCtxKind = TypeVar.Create("appctx"), Kind.Star
     let _stVar, stKind = TypeVar.Create("st"), Kind.Star
 
-    let make_webAppIOType (schema: TypeValue<'ext>) =
+    let make_webAppIOType (schema: TypeValue<'ext>) (appCtx: TypeValue<'ext>) =
       TypeValue.Imported
         { Id = webAppIOResolvedId
           Sym = webAppIOSymbolId
           Parameters = []
-          Arguments = [ schema ] }
+          Arguments = [ schema; appCtx ] }
 
     // --- WebApp::withRoute ---
-    // withRoute : Λschema::Schema. Λinitst::*.
-    //   (string * Co[schema][()][initst][()] * initst) -> WebAppIO[schema] -> WebAppIO[schema]
+    // withRoute : Λschema::Schema. Λinitst::*. Λappctx::*.
+    //   (string * Co[schema][appctx][initst][()] * initst) -> WebAppIO[schema][appctx] -> WebAppIO[schema][appctx]
     let withRouteId =
       Identifier.FullyQualified([ "WebApp" ], "withRoute")
       |> TypeCheckScope.Empty.Resolve
@@ -95,32 +95,41 @@ module Extension =
             TypeParameter.Create("schema", schemaKind),
             TypeExpr.Lambda(
               TypeParameter.Create("initst", stKind),
-              TypeExpr.Arrow(
-                TypeExpr.Tuple(
-                  [ TypeExpr.Primitive PrimitiveType.String
-                    TypeExpr.Apply(
+              TypeExpr.Lambda(
+                TypeParameter.Create("appctx", appCtxKind),
+                TypeExpr.Arrow(
+                  TypeExpr.Tuple(
+                    [ TypeExpr.Primitive PrimitiveType.String
                       TypeExpr.Apply(
                         TypeExpr.Apply(
                           TypeExpr.Apply(
-                            TypeExpr.Lookup coTypeId,
-                            TypeExpr.Lookup(Identifier.LocalScope "schema")
+                            TypeExpr.Apply(
+                              TypeExpr.Lookup coTypeId,
+                              TypeExpr.Lookup(Identifier.LocalScope "schema")
+                            ),
+                            TypeExpr.Lookup(Identifier.LocalScope "appctx")
                           ),
-                          TypeExpr.Primitive PrimitiveType.Unit
+                          TypeExpr.Lookup(Identifier.LocalScope "initst")
                         ),
-                        TypeExpr.Lookup(Identifier.LocalScope "initst")
-                      ),
-                      TypeExpr.Primitive PrimitiveType.Unit
-                    )
-                    TypeExpr.Lookup(Identifier.LocalScope "initst") ]
-                ),
-                TypeExpr.Arrow(
-                  TypeExpr.Apply(
-                    TypeExpr.Lookup webAppIOId,
-                    TypeExpr.Lookup(Identifier.LocalScope "schema")
+                        TypeExpr.Primitive PrimitiveType.Unit
+                      )
+                      TypeExpr.Lookup(Identifier.LocalScope "initst") ]
                   ),
-                  TypeExpr.Apply(
-                    TypeExpr.Lookup webAppIOId,
-                    TypeExpr.Lookup(Identifier.LocalScope "schema")
+                  TypeExpr.Arrow(
+                    TypeExpr.Apply(
+                      TypeExpr.Apply(
+                        TypeExpr.Lookup webAppIOId,
+                        TypeExpr.Lookup(Identifier.LocalScope "schema")
+                      ),
+                      TypeExpr.Lookup(Identifier.LocalScope "appctx")
+                    ),
+                    TypeExpr.Apply(
+                      TypeExpr.Apply(
+                        TypeExpr.Lookup webAppIOId,
+                        TypeExpr.Lookup(Identifier.LocalScope "schema")
+                      ),
+                      TypeExpr.Lookup(Identifier.LocalScope "appctx")
+                    )
                   )
                 )
               )
@@ -129,7 +138,7 @@ module Extension =
         Kind =
           Kind.Arrow(
             Kind.Schema,
-            Kind.Arrow(Kind.Star, Kind.Star)
+            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
           )
         Operation = WebApp_WithRoute { Path = None; InitialState = None; Coroutine = None }
         OperationsLens =
@@ -184,8 +193,8 @@ module Extension =
             } }
 
     // --- WebApp::withDbRoute ---
-    // withDbRoute : Λschema::Schema. Λst::*.
-    //   (string * (schema -> Co[schema][()][st][()]) * st) -> WebAppIO[schema] -> WebAppIO[schema]
+    // withDbRoute : Λschema::Schema. Λst::*. Λappctx::*.
+    //   (string * (schema -> Co[schema][appctx][st][()]) * st) -> WebAppIO[schema][appctx] -> WebAppIO[schema][appctx]
     // Like withRoute, but the coroutine is provided as a function of the schema descriptor.
     // The function is stored unapplied; the host (Program.fs) resolves it before frontend generation.
     let withDbRouteId =
@@ -201,35 +210,44 @@ module Extension =
             TypeParameter.Create("schema", schemaKind),
             TypeExpr.Lambda(
               TypeParameter.Create("st", stKind),
-              TypeExpr.Arrow(
-                TypeExpr.Tuple(
-                  [ TypeExpr.Primitive PrimitiveType.String
-                    TypeExpr.Arrow(
-                      TypeExpr.Lookup(Identifier.LocalScope "schema"),
-                      TypeExpr.Apply(
+              TypeExpr.Lambda(
+                TypeParameter.Create("appctx", appCtxKind),
+                TypeExpr.Arrow(
+                  TypeExpr.Tuple(
+                    [ TypeExpr.Primitive PrimitiveType.String
+                      TypeExpr.Arrow(
+                        TypeExpr.Lookup(Identifier.LocalScope "schema"),
                         TypeExpr.Apply(
                           TypeExpr.Apply(
                             TypeExpr.Apply(
-                              TypeExpr.Lookup coTypeId,
-                              TypeExpr.Lookup(Identifier.LocalScope "schema")
+                              TypeExpr.Apply(
+                                TypeExpr.Lookup coTypeId,
+                                TypeExpr.Lookup(Identifier.LocalScope "schema")
+                              ),
+                              TypeExpr.Lookup(Identifier.LocalScope "appctx")
                             ),
-                            TypeExpr.Primitive PrimitiveType.Unit
+                            TypeExpr.Lookup(Identifier.LocalScope "st")
                           ),
-                          TypeExpr.Lookup(Identifier.LocalScope "st")
-                        ),
-                        TypeExpr.Primitive PrimitiveType.Unit
+                          TypeExpr.Primitive PrimitiveType.Unit
+                        )
                       )
-                    )
-                    TypeExpr.Lookup(Identifier.LocalScope "st") ]
-                ),
-                TypeExpr.Arrow(
-                  TypeExpr.Apply(
-                    TypeExpr.Lookup webAppIOId,
-                    TypeExpr.Lookup(Identifier.LocalScope "schema")
+                      TypeExpr.Lookup(Identifier.LocalScope "st") ]
                   ),
-                  TypeExpr.Apply(
-                    TypeExpr.Lookup webAppIOId,
-                    TypeExpr.Lookup(Identifier.LocalScope "schema")
+                  TypeExpr.Arrow(
+                    TypeExpr.Apply(
+                      TypeExpr.Apply(
+                        TypeExpr.Lookup webAppIOId,
+                        TypeExpr.Lookup(Identifier.LocalScope "schema")
+                      ),
+                      TypeExpr.Lookup(Identifier.LocalScope "appctx")
+                    ),
+                    TypeExpr.Apply(
+                      TypeExpr.Apply(
+                        TypeExpr.Lookup webAppIOId,
+                        TypeExpr.Lookup(Identifier.LocalScope "schema")
+                      ),
+                      TypeExpr.Lookup(Identifier.LocalScope "appctx")
+                    )
                   )
                 )
               )
@@ -238,7 +256,7 @@ module Extension =
         Kind =
           Kind.Arrow(
             Kind.Schema,
-            Kind.Arrow(Kind.Star, Kind.Star)
+            Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
           )
         Operation = WebApp_WithDbRoute { Path = None; InitialState = None; SchemaFn = None }
         OperationsLens =
@@ -293,8 +311,8 @@ module Extension =
             } }
 
     // --- WebApp::withComponent ---
-    // withComponent : Λschema::Schema. Λctx::*. Λst::*.
-    //   string -> Frontend::View[schema][ctx][st] -> WebAppIO[schema] -> WebAppIO[schema]
+    // withComponent : Λschema::Schema. Λappctx::*. Λst::*.
+    //   string -> Frontend::View[schema][appctx][st] -> WebAppIO[schema][appctx] -> WebAppIO[schema][appctx]
     let withComponentId =
       Identifier.FullyQualified([ "WebApp" ], "withComponent")
       |> TypeCheckScope.Empty.Resolve
@@ -307,7 +325,7 @@ module Extension =
           TypeValue.CreateLambda(
             TypeParameter.Create("schema", schemaKind),
             TypeExpr.Lambda(
-              TypeParameter.Create("ctx", ctxKind),
+              TypeParameter.Create("appctx", appCtxKind),
               TypeExpr.Lambda(
                 TypeParameter.Create("st", stKind),
                 TypeExpr.Arrow(
@@ -319,18 +337,24 @@ module Extension =
                           TypeExpr.Lookup viewTypeId,
                           TypeExpr.Lookup(Identifier.LocalScope "schema")
                         ),
-                        TypeExpr.Lookup(Identifier.LocalScope "ctx")
+                        TypeExpr.Lookup(Identifier.LocalScope "appctx")
                       ),
                       TypeExpr.Lookup(Identifier.LocalScope "st")
                     ),
                     TypeExpr.Arrow(
                       TypeExpr.Apply(
-                        TypeExpr.Lookup webAppIOId,
-                        TypeExpr.Lookup(Identifier.LocalScope "schema")
+                        TypeExpr.Apply(
+                          TypeExpr.Lookup webAppIOId,
+                          TypeExpr.Lookup(Identifier.LocalScope "schema")
+                        ),
+                        TypeExpr.Lookup(Identifier.LocalScope "appctx")
                       ),
                       TypeExpr.Apply(
-                        TypeExpr.Lookup webAppIOId,
-                        TypeExpr.Lookup(Identifier.LocalScope "schema")
+                        TypeExpr.Apply(
+                          TypeExpr.Lookup webAppIOId,
+                          TypeExpr.Lookup(Identifier.LocalScope "schema")
+                        ),
+                        TypeExpr.Lookup(Identifier.LocalScope "appctx")
                       )
                     )
                   )
@@ -394,7 +418,7 @@ module Extension =
 
     let webAppIOExtension =
       { TypeName = webAppIOResolvedId, webAppIOSymbolId
-        TypeVars = [ (schemaVar, schemaKind) ]
+        TypeVars = [ (schemaVar, schemaKind); (_appCtxVar, appCtxKind) ]
         Cases = Map.empty
         Operations =
           [ withRouteOperation; withDbRouteOperation; withComponentOperation ] |> Map.ofList
@@ -402,37 +426,38 @@ module Extension =
         ExtTypeChecker = None }
 
     // --- WebApp::run ---
-    // run : Λschema::Schema. Λresult::*.
-    //   DBIO[schema][result] -> WebAppIO[schema]
+    // run : Λschema::Schema. Λappctx::*.
+    //   DBIO[schema][()] -> WebAppIO[schema][appctx]
     let webAppRunId =
       Identifier.FullyQualified([ "WebApp" ], "run")
       |> TypeCheckScope.Empty.Resolve
-
-    let _resVar, resKind = TypeVar.Create("result"), Kind.Star
 
     let webAppRunType =
       TypeValue.CreateLambda(
         TypeParameter.Create("schema", schemaKind),
         TypeExpr.Lambda(
-          TypeParameter.Create("result", resKind),
+          TypeParameter.Create("appctx", appCtxKind),
           TypeExpr.Arrow(
             TypeExpr.Apply(
               TypeExpr.Apply(
                 TypeExpr.Lookup dbIOTypeId,
                 TypeExpr.Lookup(Identifier.LocalScope "schema")
               ),
-              TypeExpr.Lookup(Identifier.LocalScope "result")
-            ),
+              TypeExpr.Primitive PrimitiveType.Unit
+            )
+            ,
             TypeExpr.Apply(
-              TypeExpr.Lookup webAppIOId,
-              TypeExpr.Lookup(Identifier.LocalScope "schema")
+              TypeExpr.Apply(
+                TypeExpr.Lookup webAppIOId,
+                TypeExpr.Lookup(Identifier.LocalScope "schema")
+              ),
+              TypeExpr.Lookup(Identifier.LocalScope "appctx")
             )
           )
         )
       )
 
-    let webAppRunKind =
-      Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Star))
+    let webAppRunKind = Kind.Arrow(Kind.Schema, Kind.Arrow(Kind.Star, Kind.Star))
 
     let webAppRunExtension: TypeLambdaExtension<'runtimeContext, 'ext, 'extDTO, WebAppOperations<'ext>> =
       { ExtensionType = webAppRunId, webAppRunType, webAppRunKind
@@ -474,7 +499,7 @@ module Extension =
 
               match op with
               | WebApp_TypeAppliedRun ->
-                // Second type application [result] was erased; now value application with DBIO arg
+                // Remaining type application [appctx] is erased; now value application with DBIO arg
                 return
                   Applicable(fun dbioValue ->
                     reader {
