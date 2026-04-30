@@ -1163,9 +1163,7 @@ module SchemaTypeEval =
                 synth (
                   RunnableExprRec.Lambda
                     { Param = v
-                      ParamType = TypeValue.CreateUnit()
-                      Body = body
-                      BodyType = TypeValue.CreateUnit() }
+                      Body = body }
                 ))
               matchExpr
 

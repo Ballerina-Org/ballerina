@@ -2527,12 +2527,10 @@ module Model =
 
   and [<RequireQualifiedAccess>] RunnableExprLambda<'valueExt> =
     { Param: Var
-      ParamType: TypeValue<'valueExt>
-      Body: RunnableExpr<'valueExt>
-      BodyType: TypeValue<'valueExt> }
+      Body: RunnableExpr<'valueExt> }
 
     override self.ToString() =
-      $"fun ({self.Param}: {self.ParamType}) -> {self.Body}"
+      $"fun {self.Param} -> {self.Body}"
 
   and [<RequireQualifiedAccess>] RunnableExprApply<'valueExt> =
     { F: RunnableExpr<'valueExt>
@@ -2934,9 +2932,9 @@ module Model =
       | RunnableExprRec.TypeLambda({ RunnableExprTypeLambda.Param = tp
                                      Body = body }) -> $"(Λ{tp} => {body})"
       | TypeApply({ Func = e; TypeArg = t }) -> $"{e} [{t}]"
-      | Lambda({ Param = v
-                 ParamType = t
-                 Body = body }) -> $"(fun ({v.Name}: {t}) -> {body})"
+      | RunnableExprRec.Lambda({ RunnableExprLambda.Param = v
+                                 RunnableExprLambda.Body = body }) ->
+        $"(fun {v.Name} -> {body})"
       | Apply({ F = e1; Arg = e2 }) -> $"({e1} {e2})"
       | FromValue({ Value = v
                     ValueType = t

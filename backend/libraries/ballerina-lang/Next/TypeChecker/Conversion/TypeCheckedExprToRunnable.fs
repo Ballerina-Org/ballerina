@@ -49,7 +49,7 @@ module Conversion =
     | TypeCheckedExprRec.Lambda l ->
       sum {
         let! body = convertExpression l.Body
-        return RunnableExprRec.Lambda { Param = l.Param; ParamType = l.ParamType; Body = body; BodyType = l.BodyType }
+        return RunnableExprRec.Lambda { Param = l.Param; Body = body }
       }
     | TypeCheckedExprRec.FromValue fv ->
       Left(RunnableExprRec.FromValue { Value = fv.Value; ValueType = fv.ValueType; ValueKind = fv.ValueKind })

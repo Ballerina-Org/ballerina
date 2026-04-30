@@ -34,7 +34,7 @@ module RunnableExprLegacyConstructors =
         e: RunnableExpr<'valueExt>,
         r: TypeValue<'valueExt>
       ) : RunnableExpr<'valueExt> =
-      { Expr = RunnableExprRec.Lambda { Param = v; ParamType = t; Body = e; BodyType = r }
+      { Expr = RunnableExprRec.Lambda { Param = v; Body = e }
         Location = Location.Unknown
         Type = TypeValue.CreateArrow(t, r)
         Kind = Kind.Star

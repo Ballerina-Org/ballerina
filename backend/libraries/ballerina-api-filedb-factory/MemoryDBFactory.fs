@@ -31,6 +31,16 @@ module MemoryDBAPIFactory =
   open Microsoft.AspNetCore.Http
   open CacheCompilation
 
+  let private mergeEvalScope
+    (baseScope: ExprEvalContextScope<'valueExtension>)
+    (evaluatedScope: ExprEvalContextScope<'valueExtension>)
+    : ExprEvalContextScope<'valueExtension> =
+    { Values =
+        evaluatedScope.Values
+        |> Map.merge (fun evaluatedValue _baseValue -> evaluatedValue) baseScope.Values
+      Symbols =
+        ExprEvalContextSymbols.Append baseScope.Symbols evaluatedScope.Symbols }
+
   let contextFactory dbFileConfig =
     hddcacheWithStdExtensions
       (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
@@ -114,7 +124,7 @@ module MemoryDBAPIFactory =
           { DbExtension = dbio
             EvalContext =
               { evalContext with
-                  Scope = dbio.EvalContext }
+                  Scope = mergeEvalScope evalContext.Scope dbio.EvalContext }
             TypeCheckContext = typeCheckContext
             TypeCheckState = typeCheckState
             LanguageContext = languageContext
@@ -126,7 +136,7 @@ module MemoryDBAPIFactory =
           { DbExtension = dbio
             EvalContext =
               { evalContext with
-                  Scope = dbio.EvalContext }
+                  Scope = mergeEvalScope evalContext.Scope dbio.EvalContext }
             TypeCheckContext = typeCheckContext
             TypeCheckState = typeCheckState
             LanguageContext = languageContext

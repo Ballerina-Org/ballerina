@@ -11,13 +11,23 @@ open Ballerina.DSL.Next.Terms.Eval
 open Ballerina.DSL.Next.Terms.Patterns
 open Ballerina.Errors
 open Ballerina.Collections.NonEmptyList
+open Ballerina.Collections.Map
+
+let private mergeEvalScope
+  (baseScope: ExprEvalContextScope<'valueExtension>)
+  (evaluatedScope: ExprEvalContextScope<'valueExtension>)
+  : ExprEvalContextScope<'valueExtension> =
+  { Values =
+      evaluatedScope.Values
+      |> Map.merge (fun evaluatedValue _baseValue -> evaluatedValue) baseScope.Values
+    Symbols =
+      ExprEvalContextSymbols.Append baseScope.Symbols evaluatedScope.Symbols }
 
 let executeBackgroundJob
   dbio
-  (evalContext: ValueExtensionOps<'runtimeContext, 'valueExtension>)
+  (baseEvalContext: ExprEvalContext<'runtimeContext, 'valueExtension>)
   (injectBackgroundContext:
     Updater<ExprEvalContext<'runtimeContext, 'valueExtension>>)
-  runtimeContext
   backgroundJob
   value
   entityId
@@ -57,11 +67,10 @@ let executeBackgroundJob
       Expr.Eval(NonEmptyList.OfList(backgroundJobExpr, []))
       |> Reader.mapContext injectBackgroundContext
       |> Reader.Run
-        { Scope = dbio.EvalContext
-          ValueOverlays = []
-          ExtensionOps = evalContext
-          RuntimeContext = runtimeContext
-          RootLevelEval = true }
+        { baseEvalContext with
+            Scope = mergeEvalScope baseEvalContext.Scope dbio.EvalContext
+            ValueOverlays = []
+            RootLevelEval = true }
 
     match backgroundJobResult with
     | Left(Value.Sum(_,
