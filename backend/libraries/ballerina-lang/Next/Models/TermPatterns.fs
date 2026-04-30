@@ -1740,9 +1740,9 @@ module Patterns =
     static member Lambda
       (
         v: Var,
-        paramType: TypeValue<'valueExt>,
+        _paramType: TypeValue<'valueExt>,
         e: RunnableExpr<'valueExt>,
-        returnType: TypeValue<'valueExt>,
+        _returnType: TypeValue<'valueExt>,
         t: TypeValue<'valueExt>,
         k: Kind,
         loc: Location,
@@ -1751,9 +1751,7 @@ module Patterns =
       { Expr =
           RunnableExprRec.Lambda(
             { RunnableExprLambda.Param = v
-              ParamType = paramType
-              Body = e
-              BodyType = returnType }
+              Body = e }
           )
         Type = t
         Kind = k

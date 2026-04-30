@@ -23,6 +23,7 @@ module API =
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Terms.FastEval
   open Ballerina.DSL.Next.Terms.Eval
+  open Ballerina.Collections.Map
   open Ballerina.Collections.NonEmptyList
   open Ballerina.Reader.WithError
   open System.Text
@@ -30,6 +31,16 @@ module API =
   type SchemaAPIPayload =
     { SchemaDefinition: SchemaFileDefinition[]
       IsDraft: bool }
+
+  let private mergeEvalScope
+    (baseScope: ExprEvalContextScope<'valueExtension>)
+    (evaluatedScope: ExprEvalContextScope<'valueExtension>)
+    : ExprEvalContextScope<'valueExtension> =
+    { Values =
+        evaluatedScope.Values
+        |> Map.merge (fun evaluatedValue _baseValue -> evaluatedValue) baseScope.Values
+      Symbols =
+        ExprEvalContextSymbols.Append baseScope.Symbols evaluatedScope.Symbols }
 
   let private runMain
     (languageContext:
@@ -164,7 +175,7 @@ module API =
 
       let evalContext =
         { evalContext with
-            Scope = dbio.EvalContext }
+            Scope = mergeEvalScope evalContext.Scope dbio.EvalContext }
 
 
       match schema with

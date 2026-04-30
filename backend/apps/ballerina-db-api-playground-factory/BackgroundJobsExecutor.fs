@@ -103,9 +103,8 @@ type MemoryDBBackgroundJobExecutor
                       let result =
                         executeBackgroundJob
                           descriptor.DbExtension
-                          descriptor.EvalContext.ExtensionOps
+                          descriptor.EvalContext
                           injectBackgroundContext
-                          descriptor.EvalContext.RuntimeContext
                           backgroundJob
                           value
                           entity.EntityId
