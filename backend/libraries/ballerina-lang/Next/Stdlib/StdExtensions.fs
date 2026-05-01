@@ -750,11 +750,11 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get = function | VWebApp x -> Some x | _ -> None
         Set = VWebApp }
+      db_ops
       DBExt<'runtimeContext, 'db, 'customExtension>.ValueLens
       None
       (Identifier.FullyQualified([ "Frontend" ], "View"))
       (Identifier.LocalScope "Co")
-      (Identifier.LocalScope "DBIO")
 
   let dateOnlyExtension =
     DateOnly.Extension.DateOnlyExtension<

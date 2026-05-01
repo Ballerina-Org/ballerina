@@ -12,6 +12,7 @@ module Extension =
   open Ballerina.DSL.Next.Terms
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.StdLib.DB
+  open Ballerina.DSL.Next.StdLib.DB.Extension
 
   type WebAppWithRouteArgs<'ext when 'ext: comparison> =
     { Path: Option<string>
@@ -29,7 +30,8 @@ module Extension =
 
   type WebAppOperations<'ext when 'ext: comparison> =
     | WebApp_Run
-    | WebApp_TypeAppliedRun
+    | WebApp_TypeAppliedRun of Schema<'ext>
+    | WebApp_ContextAppliedRun of Schema<'ext>
     | WebApp_WithRoute of WebAppWithRouteArgs<'ext>
     | WebApp_WithDbRoute of WebAppWithDbRouteArgs<'ext>
     | WebApp_WithComponent of WebAppWithComponentArgs<'ext>
@@ -42,11 +44,11 @@ module Extension =
     and 'deltaExtDTO: not null
     and 'deltaExtDTO: not struct>
     (operationLens: PartialLens<'ext, WebAppOperations<'ext>>)
+    (db_ops: DBTypeClass<'runtimeContext, 'db, 'ext>)
     (dbValuesLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
     (webAppIOTypeSymbol: Option<TypeSymbol>)
     (viewTypeId: Identifier)
     (coTypeId: Identifier)
-    (dbIOTypeId: Identifier)
     : TypeExtension<
         'runtimeContext,
         'ext,
@@ -427,7 +429,7 @@ module Extension =
 
     // --- WebApp::run ---
     // run : Λschema::Schema. Λappctx::*.
-    //   DBIO[schema][()] -> WebAppIO[schema][appctx]
+    //   (schema -> ()) -> WebAppIO[schema][appctx]
     let webAppRunId =
       Identifier.FullyQualified([ "WebApp" ], "run")
       |> TypeCheckScope.Empty.Resolve
@@ -438,14 +440,10 @@ module Extension =
         TypeExpr.Lambda(
           TypeParameter.Create("appctx", appCtxKind),
           TypeExpr.Arrow(
-            TypeExpr.Apply(
-              TypeExpr.Apply(
-                TypeExpr.Lookup dbIOTypeId,
-                TypeExpr.Lookup(Identifier.LocalScope "schema")
-              ),
+            TypeExpr.Arrow(
+              TypeExpr.Lookup(Identifier.LocalScope "schema"),
               TypeExpr.Primitive PrimitiveType.Unit
-            )
-            ,
+            ),
             TypeExpr.Apply(
               TypeExpr.Apply(
                 TypeExpr.Lookup webAppIOId,
@@ -476,11 +474,24 @@ module Extension =
 
               match op with
               | WebApp_Run ->
-                // First type application [schema] — transition to TypeAppliedRun
+                // First type application [schema] captures the schema for internal DBIO construction.
+                return
+                  TypeApplicable(fun typeArg ->
+                    reader {
+                      let! schema =
+                        typeArg
+                        |> TypeValue.AsSchema
+                        |> Sum.mapRight (Errors.MapContext(fun _ -> Location.Unknown))
+                        |> reader.OfSum
+
+                      return (WebApp_TypeAppliedRun schema |> operationLens.Set, None) |> Ext
+                    })
+              | WebApp_TypeAppliedRun schema ->
+                // Remaining explicit appctx type argument is erased at runtime.
                 return
                   TypeApplicable(fun _typeArg ->
                     reader {
-                      return (WebApp_TypeAppliedRun |> operationLens.Set, None) |> Ext
+                      return (WebApp_ContextAppliedRun schema |> operationLens.Set, None) |> Ext
                     })
               | _ ->
                 return!
@@ -498,40 +509,30 @@ module Extension =
                 |> reader.OfSum
 
               match op with
-              | WebApp_TypeAppliedRun ->
-                // Remaining type application [appctx] is erased; now value application with DBIO arg
+              | WebApp_ContextAppliedRun schema ->
+                // The callback becomes the DBIO.Main function; WebApp::run constructs DBIO internally.
                 return
-                  Applicable(fun dbioValue ->
+                  Applicable(fun mainValue ->
                     reader {
-                      // Extract the DBIO from the argument value
-                      let! dbVals =
-                        match dbioValue with
-                        | Ext(ext, _) ->
-                          dbValuesLens.Get ext
-                          |> sum.OfOption(
-                            Errors.Singleton loc0 (fun () -> "WebApp::run: expected DBIO value")
-                          )
-                          |> reader.OfSum
-                        | _ ->
-                          Errors.Singleton loc0 (fun () -> "WebApp::run: expected an Ext value")
-                          |> reader.Throw
+                      let! dbio =
+                        BuildDBIO<'runtimeContext, 'db, 'ext>
+                          loc0
+                          dbValuesLens
+                          db_ops.DB
+                          schema
+                          mainValue
 
-                      match dbVals with
-                      | DBValues.DBIO dbio ->
-                        let webAppData: WebAppIOData<'runtimeContext, 'db, 'ext> =
-                          { DBIO = dbio
-                            Routes = []
-                            DbRoutes = []
-                            Components = [] }
-                        return (DBValues.WebAppIO webAppData |> dbValuesLens.Set, None) |> Ext
-                      | _ ->
-                        return!
-                          Errors.Singleton loc0 (fun () -> "WebApp::run: expected DBIO data")
-                          |> reader.Throw
+                      let webAppData: WebAppIOData<'runtimeContext, 'db, 'ext> =
+                        { DBIO = dbio
+                          Routes = []
+                          DbRoutes = []
+                          Components = [] }
+
+                      return (DBValues.WebAppIO webAppData |> dbValuesLens.Set, None) |> Ext
                     })
               | _ ->
                 return!
-                  Errors.Singleton loc0 (fun () -> "WebApp::run: expected WebApp_TypeAppliedRun")
+                  Errors.Singleton loc0 (fun () -> "WebApp::run: expected WebApp_ContextAppliedRun state")
                   |> reader.Throw
             } }
 
