@@ -35,6 +35,7 @@ module RecordDes =
   type Expr<'T, 'Id, 've when 'Id: comparison> with
     static member internal TypeCheckRecordDes<'valueExt
       when 'valueExt: comparison>
+      (config: TypeCheckingConfig<'valueExt>)
       (typeCheckExpr: ExprTypeChecker<'valueExt>)
       : TypeChecker<
           ExprRecordDes<TypeExpr<'valueExt>, Identifier, 'valueExt>,
@@ -390,6 +391,16 @@ module RecordDes =
               |> state.MapError(
                 Errors<_>.MapPriority(replaceWith ErrorPriority.High)
               )
+
+            | Kind.Star,
+              TypeValue.Imported { Sym = sym; Arguments = args }
+                when config.ImportedTypesWithFields |> Map.containsKey sym ->
+              state {
+                let fieldBuilder = config.ImportedTypesWithFields |> Map.find sym
+                let fields_t = fieldBuilder args
+                return! resolve_lookup fields_t
+              }
+              |> state.MapError Errors<_>.FilterHighestPriorityOnly
 
             | Kind.Star, _ ->
               state {

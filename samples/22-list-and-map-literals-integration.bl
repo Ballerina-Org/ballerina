@@ -31,3 +31,4 @@ let record_updated = {record_value with B = 30};
   ("map_rows", List::length score_rows),
   ("record_sum", record_updated.A + record_updated.B)
 )
+;

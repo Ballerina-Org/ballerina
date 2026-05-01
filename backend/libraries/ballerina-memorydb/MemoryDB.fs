@@ -128,6 +128,7 @@ module MutableMemoryDB =
   // type EvalQueryContext<'ext when 'ext: comparison> =
   //   { Bindings: Map<ResolvedIdentifier, Value<TypeValue<'ext>, 'ext>> }
 
+  [<NoComparison; NoEquality>]
   type MemoryDBQueryRunAdapter<'db, 'ext when 'ext: comparison> =
     { GetDbFromEntityRef: EntityRef<'db, 'ext> -> 'db
       GetDbFromRelationRef: RelationRef<'db, 'ext> -> 'db }
@@ -349,7 +350,7 @@ module MutableMemoryDB =
         |> NonEmptyList.map (fun it ->
           reader {
             match it.Source with
-            | Value.Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.EntityRef entity_ref))),
+            | Value.Ext(ValueExt.VDB(DBExt.DBValues(DBValues.EntityRef entity_ref)),
                         _) ->
               let (db: MutableMemoryDB<_, _>) =
                 queryRunAdapter.GetDbFromEntityRef entity_ref
@@ -391,11 +392,11 @@ module MutableMemoryDB =
                 |> reader.OfSum
 
               match relation with
-              | Value.Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.RelationRef(relation_ref:
+              | Value.Ext(ValueExt.VDB(DBExt.DBValues(DBValues.RelationRef(relation_ref:
                             RelationRef<
                               MutableMemoryDB<'a, 'b>,
                               ValueExt<'a, MutableMemoryDB<'a, 'b>, 'b>
-                             >)))),
+                             >))),
                           _) ->
                 let (db: MutableMemoryDB<_, _>) =
                   queryRunAdapter.GetDbFromRelationRef relation_ref
@@ -962,6 +963,68 @@ module MutableMemoryDB =
             let fromId, toId = unlink_arg.FromId, unlink_arg.ToId
             let _, db, relation, _, _, _ = relation_ref
 
+            let remove_conflicts
+              (rel: MemoryDBRelation<'runtimeContext, 'customExt>)
+              : MemoryDBRelation<'runtimeContext, 'customExt> =
+              match relation.Cardinality with
+              | Some { From = One; To = One } ->
+                // Remove any link from this fromId OR to this toId (but not the exact pair we're about to add)
+                let conflicting =
+                  rel.All
+                  |> Set.filter (fun (f, t) ->
+                    (f = fromId || t = toId) && not (f = fromId && t = toId))
+
+                conflicting
+                |> Set.fold
+                  (fun acc (f, t) ->
+                    { acc with
+                        All = acc.All |> Set.remove (f, t)
+                        FromTo =
+                          acc.FromTo
+                          |> Map.change f (Option.map (Set.remove t))
+                        ToFrom =
+                          acc.ToFrom
+                          |> Map.change t (Option.map (Set.remove f)) })
+                  rel
+              | Some { From = One; To = Many } ->
+                // Remove any other link to this toId
+                let conflicting =
+                  rel.All
+                  |> Set.filter (fun (f, t) -> t = toId && f <> fromId)
+
+                conflicting
+                |> Set.fold
+                  (fun acc (f, t) ->
+                    { acc with
+                        All = acc.All |> Set.remove (f, t)
+                        FromTo =
+                          acc.FromTo
+                          |> Map.change f (Option.map (Set.remove t))
+                        ToFrom =
+                          acc.ToFrom
+                          |> Map.change t (Option.map (Set.remove f)) })
+                  rel
+              | Some { From = Many; To = One }
+              | Some { From = Zero; To = One } ->
+                // Remove any other link from this fromId
+                let conflicting =
+                  rel.All
+                  |> Set.filter (fun (f, t) -> f = fromId && t <> toId)
+
+                conflicting
+                |> Set.fold
+                  (fun acc (f, t) ->
+                    { acc with
+                        All = acc.All |> Set.remove (f, t)
+                        FromTo =
+                          acc.FromTo
+                          |> Map.change f (Option.map (Set.remove t))
+                        ToFrom =
+                          acc.ToFrom
+                          |> Map.change t (Option.map (Set.remove f)) })
+                  rel
+              | _ -> rel
+
             let add_link
               (rel: MemoryDBRelation<'runtimeContext, 'customExt>)
               : MemoryDBRelation<'runtimeContext, 'customExt> =
@@ -981,7 +1044,7 @@ module MutableMemoryDB =
             db.relations <-
               db.relations
               |> Map.change relation.Name (function
-                | Some rel -> Some(add_link rel)
+                | Some rel -> Some(rel |> remove_conflicts |> add_link)
                 | None -> Some(MemoryDBRelation.Empty |> add_link))
 
             do
@@ -1039,6 +1102,11 @@ module MutableMemoryDB =
 
             return rel.All |> Set.contains (fromId, toId)
           } //: RelationRef<'db, 'ext> -> IsLinkedArgs<'runtimeContext, 'db, 'ext> -> Sum<bool, Errors<Unit>>
+
+      MoveBefore = fun _ _ -> reader.Return()
+      MoveAfter = fun _ _ -> reader.Return()
+      MoveBeforeReverse = fun _ _ -> reader.Return()
+      MoveAfterReverse = fun _ _ -> reader.Return()
 
       GetById =
         fun entity_ref entityId ->
@@ -1121,4 +1189,40 @@ module MutableMemoryDB =
 
             return
               results |> Seq.skip skip |> Seq.truncate truncate |> Seq.toList
+          }
+      LookupNotConnectedMany =
+        fun relation_ref source dir (skip, truncate) ->
+          reader {
+            let schema, db, relation, from, to_, schema_value = relation_ref
+
+            let! relation_data =
+              db.relations
+              |> Map.tryFind relation.Name
+              |> reader.OfOption(
+                Errors.Singleton () (fun () -> "Relation not found")
+              )
+
+            let _source_entity_ref, target_entity_ref, source_to_targets =
+              match dir with
+              | FromTo -> from, to_, relation_data.FromTo
+              | ToFrom -> to_, from, relation_data.ToFrom
+
+            let! targets =
+              entity_values_restricted_by_can_read
+                (schema, db, target_entity_ref, schema_value)
+                queryRunAdapter
+
+            let connected_ids =
+              source_to_targets
+              |> Map.tryFind source
+              |> Option.defaultValue Set.empty
+
+            return
+              targets
+              |> Map.toSeq
+              |> Seq.filter (fun (id, _) -> not (Set.contains id connected_ids))
+              |> Seq.skip skip
+              |> Seq.truncate truncate
+              |> Seq.map (fun (id, value) -> Value.Tuple [ id; value ])
+              |> Seq.toList
           } }

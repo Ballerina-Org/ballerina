@@ -1496,6 +1496,125 @@ module Model =
       | Some t -> $"{self.Var}: {t} in {self.Source}"
       | None -> $"{self.Var} in {self.Source}"
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // View AST types (JSX-like syntax)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  and ExprView<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Param: Var
+      ParamType: Option<'T>
+      Body: ExprViewNode<'T, 'Id, 'valueExt>
+      Location: Location }
+
+    override self.ToString() =
+      match self.ParamType with
+      | Some t -> $"view ({self.Param}: {t}) -> {self.Body}"
+      | None -> $"view {self.Param} -> {self.Body}"
+
+  and ExprViewNode<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Location: Location
+      Node: ExprViewNodeRec<'T, 'Id, 'valueExt> }
+
+    override self.ToString() = self.Node.ToString()
+
+  and ExprViewNodeRec<'T, 'Id, 'valueExt when 'Id: comparison> =
+    | ViewLet of Var: Var * Value: Expr<'T, 'Id, 'valueExt> * Rest: ExprViewNode<'T, 'Id, 'valueExt>
+    | ViewElement of ExprViewElement<'T, 'Id, 'valueExt>
+    | ViewFragment of List<ExprViewNode<'T, 'Id, 'valueExt>>
+    | ViewExprContainer of Expr<'T, 'Id, 'valueExt>
+    | ViewText of string
+    // View operation nodes (structurally promoted from extensions)
+    | ViewMapContext of Mapper: Expr<'T, 'Id, 'valueExt> * Inner: Expr<'T, 'Id, 'valueExt>
+    | ViewMapState of MapDown: Expr<'T, 'Id, 'valueExt> * MapUp: Expr<'T, 'Id, 'valueExt> * Inner: Expr<'T, 'Id, 'valueExt>
+
+    override self.ToString() =
+      match self with
+      | ViewLet(var, value, rest) -> $"let {var} = {value}; {rest}"
+      | ViewElement el -> el.ToString()
+      | ViewFragment children ->
+        let childStrs = children |> List.map (fun c -> c.ToString()) |> String.concat " "
+        $"<>{childStrs}</>"
+      | ViewExprContainer e -> $"{{{e}}}"
+      | ViewText t -> t
+      | ViewMapContext(mapper, inner) -> $"View::mapContext ({mapper}) ({inner})"
+      | ViewMapState(mapDown, mapUp, inner) -> $"View::mapState ({mapDown}) ({mapUp}) ({inner})"
+
+  and ExprViewElement<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Tag: string
+      Attributes: List<ExprViewAttribute<'T, 'Id, 'valueExt>>
+      Children: List<ExprViewNode<'T, 'Id, 'valueExt>>
+      SelfClosing: bool }
+
+    override self.ToString() =
+      let attrStr =
+        self.Attributes
+        |> List.map (fun a -> a.ToString())
+        |> String.concat " "
+      if self.SelfClosing then
+        $"<{self.Tag} {attrStr} />"
+      else
+        let childStr = self.Children |> List.map (fun c -> c.ToString()) |> String.concat ""
+        $"<{self.Tag} {attrStr}>{childStr}</{self.Tag}>"
+
+  and ExprViewAttribute<'T, 'Id, 'valueExt when 'Id: comparison> =
+    | ViewAttrStringValue of Name: string * Value: string
+    | ViewAttrExprValue of Name: string * Value: Expr<'T, 'Id, 'valueExt>
+
+    override self.ToString() =
+      match self with
+      | ViewAttrStringValue(name, value) -> $"{name}=\"{value}\""
+      | ViewAttrExprValue(name, _) -> $"{name}={{...}}"
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Coroutine AST types (co { } computation expressions)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  and ExprCo<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Body: ExprCoStep<'T, 'Id, 'valueExt>
+      Location: Location }
+
+    override self.ToString() = $"co {{ {self.Body} }}"
+
+  and ExprCoStep<'T, 'Id, 'valueExt when 'Id: comparison> =
+    { Location: Location
+      Step: ExprCoStepRec<'T, 'Id, 'valueExt> }
+
+    override self.ToString() = self.Step.ToString()
+
+  and ExprCoStepRec<'T, 'Id, 'valueExt when 'Id: comparison> =
+    | CoLetBang of Var: Var * Value: Expr<'T, 'Id, 'valueExt> * Rest: ExprCoStep<'T, 'Id, 'valueExt>
+    | CoLet of Var: Var * Value: Expr<'T, 'Id, 'valueExt> * Rest: ExprCoStep<'T, 'Id, 'valueExt>
+    | CoDoBang of Value: Expr<'T, 'Id, 'valueExt> * Rest: ExprCoStep<'T, 'Id, 'valueExt>
+    | CoReturn of Expr<'T, 'Id, 'valueExt>
+    | CoReturnBang of Expr<'T, 'Id, 'valueExt>
+    // Co operation nodes (structurally promoted from extensions)
+    | CoShow of Predicate: Expr<'T, 'Id, 'valueExt> * View: Expr<'T, 'Id, 'valueExt>
+    | CoUntil of Predicate: Expr<'T, 'Id, 'valueExt> * Inner: Expr<'T, 'Id, 'valueExt>
+    | CoIgnore of Inner: Expr<'T, 'Id, 'valueExt>
+    | CoMapContext of Mapper: Expr<'T, 'Id, 'valueExt> * Inner: Expr<'T, 'Id, 'valueExt>
+    | CoMapState of MapDown: Expr<'T, 'Id, 'valueExt> * MapUp: Expr<'T, 'Id, 'valueExt> * Inner: Expr<'T, 'Id, 'valueExt>
+    | CoGetContext
+    | CoGetState
+    | CoSetState of Updater: Expr<'T, 'Id, 'valueExt>
+
+    override self.ToString() =
+      match self with
+      | CoLetBang(var, value, rest) -> $"let! {var} = {value}; {rest}"
+      | CoLet(var, value, rest) -> $"let {var} = {value}; {rest}"
+      | CoDoBang(value, rest) -> $"do! {value}; {rest}"
+      | CoReturn e -> $"return {e}"
+      | CoReturnBang e -> $"return! {e}"
+      | CoShow(pred, view) -> $"Co::show ({pred}) ({view})"
+      | CoUntil(pred, inner) -> $"Co::until ({pred}) ({inner})"
+      | CoIgnore inner -> $"Co::ignore ({inner})"
+      | CoMapContext(mapper, inner) -> $"Co::mapContext ({mapper}) ({inner})"
+      | CoMapState(mapDown, mapUp, inner) -> $"Co::mapState ({mapDown}) ({mapUp}) ({inner})"
+      | CoGetContext -> "Co::getContext"
+      | CoGetState -> "Co::getState"
+      | CoSetState updater -> $"Co::setState ({updater})"
+
+  // ═══════════════════════════════════════════════════════════════════════════
+
   and ExprRecoveredSyntaxError<'T, 'Id, 'valueExt when 'Id: comparison> =
     { ErrorMessage: string
       ErrorLocation: Location
@@ -1519,6 +1638,65 @@ module Model =
     override self.ToString() =
       let joined = System.String.Join("::", self.PrefixParts)
       $"{joined}::<incomplete>"
+
+  and [<RequireQualifiedAccess>] CoOperationKind =
+    | Show
+    | Until
+    | Ignore
+    | MapContext
+    | MapState
+    | GetContext
+    | GetState
+    | SetState
+    | Repeat
+    | Any
+    | All
+
+    member self.Name =
+      match self with
+      | Show -> "show" | Until -> "until" | Ignore -> "ignore"
+      | MapContext -> "mapContext" | MapState -> "mapState"
+      | GetContext -> "getContext" | GetState -> "getState"
+      | SetState -> "setState"
+      | Repeat -> "repeat" | Any -> "any" | All -> "all"
+
+    member self.Arity =
+      match self with
+      | Show -> 2 | Until -> 2 | Ignore -> 1
+      | MapContext -> 2 | MapState -> 3
+      | GetContext -> 0 | GetState -> 0 | SetState -> 1
+      | Repeat -> 1 | Any -> 1 | All -> 1
+
+    override self.ToString() = $"Co::{self.Name}"
+
+    static member TryParse(name: string) =
+      match name with
+      | "show" -> Some Show | "until" -> Some Until | "ignore" -> Some Ignore
+      | "mapContext" -> Some MapContext | "mapState" -> Some MapState
+      | "getContext" -> Some GetContext | "getState" -> Some GetState
+      | "setState" -> Some SetState
+      | "repeat" -> Some Repeat | "any" -> Some Any | "all" -> Some All
+      | _ -> None
+
+  and [<RequireQualifiedAccess>] ViewOperationKind =
+    | MapContext
+    | MapState
+    | Memo
+
+    member self.Name =
+      match self with
+      | MapContext -> "mapContext" | MapState -> "mapState" | Memo -> "memo"
+
+    member self.Arity =
+      match self with
+      | MapContext -> 2 | MapState -> 3 | Memo -> 2
+
+    override self.ToString() = $"View::{self.Name}"
+
+    static member TryParse(name: string) =
+      match name with
+      | "mapContext" -> Some MapContext | "mapState" -> Some MapState | "memo" -> Some Memo
+      | _ -> None
 
   and ExprRec<'T, 'Id, 'valueExt when 'Id: comparison> =
     | Primitive of PrimitiveValue
@@ -1546,6 +1724,10 @@ module Model =
     | TupleDes of ExprTupleDes<'T, 'Id, 'valueExt>
     | SumDes of ExprSumDes<'T, 'Id, 'valueExt>
     | Query of ExprQuery<'T, 'Id, 'valueExt>
+    | View of ExprView<'T, 'Id, 'valueExt>
+    | Co of ExprCo<'T, 'Id, 'valueExt>
+    | CoOp of CoOperationKind
+    | ViewOp of ViewOperationKind
     | RecoveredSyntaxError of ExprRecoveredSyntaxError<'T, 'Id, 'valueExt>
     | ErrorDanglingRecordDes of ExprErrorDanglingRecordDes<'T, 'Id, 'valueExt>
     | ErrorDanglingScopedIdentifier of ExprErrorDanglingScopedIdentifier<'T, 'Id, 'valueExt>
@@ -1657,6 +1839,10 @@ module Model =
         $"(if {cond.ToString()} then {thenExpr.ToString()} else {elseExpr.ToString()})"
 
       | Query q -> q.ToString()
+      | View v -> v.ToString()
+      | Co c -> c.ToString()
+      | CoOp op -> op.ToString()
+      | ViewOp op -> op.ToString()
       | RecoveredSyntaxError err -> err.ToString()
       | ErrorDanglingRecordDes err -> err.ToString()
       | ErrorDanglingScopedIdentifier err -> err.ToString()
@@ -2045,6 +2231,122 @@ module Model =
 
     override self.ToString() = $"{self.Param} -> {self.Body}"
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Type-checked View AST types
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  and [<RequireQualifiedAccess>] TypeCheckedExprView<'valueExt> =
+    { Param: Var
+      ParamType: TypeValue<'valueExt>
+      Body: TypeCheckedViewNode<'valueExt>
+      Location: Location }
+
+    override self.ToString() =
+      $"view ({self.Param}: {self.ParamType}) -> {self.Body}"
+
+  and [<RequireQualifiedAccess>] TypeCheckedViewNode<'valueExt> =
+    { Location: Location
+      Node: TypeCheckedViewNodeRec<'valueExt> }
+
+    override self.ToString() = self.Node.ToString()
+
+  and [<RequireQualifiedAccess>] TypeCheckedViewNodeRec<'valueExt> =
+    | ViewLet of Var: Var * Value: TypeCheckedExpr<'valueExt> * Rest: TypeCheckedViewNode<'valueExt>
+    | ViewElement of TypeCheckedViewElement<'valueExt>
+    | ViewFragment of List<TypeCheckedViewNode<'valueExt>>
+    | ViewExprContainer of TypeCheckedExpr<'valueExt>
+    | ViewText of string
+    // View operation nodes (structurally promoted from extensions)
+    | ViewMapContext of Mapper: TypeCheckedExpr<'valueExt> * Inner: TypeCheckedExpr<'valueExt>
+    | ViewMapState of MapDown: TypeCheckedExpr<'valueExt> * MapUp: TypeCheckedExpr<'valueExt> * Inner: TypeCheckedExpr<'valueExt>
+
+    override self.ToString() =
+      match self with
+      | ViewLet(var, value, rest) -> $"let {var} = {value}; {rest}"
+      | ViewElement el -> el.ToString()
+      | ViewFragment children ->
+        let childStrs = children |> List.map string |> String.concat " "
+        $"<>{childStrs}</>"
+      | ViewExprContainer e -> $"{{{e}}}"
+      | ViewText t -> t
+      | ViewMapContext(mapper, inner) -> $"View::mapContext ({mapper}) ({inner})"
+      | ViewMapState(mapDown, mapUp, inner) -> $"View::mapState ({mapDown}) ({mapUp}) ({inner})"
+
+  and [<RequireQualifiedAccess>] TypeCheckedViewElement<'valueExt> =
+    { Tag: string
+      Attributes: List<TypeCheckedViewAttribute<'valueExt>>
+      Children: List<TypeCheckedViewNode<'valueExt>>
+      SelfClosing: bool }
+
+    override self.ToString() =
+      let attrStr =
+        self.Attributes |> List.map string |> String.concat " "
+
+      if self.SelfClosing then
+        $"<{self.Tag} {attrStr} />"
+      else
+        let childStr =
+          self.Children |> List.map string |> String.concat ""
+
+        $"<{self.Tag} {attrStr}>{childStr}</{self.Tag}>"
+
+  and [<RequireQualifiedAccess>] TypeCheckedViewAttribute<'valueExt> =
+    | ViewAttrStringValue of Name: string * Value: string
+    | ViewAttrExprValue of Name: string * Value: TypeCheckedExpr<'valueExt>
+
+    override self.ToString() =
+      match self with
+      | ViewAttrStringValue(name, value) -> $"{name}=\"{value}\""
+      | ViewAttrExprValue(name, _) -> $"{name}={{...}}"
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Type-checked Coroutine AST types
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  and [<RequireQualifiedAccess>] TypeCheckedExprCo<'valueExt> =
+    { Body: TypeCheckedCoStep<'valueExt>
+      Location: Location }
+
+    override self.ToString() = $"co {{ {self.Body} }}"
+
+  and [<RequireQualifiedAccess>] TypeCheckedCoStep<'valueExt> =
+    { Location: Location
+      Step: TypeCheckedCoStepRec<'valueExt> }
+
+    override self.ToString() = self.Step.ToString()
+
+  and [<RequireQualifiedAccess>] TypeCheckedCoStepRec<'valueExt> =
+    | CoLetBang of Var: Var * Value: TypeCheckedExpr<'valueExt> * Rest: TypeCheckedCoStep<'valueExt>
+    | CoLet of Var: Var * Value: TypeCheckedExpr<'valueExt> * Rest: TypeCheckedCoStep<'valueExt>
+    | CoDoBang of Value: TypeCheckedExpr<'valueExt> * Rest: TypeCheckedCoStep<'valueExt>
+    | CoReturn of TypeCheckedExpr<'valueExt>
+    | CoReturnBang of TypeCheckedExpr<'valueExt>
+    // Co operation nodes (structurally promoted from extensions)
+    | CoShow of Predicate: TypeCheckedExpr<'valueExt> * View: TypeCheckedExpr<'valueExt>
+    | CoUntil of Predicate: TypeCheckedExpr<'valueExt> * Inner: TypeCheckedExpr<'valueExt>
+    | CoIgnore of Inner: TypeCheckedExpr<'valueExt>
+    | CoMapContext of Mapper: TypeCheckedExpr<'valueExt> * Inner: TypeCheckedExpr<'valueExt>
+    | CoMapState of MapDown: TypeCheckedExpr<'valueExt> * MapUp: TypeCheckedExpr<'valueExt> * Inner: TypeCheckedExpr<'valueExt>
+    | CoGetContext
+    | CoGetState
+    | CoSetState of Updater: TypeCheckedExpr<'valueExt>
+
+    override self.ToString() =
+      match self with
+      | CoLetBang(var, value, rest) -> $"let! {var} = {value}; {rest}"
+      | CoLet(var, value, rest) -> $"let {var} = {value}; {rest}"
+      | CoDoBang(value, rest) -> $"do! {value}; {rest}"
+      | CoReturn e -> $"return {e}"
+      | CoReturnBang e -> $"return! {e}"
+      | CoShow(pred, view) -> $"Co::show ({pred}) ({view})"
+      | CoUntil(pred, inner) -> $"Co::until ({pred}) ({inner})"
+      | CoIgnore inner -> $"Co::ignore ({inner})"
+      | CoMapContext(mapper, inner) -> $"Co::mapContext ({mapper}) ({inner})"
+      | CoMapState(mapDown, mapUp, inner) -> $"Co::mapState ({mapDown}) ({mapUp}) ({inner})"
+      | CoGetContext -> "Co::getContext"
+      | CoGetState -> "Co::getState"
+      | CoSetState updater -> $"Co::setState ({updater})"
+
   and [<RequireQualifiedAccess>] TypeCheckedExprRecoveredSyntaxError =
     { ErrorMessage: string
       ErrorLocation: Location
@@ -2101,6 +2403,10 @@ module Model =
     | TupleDes of TypeCheckedExprTupleDes<'valueExt>
     | SumDes of TypeCheckedExprSumDes<'valueExt>
     | Query of TypeCheckedExprQuery<'valueExt>
+    | View of TypeCheckedExprView<'valueExt>
+    | Co of TypeCheckedExprCo<'valueExt>
+    | CoOp of CoOperationKind
+    | ViewOp of ViewOperationKind
     | RecoveredSyntaxError of TypeCheckedExprRecoveredSyntaxError
     | ErrorDanglingRecordDes of TypeCheckedExprErrorDanglingRecordDes<'valueExt>
     | ErrorDanglingScopedIdentifier of TypeCheckedExprErrorDanglingScopedIdentifier
@@ -2188,6 +2494,10 @@ module Model =
              Else = elseExpr }) ->
         $"(if {cond} then {thenExpr} else {elseExpr})"
       | Query q -> q.ToString()
+      | View v -> v.ToString()
+      | Co c -> c.ToString()
+      | CoOp op -> $"Co::{op.Name}"
+      | ViewOp op -> $"View::{op.Name}"
       | RecoveredSyntaxError err -> err.ToString()
       | ErrorDanglingRecordDes err -> err.ToString()
       | ErrorDanglingScopedIdentifier err -> err.ToString()
@@ -2217,12 +2527,10 @@ module Model =
 
   and [<RequireQualifiedAccess>] RunnableExprLambda<'valueExt> =
     { Param: Var
-      ParamType: TypeValue<'valueExt>
-      Body: RunnableExpr<'valueExt>
-      BodyType: TypeValue<'valueExt> }
+      Body: RunnableExpr<'valueExt> }
 
     override self.ToString() =
-      $"fun ({self.Param}: {self.ParamType}) -> {self.Body}"
+      $"fun {self.Param} -> {self.Body}"
 
   and [<RequireQualifiedAccess>] RunnableExprApply<'valueExt> =
     { F: RunnableExpr<'valueExt>
@@ -2474,6 +2782,120 @@ module Model =
     { Param: Var
       Body: RunnableExprQueryExpr<'valueExt> }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Runnable View AST types
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  and [<RequireQualifiedAccess>] RunnableExprView<'valueExt> =
+    { Param: Var
+      ParamType: TypeValue<'valueExt>
+      Body: RunnableViewNode<'valueExt>
+      Location: Location }
+
+    override self.ToString() =
+      $"view ({self.Param}: {self.ParamType}) -> {self.Body}"
+
+  and [<RequireQualifiedAccess>] RunnableViewNode<'valueExt> =
+    { Location: Location
+      Node: RunnableViewNodeRec<'valueExt> }
+
+    override self.ToString() = self.Node.ToString()
+
+  and [<RequireQualifiedAccess>] RunnableViewNodeRec<'valueExt> =
+    | ViewLet of Var: Var * Value: RunnableExpr<'valueExt> * Rest: RunnableViewNode<'valueExt>
+    | ViewElement of RunnableViewElement<'valueExt>
+    | ViewFragment of List<RunnableViewNode<'valueExt>>
+    | ViewExprContainer of RunnableExpr<'valueExt>
+    | ViewText of string
+    | ViewMapContext of Mapper: RunnableExpr<'valueExt> * Inner: RunnableExpr<'valueExt>
+    | ViewMapState of MapDown: RunnableExpr<'valueExt> * MapUp: RunnableExpr<'valueExt> * Inner: RunnableExpr<'valueExt>
+
+    override self.ToString() =
+      match self with
+      | ViewLet(var, value, rest) -> $"let {var} = {value}; {rest}"
+      | ViewElement el -> el.ToString()
+      | ViewFragment children ->
+        let childStrs = children |> List.map string |> String.concat " "
+        $"<>{childStrs}</>"
+      | ViewExprContainer e -> $"{{{e}}}"
+      | ViewText t -> t
+      | ViewMapContext(mapper, inner) -> $"View::mapContext ({mapper}) ({inner})"
+      | ViewMapState(mapDown, mapUp, inner) -> $"View::mapState ({mapDown}) ({mapUp}) ({inner})"
+
+  and [<RequireQualifiedAccess>] RunnableViewElement<'valueExt> =
+    { Tag: string
+      Attributes: List<RunnableViewAttribute<'valueExt>>
+      Children: List<RunnableViewNode<'valueExt>>
+      SelfClosing: bool }
+
+    override self.ToString() =
+      let attrStr =
+        self.Attributes |> List.map string |> String.concat " "
+
+      if self.SelfClosing then
+        $"<{self.Tag} {attrStr} />"
+      else
+        let childStr =
+          self.Children |> List.map string |> String.concat ""
+
+        $"<{self.Tag} {attrStr}>{childStr}</{self.Tag}>"
+
+  and [<RequireQualifiedAccess>] RunnableViewAttribute<'valueExt> =
+    | ViewAttrStringValue of Name: string * Value: string
+    | ViewAttrExprValue of Name: string * Value: RunnableExpr<'valueExt>
+
+    override self.ToString() =
+      match self with
+      | ViewAttrStringValue(name, value) -> $"{name}=\"{value}\""
+      | ViewAttrExprValue(name, _) -> $"{name}={{...}}"
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Runnable Coroutine AST types
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  and [<RequireQualifiedAccess>] RunnableExprCo<'valueExt> =
+    { Body: RunnableCoStep<'valueExt>
+      Location: Location }
+
+    override self.ToString() = $"co {{ {self.Body} }}"
+
+  and [<RequireQualifiedAccess>] RunnableCoStep<'valueExt> =
+    { Location: Location
+      Step: RunnableCoStepRec<'valueExt> }
+
+    override self.ToString() = self.Step.ToString()
+
+  and [<RequireQualifiedAccess>] RunnableCoStepRec<'valueExt> =
+    | CoLetBang of Var: Var * Value: RunnableExpr<'valueExt> * Rest: RunnableCoStep<'valueExt>
+    | CoLet of Var: Var * Value: RunnableExpr<'valueExt> * Rest: RunnableCoStep<'valueExt>
+    | CoDoBang of Value: RunnableExpr<'valueExt> * Rest: RunnableCoStep<'valueExt>
+    | CoReturn of RunnableExpr<'valueExt>
+    | CoReturnBang of RunnableExpr<'valueExt>
+    | CoShow of Predicate: RunnableExpr<'valueExt> * View: RunnableExpr<'valueExt>
+    | CoUntil of Predicate: RunnableExpr<'valueExt> * Inner: RunnableExpr<'valueExt>
+    | CoIgnore of Inner: RunnableExpr<'valueExt>
+    | CoMapContext of Mapper: RunnableExpr<'valueExt> * Inner: RunnableExpr<'valueExt>
+    | CoMapState of MapDown: RunnableExpr<'valueExt> * MapUp: RunnableExpr<'valueExt> * Inner: RunnableExpr<'valueExt>
+    | CoGetContext
+    | CoGetState
+    | CoSetState of Updater: RunnableExpr<'valueExt>
+
+    override self.ToString() =
+      match self with
+      | CoLetBang(var, value, rest) -> $"let! {var} = {value}; {rest}"
+      | CoLet(var, value, rest) -> $"let {var} = {value}; {rest}"
+      | CoDoBang(value, rest) -> $"do! {value}; {rest}"
+      | CoReturn e -> $"return {e}"
+      | CoReturnBang e -> $"return! {e}"
+      | CoShow(pred, view) -> $"Co::show ({pred}) ({view})"
+      | CoUntil(pred, inner) -> $"Co::until ({pred}) ({inner})"
+      | CoIgnore inner -> $"Co::ignore ({inner})"
+      | CoMapContext(mapper, inner) -> $"Co::mapContext ({mapper}) ({inner})"
+      | CoMapState(mapDown, mapUp, inner) -> $"Co::mapState ({mapDown}) ({mapUp}) ({inner})"
+      | CoGetContext -> "Co::getContext"
+      | CoGetState -> "Co::getState"
+      | CoSetState updater -> $"Co::setState ({updater})"
+
   and [<RequireQualifiedAccess>] RunnableExprRec<'valueExt> =
     | Primitive of PrimitiveValue
     | Lookup of RunnableExprLookup<'valueExt>
@@ -2500,15 +2922,19 @@ module Model =
     | TupleDes of RunnableExprTupleDes<'valueExt>
     | SumDes of RunnableExprSumDes<'valueExt>
     | Query of RunnableExprQuery<'valueExt>
+    | View of RunnableExprView<'valueExt>
+    | Co of RunnableExprCo<'valueExt>
+    | CoOp of CoOperationKind
+    | ViewOp of ViewOperationKind
 
     override self.ToString() =
       match self with
       | RunnableExprRec.TypeLambda({ RunnableExprTypeLambda.Param = tp
                                      Body = body }) -> $"(Λ{tp} => {body})"
       | TypeApply({ Func = e; TypeArg = t }) -> $"{e} [{t}]"
-      | Lambda({ Param = v
-                 ParamType = t
-                 Body = body }) -> $"(fun ({v.Name}: {t}) -> {body})"
+      | RunnableExprRec.Lambda({ RunnableExprLambda.Param = v
+                                 RunnableExprLambda.Body = body }) ->
+        $"(fun {v.Name} -> {body})"
       | Apply({ F = e1; Arg = e2 }) -> $"({e1} {e2})"
       | FromValue({ Value = v
                     ValueType = t
@@ -2583,6 +3009,10 @@ module Model =
              Else = elseExpr }) ->
         $"(if {cond} then {thenExpr} else {elseExpr})"
       | Query q -> q.ToString()
+      | View v -> v.ToString()
+      | Co c -> c.ToString()
+      | CoOp op -> $"Co::{op.Name}"
+      | ViewOp op -> $"View::{op.Name}"
 
   and [<RequireQualifiedAccess>] RunnableExpr<'valueExt> =
     { Expr: RunnableExprRec<'valueExt>
@@ -2736,6 +3166,36 @@ module Model =
 
         $"(\n{unionStrs}\n)"
 
+  and ValueCo<'T, 'valueExt> =
+    | CoOp of CoOperationKind * args: List<Value<'T, 'valueExt>>
+    | CoBlock of
+      body: RunnableCoStep<'valueExt> *
+      closure: Map<ResolvedIdentifier, Value<'T, 'valueExt>> *
+      scope: TypeCheckScope
+
+    override self.ToString() =
+      match self with
+      | CoOp(kind, args) ->
+        let argsStr = args |> List.map string |> String.concat ", "
+        $"Co::{kind.Name}({argsStr})"
+      | CoBlock(body, _, _) -> $"co {{ {body} }}"
+
+  and ValueView<'T, 'valueExt> =
+    | ViewOp of ViewOperationKind * args: List<Value<'T, 'valueExt>>
+    | ViewDef of
+      param: Var *
+      paramType: TypeValue<'valueExt> *
+      body: RunnableViewNode<'valueExt> *
+      closure: Map<ResolvedIdentifier, Value<'T, 'valueExt>> *
+      scope: TypeCheckScope
+
+    override self.ToString() =
+      match self with
+      | ViewOp(kind, args) ->
+        let argsStr = args |> List.map string |> String.concat ", "
+        $"View::{kind.Name}({argsStr})"
+      | ViewDef(param, paramType, body, _, _) -> $"view ({param.Name}: {paramType}) -> {body}"
+
   and Value<'T, 'valueExt> =
     | TypeLambda of TypeParameter * RunnableExpr<'valueExt>
     | Lambda of
@@ -2751,6 +3211,8 @@ module Model =
     | Sum of SumConsSelector * Value<'T, 'valueExt>
     | Primitive of PrimitiveValue
     | Query of ValueQuery<'T, 'valueExt>
+    | Co of ValueCo<'T, 'valueExt>
+    | View of ValueView<'T, 'valueExt>
     | Var of Var
     | Ext of 'valueExt * applicableId: Option<ResolvedIdentifier>
 
@@ -2779,4 +3241,6 @@ module Model =
       | Primitive p -> p.ToString()
       | Var v -> v.Name
       | Query q -> q.ToString()
+      | Co c -> c.ToString()
+      | View v -> v.ToString()
       | Ext(e, _) -> e.ToString()

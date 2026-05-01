@@ -194,6 +194,42 @@ module Patterns =
         Errors.Singleton () (fun () -> "Expected IsLinked operation")
         |> sum.Throw
 
+    static member AsMoveBefore
+      (op: DBValues<'runtimeContext, 'db, 'ext>)
+      : Sum<{| RelationRef: Option<RelationRef<'db, 'ext>> |}, Errors<Unit>> =
+      match op with
+      | DBValues.MoveBefore moveBefore -> moveBefore |> sum.Return
+      | _ ->
+        Errors.Singleton () (fun () -> "Expected MoveBefore operation")
+        |> sum.Throw
+
+    static member AsMoveAfter
+      (op: DBValues<'runtimeContext, 'db, 'ext>)
+      : Sum<{| RelationRef: Option<RelationRef<'db, 'ext>> |}, Errors<Unit>> =
+      match op with
+      | DBValues.MoveAfter moveAfter -> moveAfter |> sum.Return
+      | _ ->
+        Errors.Singleton () (fun () -> "Expected MoveAfter operation")
+        |> sum.Throw
+
+    static member AsMoveBeforeReverse
+      (op: DBValues<'runtimeContext, 'db, 'ext>)
+      : Sum<{| RelationRef: Option<RelationRef<'db, 'ext>> |}, Errors<Unit>> =
+      match op with
+      | DBValues.MoveBeforeReverse moveBeforeReverse -> moveBeforeReverse |> sum.Return
+      | _ ->
+        Errors.Singleton () (fun () -> "Expected MoveBeforeReverse operation")
+        |> sum.Throw
+
+    static member AsMoveAfterReverse
+      (op: DBValues<'runtimeContext, 'db, 'ext>)
+      : Sum<{| RelationRef: Option<RelationRef<'db, 'ext>> |}, Errors<Unit>> =
+      match op with
+      | DBValues.MoveAfterReverse moveAfterReverse -> moveAfterReverse |> sum.Return
+      | _ ->
+        Errors.Singleton () (fun () -> "Expected MoveAfterReverse operation")
+        |> sum.Throw
+
     static member AsLinkMany
       (op: DBValues<'runtimeContext, 'db, 'ext>)
       : Sum<{| RelationRef: Option<RelationRef<'db, 'ext>> |}, Errors<Unit>> =
@@ -255,11 +291,27 @@ module Patterns =
         Errors.Singleton () (fun () -> "Expected LookupMany operation")
         |> sum.Throw
 
+    static member AsLookupNotConnectedMany
+      (op: DBValues<'runtimeContext, 'db, 'ext>)
+      : Sum<
+          {| RelationRef:
+               Option<RelationRef<'db, 'ext> * RelationLookupDirection>
+             EntityId: Option<_> |},
+          Errors<Unit>
+         >
+      =
+      match op with
+      | DBValues.LookupNotConnectedMany v -> v |> sum.Return
+      | _ ->
+        Errors.Singleton () (fun () -> "Expected LookupNotConnectedMany operation")
+        |> sum.Throw
+
     static member AsDBIO
       (op: DBValues<'runtimeContext, 'db, 'ext>)
       : Sum<DBIO<'runtimeContext, 'db, 'ext>, Errors<Unit>> =
       match op with
       | DBValues.DBIO dbio -> dbio |> sum.Return
+      | DBValues.WebAppIO data -> data.DBIO |> sum.Return
       | _ ->
         Errors.Singleton () (fun () -> "Expected DBIO operation") |> sum.Throw
 

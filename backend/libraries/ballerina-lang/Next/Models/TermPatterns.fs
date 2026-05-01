@@ -1075,6 +1075,46 @@ module Patterns =
       TypeCheckedExpr<'valueExt>
         .Query(q, t, k, Location.Unknown, TypeCheckScope.Empty)
 
+    static member View
+      (
+        v: TypeCheckedExprView<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) =
+      { TypeCheckedExpr.Expr = TypeCheckedExprRec.View(v)
+        TypeCheckedExpr.Type = t
+        TypeCheckedExpr.Kind = k
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member View
+      (v: TypeCheckedExprView<'valueExt>, t: TypeValue<'valueExt>, k: Kind)
+      =
+      TypeCheckedExpr<'valueExt>
+        .View(v, t, k, Location.Unknown, TypeCheckScope.Empty)
+
+    static member Co
+      (
+        c: TypeCheckedExprCo<'valueExt>,
+        t: TypeValue<'valueExt>,
+        k: Kind,
+        loc: Location,
+        scope: TypeCheckScope
+      ) =
+      { TypeCheckedExpr.Expr = TypeCheckedExprRec.Co(c)
+        TypeCheckedExpr.Type = t
+        TypeCheckedExpr.Kind = k
+        TypeCheckedExpr.Location = loc
+        TypeCheckedExpr.Scope = scope }
+
+    static member Co
+      (c: TypeCheckedExprCo<'valueExt>, t: TypeValue<'valueExt>, k: Kind)
+      =
+      TypeCheckedExpr<'valueExt>
+        .Co(c, t, k, Location.Unknown, TypeCheckScope.Empty)
+
     static member FromValue
       (
         v: Value<TypeValue<'valueExt>, 'valueExt>,
@@ -1700,9 +1740,9 @@ module Patterns =
     static member Lambda
       (
         v: Var,
-        paramType: TypeValue<'valueExt>,
+        _paramType: TypeValue<'valueExt>,
         e: RunnableExpr<'valueExt>,
-        returnType: TypeValue<'valueExt>,
+        _returnType: TypeValue<'valueExt>,
         t: TypeValue<'valueExt>,
         k: Kind,
         loc: Location,
@@ -1711,9 +1751,7 @@ module Patterns =
       { Expr =
           RunnableExprRec.Lambda(
             { RunnableExprLambda.Param = v
-              ParamType = paramType
-              Body = e
-              BodyType = returnType }
+              Body = e }
           )
         Type = t
         Kind = k

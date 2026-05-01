@@ -15,6 +15,7 @@ module TypeExtractionExpr =
 
   type MapOps = { MapToList: ResolvedIdentifier }
 
+  [<NoComparison; NoEquality>]
   type private CompileContext<'valueExt> =
     { ListOps: ListOps
       MapOps: MapOps

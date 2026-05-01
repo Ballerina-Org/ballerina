@@ -1,0 +1,383 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// Ballerina Example 24: Frontend Views (JSX-like Syntax)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// This sample demonstrates the JSX-like view syntax for defining typed
+// React components directly in Ballerina. Views compile to TSX files that
+// are served by the backend and consumed by the Next.js frontend.
+//
+// Key concepts:
+//   - `view` keyword introduces a component with a single props parameter
+//   - JSX-like body with HTML tags, attributes, and expression containers
+//   - Custom components referenced by name (lowercase identifiers)
+//   - `Frontend::View[Schema][I][S]` built-in type
+//   - `Co[Schema][Ctx][St][Res]` coroutine type for long-running UI flows
+//   - `co { ... }` computation expressions with `let!`, `do!`, `return`
+//   - `WebApp::run` builder collects views into routes and components
+//
+// Every view takes one parameter of the built-in generic type
+// `View::Props[Schema][I][S]`, which is a record with four fields:
+//
+//   { schema: Schema;  context: I;  state: S;  setState: (S -> S) -> () }
+//
+// Syntax:
+//
+//   let myView = view (props:View::Props[MySchema][I][S]) ->
+//     <tag attr="value" handler={expr}>
+//       {expr}
+//       <child />
+//     </tag>
+//
+// The resulting type is Frontend::View[MySchema][I][S].
+//
+// ── Props transformation ─────────────────────────────────────────────────
+//
+// When composing child views, the parent passes its `props` and adapts
+// context/state with two built-in combinators:
+//
+//   View::mapContext : (I -> I') -> View::Props[S][I][St] -> View::Props[S][I'][St]
+//     Transforms the readonly context. The state and setState pass through.
+//
+//   View::mapState : (St -> St') -> ((St' -> St') -> (St -> St)) -> View::Props[S][I][St] -> View::Props[S][I][St']
+//     Focuses the state. First arg extracts child state from parent state.
+//     Second arg lifts a child updater back into a parent updater.
+//
+// Children receive the whole `props` object, already adapted:
+//
+//   <child props={props |> View::mapContext(...) |> View::mapState(...)} />
+//
+// ── Coroutines ───────────────────────────────────────────────────────────
+//
+// `Co[Schema][Ctx][St][Res]` is a coroutine that lives inside the
+// frontend. It can show views, wait for results, sequence steps, and
+// eventually produce a value of type `Res`.
+//
+// Syntax (computation expression):
+//
+//   co {
+//     let! result = someCoroutine        // bind: suspend until result
+//     do! someVoidCoroutine              // bind + discard result
+//     return value                       // finish with a value
+//     return! anotherCoroutine           // tail-call another coroutine
+//   }
+//
+// The bridge between views and coroutines is `Co::show`:
+//
+//   Co::show : (St -> () + O) -> View[Schema][Ctx][St] -> Co[Schema][Ctx][St][O]
+//
+// It renders a view whose context and state match the coroutine's own
+// `Ctx` and `St`. On every state change it calls the predicate `(St -> () + O)`:
+//   - `1Of2()` means "keep running" (the view stays on screen)
+//   - `2Of2(result)` means "done" (the coroutine yields `result`)
+//
+// To adapt a coroutine's context or state to a parent's types, use:
+//
+//   Co::mapContext : (Ctx2 -> Ctx) -> Co[S][Ctx][St][O] -> Co[S][Ctx2][St][O]
+//   Co::mapState   : (St2 -> St) -> ((St -> St) -> (St2 -> St2))
+//                    -> Co[S][Ctx][St][O] -> Co[S][Ctx][St2][O]
+//
+// Coroutines can also access their ambient context and state directly:
+//
+//   Co::getContext : Co[Schema][Ctx][St][Ctx]
+//   Co::getState  : Co[Schema][Ctx][St][St]
+//   Co::setState  : (St -> St) -> Co[Schema][Ctx][St][()]
+//
+// This turns interactive UI into sequential code: show a form, wait for
+// submission, show a confirmation, call an API, show the result — all
+// as straight-line statements in a `co { }` block.
+
+// ── Domain schema ────────────────────────────────────────────────────────
+// A minimal todo-list schema. We keep it simple to focus on view syntax.
+
+type Todo = {
+  Title: string;
+  Done: bool;
+};
+type TodoId = { TodoId: string };
+
+type TodoSchema =
+  schema {
+    entity Todos {
+      type Todo TodoId
+    }
+  };
+
+// ── Utility ──────────────────────────────────────────────────────────────
+// replaceWith x = fun _ -> x  (like `const` in Haskell)
+
+let replaceWith = fun [a:*] [b:*] (y:b) -> fun (_:a) -> y;
+let id = fun [a:*] (x:a) -> x;
+
+// ═════════════════════════════════════════════════════════════════════════
+// VIEW DEFINITIONS
+// ═════════════════════════════════════════════════════════════════════════
+
+// ── 1. Simple counter ────────────────────────────────────────────────────
+// Demonstrates: basic view, string attrs, expression attrs, event handlers.
+// context = label (readonly from parent), state = count (local mutable int).
+// Type: Frontend::View[TodoSchema][string][int32]
+
+let counter = view (props:View::Props[TodoSchema][string][int32]) ->
+  <div class="counter">
+    <h2>{props.context}</h2>
+    <span class="count">{props.state}</span>
+    <button onClick={props.setState(fun (n:int32) -> n + 1)}>+</button>
+    <button onClick={props.setState(fun (n:int32) -> n - 1)}>-</button>
+  </div>;
+
+// ── 2. Todo item ─────────────────────────────────────────────────────────
+// Demonstrates: conditional expression in attribute, record-with update,
+// boolean negation, checkbox binding.
+// context = unit, state = the todo itself.
+// Type: Frontend::View[TodoSchema][unit][Todo]
+
+let todoItem = view (props:View::Props[TodoSchema][()][Todo]) ->
+  <li class={if props.state.Done then "done" else "pending"}>
+    <input type="checkbox"
+           checked={props.state.Done}
+           onChange={props.setState(fun (t:Todo) -> { t with Todo::Done = !(t.Done) })} />
+    <span>{props.state.Title}</span>
+  </li>;
+
+// ── 3. Todo list (composes todoItem) ─────────────────────────────────────
+// Demonstrates: composition via mapState. Each todo item gets a focused
+// slice of the list state, with an updater that maps changes back.
+// context = unit, state = list of todos.
+// Type: Frontend::View[TodoSchema][unit][List[Todo]]
+
+let todoList = view (props:View::Props[TodoSchema][()][List[Todo]]) ->
+  <div class="todo-list">
+    <h1>My Todos</h1>
+    <ul>
+      {List::map (fun (todo:Todo) ->
+        <todoItem props={
+          props |> View::mapState
+            (replaceWith todo)
+            (fun (f:(Todo -> Todo)) (items:List[Todo]) -> List::map (fun (t:Todo) ->
+              if t.Title == todo.Title then f t else t
+            ) items)
+        } />
+      ) props.state}
+    </ul>
+    <p>
+      {List::length (List::filter (fun (t:Todo) -> t.Done) props.state)}
+      of
+      {List::length props.state}
+      completed
+    </p>
+  </div>;
+
+// ── 4. Fragment ──────────────────────────────────────────────────────────
+// Demonstrates: fragment syntax <>...</> for returning multiple root nodes
+// without a wrapper element.
+// context = header info record, state = unit (stateless display).
+// Type: Frontend::View[TodoSchema][HeaderInput][unit]
+
+type HeaderInput = {
+  Title: string;
+  Subtitle: string;
+};
+
+let pageHeader = view (props:View::Props[TodoSchema][HeaderInput][()]) ->
+  <>
+    <h1>{props.context.Title}</h1>
+    <p class="subtitle">{props.context.Subtitle}</p>
+  </>;
+
+// ── 5. Self-closing tags ─────────────────────────────────────────────────
+// Demonstrates: void HTML elements with self-closing syntax.
+// Both are stateless display-only views.
+// Type: Frontend::View[TodoSchema][unit][unit]
+
+let divider = view (props:View::Props[TodoSchema][()][()]) ->
+  <hr />;
+
+// Type: Frontend::View[TodoSchema][AvatarInput][unit]
+
+type AvatarInput = {
+  Url: string;
+  Alt: string;
+};
+
+let avatar = view (props:View::Props[TodoSchema][AvatarInput][()]) ->
+  <img src={props.context.Url} alt={props.context.Alt} class="avatar" />;
+
+// ── 6. Nested composition ────────────────────────────────────────────────
+// Demonstrates: combining multiple custom components and HTML in one view.
+// Uses mapContext and mapState to wire parent state into child props.
+// context = unit (root page), state = composite record.
+// Type: Frontend::View[TodoSchema][unit][PageState]
+
+type PageState = {
+  Todos: List[Todo];
+  Count: int32;
+};
+
+let homePage = view (props:View::Props[TodoSchema][()][PageState]) ->
+  <div class="home">
+    <pageHeader props={
+      props
+      |> View::mapContext(replaceWith { Title = "Todo App"; Subtitle = "Built with Ballerina views" })
+      |> View::mapState (replaceWith ()) (replaceWith (id [PageState]))
+    } />
+    <divider props={
+      props
+      |> View::mapState (replaceWith ()) (replaceWith (id [PageState]))
+    } />
+    <counter props={
+      props
+      |> View::mapContext(replaceWith "Visits")
+      |> View::mapState
+        (fun (s:PageState) -> s.Count)
+        (fun (f:(int32 -> int32)) (s:PageState) -> { s with PageState::Count = f s.Count })
+    } />
+    <divider props={
+      props
+      |> View::mapState (replaceWith ()) (replaceWith (id [PageState]))
+    } />
+    <todoList props={
+      props
+      |> View::mapState
+        (fun (s:PageState) -> s.Todos)
+        (fun (f:(List[Todo] -> List[Todo])) (s:PageState) -> { s with PageState::Todos = f s.Todos })
+    } />
+  </div>;
+
+// ═════════════════════════════════════════════════════════════════════════
+// COROUTINES
+// ═════════════════════════════════════════════════════════════════════════
+
+// ── 7. A "done" message view ─────────────────────────────────────────────
+// Shown after the counter coroutine completes.
+// Type: Frontend::View[TodoSchema][int32][unit]
+
+let doneMessage = view (props:View::Props[TodoSchema][int32][()]) ->
+  <div class="done">
+    <h1>Done!</h1>
+    <p>You counted to {props.context}.</p>
+  </div>;
+
+// ── 8. Counter coroutine ─────────────────────────────────────────────────
+// Shows the counter view. When the count exceeds 10, the coroutine
+// finishes and yields the final count.
+// Type: Co[TodoSchema][string][int32][int32]
+
+let counterFlow = co {
+  let! finalCount =
+    Co::show
+      (fun (n:int32) ->
+        if n > 10 then 2Of2(n)
+        else 1Of2())
+      counter;
+  return finalCount
+};
+
+// ── 9. Done message coroutine ────────────────────────────────────────────
+// Shows the done message view forever (never completes).
+// Type: Co[TodoSchema][int32][unit][unit]
+
+let doneMessageFlow = co {
+  do! Co::show
+    (replaceWith (1Of2()))
+    doneMessage;
+  return ()
+};
+
+// ── 10. Coroutine state access ───────────────────────────────────────────
+// Demonstrates Co::getContext, Co::getState, Co::setState.
+// These operations access the coroutine's ambient context and state
+// without needing to show a view.
+// Type: Co[TodoSchema][string][int32][string]
+
+let stateAccessDemo = co {
+  // Read the ambient context (a string label)
+  let! label = Co::getContext;
+
+  // Read the current state (an int32 counter)
+  let! current = Co::getState;
+
+  // Plain let binding (evaluated eagerly, not monadic)
+  let message = "hello";
+
+  // Update the state with an updater function
+  do! Co::setState (fun (n:int32) -> n + 1);
+
+  return label
+};
+
+// ── 11. Composite state for the home flow ────────────────────────────────
+// The home flow sequences two phases with different ctx/st types.
+// Its state is a superset that contains both phases' state.
+
+type HomeFlowState = {
+  CounterCount: int32;
+};
+
+// ── 12. Full page coroutine ──────────────────────────────────────────────
+// Sequences two phases: first the counter, then a "done" message.
+// Uses Co::mapContext and Co::mapState to adapt child coroutines to the
+// parent's composite state.
+// Type: Co[TodoSchema][unit][HomeFlowState][unit]
+
+let homeFlow = co {
+  // Phase 1: show the counter until count > 10
+  let! finalCount =
+    counterFlow
+    |> Co::mapContext (replaceWith "Click counter")
+    |> Co::mapState
+      (fun (st:HomeFlowState) -> st.CounterCount)
+      (fun (f:(int32 -> int32)) (st:HomeFlowState) -> { st with HomeFlowState::CounterCount = f st.CounterCount });
+
+  // Phase 2: show the done message forever (never completes)
+  do! doneMessageFlow
+    |> Co::mapContext (replaceWith finalCount)
+    |> Co::mapState (replaceWith ()) (replaceWith (id [HomeFlowState]));
+
+  return ()
+};
+
+// ═════════════════════════════════════════════════════════════════════════
+// WEBAPP BUILDER
+// ═════════════════════════════════════════════════════════════════════════
+// WebApp::run wraps a unit-returning schema callback and attaches routes and components.
+// Routes map URL paths to coroutines (which manage page-level state).
+// Components register reusable views by name.
+// Routes are always coroutines — views are lifted via Co::show.
+
+let main = fun (schema: TodoSchema) ->
+  ();
+
+let seed_todos = {
+  { Todo::Title = "Learn Ballerina"; Todo::Done = true };
+  { Todo::Title = "Build views"; Todo::Done = false };
+  { Todo::Title = "Ship it"; Todo::Done = false }
+};
+
+WebApp::run [TodoSchema] main
+  |> WebApp::withRoute "/" (co {
+    do! Co::show
+      (replaceWith (1Of2()))
+      homePage
+    |> Co::mapState
+      (replaceWith { Todos = seed_todos; Count = 0 })
+      (replaceWith (id [()]));
+    return ()
+  })
+  |> WebApp::withRoute "/flow" (homeFlow
+    |> Co::mapState
+      (replaceWith { CounterCount = 0 })
+      (replaceWith (id [()])))
+  |> WebApp::withRoute "/header" (co {
+    do! Co::show
+      (replaceWith (1Of2()))
+      pageHeader
+    |> Co::mapContext
+      (replaceWith { Title = "Header"; Subtitle = "Standalone page" })
+    |> Co::mapState (replaceWith ()) (replaceWith (id [()]));
+    return ()
+  })
+  |> WebApp::withComponent "counter" counter
+  |> WebApp::withComponent "todoItem" todoItem
+  |> WebApp::withComponent "divider" divider
+  |> WebApp::withComponent "avatar" avatar
+;

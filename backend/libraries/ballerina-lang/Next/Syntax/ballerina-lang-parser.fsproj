@@ -13,7 +13,9 @@
     <Compile Include="Parser/Type/Schema.fs" />
     <Compile Include="Parser/Type.fs" />
     <Compile Include="Parser/Query.fs" />
+    <Compile Include="Parser/View.fs" />
     <Compile Include="Parser/Expr.fs" />
+    <Compile Include="Parser/Grammar.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FSharp.Data" Version="6.6.0" />

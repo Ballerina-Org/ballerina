@@ -50,7 +50,11 @@ module Patterns =
         TypeParameters = Map.empty
         Values = Map.empty
         BackgroundHooksExtraScope = Map.empty
-        PermissionHooksExtraScope = Map.empty }
+        PermissionHooksExtraScope = Map.empty
+        ViewRejectedIdentifiers = Map.empty
+        CoRejectedIdentifiers = Map.empty
+        RejectedIdentifiers = Map.empty
+        ViewAttributeSchemas = Map.empty }
 
     static member Updaters =
       {| Scope =
@@ -78,7 +82,23 @@ module Patterns =
          PermissionHooksExtraScope =
           fun u (c: TypeCheckContext<'valueExt>) ->
             { c with
-                PermissionHooksExtraScope = c.PermissionHooksExtraScope |> u } |}
+                PermissionHooksExtraScope = c.PermissionHooksExtraScope |> u }
+         ViewRejectedIdentifiers =
+          fun u (c: TypeCheckContext<'valueExt>) ->
+            { c with
+                ViewRejectedIdentifiers = c.ViewRejectedIdentifiers |> u }
+         CoRejectedIdentifiers =
+          fun u (c: TypeCheckContext<'valueExt>) ->
+            { c with
+                CoRejectedIdentifiers = c.CoRejectedIdentifiers |> u }
+         RejectedIdentifiers =
+          fun u (c: TypeCheckContext<'valueExt>) ->
+            { c with
+                RejectedIdentifiers = c.RejectedIdentifiers |> u }
+         ViewAttributeSchemas =
+          fun u (c: TypeCheckContext<'valueExt>) ->
+            { c with
+                ViewAttributeSchemas = c.ViewAttributeSchemas |> u } |}
 
     static member FromInstantiateContext<'ve when 've: comparison>
       (ctx: TypeInstantiateContext<'ve>)
@@ -89,7 +109,11 @@ module Patterns =
         TypeParameters = ctx.TypeParameters
         Values = ctx.Values
         BackgroundHooksExtraScope = ctx.BackgroundHooksExtraScope
-        PermissionHooksExtraScope = ctx.PermissionHooksExtraScope }
+        PermissionHooksExtraScope = ctx.PermissionHooksExtraScope
+        ViewRejectedIdentifiers = Map.empty
+        CoRejectedIdentifiers = Map.empty
+        RejectedIdentifiers = Map.empty
+        ViewAttributeSchemas = Map.empty }
 
     static member tryFindTypeVariable
       (v: string, loc: Location)

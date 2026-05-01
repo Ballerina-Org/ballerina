@@ -46,28 +46,23 @@ module ToUpdater =
         | Delta.Record(fieldName, fieldDelta) ->
           let! fieldUpdater = Delta.ToUpdater deltaExtensionHandler fieldDelta
 
-          (*
-            IMPROVEMENT: the delta should take resolved identifiers and not just field names so that we can do a lookup in the map 
-            instead of a linear search.
-          *)
           return
             fun (v: Value<TypeValue<'valueExtension>, 'valueExtension>) ->
               sum {
                 let! fieldValues = Value.AsRecord v
 
-                let! targetSymbol, currentValue =
+                let! currentValue =
                   fieldValues
-                  |> Map.tryFindByWithError
-                    (fun (ts, _) -> ts.Name = fieldName)
-                    "field values"
-                    (fun () -> fieldName)
-                    ()
+                  |> Map.tryFind fieldName
+                  |> Sum.fromOption (fun () ->
+                    Errors.Singleton () (fun () ->
+                      $"Cannot find field values '{fieldName}'"))
 
                 let! updatedValue = fieldUpdater currentValue
 
                 return
                   fieldValues
-                  |> Map.add targetSymbol updatedValue
+                  |> Map.add fieldName updatedValue
                   |> Value.Record
               }
 
@@ -79,7 +74,7 @@ module ToUpdater =
               sum {
                 let! valueCaseName, caseValue = v |> Value.AsUnion
 
-                if caseName <> valueCaseName.Name then
+                if caseName <> valueCaseName then
                   return v
                 else
                   let! caseValue = caseUpdater caseValue

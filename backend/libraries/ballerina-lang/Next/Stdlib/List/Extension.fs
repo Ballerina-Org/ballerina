@@ -118,6 +118,10 @@ module Extension =
       Identifier.FullyQualified([ "List" ], "decompose")
       |> TypeCheckScope.Empty.Resolve
 
+    let listAnyId =
+      Identifier.FullyQualified([ "List" ], "any")
+      |> TypeCheckScope.Empty.Resolve
+
     let getValueAsList
       (v: Value<TypeValue<'ext>, 'ext>)
       : Sum<List<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
@@ -408,6 +412,110 @@ module Extension =
                   |> Ext
             } //: 'runtimeContext * 'extOperations * Value<TypeValue<'ext>, 'ext> -> ExprEvaluator<'runtimeContext, 'ext, 'extValues> }
       }
+
+    let anyOperation
+      : ResolvedIdentifier *
+        TypeOperationExtension<
+          'runtimeContext,
+          'ext,
+          Unit,
+          ListValues<'ext>,
+          ListOperations<'ext>
+         > =
+      listAnyId,
+      { Type =
+          TypeValue.CreateLambda(
+            TypeParameter.Create("a", aKind),
+            TypeExpr.Lambda(
+              TypeParameter.Create("b", Kind.Star),
+              TypeExpr.Arrow(
+                TypeExpr.Arrow(
+                  TypeExpr.Lookup(Identifier.LocalScope "a"),
+                  TypeExpr.Sum
+                    [ TypeExpr.Primitive PrimitiveType.Unit
+                      TypeExpr.Lookup(Identifier.LocalScope "b") ]
+                ),
+                TypeExpr.Arrow(
+                  TypeExpr.Apply(
+                    TypeExpr.Lookup(Identifier.LocalScope "List"),
+                    TypeExpr.Lookup(Identifier.LocalScope "a")
+                  ),
+                  TypeExpr.Sum
+                    [ TypeExpr.Primitive PrimitiveType.Unit
+                      TypeExpr.Lookup(Identifier.LocalScope "b") ]
+                )
+              )
+            )
+          )
+        Kind = Kind.Arrow(Kind.Star, Kind.Arrow(Kind.Star, Kind.Star))
+        Operation = List_Any {| f = None |}
+        OperationsLens =
+          operationLens
+          |> PartialLens.BindGet (function
+            | List_Any v -> Some(List_Any v)
+            | _ -> None)
+        Apply =
+          fun loc0 _rest (op, v) ->
+            reader {
+              let! op =
+                op
+                |> ListOperations.AsAny
+                |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                |> reader.OfSum
+
+              match op with
+              | None -> // first step: store the predicate function
+                return
+                  (ListOperations.List_Any({| f = Some v |})
+                   |> operationLens.Set,
+                   Some listAnyId)
+                  |> Ext
+              | Some predicate -> // second step: iterate list, short-circuit on first 2Of2
+                let! v, _ =
+                  v
+                  |> Value.AsExt
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
+
+                let! v =
+                  valueLens.Get v
+                  |> sum.OfOption(
+                    (fun () -> "cannot get list value")
+                    |> Errors.Singleton loc0
+                  )
+                  |> reader.OfSum
+
+                let! v =
+                  v
+                  |> ListValues.AsList
+                  |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                  |> reader.OfSum
+
+                // Apply predicate to each element and collect (item, tag) pairs
+                let! results =
+                  v
+                  |> List.map (fun item ->
+                    reader {
+                      let! res = Expr.EvalApply loc0 [] (predicate, item)
+
+                      let! tag, _value =
+                        res
+                        |> Value.AsSum
+                        |> sum.MapError(Errors.MapContext(replaceWith loc0))
+                        |> reader.OfSum
+
+                      return tag, res
+                    })
+                  |> reader.All
+
+                // Find the first 2Of2 result
+                let selector2Of2 = { Case = 2; Count = 2 }
+                match results |> List.tryFind (fun (tag, _) -> tag = selector2Of2) with
+                | Some (_, found) -> return found
+                | None ->
+                  let selector1Of2 = { Case = 1; Count = 2 }
+                  return Value.Sum(selector1Of2, Value.Primitive PrimitiveValue.Unit)
+            } }
 
     let mapOperation
       : ResolvedIdentifier *
@@ -1061,6 +1169,7 @@ module Extension =
           [ lengthOperation
             foldOperation
             filterOperation
+            anyOperation
             mapOperation
             orderByOperation
             appendOperation

@@ -22,6 +22,9 @@
     <Compile Include="State/WithError/Seq/Model.fs" />
     <Compile Include="Coroutine/Model.fs" />
     <Compile Include="Coroutine/Runner.fs" />
+    <Compile Include="Grammar/Model.fs" />
+    <Compile Include="Grammar/Ebnf.fs" />
+    <Compile Include="Grammar/Gbnf.fs" />
     <Compile Include="Parser/Model.fs" />
   </ItemGroup>
 </Project>

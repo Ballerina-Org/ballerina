@@ -1,7 +1,7 @@
 namespace Ballerina.Data.Delta.Serialization
 
 module DeltaDeserializer =
-  open Ballerina.Data.Delta
+  open Ballerina.DSL.Next.Types.Model
   open Ballerina.Reader.WithError
   open DeltaDTO
   open Ballerina.Errors
@@ -9,6 +9,12 @@ module DeltaDeserializer =
   open Ballerina.Collections.NonEmptyList
   open System.Text.Json
   open Ballerina.DSL.Next.Serialization.SerializerConfig
+  open Ballerina.Data.Delta
+
+  module private ResolvedIdentifierParsing =
+    open Ballerina.DSL.Next.Serialization.PocoObjects
+
+    let tryParse (s: string) = ResolvedIdentifier.TryParse s
 
   let rec multipleFromDTO
     (deltaDTO: DeltaDTO<'valueExtensionDTO, 'deltaExtensionDTO>)
@@ -75,8 +81,12 @@ module DeltaDeserializer =
       let! field, deltaDTO =
         assertSingleElementDictionary recordDTO "record delta"
 
+      let! fieldIdentifier =
+        ResolvedIdentifierParsing.tryParse field
+        |> reader.OfSum
+
       let! delta = deltaFromDTO deltaDTO
-      return Record(field, delta)
+      return Record(fieldIdentifier, delta)
     }
 
   and unionFromDTO
@@ -95,8 +105,13 @@ module DeltaDeserializer =
     reader {
       let! unionDTO = assertValue deltaDTO.Union "union delta"
       let! case, deltaDTO = assertSingleElementDictionary unionDTO "union delta"
+
+      let! caseIdentifier =
+        ResolvedIdentifierParsing.tryParse case
+        |> reader.OfSum
+
       let! delta = deltaFromDTO deltaDTO
-      return Union(case, delta)
+      return Union(caseIdentifier, delta)
     }
 
   and tupleFromDTO

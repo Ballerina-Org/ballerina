@@ -100,6 +100,16 @@ module Patterns =
         |> Errors.Singleton()
         |> sum.Throw
 
+    static member AsAny
+      (op: ListOperations<'ext>)
+      : Sum<Option<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> =
+      match op with
+      | List_Any v -> v.f |> sum.Return
+      | _ ->
+        (fun () -> $"Error: Expected List_Any, found {op}")
+        |> Errors.Singleton()
+        |> sum.Throw
+
   type ListValues<'ext> with
     static member AsList
       (op: ListValues<'ext>)

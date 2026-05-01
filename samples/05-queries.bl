@@ -177,3 +177,4 @@ let main = fun (schema: ItemsSchema) ->
   );
 
 DB::run [ItemsSchema] main
+;

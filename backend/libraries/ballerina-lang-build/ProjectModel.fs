@@ -21,10 +21,11 @@ module ProjectModel =
   open System.Text.Json.Serialization
   open Ballerina.Collections.NonEmptyList
 
+  [<NoComparison; NoEquality>]
   type ProjectBuildConfiguration =
     { Files: NonEmptyList<FileBuildConfiguration> }
 
-  and FileTypeCheckedOutput<'valueExt when 'valueExt: comparison> =
+  and [<NoComparison; NoEquality>] FileTypeCheckedOutput<'valueExt when 'valueExt: comparison> =
     { File: FileBuildConfiguration
       Expr: TypeCheckedExpr<'valueExt>
       TypeValue: TypeValue<'valueExt> }
@@ -42,7 +43,7 @@ module ProjectModel =
             md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes(s))
           ) }
 
-  and FileBuildConfiguration =
+  and [<NoComparison; NoEquality>] FileBuildConfiguration =
     { FileName: FileName
       Content: Unit -> string
       Checksum: Checksum }
@@ -52,7 +53,7 @@ module ProjectModel =
         Content = fun () -> fileContent
         Checksum = Checksum.Compute fileContent }
 
-  and ProjectCache<'valueExt when 'valueExt: comparison> =
+  and [<NoComparison; NoEquality>] ProjectCache<'valueExt when 'valueExt: comparison> =
     { Fold:
         NonEmptyList<FileBuildConfiguration>
           -> (FileBuildConfiguration * int
@@ -376,7 +377,7 @@ module ProjectModel =
             Location,
             Errors<Location>
            >) =
-          Parser.Expr.program ()
+          (Parser.Expr.program ()).Parser
           |> Parser.Run(actual, initialLocation)
           |> sum.MapError fst
 

@@ -13,6 +13,7 @@ module CacheCompilation =
       Schema: string
       IsDraft: bool }
 
+  [<NoComparison; NoEquality>]
   type CompilationContext<'runtimeContext, 'valueExt when 'valueExt: comparison>
     =
     { TypeCheckContext: TypeCheckContext<'valueExt>
@@ -20,6 +21,7 @@ module CacheCompilation =
       EvalContext: ExprEvalContext<'runtimeContext, 'valueExt>
       EvalResult: Value<TypeValue<'valueExt>, 'valueExt> }
 
+  [<NoComparison; NoEquality>]
   type CompilationCache<'runtimeContext, 'valueExt when 'valueExt: comparison> =
     { mutable Cache:
         Map<TenantData, CompilationContext<'runtimeContext, 'valueExt>> }

@@ -71,6 +71,9 @@ module Model =
     { Prefix: string
       AvailableSymbols: Map<string, string> }
 
+  type ViewAttributeSchemas<'valueExt> =
+    Map<string, Map<string, List<TypeValue<'valueExt>>>>
+
   type TypeCheckContext<'valueExt> =
     { Scope: TypeCheckScope
       IsTypeCheckingLetValue: bool
@@ -80,7 +83,11 @@ module Model =
       BackgroundHooksExtraScope:
         Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)>
       PermissionHooksExtraScope:
-        Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)> }
+        Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)>
+      ViewRejectedIdentifiers: Map<ResolvedIdentifier, string>
+      CoRejectedIdentifiers: Map<ResolvedIdentifier, string>
+      RejectedIdentifiers: Map<ResolvedIdentifier, string>
+      ViewAttributeSchemas: ViewAttributeSchemas<'valueExt> }
 
   type UnificationState<'valueExt when 'valueExt: comparison> =
     { Classes: EquivalenceClasses<TypeVar, TypeValue<'valueExt>> }
@@ -168,12 +175,26 @@ module Model =
       PermissionHooksExtraScope:
         Map<ResolvedIdentifier, (TypeValue<'valueExt> * Kind)> }
 
+  [<NoComparison; NoEquality>]
   type TypeCheckingConfig<'valueExt when 'valueExt: comparison> =
     { QueryTypeSymbol: TypeSymbol
       ListTypeSymbol: TypeSymbol
+      ViewTypeSymbol: TypeSymbol
+      ViewPropsTypeSymbol: TypeSymbol
+      ReactNodeTypeSymbol: TypeSymbol
+      ReactComponentTypeSymbol: TypeSymbol
+      CoTypeSymbol: TypeSymbol
       MkQueryType:
         Schema<'valueExt> -> TypeQueryRow<'valueExt> -> TypeValue<'valueExt>
-      MkListType: TypeValue<'valueExt> -> TypeValue<'valueExt> }
+      MkListType: TypeValue<'valueExt> -> TypeValue<'valueExt>
+      MkViewType:
+        TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt>
+      MkViewPropsType:
+        TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt>
+      MkCoType:
+        TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt> -> TypeValue<'valueExt>
+      ImportedTypesWithFields:
+        Map<TypeSymbol, List<TypeValue<'valueExt>> -> OrderedMap<TypeSymbol, (TypeValue<'valueExt> * Kind)>> }
 
   type TypeExprEvalResult<'valueExt when 'valueExt: comparison> =
     State<

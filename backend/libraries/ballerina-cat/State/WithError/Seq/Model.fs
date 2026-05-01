@@ -6,6 +6,7 @@ module Seq =
   open Ballerina
   open Ballerina.Collections.Sum
 
+  [<NoComparison; NoEquality>]
   type SeqState<'a, 'c, 's, 'e> =
     | State of ('c * 's -> Sum<seq<'a> * Option<'s>, 'e * Option<'s>>)
 

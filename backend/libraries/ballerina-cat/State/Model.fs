@@ -3,6 +3,7 @@ namespace Ballerina.State
 module Simple =
   open Ballerina.Fun
 
+  [<NoComparison; NoEquality>]
   type State<'a, 'c, 's> =
     | State of ('c * 's -> 'a * Option<'s>)
 

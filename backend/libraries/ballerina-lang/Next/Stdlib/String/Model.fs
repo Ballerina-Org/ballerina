@@ -4,6 +4,7 @@ namespace Ballerina.DSL.Next.StdLib.String
 module Model =
   type StringOperations<'ext> =
     | Concat of {| v1: Option<string> |}
+    | Replace of {| pattern: Option<string>; replacement: Option<string> |}
     | Equal of {| v1: Option<string> |}
     | NotEqual of {| v1: Option<string> |}
     | GreaterThan of {| v1: Option<string> |}

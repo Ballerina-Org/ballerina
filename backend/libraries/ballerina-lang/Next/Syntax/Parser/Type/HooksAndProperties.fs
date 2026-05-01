@@ -12,6 +12,7 @@ module TypeHooksAndProperties =
   open Ballerina.LocalizedErrors
   open Ballerina.Errors
   open Ballerina
+  open Ballerina.Grammar
 
   type TypeExprParser<'valueExt> =
     Parser<
@@ -23,6 +24,10 @@ module TypeHooksAndProperties =
 
   type TypeDeclParser<'valueExt> =
     Parser<TypeExpr<'valueExt>, LocalizedToken, Location, Errors<Location>>
+
+  let relationHooksRule =
+    { Name = "relation-hooks"
+      Rule = Repeat (Seq [ Terminal "let"; Terminal "on"; Alt [ Terminal "linking"; Terminal "linked"; Terminal "unlinking"; Terminal "unlinked" ]; Terminal "="; NonTerminal "expr" ]) }
 
   let relation_hooks (parseExpr: TypeExprParser<'valueExt>) () =
     let onHook (hookKeyword, hookKeywordParser) =
@@ -57,6 +62,11 @@ module TypeHooksAndProperties =
     |> parser.Any
     |> parser.Many
     |> parser.Map(Map.ofList)
+    |> AnnotatedParser.withNamedRule relationHooksRule
+
+  let entityHooksRule =
+    { Name = "entity-hooks"
+      Rule = Repeat (Seq [ Terminal "let"; Alt [ Terminal "on"; Terminal "can" ]; Alt [ Terminal "creating"; Terminal "created"; Terminal "updating"; Terminal "updated"; Terminal "deleting"; Terminal "deleted"; Terminal "background"; Terminal "create"; Terminal "read"; Terminal "update"; Terminal "delete" ]; Terminal "="; NonTerminal "expr" ]) }
 
   let entity_hooks (parseExpr: TypeExprParser<'valueExt>) () =
     let onHook (preHookKeyword) (hookKeyword, hookKeywordParser) =
@@ -98,25 +108,24 @@ module TypeHooksAndProperties =
     |> parser.Any
     |> parser.Many
     |> parser.Map(Map.ofList)
+    |> AnnotatedParser.withNamedRule entityHooksRule
+
+  let entityPropertiesRule =
+    { Name = "entity-properties"
+      Rule = Repeat (Seq [ Terminal "let"; Terminal "property"; Optional (NonTerminal "schema-path"); NonTerminal "identifier"; Terminal ":"; NonTerminal "type-decl"; Terminal "="; NonTerminal "expr" ]) }
 
   let entity_properties
     (parseExpr: TypeExprParser<'valueExt>)
     parseSchemaPath
     (parseTypeDecl: unit -> TypeDeclParser<'valueExt>)
     ()
-    : Parser<
-        SchemaEntityPropertyExpr<'valueExt> list,
-        LocalizedToken,
-        Location,
-        Errors<Location>
-       >
     =
     parser.Many(
       parser {
         do! letKeyword
         do! propertyKeyword
         let! path = parseSchemaPath ()
-        let! propertyName = singleIdentifier
+        let! propertyName = singleIdentifier.Parser
         do! colonOperator
         let! propertyType = parseTypeDecl ()
         do! equalsOperator
@@ -130,16 +139,15 @@ module TypeHooksAndProperties =
       }
     )
     |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+    |> AnnotatedParser.withNamedRule entityPropertiesRule
+
+  let entityVectorsRule =
+    { Name = "entity-vectors"
+      Rule = Repeat (Seq [ Terminal "let"; Terminal "vector"; NonTerminal "identifier"; Terminal "="; NonTerminal "expr" ]) }
 
   let entity_vectors
     (parseExpr: TypeExprParser<'valueExt>)
     ()
-    : Parser<
-        SchemaEntityVectorExpr<'valueExt> list,
-        LocalizedToken,
-        Location,
-        Errors<Location>
-       >
     =
     parser.Many(
       parser {
@@ -158,7 +166,7 @@ module TypeHooksAndProperties =
           |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
           |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
 
-        let! vectorName = singleIdentifier
+        let! vectorName = singleIdentifier.Parser
         do! equalsOperator
         let! vectorBody = parseExpr
 
@@ -168,3 +176,6 @@ module TypeHooksAndProperties =
       }
     )
     |> parser.MapError(Errors<Location>.FilterHighestPriorityOnly)
+    |> AnnotatedParser.withNamedRule entityVectorsRule
+
+  let grammarRules: NamedRule list = [ relationHooksRule; entityHooksRule; entityPropertiesRule; entityVectorsRule ]

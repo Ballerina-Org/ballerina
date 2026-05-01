@@ -83,8 +83,9 @@ module TypeApply =
               |> error
               |> state.Throw
           else
-            let! f_res, _ =
-              TypeExpr.Apply(f_t.AsExpr, tExpr)
+            let applyExpr = TypeExpr.Apply(f_t.AsExpr, tExpr)
+            let! f_res, _f_res_k =
+              applyExpr
               |> TypeExpr.Eval config typeCheckExpr None loc0
               |> Expr.liftTypeEval
 

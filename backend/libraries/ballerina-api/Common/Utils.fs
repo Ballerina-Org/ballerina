@@ -20,6 +20,7 @@ module APIUtils =
   open Ballerina.DSL.Next.Terms.Eval
   open Ballerina.Data.Delta
   open Ballerina.DSL.Next.StdLib.Updater.Model
+  open Npgsql
 
   [<Extension>]
   type HttpContextExtensions() =
@@ -228,11 +229,9 @@ module APIUtils =
       let! updater = delta |> Delta.ToUpdater DeltaExt.ToUpdater
 
       let updaterExtension =
-        ValueExt(
-          Choice4Of7(
-            CompositeType(
-              Choice5Of5(UpdaterOperations(Apply { Updater = updater }))
-            )
+        VComposite(
+          CompositeType(
+            Choice5Of5(UpdaterOperations(Apply { Updater = updater }))
           )
         )
 
@@ -253,7 +252,6 @@ module APIUtils =
     when 'customExtension: comparison and 'db: comparison>
     (tenantId: 'tenantId)
     (schemaName: 'schemaName)
-    (draft: bool)
     (context:
       APIRegistrationFactory<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
     : Sum<
@@ -274,19 +272,21 @@ module APIUtils =
           ValueExt<'runtimeContext, 'db, 'customExtension>
          > *
         TypeCheckContext<ValueExt<'runtimeContext, 'db, 'customExtension>> *
-        TypeCheckState<ValueExt<'runtimeContext, 'db, 'customExtension>>,
+        TypeCheckState<ValueExt<'runtimeContext, 'db, 'customExtension>> *
+        Option<NpgsqlDataSource>,
         APIError<'runtimeContext, 'db, 'customExtension, Location>
        >
     =
     sum {
-      let! dbDescriptor = context.DbDescriptorFetcher tenantId schemaName draft
+      let! dbDescriptor = context.DbDescriptorFetcher tenantId schemaName
 
       return
         dbDescriptor.DbExtension,
         dbDescriptor.LanguageContext,
         dbDescriptor.EvalContext,
         dbDescriptor.TypeCheckContext,
-        dbDescriptor.TypeCheckState
+        dbDescriptor.TypeCheckState,
+        dbDescriptor.DataSource
     }
     |> sum.MapError
       APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
@@ -297,17 +297,20 @@ module APIUtils =
     and 'db: comparison
     and 'deltaDb: comparison>
     (body: Sum<'a, APIError<'runtimeContext, 'db, 'customExtension, 'context>>)
+    (onFail: APIError<'runtimeContext, 'db, 'customExtension, 'context> -> unit)
     (onSuccess: 'a -> 'b)
     : IResult =
     match body with
     | Left result -> onSuccess >> Results.Ok <| result
-    | Right { Errors = errors; TypeError = Some _ } ->
+    | Right ({ Errors = errors; TypeError = Some _ } as apiError) ->
+      onFail apiError
       let serializedErrors = errorsToSerializable errors
 
       Results.BadRequest
         { Errors = serializedErrors
           Examples = [||] }
-    | Right { Errors = errors; TypeError = None } ->
+    | Right ({ Errors = errors; TypeError = None } as apiError) ->
+      onFail apiError
       Results.BadRequest
         { Errors = errorsToSerializable errors
           Examples = [||] }

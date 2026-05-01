@@ -8,8 +8,9 @@ module Model =
   open Ballerina.Collections
   open Ballerina.Collections.NonEmptyList
   open Ballerina.Reader.WithError
+  open Ballerina.Grammar
   open Ballerina.Stackless.State.WithError.StacklessStateWithError
-
+  open Ballerina.Grammar
 
   open FSharp.Core
   open Ballerina.Collections.NonEmptyList
@@ -33,6 +34,7 @@ module Model =
       ParserResult(f a, rest)
 
 
+  [<NoComparison; NoEquality>]
   type Parser<'a, 'sym, 'loc, 'err> =
     | Parser of FreeNode<'a, unit, List<'sym> * 'loc, 'err>
 
@@ -289,3 +291,78 @@ module Model =
 
         return! res |> parser.OfSum
       }
+
+  [<NoComparison; NoEquality>]
+  type AnnotatedParser<'a, 'sym, 'loc, 'err> =
+    { Parser: Parser<'a, 'sym, 'loc, 'err>
+      Rule: NamedRule option }
+
+  module AnnotatedParser =
+    let ofParser (p: Parser<'a, 'sym, 'loc, 'err>) : AnnotatedParser<'a, 'sym, 'loc, 'err> =
+      { Parser = p; Rule = None }
+
+    let withRule (name: string) (rule: GrammarRule) (p: Parser<'a, 'sym, 'loc, 'err>) : AnnotatedParser<'a, 'sym, 'loc, 'err> =
+      { Parser = p; Rule = Some { Name = name; Rule = rule } }
+
+    let withNamedRule (nr: NamedRule) (p: Parser<'a, 'sym, 'loc, 'err>) : AnnotatedParser<'a, 'sym, 'loc, 'err> =
+      { Parser = p; Rule = Some nr }
+
+    let grammar (ap: AnnotatedParser<'a, 'sym, 'loc, 'err>) : NamedRule option =
+      ap.Rule
+
+    let parser (ap: AnnotatedParser<'a, 'sym, 'loc, 'err>) : Parser<'a, 'sym, 'loc, 'err> =
+      ap.Parser
+
+    let collectRules (aps: AnnotatedParser<'a, 'sym, 'loc, 'err> list) : NamedRule list =
+      aps |> List.choose (fun ap -> ap.Rule)
+
+  // AnnotatedParser combinator extensions on ParserBuilder
+  type ParserBuilder<'sym, 'loc, 'err when 'sym: equality> with
+
+    member self.Any
+      (aps: List<AnnotatedParser<'a, 'sym, 'loc, 'err>>)
+      : Parser<'a, 'sym, 'loc, 'err> =
+      let ps: List<Parser<'a, 'sym, 'loc, 'err>> = aps |> List.map (fun ap -> ap.Parser)
+      self.Any(ps)
+
+    member self.All
+      (aps: List<AnnotatedParser<'a, 'sym, 'loc, 'err>>)
+      : Parser<List<'a>, 'sym, 'loc, 'err> =
+      let ps: List<Parser<'a, 'sym, 'loc, 'err>> = aps |> List.map (fun ap -> ap.Parser)
+      self.All(ps)
+
+    member self.Many
+      (ap: AnnotatedParser<'a, 'sym, 'loc, 'err>)
+      : Parser<List<'a>, 'sym, 'loc, 'err> =
+      let p: Parser<'a, 'sym, 'loc, 'err> = ap.Parser
+      self.Many(p)
+
+    member self.AtLeastOne
+      (ap: AnnotatedParser<'a, 'sym, 'loc, 'err>)
+      : Parser<NonEmptyList<'a>, 'sym, 'loc, 'err> =
+      let p: Parser<'a, 'sym, 'loc, 'err> = ap.Parser
+      self.AtLeastOne(p)
+
+    member self.Try
+      (ap: AnnotatedParser<'a, 'sym, 'loc, 'err>)
+      : Parser<Sum<'a, 'err>, 'sym, 'loc, 'err> =
+      let p: Parser<'a, 'sym, 'loc, 'err> = ap.Parser
+      self.Try(p)
+
+    member self.Lookahead
+      (ap: AnnotatedParser<'a, 'sym, 'loc, 'err>)
+      : Parser<'a, 'sym, 'loc, 'err> =
+      let p: Parser<'a, 'sym, 'loc, 'err> = ap.Parser
+      self.Lookahead(p)
+
+    member self.Not
+      (ap: AnnotatedParser<'a, 'sym, 'loc, 'err>)
+      : Parser<Unit, 'sym, 'loc, 'err> =
+      let p: Parser<'a, 'sym, 'loc, 'err> = ap.Parser
+      self.Not(p)
+
+    member self.Ignore
+      (ap: AnnotatedParser<'a, 'sym, 'loc, 'err>)
+      : Parser<Unit, 'sym, 'loc, 'err> =
+      let p: Parser<'a, 'sym, 'loc, 'err> = ap.Parser
+      self.Ignore(p)

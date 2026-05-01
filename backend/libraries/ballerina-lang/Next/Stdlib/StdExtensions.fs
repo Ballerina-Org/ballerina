@@ -16,37 +16,37 @@ open Ballerina.Data.Delta
 open Ballerina.DSL.Next.StdLib.Email
 open Ballerina.DSL.Next.StdLib.String
 open Ballerina.DSL.Next.Types.TypeChecker.Model
+open Ballerina.Cat.Collections.OrderedMap
 open Ballerina.DSL.Next.StdLib.DB.Extension.DBRun
+open Ballerina.DSL.Next.StdLib.View.Extension
+open Ballerina.DSL.Next.StdLib.Coroutine.Extension
+open Ballerina.DSL.Next.StdLib.WebApp.Extension
 
 type ValueExt<'runtimeContext, 'db, 'customExtension
   when 'db: comparison and 'customExtension: comparison> =
-  | ValueExt of
-    Choice<
-      ListExt<'runtimeContext, 'db, 'customExtension>,
-      Unit,
-      PrimitiveExt<'runtimeContext, 'db, 'customExtension>,
-      CompositeTypeExt<'runtimeContext, 'db, 'customExtension>,
-      DBExt<'runtimeContext, 'db, 'customExtension>,
-      MapExt<'runtimeContext, 'db, 'customExtension>,
-      'customExtension
-     >
+  | VList of ListExt<'runtimeContext, 'db, 'customExtension>
+  | VViewProps of ViewPropsOperations<ValueExt<'runtimeContext, 'db, 'customExtension>>
+  | VCo of CoroutineOperations<ValueExt<'runtimeContext, 'db, 'customExtension>>
+  | VPrimitive of PrimitiveExt<'runtimeContext, 'db, 'customExtension>
+  | VComposite of CompositeTypeExt<'runtimeContext, 'db, 'customExtension>
+  | VDB of DBExt<'runtimeContext, 'db, 'customExtension>
+  | VMap of MapExt<'runtimeContext, 'db, 'customExtension>
+  | VWebApp of WebAppOperations<ValueExt<'runtimeContext, 'db, 'customExtension>>
+  | VCustom of 'customExtension
 
   override self.ToString() =
     match self with
-    | ValueExt(Choice1Of7 ext) -> ext.ToString()
-    | ValueExt(Choice2Of7 ext) -> ext.ToString()
-    | ValueExt(Choice3Of7 ext) -> ext.ToString()
-    | ValueExt(Choice4Of7 ext) -> ext.ToString()
-    | ValueExt(Choice5Of7 ext) -> ext.ToString()
-    | ValueExt(Choice6Of7 ext) -> ext.ToString()
-    | ValueExt(Choice7Of7 ext) -> ext.ToString()
+    | VList ext -> ext.ToString()
+    | VViewProps ext -> ext.ToString()
+    | VCo ext -> ext.ToString()
+    | VPrimitive ext -> ext.ToString()
+    | VComposite ext -> ext.ToString()
+    | VDB ext -> ext.ToString()
+    | VMap ext -> ext.ToString()
+    | VWebApp ext -> ext.ToString()
+    | VCustom ext -> ext.ToString()
 
-
-  static member Getters = {| ValueExt = fun (ValueExt e) -> e |}
-
-  static member Updaters = {| ValueExt = fun u (ValueExt e) -> ValueExt(u e) |}
-
-and ValueExtDTO =
+and [<NoComparison; NoEquality>] ValueExtDTO =
   { List: List.Model.ListValueDTO<ValueExtDTO>
     Map: Map.Model.MapValueDTO<ValueExtDTO> }
 
@@ -76,9 +76,9 @@ and DBExt<'runtimeContext, 'db, 'customExtension
        > =
     { Get =
         function
-        | ValueExt(Choice5Of7(DBExt.DBValues x)) -> Some x
+        | VDB(DBExt.DBValues x) -> Some x
         | _ -> None
-      Set = DBExt.DBValues >> Choice5Of7 >> ValueExt.ValueExt }
+      Set = DBExt.DBValues >> VDB }
 
 and MapExt<'runtimeContext, 'db, 'customExtension
   when 'db: comparison and 'customExtension: comparison> =
@@ -99,9 +99,9 @@ and MapExt<'runtimeContext, 'db, 'customExtension
        > =
     { Get =
         function
-        | ValueExt(Choice6Of7(MapValues x)) -> Some x
+        | VMap(MapValues x) -> Some x
         | _ -> None
-      Set = MapValues >> Choice6Of7 >> ValueExt.ValueExt }
+      Set = MapValues >> VMap }
 
   static member inline ValueDTOLens =
     { Get =
@@ -153,9 +153,9 @@ and ListExt<'runtimeContext, 'db, 'customExtension
     { Get =
         fun (v: ValueExt<'runtimeContext, 'db, 'customExtension>) ->
           match v with
-          | ValueExt(Choice1Of7(ListValues x)) -> Some x
+          | VList(ListValues x) -> Some x
           | _ -> None
-      Set = ListValues >> Choice1Of7 >> ValueExt.ValueExt }
+      Set = ListValues >> VList }
 
 
   static member inline ValueDTOLens =
@@ -348,7 +348,7 @@ and DeltaExt<'runtimeContext, 'db, 'customExtension
              >) ->
         sum {
           match value with
-          | Value.Ext(ValueExt(Choice1Of7(ListValues(List.Model.ListValues.List l))),
+          | Value.Ext(VList(ListValues(List.Model.ListValues.List l)),
                       _) ->
             match delta with
             | DeltaExt.DeltaExtension(Choice1Of4(UpdateElement(i, delta))) ->
@@ -362,63 +362,49 @@ and DeltaExt<'runtimeContext, 'db, 'customExtension
               let next = List.updateAt i updatedElement l
 
               return
-                (ValueExt(
-                  Choice1Of7(ListValues(List.Model.ListValues.List next))
-                 ),
+                (VList(ListValues(List.Model.ListValues.List next)),
                  None)
                 |> Value.Ext
             | DeltaExt.DeltaExtension(Choice1Of4(ListDeltaExt.AppendElement(v))) ->
               let next = List.append l [ v ]
 
               return
-                (ValueExt(
-                  Choice1Of7(ListValues(List.Model.ListValues.List next))
-                 ),
+                (VList(ListValues(List.Model.ListValues.List next)),
                  None)
                 |> Value.Ext
             | DeltaExt.DeltaExtension(Choice1Of4(ListDeltaExt.RemoveElement(i))) ->
               let next = List.removeAt i l
 
               return
-                (ValueExt(
-                  Choice1Of7(ListValues(List.Model.ListValues.List next))
-                 ),
+                (VList(ListValues(List.Model.ListValues.List next)),
                  None)
                 |> Value.Ext
             | DeltaExt.DeltaExtension(Choice1Of4(ListDeltaExt.InsertElement(i, v))) ->
               let next = List.insertAt (i + 1) v l
 
               return
-                (ValueExt(
-                  Choice1Of7(ListValues(List.Model.ListValues.List next))
-                 ),
+                (VList(ListValues(List.Model.ListValues.List next)),
                  None)
                 |> Value.Ext
             | DeltaExt.DeltaExtension(Choice1Of4(ListDeltaExt.DuplicateElement(i))) ->
               let next = List.insertAt (i + 1) (List.item i l) l
 
               return
-                (ValueExt(
-                  Choice1Of7(ListValues(List.Model.ListValues.List next))
-                 ),
+                (VList(ListValues(List.Model.ListValues.List next)),
                  None)
                 |> Value.Ext
             | DeltaExt.DeltaExtension(Choice1Of4(ListDeltaExt.SetAllElements(v))) ->
               let next = List.map (fun _ -> v) l
 
               return
-                (ValueExt(
-                  Choice1Of7(ListValues(List.Model.ListValues.List next))
-                 ),
+                (VList(ListValues(List.Model.ListValues.List next)),
                  None)
                 |> Value.Ext
             | DeltaExt.DeltaExtension(Choice1Of4(ListDeltaExt.RemoveAllElements)) ->
               let next = List.empty
 
               return
-                (ValueExt(
-                  Choice1Of7(ListValues(List.Model.ListValues.List next))
-                 ),
+                (VList(ListValues(List.Model.ListValues.List next)),
                  None)
                 |> Value.Ext
             | DeltaExt.DeltaExtension(Choice1Of4(ListDeltaExt.MoveElement(fromIndex,
@@ -438,9 +424,7 @@ and DeltaExt<'runtimeContext, 'db, 'customExtension
                   List.insertAt toIndex element withoutElement
 
               return
-                (ValueExt(
-                  Choice1Of7(ListValues(List.Model.ListValues.List next))
-                 ),
+                (VList(ListValues(List.Model.ListValues.List next)),
                  None)
                 |> Value.Ext
             | other ->
@@ -449,7 +433,7 @@ and DeltaExt<'runtimeContext, 'db, 'customExtension
                   Errors.Singleton () (fun () ->
                     $"Unimplemented delta ext toUpdater for {other}")
                 )
-          | Value.Ext(ValueExt(Choice6Of7(MapExt.MapValues(Map.Model.MapValues.Map m))),
+          | Value.Ext(VMap(MapExt.MapValues(Map.Model.MapValues.Map m)),
                       _) ->
             match delta with
             | DeltaExt.DeltaExtension(Choice4Of4(Map.Model.MapDeltaExt.UpdateKey(oldKey,
@@ -459,9 +443,7 @@ and DeltaExt<'runtimeContext, 'db, 'customExtension
                 let next = m |> Map.remove oldKey |> Map.add newKey value
 
                 return
-                  (ValueExt(
-                    Choice6Of7(MapExt.MapValues(Map.Model.MapValues.Map next))
-                   ),
+                  (VMap(MapExt.MapValues(Map.Model.MapValues.Map next)),
                    None)
                   |> Value.Ext
               | None ->
@@ -483,9 +465,7 @@ and DeltaExt<'runtimeContext, 'db, 'customExtension
                 let next = m |> Map.add key updatedValue
 
                 return
-                  (ValueExt(
-                    Choice6Of7(MapExt.MapValues(Map.Model.MapValues.Map next))
-                   ),
+                  (VMap(MapExt.MapValues(Map.Model.MapValues.Map next)),
                    None)
                   |> Value.Ext
               | None ->
@@ -499,18 +479,14 @@ and DeltaExt<'runtimeContext, 'db, 'customExtension
               let next = m |> Map.add key value
 
               return
-                (ValueExt(
-                  Choice6Of7(MapExt.MapValues(Map.Model.MapValues.Map next))
-                 ),
+                (VMap(MapExt.MapValues(Map.Model.MapValues.Map next)),
                  None)
                 |> Value.Ext
             | DeltaExt.DeltaExtension(Choice4Of4(Map.Model.MapDeltaExt.RemoveItem(key))) ->
               let next = m |> Map.remove key
 
               return
-                (ValueExt(
-                  Choice6Of7(MapExt.MapValues(Map.Model.MapValues.Map next))
-                 ),
+                (VMap(MapExt.MapValues(Map.Model.MapValues.Map next)),
                  None)
                 |> Value.Ext
             | other ->
@@ -553,12 +529,15 @@ and TupleDeltaExt<'runtimeContext, 'db, 'customExtension
 
 and OptionDeltaExt = OptionDeltaExt
 
-and DeltaExtDTO =
+and [<NoComparison; NoEquality>] DeltaExtDTO =
   { ListDelta: ListDeltaExtDTO<ValueExtDTO, DeltaExtDTO> | null
     MapDelta: Map.Model.MapDeltaExtDTO<ValueExtDTO, DeltaExtDTO> | null }
 
   static member Empty = { ListDelta = null; MapDelta = null }
 
+
+
+[<NoComparison; NoEquality>]
 type StdExtensions<'runtimeContext, 'valueExt, 'valueExtDTO, 'deltaExt, 'deltaExtDTO
   when 'valueExt: comparison
   and 'deltaExt: comparison
@@ -695,23 +674,21 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
       db_ops
       { Get =
           function
-          | ValueExt(Choice1Of7(ListExt.ListValues(List.Model.ListValues.List values))) ->
+          | VList(ListExt.ListValues(List.Model.ListValues.List values)) ->
             Some values
           | _ -> None
         Set =
           List.Model.ListValues.List
           >> ListExt.ListValues
-          >> Choice1Of7
-          >> ValueExt.ValueExt }
+          >> VList }
       { Get =
           function
-          | ValueExt(Choice6Of7(MapValues(Map.Model.MapValues.Map x))) -> Some x
+          | VMap(MapValues(Map.Model.MapValues.Map x)) -> Some x
           | _ -> None
         Set =
           Map.Model.MapValues.Map
           >> MapValues
-          >> Choice6Of7
-          >> ValueExt.ValueExt }
+          >> VMap }
       DBExt<_, _, _>.ValueLens
       typeCheckingConfig
 
@@ -726,13 +703,58 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
       ListExt<_, _, _>.ValueLens
       { Get =
           function
-          | ValueExt(Choice1Of7(ListOperations x)) -> Some x
+          | VList(ListOperations x) -> Some x
           | _ -> None
-        Set = ListOperations >> Choice1Of7 >> ValueExt.ValueExt }
+        Set = ListOperations >> VList }
       ListExt<_, _, _>.ValueDTOLens
       DeltaExt<_, _, _>.ListDeltaLens
       DeltaExt<_, _, _>.ListDeltaDTOLens
       (typeCheckingConfig |> Option.map (fun cfg -> cfg.ListTypeSymbol))
+
+  let viewExtension, viewPropsExtension, reactNodeExtension, reactComponentExtension, view_sym, view_props_sym, react_node_sym, react_component_sym, mk_view_type, mk_view_props_type, _react_node_type, _mk_react_component_type =
+    View.Extension.ViewExtension<
+      'runtimeContext,
+      ValueExt<'runtimeContext, 'db, 'customExtension>,
+      ValueExtDTO,
+      DeltaExt<'runtimeContext, 'db, 'customExtension>,
+      DeltaExtDTO
+     >
+      { Get = function | VViewProps x -> Some x | _ -> None
+        Set = VViewProps }
+      (typeCheckingConfig |> Option.map (fun cfg -> cfg.ViewTypeSymbol))
+      (typeCheckingConfig |> Option.map (fun cfg -> cfg.ViewPropsTypeSymbol))
+      (typeCheckingConfig |> Option.map (fun cfg -> cfg.ReactNodeTypeSymbol))
+      (typeCheckingConfig |> Option.map (fun cfg -> cfg.ReactComponentTypeSymbol))
+
+  let coroutineExtension, co_sym, mk_co_type =
+    Coroutine.Extension.CoroutineExtension<
+      'runtimeContext,
+      ValueExt<'runtimeContext, 'db, 'customExtension>,
+      ValueExtDTO,
+      DeltaExt<'runtimeContext, 'db, 'customExtension>,
+      DeltaExtDTO
+     >
+      { Get = function | VCo x -> Some x | _ -> None
+        Set = VCo }
+      (typeCheckingConfig |> Option.map (fun cfg -> cfg.CoTypeSymbol))
+      (Identifier.FullyQualified([ "Frontend" ], "View"))
+
+  let webAppIOExtension, webAppRunExtension, _webapp_sym, _mk_webapp_io_type =
+    WebApp.Extension.WebAppExtension<
+      'runtimeContext,
+      'db,
+      ValueExt<'runtimeContext, 'db, 'customExtension>,
+      ValueExtDTO,
+      DeltaExt<'runtimeContext, 'db, 'customExtension>,
+      DeltaExtDTO
+     >
+      { Get = function | VWebApp x -> Some x | _ -> None
+        Set = VWebApp }
+      db_ops
+      DBExt<'runtimeContext, 'db, 'customExtension>.ValueLens
+      None
+      (Identifier.FullyQualified([ "Frontend" ], "View"))
+      (Identifier.LocalScope "Co")
 
   let dateOnlyExtension =
     DateOnly.Extension.DateOnlyExtension<
@@ -742,15 +764,14 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice4Of7(CompositeType(Choice1Of5(DateOnlyOperations x)))) ->
+          | VComposite(CompositeType(Choice1Of5(DateOnlyOperations x))) ->
             Some x
           | _ -> None
         Set =
           DateOnlyOperations
           >> Choice1Of5
           >> CompositeType
-          >> Choice4Of7
-          >> ValueExt.ValueExt }
+          >> VComposite }
 
   let boolExtension =
     Bool.Extension.BoolExtension<
@@ -759,9 +780,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice3Of7(BoolOperations x)) -> Some x
+          | VPrimitive(BoolOperations x) -> Some x
           | _ -> None
-        Set = BoolOperations >> Choice3Of7 >> ValueExt.ValueExt }
+        Set = BoolOperations >> VPrimitive }
 
   let int32Extension =
     Int32.Extension.Int32Extension<
@@ -770,9 +791,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice3Of7(Int32Operations x)) -> Some x
+          | VPrimitive(Int32Operations x) -> Some x
           | _ -> None
-        Set = Int32Operations >> Choice3Of7 >> ValueExt.ValueExt }
+        Set = Int32Operations >> VPrimitive }
 
   let int64Extension =
     Int64.Extension.Int64Extension<
@@ -781,9 +802,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice3Of7(Int64Operations x)) -> Some x
+          | VPrimitive(Int64Operations x) -> Some x
           | _ -> None
-        Set = Int64Operations >> Choice3Of7 >> ValueExt.ValueExt }
+        Set = Int64Operations >> VPrimitive }
 
   let float32Extension =
     Float32.Extension.Float32Extension<
@@ -792,9 +813,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice3Of7(Float32Operations x)) -> Some x
+          | VPrimitive(Float32Operations x) -> Some x
           | _ -> None
-        Set = Float32Operations >> Choice3Of7 >> ValueExt.ValueExt }
+        Set = Float32Operations >> VPrimitive }
 
   let float64Extension =
     Float64.Extension.Float64Extension<
@@ -803,9 +824,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice3Of7(Float64Operations x)) -> Some x
+          | VPrimitive(Float64Operations x) -> Some x
           | _ -> None
-        Set = Float64Operations >> Choice3Of7 >> ValueExt.ValueExt }
+        Set = Float64Operations >> VPrimitive }
 
   let decimalExtension =
     Decimal.Extension.DecimalExtension<
@@ -814,9 +835,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice3Of7(DecimalOperations x)) -> Some x
+          | VPrimitive(DecimalOperations x) -> Some x
           | _ -> None
-        Set = DecimalOperations >> Choice3Of7 >> ValueExt.ValueExt }
+        Set = DecimalOperations >> VPrimitive }
 
   let dateTimeExtension =
     DateTime.Extension.DateTimeExtension<
@@ -826,15 +847,14 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice4Of7(CompositeType(Choice2Of5(DateTimeOperations x)))) ->
+          | VComposite(CompositeType(Choice2Of5(DateTimeOperations x))) ->
             Some x
           | _ -> None
         Set =
           DateTimeOperations
           >> Choice2Of5
           >> CompositeType
-          >> Choice4Of7
-          >> ValueExt.ValueExt }
+          >> VComposite }
 
   let timeSpanExtension =
     TimeSpanExtension<
@@ -844,15 +864,14 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice4Of7(CompositeType(Choice4Of5(TimeSpanOperations x)))) ->
+          | VComposite(CompositeType(Choice4Of5(TimeSpanOperations x))) ->
             Some x
           | _ -> None
         Set =
           TimeSpanOperations
           >> Choice4Of5
           >> CompositeType
-          >> Choice4Of7
-          >> ValueExt.ValueExt }
+          >> VComposite }
 
   let stringExtension =
     String.Extension.StringExtension<
@@ -862,9 +881,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
       string_ops
       { Get =
           function
-          | ValueExt(Choice3Of7(StringOperations x)) -> Some x
+          | VPrimitive(StringOperations x) -> Some x
           | _ -> None
-        Set = StringOperations >> Choice3Of7 >> ValueExt.ValueExt }
+        Set = StringOperations >> VPrimitive }
 
   let emailExtension =
     Email.Extension.EmailExtension<
@@ -874,9 +893,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
       email_ops
       { Get =
           function
-          | ValueExt(Choice3Of7(EmailOperations x)) -> Some x
+          | VPrimitive(EmailOperations x) -> Some x
           | _ -> None
-        Set = EmailOperations >> Choice3Of7 >> ValueExt.ValueExt }
+        Set = EmailOperations >> VPrimitive }
 
   let guidExtension =
     Guid.Extension.GuidExtension<
@@ -886,15 +905,14 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice4Of7(CompositeType(Choice3Of5(GuidOperations x)))) ->
+          | VComposite(CompositeType(Choice3Of5(GuidOperations x))) ->
             Some x
           | _ -> None
         Set =
           GuidOperations
           >> Choice3Of5
           >> CompositeType
-          >> Choice4Of7
-          >> ValueExt.ValueExt }
+          >> VComposite }
 
   let updaterExtension =
     Updater.Extension.UpdaterExtension<
@@ -903,15 +921,14 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
      >
       { Get =
           function
-          | ValueExt(Choice4Of7(CompositeType(Choice5Of5(UpdaterOperations x)))) ->
+          | VComposite(CompositeType(Choice5Of5(UpdaterOperations x))) ->
             Some x
           | _ -> None
         Set =
           UpdaterOperations
           >> Choice5Of5
           >> CompositeType
-          >> Choice4Of7
-          >> ValueExt.ValueExt }
+          >> VComposite }
 
   let mapExtension =
     Map.Extension.MapExtension<
@@ -924,9 +941,9 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
       MapExt<_, _, _>.ValueLens
       { Get =
           function
-          | ValueExt(Choice6Of7(MapOperations x)) -> Some x
+          | VMap(MapOperations x) -> Some x
           | _ -> None
-        Set = MapOperations >> Choice6Of7 >> ValueExt.ValueExt }
+        Set = MapOperations >> VMap }
       (Some ListExt<'runtimeContext, 'db, 'customExtension>.ValueLens)
       MapExt<_, _, _>.ValueDTOLens
       DeltaExt<_, _, _>.MapDeltaLens
@@ -952,6 +969,13 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
     context
     |> registerDBExtensions
     |> (listExtension |> TypeExtension.RegisterLanguageContext)
+    |> (viewExtension |> TypeExtension.RegisterLanguageContext)
+    |> (viewPropsExtension |> TypeExtension.RegisterLanguageContext)
+    |> (reactNodeExtension |> TypeExtension.RegisterLanguageContext)
+    |> (reactComponentExtension |> TypeExtension.RegisterLanguageContext)
+    |> (coroutineExtension |> TypeExtension.RegisterLanguageContext)
+    |> (webAppIOExtension |> TypeExtension.RegisterLanguageContext)
+    |> (webAppRunExtension |> TypeLambdaExtension.RegisterLanguageContext)
     |> (dateOnlyExtension |> OperationsExtension.RegisterLanguageContext)
     |> (dateTimeExtension |> OperationsExtension.RegisterLanguageContext)
     |> (guidExtension |> OperationsExtension.RegisterLanguageContext)
@@ -966,6 +990,323 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
     |> (stringExtension |> OperationsExtension.RegisterLanguageContext)
     |> (updaterExtension |> OperationsExtension.RegisterLanguageContext)
     |> (mapExtension |> TypeExtension.RegisterLanguageContext)
+
+  // -- HTML View Attribute Schemas --
+  let stringType = TypeValue.CreatePrimitive PrimitiveType.String
+  let boolType = TypeValue.CreatePrimitive PrimitiveType.Bool
+  let unitType = TypeValue.CreatePrimitive PrimitiveType.Unit
+
+  let globalAttrs: Map<string, List<TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>>> =
+    Map.ofList
+      [ "class", [ stringType ]
+        "id", [ stringType ]
+        "style", [ stringType ]
+        "title", [ stringType ]
+        "hidden", [ boolType ]
+        "tabIndex", [ stringType ]
+        "role", [ stringType ]
+        "key", [ stringType ] ]
+
+  let eventHandlerAttrs: Map<string, List<TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>>> =
+    Map.ofList
+      [ "onClick", [ unitType ]
+        "onChange", [ unitType ]
+        "onSubmit", [ unitType ]
+        "onInput", [ unitType ]
+        "onFocus", [ unitType ]
+        "onBlur", [ unitType ]
+        "onKeyDown", [ unitType ]
+        "onKeyUp", [ unitType ]
+        "onKeyPress", [ unitType ]
+        "onMouseDown", [ unitType ]
+        "onMouseUp", [ unitType ]
+        "onMouseEnter", [ unitType ]
+        "onMouseLeave", [ unitType ]
+        "onMouseOver", [ unitType ]
+        "onMouseOut", [ unitType ]
+        "onDoubleClick", [ unitType ]
+        "onContextMenu", [ unitType ]
+        "onDragStart", [ unitType ]
+        "onDrag", [ unitType ]
+        "onDragEnd", [ unitType ]
+        "onDragOver", [ unitType ]
+        "onDrop", [ unitType ]
+        "onScroll", [ unitType ]
+        "onTouchStart", [ unitType ]
+        "onTouchEnd", [ unitType ]
+        "onTouchMove", [ unitType ] ]
+
+  let mergeAttrs
+    (maps: List<Map<string, List<TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>>>>)
+    : Map<string, List<TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>>> =
+    maps
+    |> List.fold
+      (fun acc m -> m |> Map.fold (fun a k v -> Map.add k v a) acc)
+      Map.empty
+
+  let baseAttrs = mergeAttrs [ globalAttrs; eventHandlerAttrs ]
+
+  let inputAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "type", [ stringType ]
+            "value", [ stringType ]
+            "checked", [ boolType ]
+            "placeholder", [ stringType ]
+            "disabled", [ boolType ]
+            "readOnly", [ boolType ]
+            "required", [ boolType ]
+            "autoFocus", [ boolType ]
+            "autoComplete", [ stringType ]
+            "name", [ stringType ]
+            "min", [ stringType ]
+            "max", [ stringType ]
+            "step", [ stringType ]
+            "pattern", [ stringType ]
+            "maxLength", [ stringType ]
+            "minLength", [ stringType ]
+            "accept", [ stringType ]
+            "multiple", [ boolType ] ] ]
+
+  let anchorAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "href", [ stringType ]
+            "target", [ stringType ]
+            "rel", [ stringType ]
+            "download", [ stringType; boolType ] ] ]
+
+  let imgAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "src", [ stringType ]
+            "alt", [ stringType ]
+            "width", [ stringType ]
+            "height", [ stringType ]
+            "loading", [ stringType ] ] ]
+
+  let formAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "action", [ stringType ]
+            "method", [ stringType ]
+            "encType", [ stringType ]
+            "noValidate", [ boolType ] ] ]
+
+  let buttonAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "type", [ stringType ]
+            "disabled", [ boolType ]
+            "name", [ stringType ]
+            "value", [ stringType ] ] ]
+
+  let selectAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "value", [ stringType ]
+            "disabled", [ boolType ]
+            "name", [ stringType ]
+            "required", [ boolType ]
+            "multiple", [ boolType ] ] ]
+
+  let optionAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "value", [ stringType ]
+            "disabled", [ boolType ]
+            "selected", [ boolType ] ] ]
+
+  let textareaAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "value", [ stringType ]
+            "placeholder", [ stringType ]
+            "disabled", [ boolType ]
+            "readOnly", [ boolType ]
+            "required", [ boolType ]
+            "rows", [ stringType ]
+            "cols", [ stringType ]
+            "name", [ stringType ]
+            "maxLength", [ stringType ]
+            "autoFocus", [ boolType ] ] ]
+
+  let labelAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList [ "for", [ stringType ] ] ]
+
+  let iframeAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "src", [ stringType ]
+            "width", [ stringType ]
+            "height", [ stringType ]
+            "sandbox", [ stringType ]
+            "allow", [ stringType ]
+            "name", [ stringType ] ] ]
+
+  let videoAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "src", [ stringType ]
+            "controls", [ boolType ]
+            "autoPlay", [ boolType ]
+            "loop", [ boolType ]
+            "muted", [ boolType ]
+            "poster", [ stringType ]
+            "width", [ stringType ]
+            "height", [ stringType ] ] ]
+
+  let sourceAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "src", [ stringType ]
+            "type", [ stringType ] ] ]
+
+  let metaAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "name", [ stringType ]
+            "content", [ stringType ]
+            "charset", [ stringType ]
+            "httpEquiv", [ stringType ]
+            "property", [ stringType ] ] ]
+
+  let linkAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "href", [ stringType ]
+            "rel", [ stringType ]
+            "type", [ stringType ]
+            "media", [ stringType ] ] ]
+
+  let scriptAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "src", [ stringType ]
+            "type", [ stringType ]
+            "async", [ boolType ]
+            "defer", [ boolType ] ] ]
+
+  let int32Type = TypeValue.CreatePrimitive PrimitiveType.Int32
+
+  let tableCellAttrs =
+    mergeAttrs
+      [ baseAttrs
+        Map.ofList
+          [ "colSpan", [ int32Type; stringType ]
+            "rowSpan", [ int32Type; stringType ]
+            "headers", [ stringType ]
+            "scope", [ stringType ] ] ]
+
+  let viewAttributeSchemas
+    : ViewAttributeSchemas<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+    Map.ofList
+      [ // Container & layout
+        "div", baseAttrs
+        "span", baseAttrs
+        "p", baseAttrs
+        "section", baseAttrs
+        "article", baseAttrs
+        "aside", baseAttrs
+        "header", baseAttrs
+        "footer", baseAttrs
+        "main", baseAttrs
+        "nav", baseAttrs
+        // Headings
+        "h1", baseAttrs
+        "h2", baseAttrs
+        "h3", baseAttrs
+        "h4", baseAttrs
+        "h5", baseAttrs
+        "h6", baseAttrs
+        // Text
+        "strong", baseAttrs
+        "em", baseAttrs
+        "small", baseAttrs
+        "b", baseAttrs
+        "i", baseAttrs
+        "u", baseAttrs
+        "code", baseAttrs
+        "pre", baseAttrs
+        "blockquote", baseAttrs
+        "abbr", baseAttrs
+        "cite", baseAttrs
+        "mark", baseAttrs
+        "sub", baseAttrs
+        "sup", baseAttrs
+        // Lists
+        "ul", baseAttrs
+        "ol", baseAttrs
+        "li", baseAttrs
+        "dl", baseAttrs
+        "dt", baseAttrs
+        "dd", baseAttrs
+        // Table
+        "table", baseAttrs
+        "thead", baseAttrs
+        "tbody", baseAttrs
+        "tfoot", baseAttrs
+        "tr", baseAttrs
+        "th", tableCellAttrs
+        "td", tableCellAttrs
+        "caption", baseAttrs
+        "colgroup", baseAttrs
+        "col", baseAttrs
+        // Form
+        "form", formAttrs
+        "input", inputAttrs
+        "textarea", textareaAttrs
+        "select", selectAttrs
+        "option", optionAttrs
+        "button", buttonAttrs
+        "label", labelAttrs
+        "fieldset", baseAttrs
+        "legend", baseAttrs
+        // Media
+        "img", imgAttrs
+        "video", videoAttrs
+        "audio", videoAttrs
+        "source", sourceAttrs
+        // Links
+        "a", anchorAttrs
+        // Embedded
+        "iframe", iframeAttrs
+        // Separators
+        "hr", baseAttrs
+        "br", baseAttrs
+        // Head
+        "meta", metaAttrs
+        "link", linkAttrs
+        "script", scriptAttrs
+        // Other
+        "details", baseAttrs
+        "summary", baseAttrs
+        "dialog", baseAttrs
+        "canvas", baseAttrs
+        "svg", baseAttrs
+        "path", baseAttrs ]
+
+  let context =
+    { context with
+        TypeCheckContext =
+          { context.TypeCheckContext with
+              ViewAttributeSchemas = viewAttributeSchemas } }
 
   let extensions =
     { List = listExtension
@@ -986,8 +1327,33 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
   let typeCheckingConfig =
     { QueryTypeSymbol = query_sym
       ListTypeSymbol = list_sym
+      ViewTypeSymbol = view_sym
+      ViewPropsTypeSymbol = view_props_sym
+      ReactNodeTypeSymbol = react_node_sym
+      ReactComponentTypeSymbol = react_component_sym
+      CoTypeSymbol = co_sym
       MkQueryType = mk_query
-      MkListType = mk_list_type }
+      MkListType = mk_list_type
+      MkViewType = mk_view_type
+      MkViewPropsType = mk_view_props_type
+      MkCoType = mk_co_type
+      ImportedTypesWithFields =
+        Map.ofList
+          [ view_props_sym,
+            fun args ->
+              match args with
+              | [ schema; ctx; st ] ->
+                OrderedMap.ofList
+                  [ TypeSymbol.Create(Identifier.LocalScope "schema"), (schema, Kind.Schema)
+                    TypeSymbol.Create(Identifier.LocalScope "context"), (ctx, Kind.Star)
+                    TypeSymbol.Create(Identifier.LocalScope "state"), (st, Kind.Star)
+                    TypeSymbol.Create(Identifier.LocalScope "setState"),
+                    (TypeValue.CreateArrow(
+                       TypeValue.CreateArrow(st, st),
+                       TypeValue.CreatePrimitive PrimitiveType.Unit
+                     ),
+                     Kind.Star) ]
+              | _ -> OrderedMap.empty ] }
 
   extensions, context, typeCheckingConfig
 

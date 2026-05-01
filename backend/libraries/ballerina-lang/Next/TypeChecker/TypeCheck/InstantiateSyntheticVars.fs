@@ -306,6 +306,168 @@ module InstantiateSyntheticVars =
         | TypeCheckedExprRec.Query q ->
           return
             TypeCheckedExpr.Query(q, expr.Type, expr.Kind, loc0, expr.Scope)
+        | TypeCheckedExprRec.View v ->
+          let rec instantiateNode (node: TypeCheckedViewNode<'valueExt>) =
+            state {
+              match node.Node with
+              | TypeCheckedViewNodeRec.ViewText _ -> return node
+              | TypeCheckedViewNodeRec.ViewLet(var, value, rest) ->
+                let! value = !value
+                let! rest = instantiateNode rest
+                return
+                  { node with
+                      Node = TypeCheckedViewNodeRec.ViewLet(var, value, rest) }
+              | TypeCheckedViewNodeRec.ViewExprContainer e ->
+                let! e = !e
+                return
+                  { node with
+                      Node = TypeCheckedViewNodeRec.ViewExprContainer e }
+              | TypeCheckedViewNodeRec.ViewFragment children ->
+                let! children = children |> List.map instantiateNode |> state.All
+                return
+                  { node with
+                      Node = TypeCheckedViewNodeRec.ViewFragment children }
+              | TypeCheckedViewNodeRec.ViewElement el ->
+                let! attrs =
+                  el.Attributes
+                  |> List.map (fun attr ->
+                    state {
+                      match attr with
+                      | TypeCheckedViewAttribute.ViewAttrStringValue _ -> return attr
+                      | TypeCheckedViewAttribute.ViewAttrExprValue(name, e) ->
+                        let! e = !e
+                        return TypeCheckedViewAttribute.ViewAttrExprValue(name, e)
+                    })
+                  |> state.All
+
+                let! children = el.Children |> List.map instantiateNode |> state.All
+                return
+                  { node with
+                      Node =
+                        TypeCheckedViewNodeRec.ViewElement
+                          { el with
+                              Attributes = attrs
+                              Children = children } }
+              | TypeCheckedViewNodeRec.ViewMapContext(mapper, inner) ->
+                let! mapper = !mapper
+                let! inner = !inner
+                return
+                  { node with
+                      Node = TypeCheckedViewNodeRec.ViewMapContext(mapper, inner) }
+              | TypeCheckedViewNodeRec.ViewMapState(mapDown, mapUp, inner) ->
+                let! mapDown = !mapDown
+                let! mapUp = !mapUp
+                let! inner = !inner
+                return
+                  { node with
+                      Node = TypeCheckedViewNodeRec.ViewMapState(mapDown, mapUp, inner) }
+            }
+
+          let! body = instantiateNode v.Body
+          return
+            TypeCheckedExpr.View(
+              { v with Body = body },
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
+        | TypeCheckedExprRec.Co c ->
+          let rec instantiateStep (step: TypeCheckedCoStep<'valueExt>) =
+            state {
+              match step.Step with
+              | TypeCheckedCoStepRec.CoLetBang(var, value, rest) ->
+                let! value = !value
+                let! rest = instantiateStep rest
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoLetBang(var, value, rest) }
+              | TypeCheckedCoStepRec.CoLet(var, value, rest) ->
+                let! value = !value
+                let! rest = instantiateStep rest
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoLet(var, value, rest) }
+              | TypeCheckedCoStepRec.CoDoBang(value, rest) ->
+                let! value = !value
+                let! rest = instantiateStep rest
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoDoBang(value, rest) }
+              | TypeCheckedCoStepRec.CoReturn e ->
+                let! e = !e
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoReturn e }
+              | TypeCheckedCoStepRec.CoReturnBang e ->
+                let! e = !e
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoReturnBang e }
+              | TypeCheckedCoStepRec.CoShow(pred, view) ->
+                let! pred = !pred
+                let! view = !view
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoShow(pred, view) }
+              | TypeCheckedCoStepRec.CoUntil(pred, inner) ->
+                let! pred = !pred
+                let! inner = !inner
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoUntil(pred, inner) }
+              | TypeCheckedCoStepRec.CoIgnore inner ->
+                let! inner = !inner
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoIgnore inner }
+              | TypeCheckedCoStepRec.CoMapContext(mapper, inner) ->
+                let! mapper = !mapper
+                let! inner = !inner
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoMapContext(mapper, inner) }
+              | TypeCheckedCoStepRec.CoMapState(mapDown, mapUp, inner) ->
+                let! mapDown = !mapDown
+                let! mapUp = !mapUp
+                let! inner = !inner
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoMapState(mapDown, mapUp, inner) }
+              | TypeCheckedCoStepRec.CoGetContext ->
+                return step
+              | TypeCheckedCoStepRec.CoGetState ->
+                return step
+              | TypeCheckedCoStepRec.CoSetState updater ->
+                let! updater = !updater
+                return
+                  { TypeCheckedCoStep.Location = step.Location
+                    TypeCheckedCoStep.Step = TypeCheckedCoStepRec.CoSetState updater }
+            }
+
+          let! body = instantiateStep c.Body
+          return
+            TypeCheckedExpr.Co(
+              { c with Body = body },
+              expr.Type,
+              expr.Kind,
+              loc0,
+              expr.Scope
+            )
+        | TypeCheckedExprRec.CoOp op ->
+          return
+            { Expr = TypeCheckedExprRec.CoOp op
+              Location = loc0
+              Type = expr.Type
+              Kind = expr.Kind
+              Scope = expr.Scope }
+        | TypeCheckedExprRec.ViewOp op ->
+          return
+            { Expr = TypeCheckedExprRec.ViewOp op
+              Location = loc0
+              Type = expr.Type
+              Kind = expr.Kind
+              Scope = expr.Scope }
         | TypeCheckedExprRec.RecoveredSyntaxError err ->
           return
             { Expr = TypeCheckedExprRec.RecoveredSyntaxError err

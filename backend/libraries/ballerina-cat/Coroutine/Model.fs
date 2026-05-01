@@ -10,6 +10,7 @@ module Model =
 
   type DeltaT = TimeSpan
 
+  [<NoComparison; NoEquality>]
   type Coroutine<'a, 's, 'c, 'event, 'err> =
     | Co of
       ('s * 'c * OrderedMap<Guid, 'event> * DeltaT
@@ -29,7 +30,7 @@ module Model =
         |> Sum.map (fun (p_result, s_updater, e_updater) ->
           (CoroutineResult.map f p_result, s_updater, e_updater)))
 
-  and CoroutineResult<'a, 's, 'c, 'event, 'err> =
+  and [<NoComparison; NoEquality>] CoroutineResult<'a, 's, 'c, 'event, 'err> =
     | Return of 'a
     | Any of List<Coroutine<'a, 's, 'c, 'event, 'err>>
     // | All of List<Coroutine<'a, 's, 'c, 'event, 'err>>
@@ -212,10 +213,12 @@ module Model =
 
   let co = CoroutineBuilder()
 
+  [<NoComparison; NoEquality>]
   type WaitingCoroutine<'a, 's, 'c, 'event, 'err> =
     { P: Coroutine<'a, 's, 'c, 'event, 'err>
       Until: DateTime }
 
+  [<NoComparison; NoEquality>]
   type EvaluatedCoroutine<'a, 's, 'c, 'event, 'err> =
     | Done of 'a * Option<U<'s>> * Option<U<OrderedMap<Guid, 'event>>>
     | Spawned of
@@ -252,6 +255,7 @@ module Model =
         WaitingOrListening(x, u_s >>? u_s', u_e >>? u_e')
       | Error err -> Error err
 
+  [<NoComparison; NoEquality>]
   type EvaluatedCoroutines<'s, 'c, 'event, 'err> =
     { active: Map<Guid, Coroutine<Unit, 's, 'c, 'event, 'err>>
       stopped: Set<Guid>

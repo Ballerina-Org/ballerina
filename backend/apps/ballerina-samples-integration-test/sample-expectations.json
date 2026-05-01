@@ -157,6 +157,12 @@
       "valueRegexes": ["SchemaAsValue"],
       "typeRegexes": ["Shop"],
       "errorRegexes": []
+    },
+    "24-views": {
+      "mode": "build",
+      "valueRegexes": [],
+      "typeRegexes": [],
+      "errorRegexes": []
     }
   }
 }

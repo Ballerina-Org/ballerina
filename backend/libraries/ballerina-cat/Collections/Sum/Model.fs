@@ -114,17 +114,56 @@ module Model =
         if not (obj.ReferenceEquals(box disposable, null)) then
           disposable.Dispose()
 
-    member inline _.Any<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>(ps: NonEmptyList<Sum<'a, 'b>>) =
-      let merge: Sum<'a, 'b> -> Sum<'a, 'b> -> Sum<'a, 'b> =
-        function
-        | Left a -> fun _ -> Left a
-        | Right b1 ->
-          function
-          | Left a -> Left a
-          | Right b2 -> Right('b.Concat(b1, b2))
+    // Core: seq with explicit empty error, short-circuiting mutable loop
+    member inline _.Any<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
+      (emptyError: 'b, ps: seq<Sum<'a, 'b>>)
+      : Sum<'a, 'b> =
+      use e = ps.GetEnumerator()
+      let mutable error = emptyError
+      let mutable result = Unchecked.defaultof<'a>
+      let mutable found = false
 
-      match ps with
-      | NonEmptyList(p, ps) -> ps |> Seq.fold merge p
+      while not found && e.MoveNext() do
+        match e.Current with
+        | Left a ->
+          result <- a
+          found <- true
+        | Right b -> error <- 'b.Concat(error, b)
+
+      if found then Left result else Right error
+
+    // seq with SRTP Default constraint for empty case
+    member inline sum.Any<'a, 'b
+      when 'b: (static member Concat: 'b * 'b -> 'b)
+      and 'b: (static member Default: 'b)>
+      (ps: seq<Sum<'a, 'b>>)
+      : Sum<'a, 'b> =
+      sum.Any('b.Default, ps)
+
+    // NonEmptyList: mutable loop with short-circuit
+    member inline _.Any<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
+      (ps: NonEmptyList<Sum<'a, 'b>>)
+      : Sum<'a, 'b> =
+      let (NonEmptyList(first, rest)) = ps
+
+      match first with
+      | Left a -> Left a
+      | Right firstError ->
+        let mutable e = rest
+        let mutable error = firstError
+        let mutable result = Unchecked.defaultof<'a>
+        let mutable found = false
+
+        while not found && not e.IsEmpty do
+          match e.Head with
+          | Left a ->
+            result <- a
+            found <- true
+          | Right b -> error <- 'b.Concat(error, b)
+
+          e <- e.Tail
+
+        if found then Left result else Right error
 
     member inline sum.Any<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)>
       (p: Sum<'a, 'b>, ps: List<Sum<'a, 'b>>)
@@ -133,7 +172,7 @@ module Model =
 
     member inline _.Any2<'a, 'b when 'b: (static member Concat: 'b * 'b -> 'b)> (p1: Sum<'a, 'b>) (p2: Sum<'a, 'b>) =
       match p1, p2 with
-      | Left v, _
+      | Left v, _ -> Left v
       | _, Left v -> Left v
       | Right e1, Right e2 -> Right('b.Concat(e1, e2))
 

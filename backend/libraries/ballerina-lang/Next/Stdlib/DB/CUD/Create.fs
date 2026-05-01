@@ -23,6 +23,10 @@ module Create =
   open Ballerina
   open Ballerina.DSL.Next.StdLib.DB
 
+  let private deniedCreateError loc0 entityName =
+    Errors.Singleton loc0 (fun () ->
+      $"Create failed for {entityName}: you are not allowed to perform this action.")
+
 
   let onCreatingHook<'runtimeContext, 'db, 'ext when 'ext: comparison>
     (db_ops: DBTypeClass<'runtimeContext, 'db, 'ext>)
@@ -335,11 +339,11 @@ module Create =
                           ->
                           return! actual_creation
                         | _ ->
-                          return
-                            Value.Sum(
-                              { Case = 1; Count = 2 },
-                              Value.Primitive PrimitiveValue.Unit
+                          return!
+                            sum.Throw(
+                              deniedCreateError loc0 entity.Name.Name
                             )
+                            |> reader.OfSum
                       | _, None -> return! actual_creation
                     }
                 | _ ->

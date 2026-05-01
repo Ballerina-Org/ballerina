@@ -61,6 +61,18 @@ module CUD =
     let DBIsLinkedId, IsLinkedOperation =
       DBIsLinkedExtension db_ops listLens.Set valueLens
 
+    let DBMoveBeforeId, MoveBeforeOperation =
+      DBMoveBeforeExtension db_ops listLens.Set valueLens
+
+    let DBMoveAfterId, MoveAfterOperation =
+      DBMoveAfterExtension db_ops listLens.Set valueLens
+
+    let DBMoveBeforeReverseId, MoveBeforeReverseOperation =
+      DBMoveBeforeReverseExtension db_ops listLens.Set valueLens
+
+    let DBMoveAfterReverseId, MoveAfterReverseOperation =
+      DBMoveAfterReverseExtension db_ops listLens.Set valueLens
+
     let lookupsExtensions = DBLookupsExtensions db_ops listLens.Set valueLens
 
     let DBGetByIdId, GetByIdOperation = DBGetByIdExtension db_ops valueLens
@@ -85,6 +97,10 @@ module CUD =
           (DBUnlinkId, UnlinkOperation)
           (DBUnlinkManyId, UnlinkManyOperation)
           (DBIsLinkedId, IsLinkedOperation)
+          (DBMoveBeforeId, MoveBeforeOperation)
+          (DBMoveAfterId, MoveAfterOperation)
+          (DBMoveBeforeReverseId, MoveBeforeReverseOperation)
+          (DBMoveAfterReverseId, MoveAfterReverseOperation)
           (DBDeleteId, DeleteOperation)
           (DBDeleteManyId, DeleteManyOperation) ]
         @ lookupsExtensions
@@ -119,10 +135,55 @@ module CUD =
         value_lens
         (typeCheckingConfig |> Option.map (fun cfg -> cfg.QueryTypeSymbol))
 
+    // Collect all DB identifiers for reject-lists
+    let cudIds =
+      memoryDBCUDExtension.Operations
+      |> Map.toSeq
+      |> Seq.map fst
+
+    let runId =
+      let (id, _, _) = memoryDBRunExtension.ExtensionType
+      id
+
+    let runQueryId =
+      let (id, _, _) = memoryDBRunQueryExtension.ExtensionType
+      id
+
+    let viewRejected =
+      seq {
+        yield! cudIds
+        yield runId
+        yield runQueryId
+      }
+      |> Seq.fold
+        (fun acc id ->
+          Map.add id "DB operations are not allowed inside views" acc)
+        Map.empty
+
+    let coRejected =
+      Map.ofList
+        [ (runQueryId,
+           "Queries are not allowed inside coroutines; use getMany/lookup instead") ]
+
     (fun languageContext ->
-      languageContext
-      |> (memoryDBRunExtension |> TypeLambdaExtension.RegisterLanguageContext)
-      |> (memoryDBRunQueryExtension |> TypeLambdaExtension.RegisterLanguageContext)
-      |> (memoryDBCUDExtension |> OperationsExtension.RegisterLanguageContext)),
+      let lc =
+        languageContext
+        |> (memoryDBRunExtension |> TypeLambdaExtension.RegisterLanguageContext)
+        |> (memoryDBRunQueryExtension |> TypeLambdaExtension.RegisterLanguageContext)
+        |> (memoryDBCUDExtension |> OperationsExtension.RegisterLanguageContext)
+
+      { lc with
+          TypeCheckContext =
+            { lc.TypeCheckContext with
+                ViewRejectedIdentifiers =
+                  viewRejected
+                  |> Map.fold
+                    (fun acc k v -> Map.add k v acc)
+                    lc.TypeCheckContext.ViewRejectedIdentifiers
+                CoRejectedIdentifiers =
+                  coRejected
+                  |> Map.fold
+                    (fun acc k v -> Map.add k v acc)
+                    lc.TypeCheckContext.CoRejectedIdentifiers } }),
     query_sym,
     mk_query

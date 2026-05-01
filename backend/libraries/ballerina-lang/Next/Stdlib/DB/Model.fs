@@ -63,6 +63,12 @@ module Model =
     { FromId: Value<TypeValue<'ext>, 'ext>
       ToId: Value<TypeValue<'ext>, 'ext> }
 
+  type MoveArgs<'runtimeContext, 'db, 'ext when 'ext: comparison> =
+    { FromId: Value<TypeValue<'ext>, 'ext>
+      SourceId: Value<TypeValue<'ext>, 'ext>
+      TargetId: Value<TypeValue<'ext>, 'ext> }
+
+  [<NoComparison; NoEquality>]
   type DBTypeClass<'runtimeContext, 'db, 'ext when 'ext: comparison> =
     { DB: 'db
       BeginTransaction: 'db -> Sum<Guid, Errors<Unit>>
@@ -112,6 +118,22 @@ module Model =
         RelationRef<'db, 'ext>
           -> IsLinkedArgs<'runtimeContext, 'db, 'ext>
           -> Reader<bool, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
+      MoveBefore:
+        RelationRef<'db, 'ext>
+          -> MoveArgs<'runtimeContext, 'db, 'ext>
+          -> Reader<unit, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
+      MoveAfter:
+        RelationRef<'db, 'ext>
+          -> MoveArgs<'runtimeContext, 'db, 'ext>
+          -> Reader<unit, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
+      MoveBeforeReverse:
+        RelationRef<'db, 'ext>
+          -> MoveArgs<'runtimeContext, 'db, 'ext>
+          -> Reader<unit, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
+      MoveAfterReverse:
+        RelationRef<'db, 'ext>
+          -> MoveArgs<'runtimeContext, 'db, 'ext>
+          -> Reader<unit, ExprEvalContext<'runtimeContext, 'ext>, Errors<Unit>>
       GetById:
         EntityRef<'db, 'ext>
           -> Value<TypeValue<'ext>, 'ext>
@@ -155,6 +177,16 @@ module Model =
             List<Value<TypeValue<'ext>, 'ext>>,
             ExprEvalContext<'runtimeContext, 'ext>,
             Errors<Unit>
+           >
+      LookupNotConnectedMany:
+        RelationRef<'db, 'ext>
+          -> Value<TypeValue<'ext>, 'ext>
+          -> RelationLookupDirection
+          -> int * int
+          -> Reader<
+            List<Value<TypeValue<'ext>, 'ext>>,
+            ExprEvalContext<'runtimeContext, 'ext>,
+            Errors<Unit>
            > }
 
   let db_nonsense () =
@@ -172,6 +204,10 @@ module Model =
       Link = fun _ _ -> reader.Return()
       Unlink = fun _ _ -> reader.Return()
       IsLinked = fun _ _ -> reader.Return false
+      MoveBefore = fun _ _ -> reader.Return()
+      MoveAfter = fun _ _ -> reader.Return()
+      MoveBeforeReverse = fun _ _ -> reader.Return()
+      MoveAfterReverse = fun _ _ -> reader.Return()
       GetById =
         fun _ _ ->
           reader.Throw <| Errors.Singleton () (fun () -> "No such entity")
@@ -180,7 +216,8 @@ module Model =
       LookupOne =
         fun _ _ _ ->
           reader.Throw <| Errors.Singleton () (fun () -> "No such relation")
-      LookupMany = fun _ _ _ _ -> reader.Return [] }
+      LookupMany = fun _ _ _ _ -> reader.Return []
+      LookupNotConnectedMany = fun _ _ _ _ -> reader.Return [] }
 
   type DBEvalProperty<'ext> =
     { PropertyName: LocalIdentifier
@@ -218,12 +255,52 @@ module Model =
             (y.Schema, y.SchemaAsValue, y.Main)
         | _ -> invalidArg "yobj" "cannot compare values of different types"
 
+  [<CustomEquality; CustomComparison>]
+  type WebAppIOData<'runtimeContext, 'db, 'ext when 'ext: comparison> =
+    { DBIO: DBIO<'runtimeContext, 'db, 'ext>
+      Routes: List<string * Value<TypeValue<'ext>, 'ext> * Value<TypeValue<'ext>, 'ext>>
+      /// Routes whose coroutine is an unapplied function (schema -> Co).
+      /// Resolved by the host (Program.fs) before frontend generation.
+      DbRoutes: List<string * Value<TypeValue<'ext>, 'ext> * Value<TypeValue<'ext>, 'ext>>
+      Components: List<string * Value<TypeValue<'ext>, 'ext>> }
+
+    override x.ToString() =
+      let routeCount = x.Routes.Length
+      let dbRouteCount = x.DbRoutes.Length
+      let compCount = x.Components.Length
+      $"WebAppIO(Routes: {routeCount}, DbRoutes: {dbRouteCount}, Components: {compCount})"
+
+    override x.Equals(yobj) =
+      match yobj with
+      | :? WebAppIOData<'runtimeContext, 'db, 'ext> as y ->
+        (x.DBIO = y.DBIO
+         && x.Routes = y.Routes
+         && x.DbRoutes = y.DbRoutes
+         && x.Components = y.Components)
+      | _ -> false
+
+    override x.GetHashCode() =
+      hash x.DBIO ^^^ hash x.Routes ^^^ hash x.DbRoutes ^^^ hash x.Components
+
+    interface System.IComparable with
+      member x.CompareTo yobj =
+        match yobj with
+        | :? WebAppIOData<'runtimeContext, 'db, 'ext> as y ->
+          compare
+            (x.DBIO, x.Routes, x.DbRoutes, x.Components)
+            (y.DBIO, y.Routes, y.DbRoutes, y.Components)
+        | _ -> invalidArg "yobj" "cannot compare values of different types"
+
   type DBValues<'runtimeContext, 'db, 'ext when 'ext: comparison> =
     | EntityRef of EntityRef<'db, 'ext>
     | RelationRef of RelationRef<'db, 'ext>
     | Link of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
     | Unlink of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
     | IsLinked of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
+    | MoveBefore of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
+    | MoveAfter of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
+    | MoveBeforeReverse of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
+    | MoveAfterReverse of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
     | LinkMany of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
     | UnlinkMany of {| RelationRef: Option<RelationRef<'db, 'ext>> |}
     | LookupOne of
@@ -231,6 +308,9 @@ module Model =
     | LookupOption of
       {| RelationRef: Option<RelationRef<'db, 'ext> * RelationLookupDirection> |}
     | LookupMany of
+      {| RelationRef: Option<RelationRef<'db, 'ext> * RelationLookupDirection>
+         EntityId: Option<Value<TypeValue<'ext>, 'ext>> |}
+    | LookupNotConnectedMany of
       {| RelationRef: Option<RelationRef<'db, 'ext> * RelationLookupDirection>
          EntityId: Option<Value<TypeValue<'ext>, 'ext>> |}
     | RelationLookupRef of RelationRef<'db, 'ext> * RelationLookupDirection
@@ -249,6 +329,7 @@ module Model =
     | StripProps of {| EntityRef: Option<EntityRef<'db, 'ext>> |}
     | Run
     | DBIO of DBIO<'runtimeContext, 'db, 'ext>
+    | WebAppIO of WebAppIOData<'runtimeContext, 'db, 'ext>
     | TypeAppliedRun of Schema<'ext> * 'db
     | QueryRun of {| Query: Option<ValueQuery<TypeValue<'ext>, 'ext>> |}
 
@@ -281,6 +362,38 @@ module Model =
           | None -> "None"
 
         $"IsLinked(Relation: {relationStr})"
+      | MoveBefore moveBefore ->
+        let relationStr =
+          match moveBefore.RelationRef with
+          | Some(_, _, relation, fromEntity, toEntity, _) ->
+            $"RelationRef({relation.Name}, from: {fromEntity.Name}, to: {toEntity.Name})"
+          | None -> "None"
+
+        $"MoveBefore(Relation: {relationStr})"
+      | MoveAfter moveAfter ->
+        let relationStr =
+          match moveAfter.RelationRef with
+          | Some(_, _, relation, fromEntity, toEntity, _) ->
+            $"RelationRef({relation.Name}, from: {fromEntity.Name}, to: {toEntity.Name})"
+          | None -> "None"
+
+        $"MoveAfter(Relation: {relationStr})"
+      | MoveBeforeReverse moveBeforeReverse ->
+        let relationStr =
+          match moveBeforeReverse.RelationRef with
+          | Some(_, _, relation, fromEntity, toEntity, _) ->
+            $"RelationRef({relation.Name}, from: {fromEntity.Name}, to: {toEntity.Name})"
+          | None -> "None"
+
+        $"MoveBeforeReverse(Relation: {relationStr})"
+      | MoveAfterReverse moveAfterReverse ->
+        let relationStr =
+          match moveAfterReverse.RelationRef with
+          | Some(_, _, relation, fromEntity, toEntity, _) ->
+            $"RelationRef({relation.Name}, from: {fromEntity.Name}, to: {toEntity.Name})"
+          | None -> "None"
+
+        $"MoveAfterReverse(Relation: {relationStr})"
       | LinkMany linkMany ->
         let relationStr =
           match linkMany.RelationRef with
@@ -321,6 +434,14 @@ module Model =
           | None -> "None"
 
         $"LookupMany(Relation: {relationStr})"
+      | LookupNotConnectedMany lookupNotConnectedMany ->
+        let relationStr =
+          match lookupNotConnectedMany.RelationRef with
+          | Some((_, _, relation, fromEntity, toEntity, _), _) ->
+            $"RelationRef({relation.Name}, from: {fromEntity.Name}, to: {toEntity.Name})"
+          | None -> "None"
+
+        $"LookupNotConnectedMany(Relation: {relationStr})"
       | RelationLookupRef((_, _, relation, _fromEntity, _toEntity, _), direction) ->
         $"{relation.Name}[{direction}]"
       | EvalProperty prop -> $"EvalProperty({prop.PropertyName})"
@@ -338,5 +459,6 @@ module Model =
       | StripProps _ -> "StripProps"
       | Run -> "Run"
       | DBIO dbio -> $"DBIO({dbio})"
+      | WebAppIO data -> data.ToString()
       | TypeAppliedRun(_schema, _) -> $"TypeAppliedRun"
       | QueryRun v -> $"runQuery ({v.Query})"

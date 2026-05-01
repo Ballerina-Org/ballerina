@@ -26,7 +26,7 @@ module APIRegistration =
           'tenantId,
           'schemaName
          >)
-      (getFilterFunction: 'tenantId -> 'schemaName -> bool -> Sum<EntityFilterFunction, Errors<Location>>)
+      (getFilterFunction: 'tenantId -> 'schemaName -> Sum<EntityFilterFunction, Errors<Location>>)
       =
       do
         create<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>
@@ -40,6 +40,11 @@ module APIRegistration =
 
       do
         link<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>
+          builder
+          apiContext
+
+      do
+        moveRelation<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>
           builder
           apiContext
 

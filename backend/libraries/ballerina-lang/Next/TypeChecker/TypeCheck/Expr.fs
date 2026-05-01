@@ -40,6 +40,8 @@ module Expr =
   open Ballerina.DSL.Next.Types.TypeChecker.TypeLet
   open Ballerina.DSL.Next.Types.TypeChecker.TypeApply
   open Ballerina.DSL.Next.Types.TypeChecker.Query
+  open Ballerina.DSL.Next.Types.TypeChecker.View
+  open Ballerina.DSL.Next.Types.TypeChecker.Co
   open Ballerina.DSL.Next.Types.TypeChecker.ErrorDanglingScopedIdentifier
   open Ballerina.DSL.Next.Types.TypeChecker.ErrorDanglingRecordDes
   open Ballerina.Fun
@@ -166,6 +168,7 @@ module Expr =
               | ExprRec.RecordDes record_des_expr ->
                 return!
                   Expr.TypeCheckRecordDes
+                    config
                     typeCheckExpr
                     context_t
                     record_des_expr
@@ -233,6 +236,60 @@ module Expr =
                     q
 
                 return TypeCheckedExpr.Query(q, t, k), ctx
+
+              | ExprRec.View v ->
+                let! result, ctx =
+                  Expr.TypeCheckView
+                    config
+                    typeCheckExpr
+                    context_t
+                    (loc0, v)
+
+                return result, ctx
+
+              | ExprRec.Co c ->
+                let! result, ctx =
+                  Expr.TypeCheckCo
+                    config
+                    typeCheckExpr
+                    context_t
+                    (loc0, c)
+
+                return result, ctx
+
+              | ExprRec.CoOp op ->
+                // Resolve Co::name to get the type from extension registration,
+                // but produce a CoOp node instead of a Lookup node
+                let id = Identifier.FullyQualified([ "Co" ], op.Name)
+                let! result, ctx =
+                  Expr.TypeCheckLookup
+                    (typeCheckExpr, t.Location)
+                    context_t
+                    { Id = id }
+                return
+                  { TypeCheckedExpr.Expr = TypeCheckedExprRec.CoOp op
+                    TypeCheckedExpr.Type = result.Type
+                    TypeCheckedExpr.Kind = result.Kind
+                    TypeCheckedExpr.Location = result.Location
+                    TypeCheckedExpr.Scope = result.Scope },
+                  ctx
+
+              | ExprRec.ViewOp op ->
+                // Resolve View::name to get the type from extension registration,
+                // but produce a ViewOp node instead of a Lookup node
+                let id = Identifier.FullyQualified([ "View" ], op.Name)
+                let! result, ctx =
+                  Expr.TypeCheckLookup
+                    (typeCheckExpr, t.Location)
+                    context_t
+                    { Id = id }
+                return
+                  { TypeCheckedExpr.Expr = TypeCheckedExprRec.ViewOp op
+                    TypeCheckedExpr.Type = result.Type
+                    TypeCheckedExpr.Kind = result.Kind
+                    TypeCheckedExpr.Location = result.Location
+                    TypeCheckedExpr.Scope = result.Scope },
+                  ctx
 
               | ExprRec.RecoveredSyntaxError err ->
                 return!

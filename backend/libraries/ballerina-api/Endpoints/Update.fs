@@ -28,7 +28,9 @@ module Update =
   open Ballerina.Data.Delta.ToUpdater
   open Ballerina.Data.Delta
   open Ballerina.DSL.Next.StdLib.Updater.Model
+  open Npgsql
 
+  [<NoComparison; NoEquality>]
   type UpdateDeltaWithId =
     { Id: ValueDTO<ValueExtDTO>
       Delta: DeltaDTO<ValueExtDTO, DeltaExtDTO> }
@@ -46,166 +48,189 @@ module Update =
         'tenantId,
         'schemaName,
         string,
-        bool,
         UpdateDeltaWithId,
         IResult
        >
-        (fun httpContext tenantId schemaName entityName draft payload ->
+        (fun httpContext tenantId schemaName entityName payload ->
           let entityId = payload.Id
           let delta = payload.Delta
 
-          let result =
-            sum {
-              let! dbio,
-                   languageContext,
-                   evalContext,
-                   typeCheckContext,
-                   typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+          let txn : NpgsqlTransaction option ref = ref None
+          let conn : NpgsqlConnection option ref = ref None
+          let cleanup () =
+            txn.Value |> Option.iter (fun t -> try t.Rollback() with _ -> ())
+            conn.Value |> Option.iter (fun c -> try c.Dispose() with _ -> ())
+            txn.Value <- None
+            conn.Value <- None
+          try
+            let result =
+              sum {
+                let! dbio,
+                     languageContext,
+                     evalContext,
+                     typeCheckContext,
+                     typeCheckState,
+                     dataSource =
+                  getDbDescriptor tenantId schemaName context
 
-              let! _tableDescriptor =
-                dbio.Schema.Entities
-                |> OrderedMap.tryFind (entityName |> SchemaEntityName.Create)
-                |> Sum.fromOption (fun () ->
-                  Errors.Singleton Location.Unknown (fun () ->
-                    $"Entity {entityName} not found in schema {dbio.Schema}."))
-                |> sum.MapError
-                  APIError<'runtimeContext, 'db, 'customExtension, Location>
-                    .Create
+                let! _tableDescriptor =
+                  dbio.Schema.Entities
+                  |> OrderedMap.tryFind (entityName |> SchemaEntityName.Create)
+                  |> Sum.fromOption (fun () ->
+                    Errors.Singleton Location.Unknown (fun () ->
+                      $"Entity {entityName} not found in schema {dbio.Schema}."))
+                  |> sum.MapError
+                    APIError<'runtimeContext, 'db, 'customExtension, Location>
+                      .Create
 
-              let! schema =
-                dbio.SchemaAsValue
-                |> Value.AsRecord
-                |> toUknonwLocation
-                |> sum.MapError
-                  APIError<'runtimeContext, 'db, 'customExtension, Location>
-                    .Create
+                let! schema =
+                  dbio.SchemaAsValue
+                  |> Value.AsRecord
+                  |> toUknonwLocation
+                  |> sum.MapError
+                    APIError<'runtimeContext, 'db, 'customExtension, Location>
+                      .Create
 
-              let! entities =
-                schema
-                |> Map.tryFindWithError
-                  ("Entities"
-                   |> Identifier.LocalScope
-                   |> ResolvedIdentifier.FromIdentifier)
-                  "schema"
-                  (fun () -> "Entities")
-                  Location.Unknown
-                |> sum.MapError
-                  APIError<'runtimeContext, 'db, 'customExtension, Location>
-                    .Create
+                let! entities =
+                  schema
+                  |> Map.tryFindWithError
+                    ("Entities"
+                     |> Identifier.LocalScope
+                     |> ResolvedIdentifier.FromIdentifier)
+                    "schema"
+                    (fun () -> "Entities")
+                    Location.Unknown
+                  |> sum.MapError
+                    APIError<'runtimeContext, 'db, 'customExtension, Location>
+                      .Create
 
-              let! entities =
-                entities
-                |> Value.AsRecord
-                |> sum.MapError(
-                  Errors.MapContext(replaceWith Location.Unknown)
-                )
-                |> sum.MapError
-                  APIError<'runtimeContext, 'db, 'customExtension, Location>
-                    .Create
+                let! entities =
+                  entities
+                  |> Value.AsRecord
+                  |> sum.MapError(
+                    Errors.MapContext(replaceWith Location.Unknown)
+                  )
+                  |> sum.MapError
+                    APIError<'runtimeContext, 'db, 'customExtension, Location>
+                      .Create
 
-              let! entityDescriptor =
-                entities
-                |> Map.tryFindWithError
-                  (entityName
-                   |> Identifier.LocalScope
-                   |> ResolvedIdentifier.FromIdentifier)
-                  "schema"
-                  (fun () -> "Entities")
-                  Location.Unknown
-                |> sum.MapError
-                  APIError<'runtimeContext, 'db, 'customExtension, Location>
-                    .Create
+                let! entityDescriptor =
+                  entities
+                  |> Map.tryFindWithError
+                    (entityName
+                     |> Identifier.LocalScope
+                     |> ResolvedIdentifier.FromIdentifier)
+                    "schema"
+                    (fun () -> "Entities")
+                    Location.Unknown
+                  |> sum.MapError
+                    APIError<'runtimeContext, 'db, 'customExtension, Location>
+                      .Create
 
-              let! idValue =
-                runDTOConverter languageContext (valueFromDTO entityId)
-                |> sum.MapError
-                  APIError<'runtimeContext, 'db, 'customExtension, Location>
-                    .Create
+                let! idValue =
+                  runDTOConverter languageContext (valueFromDTO entityId)
+                  |> sum.MapError
+                    APIError<'runtimeContext, 'db, 'customExtension, Location>
+                      .Create
 
-              let idType = _tableDescriptor.Id
+                let idType = _tableDescriptor.Id
 
-              do!
-                typeCheckValue
-                  idValue
-                  idType
-                  languageContext
-                  typeCheckContext
-                  typeCheckState
+                do!
+                  typeCheckValue
+                    idValue
+                    idType
+                    languageContext
+                    typeCheckContext
+                    typeCheckState
 
-              let! delta =
-                deltaFromDTO delta
-                |> Reader.Run languageContext.SerializationContext
-                |> sum.MapError(
-                  Errors.MapContext(replaceWith Location.Unknown)
-                )
-                |> sum.MapError
-                  APIError<'runtimeContext, 'db, 'customExtension, Location>
-                    .Create
+                let! delta =
+                  deltaFromDTO delta
+                  |> Reader.Run languageContext.SerializationContext
+                  |> sum.MapError(
+                    Errors.MapContext(replaceWith Location.Unknown)
+                  )
+                  |> sum.MapError
+                    APIError<'runtimeContext, 'db, 'customExtension, Location>
+                      .Create
 
-              let! updaterLambda =
-                createUpdaterFromDelta delta
-                |> sum.MapError(
-                  Errors.MapContext(replaceWith Location.Unknown)
-                )
-                |> sum.MapError
-                  APIError<'runtimeContext, 'db, 'customExtension, Location>
-                    .Create
+                let! updaterLambda =
+                  createUpdaterFromDelta delta
+                  |> sum.MapError(
+                    Errors.MapContext(replaceWith Location.Unknown)
+                  )
+                  |> sum.MapError
+                    APIError<'runtimeContext, 'db, 'customExtension, Location>
+                      .Create
 
-              let doUpdateExpr
-                : RunnableExpr<
-                    ValueExt<'runtimeContext, 'db, 'customExtension>
-                   > =
+                let doUpdateExpr
+                  : RunnableExpr<
+                      ValueExt<'runtimeContext, 'db, 'customExtension>
+                     > =
 
-                RunnableExpr.UnsafeApplyForUntypedEval(
                   RunnableExpr.UnsafeApplyForUntypedEval(
-                    RunnableExpr.UnsafeLookupForUntypedEval(
-                      Identifier.FullyQualified([ "DB" ], "update")
-                      |> ResolvedIdentifier.FromIdentifier
-                    ),
-                    RunnableExpr.FromValue(
-                      entityDescriptor,
-                      TypeValue.CreatePrimitive PrimitiveType.Unit,
-                      Kind.Star
-                    )
-                  ),
-                  RunnableExpr.UnsafeTupleConsForUntypedEval
-                    [ RunnableExpr.FromValue(
-                        idValue,
+                    RunnableExpr.UnsafeApplyForUntypedEval(
+                      RunnableExpr.UnsafeLookupForUntypedEval(
+                        Identifier.FullyQualified([ "DB" ], "update")
+                        |> ResolvedIdentifier.FromIdentifier
+                      ),
+                      RunnableExpr.FromValue(
+                        entityDescriptor,
                         TypeValue.CreatePrimitive PrimitiveType.Unit,
                         Kind.Star
                       )
-                      RunnableExpr.UnsafeLambdaForUntypedEval(
-                        Var.Create "_",
-                        TypeValue.CreatePrimitive PrimitiveType.Unit,
-                        updaterLambda,
-                        TypeValue.CreatePrimitive PrimitiveType.Unit
-                      ) ]
-                )
+                    ),
+                    RunnableExpr.UnsafeTupleConsForUntypedEval
+                      [ RunnableExpr.FromValue(
+                          idValue,
+                          TypeValue.CreatePrimitive PrimitiveType.Unit,
+                          Kind.Star
+                        )
+                        RunnableExpr.UnsafeLambdaForUntypedEval(
+                          Var.Create "_",
+                          TypeValue.CreatePrimitive PrimitiveType.Unit,
+                          updaterLambda,
+                          TypeValue.CreatePrimitive PrimitiveType.Unit
+                        ) ]
+                  )
 
-              let! evalResult =
-                Expr.Eval(
-                  NonEmptyList.prependList
-                    languageContext.TypeCheckedPreludes
-                    (NonEmptyList.OfList(doUpdateExpr, []))
-                )
-                |> Reader.Run(
-                  evalContext |> context.PermissionHookInjector httpContext
-                )
-                |> sum.MapError
-                  APIError<'runtimeContext, 'db, 'customExtension, Location>
-                    .Create
+                match dataSource with
+                | Some ds ->
+                  let c = ds.OpenConnection()
+                  let t = c.BeginTransaction()
+                  conn.Value <- Some c
+                  txn.Value <- Some t
+                | None -> ()
 
-              let! result =
-                runDTOConverter languageContext (valueToDTO evalResult)
-                |> sum.MapError
-                  APIError<'runtimeContext, 'db, 'customExtension, Location>
-                    .Create
+                let! evalResult =
+                  Expr.Eval(
+                    NonEmptyList.prependList
+                      languageContext.TypeCheckedPreludes
+                      (NonEmptyList.OfList(doUpdateExpr, []))
+                  )
+                  |> Reader.Run(
+                    evalContext |> context.PermissionHookInjector httpContext
+                  )
+                  |> sum.MapError
+                    APIError<'runtimeContext, 'db, 'customExtension, Location>
+                      .Create
 
-              return result
-            }
+                txn.Value |> Option.iter (fun t -> t.Commit())
+                conn.Value |> Option.iter (fun c -> c.Dispose())
+                txn.Value <- None
+                conn.Value <- None
 
-          apiResponseFromSum result id)
+                let! result =
+                  runDTOConverter languageContext (valueToDTO evalResult)
+                  |> sum.MapError
+                    APIError<'runtimeContext, 'db, 'customExtension, Location>
+                      .Create
+
+                return result
+              }
+            apiResponseFromSum result (fun _ -> cleanup()) id
+          with ex ->
+            cleanup()
+            reraise())
     )
     |> ignore
 
@@ -216,175 +241,197 @@ module Update =
         'tenantId,
         'schemaName,
         string,
-        bool,
         UpdateDeltaWithId[],
         IResult
        >
-        (fun httpContext tenantId schemaName entityName draft payload ->
-          let result =
-            sum {
-              let! dbio,
-                   languageContext,
-                   evalContext,
-                   typeCheckContext,
-                   typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+        (fun httpContext tenantId schemaName entityName payload ->
+          let txn : NpgsqlTransaction option ref = ref None
+          let conn : NpgsqlConnection option ref = ref None
+          let cleanup () =
+            txn.Value |> Option.iter (fun t -> try t.Rollback() with _ -> ())
+            conn.Value |> Option.iter (fun c -> try c.Dispose() with _ -> ())
+            txn.Value <- None
+            conn.Value <- None
+          try
+            let result =
+              sum {
+                let! dbio,
+                     languageContext,
+                     evalContext,
+                     typeCheckContext,
+                     typeCheckState,
+                     dataSource =
+                  getDbDescriptor tenantId schemaName context
 
-              let! _tableDescriptor =
-                dbio.Schema.Entities
-                |> OrderedMap.tryFind (entityName |> SchemaEntityName.Create)
-                |> Sum.fromOption (fun () ->
-                  Errors.Singleton Location.Unknown (fun () ->
-                    $"Entity {entityName} not found in schema {dbio.Schema}."))
-                |> sum.MapError
-                  APIError<'runtimeContext, 'db, 'customExtension, Location>
-                    .Create
+                let! _tableDescriptor =
+                  dbio.Schema.Entities
+                  |> OrderedMap.tryFind (entityName |> SchemaEntityName.Create)
+                  |> Sum.fromOption (fun () ->
+                    Errors.Singleton Location.Unknown (fun () ->
+                      $"Entity {entityName} not found in schema {dbio.Schema}."))
+                  |> sum.MapError
+                    APIError<'runtimeContext, 'db, 'customExtension, Location>
+                      .Create
 
-              let! schema =
-                dbio.SchemaAsValue
-                |> Value.AsRecord
-                |> toUknonwLocation
-                |> sum.MapError
-                  APIError<'runtimeContext, 'db, 'customExtension, Location>
-                    .Create
+                let! schema =
+                  dbio.SchemaAsValue
+                  |> Value.AsRecord
+                  |> toUknonwLocation
+                  |> sum.MapError
+                    APIError<'runtimeContext, 'db, 'customExtension, Location>
+                      .Create
 
-              let! entities =
-                schema
-                |> Map.tryFindWithError
-                  ("Entities"
-                   |> Identifier.LocalScope
-                   |> ResolvedIdentifier.FromIdentifier)
-                  "schema"
-                  (fun () -> "Entities")
-                  Location.Unknown
-                |> sum.MapError
-                  APIError<'runtimeContext, 'db, 'customExtension, Location>
-                    .Create
+                let! entities =
+                  schema
+                  |> Map.tryFindWithError
+                    ("Entities"
+                     |> Identifier.LocalScope
+                     |> ResolvedIdentifier.FromIdentifier)
+                    "schema"
+                    (fun () -> "Entities")
+                    Location.Unknown
+                  |> sum.MapError
+                    APIError<'runtimeContext, 'db, 'customExtension, Location>
+                      .Create
 
-              let! entities =
-                entities
-                |> Value.AsRecord
-                |> sum.MapError(
-                  Errors.MapContext(replaceWith Location.Unknown)
-                )
-                |> sum.MapError
-                  APIError<'runtimeContext, 'db, 'customExtension, Location>
-                    .Create
+                let! entities =
+                  entities
+                  |> Value.AsRecord
+                  |> sum.MapError(
+                    Errors.MapContext(replaceWith Location.Unknown)
+                  )
+                  |> sum.MapError
+                    APIError<'runtimeContext, 'db, 'customExtension, Location>
+                      .Create
 
-              let! entityDescriptor =
-                entities
-                |> Map.tryFindWithError
-                  (entityName
-                   |> Identifier.LocalScope
-                   |> ResolvedIdentifier.FromIdentifier)
-                  "schema"
-                  (fun () -> "Entities")
-                  Location.Unknown
-                |> sum.MapError
-                  APIError<'runtimeContext, 'db, 'customExtension, Location>
-                    .Create
+                let! entityDescriptor =
+                  entities
+                  |> Map.tryFindWithError
+                    (entityName
+                     |> Identifier.LocalScope
+                     |> ResolvedIdentifier.FromIdentifier)
+                    "schema"
+                    (fun () -> "Entities")
+                    Location.Unknown
+                  |> sum.MapError
+                    APIError<'runtimeContext, 'db, 'customExtension, Location>
+                      .Create
 
-              let! updaters =
-                payload
-                |> Array.map (fun updater ->
-                  reader {
-                    let! delta = deltaFromDTO updater.Delta
+                let! updaters =
+                  payload
+                  |> Array.map (fun updater ->
+                    reader {
+                      let! delta = deltaFromDTO updater.Delta
 
-                    let! idValue =
-                      valueFromDTO updater.Id
-                      |> reader.MapContext(fun deltaSerializationContext ->
-                        deltaSerializationContext.SerializationContext)
+                      let! idValue =
+                        valueFromDTO updater.Id
+                        |> reader.MapContext(fun deltaSerializationContext ->
+                          deltaSerializationContext.SerializationContext)
 
-                    let! updaterLambda =
-                      createUpdaterFromDelta delta |> reader.OfSum
+                      let! updaterLambda =
+                        createUpdaterFromDelta delta |> reader.OfSum
 
-                    return
-                      idValue,
-                      Value.Lambda(
-                        Var.Create "_",
-                        updaterLambda,
-                        Map.empty,
-                        TypeCheckScope.Empty
-                      )
-                  })
-                |> reader.All
-                |> Reader.Run languageContext.SerializationContext
-                |> sum.MapError(
-                  Errors.MapContext(replaceWith Location.Unknown)
-                )
-                |> sum.MapError
-                  APIError<'runtimeContext, 'db, 'customExtension, Location>
-                    .Create
+                      return
+                        idValue,
+                        Value.Lambda(
+                          Var.Create "_",
+                          updaterLambda,
+                          Map.empty,
+                          TypeCheckScope.Empty
+                        )
+                    })
+                  |> reader.All
+                  |> Reader.Run languageContext.SerializationContext
+                  |> sum.MapError(
+                    Errors.MapContext(replaceWith Location.Unknown)
+                  )
+                  |> sum.MapError
+                    APIError<'runtimeContext, 'db, 'customExtension, Location>
+                      .Create
 
-              let idType = _tableDescriptor.Id
+                let idType = _tableDescriptor.Id
 
-              do!
-                updaters
-                |> List.map (fun (idValue, _) ->
-                  typeCheckValue
-                    idValue
-                    idType
-                    languageContext
-                    typeCheckContext
-                    typeCheckState)
-                |> Sum.All
-                |> Sum.map (fun _ -> ())
+                do!
+                  updaters
+                  |> List.map (fun (idValue, _) ->
+                    typeCheckValue
+                      idValue
+                      idType
+                      languageContext
+                      typeCheckContext
+                      typeCheckState)
+                  |> Sum.All
+                  |> Sum.map (fun _ -> ())
 
-              let updaters =
-                updaters
-                |> Map.ofList
-                |> Ballerina.DSL.Next.StdLib.Map.Model.MapValues.Map
-                |> MapExt.MapValues
-                |> Choice6Of7
-                |> ValueExt
+                let updaters =
+                  updaters
+                  |> Map.ofList
+                  |> Ballerina.DSL.Next.StdLib.Map.Model.MapValues.Map
+                  |> MapExt.MapValues
+                  |> VMap
 
-              let updaters = Value.Ext(updaters, None)
+                let updaters = Value.Ext(updaters, None)
 
-              let doUpdateExpr
-                : RunnableExpr<
-                    ValueExt<'runtimeContext, 'db, 'customExtension>
-                   > =
-                RunnableExpr.UnsafeApplyForUntypedEval(
+                let doUpdateExpr
+                  : RunnableExpr<
+                      ValueExt<'runtimeContext, 'db, 'customExtension>
+                     > =
                   RunnableExpr.UnsafeApplyForUntypedEval(
-                    RunnableExpr.UnsafeLookupForUntypedEval(
-                      Identifier.FullyQualified([ "DB" ], "updateMany")
-                      |> ResolvedIdentifier.FromIdentifier
+                    RunnableExpr.UnsafeApplyForUntypedEval(
+                      RunnableExpr.UnsafeLookupForUntypedEval(
+                        Identifier.FullyQualified([ "DB" ], "updateMany")
+                        |> ResolvedIdentifier.FromIdentifier
+                      ),
+                      RunnableExpr.FromValue(
+                        entityDescriptor,
+                        TypeValue.CreatePrimitive PrimitiveType.Unit,
+                        Kind.Star
+                      )
                     ),
                     RunnableExpr.FromValue(
-                      entityDescriptor,
+                      updaters,
                       TypeValue.CreatePrimitive PrimitiveType.Unit,
                       Kind.Star
                     )
-                  ),
-                  RunnableExpr.FromValue(
-                    updaters,
-                    TypeValue.CreatePrimitive PrimitiveType.Unit,
-                    Kind.Star
                   )
-                )
 
-              let! evalResult =
-                Expr.Eval(
-                  NonEmptyList.prependList
-                    languageContext.TypeCheckedPreludes
-                    (NonEmptyList.OfList(doUpdateExpr, []))
-                )
-                |> Reader.Run(
-                  evalContext |> context.PermissionHookInjector httpContext
-                )
-                |> sum.MapError
-                  APIError<'runtimeContext, 'db, 'customExtension, Location>
-                    .Create
+                match dataSource with
+                | Some ds ->
+                  let c = ds.OpenConnection()
+                  let t = c.BeginTransaction()
+                  conn.Value <- Some c
+                  txn.Value <- Some t
+                | None -> ()
 
-              let! result =
-                runDTOConverter languageContext (valueToDTO evalResult)
-                |> sum.MapError
-                  APIError<'runtimeContext, 'db, 'customExtension, Location>
-                    .Create
+                let! evalResult =
+                  Expr.Eval(
+                    NonEmptyList.prependList
+                      languageContext.TypeCheckedPreludes
+                      (NonEmptyList.OfList(doUpdateExpr, []))
+                  )
+                  |> Reader.Run(
+                    evalContext |> context.PermissionHookInjector httpContext
+                  )
+                  |> sum.MapError
+                    APIError<'runtimeContext, 'db, 'customExtension, Location>
+                      .Create
 
-              return result
-            }
+                txn.Value |> Option.iter (fun t -> t.Commit())
+                conn.Value |> Option.iter (fun c -> c.Dispose())
+                txn.Value <- None
+                conn.Value <- None
 
-          apiResponseFromSum result id)
+                let! result =
+                  runDTOConverter languageContext (valueToDTO evalResult)
+                  |> sum.MapError
+                    APIError<'runtimeContext, 'db, 'customExtension, Location>
+                      .Create
+
+                return result
+              }
+            apiResponseFromSum result (fun _ -> cleanup()) id
+          with ex ->
+            cleanup()
+            reraise())
     )
     |> ignore

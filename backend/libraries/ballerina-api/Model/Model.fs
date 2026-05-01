@@ -13,7 +13,9 @@ open Ballerina.DSL.Next.Terms.Eval
 open Ballerina.DSL.Next.StdLib.DB
 open Ballerina.Fun
 open Microsoft.AspNetCore.Http
+open Npgsql
 
+[<NoComparison; NoEquality>]
 type APITypeError<'runtimeContext, 'db, 'customExtension
   when 'customExtension: comparison and 'db: comparison> =
   { ExpectedType: TypeValue<ValueExt<'runtimeContext, 'db, 'customExtension>>
@@ -30,6 +32,7 @@ type APITypeError<'runtimeContext, 'db, 'customExtension
         DeltaExtDTO
        > }
 
+[<NoComparison; NoEquality>]
 type APIError<'runtimeContext, 'db, 'customExtension, 'context
   when 'customExtension: comparison and 'context: comparison and 'db: comparison>
   =
@@ -39,10 +42,12 @@ type APIError<'runtimeContext, 'db, 'customExtension, 'context
   static member Create(errors: Errors<'context>) =
     { Errors = errors; TypeError = None }
 
+[<NoComparison; NoEquality>]
 type APIErrorResponse =
   { Errors: string[]
     Examples: ValueDTO<ValueExtDTO>[] }
 
+[<NoComparison; NoEquality>]
 type DbDescriptor<'runtimeContext, 'db, 'customExtension
   when 'customExtension: comparison and 'db: comparison> =
   { TypeCheckContext:
@@ -67,18 +72,19 @@ type DbDescriptor<'runtimeContext, 'db, 'customExtension
         ValueExtDTO,
         DeltaExt<'runtimeContext, 'db, 'customExtension>,
         DeltaExtDTO
-       > }
+       >
+    DataSource: Option<NpgsqlDataSource> }
 
 type TenantDescriptor<'tenantId, 'schemaName> =
   { TenantId: 'tenantId
     SchemaName: 'schemaName }
 
+[<NoComparison; NoEquality>]
 type APIRegistrationFactory<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
   when 'customExtension: comparison and 'db: comparison> =
   { DbDescriptorFetcher:
       'tenantId
         -> 'schemaName
-        -> bool
         -> Sum<
           DbDescriptor<'runtimeContext, 'db, 'customExtension>,
           Errors<Location>

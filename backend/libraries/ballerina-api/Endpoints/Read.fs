@@ -23,6 +23,7 @@ module Read =
   open Ballerina.DSL.Next.Serialization.ValueSerializer
   open Ballerina.DSL.Next.StdLib.DB
 
+  [<NoComparison; NoEquality>]
   type GetManyResponseItem =
     { Key: ValueDTO<ValueExtDTO>
       Value: ValueDTO<ValueExtDTO> }
@@ -94,13 +95,13 @@ module Read =
 
     app.MapPost(
       "/{tenantId}/{schemaName}/{entityName}/get-by-id",
-      Func<HttpContext, 'tenantId, 'schemaName, string, bool, ValueDTO<ValueExtDTO>, IResult>
-        (fun httpContext tenantId schemaName entityName draft idDTO ->
+      Func<HttpContext, 'tenantId, 'schemaName, string, ValueDTO<ValueExtDTO>, IResult>
+        (fun httpContext tenantId schemaName entityName idDTO ->
 
           let result =
             sum {
-              let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+              let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState, _ =
+                getDbDescriptor tenantId schemaName context
 
               let! idValue =
                 valueFromDTO >> runDTOConverter languageContext <| idDTO
@@ -157,17 +158,17 @@ module Read =
               return idDTO, resultDTO
             }
 
-          apiResponseFromSum result id)
+          apiResponseFromSum result (fun _ -> ()) id)
     )
     |> ignore
 
     app.MapGet(
       "/{tenantId}/{schemaName}/{entityName}/many",
-      Func<HttpContext, 'tenantId, 'schemaName, string, bool, int, int, IResult>
-        (fun httpContext tenantId schemaName entityName draft (offset: int) (limit: int) ->
+      Func<HttpContext, 'tenantId, 'schemaName, string, int, int, IResult>
+        (fun httpContext tenantId schemaName entityName (offset: int) (limit: int) ->
           let result =
             sum {
-              let! dbio, languageContext, evalContext, _, _ = getDbDescriptor tenantId schemaName draft context
+              let! dbio, languageContext, evalContext, _, _, _ = getDbDescriptor tenantId schemaName context
 
               let! entityDescriptor =
                 entityDescriptorFromDb dbio entityName
@@ -208,7 +209,7 @@ module Read =
               return resultDTO
             }
 
-          apiResponseFromSum result id)
+          apiResponseFromSum result (fun _ -> ()) id)
     )
     |> ignore
 
@@ -220,13 +221,13 @@ module Read =
 
     app.MapPost(
       "/{tenantId}/{schemaName}/{relationName}/lookup-one/{direction}",
-      Func<HttpContext, 'tenantId, 'schemaName, string, string, bool, ValueDTO<ValueExtDTO>, IResult>
-        (fun httpContext tenantId schemaName relationName direction draft payloadId ->
+      Func<HttpContext, 'tenantId, 'schemaName, string, string, ValueDTO<ValueExtDTO>, IResult>
+        (fun httpContext tenantId schemaName relationName direction payloadId ->
 
           let result =
             sum {
-              let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+              let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState, _ =
+                getDbDescriptor tenantId schemaName context
 
               let! idValue =
                 valueFromDTO >> runDTOConverter languageContext <| payloadId
@@ -279,20 +280,20 @@ module Read =
               return resultDTO
             }
 
-          apiResponseFromSum result id)
+          apiResponseFromSum result (fun _ -> ()) id)
     )
     |> ignore
 
     app.MapPost(
       "/{tenantId}/{schemaName}/{relationName}/lookup-many/{direction}",
-      Func<HttpContext, 'tenantId, 'schemaName, string, string, bool, int, int, ValueDTO<ValueExtDTO>, IResult>
-        (fun httpContext tenantId schemaName relationName direction draft offset limit fromId ->
+      Func<HttpContext, 'tenantId, 'schemaName, string, string, int, int, ValueDTO<ValueExtDTO>, IResult>
+        (fun httpContext tenantId schemaName relationName direction offset limit fromId ->
 
           let result =
             sum {
 
-              let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+              let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState, _ =
+                getDbDescriptor tenantId schemaName context
 
               let! idValue =
                 valueFromDTO >> runDTOConverter languageContext <| fromId
@@ -350,19 +351,90 @@ module Read =
               return resultDTO
             }
 
-          apiResponseFromSum result id)
+          apiResponseFromSum result (fun _ -> ()) id)
+    )
+    |> ignore
+
+    app.MapPost(
+      "/{tenantId}/{schemaName}/{relationName}/lookup-not-connected-many/{direction}",
+      Func<HttpContext, 'tenantId, 'schemaName, string, string, int, int, ValueDTO<ValueExtDTO>, IResult>
+        (fun httpContext tenantId schemaName relationName direction offset limit fromId ->
+
+          let result =
+            sum {
+
+              let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState, _ =
+                getDbDescriptor tenantId schemaName context
+
+              let! idValue =
+                valueFromDTO >> runDTOConverter languageContext <| fromId
+                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+
+              do!
+                checkRelatedEntityId
+                  relationName
+                  direction
+                  idValue
+                  dbio
+                  languageContext
+                  typeCheckContext
+                  typeCheckState
+
+              let! lookupDescriptor =
+                lookupDescriptorFromDb dbio relationName direction
+                |> sum.MapError(
+                  Errors.MapContext(replaceWith Location.Unknown)
+                  >> APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+                )
+
+              let doLookupExpr: RunnableExpr<ValueExt<'runtimeContext, 'db, 'customExtension>> =
+                RunnableExpr.UnsafeApplyForUntypedEval(
+                  RunnableExpr.UnsafeApplyForUntypedEval(
+                    RunnableExpr.UnsafeApplyForUntypedEval(
+                      RunnableExpr.UnsafeLookupForUntypedEval(
+                        Identifier.FullyQualified([ "DB" ], $"lookupNotConnectedMany")
+                        |> ResolvedIdentifier.FromIdentifier
+                      ),
+                      RunnableExpr.FromValue(
+                        lookupDescriptor,
+                        TypeValue.CreatePrimitive PrimitiveType.Unit,
+                        Kind.Star
+                      )
+                    ),
+                    RunnableExpr.FromValue(idValue, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
+                  ),
+                  RunnableExpr.UnsafeTupleConsForUntypedEval
+                    [ RunnableExpr.UnsafePrimitiveForUntypedEval(PrimitiveValue.Int32(offset))
+                      RunnableExpr.UnsafePrimitiveForUntypedEval(PrimitiveValue.Int32(limit)) ]
+                )
+
+              let! evalResult =
+                Expr.Eval(
+                  NonEmptyList.prependList languageContext.TypeCheckedPreludes (NonEmptyList.OfList(doLookupExpr, []))
+                )
+                |> Reader.Run(evalContext |> context.PermissionHookInjector httpContext)
+                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+
+              let! resultDTO =
+                valueToDTO >> runDTOConverter languageContext <| evalResult
+                |> sum.MapError APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
+
+              return resultDTO
+            }
+
+          apiResponseFromSum result (fun _ -> ()) id)
     )
     |> ignore
 
     app.MapPost(
       "/{tenantId}/{schemaName}/{relationName}/lookup-option/{direction}",
-      Func<HttpContext, 'tenantId, 'schemaName, string, string, bool, ValueDTO<ValueExtDTO>, IResult>
-        (fun httpContext tenantId schemaName relationName direction draft fromId ->
+      Func<HttpContext, 'tenantId, 'schemaName, string, string, ValueDTO<ValueExtDTO>, IResult>
+        (fun httpContext tenantId schemaName relationName direction fromId ->
 
           let result =
             sum {
-              let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState =
-                getDbDescriptor tenantId schemaName draft context
+              let! dbio, languageContext, evalContext, typeCheckContext, typeCheckState, _ =
+                getDbDescriptor tenantId schemaName context
 
               let! idValue =
                 valueFromDTO >> runDTOConverter languageContext <| fromId
@@ -415,6 +487,6 @@ module Read =
               return resultDTO
             }
 
-          apiResponseFromSum result id)
+          apiResponseFromSum result (fun _ -> ()) id)
     )
     |> ignore

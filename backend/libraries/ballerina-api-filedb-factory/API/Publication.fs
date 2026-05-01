@@ -23,6 +23,7 @@ module API =
   open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Terms.FastEval
   open Ballerina.DSL.Next.Terms.Eval
+  open Ballerina.Collections.Map
   open Ballerina.Collections.NonEmptyList
   open Ballerina.Reader.WithError
   open System.Text
@@ -30,6 +31,16 @@ module API =
   type SchemaAPIPayload =
     { SchemaDefinition: SchemaFileDefinition[]
       IsDraft: bool }
+
+  let private mergeEvalScope
+    (baseScope: ExprEvalContextScope<'valueExtension>)
+    (evaluatedScope: ExprEvalContextScope<'valueExtension>)
+    : ExprEvalContextScope<'valueExtension> =
+    { Values =
+        evaluatedScope.Values
+        |> Map.merge (fun evaluatedValue _baseValue -> evaluatedValue) baseScope.Values
+      Symbols =
+        ExprEvalContextSymbols.Append baseScope.Symbols evaluatedScope.Symbols }
 
   let private runMain
     (languageContext:
@@ -146,73 +157,57 @@ module API =
           payload.IsDraft
           schemaDefinition
 
-      match evalResult with
-      | Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.DBIO dbio))), _) ->
-        let! schema =
+      let! dbio =
+        match evalResult with
+        | Ext(ValueExt.VDB(DBExt.DBValues(DBValues.WebAppIO webAppData)), _) ->
+          webAppData.DBIO |> sum.Return
+        | Ext(ValueExt.VDB(DBExt.DBValues(DBValues.DBIO dbio)), _) ->
+          dbio |> sum.Return
+        | _ ->
+          sum.Throw(
+            Errors.Singleton Location.Unknown (fun _ ->
+              "The evaluation did not return a database extension in descriptorFetcher")
+          )
+
+      let! schema =
           fileManager.TryReadContent()
           |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
 
-        let evalContext =
-          { evalContext with
-              Scope = dbio.EvalContext }
+      let evalContext =
+        { evalContext with
+            Scope = mergeEvalScope evalContext.Scope dbio.EvalContext }
 
 
-        match schema with
-        | None ->
-          let newVersion =
-            { Id = Guid.CreateVersion7()
-              Definition = schemaDefinition
-              Version = 1L
-              PublishedAt = DateTime.UtcNow }
+      match schema with
+      | None ->
+        let newVersion =
+          { Id = Guid.CreateVersion7()
+            Definition = schemaDefinition
+            Version = 1L
+            PublishedAt = DateTime.UtcNow }
 
-          let newSchema: Schema =
-            if payload.IsDraft then
-              { Id = Guid.CreateVersion7()
-                Name = schemaName
-                Tenant = tenantId
-                Draft = Some newVersion
-                Publications = [] }
-            else
-              { Id = Guid.CreateVersion7()
-                Name = schemaName
-                Tenant = tenantId
-                Draft = None
-                Publications = [ newVersion ] }
-
-          do!
-            fileManager.WriteContent newSchema
-            |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
-
-        | Some schema ->
+        let newSchema: Schema =
           if payload.IsDraft then
-            match schema.Draft with
-            | None ->
-              let newVersion =
-                { Id = Guid.CreateVersion7()
-                  Definition = schemaDefinition
-                  Version = 1L
-                  PublishedAt = DateTime.UtcNow }
-
-              do!
-                fileManager.WriteContent { schema with Draft = Some newVersion }
-                |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
-
-            | Some draft ->
-
-              let newDraft =
-                { draft with
-                    Definition = schemaDefinition
-                    Version = draft.Version + 1L
-                    PublishedAt = DateTime.UtcNow }
-
-              do!
-                dbFileManager.WriteContent emptyDb
-                |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
-
-              do!
-                fileManager.WriteContent { schema with Draft = Some newDraft }
-                |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
+            { Id = Guid.CreateVersion7()
+              Name = schemaName
+              Tenant = tenantId
+              Draft = Some newVersion
+              Publications = [] }
           else
+            { Id = Guid.CreateVersion7()
+              Name = schemaName
+              Tenant = tenantId
+              Draft = None
+              Publications = [ newVersion ] }
+
+        do!
+          fileManager.WriteContent newSchema
+          |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
+
+      | Some schema ->
+        if payload.IsDraft then
+          match schema.Draft with
+          | None ->
             let newVersion =
               { Id = Guid.CreateVersion7()
                 Definition = schemaDefinition
@@ -220,27 +215,47 @@ module API =
                 PublishedAt = DateTime.UtcNow }
 
             do!
+              fileManager.WriteContent { schema with Draft = Some newVersion }
+              |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
+
+          | Some draft ->
+
+            let newDraft =
+              { draft with
+                  Definition = schemaDefinition
+                  Version = draft.Version + 1L
+                  PublishedAt = DateTime.UtcNow }
+
+            do!
               dbFileManager.WriteContent emptyDb
               |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
 
             do!
-              fileManager.WriteContent
-                { schema with
-                    Publications = newVersion :: schema.Publications }
+              fileManager.WriteContent { schema with Draft = Some newDraft }
               |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
+        else
+          let newVersion =
+            { Id = Guid.CreateVersion7()
+              Definition = schemaDefinition
+              Version = 1L
+              PublishedAt = DateTime.UtcNow }
 
-        do! runMain languageContext evalContext dbio showMainResult
+          do!
+            dbFileManager.WriteContent emptyDb
+            |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
 
-        schemaStream.OnNext
-          { TenantId = tenantId
-            SchemaName = schemaName
-            IsDraft = payload.IsDraft }
-      | _ ->
-        return!
-          sum.Throw(
-            Errors.Singleton Location.Unknown (fun _ ->
-              "The evaluation did not return a database extension in descriptorFetcher")
-          )
+          do!
+            fileManager.WriteContent
+              { schema with
+                  Publications = newVersion :: schema.Publications }
+            |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
+
+      do! runMain languageContext evalContext dbio showMainResult
+
+      schemaStream.OnNext
+        { TenantId = tenantId
+          SchemaName = schemaName
+          IsDraft = payload.IsDraft }
     }
 
   type WebApplication with

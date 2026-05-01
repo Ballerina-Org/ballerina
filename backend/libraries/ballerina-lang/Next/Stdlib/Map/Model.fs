@@ -50,10 +50,12 @@ module Model =
       value: Model.Value<Model.TypeValue<'valueExt>, 'valueExt>
     | RemoveItem of key: Model.Value<Model.TypeValue<'valueExt>, 'valueExt>
 
+  [<NoComparison; NoEquality>]
   type UpdateMapKeyDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct> =
     { OldKey: ValueDTO<'extDTO>
       NewKey: ValueDTO<'extDTO> }
 
+  [<NoComparison; NoEquality>]
   type UpdateMapValueDTO<'extDTO, 'deltaExtDTO
     when 'extDTO: not null
     and 'extDTO: not struct
@@ -62,10 +64,12 @@ module Model =
     { Key: ValueDTO<'extDTO>
       Value: DeltaDTO<'extDTO, 'deltaExtDTO> }
 
+  [<NoComparison; NoEquality>]
   type AddMapItemDTO<'extDTO when 'extDTO: not null and 'extDTO: not struct> =
     { Key: ValueDTO<'extDTO>
       Value: ValueDTO<'extDTO> }
 
+  [<NoComparison; NoEquality>]
   type MapDeltaExtDTO<'extDTO, 'deltaExtDTO
     when 'extDTO: not null
     and 'extDTO: not struct

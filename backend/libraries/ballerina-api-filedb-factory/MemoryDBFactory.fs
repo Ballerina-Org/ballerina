@@ -31,6 +31,16 @@ module MemoryDBAPIFactory =
   open Microsoft.AspNetCore.Http
   open CacheCompilation
 
+  let private mergeEvalScope
+    (baseScope: ExprEvalContextScope<'valueExtension>)
+    (evaluatedScope: ExprEvalContextScope<'valueExtension>)
+    : ExprEvalContextScope<'valueExtension> =
+    { Values =
+        evaluatedScope.Values
+        |> Map.merge (fun evaluatedValue _baseValue -> evaluatedValue) baseScope.Values
+      Symbols =
+        ExprEvalContextSymbols.Append baseScope.Symbols evaluatedScope.Symbols }
+
   let contextFactory dbFileConfig =
     hddcacheWithStdExtensions
       (Ballerina.DSL.Next.StdLib.String.Extension.StringTypeClass<_>.Console())
@@ -41,7 +51,7 @@ module MemoryDBAPIFactory =
     |> fun (_, languageContext, typeCheckingConfig, _) ->
       languageContext, typeCheckingConfig
 
-  let getSchemaVersion tenantId schemaName draft schemaFileConfig =
+  let getSchemaVersion tenantId schemaName schemaFileConfig =
     sum {
       let schemaDirectory, schemaExtension =
         schemaFileConfig.SchemaDirectory, schemaFileConfig.SchemaExtension
@@ -54,22 +64,14 @@ module MemoryDBAPIFactory =
         fileManager.GetContent()
         |> sum.MapError(Errors.MapContext(replaceWith Location.Unknown))
 
-      if draft then
-        return!
-          schema.Draft
-          |> sum.OfOption(
-            Errors.Singleton Location.Unknown (fun _ ->
-              $"Draft not found for schema {schemaName} in tenant {tenantId}.")
-          )
-      else
-        return!
-          schema.Publications
-          |> List.sortByDescending (fun publication -> publication.PublishedAt)
-          |> List.tryHead
-          |> sum.OfOption(
-            Errors.Singleton Location.Unknown (fun _ ->
-              $"Publication not found for schema {schemaName} in tenant {tenantId}.")
-          )
+      return!
+        schema.Publications
+        |> List.sortByDescending (fun publication -> publication.PublishedAt)
+        |> List.tryHead
+        |> sum.OfOption(
+          Errors.Singleton Location.Unknown (fun _ ->
+            $"Publication not found for schema {schemaName} in tenant {tenantId}.")
+        )
     }
 
   let descriptorFetcherFactory
@@ -81,7 +83,6 @@ module MemoryDBAPIFactory =
       Updater<Map<ResolvedIdentifier, (TypeValue<FileDbValueExtension> * Kind)>>)
     (tenantId: Guid)
     (schemaName: string)
-    (draft: bool)
     : Sum<
         DbDescriptor<
           FileDBRuntimeContext,
@@ -93,10 +94,10 @@ module MemoryDBAPIFactory =
     =
     sum {
       let! schemaVersion =
-        getSchemaVersion tenantId schemaName draft schemaFileConfig
+        getSchemaVersion tenantId schemaName schemaFileConfig
 
       let! evalResult, typeCheckContext, typeCheckState, evalContext =
-        match compilationCache.TryFind(tenantId, schemaName, draft) with
+        match compilationCache.TryFind(tenantId, schemaName, false) with
         | None ->
           buildSchemaDefinition
             dbFileConfig
@@ -104,7 +105,7 @@ module MemoryDBAPIFactory =
             addBackgroundHookScope
             tenantId
             schemaName
-            draft
+            false
             schemaVersion.Definition
         | Some cachedCompilationContext ->
           sum.Return(
@@ -115,17 +116,31 @@ module MemoryDBAPIFactory =
           )
 
       match evalResult with
-      | Ext(ValueExt.ValueExt(Choice5Of7(DBExt.DBValues(DBValues.DBIO dbio))), _) ->
+      | Ext(ValueExt.VDB(DBExt.DBValues(DBValues.WebAppIO webAppData)), _) ->
+        let dbio = webAppData.DBIO
         let languageContext, _ = contextFactory dbFileConfig
 
         return
           { DbExtension = dbio
             EvalContext =
               { evalContext with
-                  Scope = dbio.EvalContext }
+                  Scope = mergeEvalScope evalContext.Scope dbio.EvalContext }
             TypeCheckContext = typeCheckContext
             TypeCheckState = typeCheckState
-            LanguageContext = languageContext }
+            LanguageContext = languageContext
+            DataSource = None }
+      | Ext(ValueExt.VDB(DBExt.DBValues(DBValues.DBIO dbio)), _) ->
+        let languageContext, _ = contextFactory dbFileConfig
+
+        return
+          { DbExtension = dbio
+            EvalContext =
+              { evalContext with
+                  Scope = mergeEvalScope evalContext.Scope dbio.EvalContext }
+            TypeCheckContext = typeCheckContext
+            TypeCheckState = typeCheckState
+            LanguageContext = languageContext
+            DataSource = None }
       | _ ->
         return!
           sum.Throw(
@@ -162,7 +177,7 @@ module MemoryDBAPIFactory =
         .MapGetSchemaVersions(schemaFileConfig)
       |> ignore
 
-      routeGroupBuilder.RegisterAPIEndpoints factory (fun _ _ _ ->
+      routeGroupBuilder.RegisterAPIEndpoints factory (fun _ _ ->
         sum.Throw(
           Errors.Singleton Location.Unknown (fun _ ->
             "Filtering is not supported for in-memory database backends.")

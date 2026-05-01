@@ -5,8 +5,10 @@ module HddCache =
   open Ballerina.Collections.Sum
   open Ballerina.Errors
   open Ballerina.DSL.Next.Types.Model
+  open Ballerina.DSL.Next.Types.Patterns
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.TypeChecker.Model
+  open Ballerina.Cat.Collections.OrderedMap
   open Ballerina.DSL.Next.Types.TypeChecker.Expr
   open Ballerina.DSL.Next.StdLib.DB.Model
   open Ballerina.DSL.Next.StdLib.Extensions
@@ -46,7 +48,13 @@ module HddCache =
   type BuildCacheContainerDto<'valueExt when 'valueExt: comparison> =
     { Entries: (string * byte array) array
       QueryTypeSymbol: Option<TypeSymbol>
-      ListTypeSymbol: Option<TypeSymbol> }
+      ListTypeSymbol: Option<TypeSymbol>
+      ViewTypeSymbol: Option<TypeSymbol>
+      ViewPropsTypeSymbol: Option<TypeSymbol>
+
+      ReactNodeTypeSymbol: Option<TypeSymbol>
+      ReactComponentTypeSymbol: Option<TypeSymbol>
+      CoTypeSymbol: Option<TypeSymbol> }
 
   type PersistedCacheData<'valueExt when 'valueExt: comparison> =
     Map<
@@ -58,6 +66,11 @@ module HddCache =
       TypeCheckContext<'valueExt> *
       TypeCheckState<'valueExt>
      > *
+    Option<TypeSymbol> *
+    Option<TypeSymbol> *
+    Option<TypeSymbol> *
+    Option<TypeSymbol> *
+    Option<TypeSymbol> *
     Option<TypeSymbol> *
     Option<TypeSymbol>
 
@@ -89,15 +102,20 @@ module HddCache =
         | Left container ->
           decodeEntries container.Entries,
           container.QueryTypeSymbol,
-          container.ListTypeSymbol
+          container.ListTypeSymbol,
+          container.ViewTypeSymbol,
+          container.ViewPropsTypeSymbol,
+          container.ReactNodeTypeSymbol,
+          container.ReactComponentTypeSymbol,
+          container.CoTypeSymbol
         | Right _ ->
           // Legacy cache format has no TypeCheckingConfig and can lead to symbol mismatches.
           // Force a clean rebuild so the next persisted cache includes the config.
-          Map.empty, None, None
+          Map.empty, None, None, None, None, None, None, None
       else
-        Map.empty, None, None
+        Map.empty, None, None, None, None, None, None, None
     with _ ->
-      Map.empty, None, None
+      Map.empty, None, None, None, None, None, None, None
 
   let private tryDeleteCacheFile (cacheFilePath: string) =
     try
@@ -111,18 +129,28 @@ module HddCache =
     : Option<TypeCheckingConfig<'valueExt>> =
     let serializer = MessagePackSerializerAdapter()
 
-    let _, queryTypeSymbol, listTypeSymbol =
+    let _, queryTypeSymbol, listTypeSymbol, viewTypeSymbol, viewPropsTypeSymbol, reactNodeTypeSymbol, reactComponentTypeSymbol, coTypeSymbol =
       loadPersistedCacheData<'valueExt> serializer cacheFilePath
 
     let dbQueryId = Identifier.FullyQualified([ "DB" ], "Query")
     let dbQueryResolvedId = dbQueryId |> TypeCheckScope.Empty.Resolve
     let listId = Identifier.LocalScope "List" |> TypeCheckScope.Empty.Resolve
+    let viewId = Identifier.FullyQualified([ "Frontend" ], "View") |> TypeCheckScope.Empty.Resolve
+    let viewPropsId = Identifier.FullyQualified([ "View" ], "Props") |> TypeCheckScope.Empty.Resolve
+    let _reactNodeId = Identifier.FullyQualified([ "View" ], "ReactNode") |> TypeCheckScope.Empty.Resolve
+    let _reactComponentId = Identifier.FullyQualified([ "View" ], "ReactComponent") |> TypeCheckScope.Empty.Resolve
+    let coId = Identifier.LocalScope "Co" |> TypeCheckScope.Empty.Resolve
 
-    match queryTypeSymbol, listTypeSymbol with
-    | Some queryTypeSymbol, Some listTypeSymbol ->
+    match queryTypeSymbol, listTypeSymbol, viewTypeSymbol, viewPropsTypeSymbol, reactNodeTypeSymbol, reactComponentTypeSymbol, coTypeSymbol with
+    | Some queryTypeSymbol, Some listTypeSymbol, Some viewTypeSymbol, Some viewPropsTypeSymbol, Some reactNodeTypeSymbol, Some reactComponentTypeSymbol, Some coTypeSymbol ->
       Some
         { QueryTypeSymbol = queryTypeSymbol
           ListTypeSymbol = listTypeSymbol
+          ViewTypeSymbol = viewTypeSymbol
+          ViewPropsTypeSymbol = viewPropsTypeSymbol
+          ReactNodeTypeSymbol = reactNodeTypeSymbol
+          ReactComponentTypeSymbol = reactComponentTypeSymbol
+          CoTypeSymbol = coTypeSymbol
           // This config is only used to bootstrap stdExtensions with stable symbols.
           MkQueryType =
             fun s qr ->
@@ -137,7 +165,45 @@ module HddCache =
                 { Id = listId
                   Sym = listTypeSymbol
                   Parameters = []
-                  Arguments = [ inner ] } }
+                  Arguments = [ inner ] }
+          MkViewType =
+            fun schema ctx st ->
+              TypeValue.Imported
+                { Id = viewId
+                  Sym = viewTypeSymbol
+                  Parameters = []
+                  Arguments = [ schema; ctx; st ] }
+          MkViewPropsType =
+            fun schema ctx st ->
+              TypeValue.Imported
+                { Id = viewPropsId
+                  Sym = viewPropsTypeSymbol
+                  Parameters = []
+                  Arguments = [ schema; ctx; st ] }
+          MkCoType =
+            fun schema ctx st res ->
+              TypeValue.Imported
+                { Id = coId
+                  Sym = coTypeSymbol
+                  Parameters = []
+                  Arguments = [ schema; ctx; st; res ] }
+          ImportedTypesWithFields =
+            Map.ofList
+              [ viewPropsTypeSymbol,
+                fun args ->
+                  match args with
+                  | [ schema; ctx; st ] ->
+                    OrderedMap.ofList
+                      [ TypeSymbol.Create(Identifier.LocalScope "schema"), (schema, Kind.Schema)
+                        TypeSymbol.Create(Identifier.LocalScope "context"), (ctx, Kind.Star)
+                        TypeSymbol.Create(Identifier.LocalScope "state"), (st, Kind.Star)
+                        TypeSymbol.Create(Identifier.LocalScope "setState"),
+                        (TypeValue.CreateArrow(
+                           TypeValue.CreateArrow(st, st),
+                           TypeValue.CreatePrimitive PrimitiveType.Unit
+                         ),
+                         Kind.Star) ]
+                  | _ -> OrderedMap.empty ] }
     | _ ->
       // If symbols are missing while cache file exists, assume format mismatch and invalidate.
       tryDeleteCacheFile cacheFilePath
@@ -153,7 +219,7 @@ module HddCache =
     let cacheFilePath = Path.Combine(cacheFolder, "build-cache.msgpack")
 
     let loadCache () =
-      let cache, _, _ =
+      let cache, _, _, _, _, _, _, _ =
         loadPersistedCacheData<'valueExt> serializer cacheFilePath
 
       cache
@@ -176,7 +242,17 @@ module HddCache =
             QueryTypeSymbol =
               typeCheckingConfig |> Option.map (fun cfg -> cfg.QueryTypeSymbol)
             ListTypeSymbol =
-              typeCheckingConfig |> Option.map (fun cfg -> cfg.ListTypeSymbol) }
+              typeCheckingConfig |> Option.map (fun cfg -> cfg.ListTypeSymbol)
+            ViewTypeSymbol =
+              typeCheckingConfig |> Option.map (fun cfg -> cfg.ViewTypeSymbol)
+            ViewPropsTypeSymbol =
+              typeCheckingConfig |> Option.map (fun cfg -> cfg.ViewPropsTypeSymbol)
+            ReactNodeTypeSymbol =
+              typeCheckingConfig |> Option.map (fun cfg -> cfg.ReactNodeTypeSymbol)
+            ReactComponentTypeSymbol =
+              typeCheckingConfig |> Option.map (fun cfg -> cfg.ReactComponentTypeSymbol)
+            CoTypeSymbol =
+              typeCheckingConfig |> Option.map (fun cfg -> cfg.CoTypeSymbol) }
 
         match serializer.Serialize(container) with
         | Left bytes ->

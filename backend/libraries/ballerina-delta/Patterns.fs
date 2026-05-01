@@ -33,7 +33,7 @@ module Patterns =
 
     static member AsRecord
       (delta: Delta<'valueExtension, 'deltaExtension>)
-      : Sum<string * Delta<'valueExtension, 'deltaExtension>, Errors<unit>> =
+      : Sum<ResolvedIdentifier * Delta<'valueExtension, 'deltaExtension>, Errors<unit>> =
       match delta with
       | Delta.Record(fieldName, fieldDelta) -> sum.Return(fieldName, fieldDelta)
       | other ->
@@ -44,7 +44,7 @@ module Patterns =
 
     static member AsUnion
       (delta: Delta<'valueExtension, 'deltaExtension>)
-      : Sum<string * Delta<'valueExtension, 'deltaExtension>, Errors<unit>> =
+      : Sum<ResolvedIdentifier * Delta<'valueExtension, 'deltaExtension>, Errors<unit>> =
       match delta with
       | Delta.Union(caseName, caseDelta) -> sum.Return(caseName, caseDelta)
       | other ->

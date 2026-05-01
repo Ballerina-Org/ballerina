@@ -14,6 +14,7 @@ module Filter =
   open Microsoft.AspNetCore.Http
   open System.Text.Json
 
+  [<NoComparison; NoEquality>]
   type EntityFilterResult =
     { EntityId: string
       JsonValue: ValueDTO<ValueExtDTO> }
@@ -25,17 +26,17 @@ module Filter =
     when 'customExtension: comparison and 'db: comparison>
     (app: IEndpointRouteBuilder)
     (_context: APIRegistrationFactory<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>)
-    (getFilterFunction: 'tenantId -> 'schemaName -> bool -> Sum<EntityFilterFunction, Errors<Location>>)
+    (getFilterFunction: 'tenantId -> 'schemaName -> Sum<EntityFilterFunction, Errors<Location>>)
     =
 
     app.MapPost(
       "/{tenantId}/{schemaName}/{entityName}/filter",
-      Func<HttpContext, 'tenantId, 'schemaName, string, bool, int, int, JsonElement, IResult>
-        (fun _httpContext tenantId schemaName entityName draft (offset: int) (limit: int) filterBody ->
+      Func<HttpContext, 'tenantId, 'schemaName, string, int, int, JsonElement, IResult>
+        (fun _httpContext tenantId schemaName entityName (offset: int) (limit: int) filterBody ->
           let result =
             sum {
               let! filterFn =
-                getFilterFunction tenantId schemaName draft
+                getFilterFunction tenantId schemaName
                 |> sum.MapError
                   APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
@@ -52,6 +53,6 @@ module Filter =
                      Value = r.JsonValue |})
             }
 
-          apiResponseFromSum result id)
+          apiResponseFromSum result (fun _ -> ()) id)
     )
     |> ignore

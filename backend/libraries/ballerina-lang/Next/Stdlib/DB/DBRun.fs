@@ -1,6 +1,7 @@
 namespace Ballerina.DSL.Next.StdLib.DB.Extension
 
 #nowarn "0040"
+#nowarn "21"
 
 [<AutoOpen>]
 module DBRun =
@@ -116,6 +117,32 @@ module DBRun =
       return res
     }
 
+  let BuildDBIO<'runtimeContext, 'db, 'ext when 'ext: comparison>
+    (loc0: Location)
+    (valueLens: PartialLens<'ext, DBValues<'runtimeContext, 'db, 'ext>>)
+    (db: 'db)
+    (schema: Schema<'ext>)
+    (value: Value<TypeValue<'ext>, 'ext>)
+    : ExprEvaluator<'runtimeContext, 'ext, DBIO<'runtimeContext, 'db, 'ext>> =
+    reader {
+      let! ctx = reader.GetContext()
+
+      let! schema_value =
+        MemoryDBSchemaToDescriptors<'runtimeContext, 'db, 'ext>
+          valueLens
+          db
+          schema
+        |> sum.MapError(Errors.MapContext(replaceWith loc0))
+        |> reader.OfSum
+
+      return
+        { Schema = schema
+          SchemaAsValue = schema_value
+          DB = db
+          EvalContext = ctx.Scope
+          Main = value }
+    }
+
 
   let DBRunExtension<'runtimeContext, 'db, 'ext, 'extDTO
     when 'ext: comparison and 'extDTO: not null and 'extDTO: not struct>
@@ -225,29 +252,13 @@ module DBRun =
       (_rest: List<RunnableExpr<'ext>>)
       : ExprEvaluator<'runtimeContext, 'ext, Value<TypeValue<'ext>, 'ext>> =
       reader {
-
-        // return!
-        //   Expr.Apply(
-        //     Expr.FromValue(value, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star),
-        //     Expr.FromValue(arg, TypeValue.CreatePrimitive PrimitiveType.Unit, Kind.Star)
-        //   )
-        //   |> fun e -> Expr.Eval(NonEmptyList.OfList(e, _rest))
-        let! ctx = reader.GetContext()
-
-        let! (schema_value: Value<TypeValue<'ext>, 'ext>) =
-          MemoryDBSchemaToDescriptors<'runtimeContext, 'db, 'ext>
+        let! result =
+          BuildDBIO<'runtimeContext, 'db, 'ext>
+            _loc0
             valueLens
             db
             schema
-          |> sum.MapError(Errors.MapContext(replaceWith _loc0))
-          |> reader.OfSum
-
-        let result: DBIO<'runtimeContext, 'db, 'ext> =
-          { Schema = schema
-            SchemaAsValue = schema_value
-            DB = db
-            EvalContext = ctx.Scope
-            Main = value }
+            value
 
         return (result |> DBValues.DBIO |> valueLens.Set, None) |> Ext
       }

@@ -23,6 +23,7 @@ module Expr =
   open Type
   open Ballerina.DSL.Next.Syntax
   open Ballerina
+  open Ballerina.Grammar
 
   type ComplexExpressionKind =
     | ScopedIdentifier
@@ -60,10 +61,13 @@ module Expr =
 
   let private parseNoComplexShapes: Set<ComplexExpressionKind> = Set.empty
 
+  let exprRule: NamedRule =
+    { Name = "expr"; Rule = Terminal "<expr>" }
+
   let rec expr
     (depth: int)
     (parseComplexShapes: Set<ComplexExpressionKind>)
-    : Parser<
+    : AnnotatedParser<
         Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
         LocalizedToken,
         Location,
@@ -71,13 +75,29 @@ module Expr =
        >
     =
 
-    let expr = expr (depth + 1)
-    let singleIdentifier = singleTermIdentifier
+    let nestedExpr parseComplexShapes =
+      (expr (depth + 1) parseComplexShapes).Parser
 
-    let typeDecl v = typeDecl (expr parseAllComplexShapes) v
+    let parseExpr parseComplexShapes = nestedExpr parseComplexShapes
+
+    let singleIdentifier = singleTermIdentifier.Parser
+    let typeParam = Type.typeParam.Parser
+    let binaryExprOperator = Common.binaryExprOperator.Parser
+
+    let caseLiteral () =
+      (Common.caseLiteral ()).Parser
+
+    let identifierLocalOrFullyQualified () =
+      (Common.identifierLocalOrFullyQualified ()).Parser
+
+    let intLiteralToken () =
+      (Common.intLiteralToken ()).Parser
+
+    let typeDecl v =
+      (Type.typeDecl (parseExpr parseAllComplexShapes) v).Parser
 
     let parseBoundBody () =
-      expr parseAllComplexShapes
+      parseExpr parseAllComplexShapes
       |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
     // let indent = "--"
@@ -181,7 +201,7 @@ module Expr =
 
         return!
           parser {
-            let! matchedExpr = expr parseAllComplexShapes
+            let! matchedExpr = parseExpr parseAllComplexShapes
             do! parseKeyword Keyword.With
 
             let! cases =
@@ -217,7 +237,7 @@ module Expr =
                         |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
                       do! parseOperator Operator.SingleArrow
-                      let! body = expr parseAllComplexShapes
+                      let! body = parseExpr parseAllComplexShapes
                       return id, (paramName |> Option.map Var.Create, body)
                     }
 
@@ -235,7 +255,7 @@ module Expr =
                 do! timesOperator
 
                 do! parseOperator Operator.SingleArrow
-                let! body = expr parseAllComplexShapes
+                let! body = parseExpr parseAllComplexShapes
                 do! closeRoundBracketOperator
                 return body
               }
@@ -332,7 +352,7 @@ module Expr =
               | Right _ -> parser { return None }
 
             do! parseOperator Operator.SingleArrow
-            let! body = expr parseAllComplexShapes
+            let! body = parseExpr parseAllComplexShapes
 
             return
               (body, true)
@@ -415,7 +435,7 @@ module Expr =
         let! loc' = parser.Location
 
         let! value =
-          expr parseAllComplexShapes
+          parseExpr parseAllComplexShapes
           |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
         do!
@@ -449,7 +469,7 @@ module Expr =
         let! loc = parser.Location
 
         let! value =
-          expr parseAllComplexShapes
+          parseExpr parseAllComplexShapes
           |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
         do!
@@ -463,7 +483,7 @@ module Expr =
           |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
         let! body =
-          expr parseAllComplexShapes
+          parseExpr parseAllComplexShapes
           |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
 
         return Expr.Do(value, body, loc, TypeCheckScope.Empty)
@@ -477,11 +497,11 @@ module Expr =
 
         return!
           parser {
-            let! cond = expr parseAllComplexShapes
+            let! cond = parseExpr parseAllComplexShapes
             do! thenKeyword
-            let! thenBranch = expr parseAllComplexShapes
+            let! thenBranch = parseExpr parseAllComplexShapes
             do! elseKeyword
-            let! elseBranch = expr parseAllComplexShapes
+            let! elseBranch = parseExpr parseAllComplexShapes
 
             return
               Expr.If(cond, thenBranch, elseBranch, loc, TypeCheckScope.Empty)
@@ -586,7 +606,7 @@ module Expr =
             | Left _ ->
               return mkListLiteral []
             | Right _ ->
-              let! firstExpr = expr parseAllComplexShapes
+              let! firstExpr = parseExpr parseAllComplexShapes
 
               let firstLookupId =
                 match firstExpr.Expr with
@@ -599,7 +619,7 @@ module Expr =
                     parser.ManyIndex(fun _ ->
                       parser {
                         do! semicolonOperator
-                        let! value = expr parseAllComplexShapes
+                        let! value = parseExpr parseAllComplexShapes
                         return value
                       })
 
@@ -620,7 +640,7 @@ module Expr =
 
                         let! id = identifierLocalOrFullyQualified ()
                         do! equalsOperator
-                        let! value = expr parseAllComplexShapes
+                        let! value = parseExpr parseAllComplexShapes
                         return (id, value)
                       })
 
@@ -634,7 +654,7 @@ module Expr =
                 : Parser<_, _, _, _> =
                 parser {
                   do! equalsOperator
-                  let! firstValue = expr parseAllComplexShapes
+                  let! firstValue = parseExpr parseAllComplexShapes
 
                   let! fields =
                     parser.ManyIndex(fun _ ->
@@ -642,7 +662,7 @@ module Expr =
                         do! semicolonOperator
                         let! id = identifierLocalOrFullyQualified ()
                         do! equalsOperator
-                        let! value = expr parseAllComplexShapes
+                        let! value = parseExpr parseAllComplexShapes
                         return (id, value)
                       })
 
@@ -662,7 +682,7 @@ module Expr =
                 : Parser<_, _, _, _> =
                 parser {
                   do! singleArrowOperator
-                  let! firstValue = expr parseAllComplexShapes
+                  let! firstValue = parseExpr parseAllComplexShapes
 
                   let! entries =
                     parser.ManyIndex(fun _ ->
@@ -670,7 +690,7 @@ module Expr =
                         do! semicolonOperator
                         let! key = identifierLocalOrFullyQualified ()
                         do! singleArrowOperator
-                        let! value = expr parseAllComplexShapes
+                        let! value = parseExpr parseAllComplexShapes
                         return (key, value)
                       })
 
@@ -707,7 +727,7 @@ module Expr =
                   do! commaOperator
 
                   let! value =
-                    expr (
+                    parseExpr (
                       parseComplexShapes
                       |> Set.remove ComplexExpressionKind.TupleCons
                     )
@@ -914,7 +934,7 @@ module Expr =
                   let! op = binaryExprOperator
 
                   let! value =
-                    expr (
+                    parseExpr (
                       parseComplexShapes
                       |> Set.remove ComplexExpressionKind.BinaryExpressionChain
                     )
@@ -932,7 +952,7 @@ module Expr =
       parser {
         let! res =
           parser.Any
-            [ expr (Set.singleton ComplexExpressionKind.RecordDes)
+            [ parseExpr (Set.singleton ComplexExpressionKind.RecordDes)
               |> parser.Map Sum.Left
               (fun () -> typeDecl parseAllComplexTypeShapes)
               |> betweenSquareBrackets
@@ -967,6 +987,8 @@ module Expr =
       | Token.Keyword Keyword.If
       | Token.Keyword Keyword.Match
       | Token.Keyword Keyword.Query
+      | Token.Keyword Keyword.View
+      | Token.Keyword Keyword.Co
       | Token.Operator(Operator.RoundBracket Bracket.Open)
       | Token.Operator(Operator.SquareBracket Bracket.Open)
       | Token.Operator(Operator.CurlyBracket Bracket.Open)
@@ -986,14 +1008,56 @@ module Expr =
       | Token.BoolLiteral _ -> [ boolLiteral () ]
       | Token.Operator(Operator.RoundBracket Bracket.Open) ->
         [ unitLiteral ()
-          betweenBrackets (fun () -> expr parseAllComplexShapes) ]
+          betweenBrackets (fun () -> parseExpr parseAllComplexShapes) ]
       | Token.Keyword Keyword.Fun -> [ exprLambda () ]
       | Token.Keyword Keyword.If -> [ exprConditional () ]
       | Token.Operator(Operator.CurlyBracket Bracket.Open) -> [ recordCons () ]
       | Token.Keyword Keyword.Type -> [ typeLet () ]
       | Token.Keyword Keyword.Match -> [ matchWith () ]
       | Token.Keyword Keyword.Query ->
-        [ query (fun () -> expr parseAllComplexShapes) () ]
+        [ (query (fun () -> parseExpr parseAllComplexShapes) ()).Parser ]
+      | Token.Keyword Keyword.View ->
+        [ // Try View::name first, then fall back to view expression
+          parser {
+            do! parseKeyword Keyword.View
+            do! doubleColonOperator
+            let! name = singleIdentifier
+            let! loc = parser.Location
+            match ViewOperationKind.TryParse name with
+            | Some op ->
+              return
+                { Expr = ExprRec.ViewOp op
+                  Location = loc
+                  Scope = TypeCheckScope.Empty }
+            | None ->
+              return!
+                (fun () -> $"Unknown View operation: View::{name}")
+                |> Errors.Singleton loc
+                |> parser.Throw
+          }
+          (viewExpr (fun () -> parseExpr parseAllComplexShapes) ()).Parser ]
+      | Token.Keyword Keyword.Co ->
+        [ // Try Co::name first, then fall back to co expression
+          parser {
+            do! parseKeyword Keyword.Co
+            do! doubleColonOperator
+            let! name = singleIdentifier
+            let! loc = parser.Location
+            match CoOperationKind.TryParse name with
+            | Some op ->
+              return
+                { Expr = ExprRec.CoOp op
+                  Location = loc
+                  Scope = TypeCheckScope.Empty }
+            | None ->
+              return!
+                (fun () -> $"Unknown Co operation: Co::{name}")
+                |> Errors.Singleton loc
+                |> parser.Throw
+          }
+          (coExpr (fun () -> parseExpr parseAllComplexShapes) ()).Parser ]
+      | Token.Operator Operator.LessThan ->
+        [ (viewNodeExpr (fun () -> parseExpr parseAllComplexShapes) ()).Parser ]
       | Token.Identifier _
       | Token.Keyword Keyword.Schema
       | Token.Keyword Keyword.Entity
@@ -1045,7 +1109,7 @@ module Expr =
         //   )
 
         // do Console.ReadLine() |> ignore
-        let! e = expr parseNoComplexShapes
+        let! e = parseExpr parseNoComplexShapes
         // do Console.Write $"{e.ToFSharpString}"
         // do Console.WriteLine $"included = {parseComplexShapes.ToFSharpString}"
         // do Console.ReadLine() |> ignore
@@ -1348,12 +1412,31 @@ module Expr =
         | Sum.Right e -> return! e |> parser.Throw
         | Sum.Left res -> return res
     }
+    |> AnnotatedParser.withNamedRule exprRule
+
+  let programRule: NamedRule =
+    { Name = "program"
+      Rule = Seq [ NonTerminal "expr"; Terminal ";" ] }
 
   let program<'valueExt>
     ()
-    : Parser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, _, _, _> =
+    : AnnotatedParser<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>, _, _, _> =
     parser {
-      let! e = expr 0 parseAllComplexShapes
+      let! e = (expr 0 parseAllComplexShapes).Parser
+
+      let! loc = parser.Location
+
+      do!
+        parser.Any
+          [ semicolonOperator
+            (fun () -> "Expected ';' at end of program")
+            |> Errors.Singleton loc
+            |> parser.Throw ]
+        |> parser.MapError(Errors<_>.FilterHighestPriorityOnly)
+
       do! parser.EndOfStream()
       return e
     }
+    |> AnnotatedParser.withNamedRule programRule
+
+  let grammarRules: NamedRule list = [ exprRule; programRule ]
