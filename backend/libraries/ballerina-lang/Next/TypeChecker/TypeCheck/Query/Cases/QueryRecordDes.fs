@@ -126,7 +126,7 @@ module QueryCaseRecordDes =
                 (state {
                   let! record_t = json_t |> TypeValue.AsRecord |> ofSum
 
-                  let! _, (field_t, _) =
+                  let! matched_field_sym, (field_t, _) =
                     let availableFields =
                       record_t
                       |> OrderedMap.toSeq
@@ -144,10 +144,20 @@ module QueryCaseRecordDes =
                     )
                     |> state.OfSum
 
+                  let! s = state.GetState()
+
+                  let field_id =
+                    match
+                      s.Symbols.ResolvedIdentifiers
+                      |> Map.tryFind matched_field_sym
+                    with
+                    | Some resolved -> resolved
+                    | None -> field.LocalName |> ResolvedIdentifier.Create
+
                   return
                     TypeCheckedExprQueryExprRec.QueryRecordDes(
                       record_e,
-                      field.LocalName |> ResolvedIdentifier.Create,
+                      field_id,
                       true
                     )
                     |> TypeCheckedExprQueryExpr.Create expr.Location,
