@@ -339,13 +339,13 @@ let homeFlow = co {
 // ═════════════════════════════════════════════════════════════════════════
 // WEBAPP BUILDER
 // ═════════════════════════════════════════════════════════════════════════
-// WebApp::run wraps a DB::run and attaches routes and components.
+// WebApp::run wraps a unit-returning schema callback and attaches routes and components.
 // Routes map URL paths to coroutines (which manage page-level state).
 // Components register reusable views by name.
 // Routes are always coroutines — views are lifted via Co::show.
 
 let main = fun (schema: TodoSchema) ->
-  ((), "seeded");
+  ();
 
 let seed_todos = {
   { Todo::Title = "Learn Ballerina"; Todo::Done = true };
@@ -353,7 +353,7 @@ let seed_todos = {
   { Todo::Title = "Ship it"; Todo::Done = false }
 };
 
-WebApp::run [TodoSchema] (DB::run [TodoSchema] main)
+WebApp::run [TodoSchema] main
   |> WebApp::withRoute "/" (co {
     do! Co::show
       (replaceWith (1Of2()))
