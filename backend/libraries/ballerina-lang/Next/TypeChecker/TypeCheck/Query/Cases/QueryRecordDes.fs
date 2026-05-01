@@ -144,15 +144,15 @@ module QueryCaseRecordDes =
                     )
                     |> state.OfSum
 
-                  let! s = state.GetState()
-
-                  let field_id =
-                    match
-                      s.Symbols.ResolvedIdentifiers
-                      |> Map.tryFind matched_field_sym
-                    with
-                    | Some resolved -> resolved
-                    | None -> field.LocalName |> ResolvedIdentifier.Create
+                  let! field_id =
+                    state.Either
+                      (TypeCheckState.TryResolveIdentifier(
+                        matched_field_sym,
+                        loc0
+                      ))
+                      (state {
+                        return field.LocalName |> ResolvedIdentifier.Create
+                      })
 
                   return
                     TypeCheckedExprQueryExprRec.QueryRecordDes(
