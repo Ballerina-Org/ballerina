@@ -84,236 +84,239 @@ module Expr =
 
         // let error e = Errors.Singleton loc0 e
 
-        state {
-          let! expr, ctx =
-            state {
-              match t.Expr with
-              | ExprRec.Primitive(p) ->
-                return!
-                  Expr.TypeCheckPrimitive
-                    (typeCheckExpr, t.Location)
-                    context_t
-                    p
+        timeTypeCheckCategory "general typecheck" loc0
+          (state {
+            let! expr, ctx =
+              state {
+                match t.Expr with
+                | ExprRec.Primitive(p) ->
+                  return!
+                    Expr.TypeCheckPrimitive
+                      (typeCheckExpr, t.Location)
+                      context_t
+                      p
 
-              | ExprRec.FromValue({ Value = v
-                                    ValueType = t_v
-                                    ValueKind = k }) ->
-                let! ctx = state.GetContext()
+                | ExprRec.FromValue({ Value = v
+                                      ValueType = t_v
+                                      ValueKind = k }) ->
+                  let! ctx = state.GetContext()
 
-                return
-                  TypeCheckedExpr.FromValue(v, t_v, k, t.Location, t.Scope), ctx
+                  return
+                    TypeCheckedExpr.FromValue(v, t_v, k, t.Location, t.Scope), ctx
 
-              | ExprRec.Lookup({ Id = id }) ->
-                return!
-                  Expr.TypeCheckLookup
-                    (typeCheckExpr, t.Location)
-                    context_t
-                    { Id = id }
+                | ExprRec.Lookup({ Id = id }) ->
+                  return!
+                    Expr.TypeCheckLookup
+                      (typeCheckExpr, t.Location)
+                      context_t
+                      { Id = id }
 
-              | ExprRec.Apply apply ->
-                return! Expr.TypeCheckApply config typeCheckExpr context_t apply
-              | ExprRec.If if_expr ->
-                return! Expr.TypeCheckIf config typeCheckExpr context_t if_expr
+                | ExprRec.Apply apply ->
+                  return! Expr.TypeCheckApply config typeCheckExpr context_t apply
+                | ExprRec.If if_expr ->
+                  return! Expr.TypeCheckIf config typeCheckExpr context_t if_expr
 
-              | ExprRec.Let let_expr ->
-                return!
-                  Expr.TypeCheckLet
-                    config
-                    typeCheckExpr
-                    context_t
-                    (t.Location, let_expr)
+                | ExprRec.Let let_expr ->
+                  return!
+                    Expr.TypeCheckLet
+                      config
+                      typeCheckExpr
+                      context_t
+                      (t.Location, let_expr)
 
-              | ExprRec.Do do_expr ->
-                return! Expr.TypeCheckDo config typeCheckExpr context_t do_expr
+                | ExprRec.Do do_expr ->
+                  return! Expr.TypeCheckDo config typeCheckExpr context_t do_expr
 
-              | ExprRec.Lambda(lambda) ->
-                return!
-                  Expr<'T, 'Id, 'valueExt>.TypeCheckLambda
-                    config
-                    typeCheckExpr
-                    context_t
-                    (t.Location, lambda)
-              | ExprRec.RecordCons record_cons_expr ->
-                return!
-                  Expr.TypeCheckRecordCons
-                    config
-                    typeCheckExpr
-                    context_t
-                    record_cons_expr
+                | ExprRec.Lambda(lambda) ->
+                  return!
+                    Expr<'T, 'Id, 'valueExt>.TypeCheckLambda
+                      config
+                      typeCheckExpr
+                      context_t
+                      (t.Location, lambda)
+                | ExprRec.RecordCons record_cons_expr ->
+                  return!
+                    Expr.TypeCheckRecordCons
+                      config
+                      typeCheckExpr
+                      context_t
+                      record_cons_expr
 
-              | ExprRec.RecordWith record_with_expr ->
-                return!
-                  Expr.TypeCheckRecordWith
-                    config
-                    typeCheckExpr
-                    context_t
-                    record_with_expr
+                | ExprRec.RecordWith record_with_expr ->
+                  return!
+                    Expr.TypeCheckRecordWith
+                      config
+                      typeCheckExpr
+                      context_t
+                      record_with_expr
 
-              | ExprRec.TupleCons tuple_cons_expr ->
-                return!
-                  Expr.TypeCheckTupleCons
-                    config
-                    typeCheckExpr
-                    context_t
-                    tuple_cons_expr
+                | ExprRec.TupleCons tuple_cons_expr ->
+                  return!
+                    Expr.TypeCheckTupleCons
+                      config
+                      typeCheckExpr
+                      context_t
+                      tuple_cons_expr
 
-              | ExprRec.SumCons sum_cons_expr ->
-                return!
-                  Expr.TypeCheckSumCons
-                    config
-                    (typeCheckExpr, t.Location)
-                    context_t
-                    sum_cons_expr
+                | ExprRec.SumCons sum_cons_expr ->
+                  return!
+                    Expr.TypeCheckSumCons
+                      config
+                      (typeCheckExpr, t.Location)
+                      context_t
+                      sum_cons_expr
 
-              | ExprRec.RecordDes record_des_expr ->
-                return!
-                  Expr.TypeCheckRecordDes
-                    config
-                    typeCheckExpr
-                    context_t
-                    record_des_expr
+                | ExprRec.RecordDes record_des_expr ->
+                  return!
+                    Expr.TypeCheckRecordDes
+                      config
+                      typeCheckExpr
+                      context_t
+                      record_des_expr
 
-              | ExprRec.TupleDes tuple_des_expr ->
-                return!
-                  Expr.TypeCheckTupleDes typeCheckExpr context_t tuple_des_expr
+                | ExprRec.TupleDes tuple_des_expr ->
+                  return!
+                    Expr.TypeCheckTupleDes typeCheckExpr context_t tuple_des_expr
 
-              | ExprRec.UnionDes union_des_handlers ->
-                return!
-                  Expr.TypeCheckUnionDes
-                    config
-                    typeCheckExpr
-                    context_t
-                    union_des_handlers
+                | ExprRec.UnionDes union_des_handlers ->
+                  return!
+                    Expr.TypeCheckUnionDes
+                      config
+                      typeCheckExpr
+                      context_t
+                      union_des_handlers
 
-              | ExprRec.SumDes sum_des_expr ->
-                return!
-                  Expr.TypeCheckSumDes
-                    config
-                    typeCheckExpr
-                    context_t
-                    sum_des_expr
+                | ExprRec.SumDes sum_des_expr ->
+                  return!
+                    Expr.TypeCheckSumDes
+                      config
+                      typeCheckExpr
+                      context_t
+                      sum_des_expr
 
-              | ExprRec.TypeLet type_let_expr ->
-                return!
-                  Expr.TypeCheckTypeLet
-                    config
-                    typeCheckExpr
-                    context_t
-                    type_let_expr
+                | ExprRec.TypeLet type_let_expr ->
+                  return!
+                    Expr.TypeCheckTypeLet
+                      config
+                      typeCheckExpr
+                      context_t
+                      type_let_expr
 
-              | ExprRec.TypeLambda type_lambda_expr ->
-                return!
-                  Expr.TypeCheckTypeLambda
-                    typeCheckExpr
-                    context_t
-                    type_lambda_expr
+                | ExprRec.TypeLambda type_lambda_expr ->
+                  return!
+                    Expr.TypeCheckTypeLambda
+                      typeCheckExpr
+                      context_t
+                      type_lambda_expr
 
-              | ExprRec.TypeApply type_apply_expr ->
-                return!
-                  Expr.TypeCheckTypeApply
-                    config
-                    typeCheckExpr
-                    context_t
-                    type_apply_expr
+                | ExprRec.TypeApply type_apply_expr ->
+                  return!
+                    Expr.TypeCheckTypeApply
+                      config
+                      typeCheckExpr
+                      context_t
+                      type_apply_expr
 
-              | ExprRec.EntityDes _
-              | ExprRec.RelationDes _
-              | ExprRec.EntitiesDes _
-              | ExprRec.RelationsDes _
-              | ExprRec.RelationLookupDes _ ->
-                return!
-                  Errors.Singleton loc0 (fun () ->
-                    $"Error: unexpected expression pattern schema entity and entities (should not occur, are only constructed as record destructuring) ")
-                  |> state.Throw
-              | ExprRec.Query q ->
-                let! q, t, k, ctx =
-                  Expr.TypeCheckQuery
-                    config
-                    typeCheckExpr
-                    context_t
-                    Map.empty
-                    Map.empty
-                    q
+                | ExprRec.EntityDes _
+                | ExprRec.RelationDes _
+                | ExprRec.EntitiesDes _
+                | ExprRec.RelationsDes _
+                | ExprRec.RelationLookupDes _ ->
+                  return!
+                    Errors.Singleton loc0 (fun () ->
+                      $"Error: unexpected expression pattern schema entity and entities (should not occur, are only constructed as record destructuring) ")
+                    |> state.Throw
+                | ExprRec.Query q ->
+                  let! q, t, k, ctx =
+                    Expr.TypeCheckQuery
+                      config
+                      typeCheckExpr
+                      context_t
+                      Map.empty
+                      Map.empty
+                      q
 
-                return TypeCheckedExpr.Query(q, t, k), ctx
+                  return TypeCheckedExpr.Query(q, t, k), ctx
 
-              | ExprRec.View v ->
-                let! result, ctx =
-                  Expr.TypeCheckView
-                    config
-                    typeCheckExpr
-                    context_t
-                    (loc0, v)
+                | ExprRec.View v ->
+                  let! result, ctx =
+                    Expr.TypeCheckView
+                      config
+                      typeCheckExpr
+                      context_t
+                      (loc0, v)
 
-                return result, ctx
+                  return result, ctx
 
-              | ExprRec.Co c ->
-                let! result, ctx =
-                  Expr.TypeCheckCo
-                    config
-                    typeCheckExpr
-                    context_t
-                    (loc0, c)
+                | ExprRec.Co c ->
+                  let! result, ctx =
+                    Expr.TypeCheckCo
+                      config
+                      typeCheckExpr
+                      context_t
+                      (loc0, c)
 
-                return result, ctx
+                  return result, ctx
 
-              | ExprRec.CoOp op ->
-                // Resolve Co::name to get the type from extension registration,
-                // but produce a CoOp node instead of a Lookup node
-                let id = Identifier.FullyQualified([ "Co" ], op.Name)
-                let! result, ctx =
-                  Expr.TypeCheckLookup
-                    (typeCheckExpr, t.Location)
-                    context_t
-                    { Id = id }
-                return
-                  { TypeCheckedExpr.Expr = TypeCheckedExprRec.CoOp op
-                    TypeCheckedExpr.Type = result.Type
-                    TypeCheckedExpr.Kind = result.Kind
-                    TypeCheckedExpr.Location = result.Location
-                    TypeCheckedExpr.Scope = result.Scope },
-                  ctx
+                | ExprRec.CoOp op ->
+                  // Resolve Co::name to get the type from extension registration,
+                  // but produce a CoOp node instead of a Lookup node
+                  let id = Identifier.FullyQualified([ "Co" ], op.Name)
+                  let! result, ctx =
+                    Expr.TypeCheckLookup
+                      (typeCheckExpr, t.Location)
+                      context_t
+                      { Id = id }
 
-              | ExprRec.ViewOp op ->
-                // Resolve View::name to get the type from extension registration,
-                // but produce a ViewOp node instead of a Lookup node
-                let id = Identifier.FullyQualified([ "View" ], op.Name)
-                let! result, ctx =
-                  Expr.TypeCheckLookup
-                    (typeCheckExpr, t.Location)
-                    context_t
-                    { Id = id }
-                return
-                  { TypeCheckedExpr.Expr = TypeCheckedExprRec.ViewOp op
-                    TypeCheckedExpr.Type = result.Type
-                    TypeCheckedExpr.Kind = result.Kind
-                    TypeCheckedExpr.Location = result.Location
-                    TypeCheckedExpr.Scope = result.Scope },
-                  ctx
+                  return
+                    { TypeCheckedExpr.Expr = TypeCheckedExprRec.CoOp op
+                      TypeCheckedExpr.Type = result.Type
+                      TypeCheckedExpr.Kind = result.Kind
+                      TypeCheckedExpr.Location = result.Location
+                      TypeCheckedExpr.Scope = result.Scope },
+                    ctx
 
-              | ExprRec.RecoveredSyntaxError err ->
-                return!
-                  Errors.Singleton err.ErrorLocation (fun () -> err.ErrorMessage)
-                  |> state.Throw
+                | ExprRec.ViewOp op ->
+                  // Resolve View::name to get the type from extension registration,
+                  // but produce a ViewOp node instead of a Lookup node
+                  let id = Identifier.FullyQualified([ "View" ], op.Name)
+                  let! result, ctx =
+                    Expr.TypeCheckLookup
+                      (typeCheckExpr, t.Location)
+                      context_t
+                      { Id = id }
 
-              | ExprRec.ErrorDanglingRecordDes({ Expr = record_expr; Field = _field }) ->
-                return!
-                  Expr.TypeCheckErrorDanglingRecordDes
-                    typeCheckExpr
-                    context_t
-                    record_expr
-                    loc0
+                  return
+                    { TypeCheckedExpr.Expr = TypeCheckedExprRec.ViewOp op
+                      TypeCheckedExpr.Type = result.Type
+                      TypeCheckedExpr.Kind = result.Kind
+                      TypeCheckedExpr.Location = result.Location
+                      TypeCheckedExpr.Scope = result.Scope },
+                    ctx
 
-              | ExprRec.ErrorDanglingScopedIdentifier({ PrefixParts = prefixParts }) ->
-                return!
-                  Expr.TypeCheckErrorDanglingScopedIdentifier
-                    prefixParts
-                    loc0
-            }
+                | ExprRec.RecoveredSyntaxError err ->
+                  return!
+                    Errors.Singleton err.ErrorLocation (fun () -> err.ErrorMessage)
+                    |> state.Throw
 
-          let! expr =
-            expr
-            |> TypeCheckedExpr.InstantiateSyntheticVars config typeCheckExpr
+                | ExprRec.ErrorDanglingRecordDes({ Expr = record_expr; Field = _field }) ->
+                  return!
+                    Expr.TypeCheckErrorDanglingRecordDes
+                      typeCheckExpr
+                      context_t
+                      record_expr
+                      loc0
 
-          return expr, ctx
-        }
+                | ExprRec.ErrorDanglingScopedIdentifier({ PrefixParts = prefixParts }) ->
+                  return!
+                    Expr.TypeCheckErrorDanglingScopedIdentifier
+                      prefixParts
+                      loc0
+              }
+
+            let! expr =
+              expr
+              |> TypeCheckedExpr.InstantiateSyntheticVars config typeCheckExpr
+
+            return expr, ctx
+          })

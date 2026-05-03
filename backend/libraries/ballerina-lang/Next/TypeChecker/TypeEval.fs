@@ -82,7 +82,7 @@ module Eval =
               |> state.AllMap
 
             return TypeQueryRow.Record qs
-        }
+          }
 
   and TypeExpr<'valueExt> with
     static member EvalAsSymbol<'ve when 've: comparison>
@@ -167,7 +167,8 @@ module Eval =
       (config: TypeCheckingConfig<'ve>)
       : TypeExprEval<'ve> =
       fun typeCheckExpr n loc0 t ->
-        state {
+        let evalState =
+          state {
           let { QueryTypeSymbol = _query_type_symbol
                 MkQueryType = _mk_query_type
                 MkListType = mk_list_type } =
@@ -1347,4 +1348,17 @@ module Eval =
             return
               TypeValue.QueryTypeFunction, Kind.Arrow(Kind.QueryRow, Kind.Star)
 
+          }
+
+        state {
+          let! ctx = state.GetContext()
+          let! stateSnapshot = state.GetState()
+
+          recordTypeCheckMemoDiagnostic
+            "type eval"
+            loc0
+            (n, t)
+            (n, t, ctx, stateSnapshot.VarsVersion)
+
+          return! timeTypeCheckCategory "type eval" loc0 evalState
         }
