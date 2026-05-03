@@ -6,6 +6,7 @@ module ProjectModel =
   open Ballerina.State.WithError
   open Ballerina.Errors
   open System
+  open System.Diagnostics
   open Ballerina.DSL.Next.Types.Model
   open Ballerina.DSL.Next.Terms.Patterns
   open Ballerina.DSL.Next.Types.TypeChecker.Model
@@ -159,10 +160,150 @@ module ProjectModel =
         return nextState
       }
 
+  type TypeCheckState<'valueExt when 'valueExt: comparison> with
     static member RenderInlayHints
       (state: TypeCheckState<'valueExt>)
       : Map<Location, string> =
       state.InlayHints |> Map.map (fun _ hint -> hint.AsString())
+
+  let private parseFile<'valueExt when 'valueExt: comparison>
+    (file: FileBuildConfiguration)
+    : Sum<
+        ParserResult<
+          Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
+          LocalizedToken,
+          Location,
+          Errors<Location>
+         >,
+        Errors<Location>
+       > =
+    sum {
+      let initialLocation = Location.Initial file.FileName.Path
+
+      let! ParserResult(actual, _) =
+        tokens
+        |> Parser.Run(file.Content() |> Seq.toList, initialLocation)
+        |> sum.MapError fst
+
+      let! (parserResult:
+        ParserResult<
+          Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
+          LocalizedToken,
+          Location,
+          Errors<Location>
+         >) =
+        (Parser.Expr.program ()).Parser
+        |> Parser.Run(actual, initialLocation)
+        |> sum.MapError fst
+
+      parserResult
+    }
+
+  let private buildDiagnosticsEnabled =
+    match Environment.GetEnvironmentVariable("BISE_BUILD_DIAGNOSTICS") with
+    | null -> false
+    | value ->
+      match value.Trim().ToLowerInvariant() with
+      | "1"
+      | "true"
+      | "yes"
+      | "on" -> true
+      | _ -> false
+
+  let private logBuildDiagnostic
+    (phase: string)
+    (filePath: string)
+    (elapsed: TimeSpan)
+    =
+    if buildDiagnosticsEnabled then
+      Console.WriteLine(
+        $"Build diagnostics | {phase,-14} | {elapsed.TotalMilliseconds,8:F1} ms | {filePath}"
+      )
+
+  let private buildProjectFile<'valueExt when 'valueExt: comparison>
+    (config: TypeCheckingConfig<'valueExt>)
+    (project: ProjectBuildConfiguration)
+    (file: FileBuildConfiguration, index: int)
+    : State<
+        TypeCheckedExpr<'valueExt> * TypeValue<'valueExt>,
+        Unit,
+        TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
+        Errors<Location>
+       > =
+    state {
+      let parseStopwatch = Stopwatch.StartNew()
+
+      let parseResult =
+        file
+        |> parseFile
+        |> sum.WithErrorContext(fun () ->
+          $"...while parsing {file.FileName.Path}")
+
+      parseStopwatch.Stop()
+      logBuildDiagnostic "parse" file.FileName.Path parseStopwatch.Elapsed
+
+      let! ParserResult(program, _) = parseResult |> state.OfSum
+
+      let! ctx, st = state.GetState()
+
+      let scopeHintStopwatch = Stopwatch.StartNew()
+
+      let scopePrefixHints =
+        TypeCheckState.ComputeScopePrefixHints ctx st
+
+      scopeHintStopwatch.Stop()
+
+      logBuildDiagnostic
+        "scope-hints"
+        file.FileName.Path
+        scopeHintStopwatch.Elapsed
+
+      let st =
+        { st with ScopePrefixHints = scopePrefixHints }
+
+      clearTypeCheckCategoryDiagnostics file.FileName.Path
+      clearTypeCheckMemoDiagnostics file.FileName.Path
+
+      let typecheckStopwatch = Stopwatch.StartNew()
+
+      let typecheckResult =
+        Expr.TypeCheck config None program
+        |> State.Run(ctx, st)
+        |> sum.MapError fst
+        |> sum.WithErrorContext(fun () ->
+          $"...while typechecking {file.FileName.Path}")
+
+      typecheckStopwatch.Stop()
+      logBuildDiagnostic "typecheck" file.FileName.Path typecheckStopwatch.Elapsed
+
+      renderTypeCheckCategoryDiagnostics file.FileName.Path
+      |> List.iter (fun (line: string) -> Console.WriteLine(line))
+
+      renderTypeCheckMemoDiagnostics file.FileName.Path
+      |> List.iter (fun (line: string) -> Console.WriteLine(line))
+
+      clearCurrentTypeCheckCategoryFilePath ()
+
+      let! (typeCheckedExpr, ctx'), st' = typecheckResult |> state.OfSum
+
+      let typeValue = typeCheckedExpr.Type
+
+      if index < project.Files.Tail.Length then
+        match typeValue with
+        | TypeValue.Primitive({ value = PrimitiveType.Unit }) ->
+          return ()
+        | _ ->
+          return!
+            state.Throw(
+              Errors.Singleton Location.Unknown (fun () ->
+                $"Expected returned unit type for {file.FileName.Path} but got {typeValue}. Intermediate files in the project should always return `()`, otherwise we discard possibly useful information by accident!")
+            )
+
+      let st' = st' |> Option.defaultValue st
+      do! state.SetState(replaceWith (ctx', st'))
+
+      return typeCheckedExpr, typeValue
+    }
 
   type ProjectBuildConfiguration with
     static member BuildCachedWithFileOutputs<'valueExt
@@ -179,58 +320,21 @@ module ProjectModel =
       =
       sum {
         let! expressionsWithTypes, finalContext, finalState =
-          cache.Fold project.Files (fun (file, index) ->
-            state {
-              let! ParserResult(program, _) =
-                file
-                |> ProjectBuildConfiguration.ParseFile
-                |> sum.WithErrorContext(fun () ->
-                  $"...while parsing {file.FileName.Path}")
-                |> state.OfSum
-
-              let! ctx, st = state.GetState()
-
-              let scopePrefixHints =
-                TypeCheckState.ComputeScopePrefixHints ctx st
-
-              let st =
-                { st with ScopePrefixHints = scopePrefixHints }
-
-              let! (typeCheckedExpr, ctx'), st' =
-                Expr.TypeCheck config None program
-                |> State.Run(ctx, st)
-                |> sum.MapError fst
-                |> sum.WithErrorContext(fun () ->
-                  $"...while typechecking {file.FileName.Path}")
-                |> state.OfSum
-
-              let typeValue = typeCheckedExpr.Type
-
-              if index < project.Files.Tail.Length then
-                match typeValue with
-                | TypeValue.Primitive({ value = PrimitiveType.Unit }) ->
-                  return ()
-                | _ ->
-                  return!
-                    state.Throw(
-                      Errors.Singleton Location.Unknown (fun () ->
-                        $"Expected returned unit type for {file.FileName.Path} but got {typeValue}. Intermediate files in the project should always return `()`, otherwise we discard possibly useful information by accident!")
-                    )
-
-              let st' = st' |> Option.defaultValue st
-              do! state.SetState(replaceWith (ctx', st'))
-
-              typeCheckedExpr, typeValue
-            })
+          cache.Fold project.Files (buildProjectFile config project)
 
         let expressionsWithTypesInOrder =
           expressionsWithTypes |> NonEmptyList.rev |> NonEmptyList.ToList
+
+        let inlayHintStopwatch = Stopwatch.StartNew()
 
         let! finalState =
           TypeCheckState.InstantiateInlayHints config
           |> State.Run(finalContext, finalState)
           |> sum.MapError fst
           |> sum.Map fst
+
+        inlayHintStopwatch.Stop()
+        logBuildDiagnostic "inlay-hints" project.Files.Head.FileName.Path inlayHintStopwatch.Elapsed
 
         let filesInOrder = project.Files |> NonEmptyList.ToList
 
@@ -274,58 +378,21 @@ module ProjectModel =
       =
       sum {
         let! expressionsWithTypes, finalContext, finalState =
-          cache.FoldStreaming project.Files (fun (file, index) ->
-            state {
-              let! ParserResult(program, _) =
-                file
-                |> ProjectBuildConfiguration.ParseFile
-                |> sum.WithErrorContext(fun () ->
-                  $"...while parsing {file.FileName.Path}")
-                |> state.OfSum
-
-              let! ctx, st = state.GetState()
-
-              let scopePrefixHints =
-                TypeCheckState.ComputeScopePrefixHints ctx st
-
-              let st =
-                { st with ScopePrefixHints = scopePrefixHints }
-
-              let! (typeCheckedExpr, ctx'), st' =
-                Expr.TypeCheck config None program
-                |> State.Run(ctx, st)
-                |> sum.MapError fst
-                |> sum.WithErrorContext(fun () ->
-                  $"...while typechecking {file.FileName.Path}")
-                |> state.OfSum
-
-              let typeValue = typeCheckedExpr.Type
-
-              if index < project.Files.Tail.Length then
-                match typeValue with
-                | TypeValue.Primitive({ value = PrimitiveType.Unit }) ->
-                  return ()
-                | _ ->
-                  return!
-                    state.Throw(
-                      Errors.Singleton Location.Unknown (fun () ->
-                        $"Expected returned unit type for {file.FileName.Path} but got {typeValue}. Intermediate files in the project should always return `()`, otherwise we discard possibly useful information by accident!")
-                    )
-
-              let st' = st' |> Option.defaultValue st
-              do! state.SetState(replaceWith (ctx', st'))
-
-              typeCheckedExpr, typeValue
-            }) onFileBuilt
+          cache.FoldStreaming project.Files (buildProjectFile config project) onFileBuilt
 
         let expressionsWithTypesInOrder =
           expressionsWithTypes |> NonEmptyList.rev |> NonEmptyList.ToList
+
+        let inlayHintStopwatch = Stopwatch.StartNew()
 
         let! finalState =
           TypeCheckState.InstantiateInlayHints config
           |> State.Run(finalContext, finalState)
           |> sum.MapError fst
           |> sum.Map fst
+
+        inlayHintStopwatch.Stop()
+        logBuildDiagnostic "inlay-hints" project.Files.Head.FileName.Path inlayHintStopwatch.Elapsed
 
         let filesInOrder = project.Files |> NonEmptyList.ToList
 
@@ -362,35 +429,16 @@ module ProjectModel =
           Errors<Location>
          >
       =
-      sum {
-        let initialLocation = Location.Initial file.FileName.Path
+      parseFile file
 
-        let! ParserResult(actual, _) =
-          tokens
-          |> Parser.Run(file.Content() |> Seq.toList, initialLocation)
-          |> sum.MapError fst
-
-        let! (parserResult:
-          ParserResult<
-            Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>,
-            LocalizedToken,
-            Location,
-            Errors<Location>
-           >) =
-          (Parser.Expr.program ()).Parser
-          |> Parser.Run(actual, initialLocation)
-          |> sum.MapError fst
-
-        parserResult
-      }
-
-    static member TypeCheckSingleFile<'valueExt when 'valueExt: comparison>
+    static member TypeCheckSingleFileWithOutput<'valueExt when 'valueExt: comparison>
       (config: TypeCheckingConfig<'valueExt>)
       (cache: ProjectCache<'valueExt>)
       (project: ProjectBuildConfiguration)
       (targetFilePath: string)
       (targetFileContent: string)
       : Sum<
+          FileTypeCheckedOutput<'valueExt> *
           TypeCheckContext<'valueExt> *
           TypeCheckState<'valueExt>,
           Errors<Location> *
@@ -469,12 +517,42 @@ module ProjectModel =
             |> State.Run(predecessorCtx, st)
 
           match typecheckResult with
-          | Left((_typeCheckedExpr, ctx'), stOpt) ->
+          | Left((typeCheckedExpr, ctx'), stOpt) ->
             let st' = stOpt |> Option.defaultValue st
-            Left(ctx', st')
+            Left(
+              { File = FileBuildConfiguration.FromFile(targetFilePath, targetFileContent)
+                Expr = typeCheckedExpr
+                TypeValue = typeCheckedExpr.Type },
+              ctx',
+              st'
+            )
           | Right(errors, partialStOpt) ->
             let partialSt = partialStOpt |> Option.defaultValue st
             Right(errors, Some partialSt)
+
+    static member TypeCheckSingleFile<'valueExt when 'valueExt: comparison>
+      (config: TypeCheckingConfig<'valueExt>)
+      (cache: ProjectCache<'valueExt>)
+      (project: ProjectBuildConfiguration)
+      (targetFilePath: string)
+      (targetFileContent: string)
+      : Sum<
+          TypeCheckContext<'valueExt> *
+          TypeCheckState<'valueExt>,
+          Errors<Location> *
+          Option<TypeCheckState<'valueExt>>
+         >
+      =
+      match
+        ProjectBuildConfiguration.TypeCheckSingleFileWithOutput
+          config
+          cache
+          project
+          targetFilePath
+          targetFileContent
+      with
+      | Left(_fileOutput, ctx, st) -> Left(ctx, st)
+      | Right errors -> Right errors
 
     static member BuildCached<'valueExt when 'valueExt: comparison>
       (config: TypeCheckingConfig<'valueExt>)

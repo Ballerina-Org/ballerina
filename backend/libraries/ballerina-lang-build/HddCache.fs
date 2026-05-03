@@ -15,7 +15,23 @@ module HddCache =
   open Ballerina.DSL.Next.StdLib.Email.Extension
   open Ballerina.DSL.Next.StdLib.String.Extension
   open Ballerina.Serialization.MessagePack
+  open System
   open System.IO
+
+  let private buildDiagnosticsEnabled =
+    match Environment.GetEnvironmentVariable("BISE_BUILD_DIAGNOSTICS") with
+    | null -> false
+    | value ->
+      match value.Trim().ToLowerInvariant() with
+      | "1"
+      | "true"
+      | "yes"
+      | "on" -> true
+      | _ -> false
+
+  let private logBuildDiagnostic (message: string) =
+    if buildDiagnosticsEnabled then
+      Console.WriteLine(message)
 
   [<CLIMutable>]
   type BuildCacheDto<'valueExt when 'valueExt: comparison> =
@@ -234,7 +250,13 @@ module HddCache =
               serializer.Serialize(BuildCacheDto<'valueExt>.FromDomain data)
             with
             | Left payload -> Some(fileName.Path, payload)
-            | Right _ -> None)
+            | Right errors ->
+              let errorText = Errors.ToString(errors, " | ")
+
+              logBuildDiagnostic
+                $"Build cache persist skipped | entry-serialize-failed | {fileName.Path} | {errorText}"
+
+              None)
           |> Array.ofSeq
 
         let container: BuildCacheContainerDto<'valueExt> =
@@ -258,9 +280,14 @@ module HddCache =
         | Left bytes ->
           Directory.CreateDirectory cacheFolder |> ignore
           File.WriteAllBytes(cacheFilePath, bytes)
-        | Right _ -> ()
-      with _ ->
-        ()
+        | Right errors ->
+          let errorText = Errors.ToString(errors, " | ")
+
+          logBuildDiagnostic
+            $"Build cache persist skipped | container-serialize-failed | {cacheFilePath} | {errorText}"
+      with ex ->
+        logBuildDiagnostic
+          $"Build cache persist exception | {cacheFilePath} | {ex.GetType().Name}: {ex.Message}"
 
     let mutable cache
       : Map<

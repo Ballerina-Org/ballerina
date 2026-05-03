@@ -20,6 +20,268 @@ module Unification =
   open Ballerina.DSL.Next.Types.TypeChecker.Patterns
   open Ballerina.StdLib.OrderPreservingMap
   open Ballerina.Cat.Collections.OrderedMap
+  open System.Collections.Concurrent
+  open System.Collections.Generic
+  open System.IO
+  open System.Threading
+  open Ballerina.Stackless.State.WithError.StacklessStateWithError
+
+  let private typeCheckCategoryDiagnosticsEnabled =
+    match Environment.GetEnvironmentVariable("BISE_TYPECHECK_CATEGORY_DIAGNOSTICS") with
+    | null -> false
+    | value ->
+      match value.Trim().ToLowerInvariant() with
+      | "1"
+      | "true"
+      | "yes"
+      | "on" -> true
+      | _ -> false
+
+  let private typeCheckMemoDiagnosticsEnabled =
+    match Environment.GetEnvironmentVariable("BISE_TYPECHECK_MEMO_DIAGNOSTICS") with
+    | null -> false
+    | value ->
+      match value.Trim().ToLowerInvariant() with
+      | "1"
+      | "true"
+      | "yes"
+      | "on" -> true
+      | _ -> false
+
+  let private anyTypeCheckDiagnosticsEnabled =
+    typeCheckCategoryDiagnosticsEnabled || typeCheckMemoDiagnosticsEnabled
+
+  let private typeCheckCategoryTotals =
+    ConcurrentDictionary<string * string, int64 * int64>()
+
+  type private TypeCheckMemoDiagnosticCounter() =
+    let syncRoot = obj ()
+    let rawInputs = HashSet<struct(int * int)>()
+    let contextualInputs = HashSet<struct(int * int)>()
+    let mutable totalCalls = 0L
+
+    member _.Record(rawInputKey: struct(int * int), contextualInputKey: struct(int * int)) =
+      lock syncRoot (fun () ->
+        totalCalls <- totalCalls + 1L
+        rawInputs.Add(rawInputKey) |> ignore
+        contextualInputs.Add(contextualInputKey) |> ignore)
+
+    member _.Snapshot() =
+      lock syncRoot (fun () -> totalCalls, rawInputs.Count, contextualInputs.Count)
+
+  let private typeCheckMemoDiagnostics =
+    ConcurrentDictionary<string * string, TypeCheckMemoDiagnosticCounter>()
+
+  type private TypeCheckCategoryFrame =
+    { Category: string
+      FilePath: string
+      StartTimestamp: int64
+      mutable NestedElapsedTicks: int64 }
+
+  let private typeCheckCategoryStack =
+    AsyncLocal<TypeCheckCategoryFrame list>()
+
+  let private currentTypeCheckCategoryFilePath =
+    AsyncLocal<string>()
+
+  let private normalizeTypeCheckCategoryFilePath (filePath: string) =
+    if String.IsNullOrWhiteSpace filePath then
+      filePath
+    else
+      Path.GetFileName filePath
+
+  let private resolveTypeCheckCategoryFilePath (location: Location) =
+    let currentFilePath = currentTypeCheckCategoryFilePath.Value
+
+    if String.IsNullOrWhiteSpace currentFilePath then
+      normalizeTypeCheckCategoryFilePath location.File
+    else
+      currentFilePath
+
+  let private makeTypeCheckMemoDiagnosticKey (value: 'a) =
+    struct (hash value, hash (value, 0x9E3779B9))
+
+  let addTypeCheckCategoryTiming
+    (category: string)
+    (filePath: string)
+    (elapsed: TimeSpan)
+    =
+    if typeCheckCategoryDiagnosticsEnabled then
+      let normalizedFilePath = normalizeTypeCheckCategoryFilePath filePath
+
+      typeCheckCategoryTotals.AddOrUpdate(
+        (normalizedFilePath, category),
+        (elapsed.Ticks, 1L),
+        fun _ (ticks, count) -> ticks + elapsed.Ticks, count + 1L
+      )
+      |> ignore
+
+  let recordTypeCheckMemoDiagnostic
+    (operation: string)
+    (location: Location)
+    (rawInput: 'rawInput)
+    (contextualInput: 'contextualInput)
+    =
+    if typeCheckMemoDiagnosticsEnabled then
+      let filePath = resolveTypeCheckCategoryFilePath location
+
+      let counter =
+        typeCheckMemoDiagnostics.GetOrAdd(
+          (filePath, operation),
+          fun _ -> TypeCheckMemoDiagnosticCounter()
+        )
+
+      counter.Record(
+        makeTypeCheckMemoDiagnosticKey rawInput,
+        makeTypeCheckMemoDiagnosticKey contextualInput
+      )
+
+  let private pushTypeCheckCategoryFrame (category: string) (location: Location) =
+    let frame =
+      { Category = category
+        FilePath = resolveTypeCheckCategoryFilePath location
+        StartTimestamp = Diagnostics.Stopwatch.GetTimestamp()
+        NestedElapsedTicks = 0L }
+
+    let stack =
+      let existing = typeCheckCategoryStack.Value
+
+      if obj.ReferenceEquals(existing, null) then
+        []
+      else
+        existing
+
+    typeCheckCategoryStack.Value <- frame :: stack
+    frame
+
+  let private popTypeCheckCategoryFrame (frame: TypeCheckCategoryFrame) =
+    let totalElapsedTicks =
+      Diagnostics.Stopwatch.GetElapsedTime(frame.StartTimestamp).Ticks
+
+    let exclusiveElapsedTicks = max 0L (totalElapsedTicks - frame.NestedElapsedTicks)
+
+    addTypeCheckCategoryTiming
+      frame.Category
+      frame.FilePath
+      (TimeSpan.FromTicks exclusiveElapsedTicks)
+
+    match typeCheckCategoryStack.Value with
+    | current :: remaining when obj.ReferenceEquals(current, frame) ->
+      typeCheckCategoryStack.Value <- remaining
+
+      match remaining with
+      | parent :: _ ->
+        parent.NestedElapsedTicks <- parent.NestedElapsedTicks + totalElapsedTicks
+      | [] -> ()
+    | _ -> ()
+
+  let timeTypeCheckCategory<'result, 'context, 'state, 'error>
+    (category: string)
+    (location: Location)
+    (computation: State<'result, 'context, 'state, 'error>)
+    : State<'result, 'context, 'state, 'error> =
+    if not typeCheckCategoryDiagnosticsEnabled then
+      computation
+    else
+      State(
+        FreeNode.fromStep (fun (context, state) ->
+          let frame = pushTypeCheckCategoryFrame category location
+
+          try
+            computation.run (context, state)
+          finally
+            popTypeCheckCategoryFrame frame)
+      )
+
+  let clearTypeCheckCategoryDiagnostics (filePath: string) =
+    if anyTypeCheckDiagnosticsEnabled then
+      let normalizedFilePath = normalizeTypeCheckCategoryFilePath filePath
+
+      currentTypeCheckCategoryFilePath.Value <- normalizedFilePath
+
+      if typeCheckCategoryDiagnosticsEnabled then
+        typeCheckCategoryTotals.Keys
+        |> Seq.filter (fun (trackedFilePath, _category) -> trackedFilePath = normalizedFilePath)
+        |> Seq.iter (fun key -> typeCheckCategoryTotals.TryRemove(key) |> ignore)
+
+  let clearTypeCheckMemoDiagnostics (filePath: string) =
+    if typeCheckMemoDiagnosticsEnabled then
+      let normalizedFilePath = normalizeTypeCheckCategoryFilePath filePath
+
+      typeCheckMemoDiagnostics.Keys
+      |> Seq.filter (fun (trackedFilePath, _operation) -> trackedFilePath = normalizedFilePath)
+      |> Seq.iter (fun key -> typeCheckMemoDiagnostics.TryRemove(key) |> ignore)
+
+  let clearCurrentTypeCheckCategoryFilePath () =
+    if anyTypeCheckDiagnosticsEnabled then
+      currentTypeCheckCategoryFilePath.Value <- null
+
+  let renderTypeCheckCategoryDiagnostics (filePath: string) : string list =
+    if not typeCheckCategoryDiagnosticsEnabled then
+      []
+    else
+      let normalizedFilePath = normalizeTypeCheckCategoryFilePath filePath
+
+      let renderedLines =
+        typeCheckCategoryTotals
+        |> Seq.choose (fun kvp ->
+          let trackedFilePath, category = kvp.Key
+          let ticks, count = kvp.Value
+
+          if trackedFilePath <> normalizedFilePath then
+            None
+          else
+            let totalMs = TimeSpan.FromTicks(ticks).TotalMilliseconds
+            let avgMs = if count = 0L then 0.0 else totalMs / float count
+
+            Some(
+              totalMs,
+              $"Typecheck category summary  | total {totalMs,8:F1} ms | avg {avgMs,8:F3} ms | calls {count,8} | {trackedFilePath} | {category}"
+            ))
+        |> Seq.sortByDescending fst
+        |> Seq.map snd
+        |> List.ofSeq
+
+      renderedLines
+
+  let renderTypeCheckMemoDiagnostics (filePath: string) : string list =
+    if not typeCheckMemoDiagnosticsEnabled then
+      []
+    else
+      let normalizedFilePath = normalizeTypeCheckCategoryFilePath filePath
+
+      typeCheckMemoDiagnostics
+      |> Seq.choose (fun kvp ->
+        let trackedFilePath, operation = kvp.Key
+
+        if trackedFilePath <> normalizedFilePath then
+          None
+        else
+          let totalCalls, rawDistinctCount, contextualDistinctCount =
+            kvp.Value.Snapshot()
+
+          let rawReusePct =
+            if totalCalls = 0L then
+              0.0
+            else
+              (1.0 - (float rawDistinctCount / float totalCalls)) * 100.0
+
+          let contextualReusePct =
+            if totalCalls = 0L then
+              0.0
+            else
+              (1.0 - (float contextualDistinctCount / float totalCalls)) * 100.0
+
+          let rawReuseLabel = $"{rawReusePct:F2}%%"
+          let contextualReuseLabel = $"{contextualReusePct:F2}%%"
+
+          Some(
+            totalCalls,
+            $"Typecheck memo summary      | total {totalCalls,8} | raw distinct {rawDistinctCount,8} | contextual distinct {contextualDistinctCount,8} | raw reuse {rawReuseLabel} | contextual reuse {contextualReuseLabel} | {trackedFilePath} | {operation}"
+          ))
+      |> Seq.sortByDescending fst
+      |> Seq.map snd
+      |> List.ofSeq
 
 
   type TypeExpr<'ve> with
@@ -663,7 +925,8 @@ module Unification =
         bind_un_s |> TypeValue.EquivalenceClassesOp<_, 'valueExt> loc0
 
 
-      state {
+      let unifyState =
+        state {
         let! ctx = state.GetContext()
 
         match left, right with
@@ -908,7 +1171,9 @@ module Unification =
             (fun () -> $"Cannot unify types: {left} and {right}")
             |> error
             |> state.Throw
-      }
+        }
+
+      timeTypeCheckCategory "type unify" loc0 unifyState
 
 
   and SymbolicTypeApplication<'ve> with
@@ -929,7 +1194,8 @@ module Unification =
 
       let (==) a b = TypeValue.Unify(loc0, a, b)
 
-      state {
+      let unifyState =
+        state {
         match left, right with
         | SymbolicTypeApplication.FromQueryRow id1,
           SymbolicTypeApplication.FromQueryRow id2 when id1 = id2 ->
@@ -948,7 +1214,9 @@ module Unification =
               $"Cannot unify type applications: {left} and {right}")
             |> error
             |> state.Throw
-      }
+        }
+
+      timeTypeCheckCategory "type unify" loc0 unifyState
 
 
   and TypeQueryRow<'ve> with
@@ -970,7 +1238,8 @@ module Unification =
       let (==) a b = TypeValue.Unify(loc0, a, b)
       let (===) a b = TypeQueryRow.Unify(loc0, a, b)
 
-      state {
+      let unifyState =
+        state {
         match left, right with
         | TypeQueryRow.PrimaryKey k1, TypeQueryRow.PrimaryKey k2 ->
           return! k1 == k2
@@ -1011,7 +1280,9 @@ module Unification =
             (fun () -> $"Cannot unify query row types: {left} and {right}")
             |> error
             |> state.Throw
-      }
+        }
+
+      timeTypeCheckCategory "type unify" loc0 unifyState
 
 
   type SymbolicTypeApplication<'ve> with
@@ -1130,7 +1401,8 @@ module Unification =
            >
       =
       fun typeEval loc0 t ->
-        state {
+        let instantiateState =
+          state {
           if TypeValue.IsConcrete t then
             return t
           else
@@ -1553,6 +1825,19 @@ module Unification =
           | TypeValue.QueryRow row ->
             let! row = TypeQueryRow.Instantiate () typeEval loc0 row
             return TypeValue.QueryRow(row)
+          }
+
+        state {
+          let! ctx = state.GetContext()
+          let! stateSnapshot = state.GetState()
+
+          recordTypeCheckMemoDiagnostic
+            "type instantiate"
+            loc0
+            t
+            (t, ctx, stateSnapshot.VarsVersion)
+
+          return! timeTypeCheckCategory "type instantiate" loc0 instantiateState
         }
 
 
