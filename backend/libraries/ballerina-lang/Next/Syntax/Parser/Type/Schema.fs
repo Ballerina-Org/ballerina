@@ -174,12 +174,14 @@ module TypeSchema =
         let onLinked = hooks |> Map.tryFind SchemaRelationHook.Linked
         let onUnlinking = hooks |> Map.tryFind SchemaRelationHook.Unlinking
         let onUnlinked = hooks |> Map.tryFind SchemaRelationHook.Unlinked
+        let canLink = hooks |> Map.tryFind SchemaRelationHook.CanLink
 
         let relationHooksExpr: SchemaRelationHooksExpr<'valueExt> =
           { SchemaRelationHooksExpr.OnLinking = onLinking
             SchemaRelationHooksExpr.OnLinked = onLinked
             SchemaRelationHooksExpr.OnUnlinking = onUnlinking
-            SchemaRelationHooksExpr.OnUnlinked = onUnlinked }
+            SchemaRelationHooksExpr.OnUnlinked = onUnlinked
+            SchemaRelationHooksExpr.CanLink = canLink }
 
         do! closeCurlyBracketOperator
 
@@ -244,6 +246,7 @@ module TypeSchema =
           let onLinked = hooks |> Map.tryFind SchemaRelationHook.Linked
           let onUnlinking = hooks |> Map.tryFind SchemaRelationHook.Unlinking
           let onUnlinked = hooks |> Map.tryFind SchemaRelationHook.Unlinked
+          let canLink = hooks |> Map.tryFind SchemaRelationHook.CanLink
 
           do! closeCurlyBracketOperator
 
@@ -258,7 +261,8 @@ module TypeSchema =
                 { OnLinking = onLinking
                   OnLinked = onLinked
                   OnUnlinking = onUnlinking
-                  OnUnlinked = onUnlinked } }
+                  OnUnlinked = onUnlinked
+                  CanLink = canLink } }
         })
         |> parser.MapError(Errors.MapPriority(replaceWith ErrorPriority.High))
     }

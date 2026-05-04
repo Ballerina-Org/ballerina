@@ -27,15 +27,30 @@ module TypeHooksAndProperties =
 
   let relationHooksRule =
     { Name = "relation-hooks"
-      Rule = Repeat (Seq [ Terminal "let"; Terminal "on"; Alt [ Terminal "linking"; Terminal "linked"; Terminal "unlinking"; Terminal "unlinked" ]; Terminal "="; NonTerminal "expr" ]) }
+      Rule =
+        Repeat(
+          Seq
+            [ Terminal "let"
+              Alt
+                [ Seq
+                    [ Terminal "on"
+                      Alt
+                        [ Terminal "linking"
+                          Terminal "linked"
+                          Terminal "unlinking"
+                          Terminal "unlinked" ] ]
+                  Seq [ Terminal "can"; Terminal "link" ] ]
+              Terminal "="
+              NonTerminal "expr" ]
+        ) }
 
   let relation_hooks (parseExpr: TypeExprParser<'valueExt>) () =
-    let onHook (hookKeyword, hookKeywordParser) =
+    let onHook (preHookKeyword) (hookKeyword, hookKeywordParser) =
       parser {
         let! startsWithHookKeyword =
           parser {
             do! letKeyword
-            do! onKeyword
+            do! preHookKeyword
             do! hookKeywordParser
           }
           |> parser.Lookahead
@@ -48,17 +63,18 @@ module TypeHooksAndProperties =
           return! parser.Throw(Errors.Singleton loc (fun () -> "No hook found"))
         | Left _ ->
           do! letKeyword
-          do! onKeyword
+          do! preHookKeyword
           do! hookKeywordParser
           do! equalsOperator
           let! hookExpr = parseExpr
           return hookKeyword, hookExpr
       }
 
-    [ (SchemaRelationHook.Linking, linkingKeyword) |> onHook
-      (SchemaRelationHook.Linked, linkedKeyword) |> onHook
-      (SchemaRelationHook.Unlinking, unlinkingKeyword) |> onHook
-      (SchemaRelationHook.Unlinked, unlinkedKeyword) |> onHook ]
+    [ (SchemaRelationHook.Linking, linkingKeyword) |> onHook onKeyword
+      (SchemaRelationHook.Linked, linkedKeyword) |> onHook onKeyword
+      (SchemaRelationHook.Unlinking, unlinkingKeyword) |> onHook onKeyword
+      (SchemaRelationHook.Unlinked, unlinkedKeyword) |> onHook onKeyword
+      (SchemaRelationHook.CanLink, canLinkKeyword) |> onHook canKeyword ]
     |> parser.Any
     |> parser.Many
     |> parser.Map(Map.ofList)

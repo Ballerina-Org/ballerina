@@ -393,6 +393,7 @@ module Model =
     | Unlinking
     | Linked
     | Unlinked
+    | CanLink
 
     override self.ToString() =
       match self with
@@ -400,19 +401,22 @@ module Model =
       | Unlinking -> "unlinking"
       | Linked -> "linked"
       | Unlinked -> "unlinked"
+      | CanLink -> "canLink"
 
   and SchemaRelationHooksExpr<'valueExt> =
     { OnLinking: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
       OnUnlinking: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
       OnLinked: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
-      OnUnlinked: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>> }
+      OnUnlinked: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>>
+      CanLink: Option<Expr<TypeExpr<'valueExt>, Identifier, 'valueExt>> }
 
     override self.ToString() =
       let enabledHooks =
         [ ("linking", self.OnLinking)
           ("unlinking", self.OnUnlinking)
           ("linked", self.OnLinked)
-          ("unlinked", self.OnUnlinked) ]
+          ("unlinked", self.OnUnlinked)
+          ("canLink", self.CanLink) ]
         |> List.choose (fun (name, body) ->
           body |> Option.map (fun b -> $"{name} -> {b}"))
 
@@ -703,14 +707,16 @@ module Model =
     { OnLinking: Option<RunnableExpr<'valueExt>>
       OnUnlinking: Option<RunnableExpr<'valueExt>>
       OnLinked: Option<RunnableExpr<'valueExt>>
-      OnUnlinked: Option<RunnableExpr<'valueExt>> }
+      OnUnlinked: Option<RunnableExpr<'valueExt>>
+      CanLink: Option<RunnableExpr<'valueExt>> }
 
     override self.ToString() =
       let enabledHooks =
         [ ("linking", self.OnLinking)
           ("unlinking", self.OnUnlinking)
           ("linked", self.OnLinked)
-          ("unlinked", self.OnUnlinked) ]
+          ("unlinked", self.OnUnlinked)
+          ("canLink", self.CanLink) ]
         |> List.choose (fun (name, body) ->
           body |> Option.map (fun b -> $"{name} -> {b}"))
 
