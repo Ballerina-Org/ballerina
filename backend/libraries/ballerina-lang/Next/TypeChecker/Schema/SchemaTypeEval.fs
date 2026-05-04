@@ -280,7 +280,8 @@ module SchemaTypeEval =
                       { SchemaRelationHooks.OnLinking = None
                         SchemaRelationHooks.OnLinked = None
                         SchemaRelationHooks.OnUnlinking = None
-                        SchemaRelationHooks.OnUnlinked = None } }
+                        SchemaRelationHooks.OnUnlinked = None
+                        SchemaRelationHooks.CanLink = None } }
               })
             |> OrderedMap.ofList
             |> state.AllMapOrdered
@@ -890,6 +891,7 @@ module SchemaTypeEval =
                 Errors<Location>
                >)
             (relation_hook_type: TypeValue<'ve>)
+            (relation_can_link_hook_type: TypeValue<'ve>)
             (parsed_hooks: SchemaRelationHooksExpr<'ve>)
             =
             state {
@@ -897,7 +899,8 @@ module SchemaTypeEval =
                 { OnLinking = None
                   OnLinked = None
                   OnUnlinking = None
-                  OnUnlinked = None }
+                  OnUnlinked = None
+                  CanLink = None }
 
               let! r_typechecked =
                 state {
@@ -1064,6 +1067,55 @@ module SchemaTypeEval =
                     return
                       { r_typechecked with
                           OnUnlinked = Some on_unlinked_runnable }
+                }
+
+              let! r_typechecked =
+                state {
+                  match parsed_hooks.CanLink with
+                  | None -> return { r_typechecked with CanLink = None }
+                  | Some can_link ->
+                    do! assert_no_cardinality
+
+                    let! ctx = state.GetContext()
+                    let extra_scope = ctx.PermissionHooksExtraScope
+
+                    let! can_link_expr, _ =
+                      typeCheckExpr None can_link
+                      |> state.MapContext(
+                        TypeCheckContext.Updaters.Values(
+                          Map.merge (fun _ -> id) extra_scope
+                        )
+                        >> TypeCheckContext.Updaters.Scope(
+                          TypeCheckScope.Empty |> replaceWith
+                        )
+                      )
+
+                    let can_link_t = can_link_expr.Type
+
+                    let can_link_k = can_link_expr.Kind
+
+                    do! can_link_k |> Kind.AsStar |> ofSum |> state.Ignore
+
+                    do!
+                      TypeValue.Unify(
+                        can_link.Location,
+                        can_link_t,
+                        relation_can_link_hook_type
+                      )
+                      |> Expr.liftUnification
+                      |> state.MapContext(
+                        TypeCheckContext.Updaters.Scope(
+                          TypeCheckScope.Empty |> replaceWith
+                        )
+                      )
+
+                    let! can_link_runnable =
+                      Conversion.convertExpression can_link_expr
+                      |> state.OfSum
+
+                    return
+                      { r_typechecked with
+                          CanLink = Some can_link_runnable }
                 }
 
               return r_typechecked
@@ -1375,6 +1427,15 @@ module SchemaTypeEval =
                     )
                   )
 
+                let relation_can_link_hook_type =
+                  TypeValue.CreateArrow(
+                    TypeValue.Schema resulting_schema_without_hooks,
+                    TypeValue.CreateArrow(
+                      from_e.Id,
+                      TypeValue.CreateArrow(to_e.Id, TypeValue.CreateBool())
+                    )
+                  )
+
                 let assert_no_cardinality =
                   match included_relation.Cardinality with
                   | None ->
@@ -1389,6 +1450,7 @@ module SchemaTypeEval =
                   typecheck_relation_hooks
                     assert_no_cardinality
                     relation_hook_type
+                    relation_can_link_hook_type
                     hooks
 
                 return relationName, typechecked_hooks
@@ -1415,7 +1477,10 @@ module SchemaTypeEval =
                               |> Option.orElse hooks.OnUnlinking
                             SchemaRelationHooks.OnUnlinked =
                               v.Hooks.OnUnlinked
-                              |> Option.orElse hooks.OnUnlinked } }
+                              |> Option.orElse hooks.OnUnlinked
+                            SchemaRelationHooks.CanLink =
+                              v.Hooks.CanLink
+                              |> Option.orElse hooks.CanLink } }
 
                   acc |> OrderedMap.add relationName v
                 | None -> acc)
@@ -1529,6 +1594,15 @@ module SchemaTypeEval =
                     )
                   )
 
+                let relation_can_link_hook_type =
+                  TypeValue.CreateArrow(
+                    TypeValue.Schema resulting_schema_without_hooks,
+                    TypeValue.CreateArrow(
+                      from_e.Id,
+                      TypeValue.CreateArrow(to_e.Id, TypeValue.CreateBool())
+                    )
+                  )
+
                 let assert_no_cardinality =
                   match r_parsed.Cardinality with
                   | None ->
@@ -1542,6 +1616,7 @@ module SchemaTypeEval =
                   typecheck_relation_hooks
                     assert_no_cardinality
                     relation_hook_type
+                    relation_can_link_hook_type
                     r_parsed.Hooks
 
                 return

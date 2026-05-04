@@ -269,6 +269,7 @@ module Common =
   let canReadKeyword = softKeyword "read"
   let canUpdateKeyword = softKeyword "update"
   let canDeleteKeyword = softKeyword "delete"
+  let canLinkKeyword = softKeyword "link"
   let canKeyword = parseKeyword Keyword.Can
 
 

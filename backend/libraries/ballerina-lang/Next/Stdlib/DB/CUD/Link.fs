@@ -23,6 +23,58 @@ module Link =
   open Ballerina
   open Ballerina.DSL.Next.StdLib.DB
 
+  let private deniedLinkError loc0 relationName =
+    Errors.Singleton loc0 (fun () ->
+      $"Link failed for relation {relationName}: you are not allowed to perform this action.")
+
+  let canLinkHook
+    (_db_ops: DBTypeClass<'runtimeContext, 'db, 'ext>)
+    (relation: RelationRef<'db, 'ext>)
+    (loc0: Location)
+    (_fromId: Value<TypeValue<'ext>, 'ext>)
+    (_toId: Value<TypeValue<'ext>, 'ext>)
+    =
+    reader {
+      let _schema, _db, relation, _from, _to, schema_as_value = relation
+      let _schema_as_value = schema_as_value.Value.Value
+
+      let! ctx = reader.GetContext()
+
+      match ctx.RootLevelEval, relation.Hooks.CanLink with
+      | false, _ -> return ()
+      | _, Some canLinkExpr ->
+        let! run_hook_result =
+          RunnableExpr.UnsafeApplyForUntypedEval(
+            RunnableExpr.UnsafeApplyForUntypedEval(
+              RunnableExpr.UnsafeApplyForUntypedEval(
+                canLinkExpr,
+                RunnableExpr.FromValue(
+                  _schema_as_value,
+                  TypeValue.CreateUnit(),
+                  Kind.Star
+                )
+              ),
+              RunnableExpr.FromValue(
+                _fromId,
+                TypeValue.CreateUnit(),
+                Kind.Star
+              )
+            ),
+            RunnableExpr.FromValue(_toId, TypeValue.CreateUnit(), Kind.Star)
+          )
+          |> NonEmptyList.One
+          |> Expr.Eval
+
+        match run_hook_result with
+        | Value.Primitive(PrimitiveValue.Bool canLink) when canLink ->
+          return ()
+        | _ ->
+          return!
+            sum.Throw(deniedLinkError loc0 relation.Name.Name)
+            |> reader.OfSum
+      | _, None -> return ()
+    }
+
   let onLinkingHook
     (_db_ops: DBTypeClass<'runtimeContext, 'db, 'ext>)
     (relation: RelationRef<'db, 'ext>)
@@ -260,6 +312,7 @@ module Link =
 
                 match v with
                 | [ _fromId; _toId ] ->
+                  do! canLinkHook db_ops relation_ref loc0 _fromId _toId
 
                   do! onLinkingHook db_ops relation_ref loc0 _fromId _toId
 
@@ -428,6 +481,9 @@ module Link =
 
                       match v with
                       | [ _fromId; _toId ] ->
+
+                        do!
+                          canLinkHook db_ops relation_ref loc0 _fromId _toId
 
                         do!
                           onLinkingHook db_ops relation_ref loc0 _fromId _toId
