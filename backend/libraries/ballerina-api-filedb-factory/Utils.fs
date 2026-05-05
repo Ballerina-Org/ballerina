@@ -70,16 +70,6 @@ module Utils =
             { Case = 1; Count = 2 },
             Value.Primitive(PrimitiveValue.Unit)
           )
-          ResolvedIdentifier.Create(domainName, "CurrentOwner"),
-          Value.Sum(
-            { Case = 1; Count = 2 },
-            Value.Primitive(PrimitiveValue.Unit)
-          )
-          ResolvedIdentifier.Create(domainName, "CurrentManager"),
-          Value.Sum(
-            { Case = 1; Count = 2 },
-            Value.Primitive(PrimitiveValue.Unit)
-          )
           ResolvedIdentifier.Create(domainName, "CurrentApiToken"),
           Value.Sum(
             { Case = 1; Count = 2 },
