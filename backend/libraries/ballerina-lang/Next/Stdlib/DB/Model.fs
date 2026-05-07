@@ -187,7 +187,10 @@ module Model =
             List<Value<TypeValue<'ext>, 'ext>>,
             ExprEvalContext<'runtimeContext, 'ext>,
             Errors<Unit>
-           > }
+           >
+      RunInTransaction:
+        (unit -> Sum<List<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>>)
+          -> Sum<List<Value<TypeValue<'ext>, 'ext>>, Errors<Unit>> }
 
   let db_nonsense () =
     { DB = ()
@@ -217,7 +220,8 @@ module Model =
         fun _ _ _ ->
           reader.Throw <| Errors.Singleton () (fun () -> "No such relation")
       LookupMany = fun _ _ _ _ -> reader.Return []
-      LookupNotConnectedMany = fun _ _ _ _ -> reader.Return [] }
+      LookupNotConnectedMany = fun _ _ _ _ -> reader.Return []
+      RunInTransaction = fun f -> f () }
 
   type DBEvalProperty<'ext> =
     { PropertyName: LocalIdentifier

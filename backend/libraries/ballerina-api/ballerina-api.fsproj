@@ -20,6 +20,7 @@
     <Compile Include="Endpoints/Read.fs" />
     <Compile Include="Endpoints/Upsert.fs" />
     <Compile Include="Endpoints/Update.fs" />
+    <Compile Include="Endpoints/Batch.fs" />
     <Compile Include="Endpoints/OpenAPI.fs" />
     <Compile Include="Endpoints/Filter.fs" />
     <Compile Include="APIRegistration.fs" />
