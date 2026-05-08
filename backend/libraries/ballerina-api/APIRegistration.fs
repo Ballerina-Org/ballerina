@@ -9,6 +9,7 @@ module APIRegistration =
   open Upsert
   open Ballerina.Collections.Sum
   open Update
+  open Batch
   open OpenAPI
   open Filter
   open Ballerina.Errors
@@ -70,6 +71,11 @@ module APIRegistration =
 
       do
         openApi<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>
+          builder
+          apiContext
+
+      do
+        batch<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName>
           builder
           apiContext
 

@@ -616,4 +616,84 @@ module EndpointGeneration =
           })
         |> state.All
         |> state.Ignore
+
+      // Batch endpoint: accepts an array of polymorphic operation descriptors
+      let batchCreateOp =
+        OpenAPIDataModel.Object
+          [ ("EntityName" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.String)
+            ("Id" |> ResolvedIdentifier.Create, OpenAPIDataModel.AnyObject)
+            ("Entity" |> ResolvedIdentifier.Create, OpenAPIDataModel.AnyObject) ]
+
+      let batchUpdateOp =
+        OpenAPIDataModel.Object
+          [ ("EntityName" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.String)
+            ("Id" |> ResolvedIdentifier.Create, OpenAPIDataModel.AnyObject)
+            ("Delta" |> ResolvedIdentifier.Create, OpenAPIDataModel.AnyObject) ]
+
+      let batchDeleteOp =
+        OpenAPIDataModel.Object
+          [ ("EntityName" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.String)
+            ("Id" |> ResolvedIdentifier.Create, OpenAPIDataModel.AnyObject) ]
+
+      let batchLinkOp =
+        OpenAPIDataModel.Object
+          [ ("RelationName" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.String)
+            ("FromId" |> ResolvedIdentifier.Create, OpenAPIDataModel.AnyObject)
+            ("ToId" |> ResolvedIdentifier.Create, OpenAPIDataModel.AnyObject) ]
+
+      let batchUnlinkOp =
+        OpenAPIDataModel.Object
+          [ ("RelationName" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.String)
+            ("FromId" |> ResolvedIdentifier.Create, OpenAPIDataModel.AnyObject)
+            ("ToId" |> ResolvedIdentifier.Create, OpenAPIDataModel.AnyObject) ]
+
+      let batchMoveOp =
+        OpenAPIDataModel.Object
+          [ ("RelationName" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.String)
+            ("FromId" |> ResolvedIdentifier.Create, OpenAPIDataModel.AnyObject)
+            ("SourceId" |> ResolvedIdentifier.Create, OpenAPIDataModel.AnyObject)
+            ("TargetId" |> ResolvedIdentifier.Create, OpenAPIDataModel.AnyObject) ]
+
+      let batchOperationModel =
+        OpenAPIDataModel.OneOf
+          [ ("Create" |> ResolvedIdentifier.Create, batchCreateOp)
+            ("Update" |> ResolvedIdentifier.Create, batchUpdateOp)
+            ("Delete" |> ResolvedIdentifier.Create, batchDeleteOp)
+            ("Link" |> ResolvedIdentifier.Create, batchLinkOp)
+            ("Unlink" |> ResolvedIdentifier.Create, batchUnlinkOp)
+            ("MoveBefore" |> ResolvedIdentifier.Create, batchMoveOp)
+            ("MoveAfter" |> ResolvedIdentifier.Create, batchMoveOp) ]
+
+      let batchRequestModel =
+        OpenAPIDataModel.Object
+          [ ("Operations" |> ResolvedIdentifier.Create,
+             OpenAPIDataModel.Array batchOperationModel) ]
+
+      let batchResultModel =
+        OpenAPIDataModel.Object
+          [ ("Index" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Int32)
+            ("Success" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Bool)
+            ("Result" |> ResolvedIdentifier.Create, OpenAPIDataModel.AnyObject)
+            ("Error" |> ResolvedIdentifier.Create,
+             OpenAPIDataModel.Sum
+               [ OpenAPIDataModel.Primitive PrimitiveType.Unit
+                 OpenAPIDataModel.Primitive PrimitiveType.String ]) ]
+
+      let batchResponseModel =
+        OpenAPIDataModel.Object
+          [ ("Success" |> ResolvedIdentifier.Create, OpenAPIDataModel.Primitive PrimitiveType.Bool)
+            ("Results" |> ResolvedIdentifier.Create, OpenAPIDataModel.Array batchResultModel)
+            ("Error" |> ResolvedIdentifier.Create,
+             OpenAPIDataModel.Sum
+               [ OpenAPIDataModel.Primitive PrimitiveType.Unit
+                 OpenAPIDataModel.Primitive PrimitiveType.String ]) ]
+
+      let batchEndpoint =
+        { Path = $"{routePrefix}/batch"
+          Method = OpenAPIEndpointModel.Post
+          QueryParameters = []
+          RequestModel = Some batchRequestModel
+          ResponseModel = Some batchResponseModel }
+
+      do! state.SetState(fun l -> batchEndpoint :: l)
     }

@@ -1225,4 +1225,5 @@ module MutableMemoryDB =
               |> Seq.truncate truncate
               |> Seq.map (fun (id, value) -> Value.Tuple [ id; value ])
               |> Seq.toList
-          } }
+          }
+      RunInTransaction = fun f -> f () }

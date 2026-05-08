@@ -596,4 +596,5 @@ module FileDB =
             | Some(skip, take) ->
               return values |> Seq.skip skip |> Seq.truncate take |> Seq.toList
 
-          } }
+          }
+      RunInTransaction = fun f -> f () }
