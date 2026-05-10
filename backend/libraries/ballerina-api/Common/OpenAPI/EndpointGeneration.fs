@@ -164,11 +164,13 @@ module EndpointGeneration =
                 RequestModel = Some(OpenAPIDataModel.Ref id_name)
                 ResponseModel =
                   Some(
-                    OpenAPIDataModel.Tuple
-                      [ id_name |> OpenAPIDataModel.Ref
-                        [ OpenAPIDataModel.Primitive PrimitiveType.Unit
-                          type_with_props_name |> OpenAPIDataModel.Ref ]
-                        |> OpenAPIDataModel.Sum ]
+                    OpenAPIDataModel.Object
+                      [ ("Item1" |> ResolvedIdentifier.Create,
+                         id_name |> OpenAPIDataModel.Ref)
+                        ("Item2" |> ResolvedIdentifier.Create,
+                         [ OpenAPIDataModel.Primitive PrimitiveType.Unit
+                           type_with_props_name |> OpenAPIDataModel.Ref ]
+                         |> OpenAPIDataModel.Sum) ]
                   ) }
 
             do! state.SetState(fun l -> endpoint :: l)
@@ -326,10 +328,13 @@ module EndpointGeneration =
                         { OpenAPIDataModelName.OpenAPIDataModelName = $"{entity_name.Name}-FilterTree" }
                     )
                   ResponseModel =
-                    OpenAPIDataModel.Tuple
-                      [ id_name |> OpenAPIDataModel.Ref
-                        type_with_props_name |> OpenAPIDataModel.Ref ]
-                    |> listToOpenApi
+                    OpenAPIDataModel.Array(
+                      OpenAPIDataModel.Object
+                        [ ("Key" |> ResolvedIdentifier.Create,
+                           OpenAPIDataModel.Scalar PrimitiveType.Guid)
+                          ("Value" |> ResolvedIdentifier.Create,
+                           type_with_props_name |> OpenAPIDataModel.Ref) ]
+                    )
                     |> Some }
 
               do! state.SetState(fun l -> filterEndpoint :: l)
