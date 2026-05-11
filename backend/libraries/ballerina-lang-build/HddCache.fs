@@ -15,6 +15,7 @@ module HddCache =
   open Ballerina.DSL.Next.StdLib.Email.Extension
   open Ballerina.DSL.Next.StdLib.String.Extension
   open Ballerina.Serialization.MessagePack
+  open Nerdbank.MessagePack
   open System
   open System.IO
 
@@ -143,7 +144,11 @@ module HddCache =
   let private tryLoadTypeCheckingConfig<'valueExt when 'valueExt: comparison>
     (cacheFilePath: string)
     : Option<TypeCheckingConfig<'valueExt>> =
-    let serializer = MessagePackSerializerAdapter()
+    let serializer =
+      MessagePackSerializerAdapter(
+        Nerdbank.MessagePack.MessagePackSerializer(
+          PreserveReferences = ReferencePreservationMode.AllowCycles,
+          StartingContext = SerializationContext(MaxDepth = 2048)))
 
     let _, queryTypeSymbol, listTypeSymbol, viewTypeSymbol, viewPropsTypeSymbol, reactNodeTypeSymbol, reactComponentTypeSymbol, coTypeSymbol =
       loadPersistedCacheData<'valueExt> serializer cacheFilePath
@@ -230,7 +235,11 @@ module HddCache =
     (typeCheckingConfig: Option<TypeCheckingConfig<'valueExt>>)
     (ctx0: TypeCheckContext<'valueExt>, st0: TypeCheckState<'valueExt>)
     : ProjectModel.ProjectCache<'valueExt> =
-    let serializer = MessagePackSerializerAdapter()
+    let serializer =
+      MessagePackSerializerAdapter(
+        Nerdbank.MessagePack.MessagePackSerializer(
+          PreserveReferences = ReferencePreservationMode.AllowCycles,
+          StartingContext = SerializationContext(MaxDepth = 2048)))
     let cacheFolder = ".build-cache"
     let cacheFilePath = Path.Combine(cacheFolder, "build-cache.msgpack")
 
