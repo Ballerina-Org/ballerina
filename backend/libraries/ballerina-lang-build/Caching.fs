@@ -52,13 +52,15 @@ module Caching =
             Errors<Location>
            >)
       (prevChecksums: List<ProjectModel.Checksum>)
+      (forceRebuild: bool)
       (ctx: TypeCheckContext<'valueExt>)
       (st: TypeCheckState<'valueExt>)
       (file: ProjectModel.FileBuildConfiguration, index: int)
       : Sum<
           (TypeCheckedExpr<'valueExt> * TypeValue<'valueExt>) *
           TypeCheckContext<'valueExt> *
-          TypeCheckState<'valueExt>,
+          TypeCheckState<'valueExt> *
+          bool,
           Errors<Location>
          >
       =
@@ -68,7 +70,9 @@ module Caching =
 
       match cached_entry with
       | Some(checksum, checksums, expr, typeValue, ctx', st') when
-        checksum = file.Checksum && prevChecksums = checksums
+        not forceRebuild
+        && checksum = file.Checksum
+        && prevChecksums = checksums
         ->
         sum {
           sw.Stop()
@@ -76,7 +80,7 @@ module Caching =
           Console.WriteLine
             $"Cache hit  for {file.FileName.Path} in {sw.ElapsedMilliseconds} ms"
 
-          return (expr, typeValue), ctx', st'
+          return (expr, typeValue), ctx', st', false
         }
       | _ ->
         sum {
@@ -97,7 +101,7 @@ module Caching =
           Console.WriteLine
             $"Cache miss for {file.FileName.Path} in {sw.ElapsedMilliseconds} ms"
 
-          return (expr, typeValue), ctx', st'
+          return (expr, typeValue), ctx', st', true
         }
 
     { Fold =
@@ -124,15 +128,16 @@ module Caching =
                       > *
                      List<ProjectModel.Checksum> *
                      TypeCheckContext<'valueExt> *
-                     TypeCheckState<'valueExt>,
+                     TypeCheckState<'valueExt> *
+                     bool,
                      Errors<Location>
                     >)
                  ((file, index): ProjectModel.FileBuildConfiguration * int) ->
               sum {
-                let! prevExprs, prevChecksums, ctx, st = acc
+                let! prevExprs, prevChecksums, ctx, st, forceRebuild = acc
 
-                let! exprWithType, ctx', st' =
-                  processFile typeCheck prevChecksums ctx st (file, index)
+                let! exprWithType, ctx', st', wasCacheMiss =
+                  processFile typeCheck prevChecksums forceRebuild ctx st (file, index)
 
                 NonEmptyList.OfList(
                   exprWithType,
@@ -140,16 +145,17 @@ module Caching =
                 ),
                 file.Checksum :: prevChecksums,
                 ctx',
-                st'
+                st',
+                forceRebuild || wasCacheMiss
               })
             (fun (file, index) ->
               sum {
-                let! exprWithType, ctx', st' =
-                  processFile typeCheck [] ctx0 st0 (file, index)
+                let! exprWithType, ctx', st', wasCacheMiss =
+                  processFile typeCheck [] false ctx0 st0 (file, index)
 
-                NonEmptyList.One exprWithType, [ file.Checksum ], ctx', st'
+                NonEmptyList.One exprWithType, [ file.Checksum ], ctx', st', wasCacheMiss
               })
-          |> sum.Map(fun (exprs, _, ctx, st) -> exprs, ctx, st)
+          |> sum.Map(fun (exprs, _, ctx, st, _) -> exprs, ctx, st)
       FoldStreaming =
         fun
             (files: NonEmptyList<ProjectModel.FileBuildConfiguration>)
@@ -169,6 +175,7 @@ module Caching =
 
           let processFileWithErrorCallback
             (prevChecksums: List<ProjectModel.Checksum>)
+            (forceRebuild: bool)
             (ctx: TypeCheckContext<'valueExt>)
             (st: TypeCheckState<'valueExt>)
             (file: ProjectModel.FileBuildConfiguration, index: int)
@@ -178,7 +185,9 @@ module Caching =
 
             match cached_entry with
             | Some(checksum, checksums, expr, typeValue, ctx', st') when
-              checksum = file.Checksum && prevChecksums = checksums
+              not forceRebuild
+              && checksum = file.Checksum
+              && prevChecksums = checksums
               ->
               sw.Stop()
 
@@ -186,7 +195,7 @@ module Caching =
                 $"Cache hit  for {file.FileName.Path} in {sw.ElapsedMilliseconds} ms"
 
               onFileProcessed file ctx' st'
-              Sum.Left((expr, typeValue), ctx', st')
+              Sum.Left((expr, typeValue), ctx', st', false)
             | _ ->
               let runResult =
                 typeCheck (file, index)
@@ -207,7 +216,7 @@ module Caching =
                   $"Cache miss for {file.FileName.Path} in {sw.ElapsedMilliseconds} ms"
 
                 onFileProcessed file ctx' st'
-                Sum.Left((expr, typeValue), ctx', st')
+                Sum.Left((expr, typeValue), ctx', st', true)
               | Sum.Right(errors, stateOpt) ->
                 let ctx', st' = stateOpt |> Option.defaultValue (ctx, st)
                 sw.Stop()
@@ -231,15 +240,16 @@ module Caching =
                       > *
                      List<ProjectModel.Checksum> *
                      TypeCheckContext<'valueExt> *
-                     TypeCheckState<'valueExt>,
+                     TypeCheckState<'valueExt> *
+                     bool,
                      Errors<Location>
                     >)
                  ((file, index): ProjectModel.FileBuildConfiguration * int) ->
               sum {
-                let! prevExprs, prevChecksums, ctx, st = acc
+                let! prevExprs, prevChecksums, ctx, st, forceRebuild = acc
 
-                let! exprWithType, ctx', st' =
-                  processFileWithErrorCallback prevChecksums ctx st (file, index)
+                let! exprWithType, ctx', st', wasCacheMiss =
+                  processFileWithErrorCallback prevChecksums forceRebuild ctx st (file, index)
 
                 NonEmptyList.OfList(
                   exprWithType,
@@ -247,16 +257,17 @@ module Caching =
                 ),
                 file.Checksum :: prevChecksums,
                 ctx',
-                st'
+                st',
+                forceRebuild || wasCacheMiss
               })
             (fun (file, index) ->
               sum {
-                let! exprWithType, ctx', st' =
-                  processFileWithErrorCallback [] ctx0 st0 (file, index)
+                let! exprWithType, ctx', st', wasCacheMiss =
+                  processFileWithErrorCallback [] false ctx0 st0 (file, index)
 
-                NonEmptyList.One exprWithType, [ file.Checksum ], ctx', st'
+                NonEmptyList.One exprWithType, [ file.Checksum ], ctx', st', wasCacheMiss
               })
-          |> sum.Map(fun (exprs, _, ctx, st) -> exprs, ctx, st)
+          |> sum.Map(fun (exprs, _, ctx, st, _) -> exprs, ctx, st)
       TryGetCachedState =
         fun fileName ->
           cache.TryGet fileName
