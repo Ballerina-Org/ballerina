@@ -14,6 +14,7 @@ open Ballerina.DSL.Next.StdLib.Map.Model
 open Ballerina.DSL.Next.StdLib.DB
 open Ballerina.Data.Delta
 open Ballerina.DSL.Next.StdLib.Email
+open Ballerina.DSL.Next.StdLib.AIConfigurator
 open Ballerina.DSL.Next.StdLib.String
 open Ballerina.DSL.Next.Types.TypeChecker.Model
 open Ballerina.Cat.Collections.OrderedMap
@@ -242,6 +243,10 @@ and PrimitiveExt<'runtimeContext, 'db, 'customExtension
     Email.Model.EmailOperations<
       ValueExt<'runtimeContext, 'db, 'customExtension>
      >
+  | AIConfiguratorOperations of
+    AIConfigurator.Model.AIConfiguratorOperations<
+      ValueExt<'runtimeContext, 'db, 'customExtension>
+     >
   | StringOperations of
     String.Model.StringOperations<
       ValueExt<'runtimeContext, 'db, 'customExtension>
@@ -256,6 +261,7 @@ and PrimitiveExt<'runtimeContext, 'db, 'customExtension
     | Float64Operations ops -> ops.ToString()
     | DecimalOperations ops -> ops.ToString()
     | EmailOperations ops -> ops.ToString()
+    | AIConfiguratorOperations ops -> ops.ToString()
     | StringOperations ops -> ops.ToString()
 
 and DeltaExt<'runtimeContext, 'db, 'customExtension
@@ -897,6 +903,18 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
           | _ -> None
         Set = EmailOperations >> VPrimitive }
 
+  let aiConfiguratorExtension =
+    AIConfigurator.Extension.AIConfiguratorExtension<
+      'runtimeContext,
+      ValueExt<'runtimeContext, 'db, 'customExtension>
+     >
+      (AIConfiguratorTypeClass<'runtimeContext>.FromEnvironment())
+      { Get =
+          function
+          | VPrimitive(AIConfiguratorOperations x) -> Some x
+          | _ -> None
+        Set = AIConfiguratorOperations >> VPrimitive }
+
   let guidExtension =
     Guid.Extension.GuidExtension<
       'runtimeContext,
@@ -987,6 +1005,7 @@ let makeExtensions<'runtimeContext, 'db, 'customExtension
     |> (float64Extension |> OperationsExtension.RegisterLanguageContext)
     |> (decimalExtension |> OperationsExtension.RegisterLanguageContext)
     |> (emailExtension |> OperationsExtension.RegisterLanguageContext)
+    |> (aiConfiguratorExtension |> OperationsExtension.RegisterLanguageContext)
     |> (stringExtension |> OperationsExtension.RegisterLanguageContext)
     |> (updaterExtension |> OperationsExtension.RegisterLanguageContext)
     |> (mapExtension |> TypeExtension.RegisterLanguageContext)
