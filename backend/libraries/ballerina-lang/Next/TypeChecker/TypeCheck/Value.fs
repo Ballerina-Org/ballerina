@@ -34,6 +34,17 @@ module Value =
        >
 
   type Value<'T, 'ext> with
+    static member TypeCheck<'valueExt when 'valueExt: comparison>
+      (ext_checker: IsExtInstanceOf<'valueExt>)
+      (v: Value<TypeValue<'valueExt>, 'valueExt>)
+      (t: TypeValue<'valueExt>)
+      : Reader<
+          Unit,
+          TypeCheckContext<'valueExt> * TypeCheckState<'valueExt>,
+          Errors<Unit>
+         > =
+      Value.IsInstanceOf ext_checker (v, t)
+
     static member IsInstanceOf<'valueExt when 'valueExt: comparison>
       (ext_checker: IsExtInstanceOf<'valueExt>)
       : IsValueInstanceOf<'valueExt> =

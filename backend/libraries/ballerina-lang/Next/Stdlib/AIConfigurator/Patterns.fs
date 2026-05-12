@@ -12,3 +12,21 @@ module Patterns =
       : Sum<unit, Errors<Unit>> =
       match op with
       | AIConfiguratorOperations.BriefToPlan -> sum.Return()
+      | _ ->
+        sum.Throw(Errors.Singleton () (fun () -> "Expected BriefToPlan operation"))
+
+    static member AsCmsStage
+      (op: AIConfiguratorOperations<'ext>)
+      : Sum<unit, Errors<Unit>> =
+      match op with
+      | AIConfiguratorOperations.CmsStage -> sum.Return()
+      | _ ->
+        sum.Throw(Errors.Singleton () (fun () -> "Expected CmsStage operation"))
+
+    static member AsProductsStage
+      (op: AIConfiguratorOperations<'ext>)
+      : Sum<unit, Errors<Unit>> =
+      match op with
+      | AIConfiguratorOperations.ProductsStage -> sum.Return()
+      | _ ->
+        sum.Throw(Errors.Singleton () (fun () -> "Expected ProductsStage operation"))

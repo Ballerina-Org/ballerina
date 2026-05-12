@@ -80,7 +80,7 @@ module APIUtils =
                   TypeCheckContext = typeCheckContext } })
 
       do!
-        Value.IsInstanceOf extensionChecker (value, typeValue)
+        Value.TypeCheck extensionChecker value typeValue
         |> reader.MapError(Errors.MapContext(replaceWith Location.Unknown))
         |> Reader.Run(typeCheckContext, typeCheckState)
         |> sum.MapError(fun errors ->

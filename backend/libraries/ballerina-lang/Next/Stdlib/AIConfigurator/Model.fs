@@ -4,3 +4,5 @@ namespace Ballerina.DSL.Next.StdLib.AIConfigurator
 module Model =
   type AIConfiguratorOperations<'ext> =
     | BriefToPlan
+    | CmsStage
+    | ProductsStage

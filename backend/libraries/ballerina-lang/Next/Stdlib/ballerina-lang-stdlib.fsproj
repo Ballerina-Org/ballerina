@@ -93,6 +93,7 @@
   <ItemGroup>
     <ProjectReference Include="../../../ballerina-cat/ballerina-cat.fsproj" />
     <ProjectReference Include="../../../ballerina-stdlib/ballerina-stdlib.fsproj" />
+    <ProjectReference Include="../Syntax/ballerina-lang-parser.fsproj" />
     <ProjectReference Include="../Models/ballerina-lang-models.fsproj" />
     <ProjectReference Include="../TypeChecker/ballerina-lang-typecheck.fsproj" />
     <ProjectReference Include="../Eval/ballerina-lang-eval.fsproj" />
