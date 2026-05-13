@@ -138,13 +138,13 @@ module DeltaGeneration =
             let multiple_element =
               OpenAPIDataModel.OneOf
                 [ "Replace" |> ResolvedIdentifier.Create, replace_model
-                  "Union" |> ResolvedIdentifier.Create, union_delta ]
+                  "UnionCase" |> ResolvedIdentifier.Create, union_delta ]
 
             return
               OpenAPIDataModel.OneOf
                 [ "Multiple" |> ResolvedIdentifier.Create, OpenAPIDataModel.Array multiple_element
                   "Replace" |> ResolvedIdentifier.Create, replace_model
-                  "Union" |> ResolvedIdentifier.Create, union_delta ]
+                  "UnionCase" |> ResolvedIdentifier.Create, union_delta ]
 
           | TypeValue.Sum { value = options } ->
             let! option_deltas =
