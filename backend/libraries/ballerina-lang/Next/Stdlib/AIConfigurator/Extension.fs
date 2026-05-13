@@ -37,23 +37,23 @@ module Extension =
       let invalidSentinel opName = $"[AIConfigurator::{opName} invalid]"
 
       let briefPlanGbnf =
-        """root ::= ws brief-plan ws
+        """root ::= ws brief_plan ws
 
-brief-plan ::= "{" ws cms-field ws ";" ws products-field ws ";" ws media-field ws ";" ws theme-field ws "}"
+      brief_plan ::= "{" ws cms_field ws ";" ws products_field ws ";" ws media_field ws ";" ws theme_field ws "}"
 
-cms-field ::= "BriefPlan::Cms" ws "=" ws "2Of2(" ws cms-record ws ")"
-cms-record ::= "{" ws "PlanCmsInput::Pages" ws "=" ws "2Of2(" ws string-list ws ")" ws ";" ws "PlanCmsInput::HomepageSections" ws "=" ws "2Of2(" ws string-list ws ")" ws "}"
+      cms_field ::= "BriefPlan::Cms" ws "=" ws "2Of2(" ws cms_record ws ")"
+      cms_record ::= "{" ws "PlanCmsInput::Pages" ws "=" ws "2Of2(" ws string_list ws ")" ws ";" ws "PlanCmsInput::HomepageSections" ws "=" ws "2Of2(" ws string_list ws ")" ws "}"
 
-products-field ::= "BriefPlan::Products" ws "=" ws "2Of2(" ws products-record ws ")"
-products-record ::= "{" ws "PlanProductsInput::Categories" ws "=" ws "2Of2(" ws string-list ws ")" ws ";" ws "PlanProductsInput::ProductIdeas" ws "=" ws "2Of2(" ws string-list ws ")" ws ";" ws "PlanProductsInput::PriceBandHint" ws "=" ws "2Of2(" ws label ws ")" ws "}"
+      products_field ::= "BriefPlan::Products" ws "=" ws "2Of2(" ws products_record ws ")"
+      products_record ::= "{" ws "PlanProductsInput::Categories" ws "=" ws "2Of2(" ws string_list ws ")" ws ";" ws "PlanProductsInput::ProductIdeas" ws "=" ws "2Of2(" ws string_list ws ")" ws ";" ws "PlanProductsInput::PriceBandHint" ws "=" ws "2Of2(" ws label ws ")" ws "}"
 
-media-field ::= "BriefPlan::Media" ws "=" ws "2Of2(" ws media-record ws ")"
-media-record ::= "{" ws "PlanMediaInput::FeaturedAssets" ws "=" ws "1Of2()" ws ";" ws "PlanMediaInput::GalleryHints" ws "=" ws "2Of2(" ws string-list ws ")" ws "}"
+      media_field ::= "BriefPlan::Media" ws "=" ws "2Of2(" ws media_record ws ")"
+      media_record ::= "{" ws "PlanMediaInput::FeaturedAssets" ws "=" ws "1Of2()" ws ";" ws "PlanMediaInput::GalleryHints" ws "=" ws "2Of2(" ws string_list ws ")" ws "}"
 
-theme-field ::= "BriefPlan::Theme" ws "=" ws "2Of2(" ws theme-record ws ")"
-theme-record ::= "{" ws "PlanThemeInput::StyleKeywords" ws "=" ws "2Of2(" ws string-list ws ")" ws ";" ws "PlanThemeInput::LayoutHints" ws "=" ws "2Of2(" ws string-list ws ")" ws "}"
+      theme_field ::= "BriefPlan::Theme" ws "=" ws "2Of2(" ws theme_record ws ")"
+      theme_record ::= "{" ws "PlanThemeInput::StyleKeywords" ws "=" ws "2Of2(" ws string_list ws ")" ws ";" ws "PlanThemeInput::LayoutHints" ws "=" ws "2Of2(" ws string_list ws ")" ws "}"
 
-string-list ::= "{" ws label (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? ws "}"
+      string_list ::= "{" ws label (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? ws "}"
 
 label ::= "\"" jc jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? "\""
 jc ::= [^"\\\x00-\x1F]
@@ -62,11 +62,11 @@ ws ::= [ \t\n\r]*
 """
 
       let cmsStageGbnf =
-        """root ::= ws cms-stage ws
+        """root ::= ws cms_stage ws
 
-cms-stage ::= "{" ws "CmsStageOutput::Pages" ws "=" ws "2Of2(" ws string-list ws ")" ws ";" ws "CmsStageOutput::HomepageSections" ws "=" ws "2Of2(" ws string-list ws ")" ws "}"
+      cms_stage ::= "{" ws "CmsStageOutput::Pages" ws "=" ws "2Of2(" ws string_list ws ")" ws ";" ws "CmsStageOutput::HomepageSections" ws "=" ws "2Of2(" ws string_list ws ")" ws "}"
 
-string-list ::= "{" ws label (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? ws "}"
+      string_list ::= "{" ws label (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? ws "}"
 
 label ::= "\"" jc jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? "\""
 jc ::= [^"\\\x00-\x1F]
@@ -75,11 +75,11 @@ ws ::= [ \t\n\r]*
 """
 
       let productsStageGbnf =
-        """root ::= ws products-stage ws
+        """root ::= ws products_stage ws
 
-products-stage ::= "{" ws "ProductsStageOutput::Categories" ws "=" ws "2Of2(" ws string-list ws ")" ws ";" ws "ProductsStageOutput::ProductIdeas" ws "=" ws "2Of2(" ws string-list ws ")" ws ";" ws "ProductsStageOutput::PriceBandHint" ws "=" ws "2Of2(" ws label ws ")" ws "}"
+      products_stage ::= "{" ws "ProductsStageOutput::Categories" ws "=" ws "2Of2(" ws string_list ws ")" ws ";" ws "ProductsStageOutput::ProductIdeas" ws "=" ws "2Of2(" ws string_list ws ")" ws ";" ws "ProductsStageOutput::PriceBandHint" ws "=" ws "2Of2(" ws label ws ")" ws "}"
 
-string-list ::= "{" ws label (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? ws "}"
+      string_list ::= "{" ws label (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? (ws ";" ws label)? ws "}"
 
 label ::= "\"" jc jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? jc? "\""
 jc ::= [^"\\\x00-\x1F]

@@ -266,7 +266,7 @@ module YamlGeneration =
                  $"{indent (level + 5)}- {yaml_string case_name}" ]))
         @ [ $"{indent (level + 2)}additionalProperties: false" ]
 
-      (wrap_case_in_property level "Union" union_schema_lines)
+      (wrap_case_in_property level "UnionCase" union_schema_lines)
       @ [ $"{indent level}additionalProperties: false" ]
 
   let private render_endpoint_lines level (endpoint: OpenAPIEndpoint) =
