@@ -4,6 +4,7 @@ namespace Ballerina.DSL.Next.Types.TypeChecker
 
 [<AutoOpen>]
 module Value =
+  open System
   open Ballerina.StdLib.String
   open Ballerina
   open Ballerina.Collections.Sum
@@ -54,6 +55,15 @@ module Value =
             reader.GetContext()
 
           let (<=) v t = Value.IsInstanceOf ext_checker (v, t)
+
+          let normalizeRecordFieldName (name: string) =
+            name
+            |> Seq.filter (fun c -> Char.IsLetterOrDigit(c) || c = '_')
+            |> Seq.toArray
+            |> fun chars -> System.String(chars)
+
+          let normalizeResolvedIdentifier (id: ResolvedIdentifier) =
+            id.ToString() |> normalizeRecordFieldName
 
           match v, t with
           | _, TypeValue.Lookup l ->
@@ -146,6 +156,17 @@ module Value =
                   let! field_symbol =
                     s.Symbols.RecordFields
                     |> Map.tryFind field_name
+                    |> Option.orElseWith (fun () ->
+                      let normalized =
+                        field_name |> normalizeResolvedIdentifier
+
+                      s.Symbols.RecordFields
+                      |> Map.toSeq
+                      |> Seq.tryFind (fun (candidate, _) ->
+                        candidate
+                        |> normalizeResolvedIdentifier
+                        |> (=) normalized)
+                      |> Option.map snd)
                     |> sum.OfOption(
                       (fun () -> $"Error: field {field_name} does not exist")
                       |> Errors.Singleton()
