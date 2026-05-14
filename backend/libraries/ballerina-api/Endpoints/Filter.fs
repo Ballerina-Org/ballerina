@@ -20,7 +20,7 @@ module Filter =
       JsonValue: ValueDTO<ValueExtDTO> }
 
   type EntityFilterFunction =
-    string -> int -> int -> JsonElement -> Sum<EntityFilterResult list, Errors<unit>>
+    HttpContext -> string -> int -> int -> JsonElement -> Sum<EntityFilterResult list, Errors<unit>>
 
   let filter<'runtimeContext, 'db, 'customExtension, 'tenantId, 'schemaName
     when 'customExtension: comparison and 'db: comparison>
@@ -32,7 +32,7 @@ module Filter =
     app.MapPost(
       "/{tenantId}/{schemaName}/{entityName}/filter",
       Func<HttpContext, 'tenantId, 'schemaName, string, int, int, JsonElement, IResult>
-        (fun _httpContext tenantId schemaName entityName (offset: int) (limit: int) filterBody ->
+        (fun httpContext tenantId schemaName entityName (offset: int) (limit: int) filterBody ->
           let result =
             sum {
               let! filterFn =
@@ -41,7 +41,7 @@ module Filter =
                   APIError<'runtimeContext, 'db, 'customExtension, Location>.Create
 
               let! filterResults =
-                filterFn entityName offset limit filterBody
+                filterFn httpContext entityName offset limit filterBody
                 |> sum.MapError(fun errors ->
                   { Errors = errors |> Errors.MapContext(fun () -> Location.Unknown)
                     TypeError = None })
