@@ -55,7 +55,7 @@ module YamlGeneration =
         | PrimitiveType.Bool -> "Bool"
         | PrimitiveType.String -> "String"
         | PrimitiveType.DateTime -> "DateTime"
-        | PrimitiveType.DateOnly -> "DateOnly"
+        | PrimitiveType.DateOnly -> "Date"
         | PrimitiveType.TimeSpan -> "TimeSpan"
         | PrimitiveType.Vector -> "Vector"
 
