@@ -11,7 +11,6 @@ module OpenAPIGeneration =
   open EndpointGeneration
   open YamlGeneration
   open DeltaGeneration
-  open FilterDataModelGeneration
 
   type OpenAPIGenerationState =
     { DataModel: Map<OpenAPIDataModelName, OpenAPIDataModel>
@@ -50,16 +49,6 @@ module OpenAPIGeneration =
 
       do!
         generate_delta_models schema
-        |> State.mapContext (fun openApiGenerationContext ->
-          openApiGenerationContext.TypeCheckContext, openApiGenerationContext.TypeCheckState)
-        |> State.mapState
-          (fun (generationState: OpenAPIGenerationState, _) -> generationState.DataModel)
-          (fun (dataModel, _) (generationState: OpenAPIGenerationState) ->
-            { generationState with
-                DataModel = dataModel })
-
-      do!
-        generate_filter_data_models schema
         |> State.mapContext (fun openApiGenerationContext ->
           openApiGenerationContext.TypeCheckContext, openApiGenerationContext.TypeCheckState)
         |> State.mapState
