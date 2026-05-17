@@ -311,34 +311,6 @@ module EndpointGeneration =
               |> state.All
               |> state.Ignore
 
-            let filterableProperties = collectFilterableProperties entity_desc
-
-            if not (List.isEmpty filterableProperties) then
-              let filterEndpoint =
-                { Path = $"{routePrefix}/{entity_name.Name}/filter"
-                  Method = OpenAPIEndpointModel.Post
-                  QueryParameters =
-                    [ { Name = "offset" |> ResolvedIdentifier.Create
-                        Type = PrimitiveType.Int32 }
-                      { Name = "limit" |> ResolvedIdentifier.Create
-                        Type = PrimitiveType.Int32 } ]
-                  RequestModel =
-                    Some(
-                      OpenAPIDataModel.Ref
-                        { OpenAPIDataModelName.OpenAPIDataModelName = $"{entity_name.Name}-FilterTree" }
-                    )
-                  ResponseModel =
-                    OpenAPIDataModel.Array(
-                      OpenAPIDataModel.Object
-                        [ ("Key" |> ResolvedIdentifier.Create,
-                           OpenAPIDataModel.Scalar PrimitiveType.Guid)
-                          ("Value" |> ResolvedIdentifier.Create,
-                           type_with_props_name |> OpenAPIDataModel.Ref) ]
-                    )
-                    |> Some }
-
-              do! state.SetState(fun l -> filterEndpoint :: l)
-
             return ()
           })
         |> state.All
